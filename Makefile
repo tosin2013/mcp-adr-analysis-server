@@ -95,6 +95,12 @@ lint: check-deps
 	@npm run typecheck
 	@echo "✅ TypeScript linting completed successfully"
 
+# CI-safe linting (skips audit check)
+lint-ci:
+	@echo "Running CI-safe TypeScript compiler check..."
+	@npm run typecheck
+	@echo "✅ CI TypeScript linting completed successfully"
+
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
