@@ -132,9 +132,9 @@ jobs:
         # Update package.json to match tag
         npm version $TAG_VERSION --no-git-tag-version
 
-    - name: Create distribution package
+    - name: Verify distribution package
       run: |
-        echo "Creating distribution package..."
+        echo "Verifying distribution package..."
 
         # Debug: Check what files exist
         echo "=== Build Output Debug ==="
@@ -165,29 +165,7 @@ jobs:
           exit 1
         fi
 
-        # Create clean package directory
-        mkdir -p npm-package
-
-        # Copy essential files
-        cp package.json npm-package/
-        cp README.md npm-package/
-        cp -r dist npm-package/
-
-        # Copy license if exists
-        if [ -f LICENSE ]; then
-          cp LICENSE npm-package/
-        fi
-
-        # Verify the copy worked
-        echo "=== Package Verification ==="
-        echo "Contents of npm-package:"
-        ls -la npm-package/
-        if [ -f "npm-package/dist/src/index.js" ]; then
-          echo "✅ Main entry point copied successfully"
-        else
-          echo "❌ Main entry point copy failed"
-          exit 1
-        fi
+        echo "✅ Distribution package verification complete"
         
         # Create .npmignore for the package
         cat > npm-package/.npmignore << 'EOF'
@@ -223,16 +201,8 @@ jobs:
     - name: Test package installation
       run: |
         echo "Testing package installation..."
-        cd npm-package
 
-        # Debug package contents
-        echo "=== Package Contents Debug ==="
-        echo "Files in npm-package directory:"
-        ls -la
-        echo "Package.json main field:"
-        node -p "require('./package.json').main"
-
-        # Test that the package can be installed
+        # Test package creation directly from main directory (not npm-package)
         echo "=== Testing Package Creation ==="
         npm pack --dry-run
 
@@ -261,8 +231,6 @@ jobs:
 
     - name: Publish to NPM
       run: |
-        cd npm-package
-        
         if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.version }}" = "prerelease" ]; then
           echo "Publishing prerelease version..."
           npm publish --tag beta
@@ -270,7 +238,7 @@ jobs:
           echo "Publishing stable version..."
           npm publish
         fi
-        
+
         echo "✅ Successfully published to NPM"
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
