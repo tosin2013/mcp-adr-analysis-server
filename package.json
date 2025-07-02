@@ -14,8 +14,8 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "lint": "npx eslint src tests",
-    "lint:fix": "npx eslint src tests --fix",
+    "lint": "npx eslint \"src/**/*.ts\" \"tests/**/*.ts\"",
+    "lint:fix": "npx eslint \"src/**/*.ts\" \"tests/**/*.ts\" --fix",
     "clean": "rm -rf dist coverage .mcp-adr-cache",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build && npm test && npm run lint",
@@ -34,6 +34,7 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@eslint/js": "^9.0.0",
     "@types/jest": "^29.5.8",
     "@types/node": "^20.9.0",
     "@typescript-eslint/eslint-plugin": "^6.12.0",
