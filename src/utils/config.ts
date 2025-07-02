@@ -16,7 +16,7 @@ const ConfigSchema = z.object({
   cacheEnabled: z.boolean().default(true),
   cacheDirectory: z.string().default('.mcp-adr-cache'),
   maxCacheSize: z.number().default(100 * 1024 * 1024), // 100MB
-  analysisTimeout: z.number().default(30000), // 30 seconds
+  analysisTimeout: z.number().default(30000) // 30 seconds
 });
 
 export type ServerConfig = z.infer<typeof ConfigSchema>;

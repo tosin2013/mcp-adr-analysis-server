@@ -77,6 +77,14 @@ class McpAdrAnalysisServer {
   }
 
   /**
+   * Public health check method for testing
+   */
+  async healthCheck(): Promise<void> {
+    await this.validateConfiguration();
+    this.logger.info('Health check completed successfully');
+  }
+
+  /**
    * Setup MCP protocol handlers
    */
   private setupHandlers(): void {
@@ -1807,11 +1815,60 @@ ${newConfig.enabled ?
  * Main execution
  */
 async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+
+  // Handle command line arguments
+  if (args.includes('--help') || args.includes('-h')) {
+    console.log(`
+MCP ADR Analysis Server v${SERVER_INFO.version}
+
+Usage: mcp-adr-analysis-server [options]
+
+Options:
+  --help, -h        Show this help message
+  --version, -v     Show version information
+  --test            Run health check and exit
+  --config          Show configuration and exit
+
+Environment Variables:
+  PROJECT_PATH      Path to project directory (default: current directory)
+  ADR_DIRECTORY     ADR directory relative to project (default: docs/adrs)
+  LOG_LEVEL         Logging level: DEBUG, INFO, WARN, ERROR (default: INFO)
+  CACHE_ENABLED     Enable caching: true, false (default: true)
+
+Examples:
+  mcp-adr-analysis-server                    # Start MCP server
+  PROJECT_PATH=/path/to/project mcp-adr-analysis-server
+  mcp-adr-analysis-server --test             # Health check
+`);
+    process.exit(0);
+  }
+
+  if (args.includes('--version') || args.includes('-v')) {
+    console.log(`MCP ADR Analysis Server v${SERVER_INFO.version}`);
+    process.exit(0);
+  }
+
   try {
     const server = new McpAdrAnalysisServer();
+
+    if (args.includes('--test')) {
+      console.log('🔍 Running health check...');
+      await server.healthCheck();
+      console.log('✅ Health check passed - server can start successfully');
+      process.exit(0);
+    }
+
+    if (args.includes('--config')) {
+      console.log('📋 Server configuration validated');
+      process.exit(0);
+    }
+
+    // Normal server startup
     await server.start();
   } catch (error) {
-    console.error('Failed to start MCP ADR Analysis Server:', error);
+    console.error('❌ MCP server failed to start');
+    console.error('Error:', error instanceof Error ? error.message : String(error));
     process.exit(1);
   }
 }

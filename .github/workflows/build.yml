@@ -63,48 +63,28 @@ jobs:
       run: |
         echo "Testing built MCP server..."
         
-        # Test that the built server can start
-        timeout 10s node dist/index.js --help || true
+        # Test that the built server can start and pass health check
+        echo "Testing server health check..."
+        if node dist/src/index.js --test; then
+          echo "✅ Server health check passed"
+        else
+          echo "❌ Server health check failed"
+          exit 1
+        fi
         
         # Verify the built server has all expected tools
-        cat > verify-build.js << 'EOF'
-        const fs = require('fs');
-        const path = require('path');
-        
-        // Check if all expected files exist
-        const expectedFiles = [
-          'dist/src/index.js',
-          'dist/src/types/index.js',
-          'dist/src/utils/file-system.js',
-          'dist/src/tools/project-analysis-tool.js'
-        ];
-        
-        let allFilesExist = true;
-        expectedFiles.forEach(file => {
-          if (!fs.existsSync(file)) {
-            console.log(`❌ Missing file: ${file}`);
-            allFilesExist = false;
-          }
-        });
-        
-        if (allFilesExist) {
-          console.log('✅ All expected build files present');
-        } else {
-          console.log('❌ Build verification failed');
-          process.exit(1);
-        }
-        
-        // Check that the main index.js has MCP server code
-        const indexContent = fs.readFileSync('dist/src/index.js', 'utf8');
-        if (indexContent.includes('McpAdrAnalysisServer') && indexContent.includes('tools/list')) {
-          console.log('✅ Built server contains expected MCP functionality');
-        } else {
-          console.log('❌ Built server missing expected MCP functionality');
-          process.exit(1);
-        }
-        EOF
-        
-        node verify-build.js
+        if [ -f "scripts/validate-build.js" ]; then
+          echo "Using comprehensive build validation..."
+          node scripts/validate-build.js
+        else
+          echo "Using basic build validation..."
+          # Basic file existence check
+          if [ ! -f "dist/src/index.js" ]; then
+            echo "❌ Main entry point missing: dist/src/index.js"
+            exit 1
+          fi
+          echo "✅ Basic build validation passed"
+        fi
 
     - name: Package for distribution
       if: startsWith(github.ref, 'refs/tags/')

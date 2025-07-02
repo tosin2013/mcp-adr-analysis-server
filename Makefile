@@ -83,6 +83,12 @@ node-compat: build
 	"
 	@echo "Node.js compatibility check completed"
 
+# Health check
+health: build
+	@echo "Running server health check..."
+	npm run health
+	@echo "Health check completed"
+
 # Run linting
 lint: check-deps
 	@echo "Running ESLint..."

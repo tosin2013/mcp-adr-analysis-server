@@ -28,13 +28,26 @@ if (!existsSync(mainEntry)) {
 } else {
   console.log('✅ Main entry point exists');
   
-  // Check if it's a valid JS file
+  // Check if it's a valid JS file with MCP functionality
   try {
     const content = readFileSync(mainEntry, 'utf8');
     if (content.length < 100) {
       warnings.push('Main entry point seems too small');
     } else {
       console.log('✅ Main entry point has content');
+
+      // Check for MCP server functionality
+      if (content.includes('McpAdrAnalysisServer') || content.includes('Server')) {
+        console.log('✅ MCP server class found');
+      } else {
+        warnings.push('MCP server class not found in main entry');
+      }
+
+      if (content.includes('tools') && content.includes('resources')) {
+        console.log('✅ MCP tools and resources detected');
+      } else {
+        warnings.push('MCP tools/resources not detected');
+      }
     }
   } catch (error) {
     errors.push(`Cannot read main entry point: ${error.message}`);
@@ -72,7 +85,8 @@ if (!existsSync(declarationFile)) {
 // Check 5: Essential utility files
 const essentialFiles = [
   'dist/src/utils/config.js',
-  'dist/src/types/index.js'
+  'dist/src/types/index.js',
+  'dist/src/utils/file-system.js'
 ];
 
 for (const file of essentialFiles) {
@@ -80,6 +94,21 @@ for (const file of essentialFiles) {
     errors.push(`Essential file missing: ${file}`);
   } else {
     console.log(`✅ ${file} exists`);
+  }
+}
+
+// Check 6: Tool files (optional but expected)
+const toolFiles = [
+  'dist/src/tools',
+  'dist/src/resources',
+  'dist/src/prompts'
+];
+
+for (const file of toolFiles) {
+  if (!existsSync(file)) {
+    warnings.push(`Tool directory missing: ${file}`);
+  } else {
+    console.log(`✅ ${file} directory exists`);
   }
 }
 

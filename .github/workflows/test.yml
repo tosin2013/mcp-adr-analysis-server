@@ -34,7 +34,10 @@ jobs:
         fi
 
     - name: Test Node.js compatibility
-      run: make node-compat
+      run: |
+        make node-compat
+        echo "Testing server health check..."
+        node dist/src/index.js --test
 
     - name: Run unit tests
       run: make test

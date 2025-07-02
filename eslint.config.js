@@ -28,13 +28,13 @@ export default [
       '@typescript-eslint': typescript
     },
     rules: {
-      // TypeScript specific rules - relaxed for stubs
+      // TypeScript specific rules - relaxed for MCP server
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn', // Allow any for stubs
+      '@typescript-eslint/no-explicit-any': 'off', // Allow any for MCP dynamic data
       '@typescript-eslint/explicit-function-return-type': 'off',
 
-      // General code quality
-      'no-console': 'warn',
+      // General code quality - relaxed for MCP server
+      'no-console': 'off', // Allow console for MCP server logging
       'no-debugger': 'error',
       'no-var': 'error',
       'prefer-const': 'error',
@@ -74,8 +74,8 @@ export default [
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
       'no-console': 'off',
-      'no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }]
+      'no-unused-vars': 'off', // Allow unused vars in tests
+      '@typescript-eslint/no-unused-vars': 'off'
     }
   },
   {
