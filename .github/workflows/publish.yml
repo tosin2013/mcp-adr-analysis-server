@@ -194,29 +194,33 @@ jobs:
 
     - name: Create GitHub Release
       if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
-      uses: actions/create-release@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ env.NEW_VERSION && format('v{0}', env.NEW_VERSION) || github.ref_name }}
-        release_name: Release ${{ env.NEW_VERSION && format('v{0}', env.NEW_VERSION) || github.ref_name }}
-        body: |
-          ## MCP ADR Analysis Server ${{ env.NEW_VERSION && format('v{0}', env.NEW_VERSION) || github.ref_name }}
-          
-          ### 🚀 Features
-          - Complete MCP ADR Analysis Server with 23 tools
-          - AI-powered architectural analysis and decision tracking
-          - Enterprise-grade security and performance features
-          
-          ### 📦 Installation
-          ```bash
-          npm install -g mcp-adr-analysis-server
-          ```
-          
-          ### 🔧 Usage
-          ```bash
-          mcp-adr-analysis-server
-          ```
+      run: |
+        TAG_NAME="${{ env.NEW_VERSION && format('v{0}', env.NEW_VERSION) || github.ref_name }}"
+        RELEASE_NAME="Release ${{ env.NEW_VERSION && format('v{0}', env.NEW_VERSION) || github.ref_name }}"
+
+        # Create release with GitHub CLI
+        gh release create "$TAG_NAME" \
+          --title "$RELEASE_NAME" \
+          --notes "## MCP ADR Analysis Server ${{ env.NEW_VERSION && format('v{0}', env.NEW_VERSION) || github.ref_name }}
+
+        ### 🚀 Features
+        - Complete MCP ADR Analysis Server with 23 tools
+        - AI-powered architectural analysis and decision tracking
+        - Enterprise-grade security and performance features
+
+        ### 📦 Installation
+        \`\`\`bash
+        npm install -g mcp-adr-analysis-server
+        \`\`\`
+
+        ### 🔧 Usage
+        \`\`\`bash
+        mcp-adr-analysis-server
+        \`\`\`" \
+          --draft=false \
+          --prerelease=false
           
           ### 📚 Documentation
           See README.md for complete documentation and usage examples.

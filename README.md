@@ -508,7 +508,6 @@ npm run typecheck     # Run TypeScript type checking
   }
 }
 ```
-```
 
 ### Example Prompts for AI Assistants
 
