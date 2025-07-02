@@ -166,37 +166,6 @@ jobs:
         fi
 
         echo "✅ Distribution package verification complete"
-        
-        # Create .npmignore for the package
-        cat > npm-package/.npmignore << 'EOF'
-        # Source files
-        src/
-        tests/
-        
-        # Development files
-        .github/
-        .eslintrc.json
-        .prettierrc.json
-        tsconfig.json
-        jest.config.js
-        
-        # Cache and logs
-        .mcp-adr-cache/
-        *.log
-        
-        # Development dependencies
-        node_modules/
-        coverage/
-        
-        # Git files
-        .git/
-        .gitignore
-        
-        # Documentation that shouldn't be in package
-        docs/
-        *.md
-        !README.md
-        EOF
 
     - name: Test package installation
       run: |
