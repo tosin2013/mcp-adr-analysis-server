@@ -45,19 +45,19 @@ export async function analyzeProjectStructure(projectPath: string): Promise<Proj
       '!build/**',
       '!coverage/**',
       '!.mcp-adr-cache/**',
-      '!*.log'
+      '!*.log',
     ];
 
     const filePaths = await glob(filePatterns, {
       cwd: projectPath,
       absolute: true,
-      onlyFiles: true
+      onlyFiles: true,
     });
 
     const directoryPaths = await glob(['**/*'], {
       cwd: projectPath,
       absolute: true,
-      onlyDirectories: true
+      onlyDirectories: true,
     });
 
     // Process file information
@@ -66,13 +66,13 @@ export async function analyzeProjectStructure(projectPath: string): Promise<Proj
       try {
         const fileStats = await fs.stat(filePath);
         const relativePath = filePath.replace(projectPath + '/', '');
-        
+
         files.push({
           path: relativePath,
           name: basename(filePath),
           extension: extname(filePath),
           size: fileStats.size,
-          directory: dirname(relativePath)
+          directory: dirname(relativePath),
         });
       } catch (error) {
         // Skip files that can't be accessed
@@ -85,7 +85,7 @@ export async function analyzeProjectStructure(projectPath: string): Promise<Proj
       files,
       directories: directoryPaths.map(dir => dir.replace(projectPath + '/', '')),
       totalFiles: files.length,
-      totalDirectories: directoryPaths.length
+      totalDirectories: directoryPaths.length,
     };
   } catch (error) {
     throw new FileSystemError(
@@ -120,7 +120,7 @@ export async function findFiles(
   try {
     const filePaths = await glob(patterns, {
       cwd: projectPath,
-      absolute: true
+      absolute: true,
     });
 
     const files: FileInfo[] = [];
@@ -128,13 +128,13 @@ export async function findFiles(
       try {
         const fileStats = await fs.stat(filePath);
         const relativePath = filePath.replace(projectPath + '/', '');
-        
+
         const fileInfo: FileInfo = {
           path: relativePath,
           name: basename(filePath),
           extension: extname(filePath),
           size: fileStats.size,
-          directory: dirname(relativePath)
+          directory: dirname(relativePath),
         };
 
         if (options.includeContent) {
@@ -203,8 +203,16 @@ export async function writeFile(filePath: string, content: string): Promise<void
  */
 export const FILE_PATTERNS = {
   // Configuration files
-  config: ['package.json', 'tsconfig.json', '*.config.js', '*.config.ts', '.env*', 'Dockerfile', 'docker-compose.yml'],
-  
+  config: [
+    'package.json',
+    'tsconfig.json',
+    '*.config.js',
+    '*.config.ts',
+    '.env*',
+    'Dockerfile',
+    'docker-compose.yml',
+  ],
+
   // Source code
   typescript: ['**/*.ts', '**/*.tsx'],
   javascript: ['**/*.js', '**/*.jsx'],
@@ -213,14 +221,19 @@ export const FILE_PATTERNS = {
   csharp: ['**/*.cs'],
   go: ['**/*.go'],
   rust: ['**/*.rs'],
-  
+
   // Documentation
   documentation: ['**/*.md', '**/*.rst', '**/*.txt', '**/README*'],
-  
+
   // ADRs specifically
   adrs: ['docs/adrs/**/*.md', 'adrs/**/*.md', 'decisions/**/*.md'],
-  
+
   // Build and deployment
   build: ['Makefile', '*.mk', 'build.gradle', 'pom.xml', 'Cargo.toml'],
-  ci: ['.github/workflows/**/*.yml', '.github/workflows/**/*.yaml', '.gitlab-ci.yml', 'azure-pipelines.yml']
+  ci: [
+    '.github/workflows/**/*.yml',
+    '.github/workflows/**/*.yaml',
+    '.gitlab-ci.yml',
+    'azure-pipelines.yml',
+  ],
 } as const;

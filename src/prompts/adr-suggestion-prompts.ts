@@ -22,16 +22,24 @@ ${projectStructure}
 \`\`\`
 
 ## Code Patterns Detected
-${codePatterns.map((pattern, index) => `
+${codePatterns
+  .map(
+    (pattern, index) => `
 ### Pattern ${index + 1}
 \`\`\`
 ${pattern}
 \`\`\`
-`).join('')}
+`
+  )
+  .join('')}
 
-${existingAdrs ? `## Existing ADRs
+${
+  existingAdrs
+    ? `## Existing ADRs
 ${existingAdrs.map(adr => `- ${adr}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
 ## Detection Requirements
 
@@ -148,9 +156,13 @@ Please analyze the following code changes to identify architectural decisions th
 ## Change Description
 ${changeDescription}
 
-${commitMessages ? `## Commit Messages
+${
+  commitMessages
+    ? `## Commit Messages
 ${commitMessages.map(msg => `- ${msg}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
 ## Before Code
 \`\`\`
@@ -268,17 +280,29 @@ Please generate a complete Architectural Decision Record based on the provided d
 - **Decision**: ${decisionData.decision}
 - **Consequences**: ${decisionData.consequences}
 
-${decisionData.alternatives ? `## Alternatives Considered
+${
+  decisionData.alternatives
+    ? `## Alternatives Considered
 ${decisionData.alternatives.map(alt => `- ${alt}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
-${decisionData.evidence ? `## Supporting Evidence
+${
+  decisionData.evidence
+    ? `## Supporting Evidence
 ${decisionData.evidence.map(ev => `- ${ev}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
-${existingAdrs ? `## Existing ADRs (for reference and numbering)
+${
+  existingAdrs
+    ? `## Existing ADRs (for reference and numbering)
 ${existingAdrs.map(adr => `- ${adr}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
 ## Template Format
 ${templateFormat.toUpperCase()}

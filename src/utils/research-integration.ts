@@ -3,7 +3,6 @@
  * Implements intelligent research findings incorporation into ADRs
  */
 
-
 import { McpAdrError } from '../types/index.js';
 
 export interface ResearchFile {
@@ -59,16 +58,20 @@ export async function monitorResearchDirectory(
 ): Promise<{ monitoringPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    
+
     // Find all research files
-    const researchFiles = await findFiles(process.cwd(), [
-      `${researchPath}/**/*.md`,
-      `${researchPath}/**/*.txt`,
-      `${researchPath}/**/*.pdf`,
-      `${researchPath}/**/*.doc`,
-      `${researchPath}/**/*.docx`
-    ], { includeContent: true });
-    
+    const researchFiles = await findFiles(
+      process.cwd(),
+      [
+        `${researchPath}/**/*.md`,
+        `${researchPath}/**/*.txt`,
+        `${researchPath}/**/*.pdf`,
+        `${researchPath}/**/*.doc`,
+        `${researchPath}/**/*.docx`,
+      ],
+      { includeContent: true }
+    );
+
     const instructions = `
 # Research Directory Monitoring
 
@@ -80,13 +83,20 @@ Monitoring research directory for architectural insights and findings.
 - **Total Size**: ${researchFiles.reduce((sum, f) => sum + (f.size || 0), 0)} bytes
 
 ## Discovered Files
-${researchFiles.length === 0 ? 'No research files found in the specified directory.' : 
-  researchFiles.map((file, index) => `
+${
+  researchFiles.length === 0
+    ? 'No research files found in the specified directory.'
+    : researchFiles
+        .map(
+          (file, index) => `
 ### ${index + 1}. ${file.name}
 - **Path**: ${file.path}
 - **Size**: ${file.size} bytes
 - **Last Modified**: ${(file as any).lastModified || 'Unknown'}
-`).join('')}
+`
+        )
+        .join('')
+}
 
 ## Next Steps
 1. **Extract research topics** using the topic extraction tool
@@ -100,19 +110,23 @@ ${researchFiles.length === 0 ? 'No research files found in the specified directo
 - Create research templates for consistent structure
 - Schedule regular research integration reviews
 
-${researchFiles.length === 0 ? `
+${
+  researchFiles.length === 0
+    ? `
 ## Getting Started
 To begin using research integration:
 1. Create the research directory: \`mkdir -p ${researchPath}\`
 2. Add research files (markdown, text, or documents)
 3. Use the \`incorporate_research\` tool to analyze findings
 4. Review suggested ADR updates and implementations
-` : ''}
+`
+    : ''
+}
 `;
-    
+
     return {
       monitoringPrompt: `Research directory monitoring complete. Found ${researchFiles.length} files in ${researchPath}.`,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -131,28 +145,31 @@ export async function extractResearchTopics(
 ): Promise<{ extractionPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateResearchTopicExtractionPrompt } = await import('../prompts/research-integration-prompts.js');
-    
+    const { generateResearchTopicExtractionPrompt } = await import(
+      '../prompts/research-integration-prompts.js'
+    );
+
     // Find and read research files
-    const researchFiles = await findFiles(process.cwd(), [
-      `${researchPath}/**/*.md`,
-      `${researchPath}/**/*.txt`
-    ], { includeContent: true });
-    
+    const researchFiles = await findFiles(
+      process.cwd(),
+      [`${researchPath}/**/*.md`, `${researchPath}/**/*.txt`],
+      { includeContent: true }
+    );
+
     if (researchFiles.length === 0) {
       throw new McpAdrError(`No research files found in ${researchPath}`, 'NO_RESEARCH_FILES');
     }
-    
+
     // Prepare research file data
     const fileData = researchFiles.map(file => ({
       filename: file.name,
       content: file.content || '',
       lastModified: (file as any).lastModified || new Date().toISOString(),
-      size: file.size || 0
+      size: file.size || 0,
     }));
-    
+
     const extractionPrompt = generateResearchTopicExtractionPrompt(fileData, existingTopics);
-    
+
     const instructions = `
 # Research Topic Extraction Instructions
 
@@ -185,10 +202,10 @@ const result = await extractResearchTopics(researchPath, existingTopics);
 // Parse AI response for research topics and insights
 \`\`\`
 `;
-    
+
     return {
       extractionPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -207,31 +224,35 @@ export async function evaluateResearchImpact(
 ): Promise<{ evaluationPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateResearchImpactEvaluationPrompt } = await import('../prompts/research-integration-prompts.js');
-    
+    const { generateResearchImpactEvaluationPrompt } = await import(
+      '../prompts/research-integration-prompts.js'
+    );
+
     // Find existing ADRs
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent: true });
-    
+    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+      includeContent: true,
+    });
+
     if (adrFiles.length === 0) {
       throw new McpAdrError(`No ADR files found in ${adrDirectory}`, 'NO_ADRS_FOUND');
     }
-    
+
     // Prepare ADR data
     const adrData = adrFiles.map(file => {
       const titleMatch = file.content?.match(/^#\s+(.+)$/m);
       const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
-      
+
       return {
         id: file.name.replace(/\.md$/, ''),
         title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
         status: statusMatch?.[1] || 'Unknown',
         content: file.content || '',
-        category: extractAdrCategory(file.content || '')
+        category: extractAdrCategory(file.content || ''),
       };
     });
-    
+
     const evaluationPrompt = generateResearchImpactEvaluationPrompt(researchTopics, adrData);
-    
+
     const instructions = `
 # Research Impact Evaluation Instructions
 
@@ -264,10 +285,10 @@ const result = await evaluateResearchImpact(researchTopics, adrDirectory);
 // Parse AI response for impact analysis and recommendations
 \`\`\`
 `;
-    
+
     return {
       evaluationPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -292,33 +313,36 @@ export async function generateAdrUpdateSuggestions(
 ): Promise<{ updatePrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateAdrUpdateSuggestionPrompt } = await import('../prompts/research-integration-prompts.js');
-    
-    // Find the specific ADR
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent: true });
-    const targetAdr = adrFiles.find(file => 
-      file.name.includes(adrId) || 
-      file.content?.includes(adrId) ||
-      file.path.includes(adrId)
+    const { generateAdrUpdateSuggestionPrompt } = await import(
+      '../prompts/research-integration-prompts.js'
     );
-    
+
+    // Find the specific ADR
+    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+      includeContent: true,
+    });
+    const targetAdr = adrFiles.find(
+      file =>
+        file.name.includes(adrId) || file.content?.includes(adrId) || file.path.includes(adrId)
+    );
+
     if (!targetAdr) {
       throw new McpAdrError(`ADR not found: ${adrId}`, 'ADR_NOT_FOUND');
     }
-    
+
     // Extract ADR metadata
     const titleMatch = targetAdr.content?.match(/^#\s+(.+)$/m);
     const statusMatch = targetAdr.content?.match(/##\s+Status\s*\n\s*(.+)/i);
-    
+
     const adrData = {
       id: adrId,
       title: titleMatch?.[1] || targetAdr.name.replace(/\.md$/, ''),
       content: targetAdr.content || '',
-      status: statusMatch?.[1] || 'Unknown'
+      status: statusMatch?.[1] || 'Unknown',
     };
-    
+
     const updatePrompt = generateAdrUpdateSuggestionPrompt(adrData, researchFindings, updateType);
-    
+
     const instructions = `
 # ADR Update Suggestion Instructions
 
@@ -354,10 +378,10 @@ const result = await generateAdrUpdateSuggestions(adrId, findings, updateType);
 // Parse AI response for update suggestions and implementation guidance
 \`\`\`
 `;
-    
+
     return {
       updatePrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -379,27 +403,24 @@ function extractAdrCategory(content: string): string {
     { pattern: /deployment|infrastructure|cloud/i, category: 'deployment' },
     { pattern: /test|testing|quality/i, category: 'testing' },
     { pattern: /architecture|pattern|design/i, category: 'architecture' },
-    { pattern: /process|workflow|methodology/i, category: 'process' }
+    { pattern: /process|workflow|methodology/i, category: 'process' },
   ];
-  
+
   for (const { pattern, category } of categoryPatterns) {
     if (pattern.test(content)) {
       return category;
     }
   }
-  
+
   return 'general';
 }
 
 /**
  * Create research file template
  */
-export function createResearchTemplate(
-  title: string,
-  category: string = 'general'
-): string {
+export function createResearchTemplate(title: string, category: string = 'general'): string {
   const date = new Date().toISOString().split('T')[0];
-  
+
   return `# ${title}
 
 **Date**: ${date}
@@ -494,10 +515,15 @@ Before proceeding with this action, please confirm:
 5. **Resources**: Are the necessary resources available for implementation?
 
 ## Risk Assessment
-${impact === 'critical' ? '🔴 **CRITICAL**: This action may have significant system-wide impact' :
-  impact === 'high' ? '🟠 **HIGH**: This action may affect multiple components or stakeholders' :
-  impact === 'medium' ? '🟡 **MEDIUM**: This action has moderate impact and should be reviewed' :
-  '🟢 **LOW**: This action has minimal impact but still requires confirmation'}
+${
+  impact === 'critical'
+    ? '🔴 **CRITICAL**: This action may have significant system-wide impact'
+    : impact === 'high'
+      ? '🟠 **HIGH**: This action may affect multiple components or stakeholders'
+      : impact === 'medium'
+        ? '🟡 **MEDIUM**: This action has moderate impact and should be reviewed'
+        : '🟢 **LOW**: This action has minimal impact but still requires confirmation'
+}
 
 Please respond with:
 - **APPROVED**: To proceed with the action
@@ -535,6 +561,6 @@ This confirmation step ensures that significant changes are properly reviewed be
 
   return {
     confirmationPrompt,
-    instructions
+    instructions,
   };
 }

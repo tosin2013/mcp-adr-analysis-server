@@ -16,27 +16,27 @@ export async function analyzeEnvironment(args: {
   requirements?: any;
   industryStandards?: string[];
 }): Promise<any> {
-  const { 
+  const {
     projectPath = process.cwd(),
     adrDirectory = 'docs/adrs',
     analysisType = 'comprehensive',
     currentEnvironment,
     requirements,
-    industryStandards
+    industryStandards,
   } = args;
-  
+
   try {
-    const { 
+    const {
       analyzeEnvironmentSpecs,
       detectContainerization,
       determineEnvironmentRequirements,
-      assessEnvironmentCompliance
+      assessEnvironmentCompliance,
     } = await import('../utils/environment-analysis.js');
-    
+
     switch (analysisType) {
       case 'specs': {
         const result = await analyzeEnvironmentSpecs(projectPath);
-        
+
         return {
           content: [
             {
@@ -76,15 +76,15 @@ Use the analysis results to:
 - **Enhance Scalability**: Design for growth and load handling
 - **Reduce Costs**: Optimize cloud service usage and resource efficiency
 - **Increase Reliability**: Implement redundancy and disaster recovery
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'containerization': {
         const result = await detectContainerization(projectPath);
-        
+
         return {
           content: [
             {
@@ -125,15 +125,15 @@ Use the detection results to:
 - **Enhance Reliability**: Add health checks and proper resource limits
 - **Reduce Image Size**: Use minimal base images and multi-stage builds
 - **Automate Scanning**: Implement security scanning in CI/CD pipelines
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'requirements': {
         const result = await determineEnvironmentRequirements(adrDirectory);
-        
+
         return {
           content: [
             {
@@ -173,12 +173,12 @@ Use the extracted requirements to:
 - **Plan Improvements**: Prioritize environment enhancements
 - **Validate Decisions**: Ensure ADR requirements are properly implemented
 - **Track Changes**: Monitor requirement evolution over time
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'compliance': {
         if (!currentEnvironment || !requirements) {
           throw new McpAdrError(
@@ -186,13 +186,13 @@ Use the extracted requirements to:
             'INVALID_INPUT'
           );
         }
-        
+
         const result = await assessEnvironmentCompliance(
           currentEnvironment,
           requirements,
           industryStandards
         );
-        
+
         return {
           content: [
             {
@@ -233,17 +233,17 @@ Use the assessment results to:
 - **Track Progress**: Monitor compliance score improvements over time
 - **Manage Risk**: Mitigate identified compliance risks
 - **Demonstrate Compliance**: Provide evidence for audits and certifications
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'comprehensive': {
         const specsResult = await analyzeEnvironmentSpecs(projectPath);
         const containerResult = await detectContainerization(projectPath);
         const requirementsResult = await determineEnvironmentRequirements(adrDirectory);
-        
+
         return {
           content: [
             {
@@ -322,12 +322,12 @@ All analyses follow these principles:
 - **Security Focus**: Emphasis on security and compliance
 - **Practical Recommendations**: Actionable improvement suggestions
 - **Risk Assessment**: Identification of potential risks and mitigation strategies
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       default:
         throw new McpAdrError(`Unknown analysis type: ${analysisType}`, 'INVALID_INPUT');
     }

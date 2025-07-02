@@ -21,7 +21,9 @@ export function generateResearchTopicExtractionPrompt(
 Please analyze the following research files and extract key topics, findings, and insights that could impact architectural decisions.
 
 ## Research Files
-${researchFiles.map((file, index) => `
+${researchFiles
+  .map(
+    (file, index) => `
 ### ${index + 1}. ${file.filename}
 **Last Modified**: ${file.lastModified}
 **Size**: ${file.size} bytes
@@ -30,11 +32,17 @@ ${researchFiles.map((file, index) => `
 \`\`\`
 ${file.content.slice(0, 2000)}${file.content.length > 2000 ? '\n... (truncated for analysis)' : ''}
 \`\`\`
-`).join('')}
+`
+  )
+  .join('')}
 
-${existingTopics ? `## Previously Identified Topics
+${
+  existingTopics
+    ? `## Previously Identified Topics
 ${existingTopics.map(topic => `- ${topic}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
 ## Extraction Requirements
 
@@ -156,17 +164,23 @@ export function generateResearchImpactEvaluationPrompt(
 Please analyze how the extracted research findings impact existing Architectural Decision Records and suggest necessary updates.
 
 ## Research Topics
-${researchTopics.map((topic, index) => `
+${researchTopics
+  .map(
+    (topic, index) => `
 ### ${index + 1}. ${topic.title}
 - **ID**: ${topic.id}
 - **Category**: ${topic.category}
 - **Relevance Score**: ${topic.relevanceScore}
 - **Key Findings**:
 ${topic.keyFindings.map(finding => `  - ${finding}`).join('\n')}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Existing ADRs
-${existingAdrs.map((adr, index) => `
+${existingAdrs
+  .map(
+    (adr, index) => `
 ### ${index + 1}. ${adr.title}
 - **ID**: ${adr.id}
 - **Status**: ${adr.status}
@@ -176,7 +190,9 @@ ${existingAdrs.map((adr, index) => `
 \`\`\`
 ${adr.content.slice(0, 1000)}${adr.content.length > 1000 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Impact Analysis Requirements
 
@@ -314,13 +330,17 @@ ${adrToUpdate.content}
 \`\`\`
 
 ## Research Findings
-${researchFindings.map((finding, index) => `
+${researchFindings
+  .map(
+    (finding, index) => `
 ### Finding ${index + 1}
 **Finding**: ${finding.finding}
 **Impact**: ${finding.impact}
 **Evidence**:
 ${finding.evidence.map(ev => `- ${ev}`).join('\n')}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Update Type
 ${updateType}

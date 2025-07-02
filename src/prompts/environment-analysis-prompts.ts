@@ -20,12 +20,16 @@ export function generateEnvironmentSpecAnalysisPrompt(
 Please analyze the following environment specifications and project structure to understand the deployment environment and infrastructure requirements.
 
 ## Environment Files
-${environmentFiles.map((file, index) => `
+${environmentFiles
+  .map(
+    (file, index) => `
 ### ${index + 1}. ${file.filename} (${file.type})
 \`\`\`
 ${file.content.slice(0, 1500)}${file.content.length > 1500 ? '\n... (truncated for analysis)' : ''}
 \`\`\`
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Project Structure
 \`\`\`
@@ -192,13 +196,17 @@ export function generateContainerizationDetectionPrompt(
 Please analyze the following project files to detect containerization technologies, patterns, and configurations.
 
 ## Project Files
-${projectFiles.map((file, index) => `
+${projectFiles
+  .map(
+    (file, index) => `
 ### ${index + 1}. ${file.filename}
 **Path**: ${file.path}
 \`\`\`
 ${file.content.slice(0, 1000)}${file.content.length > 1000 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Detection Requirements
 
@@ -347,7 +355,9 @@ export function generateAdrEnvironmentRequirementsPrompt(
 Please analyze the following Architectural Decision Records to extract environment and infrastructure requirements.
 
 ## ADR Files
-${adrFiles.map((adr, index) => `
+${adrFiles
+  .map(
+    (adr, index) => `
 ### ${index + 1}. ${adr.title}
 **ID**: ${adr.id}
 **Status**: ${adr.status}
@@ -356,7 +366,9 @@ ${adrFiles.map((adr, index) => `
 \`\`\`markdown
 ${adr.content.slice(0, 1200)}${adr.content.length > 1200 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Requirements Extraction
 
@@ -560,9 +572,13 @@ ${JSON.stringify(currentEnvironment, null, 2)}
 ${JSON.stringify(requirements, null, 2)}
 \`\`\`
 
-${industryStandards ? `## Industry Standards
+${
+  industryStandards
+    ? `## Industry Standards
 ${industryStandards.map(standard => `- ${standard}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
 ## Compliance Assessment
 

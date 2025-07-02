@@ -39,7 +39,7 @@ export async function analyzeDeploymentProgress(args: {
   cicdStatus?: any;
   environmentStatus?: any;
 }): Promise<any> {
-  const { 
+  const {
     analysisType = 'comprehensive',
     adrDirectory = 'docs/adrs',
     todoPath,
@@ -49,21 +49,21 @@ export async function analyzeDeploymentProgress(args: {
     outcomeRules,
     actualOutcomes,
     cicdStatus,
-    environmentStatus
+    environmentStatus,
   } = args;
-  
+
   try {
-    const { 
+    const {
       identifyDeploymentTasks,
       analyzeCiCdStatus,
       calculateDeploymentProgress,
-      verifyDeploymentCompletion
+      verifyDeploymentCompletion,
     } = await import('../utils/deployment-analysis.js');
-    
+
     switch (analysisType) {
       case 'tasks': {
         const result = await identifyDeploymentTasks(adrDirectory, todoPath);
-        
+
         return {
           content: [
             {
@@ -101,22 +101,19 @@ Use the identified tasks to:
 - **Assess Risks**: Identify and mitigate deployment risks
 - **Verify Completion**: Use verification criteria for completion validation
 - **Optimize Process**: Improve deployment efficiency and reliability
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'cicd': {
         if (!cicdLogs) {
-          throw new McpAdrError(
-            'CI/CD logs are required for pipeline analysis',
-            'INVALID_INPUT'
-          );
+          throw new McpAdrError('CI/CD logs are required for pipeline analysis', 'INVALID_INPUT');
         }
-        
+
         const result = await analyzeCiCdStatus(cicdLogs, pipelineConfig, deploymentTasks as any);
-        
+
         return {
           content: [
             {
@@ -156,12 +153,12 @@ Use the analysis results to:
 - **Enhance Quality**: Strengthen quality gates and testing coverage
 - **Increase Reliability**: Improve pipeline stability and success rates
 - **Automate Processes**: Identify automation opportunities
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'progress': {
         if (!deploymentTasks) {
           throw new McpAdrError(
@@ -169,13 +166,13 @@ Use the analysis results to:
             'INVALID_INPUT'
           );
         }
-        
+
         const result = await calculateDeploymentProgress(
           deploymentTasks as any,
           cicdStatus,
           environmentStatus
         );
-        
+
         return {
           content: [
             {
@@ -216,12 +213,12 @@ Use the progress calculation to:
 - **Manage Risks**: Proactively address deployment risks
 - **Report Status**: Provide accurate progress reports to stakeholders
 - **Accelerate Delivery**: Implement recommendations for faster delivery
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'completion': {
         if (!deploymentTasks || !outcomeRules) {
           throw new McpAdrError(
@@ -229,13 +226,13 @@ Use the progress calculation to:
             'INVALID_INPUT'
           );
         }
-        
+
         const result = await verifyDeploymentCompletion(
           deploymentTasks as any,
           outcomeRules,
           actualOutcomes
         );
-        
+
         return {
           content: [
             {
@@ -275,15 +272,15 @@ Use the verification results to:
 - **Manage Sign-Off**: Make informed sign-off and go-live decisions
 - **Address Gaps**: Remediate identified completion gaps
 - **Ensure Compliance**: Verify compliance with outcome rules and standards
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'comprehensive': {
         const taskResult = await identifyDeploymentTasks(adrDirectory, todoPath);
-        
+
         return {
           content: [
             {
@@ -373,12 +370,12 @@ The deployment analysis integrates with AI agents for:
 - **Predictive Analysis**: Predictive insights for deployment success
 - **Automated Remediation**: Automated issue resolution and optimization
 - **Continuous Improvement**: Learning from deployment patterns and outcomes
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       default:
         throw new McpAdrError(`Unknown analysis type: ${analysisType}`, 'INVALID_INPUT');
     }

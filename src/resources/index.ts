@@ -21,15 +21,17 @@ export async function generateArchitecturalKnowledgeGraph(
 ): Promise<ResourceGenerationResult> {
   try {
     const { analyzeProjectStructure } = await import('../utils/file-system.js');
-    const { generateAnalysisContext, generateComprehensiveAnalysisPrompt } = await import('../prompts/analysis-prompts.js');
-    
+    const { generateAnalysisContext, generateComprehensiveAnalysisPrompt } = await import(
+      '../prompts/analysis-prompts.js'
+    );
+
     // Analyze project structure
     const projectStructure = await analyzeProjectStructure(projectPath);
     const analysisContext = generateAnalysisContext(projectStructure);
-    
+
     // Generate comprehensive analysis prompt
     const analysisPrompt = generateComprehensiveAnalysisPrompt(analysisContext);
-    
+
     // Create knowledge graph structure with prompt for AI completion
     const knowledgeGraphPrompt = `
 # Architectural Knowledge Graph Generation
@@ -129,7 +131,7 @@ Please generate a complete, accurate architectural knowledge graph.
 `;
 
     const cacheKey = `knowledge-graph:${Buffer.from(projectPath).toString('base64')}`;
-    
+
     return {
       data: {
         prompt: knowledgeGraphPrompt,
@@ -159,12 +161,12 @@ The knowledge graph includes:
 Submit the prompt to generate the actual knowledge graph data.
         `,
         projectPath,
-        analysisContext: JSON.parse(analysisContext)
+        analysisContext: JSON.parse(analysisContext),
       },
       contentType: 'application/json',
       lastModified: new Date().toISOString(),
       cacheKey,
-      ttl: 3600 // 1 hour cache
+      ttl: 3600, // 1 hour cache
     };
   } catch (error) {
     throw new McpAdrError(
@@ -184,11 +186,11 @@ export async function generateAnalysisReport(
   try {
     const { analyzeProjectStructure } = await import('../utils/file-system.js');
     const { generateAnalysisContext } = await import('../prompts/analysis-prompts.js');
-    
+
     // Analyze project structure
     const projectStructure = await analyzeProjectStructure(projectPath);
     const analysisContext = generateAnalysisContext(projectStructure);
-    
+
     const reportPrompt = `
 # Project Analysis Report Generation
 
@@ -199,8 +201,12 @@ Please generate a comprehensive analysis report for this project.
 ${analysisContext}
 \`\`\`
 
-${focusAreas ? `## Focus Areas
-${focusAreas.join(', ')}` : ''}
+${
+  focusAreas
+    ? `## Focus Areas
+${focusAreas.join(', ')}`
+    : ''
+}
 
 ## Required Report Format
 
@@ -287,7 +293,7 @@ Please generate a comprehensive, actionable analysis report.
 `;
 
     const cacheKey = `analysis-report:${Buffer.from(projectPath + (focusAreas?.join(',') || '')).toString('base64')}`;
-    
+
     return {
       data: {
         prompt: reportPrompt,
@@ -318,12 +324,12 @@ Submit the prompt to generate the actual analysis report.
         `,
         projectPath,
         focusAreas,
-        analysisContext: JSON.parse(analysisContext)
+        analysisContext: JSON.parse(analysisContext),
       },
       contentType: 'application/json',
       lastModified: new Date().toISOString(),
       cacheKey,
-      ttl: 1800 // 30 minutes cache
+      ttl: 1800, // 30 minutes cache
     };
   } catch (error) {
     throw new McpAdrError(
@@ -343,7 +349,9 @@ export async function generateAdrList(
     const { findFiles } = await import('../utils/file-system.js');
 
     // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent: true });
+    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+      includeContent: true,
+    });
 
     const adrListPrompt = `
 # ADR List Resource Generation
@@ -351,8 +359,12 @@ export async function generateAdrList(
 Please analyze the following ADR files and generate a structured ADR list resource.
 
 ## ADR Files Found
-${adrFiles.length === 0 ? 'No ADR files found in the specified directory.' :
-  adrFiles.map((file, index) => `
+${
+  adrFiles.length === 0
+    ? 'No ADR files found in the specified directory.'
+    : adrFiles
+        .map(
+          (file, index) => `
 ### ${index + 1}. ${file.name}
 **Path**: ${file.path}
 **Size**: ${file.size} bytes
@@ -361,7 +373,10 @@ ${adrFiles.length === 0 ? 'No ADR files found in the specified directory.' :
 \`\`\`markdown
 ${file.content?.slice(0, 1000) || 'No content available'}${(file.content?.length || 0) > 1000 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('')}
+`
+        )
+        .join('')
+}
 
 ## Required Output Format
 
@@ -472,12 +487,12 @@ Submit the prompt to generate the actual ADR list data.
         `,
         adrDirectory,
         fileCount: adrFiles.length,
-        files: adrFiles.map(f => ({ name: f.name, path: f.path, size: f.size }))
+        files: adrFiles.map(f => ({ name: f.name, path: f.path, size: f.size })),
       },
       contentType: 'application/json',
       lastModified: new Date().toISOString(),
       cacheKey,
-      ttl: 900 // 15 minutes cache
+      ttl: 900, // 15 minutes cache
     };
   } catch (error) {
     throw new McpAdrError(

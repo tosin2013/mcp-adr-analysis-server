@@ -17,23 +17,25 @@ export async function suggestAdrs(args: {
   commitMessages?: string[];
   existingAdrs?: string[];
 }): Promise<any> {
-  const { 
-    projectPath = process.cwd(), 
+  const {
+    projectPath = process.cwd(),
     analysisType = 'comprehensive',
     beforeCode,
     afterCode,
     changeDescription,
     commitMessages,
-    existingAdrs
+    existingAdrs,
   } = args;
-  
+
   try {
-    const { analyzeImplicitDecisions, analyzeCodeChanges } = await import('../utils/adr-suggestions.js');
-    
+    const { analyzeImplicitDecisions, analyzeCodeChanges } = await import(
+      '../utils/adr-suggestions.js'
+    );
+
     switch (analysisType) {
       case 'implicit_decisions': {
         const result = await analyzeImplicitDecisions(projectPath, existingAdrs);
-        
+
         return {
           content: [
             {
@@ -60,12 +62,12 @@ The AI will identify implicit architectural decisions in your codebase and provi
 - Priority and risk assessments
 - Suggested ADR titles and content
 - Recommendations for documentation strategy
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'code_changes': {
         if (!beforeCode || !afterCode || !changeDescription) {
           throw new McpAdrError(
@@ -73,9 +75,14 @@ The AI will identify implicit architectural decisions in your codebase and provi
             'INVALID_INPUT'
           );
         }
-        
-        const result = await analyzeCodeChanges(beforeCode, afterCode, changeDescription, commitMessages);
-        
+
+        const result = await analyzeCodeChanges(
+          beforeCode,
+          afterCode,
+          changeDescription,
+          commitMessages
+        );
+
         return {
           content: [
             {
@@ -102,15 +109,15 @@ The AI will analyze the code changes and provide:
 - Change motivation and context analysis
 - Impact and risk assessment
 - Recommendations for documentation
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'comprehensive': {
         const implicitResult = await analyzeImplicitDecisions(projectPath, existingAdrs);
-        
+
         return {
           content: [
             {
@@ -173,12 +180,12 @@ This analysis will help you:
 - **Prioritize documentation efforts** based on impact and risk
 - **Generate high-quality ADRs** using AI assistance
 - **Improve architectural governance** and decision tracking
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       default:
         throw new McpAdrError(`Unknown analysis type: ${analysisType}`, 'INVALID_INPUT');
     }
@@ -206,30 +213,37 @@ export async function generateAdrFromDecision(args: {
   existingAdrs?: string[];
   adrDirectory?: string;
 }): Promise<any> {
-  const { 
-    decisionData, 
-    templateFormat = 'nygard', 
+  const {
+    decisionData,
+    templateFormat = 'nygard',
     existingAdrs = [],
-    adrDirectory = 'docs/adrs'
+    adrDirectory = 'docs/adrs',
   } = args;
-  
+
   try {
-    const { generateAdrFromDecision, generateNextAdrNumber, suggestAdrFilename } = await import('../utils/adr-suggestions.js');
-    
-    if (!decisionData.title || !decisionData.context || !decisionData.decision || !decisionData.consequences) {
+    const { generateAdrFromDecision, generateNextAdrNumber, suggestAdrFilename } = await import(
+      '../utils/adr-suggestions.js'
+    );
+
+    if (
+      !decisionData.title ||
+      !decisionData.context ||
+      !decisionData.decision ||
+      !decisionData.consequences
+    ) {
       throw new McpAdrError(
         'Decision data must include title, context, decision, and consequences',
         'INVALID_INPUT'
       );
     }
-    
+
     const result = await generateAdrFromDecision(decisionData, templateFormat, existingAdrs);
-    
+
     // Generate suggested metadata
     const adrNumber = generateNextAdrNumber(existingAdrs);
     const filename = suggestAdrFilename(decisionData.title, adrNumber);
     const fullPath = `${adrDirectory}/${filename}`;
-    
+
     return {
       content: [
         {
@@ -274,9 +288,9 @@ Before finalizing the ADR, ensure:
 - Link to related ADRs and documentation
 - Include implementation tasks in project planning
 - Schedule follow-up reviews for complex decisions
-`
-        }
-      ]
+`,
+        },
+      ],
     };
   } catch (error) {
     throw new McpAdrError(
@@ -294,13 +308,15 @@ export async function discoverExistingAdrs(args: {
   includeContent?: boolean;
 }): Promise<any> {
   const { adrDirectory = 'docs/adrs', includeContent = false } = args;
-  
+
   try {
     const { findFiles } = await import('../utils/file-system.js');
-    
+
     // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent });
-    
+    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+      includeContent,
+    });
+
     if (adrFiles.length === 0) {
       return {
         content: [
@@ -327,28 +343,28 @@ Use the \`suggest_adrs\` tool to identify decisions that should be documented:
   }
 }
 \`\`\`
-`
-          }
-        ]
+`,
+          },
+        ],
       };
     }
-    
+
     // Extract ADR metadata
     const adrList = adrFiles.map(file => {
       const titleMatch = file.content?.match(/^#\s+(.+)$/m);
       const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
       const dateMatch = file.content?.match(/\b(\d{4}-\d{2}-\d{2})\b/);
-      
+
       return {
         filename: file.name,
         path: file.path,
         title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
         status: statusMatch?.[1] || 'Unknown',
         date: dateMatch?.[1] || 'Unknown',
-        size: file.size
+        size: file.size,
       };
     });
-    
+
     return {
       content: [
         {
@@ -361,14 +377,18 @@ Use the \`suggest_adrs\` tool to identify decisions that should be documented:
 - **Total Size**: ${adrFiles.reduce((sum, f) => sum + (f.size || 0), 0)} bytes
 
 ## Discovered ADRs
-${adrList.map((adr, index) => `
+${adrList
+  .map(
+    (adr, index) => `
 ### ${index + 1}. ${adr.title}
 - **File**: ${adr.filename}
 - **Path**: ${adr.path}
 - **Status**: ${adr.status}
 - **Date**: ${adr.date}
 - **Size**: ${adr.size} bytes
-`).join('')}
+`
+  )
+  .join('')}
 
 ## ADR Titles (for reference)
 ${adrList.map(adr => `- ${adr.title}`).join('\n')}
@@ -389,9 +409,9 @@ Use the discovered ADR titles with other tools:
   }
 }
 \`\`\`
-`
-        }
-      ]
+`,
+        },
+      ],
     };
   } catch (error) {
     throw new McpAdrError(

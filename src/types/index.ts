@@ -34,7 +34,7 @@ export const AdrSchema = z.object({
   implementationPlan: z.string().optional(),
   filePath: z.string(),
   tags: z.array(z.string()).optional(),
-  relatedAdrs: z.array(z.string()).optional()
+  relatedAdrs: z.array(z.string()).optional(),
 });
 
 // ============================================================================
@@ -58,7 +58,7 @@ export const DetectedTechnologySchema = z.object({
   confidence: z.number().min(0).max(1),
   evidence: z.array(z.string()),
   filePaths: z.array(z.string()),
-  description: z.string().optional()
+  description: z.string().optional(),
 });
 
 // ============================================================================
@@ -78,13 +78,20 @@ export interface DetectedPattern {
 
 export const DetectedPatternSchema = z.object({
   name: z.string(),
-  type: z.enum(['architectural', 'structural', 'organizational', 'communication', 'testing', 'data']),
+  type: z.enum([
+    'architectural',
+    'structural',
+    'organizational',
+    'communication',
+    'testing',
+    'data',
+  ]),
   confidence: z.number().min(0).max(1),
   description: z.string(),
   evidence: z.array(z.string()),
   filePaths: z.array(z.string()),
   suboptimal: z.boolean().optional(),
-  recommendations: z.array(z.string()).optional()
+  recommendations: z.array(z.string()).optional(),
 });
 
 // ============================================================================
@@ -127,13 +134,15 @@ export const ArchitecturalKnowledgeGraphSchema = z.object({
   technologies: z.array(DetectedTechnologySchema),
   patterns: z.array(DetectedPatternSchema),
   rules: z.array(z.any()), // Will be defined by RuleSchema
-  relationships: z.array(z.object({
-    source: z.string(),
-    target: z.string(),
-    type: z.enum(['implements', 'depends_on', 'conflicts_with', 'supersedes', 'relates_to']),
-    strength: z.number().min(0).max(1),
-    description: z.string().optional()
-  })),
+  relationships: z.array(
+    z.object({
+      source: z.string(),
+      target: z.string(),
+      type: z.enum(['implements', 'depends_on', 'conflicts_with', 'supersedes', 'relates_to']),
+      strength: z.number().min(0).max(1),
+      description: z.string().optional(),
+    })
+  ),
   metadata: z.object({
     name: z.string(),
     description: z.string().optional(),
@@ -141,8 +150,8 @@ export const ArchitecturalKnowledgeGraphSchema = z.object({
     lastAnalyzed: z.string(),
     analysisVersion: z.string(),
     fileCount: z.number(),
-    directoryCount: z.number()
-  })
+    directoryCount: z.number(),
+  }),
 });
 
 // ============================================================================
@@ -176,7 +185,7 @@ export const AdrTaskSchema = z.object({
   dueDate: z.string().optional(),
   dependencies: z.array(z.string()).optional(),
   verificationCriteria: z.string().optional(),
-  completionEvidence: z.array(z.string()).optional()
+  completionEvidence: z.array(z.string()).optional(),
 });
 
 // ============================================================================
@@ -208,7 +217,7 @@ export const RuleSchema = z.object({
   source: z.enum(['adr', 'inferred', 'user_defined']),
   sourceId: z.string().optional(),
   enabled: z.boolean(),
-  tags: z.array(z.string()).optional()
+  tags: z.array(z.string()).optional(),
 });
 
 // ============================================================================
@@ -219,11 +228,7 @@ export class McpAdrError extends Error {
   public readonly code: string;
   public readonly details?: Record<string, unknown>;
 
-  constructor(
-    message: string,
-    code: string,
-    details?: Record<string, unknown>
-  ) {
+  constructor(message: string, code: string, details?: Record<string, unknown>) {
     super(message);
     this.name = 'McpAdrError';
     this.code = code;

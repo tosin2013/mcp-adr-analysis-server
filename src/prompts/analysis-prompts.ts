@@ -13,42 +13,40 @@ export function generateAnalysisContext(projectStructure: ProjectStructure): str
     projectPath: projectStructure.rootPath,
     totalFiles: projectStructure.totalFiles,
     totalDirectories: projectStructure.totalDirectories,
-    
+
     // File type breakdown
     fileTypes: getFileTypeBreakdown(projectStructure),
-    
+
     // Directory structure
     topLevelDirectories: projectStructure.directories
       .filter(dir => !dir.includes('/'))
       .slice(0, 20),
-    
+
     // Key configuration files
     configFiles: projectStructure.files
       .filter(file => isConfigFile(file.name))
       .map(file => ({ name: file.name, path: file.path })),
-    
+
     // Documentation files
     documentationFiles: projectStructure.files
       .filter(file => isDocumentationFile(file.name))
       .map(file => ({ name: file.name, path: file.path })),
-    
+
     // Build and deployment files
     buildFiles: projectStructure.files
       .filter(file => isBuildFile(file.name))
       .map(file => ({ name: file.name, path: file.path })),
-    
+
     // Sample file paths for pattern analysis
-    sampleFilePaths: projectStructure.files
-      .slice(0, 100)
-      .map(file => file.path),
-    
+    sampleFilePaths: projectStructure.files.slice(0, 100).map(file => file.path),
+
     // All unique file extensions
     allExtensions: [...new Set(projectStructure.files.map(f => f.extension))].sort(),
-    
+
     // Interesting files that might indicate specific technologies
     interestingFiles: projectStructure.files
       .filter(file => isInterestingFile(file.name, file.path))
-      .map(file => ({ name: file.name, path: file.path, extension: file.extension }))
+      .map(file => ({ name: file.name, path: file.path, extension: file.extension })),
   };
 
   return JSON.stringify(context, null, 2);
@@ -71,10 +69,14 @@ Please analyze the following project structure and identify all technologies, fr
 ${projectContext}
 \`\`\`
 
-${packageJsonContent ? `## Package.json Content
+${
+  packageJsonContent
+    ? `## Package.json Content
 \`\`\`json
 ${packageJsonContent}
-\`\`\`` : ''}
+\`\`\``
+    : ''
+}
 
 ## Analysis Requirements
 
@@ -251,17 +253,29 @@ Please perform a complete architectural analysis of this project, including tech
 ${projectContext}
 \`\`\`
 
-${packageJsonContent ? `## Package.json
+${
+  packageJsonContent
+    ? `## Package.json
 \`\`\`json
 ${packageJsonContent}
-\`\`\`` : ''}
+\`\`\``
+    : ''
+}
 
-${additionalFiles ? Object.entries(additionalFiles).map(([filename, content]) => `
+${
+  additionalFiles
+    ? Object.entries(additionalFiles)
+        .map(
+          ([filename, content]) => `
 ## ${filename}
 \`\`\`
 ${content.slice(0, 2000)}${content.length > 2000 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('') : ''}
+`
+        )
+        .join('')
+    : ''
+}
 
 ## Required Analysis
 
@@ -339,23 +353,34 @@ Focus on accuracy, evidence-based conclusions, and actionable recommendations.
 // Helper functions
 function getFileTypeBreakdown(projectStructure: ProjectStructure): Record<string, number> {
   const breakdown: Record<string, number> = {};
-  
+
   for (const file of projectStructure.files) {
     const ext = file.extension || 'no-extension';
     breakdown[ext] = (breakdown[ext] || 0) + 1;
   }
-  
+
   return breakdown;
 }
 
 function isConfigFile(filename: string): boolean {
   const configPatterns = [
-    'package.json', 'tsconfig.json', 'webpack.config', 'vite.config',
-    'jest.config', 'eslint.config', '.env', 'docker-compose',
-    'Dockerfile', 'Makefile', 'pyproject.toml', 'requirements.txt',
-    'pom.xml', 'build.gradle', 'Cargo.toml'
+    'package.json',
+    'tsconfig.json',
+    'webpack.config',
+    'vite.config',
+    'jest.config',
+    'eslint.config',
+    '.env',
+    'docker-compose',
+    'Dockerfile',
+    'Makefile',
+    'pyproject.toml',
+    'requirements.txt',
+    'pom.xml',
+    'build.gradle',
+    'Cargo.toml',
   ];
-  
+
   return configPatterns.some(pattern => filename.includes(pattern));
 }
 
@@ -366,8 +391,13 @@ function isDocumentationFile(filename: string): boolean {
 
 function isBuildFile(filename: string): boolean {
   const buildPatterns = [
-    'Dockerfile', 'docker-compose', '.github/workflows',
-    'Makefile', 'build.gradle', 'pom.xml', 'setup.py'
+    'Dockerfile',
+    'docker-compose',
+    '.github/workflows',
+    'Makefile',
+    'build.gradle',
+    'pom.xml',
+    'setup.py',
   ];
   return buildPatterns.some(pattern => filename.includes(pattern));
 }
@@ -376,63 +406,138 @@ function isInterestingFile(filename: string, filepath: string): boolean {
   // Configuration and infrastructure files
   const interestingPatterns = [
     // Infrastructure as Code
-    'terraform', '.tf', '.tfvars', '.hcl',
-    'ansible', '.yml', '.yaml', 'playbook', 'inventory',
-    'pulumi', 'cloudformation', '.template',
-    
+    'terraform',
+    '.tf',
+    '.tfvars',
+    '.hcl',
+    'ansible',
+    '.yml',
+    '.yaml',
+    'playbook',
+    'inventory',
+    'pulumi',
+    'cloudformation',
+    '.template',
+
     // Container and orchestration
-    'docker', 'kubernetes', 'k8s', 'helm', 'kustomize',
-    'compose', 'dockerfile', '.dockerignore',
-    
+    'docker',
+    'kubernetes',
+    'k8s',
+    'helm',
+    'kustomize',
+    'compose',
+    'dockerfile',
+    '.dockerignore',
+
     // CI/CD
-    '.github', 'gitlab-ci', 'jenkins', 'circleci', 'travis',
-    'azure-pipelines', 'buildkite', 'drone',
-    
+    '.github',
+    'gitlab-ci',
+    'jenkins',
+    'circleci',
+    'travis',
+    'azure-pipelines',
+    'buildkite',
+    'drone',
+
     // Configuration management
-    'chef', 'puppet', 'saltstack', 'vagrant',
-    
+    'chef',
+    'puppet',
+    'saltstack',
+    'vagrant',
+
     // Cloud provider specific
-    'aws', 'gcp', 'azure', 'cloudflare',
-    '.aws', '.gcp', '.azure',
-    
+    'aws',
+    'gcp',
+    'azure',
+    'cloudflare',
+    '.aws',
+    '.gcp',
+    '.azure',
+
     // Monitoring and logging
-    'prometheus', 'grafana', 'elasticsearch', 'logstash', 'kibana',
-    'datadog', 'newrelic', 'sentry',
-    
+    'prometheus',
+    'grafana',
+    'elasticsearch',
+    'logstash',
+    'kibana',
+    'datadog',
+    'newrelic',
+    'sentry',
+
     // Database migrations and schemas
-    'migration', 'schema', 'seed', 'fixture',
-    
+    'migration',
+    'schema',
+    'seed',
+    'fixture',
+
     // API documentation
-    'swagger', 'openapi', 'postman', 'insomnia',
-    
+    'swagger',
+    'openapi',
+    'postman',
+    'insomnia',
+
     // Security and secrets
-    'vault', 'secrets', 'gpg', 'ssl', 'tls',
-    
+    'vault',
+    'secrets',
+    'gpg',
+    'ssl',
+    'tls',
+
     // Package managers and dependencies
-    'package.json', 'requirements.txt', 'Pipfile', 'poetry.lock',
-    'Cargo.toml', 'go.mod', 'composer.json', 'Gemfile',
-    
+    'package.json',
+    'requirements.txt',
+    'Pipfile',
+    'poetry.lock',
+    'Cargo.toml',
+    'go.mod',
+    'composer.json',
+    'Gemfile',
+
     // Build and deployment
-    'webpack', 'vite', 'rollup', 'parcel', 'esbuild',
-    'gradle', 'maven', 'sbt', 'leiningen',
-    
+    'webpack',
+    'vite',
+    'rollup',
+    'parcel',
+    'esbuild',
+    'gradle',
+    'maven',
+    'sbt',
+    'leiningen',
+
     // Testing
-    'test', 'spec', 'e2e', 'integration', 'unit',
-    'cypress', 'selenium', 'playwright',
-    
+    'test',
+    'spec',
+    'e2e',
+    'integration',
+    'unit',
+    'cypress',
+    'selenium',
+    'playwright',
+
     // Documentation
-    'readme', 'changelog', 'license', 'contributing',
-    'docs', 'documentation', 'wiki',
-    
+    'readme',
+    'changelog',
+    'license',
+    'contributing',
+    'docs',
+    'documentation',
+    'wiki',
+
     // Environment and configuration
-    '.env', 'config', 'settings', 'properties',
-    '.ini', '.conf', '.cfg', '.toml'
+    '.env',
+    'config',
+    'settings',
+    'properties',
+    '.ini',
+    '.conf',
+    '.cfg',
+    '.toml',
   ];
-  
+
   const lowerFilename = filename.toLowerCase();
   const lowerFilepath = filepath.toLowerCase();
-  
-  return interestingPatterns.some(pattern => 
-    lowerFilename.includes(pattern) || lowerFilepath.includes(pattern)
+
+  return interestingPatterns.some(
+    pattern => lowerFilename.includes(pattern) || lowerFilepath.includes(pattern)
   );
 }

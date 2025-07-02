@@ -26,7 +26,9 @@ export function generateRuleExtractionPrompt(
 Please analyze the following Architectural Decision Records and extract actionable rules that can be used to validate code and architectural compliance.
 
 ## ADR Files
-${adrFiles.map((adr, index) => `
+${adrFiles
+  .map(
+    (adr, index) => `
 ### ${index + 1}. ${adr.title}
 **ID**: ${adr.id}
 **Status**: ${adr.status}
@@ -36,11 +38,17 @@ ${adrFiles.map((adr, index) => `
 \`\`\`markdown
 ${adr.content.slice(0, 1500)}${adr.content.length > 1500 ? '\n... (truncated for analysis)' : ''}
 \`\`\`
-`).join('')}
+`
+  )
+  .join('')}
 
-${existingRules ? `## Existing Rules
+${
+  existingRules
+    ? `## Existing Rules
 ${existingRules.map(rule => `- **${rule.name}**: ${rule.description}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
 ## Rule Extraction Requirements
 
@@ -176,17 +184,25 @@ ${projectStructure}
 \`\`\`
 
 ## Detected Code Patterns
-${codePatterns.map((pattern, index) => `
+${codePatterns
+  .map(
+    (pattern, index) => `
 ### Pattern ${index + 1}: ${pattern.pattern}
 **Category**: ${pattern.category}
 **Frequency**: ${pattern.frequency} occurrences
 **Examples**:
 ${pattern.examples.map(example => `\`\`\`\n${example}\n\`\`\``).join('\n')}
-`).join('')}
+`
+  )
+  .join('')}
 
-${existingRules ? `## Existing Rules
+${
+  existingRules
+    ? `## Existing Rules
 ${existingRules.map(rule => `- ${rule}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
 ## Pattern Analysis Requirements
 
@@ -312,14 +328,18 @@ ${codeToValidate.slice(0, 3000)}${codeToValidate.length > 3000 ? '\n... (truncat
 \`\`\`
 
 ## Architectural Rules
-${rules.map((rule, index) => `
+${rules
+  .map(
+    (rule, index) => `
 ### Rule ${index + 1}: ${rule.name}
 **ID**: ${rule.id}
 **Severity**: ${rule.severity}
 **Pattern**: ${rule.pattern}
 **Description**: ${rule.description}
 **Violation Message**: ${rule.message}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Validation Requirements
 
@@ -462,7 +482,9 @@ export function generateRuleDeviationReportPrompt(
 Please generate a comprehensive report analyzing rule violations and compliance across the codebase.
 
 ## Validation Results
-${validationResults.map((result, index) => `
+${validationResults
+  .map(
+    (result, index) => `
 ### File ${index + 1}: ${result.fileName}
 **Overall Compliance**: ${(result.overallCompliance * 100).toFixed(1)}%
 **Violations**: ${result.violations.length}
@@ -470,15 +492,21 @@ ${validationResults.map((result, index) => `
 
 **Violations**:
 ${result.violations.map(v => `- **${v.ruleName}** (${v.severity}): ${v.message}`).join('\n')}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Rule Definitions
-${rules.map((rule, index) => `
+${rules
+  .map(
+    (rule, index) => `
 ### Rule ${index + 1}: ${rule.name}
 **ID**: ${rule.id}
 **Category**: ${rule.category}
 **Severity**: ${rule.severity}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Report Type
 ${reportType.toUpperCase()}

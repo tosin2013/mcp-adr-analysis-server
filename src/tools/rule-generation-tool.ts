@@ -19,24 +19,23 @@ export async function generateRules(args: {
   }>;
   outputFormat?: 'json' | 'yaml' | 'both';
 }): Promise<any> {
-  const { 
+  const {
     source = 'both',
     adrDirectory = 'docs/adrs',
     projectPath = process.cwd(),
     existingRules,
-    outputFormat = 'json'
+    outputFormat = 'json',
   } = args;
-  
+
   try {
-    const { 
-      extractRulesFromAdrs,
-      generateRulesFromPatterns
-    } = await import('../utils/rule-generation.js');
-    
+    const { extractRulesFromAdrs, generateRulesFromPatterns } = await import(
+      '../utils/rule-generation.js'
+    );
+
     switch (source) {
       case 'adrs': {
         const result = await extractRulesFromAdrs(adrDirectory, existingRules as any);
-        
+
         return {
           content: [
             {
@@ -86,16 +85,16 @@ After rule generation, use the validation tools:
   }
 }
 \`\`\`
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'patterns': {
         const existingRuleNames = existingRules?.map(r => r.name);
         const result = await generateRulesFromPatterns(projectPath, existingRuleNames);
-        
+
         return {
           content: [
             {
@@ -139,17 +138,17 @@ All generated rules include:
 - **Evidence**: Specific code examples supporting the rule
 - **Frequency Data**: How often patterns appear in codebase
 - **Automation Feasibility**: Whether rule can be automatically validated
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'both': {
         const adrResult = await extractRulesFromAdrs(adrDirectory, existingRules as any);
         const existingRuleNames = existingRules?.map(r => r.name);
         const patternResult = await generateRulesFromPatterns(projectPath, existingRuleNames);
-        
+
         return {
           content: [
             {
@@ -222,12 +221,12 @@ All rules will include:
 - **Examples**: Valid and invalid implementations
 - **Priority Levels**: Implementation priority based on impact
 - **Confidence Scores**: AI assessment of rule validity and importance
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       default:
         throw new McpAdrError(`Unknown rule generation source: ${source}`, 'INVALID_INPUT');
     }
@@ -257,26 +256,26 @@ export async function validateRules(args: {
   validationType?: 'file' | 'function' | 'component' | 'module';
   reportFormat?: 'summary' | 'detailed' | 'json';
 }): Promise<any> {
-  const { 
+  const {
     filePath,
     fileContent,
     fileName,
     rules,
     validationType = 'file',
-    reportFormat = 'detailed'
+    reportFormat = 'detailed',
   } = args;
-  
+
   try {
     const { validateCodeAgainstRules } = await import('../utils/rule-generation.js');
-    
+
     if (!filePath && !fileContent) {
       throw new McpAdrError('Either filePath or fileContent must be provided', 'INVALID_INPUT');
     }
-    
+
     if (!rules || rules.length === 0) {
       throw new McpAdrError('Rules array is required and cannot be empty', 'INVALID_INPUT');
     }
-    
+
     // Convert rules to ArchitecturalRule format
     const architecturalRules = rules.map(rule => ({
       id: rule.id,
@@ -293,9 +292,9 @@ export async function validateRules(args: {
       evidence: [],
       automatable: true,
       confidence: 0.8,
-      tags: []
+      tags: [],
     }));
-    
+
     let result;
     if (filePath) {
       result = await validateCodeAgainstRules(filePath, architecturalRules, validationType);
@@ -304,10 +303,10 @@ export async function validateRules(args: {
       const tempFileName = fileName || 'temp-file';
       result = {
         validationPrompt: `Validate the following code content against rules: ${fileContent?.slice(0, 100)}...`,
-        instructions: `Validation for ${tempFileName} with ${rules.length} rules`
+        instructions: `Validation for ${tempFileName} with ${rules.length} rules`,
       };
     }
-    
+
     return {
       content: [
         {
@@ -365,9 +364,9 @@ Use validation results to:
 - Identify problematic areas or patterns
 - Measure improvement after fixes
 - Generate compliance reports for stakeholders
-`
-        }
-      ]
+`,
+        },
+      ],
     };
   } catch (error) {
     throw new McpAdrError(
@@ -389,45 +388,43 @@ export async function createRuleSet(args: {
   outputFormat?: 'json' | 'yaml' | 'both';
   author?: string;
 }): Promise<any> {
-  const { 
+  const {
     name,
     description = 'Generated architectural rule set',
     adrRules = [],
     patternRules = [],
     rules = [],
     outputFormat = 'json',
-    author = 'MCP ADR Analysis Server'
+    author = 'MCP ADR Analysis Server',
   } = args;
-  
+
   try {
-    const { 
-      createRuleSet,
-      serializeRuleSetToJson,
-      serializeRuleSetToYaml
-    } = await import('../utils/rule-format.js');
-    
+    const { createRuleSet, serializeRuleSetToJson, serializeRuleSetToYaml } = await import(
+      '../utils/rule-format.js'
+    );
+
     // Combine all rules
     const allRules = [...adrRules, ...patternRules, ...rules];
-    
+
     if (allRules.length === 0) {
       throw new McpAdrError('At least one rule must be provided', 'INVALID_INPUT');
     }
-    
+
     // Create rule set
     const ruleSet = createRuleSet(name, description, allRules, author);
-    
+
     // Serialize based on output format
     let jsonOutput = '';
     let yamlOutput = '';
-    
+
     if (outputFormat === 'json' || outputFormat === 'both') {
       jsonOutput = serializeRuleSetToJson(ruleSet);
     }
-    
+
     if (outputFormat === 'yaml' || outputFormat === 'both') {
       yamlOutput = serializeRuleSetToYaml(ruleSet);
     }
-    
+
     return {
       content: [
         {
@@ -450,21 +447,29 @@ ${ruleSet.categories.map(cat => `- **${cat.name}**: ${cat.ruleCount} rules (${ca
 - **Pattern-based Rules**: ${patternRules.length}
 - **Other Rules**: ${rules.length}
 
-${outputFormat === 'json' || outputFormat === 'both' ? `
+${
+  outputFormat === 'json' || outputFormat === 'both'
+    ? `
 ## JSON Format
 
 \`\`\`json
 ${jsonOutput}
 \`\`\`
-` : ''}
+`
+    : ''
+}
 
-${outputFormat === 'yaml' || outputFormat === 'both' ? `
+${
+  outputFormat === 'yaml' || outputFormat === 'both'
+    ? `
 ## YAML Format
 
 \`\`\`yaml
 ${yamlOutput}
 \`\`\`
-` : ''}
+`
+    : ''
+}
 
 ## Usage Instructions
 
@@ -505,9 +510,9 @@ This rule set includes:
 - **Severity Levels**: Appropriate priority for each rule
 - **Traceability**: Links to source ADRs and patterns
 - **Metadata**: Complete rule set documentation
-`
-        }
-      ]
+`,
+        },
+      ],
     };
   } catch (error) {
     throw new McpAdrError(

@@ -55,23 +55,23 @@ export async function createResearchDocument(
   try {
     const { promises: fs } = await import('fs');
     const { join } = await import('path');
-    
+
     // Ensure output directory exists
     await fs.mkdir(outputDirectory, { recursive: true });
-    
+
     // Generate research document content
     const content = generateResearchDocumentContent(researchData);
-    
+
     // Create filename
     const filename = `perform_research_${researchData.id.toLowerCase().replace(/[^a-z0-9]/g, '_')}.md`;
     const filePath = join(outputDirectory, filename);
-    
+
     // Write file
     await fs.writeFile(filePath, content, 'utf-8');
-    
+
     return {
       filePath,
-      content
+      content,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -86,7 +86,7 @@ export async function createResearchDocument(
  */
 function generateResearchDocumentContent(research: ResearchDocument): string {
   const now = new Date().toISOString().split('T')[0];
-  
+
   return `# Research: ${research.title}
 
 **Research ID**: ${research.id}  
@@ -101,7 +101,9 @@ This document tracks the research progress for "${research.title}". It includes 
 
 ## Research Questions
 
-${research.questions.map((q, index) => `
+${research.questions
+  .map(
+    (q, index) => `
 ### ${index + 1}. ${q.question}
 
 **Question ID**: ${q.id}  
@@ -119,7 +121,9 @@ ${research.questions.map((q, index) => `
 <!-- Add research notes here -->
 
 ---
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Timeline & Milestones
 
@@ -128,15 +132,23 @@ ${research.questions.map((q, index) => `
 
 ### Milestones
 
-${research.timeline.milestones.map(milestone => `
+${research.timeline.milestones
+  .map(
+    milestone => `
 - **${milestone.name}** (${milestone.date}): ${milestone.description}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Resources Required
 
-${research.resources.map(resource => `
+${research.resources
+  .map(
+    resource => `
 - **${resource.type}**: ${resource.description} (Status: ${resource.status})
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Research Progress
 
@@ -160,7 +172,11 @@ ${research.resources.map(resource => `
 
 ## Findings
 
-${research.findings.length > 0 ? research.findings.map(finding => `
+${
+  research.findings.length > 0
+    ? research.findings
+        .map(
+          finding => `
 ### Finding: ${finding.finding}
 
 **Date**: ${finding.date}  
@@ -171,7 +187,10 @@ ${research.findings.length > 0 ? research.findings.map(finding => `
 <!-- Add detailed finding information here -->
 
 ---
-`).join('') : `
+`
+        )
+        .join('')
+    : `
 <!-- Findings will be documented here as research progresses -->
 
 ### Template for Findings
@@ -193,11 +212,16 @@ ${research.findings.length > 0 ? research.findings.map(finding => `
 - [Implication 2]
 
 ---
-`}
+`
+}
 
 ## Recommendations
 
-${research.recommendations.length > 0 ? research.recommendations.map((rec, index) => `
+${
+  research.recommendations.length > 0
+    ? research.recommendations
+        .map(
+          (rec, index) => `
 ### Recommendation ${index + 1}: ${rec.recommendation}
 
 **Priority**: ${rec.priority}  
@@ -205,7 +229,10 @@ ${research.recommendations.length > 0 ? research.recommendations.map((rec, index
 **Implementation**: ${rec.implementation}  
 
 ---
-`).join('') : `
+`
+        )
+        .join('')
+    : `
 <!-- Recommendations will be documented here based on research findings -->
 
 ### Template for Recommendations
@@ -228,7 +255,8 @@ ${research.recommendations.length > 0 ? research.recommendations.map((rec, index
 - [Criteria 2]
 
 ---
-`}
+`
+}
 
 ## Research Methodology
 
@@ -320,21 +348,21 @@ export async function createResearchIndex(
   try {
     const { promises: fs } = await import('fs');
     const { join } = await import('path');
-    
+
     // Ensure output directory exists
     await fs.mkdir(outputDirectory, { recursive: true });
-    
+
     // Generate index content
     const content = generateResearchIndexContent(researchDocuments);
-    
+
     const filePath = join(outputDirectory, 'README.md');
-    
+
     // Write file
     await fs.writeFile(filePath, content, 'utf-8');
-    
+
     return {
       filePath,
-      content
+      content,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -349,21 +377,27 @@ export async function createResearchIndex(
  */
 function generateResearchIndexContent(researchDocuments: ResearchDocument[]): string {
   const now = new Date().toISOString().split('T')[0];
-  
+
   // Group by status
-  const byStatus = researchDocuments.reduce((acc, doc) => {
-    if (!acc[doc.status]) acc[doc.status] = [];
-    acc[doc.status]!.push(doc);
-    return acc;
-  }, {} as Record<string, ResearchDocument[]>);
+  const byStatus = researchDocuments.reduce(
+    (acc, doc) => {
+      if (!acc[doc.status]) acc[doc.status] = [];
+      acc[doc.status]!.push(doc);
+      return acc;
+    },
+    {} as Record<string, ResearchDocument[]>
+  );
 
   // Group by category
-  const byCategory = researchDocuments.reduce((acc, doc) => {
-    if (!acc[doc.category]) acc[doc.category] = [];
-    acc[doc.category]!.push(doc);
-    return acc;
-  }, {} as Record<string, ResearchDocument[]>);
-  
+  const byCategory = researchDocuments.reduce(
+    (acc, doc) => {
+      if (!acc[doc.category]) acc[doc.category] = [];
+      acc[doc.category]!.push(doc);
+      return acc;
+    },
+    {} as Record<string, ResearchDocument[]>
+  );
+
   return `# Research Documentation Index
 
 This directory contains all research documentation for the project. Each research topic has its own \`perform_research_*.md\` file with detailed tracking and findings.
@@ -381,33 +415,65 @@ This directory contains all research documentation for the project. Each researc
 ## Research by Status
 
 ### 🔄 In Progress
-${byStatus['in_progress']?.map(doc => `
+${
+  byStatus['in_progress']
+    ?.map(
+      doc => `
 - [${doc.title}](./perform_research_${doc.id.toLowerCase().replace(/[^a-z0-9]/g, '_')}.md) (${doc.priority} priority)
-`).join('') || 'No research currently in progress.'}
+`
+    )
+    .join('') || 'No research currently in progress.'
+}
 
 ### 📋 Planned
-${byStatus['planned']?.map(doc => `
+${
+  byStatus['planned']
+    ?.map(
+      doc => `
 - [${doc.title}](./perform_research_${doc.id.toLowerCase().replace(/[^a-z0-9]/g, '_')}.md) (${doc.priority} priority)
-`).join('') || 'No research currently planned.'}
+`
+    )
+    .join('') || 'No research currently planned.'
+}
 
 ### ✅ Completed
-${byStatus['completed']?.map(doc => `
+${
+  byStatus['completed']
+    ?.map(
+      doc => `
 - [${doc.title}](./perform_research_${doc.id.toLowerCase().replace(/[^a-z0-9]/g, '_')}.md) (${doc.priority} priority)
-`).join('') || 'No research completed yet.'}
+`
+    )
+    .join('') || 'No research completed yet.'
+}
 
 ### ❌ Cancelled
-${byStatus['cancelled']?.map(doc => `
+${
+  byStatus['cancelled']
+    ?.map(
+      doc => `
 - [${doc.title}](./perform_research_${doc.id.toLowerCase().replace(/[^a-z0-9]/g, '_')}.md) (${doc.priority} priority)
-`).join('') || 'No research cancelled.'}
+`
+    )
+    .join('') || 'No research cancelled.'
+}
 
 ## Research by Category
 
-${Object.entries(byCategory).map(([category, docs]) => `
+${Object.entries(byCategory)
+  .map(
+    ([category, docs]) => `
 ### ${category.charAt(0).toUpperCase() + category.slice(1)}
-${docs.map(doc => `
+${docs
+  .map(
+    doc => `
 - [${doc.title}](./perform_research_${doc.id.toLowerCase().replace(/[^a-z0-9]/g, '_')}.md) (${doc.status}, ${doc.priority} priority)
-`).join('')}
-`).join('')}
+`
+  )
+  .join('')}
+`
+  )
+  .join('')}
 
 ## Research Guidelines
 

@@ -71,37 +71,39 @@ export async function extractRulesFromAdrs(
   try {
     const { findFiles } = await import('./file-system.js');
     const { generateRuleExtractionPrompt } = await import('../prompts/rule-generation-prompts.js');
-    
+
     // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent: true });
-    
+    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+      includeContent: true,
+    });
+
     if (adrFiles.length === 0) {
       throw new McpAdrError(`No ADR files found in ${adrDirectory}`, 'NO_ADRS_FOUND');
     }
-    
+
     // Prepare ADR data
     const adrData = adrFiles.map(file => {
       const titleMatch = file.content?.match(/^#\s+(.+)$/m);
       const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
-      
+
       return {
         id: file.name.replace(/\.md$/, ''),
         title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
         content: file.content || '',
         status: statusMatch?.[1] || 'Unknown',
-        category: extractAdrCategory(file.content || '')
+        category: extractAdrCategory(file.content || ''),
       };
     });
-    
+
     // Prepare existing rules data
     const existingRulesData = existingRules?.map(rule => ({
       id: rule.id,
       name: rule.name,
-      description: rule.description
+      description: rule.description,
     }));
-    
+
     const extractionPrompt = generateRuleExtractionPrompt(adrData, existingRulesData);
-    
+
     const instructions = `
 # Rule Extraction Instructions
 
@@ -135,10 +137,10 @@ const result = await extractRulesFromAdrs(adrDirectory, existingRules);
 // Parse AI response as rule extraction results
 \`\`\`
 `;
-    
+
     return {
       extractionPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -158,17 +160,23 @@ export async function generateRulesFromPatterns(
   try {
     const { analyzeProjectStructure } = await import('./file-system.js');
     const { generateAnalysisContext } = await import('../prompts/analysis-prompts.js');
-    const { generatePatternBasedRulePrompt } = await import('../prompts/rule-generation-prompts.js');
-    
+    const { generatePatternBasedRulePrompt } = await import(
+      '../prompts/rule-generation-prompts.js'
+    );
+
     // Analyze project structure
     const projectStructure = await analyzeProjectStructure(projectPath);
     const analysisContext = generateAnalysisContext(projectStructure);
-    
+
     // Extract code patterns
     const codePatterns = extractCodePatterns(projectStructure);
-    
-    const generationPrompt = generatePatternBasedRulePrompt(analysisContext, codePatterns, existingRules);
-    
+
+    const generationPrompt = generatePatternBasedRulePrompt(
+      analysisContext,
+      codePatterns,
+      existingRules
+    );
+
     const instructions = `
 # Pattern-Based Rule Generation Instructions
 
@@ -201,10 +209,10 @@ const result = await generateRulesFromPatterns(projectPath, existingRules);
 // Parse AI response for pattern-based rules
 \`\`\`
 `;
-    
+
     return {
       generationPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -225,11 +233,11 @@ export async function validateCodeAgainstRules(
   try {
     const { promises: fs } = await import('fs');
     const { generateCodeValidationPrompt } = await import('../prompts/rule-generation-prompts.js');
-    
+
     // Read the file to validate
     const codeContent = await fs.readFile(filePath, 'utf-8');
     const fileName = filePath.split('/').pop() || filePath;
-    
+
     // Prepare rules data for validation
     const rulesData = rules.map(rule => ({
       id: rule.id,
@@ -237,11 +245,16 @@ export async function validateCodeAgainstRules(
       description: rule.description,
       pattern: rule.pattern,
       severity: rule.severity,
-      message: rule.message
+      message: rule.message,
     }));
-    
-    const validationPrompt = generateCodeValidationPrompt(codeContent, fileName, rulesData, validationType);
-    
+
+    const validationPrompt = generateCodeValidationPrompt(
+      codeContent,
+      fileName,
+      rulesData,
+      validationType
+    );
+
     const instructions = `
 # Code Validation Instructions
 
@@ -277,10 +290,10 @@ const result = await validateCodeAgainstRules(filePath, rules, validationType);
 // Parse AI response as ValidationResult
 \`\`\`
 `;
-    
+
     return {
       validationPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -299,18 +312,24 @@ export async function generateRuleDeviationReport(
   reportType: 'summary' | 'detailed' | 'trend' | 'compliance' = 'summary'
 ): Promise<{ reportPrompt: string; instructions: string }> {
   try {
-    const { generateRuleDeviationReportPrompt } = await import('../prompts/rule-generation-prompts.js');
-    
+    const { generateRuleDeviationReportPrompt } = await import(
+      '../prompts/rule-generation-prompts.js'
+    );
+
     // Prepare rules data for reporting
     const rulesData = rules.map(rule => ({
       id: rule.id,
       name: rule.name,
       category: rule.category,
-      severity: rule.severity
+      severity: rule.severity,
     }));
-    
-    const reportPrompt = generateRuleDeviationReportPrompt(validationResults, rulesData, reportType);
-    
+
+    const reportPrompt = generateRuleDeviationReportPrompt(
+      validationResults,
+      rulesData,
+      reportType
+    );
+
     const instructions = `
 # Rule Deviation Report Instructions
 
@@ -321,7 +340,7 @@ This analysis will generate a comprehensive compliance report with actionable in
 - **Files Analyzed**: ${validationResults.length} files
 - **Rules Evaluated**: ${rules.length} rules
 - **Total Violations**: ${validationResults.reduce((sum, r) => sum + r.violations.length, 0)}
-- **Average Compliance**: ${(validationResults.reduce((sum, r) => sum + r.overallCompliance, 0) / validationResults.length * 100).toFixed(1)}%
+- **Average Compliance**: ${((validationResults.reduce((sum, r) => sum + r.overallCompliance, 0) / validationResults.length) * 100).toFixed(1)}%
 
 ## Next Steps
 1. **Submit the report prompt** to an AI agent for comprehensive analysis
@@ -346,10 +365,10 @@ const result = await generateRuleDeviationReport(validationResults, rules, repor
 // Parse AI response for comprehensive compliance report
 \`\`\`
 `;
-    
+
     return {
       reportPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -374,7 +393,7 @@ function extractCodePatterns(projectStructure: any): Array<{
     examples: string[];
     category: string;
   }> = [];
-  
+
   try {
     // Extract patterns from file types
     if (projectStructure.filesByType) {
@@ -384,41 +403,43 @@ function extractCodePatterns(projectStructure: any): Array<{
             pattern: `${type} file organization`,
             frequency: files.length,
             examples: files.slice(0, 3).map((f: any) => f.name || f),
-            category: 'structure'
+            category: 'structure',
           });
         }
       });
     }
-    
+
     // Extract patterns from directory structure
     if (projectStructure.directories) {
       patterns.push({
         pattern: 'Directory organization',
         frequency: projectStructure.directories.length,
         examples: projectStructure.directories.slice(0, 3),
-        category: 'structure'
+        category: 'structure',
       });
     }
-    
+
     // Extract patterns from detected technologies
     if (projectStructure.detectedTechnologies) {
       patterns.push({
         pattern: 'Technology stack',
         frequency: projectStructure.detectedTechnologies.length,
         examples: projectStructure.detectedTechnologies.slice(0, 3),
-        category: 'technology'
+        category: 'technology',
       });
     }
-    
+
     return patterns;
   } catch (error) {
     console.warn('Failed to extract code patterns:', error);
-    return [{
-      pattern: 'Basic project structure',
-      frequency: 1,
-      examples: ['Unable to extract specific patterns'],
-      category: 'general'
-    }];
+    return [
+      {
+        pattern: 'Basic project structure',
+        frequency: 1,
+        examples: ['Unable to extract specific patterns'],
+        category: 'general',
+      },
+    ];
   }
 }
 
@@ -434,14 +455,14 @@ function extractAdrCategory(content: string): string {
     { pattern: /deployment|infrastructure|cloud/i, category: 'deployment' },
     { pattern: /test|testing|quality/i, category: 'testing' },
     { pattern: /architecture|pattern|design/i, category: 'architecture' },
-    { pattern: /process|workflow|methodology/i, category: 'process' }
+    { pattern: /process|workflow|methodology/i, category: 'process' },
   ];
-  
+
   for (const { pattern, category } of categoryPatterns) {
     if (pattern.test(content)) {
       return category;
     }
   }
-  
+
   return 'general';
 }

@@ -55,7 +55,7 @@ export async function generateResearchQuestions(args: {
   projectPath?: string;
   adrDirectory?: string;
 }): Promise<any> {
-  const { 
+  const {
     analysisType = 'comprehensive',
     researchContext,
     problems,
@@ -64,17 +64,17 @@ export async function generateResearchQuestions(args: {
     researchQuestions,
     currentProgress,
     projectPath = process.cwd(),
-    adrDirectory = 'docs/adrs'
+    adrDirectory = 'docs/adrs',
   } = args;
-  
+
   try {
-    const { 
+    const {
       correlateProblemKnowledge,
       findRelevantAdrPatterns,
       generateContextAwareQuestions,
-      createResearchTaskTracking
+      createResearchTaskTracking,
     } = await import('../utils/research-questions.js');
-    
+
     switch (analysisType) {
       case 'correlation': {
         if (!problems || !knowledgeGraph) {
@@ -83,9 +83,9 @@ export async function generateResearchQuestions(args: {
             'INVALID_INPUT'
           );
         }
-        
+
         const result = await correlateProblemKnowledge(problems, knowledgeGraph);
-        
+
         return {
           content: [
             {
@@ -122,12 +122,12 @@ This correlation analysis enables:
 - **Priority Setting**: Rank research opportunities by importance
 - **Resource Optimization**: Allocate research resources effectively
 - **Risk Mitigation**: Address high-severity problems through research
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'relevance': {
         if (!researchContext) {
           throw new McpAdrError(
@@ -135,13 +135,16 @@ This correlation analysis enables:
             'INVALID_INPUT'
           );
         }
-        
-        const result = await findRelevantAdrPatterns({
-          ...researchContext,
-          constraints: researchContext.constraints || [],
-          timeline: researchContext.timeline || 'Not specified'
-        }, adrDirectory);
-        
+
+        const result = await findRelevantAdrPatterns(
+          {
+            ...researchContext,
+            constraints: researchContext.constraints || [],
+            timeline: researchContext.timeline || 'Not specified',
+          },
+          adrDirectory
+        );
+
         return {
           content: [
             {
@@ -178,12 +181,12 @@ This relevance analysis provides:
 - **Opportunity Recognition**: Identification of improvement opportunities
 - **Conflict Avoidance**: Early identification of potential conflicts
 - **Knowledge Leverage**: Building on existing architectural knowledge
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'questions': {
         if (!researchContext || !relevantKnowledge) {
           throw new McpAdrError(
@@ -191,17 +194,17 @@ This relevance analysis provides:
             'INVALID_INPUT'
           );
         }
-        
+
         const result = await generateContextAwareQuestions(
           {
             ...researchContext,
             constraints: researchContext.constraints || [],
-            timeline: researchContext.timeline || 'Not specified'
+            timeline: researchContext.timeline || 'Not specified',
           },
           relevantKnowledge,
           projectPath
         );
-        
+
         return {
           content: [
             {
@@ -240,12 +243,12 @@ This question generation ensures:
 - **Context Awareness**: Questions tailored to project and architectural context
 - **Priority Guidance**: Clear prioritization for research execution
 - **Quality Standards**: Built-in quality assurance and validation
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'tracking': {
         if (!researchQuestions) {
           throw new McpAdrError(
@@ -253,7 +256,7 @@ This question generation ensures:
             'INVALID_INPUT'
           );
         }
-        
+
         const result = await createResearchTaskTracking(
           researchQuestions.map(q => ({
             ...q,
@@ -263,11 +266,11 @@ This question generation ensures:
             relatedKnowledge: [],
             resources: [],
             risks: [],
-            dependencies: []
+            dependencies: [],
           })),
           currentProgress
         );
-        
+
         return {
           content: [
             {
@@ -307,12 +310,12 @@ This tracking system enables:
 - **Resource Planning**: Effective allocation and utilization of resources
 - **Quality Control**: Consistent quality standards and validation
 - **Stakeholder Communication**: Regular updates and transparent reporting
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'comprehensive': {
         if (!researchContext) {
           throw new McpAdrError(
@@ -320,14 +323,17 @@ This tracking system enables:
             'INVALID_INPUT'
           );
         }
-        
+
         // Generate all components for comprehensive research planning
-        const relevanceResult = await findRelevantAdrPatterns({
-          ...researchContext,
-          constraints: researchContext.constraints || [],
-          timeline: researchContext.timeline || 'Not specified'
-        }, adrDirectory);
-        
+        const relevanceResult = await findRelevantAdrPatterns(
+          {
+            ...researchContext,
+            constraints: researchContext.constraints || [],
+            timeline: researchContext.timeline || 'Not specified',
+          },
+          adrDirectory
+        );
+
         return {
           content: [
             {
@@ -418,12 +424,12 @@ All generated research components follow these principles:
 3. **Plan Execution**: Develop detailed task tracking and management
 4. **Monitor Progress**: Use tracking system for regular progress updates
 5. **Ensure Quality**: Apply quality assurance throughout research process
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       default:
         throw new McpAdrError(`Unknown analysis type: ${analysisType}`, 'INVALID_INPUT');
     }

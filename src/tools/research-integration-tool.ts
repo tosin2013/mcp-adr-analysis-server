@@ -11,7 +11,12 @@ import { McpAdrError } from '../types/index.js';
 export async function incorporateResearch(args: {
   researchPath?: string;
   adrDirectory?: string;
-  analysisType?: 'monitor' | 'extract_topics' | 'evaluate_impact' | 'generate_updates' | 'comprehensive';
+  analysisType?:
+    | 'monitor'
+    | 'extract_topics'
+    | 'evaluate_impact'
+    | 'generate_updates'
+    | 'comprehensive';
   existingTopics?: string[];
   researchTopics?: Array<{
     id: string;
@@ -28,7 +33,7 @@ export async function incorporateResearch(args: {
     impact: string;
   }>;
 }): Promise<any> {
-  const { 
+  const {
     researchPath = 'docs/research',
     adrDirectory = 'docs/adrs',
     analysisType = 'comprehensive',
@@ -36,21 +41,21 @@ export async function incorporateResearch(args: {
     researchTopics,
     adrId,
     updateType,
-    researchFindings
+    researchFindings,
   } = args;
-  
+
   try {
-    const { 
+    const {
       monitorResearchDirectory,
       extractResearchTopics,
       evaluateResearchImpact,
-      generateAdrUpdateSuggestions
+      generateAdrUpdateSuggestions,
     } = await import('../utils/research-integration.js');
-    
+
     switch (analysisType) {
       case 'monitor': {
         const result = await monitorResearchDirectory(researchPath);
-        
+
         return {
           content: [
             {
@@ -72,15 +77,15 @@ ${result.monitoringPrompt}
 - Schedule periodic research integration reviews
 - Establish research file templates and conventions
 - Create notification systems for new research findings
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'extract_topics': {
         const result = await extractResearchTopics(researchPath, existingTopics);
-        
+
         return {
           content: [
             {
@@ -121,12 +126,12 @@ After topic extraction, proceed with impact evaluation:
   }
 }
 \`\`\`
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'evaluate_impact': {
         if (!researchTopics || researchTopics.length === 0) {
           throw new McpAdrError(
@@ -134,7 +139,7 @@ After topic extraction, proceed with impact evaluation:
             'INVALID_INPUT'
           );
         }
-        
+
         // Convert to full ResearchTopic format
         const fullResearchTopics = researchTopics.map(topic => ({
           ...topic,
@@ -143,11 +148,11 @@ After topic extraction, proceed with impact evaluation:
           evidence: topic.keyFindings,
           confidence: topic.relevanceScore,
           lastUpdated: new Date().toISOString().split('T')[0] || '',
-          tags: [topic.category]
+          tags: [topic.category],
         }));
 
         const result = await evaluateResearchImpact(fullResearchTopics, adrDirectory);
-        
+
         return {
           content: [
             {
@@ -190,12 +195,12 @@ For high-priority updates, use the update generation tool:
   }
 }
 \`\`\`
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'generate_updates': {
         if (!adrId || !updateType || !researchFindings) {
           throw new McpAdrError(
@@ -203,14 +208,14 @@ For high-priority updates, use the update generation tool:
             'INVALID_INPUT'
           );
         }
-        
+
         const result = await generateAdrUpdateSuggestions(
           adrId,
           researchFindings,
           updateType,
           adrDirectory
         );
-        
+
         return {
           content: [
             {
@@ -250,16 +255,16 @@ Before applying updates:
 - [ ] Ensure proper backup and version control
 - [ ] Plan stakeholder communication
 - [ ] Schedule implementation timeline
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       case 'comprehensive': {
         const monitorResult = await monitorResearchDirectory(researchPath);
         const extractResult = await extractResearchTopics(researchPath, existingTopics);
-        
+
         return {
           content: [
             {
@@ -334,12 +339,12 @@ All research integration follows these principles:
 - **Stakeholder-aware**: Considers impact on all relevant parties
 - **Version-controlled**: Maintains proper change tracking
 - **Reversible**: Includes rollback plans for all changes
-`
-            }
-          ]
+`,
+            },
+          ],
         };
       }
-      
+
       default:
         throw new McpAdrError(`Unknown analysis type: ${analysisType}`, 'INVALID_INPUT');
     }
@@ -360,14 +365,17 @@ export async function createResearchTemplate(args: {
   researchPath?: string;
 }): Promise<any> {
   const { title, category = 'general', researchPath = 'docs/research' } = args;
-  
+
   try {
     const { createResearchTemplate } = await import('../utils/research-integration.js');
-    
+
     const template = createResearchTemplate(title, category);
-    const filename = `${title.toLowerCase().replace(/[^a-z0-9\s-]/g, '').replace(/\s+/g, '-')}.md`;
+    const filename = `${title
+      .toLowerCase()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')}.md`;
     const fullPath = `${researchPath}/${filename}`;
-    
+
     return {
       content: [
         {
@@ -412,9 +420,9 @@ ${template}
 - Consider architectural implications early
 - Link findings to existing ADRs when relevant
 - Plan for regular research reviews and updates
-`
-        }
-      ]
+`,
+        },
+      ],
     };
   } catch (error) {
     throw new McpAdrError(
@@ -433,12 +441,12 @@ export async function requestActionConfirmation(args: {
   impact?: 'low' | 'medium' | 'high' | 'critical';
 }): Promise<any> {
   const { action, details, impact = 'medium' } = args;
-  
+
   try {
     const { promptForActionConfirmation } = await import('../utils/research-integration.js');
-    
+
     const result = promptForActionConfirmation(action, details, impact);
-    
+
     return {
       content: [
         {
@@ -479,13 +487,14 @@ ADDITIONAL_REQUIREMENTS: [Any additional requirements or conditions]
 
 **Impact Level**: ${impact.toUpperCase()}
 
-${impact === 'critical' ? 
-  '⚠️ **CRITICAL IMPACT**: This action requires careful review and may affect multiple systems or stakeholders.' :
-  impact === 'high' ?
-  '🔶 **HIGH IMPACT**: This action should be reviewed by senior stakeholders and may require coordination.' :
-  impact === 'medium' ?
-  '🔷 **MEDIUM IMPACT**: This action requires standard review and approval processes.' :
-  '🔹 **LOW IMPACT**: This action has minimal risk but still requires confirmation.'
+${
+  impact === 'critical'
+    ? '⚠️ **CRITICAL IMPACT**: This action requires careful review and may affect multiple systems or stakeholders.'
+    : impact === 'high'
+      ? '🔶 **HIGH IMPACT**: This action should be reviewed by senior stakeholders and may require coordination.'
+      : impact === 'medium'
+        ? '🔷 **MEDIUM IMPACT**: This action requires standard review and approval processes.'
+        : '🔹 **LOW IMPACT**: This action has minimal risk but still requires confirmation.'
 }
 
 ## Next Steps
@@ -496,9 +505,9 @@ After receiving confirmation:
 3. **Apply any required modifications** before implementation
 4. **Schedule deferred actions** for future consideration
 5. **Communicate decisions** to relevant stakeholders
-`
-        }
-      ]
+`,
+        },
+      ],
     };
   } catch (error) {
     throw new McpAdrError(

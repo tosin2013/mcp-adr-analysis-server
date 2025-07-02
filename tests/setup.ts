@@ -18,7 +18,7 @@ beforeAll(() => {
     warn: jest.fn(),
     error: jest.fn(),
     info: jest.fn(),
-    debug: jest.fn()
+    debug: jest.fn(),
   };
 });
 
@@ -59,13 +59,13 @@ expect.extend({
     if (missingFields.length > 0) {
       return {
         message: () => `Expected ADR to have required fields: ${missingFields.join(', ')}`,
-        pass: false
+        pass: false,
       };
     }
 
     return {
       message: () => 'Expected ADR to be invalid',
-      pass: true
+      pass: true,
     };
   },
 
@@ -73,9 +73,9 @@ expect.extend({
     // This will be implemented when we add schema validation
     return {
       message: () => 'Expected object to have invalid schema',
-      pass: true
+      pass: true,
     };
-  }
+  },
 });
 
 export {};

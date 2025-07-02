@@ -21,7 +21,9 @@ export function generateDeploymentTaskIdentificationPrompt(
 Please analyze the following ADRs and todo content to identify deployment-related tasks and requirements.
 
 ## ADR Files
-${adrFiles.map((adr, index) => `
+${adrFiles
+  .map(
+    (adr, index) => `
 ### ADR ${index + 1}: ${adr.title}
 **ID**: ${adr.id}
 **Status**: ${adr.status}
@@ -30,13 +32,19 @@ ${adrFiles.map((adr, index) => `
 \`\`\`markdown
 ${adr.content.slice(0, 1200)}${adr.content.length > 1200 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('')}
+`
+  )
+  .join('')}
 
-${todoContent ? `## Todo Content
+${
+  todoContent
+    ? `## Todo Content
 \`\`\`markdown
 ${todoContent.slice(0, 1500)}${todoContent.length > 1500 ? '\n... (truncated)' : ''}
 \`\`\`
-` : ''}
+`
+    : ''
+}
 
 ## Task Identification Requirements
 
@@ -191,17 +199,29 @@ Please analyze the following CI/CD logs and pipeline configuration to assess dep
 ${cicdLogs.slice(0, 2000)}${cicdLogs.length > 2000 ? '\n... (truncated for analysis)' : ''}
 \`\`\`
 
-${pipelineConfig ? `## Pipeline Configuration
+${
+  pipelineConfig
+    ? `## Pipeline Configuration
 \`\`\`
 ${pipelineConfig.slice(0, 1000)}${pipelineConfig.length > 1000 ? '\n... (truncated)' : ''}
 \`\`\`
-` : ''}
+`
+    : ''
+}
 
-${deploymentTasks ? `## Deployment Tasks Context
-${deploymentTasks.map(task => `
+${
+  deploymentTasks
+    ? `## Deployment Tasks Context
+${deploymentTasks
+  .map(
+    task => `
 - **${task.taskName}** (${task.category}): ${task.verificationCriteria.join(', ')}
-`).join('')}
-` : ''}
+`
+  )
+  .join('')}
+`
+    : ''
+}
 
 ## Analysis Requirements
 
@@ -375,26 +395,38 @@ export function generateDeploymentProgressCalculationPrompt(
 Please calculate the overall deployment progress based on task status, CI/CD pipeline status, and environment status.
 
 ## Deployment Tasks
-${deploymentTasks.map((task, index) => `
+${deploymentTasks
+  .map(
+    (task, index) => `
 ### Task ${index + 1}: ${task.taskName}
 **ID**: ${task.taskId}
 **Status**: ${task.status}
 **Progress**: ${task.progress}%
 **Category**: ${task.category}
 **Priority**: ${task.priority}
-`).join('')}
+`
+  )
+  .join('')}
 
-${cicdStatus ? `## CI/CD Pipeline Status
+${
+  cicdStatus
+    ? `## CI/CD Pipeline Status
 \`\`\`json
 ${JSON.stringify(cicdStatus, null, 2)}
 \`\`\`
-` : ''}
+`
+    : ''
+}
 
-${environmentStatus ? `## Environment Status
+${
+  environmentStatus
+    ? `## Environment Status
 \`\`\`json
 ${JSON.stringify(environmentStatus, null, 2)}
 \`\`\`
-` : ''}
+`
+    : ''
+}
 
 ## Progress Calculation Requirements
 
@@ -555,33 +587,49 @@ export function generateCompletionVerificationPrompt(
 Please verify deployment completion by comparing actual outcomes against expected outcome rules and verification criteria.
 
 ## Deployment Tasks with Verification Criteria
-${deploymentTasks.map((task, index) => `
+${deploymentTasks
+  .map(
+    (task, index) => `
 ### Task ${index + 1}: ${task.taskName}
 **ID**: ${task.taskId}
 **Status**: ${task.status}
 **Expected Outcome**: ${task.expectedOutcome}
 **Verification Criteria**:
 ${task.verificationCriteria.map(criteria => `- ${criteria}`).join('\n')}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Outcome Rules
-${outcomeRules.map((rule, index) => `
+${outcomeRules
+  .map(
+    (rule, index) => `
 ### Rule ${index + 1}: ${rule.description}
 **ID**: ${rule.ruleId}
 **Verification Method**: ${rule.verificationMethod}
 **Criteria**:
 ${rule.criteria.map(criteria => `- ${criteria}`).join('\n')}
-`).join('')}
+`
+  )
+  .join('')}
 
-${actualOutcomes ? `## Actual Outcomes
-${actualOutcomes.map((outcome, index) => `
+${
+  actualOutcomes
+    ? `## Actual Outcomes
+${actualOutcomes
+  .map(
+    (outcome, index) => `
 ### Outcome ${index + 1}: ${outcome.taskId}
 **Outcome**: ${outcome.outcome}
 **Timestamp**: ${outcome.timestamp}
 **Evidence**:
 ${outcome.evidence.map(evidence => `- ${evidence}`).join('\n')}
-`).join('')}
-` : ''}
+`
+  )
+  .join('')}
+`
+    : ''
+}
 
 ## Verification Requirements
 

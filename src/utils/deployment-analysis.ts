@@ -46,28 +46,32 @@ export async function identifyDeploymentTasks(
 ): Promise<{ identificationPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateDeploymentTaskIdentificationPrompt } = await import('../prompts/deployment-analysis-prompts.js');
-    
+    const { generateDeploymentTaskIdentificationPrompt } = await import(
+      '../prompts/deployment-analysis-prompts.js'
+    );
+
     // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent: true });
-    
+    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+      includeContent: true,
+    });
+
     if (adrFiles.length === 0) {
       throw new McpAdrError(`No ADR files found in ${adrDirectory}`, 'NO_ADRS_FOUND');
     }
-    
+
     // Prepare ADR data
     const adrData = adrFiles.map(file => {
       const titleMatch = file.content?.match(/^#\s+(.+)$/m);
       const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
-      
+
       return {
         id: file.name.replace(/\.md$/, ''),
         title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
         content: file.content || '',
-        status: statusMatch?.[1] || 'Unknown'
+        status: statusMatch?.[1] || 'Unknown',
       };
     });
-    
+
     // Read todo content if provided
     let todoContent: string | undefined;
     if (todoPath) {
@@ -78,9 +82,9 @@ export async function identifyDeploymentTasks(
         console.warn(`Failed to read todo file: ${todoPath}`);
       }
     }
-    
+
     const identificationPrompt = generateDeploymentTaskIdentificationPrompt(adrData, todoContent);
-    
+
     const instructions = `
 # Deployment Task Identification Instructions
 
@@ -114,10 +118,10 @@ const result = await identifyDeploymentTasks(adrDirectory, todoPath);
 // Parse AI response for deployment tasks
 \`\`\`
 `;
-    
+
     return {
       identificationPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -136,18 +140,20 @@ export async function analyzeCiCdStatus(
   deploymentTasks?: DeploymentTask[]
 ): Promise<{ analysisPrompt: string; instructions: string }> {
   try {
-    const { generateCiCdAnalysisPrompt } = await import('../prompts/deployment-analysis-prompts.js');
-    
+    const { generateCiCdAnalysisPrompt } = await import(
+      '../prompts/deployment-analysis-prompts.js'
+    );
+
     // Prepare deployment tasks context
     const tasksContext = deploymentTasks?.map(task => ({
       taskId: task.taskId,
       taskName: task.taskName,
       category: task.category,
-      verificationCriteria: task.verificationCriteria
+      verificationCriteria: task.verificationCriteria,
     }));
-    
+
     const analysisPrompt = generateCiCdAnalysisPrompt(cicdLogs, pipelineConfig, tasksContext);
-    
+
     const instructions = `
 # CI/CD Pipeline Analysis Instructions
 
@@ -183,10 +189,10 @@ const result = await analyzeCiCdStatus(logs, config, tasks);
 // Parse AI response for CI/CD analysis
 \`\`\`
 `;
-    
+
     return {
       analysisPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -205,8 +211,10 @@ export async function calculateDeploymentProgress(
   environmentStatus?: any
 ): Promise<{ progressPrompt: string; instructions: string }> {
   try {
-    const { generateDeploymentProgressCalculationPrompt } = await import('../prompts/deployment-analysis-prompts.js');
-    
+    const { generateDeploymentProgressCalculationPrompt } = await import(
+      '../prompts/deployment-analysis-prompts.js'
+    );
+
     // Prepare task data for progress calculation
     const taskData = deploymentTasks.map(task => ({
       taskId: task.taskId,
@@ -214,15 +222,15 @@ export async function calculateDeploymentProgress(
       status: task.status,
       progress: task.progress,
       category: task.category,
-      priority: task.priority
+      priority: task.priority,
     }));
-    
+
     const progressPrompt = generateDeploymentProgressCalculationPrompt(
       taskData,
       cicdStatus,
       environmentStatus
     );
-    
+
     const instructions = `
 # Deployment Progress Calculation Instructions
 
@@ -259,10 +267,10 @@ const result = await calculateDeploymentProgress(tasks, cicdStatus, envStatus);
 // Parse AI response for progress calculation
 \`\`\`
 `;
-    
+
     return {
       progressPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -286,23 +294,25 @@ export async function verifyDeploymentCompletion(
   }>
 ): Promise<{ verificationPrompt: string; instructions: string }> {
   try {
-    const { generateCompletionVerificationPrompt } = await import('../prompts/deployment-analysis-prompts.js');
-    
+    const { generateCompletionVerificationPrompt } = await import(
+      '../prompts/deployment-analysis-prompts.js'
+    );
+
     // Prepare task data for verification
     const taskData = deploymentTasks.map(task => ({
       taskId: task.taskId,
       taskName: task.taskName,
       verificationCriteria: task.verificationCriteria,
       expectedOutcome: task.expectedOutcome,
-      status: task.status
+      status: task.status,
     }));
-    
+
     const verificationPrompt = generateCompletionVerificationPrompt(
       taskData,
       outcomeRules,
       actualOutcomes
     );
-    
+
     const instructions = `
 # Deployment Completion Verification Instructions
 
@@ -338,10 +348,10 @@ const result = await verifyDeploymentCompletion(tasks, rules, outcomes);
 // Parse AI response for completion verification
 \`\`\`
 `;
-    
+
     return {
       verificationPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(

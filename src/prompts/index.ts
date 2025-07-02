@@ -24,18 +24,18 @@ export const goalSpecificationPrompt: PromptTemplate = {
     {
       name: 'project_type',
       description: 'Type of project (web, mobile, api, library, tool, etc.)',
-      required: false
+      required: false,
     },
     {
       name: 'target_audience',
       description: 'Target audience or users of the project',
-      required: false
+      required: false,
     },
     {
       name: 'scale_requirements',
       description: 'Expected scale and performance requirements',
-      required: false
-    }
+      required: false,
+    },
   ],
   template: `# Project Goal Specification
 
@@ -61,7 +61,7 @@ Please help me define clear goals and requirements for this project analysis.
 5. **Integration Requirements**: Does this project need to integrate with other systems?
 6. **Deployment Environment**: Where will this project be deployed?
 
-Please provide detailed answers to help guide the architectural analysis and recommendations.`
+Please provide detailed answers to help guide the architectural analysis and recommendations.`,
 };
 
 /**
@@ -74,18 +74,18 @@ export const actionConfirmationPrompt: PromptTemplate = {
     {
       name: 'action',
       description: 'Description of the action to be performed',
-      required: true
+      required: true,
     },
     {
       name: 'files',
       description: 'List of files that will be affected (JSON array)',
-      required: true
+      required: true,
     },
     {
       name: 'preview',
       description: 'Preview of changes to be made',
-      required: false
-    }
+      required: false,
+    },
   ],
   template: `# Action Confirmation Required
 
@@ -116,7 +116,7 @@ Please confirm:
 - [ ] I understand which files will be modified
 - [ ] I want to proceed with this action
 
-**Type 'CONFIRM' to proceed or 'CANCEL' to abort.**`
+**Type 'CONFIRM' to proceed or 'CANCEL' to abort.**`,
 };
 
 /**
@@ -129,18 +129,18 @@ export const ambiguityResolutionPrompt: PromptTemplate = {
     {
       name: 'context',
       description: 'Context where ambiguity was detected',
-      required: true
+      required: true,
     },
     {
       name: 'ambiguous_items',
       description: 'List of ambiguous items that need clarification',
-      required: true
+      required: true,
     },
     {
       name: 'suggestions',
       description: 'Suggested interpretations or options',
-      required: false
-    }
+      required: false,
+    },
   ],
   template: `# Ambiguity Resolution Required
 
@@ -177,7 +177,7 @@ Please provide clarification for the ambiguous items above. Your input will help
 For each item, please specify:
 1. Your preferred interpretation
 2. Any additional context or constraints
-3. Priority level (high/medium/low)`
+3. Priority level (high/medium/low)`,
 };
 
 /**
@@ -190,13 +190,13 @@ export const customRuleDefinitionPrompt: PromptTemplate = {
     {
       name: 'rule_category',
       description: 'Category of rule (architectural, coding, security, performance, documentation)',
-      required: true
+      required: true,
     },
     {
       name: 'existing_rules',
       description: 'Existing rules in the project (JSON array)',
-      required: false
-    }
+      required: false,
+    },
   ],
   template: `# Custom Rule Definition
 
@@ -244,7 +244,7 @@ Please define your custom rule using the following structure:
 - **Structure Rules**: Directory organization requirements
 - **Dependency Rules**: Allowed/forbidden dependencies
 - **Security Rules**: Security best practices enforcement
-- **Performance Rules**: Performance-related constraints`
+- **Performance Rules**: Performance-related constraints`,
 };
 
 /**
@@ -257,13 +257,13 @@ export const baselineAnalysisPrompt: PromptTemplate = {
     {
       name: 'project_path',
       description: 'Path to the project directory',
-      required: true
+      required: true,
     },
     {
       name: 'focus_areas',
       description: 'Specific areas to focus on (comma-separated)',
-      required: false
-    }
+      required: false,
+    },
   ],
   template: `# Baseline Analysis Request
 
@@ -313,7 +313,7 @@ This baseline analysis will examine your existing project to provide:
 4. **Generated/Updated todo.md**
 5. **Architectural Recommendations**
 
-Please confirm to proceed with the baseline analysis.`
+Please confirm to proceed with the baseline analysis.`,
 };
 
 /**
@@ -326,13 +326,13 @@ export const secretPreventionPrompt: PromptTemplate = {
     {
       name: 'content_type',
       description: 'Type of content being created (code, documentation, configuration)',
-      required: true
+      required: true,
     },
     {
       name: 'target_location',
       description: 'Where the content will be stored/committed',
-      required: false
-    }
+      required: false,
+    },
   ],
   template: `# 🔒 Secret Prevention Guidance
 
@@ -385,7 +385,7 @@ If you need to include sensitive information:
 3. Provide setup instructions without actual values
 4. Consider using secret scanning tools
 
-**Proceed only after confirming no secrets are present.**`
+**Proceed only after confirming no secrets are present.**`,
 };
 
 /**
@@ -397,5 +397,5 @@ export const allPrompts: PromptTemplate[] = [
   ambiguityResolutionPrompt,
   customRuleDefinitionPrompt,
   baselineAnalysisPrompt,
-  secretPreventionPrompt
+  secretPreventionPrompt,
 ];

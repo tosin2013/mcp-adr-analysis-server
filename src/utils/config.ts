@@ -16,7 +16,7 @@ const ConfigSchema = z.object({
   cacheEnabled: z.boolean().default(true),
   cacheDirectory: z.string().default('.mcp-adr-cache'),
   maxCacheSize: z.number().default(100 * 1024 * 1024), // 100MB
-  analysisTimeout: z.number().default(30000) // 30 seconds
+  analysisTimeout: z.number().default(30000), // 30 seconds
 });
 
 export type ServerConfig = z.infer<typeof ConfigSchema>;
@@ -38,16 +38,16 @@ export function loadConfig(): ServerConfig {
     cacheEnabled: process.env['CACHE_ENABLED'] !== 'false',
     cacheDirectory: process.env['CACHE_DIRECTORY'] || '.mcp-adr-cache',
     maxCacheSize: parseInt(process.env['MAX_CACHE_SIZE'] || '104857600'), // 100MB
-    analysisTimeout: parseInt(process.env['ANALYSIS_TIMEOUT'] || '30000') // 30 seconds
+    analysisTimeout: parseInt(process.env['ANALYSIS_TIMEOUT'] || '30000'), // 30 seconds
   };
 
   try {
     return ConfigSchema.parse(rawConfig);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      const issues = error.issues.map(issue => 
-        `${issue.path.join('.')}: ${issue.message}`
-      ).join(', ');
+      const issues = error.issues
+        .map(issue => `${issue.path.join('.')}: ${issue.message}`)
+        .join(', ');
       throw new Error(`Configuration validation failed: ${issues}`);
     }
     throw error;
@@ -73,7 +73,7 @@ export function getCacheDirectoryPath(config: ServerConfig): string {
  */
 export async function validateProjectPath(projectPath: string): Promise<void> {
   const fs = await import('fs/promises');
-  
+
   try {
     const stats = await fs.stat(projectPath);
     if (!stats.isDirectory()) {
@@ -106,7 +106,7 @@ export function createLogger(config: ServerConfig) {
     },
     error: (message: string, ...args: any[]) => {
       if (currentLevel <= 3) console.error(`[ERROR] ${message}`, ...args);
-    }
+    },
   };
 }
 
@@ -115,7 +115,7 @@ export function createLogger(config: ServerConfig) {
  */
 export function printConfigSummary(config: ServerConfig): void {
   const logger = createLogger(config);
-  
+
   logger.info('MCP ADR Analysis Server Configuration:');
   logger.info(`  Project Path: ${config.projectPath}`);
   logger.info(`  ADR Directory: ${config.adrDirectory}`);

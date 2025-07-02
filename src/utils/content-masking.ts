@@ -59,14 +59,16 @@ export async function analyzeSensitiveContent(
   userDefinedPatterns?: string[]
 ): Promise<{ analysisPrompt: string; instructions: string }> {
   try {
-    const { generateSensitiveContentDetectionPrompt } = await import('../prompts/security-prompts.js');
-    
+    const { generateSensitiveContentDetectionPrompt } = await import(
+      '../prompts/security-prompts.js'
+    );
+
     const analysisPrompt = generateSensitiveContentDetectionPrompt(
       content,
       contentType,
       userDefinedPatterns
     );
-    
+
     const instructions = `
 # Sensitive Content Analysis Instructions
 
@@ -92,10 +94,10 @@ const result = await analyzeSensitiveContent(fileContent, 'code');
 // Parse AI response as SensitiveContentAnalysis
 \`\`\`
 `;
-    
+
     return {
       analysisPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -115,13 +117,13 @@ export async function generateMaskingInstructions(
 ): Promise<{ maskingPrompt: string; instructions: string }> {
   try {
     const { generateContentMaskingPrompt } = await import('../prompts/security-prompts.js');
-    
+
     const maskingPrompt = generateContentMaskingPrompt(
       content,
       detectedSensitiveItems,
       maskingStrategy
     );
-    
+
     const instructions = `
 # Content Masking Instructions
 
@@ -149,10 +151,10 @@ const result = await generateMaskingInstructions(content, sensitiveItems, 'parti
 // Parse AI response as MaskingResult
 \`\`\`
 `;
-    
+
     return {
       maskingPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -170,13 +172,15 @@ export async function generateCustomPatternConfiguration(
   existingPatterns?: string[]
 ): Promise<{ configurationPrompt: string; instructions: string }> {
   try {
-    const { generateCustomPatternConfigurationPrompt } = await import('../prompts/security-prompts.js');
-    
+    const { generateCustomPatternConfigurationPrompt } = await import(
+      '../prompts/security-prompts.js'
+    );
+
     const configurationPrompt = generateCustomPatternConfigurationPrompt(
       projectContext,
       existingPatterns
     );
-    
+
     const instructions = `
 # Custom Pattern Configuration Instructions
 
@@ -201,10 +205,10 @@ const result = await generateCustomPatternConfiguration(projectInfo);
 // Parse AI response to get CustomPattern[]
 \`\`\`
 `;
-    
+
     return {
       configurationPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -224,50 +228,71 @@ export function applyBasicMasking(
   // Basic patterns for common sensitive information
   const patterns = [
     // API Keys
-    { pattern: /sk-[a-zA-Z0-9]{32,}/g, replacement: maskingStrategy === 'partial' ? 'sk-...****' : '[API_KEY_REDACTED]' },
-    { pattern: /ghp_[a-zA-Z0-9]{36}/g, replacement: maskingStrategy === 'partial' ? 'ghp_...****' : '[GITHUB_TOKEN_REDACTED]' },
-    
+    {
+      pattern: /sk-[a-zA-Z0-9]{32,}/g,
+      replacement: maskingStrategy === 'partial' ? 'sk-...****' : '[API_KEY_REDACTED]',
+    },
+    {
+      pattern: /ghp_[a-zA-Z0-9]{36}/g,
+      replacement: maskingStrategy === 'partial' ? 'ghp_...****' : '[GITHUB_TOKEN_REDACTED]',
+    },
+
     // AWS Keys
-    { pattern: /AKIA[0-9A-Z]{16}/g, replacement: maskingStrategy === 'partial' ? 'AKIA...****' : '[AWS_ACCESS_KEY_REDACTED]' },
-    
+    {
+      pattern: /AKIA[0-9A-Z]{16}/g,
+      replacement: maskingStrategy === 'partial' ? 'AKIA...****' : '[AWS_ACCESS_KEY_REDACTED]',
+    },
+
     // Email addresses
-    { pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, replacement: maskingStrategy === 'partial' ? '***@***.***' : '[EMAIL_REDACTED]' },
-    
+    {
+      pattern: /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g,
+      replacement: maskingStrategy === 'partial' ? '***@***.***' : '[EMAIL_REDACTED]',
+    },
+
     // IP Addresses (private ranges)
-    { pattern: /\b(?:10\.|172\.(?:1[6-9]|2[0-9]|3[01])\.|192\.168\.)\d{1,3}\.\d{1,3}\b/g, replacement: '[IP_ADDRESS_REDACTED]' },
-    
+    {
+      pattern: /\b(?:10\.|172\.(?:1[6-9]|2[0-9]|3[01])\.|192\.168\.)\d{1,3}\.\d{1,3}\b/g,
+      replacement: '[IP_ADDRESS_REDACTED]',
+    },
+
     // Common password patterns
-    { pattern: /password\s*[:=]\s*["']?[^"'\s]+["']?/gi, replacement: 'password=[PASSWORD_REDACTED]' }
+    {
+      pattern: /password\s*[:=]\s*["']?[^"'\s]+["']?/gi,
+      replacement: 'password=[PASSWORD_REDACTED]',
+    },
   ];
-  
+
   let maskedContent = content;
-  
+
   for (const { pattern, replacement } of patterns) {
     maskedContent = maskedContent.replace(pattern, replacement);
   }
-  
+
   return maskedContent;
 }
 
 /**
  * Validate that content has been properly masked
  */
-export function validateMasking(originalContent: string, maskedContent: string): {
+export function validateMasking(
+  originalContent: string,
+  maskedContent: string
+): {
   isValid: boolean;
   issues: string[];
   securityScore: number;
 } {
   const issues: string[] = [];
   let securityScore = 1.0;
-  
+
   // Check for common patterns that should have been masked
   const sensitivePatterns = [
     /sk-[a-zA-Z0-9]{32,}/g,
     /ghp_[a-zA-Z0-9]{36}/g,
     /AKIA[0-9A-Z]{16}/g,
-    /password\s*[:=]\s*["']?[^"'\s\\[\\]]+["']?/gi
+    /password\s*[:=]\s*["']?[^"'\s\\[\\]]+["']?/gi,
   ];
-  
+
   for (const pattern of sensitivePatterns) {
     const matches = maskedContent.match(pattern);
     if (matches) {
@@ -275,16 +300,16 @@ export function validateMasking(originalContent: string, maskedContent: string):
       securityScore -= 0.2;
     }
   }
-  
+
   // Check that masking was actually applied
   if (originalContent === maskedContent) {
     issues.push('No masking appears to have been applied');
     securityScore = 0;
   }
-  
+
   return {
     isValid: issues.length === 0,
     issues,
-    securityScore: Math.max(0, securityScore)
+    securityScore: Math.max(0, securityScore),
   };
 }

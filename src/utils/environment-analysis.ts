@@ -61,17 +61,19 @@ export async function analyzeEnvironmentSpecs(
   try {
     const { analyzeProjectStructure } = await import('./file-system.js');
     const { generateAnalysisContext } = await import('../prompts/analysis-prompts.js');
-    const { generateEnvironmentSpecAnalysisPrompt } = await import('../prompts/environment-analysis-prompts.js');
-    
+    const { generateEnvironmentSpecAnalysisPrompt } = await import(
+      '../prompts/environment-analysis-prompts.js'
+    );
+
     // Find environment-related files
     const environmentFiles = await findEnvironmentFiles(projectPath);
-    
+
     // Analyze project structure
     const projectStructure = await analyzeProjectStructure(projectPath);
     const analysisContext = generateAnalysisContext(projectStructure);
-    
+
     const analysisPrompt = generateEnvironmentSpecAnalysisPrompt(environmentFiles, analysisContext);
-    
+
     const instructions = `
 # Environment Specification Analysis Instructions
 
@@ -109,10 +111,10 @@ const result = await analyzeEnvironmentSpecs(projectPath);
 // Parse AI response for environment analysis
 \`\`\`
 `;
-    
+
     return {
       analysisPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -130,33 +132,39 @@ export async function detectContainerization(
 ): Promise<{ detectionPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateContainerizationDetectionPrompt } = await import('../prompts/environment-analysis-prompts.js');
-    
+    const { generateContainerizationDetectionPrompt } = await import(
+      '../prompts/environment-analysis-prompts.js'
+    );
+
     // Find container-related files
-    const containerFiles = await findFiles(process.cwd(), [
-      '**/Dockerfile*',
-      '**/docker-compose*.yml',
-      '**/docker-compose*.yaml',
-      '**/*.dockerfile',
-      '**/Containerfile*',
-      '**/k8s/**/*.yml',
-      '**/k8s/**/*.yaml',
-      '**/kubernetes/**/*.yml',
-      '**/kubernetes/**/*.yaml',
-      '**/helm/**/*.yml',
-      '**/helm/**/*.yaml',
-      '**/.dockerignore'
-    ], { includeContent: true });
-    
+    const containerFiles = await findFiles(
+      process.cwd(),
+      [
+        '**/Dockerfile*',
+        '**/docker-compose*.yml',
+        '**/docker-compose*.yaml',
+        '**/*.dockerfile',
+        '**/Containerfile*',
+        '**/k8s/**/*.yml',
+        '**/k8s/**/*.yaml',
+        '**/kubernetes/**/*.yml',
+        '**/kubernetes/**/*.yaml',
+        '**/helm/**/*.yml',
+        '**/helm/**/*.yaml',
+        '**/.dockerignore',
+      ],
+      { includeContent: true }
+    );
+
     // Prepare file data
     const projectFiles = containerFiles.map(file => ({
       filename: file.name,
       content: file.content || '',
-      path: file.path
+      path: file.path,
     }));
-    
+
     const detectionPrompt = generateContainerizationDetectionPrompt(projectFiles);
-    
+
     const instructions = `
 # Containerization Detection Instructions
 
@@ -195,10 +203,10 @@ const result = await detectContainerization(projectPath);
 // Parse AI response as ContainerizationAnalysis
 \`\`\`
 `;
-    
+
     return {
       detectionPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -216,30 +224,34 @@ export async function determineEnvironmentRequirements(
 ): Promise<{ requirementsPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateAdrEnvironmentRequirementsPrompt } = await import('../prompts/environment-analysis-prompts.js');
-    
+    const { generateAdrEnvironmentRequirementsPrompt } = await import(
+      '../prompts/environment-analysis-prompts.js'
+    );
+
     // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent: true });
-    
+    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+      includeContent: true,
+    });
+
     if (adrFiles.length === 0) {
       throw new McpAdrError(`No ADR files found in ${adrDirectory}`, 'NO_ADRS_FOUND');
     }
-    
+
     // Prepare ADR data
     const adrData = adrFiles.map(file => {
       const titleMatch = file.content?.match(/^#\s+(.+)$/m);
       const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
-      
+
       return {
         id: file.name.replace(/\.md$/, ''),
         title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
         content: file.content || '',
-        status: statusMatch?.[1] || 'Unknown'
+        status: statusMatch?.[1] || 'Unknown',
       };
     });
-    
+
     const requirementsPrompt = generateAdrEnvironmentRequirementsPrompt(adrData);
-    
+
     const instructions = `
 # Environment Requirements Analysis Instructions
 
@@ -274,10 +286,10 @@ const result = await determineEnvironmentRequirements(adrDirectory);
 // Parse AI response as EnvironmentRequirements
 \`\`\`
 `;
-    
+
     return {
       requirementsPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -296,14 +308,16 @@ export async function assessEnvironmentCompliance(
   industryStandards?: string[]
 ): Promise<{ compliancePrompt: string; instructions: string }> {
   try {
-    const { generateEnvironmentCompliancePrompt } = await import('../prompts/environment-analysis-prompts.js');
-    
+    const { generateEnvironmentCompliancePrompt } = await import(
+      '../prompts/environment-analysis-prompts.js'
+    );
+
     const compliancePrompt = generateEnvironmentCompliancePrompt(
       currentEnvironment,
       requirements,
       industryStandards
     );
-    
+
     const instructions = `
 # Environment Compliance Assessment Instructions
 
@@ -340,10 +354,10 @@ const result = await assessEnvironmentCompliance(environment, requirements, stan
 // Parse AI response as ComplianceAssessment
 \`\`\`
 `;
-    
+
     return {
       compliancePrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -359,32 +373,36 @@ const result = await assessEnvironmentCompliance(environment, requirements, stan
 async function findEnvironmentFiles(projectPath: string): Promise<EnvironmentFile[]> {
   try {
     const { findFiles } = await import('./file-system.js');
-    
-    const files = await findFiles(projectPath, [
-      '**/Dockerfile*',
-      '**/docker-compose*.yml',
-      '**/docker-compose*.yaml',
-      '**/*.dockerfile',
-      '**/Containerfile*',
-      '**/k8s/**/*.yml',
-      '**/k8s/**/*.yaml',
-      '**/kubernetes/**/*.yml',
-      '**/kubernetes/**/*.yaml',
-      '**/terraform/**/*.tf',
-      '**/terraform/**/*.tfvars',
-      '**/.env*',
-      '**/config/**/*.yml',
-      '**/config/**/*.yaml',
-      '**/config/**/*.json',
-      '**/helm/**/*.yml',
-      '**/helm/**/*.yaml'
-    ], { includeContent: true });
-    
+
+    const files = await findFiles(
+      projectPath,
+      [
+        '**/Dockerfile*',
+        '**/docker-compose*.yml',
+        '**/docker-compose*.yaml',
+        '**/*.dockerfile',
+        '**/Containerfile*',
+        '**/k8s/**/*.yml',
+        '**/k8s/**/*.yaml',
+        '**/kubernetes/**/*.yml',
+        '**/kubernetes/**/*.yaml',
+        '**/terraform/**/*.tf',
+        '**/terraform/**/*.tfvars',
+        '**/.env*',
+        '**/config/**/*.yml',
+        '**/config/**/*.yaml',
+        '**/config/**/*.json',
+        '**/helm/**/*.yml',
+        '**/helm/**/*.yaml',
+      ],
+      { includeContent: true }
+    );
+
     return files.map(file => ({
       filename: file.name,
       content: file.content || '',
       path: file.path,
-      type: determineFileType(file.name, file.path)
+      type: determineFileType(file.name, file.path),
     }));
   } catch (error) {
     console.warn('Failed to find environment files:', error);
@@ -398,28 +416,36 @@ async function findEnvironmentFiles(projectPath: string): Promise<EnvironmentFil
 function determineFileType(filename: string, path: string): EnvironmentFile['type'] {
   const lowerFilename = filename.toLowerCase();
   const lowerPath = path.toLowerCase();
-  
+
   if (lowerFilename.includes('dockerfile') || lowerFilename.includes('containerfile')) {
     return 'dockerfile';
   }
-  
+
   if (lowerFilename.includes('docker-compose') || lowerFilename.includes('compose')) {
     return 'compose';
   }
-  
+
   if (lowerPath.includes('k8s') || lowerPath.includes('kubernetes') || lowerPath.includes('helm')) {
     return 'kubernetes';
   }
-  
-  if (lowerPath.includes('terraform') || lowerFilename.endsWith('.tf') || lowerFilename.endsWith('.tfvars')) {
+
+  if (
+    lowerPath.includes('terraform') ||
+    lowerFilename.endsWith('.tf') ||
+    lowerFilename.endsWith('.tfvars')
+  ) {
     return 'terraform';
   }
-  
-  if (lowerFilename.includes('config') || lowerFilename.startsWith('.env') || 
-      lowerFilename.endsWith('.yml') || lowerFilename.endsWith('.yaml') || 
-      lowerFilename.endsWith('.json')) {
+
+  if (
+    lowerFilename.includes('config') ||
+    lowerFilename.startsWith('.env') ||
+    lowerFilename.endsWith('.yml') ||
+    lowerFilename.endsWith('.yaml') ||
+    lowerFilename.endsWith('.json')
+  ) {
     return 'config';
   }
-  
+
   return 'other';
 }

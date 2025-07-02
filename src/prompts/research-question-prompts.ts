@@ -27,13 +27,17 @@ export function generateProblemKnowledgeCorrelationPrompt(
 Please analyze the following problems and correlate them with the architectural knowledge graph to identify research opportunities and knowledge gaps.
 
 ## Identified Problems
-${problems.map((problem, index) => `
+${problems
+  .map(
+    (problem, index) => `
 ### Problem ${index + 1}: ${problem.description}
 **ID**: ${problem.id}
 **Category**: ${problem.category}
 **Severity**: ${problem.severity}
 **Context**: ${problem.context}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Architectural Knowledge Graph
 ### Technologies
@@ -190,7 +194,9 @@ Please analyze the research context and identify relevant ADRs and patterns that
 **Objectives**: ${researchContext.objectives.join(', ')}
 
 ## Available ADRs
-${availableAdrs.map((adr, index) => `
+${availableAdrs
+  .map(
+    (adr, index) => `
 ### ADR ${index + 1}: ${adr.title}
 **ID**: ${adr.id}
 **Status**: ${adr.status}
@@ -198,14 +204,20 @@ ${availableAdrs.map((adr, index) => `
 \`\`\`
 ${adr.content.slice(0, 500)}${adr.content.length > 500 ? '...' : ''}
 \`\`\`
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Available Patterns
-${availablePatterns.map((pattern, index) => `
+${availablePatterns
+  .map(
+    (pattern, index) => `
 ### Pattern ${index + 1}: ${pattern.name}
 **Category**: ${pattern.category}
 **Description**: ${pattern.description}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Relevance Analysis Requirements
 
@@ -558,23 +570,35 @@ export function generateResearchTaskTrackingPrompt(
 Please analyze the research questions and current progress to create a comprehensive research task tracking system.
 
 ## Research Questions
-${researchQuestions.map((q, index) => `
+${researchQuestions
+  .map(
+    (q, index) => `
 ### Question ${index + 1}: ${q.question}
 **ID**: ${q.id}
 **Type**: ${q.type}
 **Priority**: ${q.priority}
 **Timeline**: ${q.timeline}
 **Methodology**: ${q.methodology}
-`).join('')}
+`
+  )
+  .join('')}
 
-${currentProgress ? `## Current Progress
-${currentProgress.map((p, index) => `
+${
+  currentProgress
+    ? `## Current Progress
+${currentProgress
+  .map(
+    (p, index) => `
 ### Progress ${index + 1}: ${p.questionId}
 **Status**: ${p.status}
 **Progress**: ${p.progress}%
 **Findings**: ${p.findings.join(', ')}
 **Blockers**: ${p.blockers.join(', ')}
-`).join('')}` : ''}
+`
+  )
+  .join('')}`
+    : ''
+}
 
 ## Task Tracking Requirements
 

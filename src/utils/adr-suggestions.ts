@@ -83,21 +83,23 @@ export async function analyzeImplicitDecisions(
   try {
     const { analyzeProjectStructure } = await import('./file-system.js');
     const { generateAnalysisContext } = await import('../prompts/analysis-prompts.js');
-    const { generateImplicitDecisionDetectionPrompt } = await import('../prompts/adr-suggestion-prompts.js');
-    
+    const { generateImplicitDecisionDetectionPrompt } = await import(
+      '../prompts/adr-suggestion-prompts.js'
+    );
+
     // Analyze project structure
     const projectStructure = await analyzeProjectStructure(projectPath);
     const analysisContext = generateAnalysisContext(projectStructure);
-    
+
     // Extract code patterns from project structure
     const codePatterns = extractCodePatterns(projectStructure);
-    
+
     const analysisPrompt = generateImplicitDecisionDetectionPrompt(
       analysisContext,
       codePatterns,
       existingAdrs
     );
-    
+
     const instructions = `
 # Implicit Decision Analysis Instructions
 
@@ -129,10 +131,10 @@ const result = await analyzeImplicitDecisions(projectPath, existingAdrs);
 // Parse AI response as ImplicitDecisionAnalysis
 \`\`\`
 `;
-    
+
     return {
       analysisPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -152,15 +154,17 @@ export async function analyzeCodeChanges(
   commitMessages?: string[]
 ): Promise<{ analysisPrompt: string; instructions: string }> {
   try {
-    const { generateCodeChangeAnalysisPrompt } = await import('../prompts/adr-suggestion-prompts.js');
-    
+    const { generateCodeChangeAnalysisPrompt } = await import(
+      '../prompts/adr-suggestion-prompts.js'
+    );
+
     const analysisPrompt = generateCodeChangeAnalysisPrompt(
       beforeCode,
       afterCode,
       changeDescription,
       commitMessages
     );
-    
+
     const instructions = `
 # Code Change Analysis Instructions
 
@@ -192,10 +196,10 @@ const result = await analyzeCodeChanges(before, after, description, commits);
 // Parse AI response for architectural decisions
 \`\`\`
 `;
-    
+
     return {
       analysisPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -222,13 +226,9 @@ export async function generateAdrFromDecision(
 ): Promise<{ generationPrompt: string; instructions: string }> {
   try {
     const { generateAdrTemplatePrompt } = await import('../prompts/adr-suggestion-prompts.js');
-    
-    const generationPrompt = generateAdrTemplatePrompt(
-      decisionData,
-      templateFormat,
-      existingAdrs
-    );
-    
+
+    const generationPrompt = generateAdrTemplatePrompt(decisionData, templateFormat, existingAdrs);
+
     const instructions = `
 # ADR Generation Instructions
 
@@ -259,10 +259,10 @@ const result = await generateAdrFromDecision(decisionData, 'nygard', existingAdr
 // Parse AI response as GeneratedAdr
 \`\`\`
 `;
-    
+
     return {
       generationPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -277,31 +277,40 @@ const result = await generateAdrFromDecision(decisionData, 'nygard', existingAdr
  */
 function extractCodePatterns(projectStructure: any): string[] {
   const patterns: string[] = [];
-  
+
   try {
     // Extract patterns from file structure
     if (projectStructure.filesByType) {
       Object.entries(projectStructure.filesByType).forEach(([type, files]: [string, any]) => {
         if (Array.isArray(files) && files.length > 0) {
-          patterns.push(`${type} files: ${files.slice(0, 5).map((f: any) => f.name || f).join(', ')}${files.length > 5 ? ` and ${files.length - 5} more` : ''}`);
+          patterns.push(
+            `${type} files: ${files
+              .slice(0, 5)
+              .map((f: any) => f.name || f)
+              .join(', ')}${files.length > 5 ? ` and ${files.length - 5} more` : ''}`
+          );
         }
       });
     }
-    
+
     // Extract patterns from directory structure
     if (projectStructure.directories) {
       const dirNames = projectStructure.directories.slice(0, 10).join(', ');
-      patterns.push(`Directory structure: ${dirNames}${projectStructure.directories.length > 10 ? ` and ${projectStructure.directories.length - 10} more` : ''}`);
+      patterns.push(
+        `Directory structure: ${dirNames}${projectStructure.directories.length > 10 ? ` and ${projectStructure.directories.length - 10} more` : ''}`
+      );
     }
-    
+
     // Extract patterns from detected technologies
     if (projectStructure.detectedTechnologies) {
       patterns.push(`Technologies: ${projectStructure.detectedTechnologies.join(', ')}`);
     }
-    
+
     // Add basic project metrics
-    patterns.push(`Project metrics: ${projectStructure.totalFiles} files, ${projectStructure.totalDirectories} directories`);
-    
+    patterns.push(
+      `Project metrics: ${projectStructure.totalFiles} files, ${projectStructure.totalDirectories} directories`
+    );
+
     return patterns;
   } catch (error) {
     console.warn('Failed to extract code patterns:', error);
@@ -321,10 +330,10 @@ export function generateNextAdrNumber(existingAdrs: string[]): string {
         return match && match[1] ? parseInt(match[1], 10) : 0;
       })
       .filter(num => num > 0);
-    
+
     const maxNumber = numbers.length > 0 ? Math.max(...numbers) : 0;
     const nextNumber = maxNumber + 1;
-    
+
     return `ADR-${nextNumber.toString().padStart(4, '0')}`;
   } catch (error) {
     console.warn('Failed to generate ADR number:', error);
@@ -344,7 +353,7 @@ export function suggestAdrFilename(title: string, adrNumber?: string): string {
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .replace(/^-|-$/g, '');
-    
+
     return `${number.toLowerCase()}-${cleanTitle}.md`;
   } catch (error) {
     console.warn('Failed to suggest filename:', error);

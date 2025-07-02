@@ -3,12 +3,12 @@
  */
 
 import { describe, it, expect } from '@jest/globals';
-import { 
-  AdrSchema, 
-  DetectedTechnologySchema, 
+import {
+  AdrSchema,
+  DetectedTechnologySchema,
   DetectedPatternSchema,
   McpAdrError,
-  ValidationError 
+  ValidationError,
 } from '../src/types/index.js';
 
 describe('Type Definitions', () => {
@@ -22,7 +22,7 @@ describe('Type Definitions', () => {
         context: 'We need type safety in our codebase',
         decision: 'We will use TypeScript',
         consequences: 'Better type safety but longer build times',
-        filePath: 'docs/adrs/001-typescript.md'
+        filePath: 'docs/adrs/001-typescript.md',
       };
 
       const result = AdrSchema.safeParse(validAdr);
@@ -34,7 +34,7 @@ describe('Type Definitions', () => {
         id: 'adr-001',
         title: 'Use TypeScript for development',
         status: 'invalid-status',
-        date: '2025-07-02'
+        date: '2025-07-02',
         // Missing required fields
       };
 
@@ -50,7 +50,7 @@ describe('Type Definitions', () => {
         category: 'language' as const,
         confidence: 0.95,
         evidence: ['package.json contains typescript'],
-        filePaths: ['src/index.ts']
+        filePaths: ['src/index.ts'],
       };
 
       const result = DetectedTechnologySchema.safeParse(validTech);
@@ -66,7 +66,7 @@ describe('Type Definitions', () => {
         confidence: 0.8,
         description: 'Model-View-Controller pattern detected',
         evidence: ['Separate model, view, and controller directories'],
-        filePaths: ['src/models/', 'src/views/', 'src/controllers/']
+        filePaths: ['src/models/', 'src/views/', 'src/controllers/'],
       };
 
       const result = DetectedPatternSchema.safeParse(validPattern);
@@ -79,7 +79,7 @@ describe('Error Classes', () => {
   describe('McpAdrError', () => {
     it('should create error with code and message', () => {
       const error = new McpAdrError('Test error', 'TEST_ERROR');
-      
+
       expect(error.message).toBe('Test error');
       expect(error.code).toBe('TEST_ERROR');
       expect(error.name).toBe('McpAdrError');
@@ -89,7 +89,7 @@ describe('Error Classes', () => {
     it('should create error with details', () => {
       const details = { file: 'test.ts', line: 42 };
       const error = new McpAdrError('Test error', 'TEST_ERROR', details);
-      
+
       expect(error.details).toEqual(details);
     });
   });
@@ -97,7 +97,7 @@ describe('Error Classes', () => {
   describe('ValidationError', () => {
     it('should extend McpAdrError with validation code', () => {
       const error = new ValidationError('Validation failed');
-      
+
       expect(error).toBeInstanceOf(McpAdrError);
       expect(error.code).toBe('VALIDATION_ERROR');
       expect(error.name).toBe('ValidationError');
@@ -114,7 +114,7 @@ describe('Custom Jest Matchers', () => {
       date: '2025-07-02',
       context: 'Test context',
       decision: 'Test decision',
-      consequences: 'Test consequences'
+      consequences: 'Test consequences',
     };
 
     expect(validAdr).toBeValidAdr();

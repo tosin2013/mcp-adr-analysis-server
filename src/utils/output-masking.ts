@@ -24,8 +24,8 @@ const DEFAULT_MASKING_CONFIG: MaskingConfig = {
     '[API_KEY_REDACTED]',
     '[PASSWORD_REDACTED]',
     '[EMAIL_REDACTED]',
-    '[IP_ADDRESS_REDACTED]'
-  ]
+    '[IP_ADDRESS_REDACTED]',
+  ],
 };
 
 /**
@@ -79,10 +79,7 @@ export async function maskMcpResponse(
 /**
  * Apply content masking to a text string
  */
-async function maskContent(
-  content: string,
-  config: MaskingConfig
-): Promise<string> {
+async function maskContent(content: string, config: MaskingConfig): Promise<string> {
   try {
     // Skip if content is already masked
     if (config.skipPatterns?.some(pattern => content.includes(pattern))) {
@@ -108,14 +105,16 @@ export async function generateAiMasking(
   contentType: 'code' | 'documentation' | 'configuration' | 'logs' | 'general' = 'general'
 ): Promise<{ maskedContent: string; analysisPrompt: string }> {
   try {
-    const { generateSensitiveContentDetectionPrompt } = await import('../prompts/security-prompts.js');
-    
+    const { generateSensitiveContentDetectionPrompt } = await import(
+      '../prompts/security-prompts.js'
+    );
+
     const analysisPrompt = generateSensitiveContentDetectionPrompt(content, contentType);
-    
+
     // For now, apply basic masking as fallback
     const { applyBasicMasking } = await import('./content-masking.js');
     const maskedContent = applyBasicMasking(content, 'partial');
-    
+
     return {
       maskedContent,
       analysisPrompt: `
@@ -135,7 +134,7 @@ ${analysisPrompt}
 1. Submit the AI analysis prompt to detect sensitive information
 2. Use the results with the \`generate_content_masking\` tool for intelligent masking
 3. Apply the enhanced masking for better security
-`
+`,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -151,20 +150,23 @@ ${analysisPrompt}
 export function createMaskingConfig(overrides?: Partial<MaskingConfig>): MaskingConfig {
   const envConfig: Partial<MaskingConfig> = {
     enabled: process.env['MCP_MASKING_ENABLED'] !== 'false',
-    strategy: (process.env['MCP_MASKING_STRATEGY'] as any) || 'partial'
+    strategy: (process.env['MCP_MASKING_STRATEGY'] as any) || 'partial',
   };
 
   return {
     ...DEFAULT_MASKING_CONFIG,
     ...envConfig,
-    ...overrides
+    ...overrides,
   };
 }
 
 /**
  * Validate masking configuration
  */
-export function validateMaskingConfig(config: MaskingConfig): { isValid: boolean; errors: string[] } {
+export function validateMaskingConfig(config: MaskingConfig): {
+  isValid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   if (typeof config.enabled !== 'boolean') {
@@ -185,7 +187,7 @@ export function validateMaskingConfig(config: MaskingConfig): { isValid: boolean
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 }
 
@@ -214,12 +216,12 @@ export async function applyProgressiveMasking(
     low: 'placeholder',
     medium: 'partial',
     high: 'full',
-    critical: 'full'
+    critical: 'full',
   };
 
   const strategy = strategies[sensitivityLevel];
   const { applyBasicMasking } = await import('./content-masking.js');
-  
+
   return applyBasicMasking(content, strategy);
 }
 
@@ -227,26 +229,15 @@ export async function applyProgressiveMasking(
  * Detect content sensitivity level using heuristics
  */
 export function detectContentSensitivity(content: string): 'low' | 'medium' | 'high' | 'critical' {
-  const criticalPatterns = [
-    /password/gi,
-    /secret/gi,
-    /private.*key/gi,
-    /api.*key/gi,
-    /token/gi
-  ];
+  const criticalPatterns = [/password/gi, /secret/gi, /private.*key/gi, /api.*key/gi, /token/gi];
 
   const highPatterns = [
     /@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, // emails
     /\b(?:\d{1,3}\.){3}\d{1,3}\b/g, // IP addresses
-    /\b[A-Z0-9]{20,}\b/g // potential keys/tokens
+    /\b[A-Z0-9]{20,}\b/g, // potential keys/tokens
   ];
 
-  const mediumPatterns = [
-    /localhost/gi,
-    /127\.0\.0\.1/g,
-    /config/gi,
-    /env/gi
-  ];
+  const mediumPatterns = [/localhost/gi, /127\.0\.0\.1/g, /config/gi, /env/gi];
 
   if (criticalPatterns.some(pattern => pattern.test(content))) {
     return 'critical';

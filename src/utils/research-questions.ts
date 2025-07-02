@@ -70,10 +70,12 @@ export async function correlateProblemKnowledge(
   knowledgeGraph: KnowledgeGraph
 ): Promise<{ correlationPrompt: string; instructions: string }> {
   try {
-    const { generateProblemKnowledgeCorrelationPrompt } = await import('../prompts/research-question-prompts.js');
-    
+    const { generateProblemKnowledgeCorrelationPrompt } = await import(
+      '../prompts/research-question-prompts.js'
+    );
+
     const correlationPrompt = generateProblemKnowledgeCorrelationPrompt(problems, knowledgeGraph);
-    
+
     const instructions = `
 # Problem-Knowledge Correlation Instructions
 
@@ -107,10 +109,10 @@ const result = await correlateProblemKnowledge(problems, knowledgeGraph);
 // Parse AI response for correlation analysis
 \`\`\`
 `;
-    
+
     return {
       correlationPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -129,33 +131,37 @@ export async function findRelevantAdrPatterns(
 ): Promise<{ relevancePrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateRelevantAdrPatternPrompt } = await import('../prompts/research-question-prompts.js');
-    
+    const { generateRelevantAdrPatternPrompt } = await import(
+      '../prompts/research-question-prompts.js'
+    );
+
     // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent: true });
-    
+    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+      includeContent: true,
+    });
+
     // Prepare ADR data
     const availableAdrs = adrFiles.map(file => {
       const titleMatch = file.content?.match(/^#\s+(.+)$/m);
       const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
-      
+
       return {
         id: file.name.replace(/\.md$/, ''),
         title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
         content: file.content || '',
-        status: statusMatch?.[1] || 'Unknown'
+        status: statusMatch?.[1] || 'Unknown',
       };
     });
-    
+
     // Extract patterns from project (simplified for this implementation)
     const availablePatterns = extractArchitecturalPatterns();
-    
+
     const relevancePrompt = generateRelevantAdrPatternPrompt(
       researchContext,
       availableAdrs,
       availablePatterns
     );
-    
+
     const instructions = `
 # Relevant ADR and Pattern Discovery Instructions
 
@@ -189,10 +195,10 @@ const result = await findRelevantAdrPatterns(researchContext, adrDirectory);
 // Parse AI response for relevant knowledge
 \`\`\`
 `;
-    
+
     return {
       relevancePrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -217,27 +223,29 @@ export async function generateContextAwareQuestions(
 ): Promise<{ questionPrompt: string; instructions: string }> {
   try {
     const { analyzeProjectStructure } = await import('./file-system.js');
-    const { generateContextAwareResearchQuestionsPrompt } = await import('../prompts/research-question-prompts.js');
-    
+    const { generateContextAwareResearchQuestionsPrompt } = await import(
+      '../prompts/research-question-prompts.js'
+    );
+
     // Analyze project context
     const projectStructure = await analyzeProjectStructure(projectPath);
     const projectContext = {
       technologies: (projectStructure as any).detectedTechnologies || [],
       architecture: inferArchitectureType(projectStructure),
       domain: inferDomainType(projectStructure),
-      scale: inferProjectScale(projectStructure)
+      scale: inferProjectScale(projectStructure),
     };
-    
+
     const questionPrompt = generateContextAwareResearchQuestionsPrompt(
       {
         ...researchContext,
         constraints: researchContext.constraints || [],
-        timeline: researchContext.timeline || 'Not specified'
+        timeline: researchContext.timeline || 'Not specified',
       },
       relevantKnowledge,
       projectContext
     );
-    
+
     const instructions = `
 # Context-Aware Research Question Generation Instructions
 
@@ -277,10 +285,10 @@ const result = await generateContextAwareQuestions(context, knowledge, projectPa
 // Parse AI response for research questions and plan
 \`\`\`
 `;
-    
+
     return {
       questionPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -304,10 +312,12 @@ export async function createResearchTaskTracking(
   }>
 ): Promise<{ trackingPrompt: string; instructions: string }> {
   try {
-    const { generateResearchTaskTrackingPrompt } = await import('../prompts/research-question-prompts.js');
-    
+    const { generateResearchTaskTrackingPrompt } = await import(
+      '../prompts/research-question-prompts.js'
+    );
+
     const trackingPrompt = generateResearchTaskTrackingPrompt(researchQuestions, currentProgress);
-    
+
     const instructions = `
 # Research Task Tracking Instructions
 
@@ -343,10 +353,10 @@ const result = await createResearchTaskTracking(questions, progress);
 // Parse AI response for task tracking system
 \`\`\`
 `;
-    
+
     return {
       trackingPrompt,
-      instructions
+      instructions,
     };
   } catch (error) {
     throw new McpAdrError(
@@ -369,28 +379,28 @@ function extractArchitecturalPatterns(): Array<{
     {
       name: 'Microservices Architecture',
       description: 'Distributed architecture with independent services',
-      category: 'architectural'
+      category: 'architectural',
     },
     {
       name: 'Layered Architecture',
       description: 'Hierarchical organization of components',
-      category: 'architectural'
+      category: 'architectural',
     },
     {
       name: 'Event-Driven Architecture',
       description: 'Asynchronous communication through events',
-      category: 'architectural'
+      category: 'architectural',
     },
     {
       name: 'Repository Pattern',
       description: 'Data access abstraction pattern',
-      category: 'design'
+      category: 'design',
     },
     {
       name: 'Factory Pattern',
       description: 'Object creation abstraction pattern',
-      category: 'design'
-    }
+      category: 'design',
+    },
   ];
 }
 
@@ -415,8 +425,12 @@ function inferArchitectureType(projectStructure: any): string {
  */
 function inferDomainType(projectStructure: any): string {
   const technologies = projectStructure.detectedTechnologies || [];
-  
-  if (technologies.some((tech: string) => tech.includes('react') || tech.includes('vue') || tech.includes('angular'))) {
+
+  if (
+    technologies.some(
+      (tech: string) => tech.includes('react') || tech.includes('vue') || tech.includes('angular')
+    )
+  ) {
     return 'web-application';
   }
   if (technologies.some((tech: string) => tech.includes('api') || tech.includes('rest'))) {
@@ -434,7 +448,7 @@ function inferDomainType(projectStructure: any): string {
 function inferProjectScale(projectStructure: any): string {
   const fileCount = projectStructure.totalFiles || 0;
   const dirCount = projectStructure.totalDirectories || 0;
-  
+
   if (fileCount > 1000 || dirCount > 100) {
     return 'enterprise';
   }

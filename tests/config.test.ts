@@ -2,7 +2,13 @@
  * Tests for configuration management
  */
 
-import { loadConfig, validateProjectPath, createLogger, getAdrDirectoryPath, getCacheDirectoryPath } from '../src/utils/config.js';
+import {
+  loadConfig,
+  validateProjectPath,
+  createLogger,
+  getAdrDirectoryPath,
+  getCacheDirectoryPath,
+} from '../src/utils/config.js';
 
 describe('Configuration Management', () => {
   const originalEnv = process.env;
@@ -20,7 +26,7 @@ describe('Configuration Management', () => {
   describe('loadConfig', () => {
     test('should load default configuration', () => {
       const config = loadConfig();
-      
+
       expect(config.projectPath).toBe(process.cwd());
       expect(config.adrDirectory).toBe('docs/adrs');
       expect(config.logLevel).toBe('INFO');
@@ -36,7 +42,7 @@ describe('Configuration Management', () => {
       process.env['CACHE_DIRECTORY'] = '.custom-cache';
 
       const config = loadConfig();
-      
+
       expect(config.projectPath).toBe('/test/project');
       expect(config.adrDirectory).toBe('architecture/decisions');
       expect(config.logLevel).toBe('DEBUG');
@@ -46,7 +52,7 @@ describe('Configuration Management', () => {
 
     test('should validate log level enum', () => {
       process.env['LOG_LEVEL'] = 'INVALID';
-      
+
       expect(() => loadConfig()).toThrow('Configuration validation failed');
     });
 
@@ -55,7 +61,7 @@ describe('Configuration Management', () => {
       process.env['ANALYSIS_TIMEOUT'] = '45000';
 
       const config = loadConfig();
-      
+
       expect(config.maxCacheSize).toBe(50000000);
       expect(config.analysisTimeout).toBe(45000);
     });
@@ -67,15 +73,25 @@ describe('Configuration Management', () => {
     });
 
     test('should reject non-existent path', async () => {
-      await expect(validateProjectPath('/non/existent/path')).rejects.toThrow('PROJECT_PATH does not exist');
+      await expect(validateProjectPath('/non/existent/path')).rejects.toThrow(
+        'PROJECT_PATH does not exist'
+      );
     });
   });
 
   describe('createLogger', () => {
     test('should create logger with correct log level', () => {
-      const config = { logLevel: 'ERROR' as const, projectPath: '', adrDirectory: '', cacheEnabled: true, cacheDirectory: '', maxCacheSize: 0, analysisTimeout: 0 };
+      const config = {
+        logLevel: 'ERROR' as const,
+        projectPath: '',
+        adrDirectory: '',
+        cacheEnabled: true,
+        cacheDirectory: '',
+        maxCacheSize: 0,
+        analysisTimeout: 0,
+      };
       const logger = createLogger(config);
-      
+
       expect(logger).toHaveProperty('debug');
       expect(logger).toHaveProperty('info');
       expect(logger).toHaveProperty('warn');
@@ -85,16 +101,32 @@ describe('Configuration Management', () => {
 
   describe('path helpers', () => {
     test('should get ADR directory path', () => {
-      const config = { projectPath: '/test/project', adrDirectory: 'docs/adrs', logLevel: 'INFO' as const, cacheEnabled: true, cacheDirectory: '', maxCacheSize: 0, analysisTimeout: 0 };
+      const config = {
+        projectPath: '/test/project',
+        adrDirectory: 'docs/adrs',
+        logLevel: 'INFO' as const,
+        cacheEnabled: true,
+        cacheDirectory: '',
+        maxCacheSize: 0,
+        analysisTimeout: 0,
+      };
       const adrPath = getAdrDirectoryPath(config);
-      
+
       expect(adrPath).toBe('/test/project/docs/adrs');
     });
 
     test('should get cache directory path', () => {
-      const config = { projectPath: '/test/project', adrDirectory: '', logLevel: 'INFO' as const, cacheEnabled: true, cacheDirectory: '.cache', maxCacheSize: 0, analysisTimeout: 0 };
+      const config = {
+        projectPath: '/test/project',
+        adrDirectory: '',
+        logLevel: 'INFO' as const,
+        cacheEnabled: true,
+        cacheDirectory: '.cache',
+        maxCacheSize: 0,
+        analysisTimeout: 0,
+      };
       const cachePath = getCacheDirectoryPath(config);
-      
+
       expect(cachePath).toBe('/test/project/.cache');
     });
   });

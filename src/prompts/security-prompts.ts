@@ -24,9 +24,13 @@ ${contentType}
 ${content.slice(0, 5000)}${content.length > 5000 ? '\n... (content truncated for analysis)' : ''}
 \`\`\`
 
-${userDefinedPatterns ? `## User-Defined Sensitive Patterns
+${
+  userDefinedPatterns
+    ? `## User-Defined Sensitive Patterns
 ${userDefinedPatterns.map(pattern => `- ${pattern}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
 ## Detection Requirements
 
@@ -140,13 +144,17 @@ ${content}
 \`\`\`
 
 ## Detected Sensitive Items
-${detectedSensitiveItems.map((item, index) => `
+${detectedSensitiveItems
+  .map(
+    (item, index) => `
 ### Item ${index + 1}
 - **Type**: ${item.type}
 - **Content**: ${item.content}
 - **Position**: ${item.startPosition}-${item.endPosition}
 - **Severity**: ${item.severity}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Masking Strategy
 ${maskingStrategy}
@@ -229,9 +237,13 @@ Please help configure custom sensitive information patterns for this specific pr
 ${projectContext}
 \`\`\`
 
-${existingPatterns ? `## Existing Patterns
+${
+  existingPatterns
+    ? `## Existing Patterns
 ${existingPatterns.map(pattern => `- ${pattern}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
 ## Configuration Requirements
 
