@@ -1,0 +1,54 @@
+# MCP ADR Analysis Server - Git Ignore Rules
+
+# Cache directory (MUST exclude per shrimp-rules.md)
+.mcp-adr-cache/
+
+# Node.js dependencies
+node_modules/
+
+# Environment files
+.env
+.env.*
+
+# Log files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Prohibited files per PRD requirements
+PRD.md
+mcp-shrimp-task-manager/
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Temporary files
+tmp/
+temp/
+
+
+todo.md
+shrimp-rules.md

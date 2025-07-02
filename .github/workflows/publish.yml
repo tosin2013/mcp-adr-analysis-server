@@ -1,0 +1,240 @@
+name: Publish to NPM
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., patch, minor, major, or specific version like 1.2.3)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+
+jobs:
+  test-and-publish:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        registry-url: 'https://registry.npmjs.org'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run linting
+      run: npm run lint
+
+    - name: Run tests
+      run: npm test
+
+    - name: Build project
+      run: npm run build
+
+    - name: Test MCP server functionality
+      run: |
+        echo "Testing MCP server functionality before publish..."
+        
+        # Start the MCP server in background
+        timeout 30s npm start &
+        SERVER_PID=$!
+        
+        # Wait for server to start
+        sleep 5
+        
+        # Check if server is still running
+        if kill -0 $SERVER_PID 2>/dev/null; then
+          echo "✅ MCP server working correctly"
+          kill $SERVER_PID
+        else
+          echo "❌ MCP server failed - aborting publish"
+          exit 1
+        fi
+
+    - name: Verify package.json
+      run: |
+        echo "Verifying package.json for npm publish..."
+        
+        # Check required fields
+        if ! grep -q '"name"' package.json; then
+          echo "❌ Missing package name"
+          exit 1
+        fi
+        
+        if ! grep -q '"version"' package.json; then
+          echo "❌ Missing package version"
+          exit 1
+        fi
+        
+        if ! grep -q '"description"' package.json; then
+          echo "❌ Missing package description"
+          exit 1
+        fi
+        
+        echo "✅ Package.json is valid for publishing"
+
+    - name: Update version (if manual trigger)
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        if [ "${{ github.event.inputs.version }}" = "patch" ] || [ "${{ github.event.inputs.version }}" = "minor" ] || [ "${{ github.event.inputs.version }}" = "major" ] || [ "${{ github.event.inputs.version }}" = "prerelease" ]; then
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+        else
+          npm version ${{ github.event.inputs.version }} --no-git-tag-version
+        fi
+        
+        NEW_VERSION=$(node -p "require('./package.json').version")
+        echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+
+    - name: Get version from tag (if tag trigger)
+      if: startsWith(github.ref, 'refs/tags/')
+      run: |
+        TAG_VERSION=${GITHUB_REF#refs/tags/v}
+        echo "NEW_VERSION=$TAG_VERSION" >> $GITHUB_ENV
+        
+        # Update package.json to match tag
+        npm version $TAG_VERSION --no-git-tag-version
+
+    - name: Create distribution package
+      run: |
+        echo "Creating distribution package..."
+        
+        # Create clean package directory
+        mkdir -p npm-package
+        
+        # Copy essential files
+        cp package.json npm-package/
+        cp README.md npm-package/
+        cp -r dist npm-package/
+        
+        # Copy license if exists
+        if [ -f LICENSE ]; then
+          cp LICENSE npm-package/
+        fi
+        
+        # Create .npmignore for the package
+        cat > npm-package/.npmignore << 'EOF'
+        # Source files
+        src/
+        tests/
+        
+        # Development files
+        .github/
+        .eslintrc.json
+        .prettierrc.json
+        tsconfig.json
+        jest.config.js
+        
+        # Cache and logs
+        .mcp-adr-cache/
+        *.log
+        
+        # Development dependencies
+        node_modules/
+        coverage/
+        
+        # Git files
+        .git/
+        .gitignore
+        
+        # Documentation that shouldn't be in package
+        docs/
+        *.md
+        !README.md
+        EOF
+
+    - name: Test package installation
+      run: |
+        echo "Testing package installation..."
+        cd npm-package
+        
+        # Test that the package can be installed
+        npm pack --dry-run
+        
+        # Verify main entry point exists
+        if [ ! -f "$(node -p "require('./package.json').main")" ]; then
+          echo "❌ Main entry point not found"
+          exit 1
+        fi
+        
+        echo "✅ Package is ready for publishing"
+
+    - name: Publish to NPM
+      run: |
+        cd npm-package
+        
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.version }}" = "prerelease" ]; then
+          echo "Publishing prerelease version..."
+          npm publish --tag beta
+        else
+          echo "Publishing stable version..."
+          npm publish
+        fi
+        
+        echo "✅ Successfully published to NPM"
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    - name: Create GitHub Release
+      if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.NEW_VERSION && format('v{0}', env.NEW_VERSION) || github.ref_name }}
+        release_name: Release ${{ env.NEW_VERSION && format('v{0}', env.NEW_VERSION) || github.ref_name }}
+        body: |
+          ## MCP ADR Analysis Server ${{ env.NEW_VERSION && format('v{0}', env.NEW_VERSION) || github.ref_name }}
+          
+          ### 🚀 Features
+          - Complete MCP ADR Analysis Server with 23 tools
+          - AI-powered architectural analysis and decision tracking
+          - Enterprise-grade security and performance features
+          
+          ### 📦 Installation
+          ```bash
+          npm install -g mcp-adr-analysis-server
+          ```
+          
+          ### 🔧 Usage
+          ```bash
+          mcp-adr-analysis-server
+          ```
+          
+          ### 📚 Documentation
+          See README.md for complete documentation and usage examples.
+        draft: false
+        prerelease: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.version == 'prerelease' }}
+
+    - name: Update package.json in repository (if manual trigger)
+      if: github.event_name == 'workflow_dispatch'
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        git add package.json
+        git commit -m "chore: bump version to ${{ env.NEW_VERSION }}" || exit 0
+        git push origin main || echo "Failed to push version update"
+
+    - name: Notify success
+      run: |
+        echo "🎉 Successfully published MCP ADR Analysis Server to NPM!"
+        echo "📦 Package: https://www.npmjs.com/package/mcp-adr-analysis-server"
+        echo "🏷️ Version: ${{ env.NEW_VERSION || github.ref_name }}"

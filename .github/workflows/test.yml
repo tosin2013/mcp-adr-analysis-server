@@ -1,0 +1,113 @@
+name: Test MCP Server
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18, 20]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run unit tests
+      run: npm test
+
+    - name: Build the project
+      run: npm run build
+
+    - name: Test MCP server startup
+      run: |
+        # Start the MCP server in background
+        timeout 30s npm start &
+        SERVER_PID=$!
+        
+        # Wait for server to start
+        sleep 5
+        
+        # Check if server is still running
+        if kill -0 $SERVER_PID 2>/dev/null; then
+          echo "✅ MCP server started successfully"
+          kill $SERVER_PID
+        else
+          echo "❌ MCP server failed to start"
+          exit 1
+        fi
+
+    - name: Test MCP server tools
+      run: |
+        # Build the project first
+        npm run build
+        
+        # Test that the server can list tools
+        echo "Testing MCP server tool listing..."
+        
+        # Create a simple test script to verify MCP functionality
+        cat > test-mcp.js << 'EOF'
+        const { spawn } = require('child_process');
+        
+        const server = spawn('node', ['dist/index.js'], {
+          stdio: ['pipe', 'pipe', 'pipe']
+        });
+        
+        let output = '';
+        let hasTools = false;
+        
+        server.stdout.on('data', (data) => {
+          output += data.toString();
+          if (output.includes('tools/list') || output.includes('analyze_project')) {
+            hasTools = true;
+          }
+        });
+        
+        server.stderr.on('data', (data) => {
+          console.error('Server error:', data.toString());
+        });
+        
+        // Send a tools/list request
+        const request = {
+          jsonrpc: "2.0",
+          id: 1,
+          method: "tools/list"
+        };
+        
+        server.stdin.write(JSON.stringify(request) + '\n');
+        
+        setTimeout(() => {
+          server.kill();
+          if (hasTools) {
+            console.log('✅ MCP server tools are accessible');
+            process.exit(0);
+          } else {
+            console.log('❌ MCP server tools not found');
+            console.log('Output:', output);
+            process.exit(1);
+          }
+        }, 10000);
+        EOF
+        
+        node test-mcp.js
+
+    - name: Upload coverage reports
+      if: matrix.node-version == '18'
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        fail_ci_if_error: false

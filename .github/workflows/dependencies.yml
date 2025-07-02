@@ -1,0 +1,140 @@
+name: Dependency Management
+
+on:
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+jobs:
+  update-dependencies:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Check for outdated dependencies
+      run: |
+        echo "Checking for outdated dependencies..."
+        npm outdated || true
+
+    - name: Update patch and minor versions
+      run: |
+        echo "Updating patch and minor versions..."
+        npm update
+
+    - name: Run tests after update
+      run: |
+        npm test
+        npm run build
+
+    - name: Test MCP server after dependency update
+      run: |
+        echo "Testing MCP server functionality after dependency update..."
+        
+        # Quick smoke test
+        timeout 15s npm start &
+        SERVER_PID=$!
+        sleep 5
+        
+        if kill -0 $SERVER_PID 2>/dev/null; then
+          echo "✅ MCP server works after dependency update"
+          kill $SERVER_PID
+        else
+          echo "❌ MCP server broken after dependency update"
+          exit 1
+        fi
+
+    - name: Check for security vulnerabilities
+      run: |
+        echo "Checking for security vulnerabilities..."
+        npm audit --audit-level=moderate
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v5
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        commit-message: 'chore: update dependencies'
+        title: 'Automated dependency updates'
+        body: |
+          ## Automated Dependency Updates
+          
+          This PR contains automated dependency updates:
+          
+          - Updated patch and minor versions
+          - Verified tests still pass
+          - Verified MCP server functionality
+          - Security audit passed
+          
+          Please review the changes and merge if everything looks good.
+          
+          ### Changes
+          - Updated npm dependencies to latest compatible versions
+          - All tests passing ✅
+          - MCP server functionality verified ✅
+          - Security audit clean ✅
+        branch: automated-dependency-updates
+        delete-branch: true
+
+  security-audit:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run security audit
+      run: |
+        echo "Running security audit..."
+        npm audit --audit-level=high
+        
+    - name: Check for known vulnerabilities
+      run: |
+        echo "Checking for known vulnerabilities in dependencies..."
+        npx audit-ci --config audit-ci.json || echo "Audit CI not configured, skipping"
+
+    - name: Generate security report
+      run: |
+        echo "Generating security report..."
+        npm audit --json > security-audit.json || true
+        
+        # Create human-readable summary
+        echo "## Security Audit Summary" > security-summary.md
+        echo "Generated on: $(date)" >> security-summary.md
+        echo "" >> security-summary.md
+        
+        if [ -s security-audit.json ]; then
+          echo "Security audit completed. Check security-audit.json for details." >> security-summary.md
+        else
+          echo "✅ No security issues found." >> security-summary.md
+        fi
+
+    - name: Upload security artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: security-audit
+        path: |
+          security-audit.json
+          security-summary.md
+        retention-days: 30

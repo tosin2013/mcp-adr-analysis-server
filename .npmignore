@@ -1,0 +1,47 @@
+# Source files (only publish built dist/)
+src/
+tests/
+
+# Development and build files
+.github/
+.eslintrc.json
+.prettierrc.json
+tsconfig.json
+jest.config.js
+Makefile
+
+# Cache and temporary files
+.mcp-adr-cache/
+node_modules/
+coverage/
+*.log
+*.tmp
+
+# Git files
+.git/
+.gitignore
+
+# Documentation that shouldn't be in package
+docs/
+todo.md
+shrimp-rules.md
+PRD.md
+
+# Development scripts
+test-mcp-server.js
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Only include what's needed for the package
+!dist/
+!README.md
+!LICENSE
+!package.json
