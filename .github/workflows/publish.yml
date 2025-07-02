@@ -44,7 +44,27 @@ jobs:
       run: npm test
 
     - name: Build project
-      run: npm run build
+      run: |
+        echo "Building project..."
+        npm run build
+
+        # Verify build completed successfully
+        echo "=== Build Verification ==="
+        if [ -d "dist" ]; then
+          echo "✅ dist directory created"
+          if [ -f "dist/src/index.js" ]; then
+            echo "✅ Main entry point built successfully"
+            echo "File size: $(ls -lh dist/src/index.js | awk '{print $5}')"
+          else
+            echo "❌ Main entry point not built"
+            echo "Contents of dist:"
+            ls -la dist/ || echo "dist directory empty"
+            exit 1
+          fi
+        else
+          echo "❌ Build failed - no dist directory created"
+          exit 1
+        fi
 
     - name: Test MCP server functionality
       run: |
@@ -115,18 +135,58 @@ jobs:
     - name: Create distribution package
       run: |
         echo "Creating distribution package..."
-        
+
+        # Debug: Check what files exist
+        echo "=== Build Output Debug ==="
+        echo "Current directory: $(pwd)"
+        echo "Files in current directory:"
+        ls -la
+        echo "Checking for dist directory:"
+        if [ -d "dist" ]; then
+          echo "✅ dist directory exists"
+          echo "Contents of dist:"
+          ls -la dist/
+          if [ -d "dist/src" ]; then
+            echo "✅ dist/src directory exists"
+            echo "Contents of dist/src:"
+            ls -la dist/src/
+            if [ -f "dist/src/index.js" ]; then
+              echo "✅ dist/src/index.js exists"
+            else
+              echo "❌ dist/src/index.js missing"
+              exit 1
+            fi
+          else
+            echo "❌ dist/src directory missing"
+            exit 1
+          fi
+        else
+          echo "❌ dist directory missing - build failed"
+          exit 1
+        fi
+
         # Create clean package directory
         mkdir -p npm-package
-        
+
         # Copy essential files
         cp package.json npm-package/
         cp README.md npm-package/
         cp -r dist npm-package/
-        
+
         # Copy license if exists
         if [ -f LICENSE ]; then
           cp LICENSE npm-package/
+        fi
+
+        # Verify the copy worked
+        echo "=== Package Verification ==="
+        echo "Contents of npm-package:"
+        ls -la npm-package/
+        if [ -f "npm-package/dist/src/index.js" ]; then
+          echo "✅ Main entry point copied successfully"
+        else
+          echo "❌ Main entry point copy failed"
+          exit 1
         fi
         
         # Create .npmignore for the package
@@ -164,16 +224,39 @@ jobs:
       run: |
         echo "Testing package installation..."
         cd npm-package
-        
+
+        # Debug package contents
+        echo "=== Package Contents Debug ==="
+        echo "Files in npm-package directory:"
+        ls -la
+        echo "Package.json main field:"
+        node -p "require('./package.json').main"
+
         # Test that the package can be installed
+        echo "=== Testing Package Creation ==="
         npm pack --dry-run
-        
+
         # Verify main entry point exists
-        if [ ! -f "$(node -p "require('./package.json').main")" ]; then
-          echo "❌ Main entry point not found"
+        MAIN_ENTRY=$(node -p "require('./package.json').main")
+        echo "Checking for main entry point: $MAIN_ENTRY"
+        if [ ! -f "$MAIN_ENTRY" ]; then
+          echo "❌ Main entry point not found: $MAIN_ENTRY"
+          echo "Available files:"
+          find . -name "*.js" -type f | head -10
+          exit 1
+        else
+          echo "✅ Main entry point found: $MAIN_ENTRY"
+          echo "File size: $(ls -lh "$MAIN_ENTRY" | awk '{print $5}')"
+        fi
+
+        # Test that the entry point is valid JavaScript
+        if node --check "$MAIN_ENTRY"; then
+          echo "✅ Main entry point has valid syntax"
+        else
+          echo "❌ Main entry point has syntax errors"
           exit 1
         fi
-        
+
         echo "✅ Package is ready for publishing"
 
     - name: Publish to NPM
