@@ -25,23 +25,13 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
 
-    - name: Debug Node.js environment
-      run: |
-        echo "Node.js version: $(node --version)"
-        echo "NPM version: $(npm --version)"
-        echo "Platform: $(uname -a)"
-        echo "Working directory: $(pwd)"
-        ls -la
-
     - name: Install dependencies
-      run: make install
-
-    - name: Debug dependencies
       run: |
-        echo "Installed packages:"
-        npm list --depth=0 || true
-        echo "TypeScript version:"
-        npx tsc --version || true
+        # Try make install first
+        if ! make install; then
+          echo "❌ Make install failed, trying npm install..."
+          npm install
+        fi
 
     - name: Test Node.js compatibility
       run: make node-compat

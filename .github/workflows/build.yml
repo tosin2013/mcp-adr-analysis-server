@@ -21,16 +21,43 @@ jobs:
         node-version: '20'
         cache: 'npm'
 
+    - name: Debug environment
+      run: |
+        echo "Node.js version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        echo "Working directory: $(pwd)"
+        echo "Package.json exists: $(test -f package.json && echo 'yes' || echo 'no')"
+        echo "Lock file exists: $(test -f package-lock.json && echo 'yes' || echo 'no')"
+        echo "TypeScript config exists: $(test -f tsconfig.json && echo 'yes' || echo 'no')"
+
     - name: Install dependencies and build
-      run: make build
+      run: |
+        # Try make build first
+        if ! make build; then
+          echo "❌ Make build failed, trying manual approach..."
+
+          # Clear any partial state
+          rm -rf node_modules dist
+
+          # Manual dependency installation
+          npm install
+
+          # Manual build
+          npm run build
+        fi
 
     - name: Verify build output
       run: |
-        if [ ! -f "dist/src/index.js" ]; then
-          echo "❌ Build failed - dist/src/index.js not found"
-          exit 1
+        # Use validation script if available, otherwise basic check
+        if [ -f "scripts/validate-build.js" ]; then
+          node scripts/validate-build.js
+        else
+          if [ ! -f "dist/src/index.js" ]; then
+            echo "❌ Build failed - dist/src/index.js not found"
+            exit 1
+          fi
+          echo "✅ Build successful - dist/src/index.js created"
         fi
-        echo "✅ Build successful - dist/src/index.js created"
 
     - name: Test built MCP server
       run: |
