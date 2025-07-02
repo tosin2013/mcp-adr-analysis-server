@@ -17,16 +17,21 @@ help:
 	@echo "  format       - Format code with ESLint"
 	@echo "  ci           - Run full CI pipeline (lint, test, build)"
 
-# Install dependencies
-install:
+# Check Node.js version compatibility
+check-node:
+	@echo "Checking Node.js version..."
+	@node -e "const v=process.version.slice(1).split('.').map(Number); if(v[0]<20) { console.error('❌ Node.js >=20.0.0 required, found:', process.version); process.exit(1); } else { console.log('✅ Node.js', process.version, 'is compatible'); }"
+
+# Install dependencies (handles lock file sync issues)
+install: check-node
 	@echo "Installing dependencies..."
-	@if [ ! -f package-lock.json ]; then \
-		echo "No package-lock.json found, running npm install..."; \
-		npm install; \
+	@if npm ci 2>/dev/null; then \
+		echo "✅ Dependencies installed with npm ci"; \
 	else \
-		npm ci; \
+		echo "⚠️  Lock file out of sync, updating with npm install..."; \
+		npm install; \
+		echo "✅ Dependencies installed and lock file updated"; \
 	fi
-	@echo "Dependencies installed successfully"
 
 # Build the project
 build: check-deps
@@ -35,11 +40,23 @@ build: check-deps
 	npm run build
 	@echo "Build completed successfully"
 
-# Run tests with coverage
+# Run tests without coverage (for CI)
 test: check-deps
+	@echo "Running tests..."
+	npm test
+	@echo "Tests completed successfully"
+
+# Run tests with coverage
+test-coverage: check-deps
 	@echo "Running tests with coverage..."
 	npm run test:coverage
-	@echo "Tests completed successfully"
+	@echo "Tests with coverage completed successfully"
+
+# Test Node.js compatibility
+node-compat: build
+	@echo "Testing Node.js compatibility..."
+	node scripts/test-node-compatibility.js
+	@echo "Node.js compatibility verified"
 
 # Run linting
 lint: check-deps

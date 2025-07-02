@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20, 22]
+        node-version: [20, 22]
       fail-fast: false
 
     steps:
@@ -34,7 +34,7 @@ jobs:
         ls -la
 
     - name: Install dependencies
-      run: npm ci
+      run: make install
 
     - name: Debug dependencies
       run: |
@@ -44,12 +44,10 @@ jobs:
         npx tsc --version || true
 
     - name: Test Node.js compatibility
-      run: |
-        npm run build
-        node scripts/test-node-compatibility.js
+      run: make node-compat
 
     - name: Run unit tests
-      run: npm test
+      run: make test
 
     - name: Build the project
       run: npm run build
