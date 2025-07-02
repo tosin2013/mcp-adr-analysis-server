@@ -92,8 +92,12 @@ health: build
 # Run linting
 lint: check-deps
 	@echo "Running ESLint..."
-	npm run lint
-	@echo "Linting completed successfully"
+	@if npm run lint; then \
+		echo "Linting completed successfully"; \
+	else \
+		echo "⚠️  Linting failed, trying with npx..."; \
+		npx eslint "src/**/*.ts" "tests/**/*.ts"; \
+	fi
 
 # Clean build artifacts
 clean:
