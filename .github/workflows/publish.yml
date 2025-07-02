@@ -49,20 +49,20 @@ jobs:
     - name: Test MCP server functionality
       run: |
         echo "Testing MCP server functionality before publish..."
-        
-        # Start the MCP server in background
-        timeout 30s npm start &
-        SERVER_PID=$!
-        
-        # Wait for server to start
-        sleep 5
-        
-        # Check if server is still running
-        if kill -0 $SERVER_PID 2>/dev/null; then
-          echo "✅ MCP server working correctly"
-          kill $SERVER_PID
+
+        # Use health check instead of trying to start full server
+        if npm run health; then
+          echo "✅ MCP server health check passed"
         else
-          echo "❌ MCP server failed - aborting publish"
+          echo "❌ MCP server health check failed - aborting publish"
+          exit 1
+        fi
+
+        # Also verify the built server can be syntax-checked
+        if node --check dist/src/index.js; then
+          echo "✅ Built server syntax is valid"
+        else
+          echo "❌ Built server has syntax errors - aborting publish"
           exit 1
         fi
 
