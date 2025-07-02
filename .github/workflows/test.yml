@@ -12,7 +12,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18, 20]
+        node-version: [18, 20, 22]
+      fail-fast: false
 
     steps:
     - name: Checkout code
@@ -24,8 +25,28 @@ jobs:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
 
+    - name: Debug Node.js environment
+      run: |
+        echo "Node.js version: $(node --version)"
+        echo "NPM version: $(npm --version)"
+        echo "Platform: $(uname -a)"
+        echo "Working directory: $(pwd)"
+        ls -la
+
     - name: Install dependencies
       run: npm ci
+
+    - name: Debug dependencies
+      run: |
+        echo "Installed packages:"
+        npm list --depth=0 || true
+        echo "TypeScript version:"
+        npx tsc --version || true
+
+    - name: Test Node.js compatibility
+      run: |
+        npm run build
+        node scripts/test-node-compatibility.js
 
     - name: Run unit tests
       run: npm test
