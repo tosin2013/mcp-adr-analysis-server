@@ -236,7 +236,7 @@ export async function generateContextAwareQuestions(
   projectPath: string = process.cwd()
 ): Promise<{ questionPrompt: string; instructions: string }> {
   try {
-    const { analyzeProjectStructure } = await import('./file-system.js');
+    const { analyzeProjectStructure, ensureDirectory } = await import('./file-system.js');
     const { generateContextAwareResearchQuestionsPrompt } = await import(
       '../prompts/research-question-prompts.js'
     );
@@ -249,6 +249,15 @@ export async function generateContextAwareQuestions(
       domain: inferDomainType(projectStructure),
       scale: inferProjectScale(projectStructure),
     };
+
+    // Generate directory creation prompt for docs/research
+    const researchDir = `${projectPath}/docs/research`;
+    const ensureDirPrompt = await ensureDirectory(researchDir);
+
+    // Generate file creation prompts for research questions
+    const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+    const researchFileName = `research-questions-${timestamp}.md`;
+    const researchFilePath = `${researchDir}/${researchFileName}`;
 
     const questionPrompt = generateContextAwareResearchQuestionsPrompt(
       {
@@ -263,7 +272,7 @@ export async function generateContextAwareQuestions(
     const instructions = `
 # Context-Aware Research Question Generation Instructions
 
-This analysis will generate specific, actionable research questions based on comprehensive context analysis.
+This analysis will generate specific, actionable research questions based on comprehensive context analysis and save them to the docs/research directory.
 
 ## Question Generation Context
 - **Research Topic**: ${researchContext.topic}
@@ -276,11 +285,34 @@ This analysis will generate specific, actionable research questions based on com
 - **Knowledge Gaps**: ${relevantKnowledge.gaps.length}
 - **Research Opportunities**: ${relevantKnowledge.opportunities.length}
 
+## File Creation Requirements
+
+### Step 1: Create Research Directory
+${ensureDirPrompt.prompt}
+
+### Step 2: Generate Research Questions
+Execute the research question generation prompt below to create comprehensive research questions.
+
+### Step 3: Save Research Questions to File
+After generating the research questions, create a research questions file:
+
+**File Path**: ${researchFilePath}
+**File Name**: ${researchFileName}
+
+The file should contain:
+- Generated research questions in structured markdown format
+- Research plan with timelines and priorities
+- Methodology and approach details
+- Quality assurance criteria
+- Expected outcomes and impact
+
 ## Next Steps
-1. **Submit the question prompt** to an AI agent for comprehensive question generation
-2. **Parse the JSON response** to get structured research questions
-3. **Review research plan** and prioritize questions
-4. **Create research tasks** using the task tracking system
+1. **Execute directory creation** from Step 1 to ensure docs/research directory exists
+2. **Submit the question prompt** to an AI agent for comprehensive question generation
+3. **Parse the JSON response** to get structured research questions
+4. **Create markdown file** with the research questions using the file creation prompt
+5. **Review research plan** and prioritize questions
+6. **Create research tasks** using the task tracking system
 
 ## Expected AI Response Format
 The AI will return a JSON object with:
@@ -292,11 +324,20 @@ The AI will return a JSON object with:
 - \`qualityAssurance\`: Quality assurance and validation approach
 - \`expectedImpact\`: Expected impact and benefits of the research
 
+## File Persistence
+After generating the research questions, the AI agent must:
+1. **Format the questions** into a structured markdown document
+2. **Create the research file** at: ${researchFilePath}
+3. **Include all generated content** in the file for future reference
+4. **Confirm file creation** and provide file location
+
 ## Usage Example
 \`\`\`typescript
 const result = await generateContextAwareQuestions(context, knowledge, projectPath);
-// Submit result.questionPrompt to AI agent
-// Parse AI response for research questions and plan
+// 1. Execute directory creation prompt
+// 2. Submit result.questionPrompt to AI agent
+// 3. Parse AI response for research questions and plan
+// 4. Create markdown file with research questions
 \`\`\`
 `;
 

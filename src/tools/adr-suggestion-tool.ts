@@ -1,12 +1,16 @@
 /**
  * MCP Tool for ADR suggestions and implicit decision detection
- * Implements prompt-driven ADR recommendation system
+ * Enhanced with Knowledge Generation and Reflexion capabilities
+ * Implements prompt-driven ADR recommendation system with learning
  */
 
 import { McpAdrError } from '../types/index.js';
+import { generateArchitecturalKnowledge } from '../utils/knowledge-generation.js';
+import { executeWithReflexion, retrieveRelevantMemories, createToolReflexionConfig } from '../utils/reflexion.js';
 
 /**
- * Suggest ADRs based on project analysis
+ * Suggest ADRs based on project analysis with advanced prompting techniques
+ * Enhanced with Knowledge Generation and Reflexion learning capabilities
  */
 export async function suggestAdrs(args: {
   projectPath?: string;
@@ -16,6 +20,9 @@ export async function suggestAdrs(args: {
   changeDescription?: string;
   commitMessages?: string[];
   existingAdrs?: string[];
+  enhancedMode?: boolean; // Enable advanced prompting features
+  learningEnabled?: boolean; // Enable Reflexion learning
+  knowledgeEnhancement?: boolean; // Enable Knowledge Generation
 }): Promise<any> {
   const {
     projectPath = process.cwd(),
@@ -25,6 +32,9 @@ export async function suggestAdrs(args: {
     changeDescription,
     commitMessages,
     existingAdrs,
+    enhancedMode = true, // Default to enhanced mode
+    learningEnabled = true, // Default to learning enabled
+    knowledgeEnhancement = true, // Default to knowledge enhancement
   } = args;
 
   try {
@@ -34,34 +44,109 @@ export async function suggestAdrs(args: {
 
     switch (analysisType) {
       case 'implicit_decisions': {
-        const result = await analyzeImplicitDecisions(projectPath, existingAdrs);
+        let enhancedPrompt = '';
+        let enhancementInfo = '';
+
+        // Apply enhancements if enabled
+        if (enhancedMode && (knowledgeEnhancement || learningEnabled)) {
+          let knowledgeContext = '';
+
+          // Generate domain knowledge for implicit decision detection
+          if (knowledgeEnhancement) {
+            try {
+              const knowledgeResult = await generateArchitecturalKnowledge({
+                projectPath,
+                technologies: [],
+                patterns: [],
+                projectType: 'implicit-decision-detection'
+              }, {
+                domains: ['api-design', 'database-design'],
+                depth: 'basic',
+                cacheEnabled: true
+              });
+
+              knowledgeContext = `\n## Knowledge Enhancement\n${knowledgeResult.prompt}\n`;
+            } catch (error) {
+              console.error('[WARNING] Knowledge generation failed:', error);
+            }
+          }
+
+          // Apply learning if enabled
+          if (learningEnabled) {
+            try {
+              const reflexionConfig = createToolReflexionConfig('suggest_adrs');
+              const baseResult = await analyzeImplicitDecisions(projectPath, existingAdrs);
+
+              const reflexionResult = await executeWithReflexion({
+                prompt: baseResult.analysisPrompt + knowledgeContext,
+                instructions: baseResult.instructions,
+                context: { projectPath, analysisType: 'implicit_decisions', existingAdrs }
+              }, reflexionConfig);
+
+              enhancedPrompt = reflexionResult.prompt;
+              enhancementInfo = `
+## Enhancement Status
+- **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Reflexion Learning**: ✅ Applied
+- **Learning from**: Past implicit decision detection tasks
+
+`;
+            } catch (error) {
+              console.error('[WARNING] Reflexion enhancement failed:', error);
+              const result = await analyzeImplicitDecisions(projectPath, existingAdrs);
+              enhancedPrompt = result.analysisPrompt + knowledgeContext;
+            }
+          } else {
+            const result = await analyzeImplicitDecisions(projectPath, existingAdrs);
+            enhancedPrompt = result.analysisPrompt + knowledgeContext;
+            enhancementInfo = `
+## Enhancement Status
+- **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Reflexion Learning**: ❌ Disabled
+
+`;
+          }
+        } else {
+          const result = await analyzeImplicitDecisions(projectPath, existingAdrs);
+          enhancedPrompt = result.analysisPrompt;
+          enhancementInfo = `
+## Enhancement Status
+- **Enhanced Mode**: ❌ Disabled
+- All advanced features are disabled for this analysis
+
+`;
+        }
+
+        const baseResult = await analyzeImplicitDecisions(projectPath, existingAdrs);
 
         return {
           content: [
             {
               type: 'text',
-              text: `# ADR Suggestions: Implicit Decisions Analysis
+              text: `# ADR Suggestions: Enhanced Implicit Decisions Analysis
 
-${result.instructions}
+${enhancementInfo}
 
-## AI Analysis Prompt
+${baseResult.instructions}
 
-${result.analysisPrompt}
+## Enhanced AI Analysis Prompt
+
+${enhancedPrompt}
 
 ## Next Steps
 
-1. **Submit the prompt** to an AI agent for comprehensive analysis
+1. **Submit the enhanced prompt** to an AI agent for comprehensive analysis
 2. **Review the detected decisions** and prioritize based on impact and risk
 3. **Use the \`generate_adr_from_decision\` tool** to create ADRs for high-priority decisions
 4. **Integrate with existing ADR workflow** for review and approval
 
 ## Expected Output
 
-The AI will identify implicit architectural decisions in your codebase and provide:
-- Detailed decision analysis with evidence
-- Priority and risk assessments
-- Suggested ADR titles and content
-- Recommendations for documentation strategy
+The enhanced AI analysis will identify implicit architectural decisions and provide:
+- Detailed decision analysis with evidence and domain knowledge
+- Priority and risk assessments informed by past experiences
+- Suggested ADR titles and content with improved quality
+- Recommendations for documentation strategy based on learning
 `,
             },
           ],
@@ -76,7 +161,107 @@ The AI will identify implicit architectural decisions in your codebase and provi
           );
         }
 
-        const result = await analyzeCodeChanges(
+        let enhancedPrompt = '';
+        let enhancementInfo = '';
+
+        // Apply enhancements if enabled
+        if (enhancedMode && (knowledgeEnhancement || learningEnabled)) {
+          let knowledgeContext = '';
+
+          // Generate domain knowledge for code change analysis
+          if (knowledgeEnhancement) {
+            try {
+              const knowledgeResult = await generateArchitecturalKnowledge({
+                projectPath: projectPath || process.cwd(),
+                technologies: [],
+                patterns: [],
+                projectType: 'code-change-analysis'
+              }, {
+                domains: ['api-design', 'performance-optimization'],
+                depth: 'basic',
+                cacheEnabled: true
+              });
+
+              knowledgeContext = `\n## Knowledge Enhancement\n${knowledgeResult.prompt}\n`;
+            } catch (error) {
+              console.error('[WARNING] Knowledge generation failed:', error);
+            }
+          }
+
+          // Apply learning if enabled
+          if (learningEnabled) {
+            try {
+              const reflexionConfig = createToolReflexionConfig('suggest_adrs', {
+                evaluationCriteria: ['task-success', 'accuracy', 'relevance']
+              });
+
+              const baseResult = await analyzeCodeChanges(
+                beforeCode,
+                afterCode,
+                changeDescription,
+                commitMessages
+              );
+
+              const reflexionResult = await executeWithReflexion({
+                prompt: baseResult.analysisPrompt + knowledgeContext,
+                instructions: baseResult.instructions,
+                context: {
+                  analysisType: 'code_changes',
+                  changeDescription,
+                  hasCommitMessages: !!commitMessages?.length
+                }
+              }, reflexionConfig);
+
+              enhancedPrompt = reflexionResult.prompt;
+              enhancementInfo = `
+## Enhancement Status
+- **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Reflexion Learning**: ✅ Applied
+- **Learning from**: Past code change analysis tasks
+
+`;
+            } catch (error) {
+              console.error('[WARNING] Reflexion enhancement failed:', error);
+              const result = await analyzeCodeChanges(
+                beforeCode,
+                afterCode,
+                changeDescription,
+                commitMessages
+              );
+              enhancedPrompt = result.analysisPrompt + knowledgeContext;
+            }
+          } else {
+            const result = await analyzeCodeChanges(
+              beforeCode,
+              afterCode,
+              changeDescription,
+              commitMessages
+            );
+            enhancedPrompt = result.analysisPrompt + knowledgeContext;
+            enhancementInfo = `
+## Enhancement Status
+- **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Reflexion Learning**: ❌ Disabled
+
+`;
+          }
+        } else {
+          const result = await analyzeCodeChanges(
+            beforeCode,
+            afterCode,
+            changeDescription,
+            commitMessages
+          );
+          enhancedPrompt = result.analysisPrompt;
+          enhancementInfo = `
+## Enhancement Status
+- **Enhanced Mode**: ❌ Disabled
+- All advanced features are disabled for this analysis
+
+`;
+        }
+
+        const baseResult = await analyzeCodeChanges(
           beforeCode,
           afterCode,
           changeDescription,
@@ -87,28 +272,30 @@ The AI will identify implicit architectural decisions in your codebase and provi
           content: [
             {
               type: 'text',
-              text: `# ADR Suggestions: Code Change Analysis
+              text: `# ADR Suggestions: Enhanced Code Change Analysis
 
-${result.instructions}
+${enhancementInfo}
 
-## AI Analysis Prompt
+${baseResult.instructions}
 
-${result.analysisPrompt}
+## Enhanced AI Analysis Prompt
+
+${enhancedPrompt}
 
 ## Next Steps
 
-1. **Submit the prompt** to an AI agent for change analysis
+1. **Submit the enhanced prompt** to an AI agent for change analysis
 2. **Review the identified decisions** reflected in the code changes
 3. **Document significant decisions** as ADRs using the generation tool
 4. **Follow up with development team** for any clarification questions
 
 ## Expected Output
 
-The AI will analyze the code changes and provide:
-- Architectural decisions reflected in the changes
-- Change motivation and context analysis
-- Impact and risk assessment
-- Recommendations for documentation
+The enhanced AI analysis will provide:
+- Architectural decisions reflected in the changes with domain context
+- Change motivation and context analysis informed by past experiences
+- Impact and risk assessment with improved accuracy
+- Recommendations for documentation based on learning patterns
 `,
             },
           ],
@@ -116,28 +303,133 @@ The AI will analyze the code changes and provide:
       }
 
       case 'comprehensive': {
+        let enhancedPrompt = '';
+        let knowledgeContext = '';
+        let reflexionContext = '';
+
+        // Step 1: Generate domain-specific knowledge if enabled
+        if (knowledgeEnhancement) {
+          try {
+            const knowledgeResult = await generateArchitecturalKnowledge({
+              projectPath,
+              technologies: [], // Will be auto-detected from project
+              patterns: [],
+              projectType: 'software-architecture',
+              existingAdrs: existingAdrs || []
+            }, {
+              domains: ['api-design', 'database-design', 'microservices'],
+              depth: 'intermediate',
+              cacheEnabled: true
+            });
+
+            knowledgeContext = `
+## Domain-Specific Knowledge Enhancement
+
+The following architectural knowledge has been generated to enhance ADR suggestions:
+
+${knowledgeResult.prompt}
+
+---
+`;
+          } catch (error) {
+            console.error('[WARNING] Knowledge generation failed:', error);
+            knowledgeContext = '<!-- Knowledge generation unavailable -->\n';
+          }
+        }
+
+        // Step 2: Apply Reflexion learning if enabled
+        if (learningEnabled) {
+          try {
+            // Retrieve relevant memories from past ADR suggestion tasks
+            const memoryResult = await retrieveRelevantMemories(
+              'adr-suggestion',
+              { projectPath, analysisType: 'comprehensive', existingAdrs },
+              { maxResults: 5, relevanceThreshold: 0.6 }
+            );
+
+            reflexionContext = `
+## Learning from Past Experiences
+
+The following insights from past ADR suggestion tasks will inform this analysis:
+
+${memoryResult.prompt}
+
+---
+`;
+          } catch (error) {
+            console.error('[WARNING] Reflexion memory retrieval failed:', error);
+            reflexionContext = '<!-- Learning context unavailable -->\n';
+          }
+        }
+
+        // Step 3: Get the base analysis
         const implicitResult = await analyzeImplicitDecisions(projectPath, existingAdrs);
+
+        // Step 4: Apply Reflexion execution if learning is enabled
+        if (learningEnabled) {
+          try {
+            const reflexionConfig = createToolReflexionConfig('suggest_adrs', {
+              reflectionDepth: 'detailed',
+              evaluationCriteria: ['task-success', 'relevance', 'clarity'],
+              learningRate: 0.7
+            });
+
+            const reflexionResult = await executeWithReflexion({
+              prompt: implicitResult.analysisPrompt,
+              instructions: implicitResult.instructions,
+              context: {
+                projectPath,
+                analysisType: 'comprehensive',
+                existingAdrs,
+                knowledgeEnhanced: knowledgeEnhancement,
+                learningEnabled: true
+              }
+            }, reflexionConfig);
+
+            enhancedPrompt = `
+## Enhanced Analysis with Learning
+
+${reflexionResult.prompt}
+
+---
+`;
+          } catch (error) {
+            console.error('[WARNING] Reflexion execution failed:', error);
+            enhancedPrompt = implicitResult.analysisPrompt;
+          }
+        } else {
+          enhancedPrompt = implicitResult.analysisPrompt;
+        }
 
         return {
           content: [
             {
               type: 'text',
-              text: `# ADR Suggestions: Comprehensive Analysis
+              text: `# ADR Suggestions: Enhanced Comprehensive Analysis
 
-This comprehensive analysis will identify all potential ADRs for your project.
+This enhanced analysis uses advanced prompting techniques to provide superior ADR suggestions.
+
+## Enhancement Features
+- **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **Reflexion Learning**: ${learningEnabled ? '✅ Enabled' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 
 ## Project Analysis
 - **Project Path**: ${projectPath}
 - **Existing ADRs**: ${existingAdrs?.length || 0} ADRs provided
-- **Analysis Type**: Comprehensive (AI-driven file scanning)
+- **Analysis Type**: Comprehensive (AI-driven with enhancements)
+
+${knowledgeContext}
+
+${reflexionContext}
 
 ## AI Analysis Instructions
 
 ${implicitResult.instructions}
 
-## AI Analysis Prompt
+## Enhanced AI Analysis Prompt
 
-${implicitResult.analysisPrompt}
+${enhancedPrompt}
 
 ## Recommended Workflow
 
@@ -224,6 +516,7 @@ export async function generateAdrFromDecision(args: {
     const { generateAdrFromDecision, generateNextAdrNumber, suggestAdrFilename } = await import(
       '../utils/adr-suggestions.js'
     );
+    const { ensureDirectory, writeFile } = await import('../utils/file-system.js');
 
     if (
       !decisionData.title ||
@@ -244,11 +537,15 @@ export async function generateAdrFromDecision(args: {
     const filename = suggestAdrFilename(decisionData.title, adrNumber);
     const fullPath = `${adrDirectory}/${filename}`;
 
+    // Generate file creation prompts
+    const ensureDirPrompt = await ensureDirectory(adrDirectory);
+    const writeFilePrompt = await writeFile(fullPath, '[ADR_CONTENT_PLACEHOLDER]');
+
     return {
       content: [
         {
           type: 'text',
-          text: `# ADR Generation: ${decisionData.title}
+          text: `# ADR Generation with File Creation: ${decisionData.title}
 
 ${result.instructions}
 
@@ -258,21 +555,42 @@ ${result.instructions}
 - **Full Path**: ${fullPath}
 - **Template Format**: ${templateFormat.toUpperCase()}
 
-## AI Generation Prompt
+## Step 1: Create ADR Directory
+${ensureDirPrompt.prompt}
+
+## Step 2: Generate ADR Content
 
 ${result.generationPrompt}
 
-## Next Steps
+## Step 3: Save ADR to File
 
-1. **Submit the generation prompt** to an AI agent for ADR creation
-2. **Review the generated ADR** for completeness and accuracy
-3. **Save the ADR** to the suggested location: \`${fullPath}\`
-4. **Update ADR index** and notify relevant stakeholders
-5. **Schedule review** with architecture team
+After generating the ADR content from Step 2, create the ADR file:
+
+${writeFilePrompt.prompt}
+
+**Important**: Replace \`[ADR_CONTENT_PLACEHOLDER]\` with the actual generated ADR content from Step 2.
+
+## File Creation Instructions
+
+The AI agent must:
+1. **Execute directory creation** from Step 1 to ensure ${adrDirectory} exists
+2. **Generate ADR content** using the prompt from Step 2
+3. **Create the ADR file** at: ${fullPath}
+4. **Include all generated content** in the file (title, context, decision, consequences, etc.)
+5. **Confirm file creation** and provide the file location
+
+## Next Steps After File Creation
+
+1. **Verify ADR file** was created successfully at: \`${fullPath}\`
+2. **Update ADR index** and notify relevant stakeholders
+3. **Schedule review** with architecture team
+4. **Link to related ADRs** and documentation
 
 ## Quality Checklist
 
 Before finalizing the ADR, ensure:
+- [ ] **Directory Created**: ${adrDirectory} directory exists
+- [ ] **File Created**: ADR file saved at ${fullPath}
 - [ ] **Title** is clear and descriptive
 - [ ] **Context** explains the problem and constraints
 - [ ] **Decision** is specific and actionable
@@ -281,9 +599,19 @@ Before finalizing the ADR, ensure:
 - [ ] **Evidence** supports the decision (if applicable)
 - [ ] **Format** follows team standards
 - [ ] **Numbering** is correct and sequential
+- [ ] **File Permissions** are appropriate for team access
+
+## Security and Validation
+
+The file creation process includes:
+- **Path Validation**: Ensures ${fullPath} is within project scope
+- **Directory Security**: Validates ${adrDirectory} is safe for file creation
+- **Content Validation**: Verifies ADR content is properly formatted
+- **User Confirmation**: Requires approval before file creation
 
 ## Integration Tips
 
+- Verify the ADR file was created successfully
 - Add the ADR to your project's ADR index
 - Link to related ADRs and documentation
 - Include implementation tasks in project planning

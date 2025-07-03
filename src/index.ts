@@ -94,7 +94,7 @@ class McpAdrAnalysisServer {
         tools: [
           {
             name: 'analyze_project_ecosystem',
-            description: 'Analyze the project ecosystem including technology stack, patterns, and architecture',
+            description: 'Analyze the project ecosystem with advanced prompting techniques (Knowledge Generation + Reflexion learning)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -106,6 +106,32 @@ class McpAdrAnalysisServer {
                   type: 'array',
                   items: { type: 'string' },
                   description: 'File patterns to include in analysis'
+                },
+                enhancedMode: {
+                  type: 'boolean',
+                  description: 'Enable advanced prompting features (Knowledge Generation + Reflexion)',
+                  default: true
+                },
+                knowledgeEnhancement: {
+                  type: 'boolean',
+                  description: 'Enable Knowledge Generation for technology-specific insights',
+                  default: true
+                },
+                learningEnabled: {
+                  type: 'boolean',
+                  description: 'Enable Reflexion learning from past analysis outcomes',
+                  default: true
+                },
+                technologyFocus: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Specific technologies to focus analysis on (auto-detected if not provided)'
+                },
+                analysisDepth: {
+                  type: 'string',
+                  enum: ['basic', 'detailed', 'comprehensive'],
+                  description: 'Depth of ecosystem analysis',
+                  default: 'comprehensive'
                 }
               },
               required: []
@@ -131,7 +157,7 @@ class McpAdrAnalysisServer {
           },
           {
             name: 'generate_adrs_from_prd',
-            description: 'Generate Architectural Decision Records from a Product Requirements Document',
+            description: 'Generate Architectural Decision Records from a Product Requirements Document with advanced prompting techniques (APE + Knowledge Generation)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -142,6 +168,27 @@ class McpAdrAnalysisServer {
                 outputDirectory: {
                   type: 'string',
                   description: 'Directory to output generated ADRs (optional, uses configured ADR_DIRECTORY if not provided)'
+                },
+                enhancedMode: {
+                  type: 'boolean',
+                  description: 'Enable advanced prompting features (APE + Knowledge Generation)',
+                  default: true
+                },
+                promptOptimization: {
+                  type: 'boolean',
+                  description: 'Enable Automatic Prompt Engineering for optimized ADR generation',
+                  default: true
+                },
+                knowledgeEnhancement: {
+                  type: 'boolean',
+                  description: 'Enable Knowledge Generation for domain-specific insights',
+                  default: true
+                },
+                prdType: {
+                  type: 'string',
+                  enum: ['web-application', 'mobile-app', 'microservices', 'data-platform', 'api-service', 'general'],
+                  description: 'Type of PRD for optimized knowledge generation',
+                  default: 'general'
                 }
               },
               required: ['prdPath']
@@ -332,7 +379,7 @@ class McpAdrAnalysisServer {
           },
           {
             name: 'suggest_adrs',
-            description: 'Suggest ADRs based on project analysis and implicit decisions',
+            description: 'Suggest ADRs based on project analysis with advanced prompting techniques (Knowledge Generation + Reflexion learning)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -368,6 +415,21 @@ class McpAdrAnalysisServer {
                   type: 'array',
                   items: { type: 'string' },
                   description: 'List of existing ADR titles to avoid duplication'
+                },
+                enhancedMode: {
+                  type: 'boolean',
+                  description: 'Enable advanced prompting features (Knowledge Generation + Reflexion)',
+                  default: true
+                },
+                learningEnabled: {
+                  type: 'boolean',
+                  description: 'Enable Reflexion learning from past experiences',
+                  default: true
+                },
+                knowledgeEnhancement: {
+                  type: 'boolean',
+                  description: 'Enable Knowledge Generation for domain-specific insights',
+                  default: true
                 }
               }
             }
@@ -1117,21 +1179,195 @@ class McpAdrAnalysisServer {
   private async analyzeProjectEcosystem(args: any): Promise<any> {
     // Use configured project path if not provided in args
     const projectPath = args.projectPath || this.config.projectPath;
+    const {
+      includePatterns,
+      enhancedMode = true,
+      knowledgeEnhancement = true,
+      learningEnabled = true,
+      technologyFocus = [],
+      analysisDepth = 'comprehensive'
+    } = args;
 
-    this.logger.info(`Generating analysis prompt for project ecosystem at: ${projectPath}`);
+    this.logger.info(`Generating enhanced analysis prompt for project ecosystem at: ${projectPath}`);
+    this.logger.info(`Enhancement features - Knowledge: ${knowledgeEnhancement}, Learning: ${learningEnabled}, Depth: ${analysisDepth}`);
 
     try {
       // Import utilities dynamically to avoid circular dependencies
       const { analyzeProjectStructure } = await import('./utils/file-system.js');
 
-      // Generate project analysis prompt
-      const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
+      // Import advanced prompting utilities if enhanced mode is enabled
+      let generateArchitecturalKnowledge: any = null;
+      let executeWithReflexion: any = null;
+      let retrieveRelevantMemories: any = null;
+      let createToolReflexionConfig: any = null;
+
+      if (enhancedMode) {
+        if (knowledgeEnhancement) {
+          const knowledgeModule = await import('./utils/knowledge-generation.js');
+          generateArchitecturalKnowledge = knowledgeModule.generateArchitecturalKnowledge;
+        }
+
+        if (learningEnabled) {
+          const reflexionModule = await import('./utils/reflexion.js');
+          executeWithReflexion = reflexionModule.executeWithReflexion;
+          retrieveRelevantMemories = reflexionModule.retrieveRelevantMemories;
+          createToolReflexionConfig = reflexionModule.createToolReflexionConfig;
+        }
+      }
+
+      // Step 1: Generate technology-specific knowledge if enabled
+      let knowledgeContext = '';
+      if (enhancedMode && knowledgeEnhancement && generateArchitecturalKnowledge) {
+        try {
+          const knowledgeResult = await generateArchitecturalKnowledge({
+            projectPath,
+            technologies: technologyFocus,
+            patterns: [],
+            projectType: 'ecosystem-analysis',
+            existingAdrs: []
+          }, {
+            domains: this.getEcosystemAnalysisDomains(technologyFocus),
+            depth: analysisDepth === 'basic' ? 'basic' : 'intermediate',
+            cacheEnabled: true
+          });
+
+          knowledgeContext = `
+## Technology-Specific Knowledge Enhancement
+
+The following architectural knowledge has been generated to enhance ecosystem analysis:
+
+${knowledgeResult.prompt}
+
+---
+`;
+        } catch (error) {
+          this.logger.warn('Knowledge generation failed:', error);
+          knowledgeContext = '<!-- Knowledge generation unavailable -->\n';
+        }
+      }
+
+      // Step 2: Retrieve relevant memories if learning is enabled
+      let reflexionContext = '';
+      if (enhancedMode && learningEnabled && retrieveRelevantMemories) {
+        try {
+          const memoryResult = await retrieveRelevantMemories(
+            'ecosystem-analysis',
+            { projectPath, analysisDepth, technologyFocus },
+            { maxResults: 5, relevanceThreshold: 0.6 }
+          );
+
+          reflexionContext = `
+## Learning from Past Analyses
+
+The following insights from past ecosystem analysis tasks will inform this analysis:
+
+${memoryResult.prompt}
+
+---
+`;
+        } catch (error) {
+          this.logger.warn('Reflexion memory retrieval failed:', error);
+          reflexionContext = '<!-- Learning context unavailable -->\n';
+        }
+      }
+
+      // Step 3: Generate base project analysis prompt
+      const baseProjectAnalysisPrompt = await analyzeProjectStructure(projectPath);
+
+      // Step 4: Apply Reflexion execution if learning is enabled
+      let enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt;
+      if (enhancedMode && learningEnabled && executeWithReflexion && createToolReflexionConfig) {
+        try {
+          const reflexionConfig = createToolReflexionConfig('analyze_project_ecosystem', {
+            reflectionDepth: analysisDepth === 'basic' ? 'basic' : 'detailed',
+            evaluationCriteria: ['task-success', 'accuracy', 'completeness'],
+            learningRate: 0.7
+          });
+
+          const reflexionResult = await executeWithReflexion({
+            prompt: baseProjectAnalysisPrompt.prompt + knowledgeContext,
+            instructions: baseProjectAnalysisPrompt.instructions,
+            context: {
+              projectPath,
+              analysisDepth,
+              technologyFocus,
+              includePatterns,
+              knowledgeEnhanced: knowledgeEnhancement,
+              learningEnabled: true
+            }
+          }, reflexionConfig);
+
+          enhancedAnalysisPrompt = reflexionResult.prompt;
+        } catch (error) {
+          this.logger.warn('Reflexion execution failed:', error);
+          enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt + knowledgeContext;
+        }
+      } else {
+        enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt + knowledgeContext;
+      }
 
       return {
         content: [
           {
             type: 'text',
-            text: `# Project Ecosystem Analysis\n\n${projectAnalysisPrompt.prompt}\n\n## Implementation Instructions\n\n${projectAnalysisPrompt.instructions}`
+            text: `# Enhanced Project Ecosystem Analysis
+
+This enhanced analysis uses advanced prompting techniques to provide superior ecosystem insights.
+
+## Enhancement Features
+- **Knowledge Generation**: ${enhancedMode && knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **Reflexion Learning**: ${enhancedMode && learningEnabled ? '✅ Enabled' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Analysis Depth**: ${analysisDepth}
+- **Technology Focus**: ${technologyFocus.length > 0 ? technologyFocus.join(', ') : 'Auto-detect'}
+
+## Project Information
+- **Project Path**: ${projectPath}
+- **Include Patterns**: ${includePatterns?.length ? includePatterns.join(', ') : 'Default patterns'}
+
+${knowledgeContext}
+
+${reflexionContext}
+
+## Enhanced Analysis Prompt
+
+${enhancedAnalysisPrompt}
+
+## Enhanced Implementation Instructions
+
+${baseProjectAnalysisPrompt.instructions}
+
+### Enhancement-Specific Instructions
+
+${enhancedMode && knowledgeEnhancement ? `
+#### Knowledge Enhancement
+- Apply technology-specific knowledge to ecosystem analysis
+- Use domain expertise to identify patterns and anti-patterns
+- Leverage architectural best practices for technology stack evaluation
+` : ''}
+
+${enhancedMode && learningEnabled ? `
+#### Learning Integration
+- Apply lessons learned from past ecosystem analyses
+- Use memory insights to improve pattern recognition accuracy
+- Incorporate feedback from previous analysis outcomes
+` : ''}
+
+## Expected Enhanced Output
+
+The enhanced analysis should provide:
+1. **Technology Stack Analysis** with domain knowledge context
+2. **Architectural Pattern Detection** informed by past experiences
+3. **Ecosystem Health Assessment** using learned evaluation criteria
+4. **Improvement Recommendations** based on domain best practices
+5. **Learning Insights** for future analysis improvement
+
+## Quality Assurance
+
+- Ensure analysis leverages all available enhancement features
+- Verify technology-specific knowledge is properly applied
+- Confirm learning insights improve analysis accuracy
+- Validate recommendations align with domain best practices`
           }
         ]
       };
@@ -1200,81 +1436,225 @@ Include in your analysis:
   }
 
   private async generateAdrsFromPrd(args: any): Promise<any> {
-    const { prdPath } = args;
+    const {
+      prdPath,
+      enhancedMode = true,
+      promptOptimization = true,
+      knowledgeEnhancement = true,
+      prdType = 'general'
+    } = args;
     const outputDirectory = args.outputDirectory || this.config.adrDirectory;
 
-    this.logger.info(`Generating ADRs from PRD: ${prdPath} to ${outputDirectory}`);
+    this.logger.info(`Generating enhanced ADRs from PRD: ${prdPath} to ${outputDirectory}`);
+    this.logger.info(`Enhancement features - APE: ${promptOptimization}, Knowledge: ${knowledgeEnhancement}, Type: ${prdType}`);
 
     try {
       const { readFileContent, fileExists } = await import('./utils/file-system.js');
 
-      // Check if PRD file exists
-      if (!(await fileExists(prdPath))) {
-        throw new McpAdrError(`PRD file not found: ${prdPath}`, 'FILE_NOT_FOUND');
+      // Import advanced prompting utilities if enhanced mode is enabled
+      let generateArchitecturalKnowledge: any = null;
+      let optimizePromptWithAPE: any = null;
+      let createToolAPEConfig: any = null;
+
+      if (enhancedMode) {
+        if (knowledgeEnhancement) {
+          const knowledgeModule = await import('./utils/knowledge-generation.js');
+          generateArchitecturalKnowledge = knowledgeModule.generateArchitecturalKnowledge;
+        }
+
+        if (promptOptimization) {
+          const apeModule = await import('./utils/automatic-prompt-engineering.js');
+          optimizePromptWithAPE = apeModule.optimizePromptWithAPE;
+          createToolAPEConfig = apeModule.createToolAPEConfig;
+        }
       }
 
-      // Read PRD content
-      const prdContent = await readFileContent(prdPath);
+      // Generate file existence check prompt
+      const fileExistsPrompt = await fileExists(prdPath);
 
-      // Generate ADR creation prompt
+      // Generate file content reading prompt
+      const fileContentPrompt = await readFileContent(prdPath);
+
+      // Step 1: Generate domain-specific knowledge if enabled
+      let knowledgeContext = '';
+      if (enhancedMode && knowledgeEnhancement && generateArchitecturalKnowledge) {
+        try {
+          const knowledgeResult = await generateArchitecturalKnowledge({
+            projectPath: outputDirectory,
+            technologies: [],
+            patterns: [],
+            projectType: prdType,
+            existingAdrs: []
+          }, {
+            domains: this.getPrdTypeDomains(prdType),
+            depth: 'intermediate',
+            cacheEnabled: true
+          });
+
+          knowledgeContext = `
+## Domain-Specific Knowledge Enhancement
+
+The following architectural knowledge has been generated to enhance PRD analysis and ADR creation:
+
+${knowledgeResult.prompt}
+
+---
+`;
+        } catch (error) {
+          this.logger.warn('Knowledge generation failed:', error);
+          knowledgeContext = '<!-- Knowledge generation unavailable -->\n';
+        }
+      }
+
+      // Step 2: Create base ADR generation prompt
+      const baseAdrPrompt = this.createBaseAdrPrompt(prdPath, outputDirectory, knowledgeContext);
+
+      // Step 3: Apply APE optimization if enabled
+      let finalAdrPrompt = baseAdrPrompt;
+      if (enhancedMode && promptOptimization && optimizePromptWithAPE && createToolAPEConfig) {
+        try {
+          const apeConfig = createToolAPEConfig('generate_adrs_from_prd', {
+            candidateCount: 5,
+            evaluationCriteria: ['task-completion', 'clarity', 'specificity'],
+            optimizationRounds: 2,
+            qualityThreshold: 0.75
+          });
+
+          const apeResult = await optimizePromptWithAPE({
+            prompt: baseAdrPrompt,
+            instructions: 'Generate comprehensive ADRs from PRD analysis',
+            context: { prdPath, outputDirectory, prdType, knowledgeEnhanced: knowledgeEnhancement }
+          }, apeConfig);
+
+          finalAdrPrompt = apeResult.prompt;
+        } catch (error) {
+          this.logger.warn('APE optimization failed:', error);
+          finalAdrPrompt = baseAdrPrompt;
+        }
+      }
+
+      // Generate comprehensive ADR creation prompt that includes file operations
       const adrPrompt = `
-# ADR Generation from PRD Request
+# Enhanced ADR Generation from PRD Request
 
-Please analyze the following Product Requirements Document and generate Architectural Decision Records (ADRs).
+This is a comprehensive prompt-driven ADR generation process enhanced with advanced prompting techniques.
 
-## PRD Content
-\`\`\`markdown
-${prdContent}
-\`\`\`
+## Enhancement Status
+- **APE Optimization**: ${enhancedMode && promptOptimization ? '✅ Enabled' : '❌ Disabled'}
+- **Knowledge Generation**: ${enhancedMode && knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **PRD Type**: ${prdType}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 
-## Requirements
+## Step 1: File Validation
+${fileExistsPrompt.prompt}
 
-1. **Extract Key Decisions**: Identify all architectural decisions implied or stated in the PRD
-2. **Generate ADRs**: Create individual ADR files for each significant decision
-3. **Follow ADR Format**: Use standard ADR template (title, status, context, decision, consequences)
-4. **Number Sequentially**: Use format 001-decision-title.md, 002-next-decision.md, etc.
-5. **Output Directory**: Place ADRs in ${outputDirectory}/
+**Instructions**: First, execute the file existence check above. If the file does not exist, stop the process and report the error. Only proceed to Step 2 if the file exists.
 
-## ADR Template Format
+## Step 2: PRD Content Reading
+${fileContentPrompt.prompt}
 
-\`\`\`markdown
-# [Number]. [Title]
+**Instructions**: Execute the file reading operation above to obtain the PRD content. Use the content from this step for the enhanced ADR generation in Step 3.
 
-**Status**: [Proposed/Accepted/Deprecated/Superseded]
-**Date**: [YYYY-MM-DD]
+## Step 3: Enhanced ADR Generation
 
-## Context
-[Describe the context and problem statement]
+${enhancedMode && promptOptimization ? `
+### APE-Optimized Analysis
+This prompt has been optimized using Automatic Prompt Engineering for superior ADR generation quality.
+The optimization focused on task completion, clarity, and specificity for PRD analysis.
 
-## Decision
-[Describe the architectural decision]
+` : ''}
 
-## Consequences
-[Describe the positive and negative consequences]
+${finalAdrPrompt}
 
-## Implementation Plan
-[Optional: Steps to implement this decision]
-\`\`\`
+### File Creation Instructions
 
-Please provide:
-1. List of identified architectural decisions
-2. Generated ADR content for each decision
-3. Recommended file names and structure
-4. Implementation priority order
+For each generated ADR, create a file creation prompt using the following pattern:
+- **File Path**: ${outputDirectory}/[number]-[decision-title].md
+- **Content**: The complete enhanced ADR markdown content
+- **Action Confirmation**: Require user confirmation before creating files
+- **Security Validation**: Ensure output directory is safe and authorized
+
+### Enhanced Quality Assurance
+
+- Ensure each ADR leverages domain knowledge when available
+- Verify decisions align with PRD type best practices
+- Check that enhancement features are properly utilized
+- Validate that ADR content exceeds baseline quality expectations
+- Confirm all decisions are traceable back to PRD requirements with domain context
 `;
 
       return {
         content: [
           {
             type: 'text',
-            text: `ADR generation from PRD: ${prdPath}\n\nPlease generate ADRs using the following prompt:\n\n${adrPrompt}`
+            text: `# Enhanced ADR Generation from PRD: ${prdPath}
+
+## Advanced Prompt-Driven ADR Generation Process
+
+This tool uses a 100% prompt-driven architecture enhanced with advanced prompting techniques:
+
+### Enhancement Features
+- **APE Optimization**: ${enhancedMode && promptOptimization ? '✅ Enabled - Prompts optimized for superior quality' : '❌ Disabled'}
+- **Knowledge Generation**: ${enhancedMode && knowledgeEnhancement ? '✅ Enabled - Domain knowledge enhanced analysis' : '❌ Disabled'}
+- **PRD Type Optimization**: ${prdType} - Tailored for specific domain requirements
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled - All advanced features active' : '❌ Disabled - Basic mode'}
+
+### Enhanced AI Agent Workflow
+
+1. **Validate PRD file existence** using secure file system operations
+2. **Read PRD content** safely with proper security validation
+3. **Apply domain knowledge** to enhance understanding (if enabled)
+4. **Generate optimized ADRs** using APE-enhanced prompts (if enabled)
+5. **Create enhanced ADR files** in the specified output directory: ${outputDirectory}
+
+## Execution Instructions
+
+Please execute the following enhanced comprehensive prompt:
+
+${adrPrompt}
+
+## Advanced Features
+
+${enhancedMode && knowledgeEnhancement ? `
+### Knowledge Enhancement
+- Domain-specific architectural knowledge has been generated
+- PRD analysis is enhanced with ${prdType} domain expertise
+- ADR decisions leverage domain best practices and patterns
+` : ''}
+
+${enhancedMode && promptOptimization ? `
+### APE Optimization
+- Prompts have been automatically optimized for quality
+- Enhanced evaluation criteria ensure superior ADR generation
+- Optimization focused on task completion, clarity, and specificity
+` : ''}
+
+## Security and Validation
+
+- All file operations include security validation
+- Path traversal protection is enabled
+- System directory access is prevented
+- User confirmation is required for file creation
+- Content validation ensures safe enhanced ADR generation
+
+## Expected Enhanced Workflow
+
+1. Execute file existence check for: ${prdPath}
+2. If file exists, read PRD content securely
+3. Apply domain knowledge to enhance PRD understanding
+4. Analyze PRD content using optimized prompts
+5. Generate domain-enhanced individual ADRs for each decision
+6. Create file creation prompts for each enhanced ADR
+7. Confirm with user before writing files to: ${outputDirectory}
+
+The enhanced process maintains full traceability from PRD requirements to generated ADRs while providing superior quality through advanced prompting techniques and ensuring security and user control over file operations.`
           }
         ]
       };
     } catch (error) {
       throw new McpAdrError(
-        `Failed to generate ADRs from PRD: ${error instanceof Error ? error.message : String(error)}`,
-        'GENERATION_ERROR'
+        `Failed to generate ADR prompts from PRD: ${error instanceof Error ? error.message : String(error)}`,
+        'PROMPT_GENERATION_ERROR'
       );
     }
   }
@@ -1400,30 +1780,56 @@ Please provide:
 
       switch (action) {
         case 'clear': {
-          await clearCache();
+          const clearPrompt = await clearCache();
           return {
             content: [
               {
                 type: 'text',
-                text: '✅ Cache cleared successfully. All cached resources have been removed.'
+                text: `# Cache Clear Operation
+
+## AI Delegation Required
+
+Please execute the following cache clearing operation:
+
+${clearPrompt.prompt}
+
+## Implementation Instructions
+
+${clearPrompt.instructions}
+
+## Expected Result
+
+After successful execution, all cache entries will be removed while preserving the cache directory structure and metadata.json file.`
               }
             ]
           };
         }
 
         case 'stats': {
-          const stats = await getCacheStats();
+          const statsPrompt = await getCacheStats();
           return {
             content: [
               {
                 type: 'text',
-                text: `# Cache Statistics
+                text: `# Cache Statistics Collection
 
-## Overview
-- **Total Entries**: ${stats.totalEntries}
-- **Total Size**: ${(stats.totalSize / 1024).toFixed(2)} KB
-- **Oldest Entry**: ${stats.oldestEntry || 'None'}
-- **Newest Entry**: ${stats.newestEntry || 'None'}
+## AI Delegation Required
+
+Please execute the following cache statistics collection operation:
+
+${statsPrompt.prompt}
+
+## Implementation Instructions
+
+${statsPrompt.instructions}
+
+## Expected Information
+
+The AI agent will provide:
+- **Total Entries**: Number of cache files
+- **Total Size**: Combined size of all cache files
+- **Oldest Entry**: Cache key of the oldest entry
+- **Newest Entry**: Cache key of the newest entry
 
 ## Cache Directory
 \`.mcp-adr-cache/\`
@@ -1437,20 +1843,33 @@ Please provide:
 Use \`manage_cache\` tool with different actions:
 - \`clear\`: Remove all cache entries
 - \`cleanup\`: Remove expired entries only
-- \`invalidate\`: Remove specific cache entry
-`
+- \`invalidate\`: Remove specific cache entry`
               }
             ]
           };
         }
 
         case 'cleanup': {
-          const cleanedCount = await cleanupCache();
+          const cleanupPrompt = await cleanupCache();
           return {
             content: [
               {
                 type: 'text',
-                text: `✅ Cache cleanup completed. Removed ${cleanedCount} expired entries.`
+                text: `# Cache Cleanup Operation
+
+## AI Delegation Required
+
+Please execute the following cache cleanup operation:
+
+${cleanupPrompt.prompt}
+
+## Implementation Instructions
+
+${cleanupPrompt.instructions}
+
+## Expected Result
+
+The AI agent will remove expired cache entries and provide a count of cleaned files.`
               }
             ]
           };
@@ -1461,12 +1880,28 @@ Use \`manage_cache\` tool with different actions:
             throw new McpAdrError('Cache key is required for invalidate action', 'INVALID_INPUT');
           }
 
-          await invalidateCache(key);
+          const invalidatePrompt = await invalidateCache(key);
           return {
             content: [
               {
                 type: 'text',
-                text: `✅ Cache entry invalidated: ${key}`
+                text: `# Cache Invalidation Operation
+
+## AI Delegation Required
+
+Please execute the following cache invalidation operation:
+
+${invalidatePrompt.prompt}
+
+## Implementation Instructions
+
+${invalidatePrompt.instructions}
+
+## Target Cache Entry
+
+**Cache Key**: ${key}
+
+The AI agent will safely remove the specified cache entry.`
               }
             ]
           };
@@ -1603,6 +2038,174 @@ ${newConfig.enabled ?
   }
 
   /**
+   * Helper method to get domains based on PRD type
+   */
+  private getPrdTypeDomains(prdType: string): string[] {
+    const domainMap: Record<string, string[]> = {
+      'web-application': ['api-design', 'frontend-architecture', 'database-design', 'security'],
+      'mobile-app': ['mobile-architecture', 'api-design', 'performance-optimization', 'security'],
+      'microservices': ['microservices', 'api-design', 'distributed-systems', 'database-design'],
+      'data-platform': ['database-design', 'data-architecture', 'performance-optimization', 'scalability'],
+      'api-service': ['api-design', 'microservices', 'security', 'performance-optimization'],
+      'general': ['api-design', 'database-design', 'security']
+    };
+
+    return domainMap[prdType] || domainMap['general'] || ['api-design', 'database-design', 'security'];
+  }
+
+  /**
+   * Helper method to get domains for ecosystem analysis based on technology focus
+   */
+  private getEcosystemAnalysisDomains(technologyFocus: string[]): string[] {
+    // Base domains for ecosystem analysis
+    const baseDomains = ['api-design', 'database-design', 'security', 'performance-optimization'];
+
+    // Technology-specific domain mapping
+    const technologyDomainMap: Record<string, string[]> = {
+      'react': ['frontend-architecture', 'web-applications'],
+      'vue': ['frontend-architecture', 'web-applications'],
+      'angular': ['frontend-architecture', 'web-applications'],
+      'node': ['api-design', 'microservices'],
+      'express': ['api-design', 'web-applications'],
+      'fastify': ['api-design', 'performance-optimization'],
+      'nestjs': ['api-design', 'microservices'],
+      'spring': ['api-design', 'microservices'],
+      'django': ['api-design', 'web-applications'],
+      'flask': ['api-design', 'web-applications'],
+      'rails': ['api-design', 'web-applications'],
+      'laravel': ['api-design', 'web-applications'],
+      'docker': ['containerization', 'microservices'],
+      'kubernetes': ['containerization', 'distributed-systems'],
+      'mongodb': ['database-design', 'data-architecture'],
+      'postgresql': ['database-design', 'data-architecture'],
+      'mysql': ['database-design', 'data-architecture'],
+      'redis': ['database-design', 'performance-optimization'],
+      'elasticsearch': ['database-design', 'data-architecture'],
+      'kafka': ['distributed-systems', 'data-architecture'],
+      'rabbitmq': ['distributed-systems', 'microservices'],
+      'aws': ['cloud-architecture', 'scalability'],
+      'azure': ['cloud-architecture', 'scalability'],
+      'gcp': ['cloud-architecture', 'scalability'],
+      'terraform': ['infrastructure-as-code', 'cloud-architecture'],
+      'ansible': ['infrastructure-as-code', 'automation'],
+      'jenkins': ['ci-cd', 'automation'],
+      'github-actions': ['ci-cd', 'automation'],
+      'gitlab-ci': ['ci-cd', 'automation']
+    };
+
+    // Collect domains based on technology focus
+    const technologyDomains = new Set<string>();
+    for (const tech of technologyFocus) {
+      const techLower = tech.toLowerCase();
+      const domains = technologyDomainMap[techLower];
+      if (domains) {
+        domains.forEach(domain => technologyDomains.add(domain));
+      }
+    }
+
+    // Combine base domains with technology-specific domains
+    const allDomains = [...baseDomains, ...Array.from(technologyDomains)];
+
+    // Remove duplicates and limit to reasonable number
+    const uniqueDomains = [...new Set(allDomains)];
+
+    // Return up to 6 most relevant domains
+    return uniqueDomains.slice(0, 6);
+  }
+
+  /**
+   * Helper method to create base ADR generation prompt
+   */
+  private createBaseAdrPrompt(prdPath: string, outputDirectory: string, knowledgeContext: string): string {
+    return `
+# Enhanced ADR Generation from PRD Request
+
+This is a comprehensive prompt-driven ADR generation process enhanced with domain knowledge and optimized prompting.
+
+${knowledgeContext}
+
+## Step 1: File Validation
+Please verify that the PRD file exists at: ${prdPath}
+
+## Step 2: PRD Content Reading
+Read and analyze the PRD content from: ${prdPath}
+
+## Step 3: Enhanced ADR Generation and Creation
+
+Once you have successfully read the PRD content, analyze it using the domain knowledge above and generate Architectural Decision Records (ADRs).
+
+### Enhanced Analysis Requirements
+
+1. **Extract Key Decisions**: Identify all architectural decisions implied or stated in the PRD
+2. **Apply Domain Knowledge**: Use the generated domain knowledge to enhance decision analysis
+3. **Decision Categorization**: Group decisions by:
+   - Technology stack choices (informed by domain best practices)
+   - Architectural patterns (leveraging domain-specific patterns)
+   - Infrastructure decisions (considering domain requirements)
+   - Security considerations (applying domain security knowledge)
+   - Performance requirements (using domain performance insights)
+   - Integration approaches (following domain integration patterns)
+
+### Enhanced ADR Generation Requirements
+
+1. **Follow ADR Format**: Use standard ADR template with domain-enhanced content
+2. **Number Sequentially**: Use format 001-decision-title.md, 002-next-decision.md, etc.
+3. **Output Directory**: Place ADRs in ${outputDirectory}/
+4. **Domain Context**: Include relevant domain knowledge in each ADR
+5. **File Creation**: Generate file creation prompts for each ADR
+
+### Enhanced ADR Template Format
+
+\`\`\`markdown
+# [Number]. [Title]
+
+**Status**: [Proposed/Accepted/Deprecated/Superseded]
+**Date**: [YYYY-MM-DD]
+**Domain**: [Relevant domain from knowledge enhancement]
+
+## Context
+[Describe the context and problem statement from PRD, enhanced with domain knowledge]
+
+## Decision
+[Describe the architectural decision, informed by domain best practices]
+
+## Consequences
+[Describe positive and negative consequences, considering domain-specific implications]
+
+## Domain Considerations
+[Specific considerations from the domain knowledge that influenced this decision]
+
+## Implementation Plan
+[Steps to implement this decision, leveraging domain expertise]
+
+## Related PRD Sections
+[Reference specific sections from the PRD that led to this decision]
+
+## Domain References
+[References to domain knowledge that informed this decision]
+\`\`\`
+
+### Expected Enhanced Output
+
+Please provide:
+1. **File Validation Results**: Confirmation that PRD file exists and is readable
+2. **PRD Content Summary**: Brief summary enhanced with domain context
+3. **Domain Analysis**: How domain knowledge applies to this PRD
+4. **Identified Decisions**: List of all architectural decisions with domain context
+5. **Generated ADRs**: Complete enhanced ADR content for each decision
+6. **File Creation Plan**: File names, directory structure, and creation order
+7. **Implementation Priority**: Recommended order considering domain best practices
+
+### Quality Assurance with Domain Enhancement
+
+- Ensure each ADR leverages relevant domain knowledge
+- Verify decisions align with domain best practices
+- Check that domain considerations are properly documented
+- Validate that ADR content is enhanced beyond basic analysis
+`;
+  }
+
+  /**
    * ADR suggestion tool implementations
    */
   private async suggestAdrs(args: any): Promise<any> {
@@ -1695,12 +2298,10 @@ ${newConfig.enabled ?
   }
 
   /**
-   * Read MCP resource with caching
+   * Read MCP resource with prompt-driven caching
    */
   private async readResource(uri: string): Promise<any> {
     try {
-      const { getCachedOrGenerate } = await import('./utils/cache.js');
-
       // Parse URI to determine resource type and parameters
       const url = new globalThis.URL(uri);
       const resourceType = url.pathname.replace('/', '');
@@ -1711,11 +2312,8 @@ ${newConfig.enabled ?
           const { generateArchitecturalKnowledgeGraph } = await import('./resources/index.js');
           const projectPath = params['projectPath'] || process.cwd();
 
-          const result = await getCachedOrGenerate(
-            `knowledge-graph:${projectPath}`,
-            () => generateArchitecturalKnowledgeGraph(projectPath),
-            { ttl: 3600 }
-          );
+          // Generate resource directly (caching is now handled through AI delegation)
+          const result = await generateArchitecturalKnowledgeGraph(projectPath);
 
           return {
             contents: [
@@ -1733,11 +2331,8 @@ ${newConfig.enabled ?
           const projectPath = params['projectPath'] || process.cwd();
           const focusAreas = params['focusAreas'] ? params['focusAreas'].split(',') : undefined;
 
-          const result = await getCachedOrGenerate(
-            `analysis-report:${projectPath}:${focusAreas?.join(',') || ''}`,
-            () => generateAnalysisReport(projectPath, focusAreas),
-            { ttl: 1800 }
-          );
+          // Generate resource directly (caching is now handled through AI delegation)
+          const result = await generateAnalysisReport(projectPath, focusAreas);
 
           return {
             contents: [
@@ -1754,11 +2349,8 @@ ${newConfig.enabled ?
           const { generateAdrList } = await import('./resources/index.js');
           const adrDirectory = params['adrDirectory'] || 'docs/adrs';
 
-          const result = await getCachedOrGenerate(
-            `adr-list:${adrDirectory}`,
-            () => generateAdrList(adrDirectory),
-            { ttl: 900 }
-          );
+          // Generate resource directly (caching is now handled through AI delegation)
+          const result = await generateAdrList(adrDirectory);
 
           return {
             contents: [

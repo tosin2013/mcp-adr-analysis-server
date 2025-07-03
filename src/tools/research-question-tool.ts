@@ -234,7 +234,7 @@ This relevance analysis provides:
           content: [
             {
               type: 'text',
-              text: `# Context-Aware Research Question Generation
+              text: `# Context-Aware Research Question Generation with File Persistence
 
 ${result.instructions}
 
@@ -242,12 +242,14 @@ ${result.instructions}
 
 ${result.questionPrompt}
 
-## Next Steps
+## File Creation Instructions
 
-1. **Submit the prompt** to an AI agent for comprehensive question generation
-2. **Parse the JSON response** to get structured research questions and plan
-3. **Review research plan** and prioritize questions
-4. **Create research tasks** using the task tracking system
+The AI agent must save the generated research questions to the docs/research directory:
+
+1. **Create Research Directory**: Execute the directory creation prompt from the instructions above
+2. **Generate Research Questions**: Process the question generation prompt to create comprehensive questions
+3. **Save to File**: Create a markdown file with all generated research questions and plans
+4. **Confirm Persistence**: Verify that the research questions file has been created successfully
 
 ## Expected Output
 
@@ -259,6 +261,7 @@ The AI will provide:
 - **Research Plan**: Phased research plan with timelines and dependencies
 - **Quality Assurance**: Quality control and validation approach
 - **Expected Impact**: Anticipated benefits and outcomes of the research
+- **File Creation Confirmation**: Confirmation that research questions have been saved to docs/research directory
 
 ## Research Excellence
 
@@ -268,6 +271,7 @@ This question generation ensures:
 - **Context Awareness**: Questions tailored to project and architectural context
 - **Priority Guidance**: Clear prioritization for research execution
 - **Quality Standards**: Built-in quality assurance and validation
+- **Persistent Documentation**: Research questions saved for future reference and tracking
 `,
             },
           ],
@@ -448,6 +452,16 @@ This comprehensive approach will provide:
 - **Quality Assurance**: Built-in quality control and validation
 - **Risk Management**: Proactive risk identification and mitigation
 - **Stakeholder Communication**: Clear reporting and communication framework
+- **Persistent Documentation**: All research questions and plans saved to docs/research directory
+
+## File Persistence Requirements
+
+**Critical**: All generated research questions and plans must be saved to the docs/research directory:
+
+1. **Directory Creation**: Ensure docs/research directory exists
+2. **File Naming**: Use timestamp-based naming (research-questions-YYYY-MM-DD.md)
+3. **Content Structure**: Include all generated questions, plans, and metadata
+4. **Confirmation**: Verify successful file creation and provide file path
 
 ## Research Excellence Standards
 
@@ -457,14 +471,16 @@ All generated research components follow these principles:
 - **Measurable**: Clear success criteria and progress metrics
 - **Prioritized**: Ranked by impact, effort, and strategic importance
 - **Quality-Focused**: Built-in quality assurance and validation processes
+- **Documented**: Properly saved and organized for future reference
 
 ## Implementation Guidance
 
 1. **Start with Relevance**: Understand existing architectural context
 2. **Generate Questions**: Create comprehensive, actionable research questions
-3. **Plan Execution**: Develop detailed task tracking and management
-4. **Monitor Progress**: Use tracking system for regular progress updates
-5. **Ensure Quality**: Apply quality assurance throughout research process
+3. **Save Documentation**: Persist all research questions to docs/research directory
+4. **Plan Execution**: Develop detailed task tracking and management
+5. **Monitor Progress**: Use tracking system for regular progress updates
+6. **Ensure Quality**: Apply quality assurance throughout research process
 `,
             },
           ],

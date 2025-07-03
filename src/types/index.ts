@@ -281,3 +281,47 @@ export interface CacheEntry<T> {
   ttl: number;
   metadata?: Record<string, unknown>;
 }
+
+// ============================================================================
+// Knowledge Generation Types (Re-exported from knowledge-generation.ts)
+// ============================================================================
+
+// Re-export key types from knowledge-generation module for convenience
+export type {
+  ArchitecturalDomain,
+  KnowledgeCategory,
+  KnowledgeGenerationConfig,
+  ArchitecturalContext,
+  ProjectContext,
+  DomainKnowledge,
+  KnowledgeItem,
+  KnowledgeGenerationResult
+} from './knowledge-generation.js';
+
+// Re-export key types from APE framework module for convenience
+export type {
+  APEConfig,
+  GenerationStrategy,
+  EvaluationCriterion,
+  SelectionStrategy,
+  PromptCandidate,
+  OptimizationResult,
+  ToolOptimizationConfig,
+  EvaluationResult,
+  PerformanceMetrics
+} from './ape-framework.js';
+
+// Re-export key types from Reflexion framework module for convenience
+export type {
+  ReflexionConfig,
+  TaskAttempt,
+  ReflexionMemory,
+  MemoryType,
+  ReflectionDepth,
+  LearningProgress,
+  ReflexionResult,
+  MemoryQuery,
+  ToolReflexionConfig,
+  SelfReflection,
+  LearningOutcome
+} from './reflexion-framework.js';
