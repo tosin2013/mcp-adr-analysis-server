@@ -129,18 +129,27 @@ This correlation analysis enables:
       }
 
       case 'relevance': {
+        // Provide intelligent defaults if researchContext is missing
+        const defaultResearchContext = {
+          topic: 'Architectural Relevance Analysis',
+          category: 'architecture',
+          scope: 'project',
+          objectives: ['Identify relevant architectural patterns and decisions'],
+          constraints: [],
+          timeline: 'Not specified'
+        };
+
+        const effectiveResearchContext = researchContext || defaultResearchContext;
+
         if (!researchContext) {
-          throw new McpAdrError(
-            'Research context is required for relevance analysis',
-            'INVALID_INPUT'
-          );
+          console.warn('[WARN] No researchContext provided for relevance analysis. Using intelligent defaults.');
         }
 
         const result = await findRelevantAdrPatterns(
           {
-            ...researchContext,
-            constraints: researchContext.constraints || [],
-            timeline: researchContext.timeline || 'Not specified',
+            ...effectiveResearchContext,
+            constraints: effectiveResearchContext.constraints || [],
+            timeline: effectiveResearchContext.timeline || 'Not specified',
           },
           adrDirectory
         );
@@ -188,18 +197,34 @@ This relevance analysis provides:
       }
 
       case 'questions': {
-        if (!researchContext || !relevantKnowledge) {
+        // Provide intelligent defaults if researchContext is missing
+        const defaultResearchContext = {
+          topic: 'Architectural Question Generation',
+          category: 'architecture',
+          scope: 'project',
+          objectives: ['Generate relevant research questions for architectural analysis'],
+          constraints: [],
+          timeline: 'Not specified'
+        };
+
+        const effectiveResearchContext = researchContext || defaultResearchContext;
+
+        if (!researchContext) {
+          console.warn('[WARN] No researchContext provided for question generation. Using intelligent defaults.');
+        }
+
+        if (!relevantKnowledge) {
           throw new McpAdrError(
-            'Research context and relevant knowledge are required for question generation',
+            'Relevant knowledge is required for question generation. Please run relevance analysis first.',
             'INVALID_INPUT'
           );
         }
 
         const result = await generateContextAwareQuestions(
           {
-            ...researchContext,
-            constraints: researchContext.constraints || [],
-            timeline: researchContext.timeline || 'Not specified',
+            ...effectiveResearchContext,
+            constraints: effectiveResearchContext.constraints || [],
+            timeline: effectiveResearchContext.timeline || 'Not specified',
           },
           relevantKnowledge,
           projectPath
@@ -317,19 +342,34 @@ This tracking system enables:
       }
 
       case 'comprehensive': {
+        // Provide intelligent defaults if researchContext is missing
+        const defaultResearchContext = {
+          topic: 'General Architectural Research',
+          category: 'architecture',
+          scope: 'project',
+          objectives: [
+            'Identify architectural patterns and best practices',
+            'Analyze current system design decisions',
+            'Discover improvement opportunities',
+            'Evaluate technology choices and alternatives'
+          ],
+          constraints: ['Time and resource limitations'],
+          timeline: 'Not specified'
+        };
+
+        const effectiveResearchContext = researchContext || defaultResearchContext;
+
+        // Log warning if using defaults
         if (!researchContext) {
-          throw new McpAdrError(
-            'Research context is required for comprehensive analysis',
-            'INVALID_INPUT'
-          );
+          console.warn('[WARN] No researchContext provided for comprehensive analysis. Using intelligent defaults.');
         }
 
         // Generate all components for comprehensive research planning
         const relevanceResult = await findRelevantAdrPatterns(
           {
-            ...researchContext,
-            constraints: researchContext.constraints || [],
-            timeline: researchContext.timeline || 'Not specified',
+            ...effectiveResearchContext,
+            constraints: effectiveResearchContext.constraints || [],
+            timeline: effectiveResearchContext.timeline || 'Not specified',
           },
           adrDirectory
         );
@@ -343,11 +383,12 @@ This tracking system enables:
 This comprehensive analysis will generate a complete research planning system with questions, tracking, and management.
 
 ## Research Context
-**Topic**: ${researchContext.topic}
-**Category**: ${researchContext.category}
-**Scope**: ${researchContext.scope}
-**Objectives**: ${researchContext.objectives.join(', ')}
-**Timeline**: ${researchContext.timeline || 'Not specified'}
+**Topic**: ${effectiveResearchContext.topic}
+**Category**: ${effectiveResearchContext.category}
+**Scope**: ${effectiveResearchContext.scope}
+**Objectives**: ${effectiveResearchContext.objectives.join(', ')}
+**Timeline**: ${effectiveResearchContext.timeline || 'Not specified'}
+${!researchContext ? '\n**Note**: Using intelligent defaults as no research context was provided.' : ''}
 
 ## Comprehensive Workflow
 
@@ -366,7 +407,7 @@ Generate context-aware research questions based on relevance analysis:
   "tool": "generate_research_questions",
   "args": {
     "analysisType": "questions",
-    "researchContext": ${JSON.stringify(researchContext)},
+    "researchContext": ${JSON.stringify(effectiveResearchContext)},
     "relevantKnowledge": [results from step 1],
     "projectPath": "${projectPath}"
   }
