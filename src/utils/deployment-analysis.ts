@@ -46,55 +46,50 @@ export async function identifyDeploymentTasks(
 ): Promise<{ identificationPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateDeploymentTaskIdentificationPrompt } = await import(
-      '../prompts/deployment-analysis-prompts.js'
-    );
 
-    // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+    // Generate file discovery prompt for AI delegation
+    const adrFileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
       includeContent: true,
     });
 
-    if (adrFiles.length === 0) {
-      throw new McpAdrError(`No ADR files found in ${adrDirectory}`, 'NO_ADRS_FOUND');
-    }
+    // Create comprehensive deployment task identification prompt
+    const deploymentAnalysisPrompt = `
+# Deployment Task Identification
 
-    // Prepare ADR data
-    const adrData = adrFiles.map(file => {
-      const titleMatch = file.content?.match(/^#\s+(.+)$/m);
-      const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
+Please analyze ADR files and todo content to identify deployment-related tasks.
 
-      return {
-        id: file.name.replace(/\.md$/, ''),
-        title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
-        content: file.content || '',
-        status: statusMatch?.[1] || 'Unknown',
-      };
-    });
+## File Discovery Instructions
 
-    // Read todo content if provided
-    let todoContent: string | undefined;
-    if (todoPath) {
-      try {
-        const { promises: fs } = await import('fs');
-        todoContent = await fs.readFile(todoPath, 'utf-8');
-      } catch (error) {
-        console.warn(`Failed to read todo file: ${todoPath}`);
-      }
-    }
+${adrFileDiscoveryPrompt.prompt}
 
-    const identificationPrompt = generateDeploymentTaskIdentificationPrompt(adrData, todoContent);
+## Implementation Steps
 
-    const instructions = `
-# Deployment Task Identification Instructions
+${adrFileDiscoveryPrompt.instructions}
 
-This analysis will identify deployment-related tasks from ADRs and todo content for comprehensive deployment tracking.
+## Additional Analysis Requirements
 
-## Identification Scope
-- **ADR Directory**: ${adrDirectory}
-- **ADRs Analyzed**: ${adrFiles.length} files
-- **Todo Content**: ${todoPath ? 'Included' : 'Not provided'}
-- **Task Categories**: Infrastructure, Application, CI/CD, Operational
+${todoPath ? `
+### Todo File Analysis
+Please also read and analyze the todo file at: ${todoPath}
+Extract any deployment-related tasks, infrastructure requirements, or operational concerns.
+` : ''}
+
+## Task Identification Criteria
+
+For each ADR file discovered:
+1. Extract deployment-related decisions and requirements
+2. Identify infrastructure components mentioned
+3. Find CI/CD pipeline requirements
+4. Detect operational concerns and monitoring needs
+5. Categorize tasks by type: Infrastructure, Application, CI/CD, Operational
+
+## Required Output Format
+
+Please provide deployment task analysis in JSON format with:
+- Task identification and categorization
+- Priority and complexity assessment
+- Dependencies between tasks
+- Implementation timeline recommendations
 
 ## Next Steps
 1. **Submit the identification prompt** to an AI agent for comprehensive task analysis
@@ -119,8 +114,27 @@ const result = await identifyDeploymentTasks(adrDirectory, todoPath);
 \`\`\`
 `;
 
+    const instructions = `
+# Deployment Task Identification Instructions
+
+This analysis will identify deployment-related tasks from ADRs and todo content for comprehensive deployment tracking.
+
+## Analysis Scope
+- **ADR Directory**: ${adrDirectory}
+- **Todo Content**: ${todoPath ? 'Included' : 'Not provided'}
+- **Task Categories**: Infrastructure, Application, CI/CD, Operational
+
+## Next Steps
+1. **Submit the analysis prompt** to an AI agent for deployment task identification
+2. **Parse the JSON response** to get categorized deployment tasks
+3. **Review task priorities** and dependencies
+4. **Use findings** for deployment planning and execution
+
+Submit the prompt to generate deployment task analysis.
+`;
+
     return {
-      identificationPrompt,
+      identificationPrompt: deploymentAnalysisPrompt,
       instructions,
     };
   } catch (error) {

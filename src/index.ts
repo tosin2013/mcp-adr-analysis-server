@@ -1118,38 +1118,20 @@ class McpAdrAnalysisServer {
     // Use configured project path if not provided in args
     const projectPath = args.projectPath || this.config.projectPath;
 
-    this.logger.info(`Analyzing project ecosystem at: ${projectPath}`);
+    this.logger.info(`Generating analysis prompt for project ecosystem at: ${projectPath}`);
 
     try {
       // Import utilities dynamically to avoid circular dependencies
-      const { analyzeProjectStructure, readFileContent } = await import('./utils/file-system.js');
-      const { generateAnalysisContext, generateComprehensiveAnalysisPrompt } = await import('./prompts/analysis-prompts.js');
+      const { analyzeProjectStructure } = await import('./utils/file-system.js');
 
-      // Analyze project structure
-      const projectStructure = await analyzeProjectStructure(projectPath);
-
-      // Read key files for context
-      let packageJsonContent: string | undefined;
-      try {
-        packageJsonContent = await readFileContent(`${projectPath}/package.json`);
-      } catch {
-        // package.json might not exist
-      }
-
-      // Generate analysis context
-      const analysisContext = generateAnalysisContext(projectStructure);
-
-      // Generate comprehensive analysis prompt
-      const analysisPrompt = generateComprehensiveAnalysisPrompt(
-        analysisContext,
-        packageJsonContent
-      );
+      // Generate project analysis prompt
+      const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
 
       return {
         content: [
           {
             type: 'text',
-            text: `Project ecosystem analysis for: ${projectPath}\n\nPlease analyze this project using the following prompt:\n\n${analysisPrompt}`
+            text: `# Project Ecosystem Analysis\n\n${projectAnalysisPrompt.prompt}\n\n## Implementation Instructions\n\n${projectAnalysisPrompt.instructions}`
           }
         ]
       };
@@ -1166,23 +1148,46 @@ class McpAdrAnalysisServer {
 
     try {
       const { analyzeProjectStructure } = await import('./utils/file-system.js');
-      const { generateAnalysisContext, generatePatternDetectionPrompt } = await import('./prompts/analysis-prompts.js');
 
       // Determine project path
-      const projectPath = filePath ? filePath.split('/').slice(0, -1).join('/') : process.cwd();
+      const projectPath = filePath ? filePath.split('/').slice(0, -1).join('/') : this.config.projectPath;
 
-      // Analyze project structure
-      const projectStructure = await analyzeProjectStructure(projectPath);
-      const analysisContext = generateAnalysisContext(projectStructure);
+      // Generate architectural analysis prompt
+      const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
 
-      // Generate pattern detection prompt
-      const patternPrompt = generatePatternDetectionPrompt(analysisContext);
+      const architecturalPrompt = `
+# Architectural Context Analysis
+
+${filePath ? `## Target File: ${filePath}` : '## Project-wide Analysis'}
+
+${projectAnalysisPrompt.prompt}
+
+## Additional Architectural Focus
+
+Please pay special attention to:
+1. **Design Patterns**: Identify common design patterns in use
+2. **Architectural Layers**: Analyze the layered architecture approach
+3. **Component Relationships**: Map dependencies and interactions
+4. **Code Organization**: Evaluate modular structure and separation of concerns
+5. **Configuration Management**: Assess how configuration is handled
+${filePath ? `6. **File-specific Context**: Analyze how ${filePath} fits into the overall architecture` : ''}
+
+## Expected Architectural Analysis
+
+Include in your analysis:
+- Architectural style (MVC, microservices, layered, etc.)
+- Design patterns identified
+- Component interaction patterns
+- Configuration and dependency management
+- Code organization principles
+- Potential architectural improvements
+`;
 
       return {
         content: [
           {
             type: 'text',
-            text: `Architectural context analysis${filePath ? ` for: ${filePath}` : ''}\n\nPlease analyze architectural patterns using the following prompt:\n\n${patternPrompt}`
+            text: architecturalPrompt
           }
         ]
       };
@@ -1278,38 +1283,24 @@ Please provide:
     const { scope = 'all' } = args;
     const adrDirectory = args.adrDirectory || this.config.adrDirectory;
 
-    this.logger.info(`Generating todo from ADRs in: ${adrDirectory}`);
+    this.logger.info(`Generating todo prompt for ADRs in: ${adrDirectory}`);
 
     try {
       const { findFiles } = await import('./utils/file-system.js');
 
-      // Find all ADR files
-      const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent: true });
+      // Generate file discovery prompt for ADR files
+      const adrFilesPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent: true });
 
-      if (adrFiles.length === 0) {
-        throw new McpAdrError(`No ADR files found in ${adrDirectory}`, 'NO_ADRS_FOUND');
-      }
-
-      // Prepare ADR content for analysis
-      const adrContent = adrFiles.map(file => ({
-        filename: file.name,
-        path: file.path,
-        content: file.content || ''
-      }));
-
-      // Generate todo creation prompt
+      // Generate comprehensive todo creation prompt
       const todoPrompt = `
 # ADR Todo Generation Request
 
-Please analyze the following Architectural Decision Records and generate a comprehensive todo.md file.
+## Step 1: File Discovery
+${adrFilesPrompt.prompt}
 
-## ADR Files
-${adrContent.map(adr => `
-### ${adr.filename}
-\`\`\`markdown
-${adr.content.slice(0, 1500)}${adr.content.length > 1500 ? '\n... (truncated)' : ''}
-\`\`\`
-`).join('')}
+## Step 2: Todo Generation Analysis
+
+Once you have discovered and read the ADR files, please analyze them and generate a comprehensive todo.md file.
 
 ## Requirements
 
@@ -1697,7 +1688,8 @@ ${newConfig.enabled ?
       return await maskMcpResponse(response, this.maskingConfig);
     } catch (error) {
       // If masking fails, log warning and return original response
-      console.warn('Output masking failed:', error);
+      // Log to stderr to avoid corrupting MCP protocol
+      console.error('[WARN] Output masking failed:', error);
       return response;
     }
   }

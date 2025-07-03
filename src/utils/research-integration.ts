@@ -59,8 +59,8 @@ export async function monitorResearchDirectory(
   try {
     const { findFiles } = await import('./file-system.js');
 
-    // Find all research files
-    const researchFiles = await findFiles(
+    // Generate research file discovery prompt for AI delegation
+    const researchFileDiscoveryPrompt = await findFiles(
       process.cwd(),
       [
         `${researchPath}/**/*.md`,
@@ -72,31 +72,47 @@ export async function monitorResearchDirectory(
       { includeContent: true }
     );
 
-    const instructions = `
+    const monitoringPrompt = `
 # Research Directory Monitoring
 
-Monitoring research directory for architectural insights and findings.
+Please monitor and analyze the research directory for architectural insights and findings.
 
-## Directory Status
+## File Discovery Instructions
+
+${researchFileDiscoveryPrompt.prompt}
+
+## Implementation Steps
+
+${researchFileDiscoveryPrompt.instructions}
+
+## Analysis Requirements
+
+For each research file discovered:
+1. Extract key architectural insights and findings
+2. Identify potential impacts on existing ADRs
+3. Assess relevance to current project decisions
+4. Categorize research by topic and priority
+5. Generate recommendations for ADR updates
+6. Monitor for new research files and changes
+
+## Required Output Format
+
+Please provide research monitoring analysis in JSON format with:
+- File inventory with metadata
+- Key insights and findings extraction
+- Impact assessment on existing ADRs
+- Recommendations for integration
+`;
+
+    const instructions = `
+# Research Directory Monitoring Instructions
+
+This analysis will monitor research directory for architectural insights and findings.
+
+## Monitoring Scope
 - **Research Path**: ${researchPath}
-- **Files Found**: ${researchFiles.length} files
-- **Total Size**: ${researchFiles.reduce((sum, f) => sum + (f.size || 0), 0)} bytes
-
-## Discovered Files
-${
-  researchFiles.length === 0
-    ? 'No research files found in the specified directory.'
-    : researchFiles
-        .map(
-          (file, index) => `
-### ${index + 1}. ${file.name}
-- **Path**: ${file.path}
-- **Size**: ${file.size} bytes
-- **Last Modified**: ${(file as any).lastModified || 'Unknown'}
-`
-        )
-        .join('')
-}
+- **File Types**: Markdown, Text, PDF, Word documents
+- **Analysis Focus**: Architectural insights, ADR impacts, integration opportunities
 
 ## Next Steps
 1. **Extract research topics** using the topic extraction tool
@@ -110,22 +126,16 @@ ${
 - Create research templates for consistent structure
 - Schedule regular research integration reviews
 
-${
-  researchFiles.length === 0
-    ? `
 ## Getting Started
 To begin using research integration:
 1. Create the research directory: \`mkdir -p ${researchPath}\`
 2. Add research files (markdown, text, or documents)
 3. Use the \`incorporate_research\` tool to analyze findings
 4. Review suggested ADR updates and implementations
-`
-    : ''
-}
 `;
 
     return {
-      monitoringPrompt: `Research directory monitoring complete. Found ${researchFiles.length} files in ${researchPath}.`,
+      monitoringPrompt,
       instructions,
     };
   } catch (error) {
@@ -145,30 +155,43 @@ export async function extractResearchTopics(
 ): Promise<{ extractionPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateResearchTopicExtractionPrompt } = await import(
-      '../prompts/research-integration-prompts.js'
-    );
 
-    // Find and read research files
-    const researchFiles = await findFiles(
+    // Generate research file discovery prompt for AI delegation
+    const researchFileDiscoveryPrompt = await findFiles(
       process.cwd(),
       [`${researchPath}/**/*.md`, `${researchPath}/**/*.txt`],
       { includeContent: true }
     );
 
-    if (researchFiles.length === 0) {
-      throw new McpAdrError(`No research files found in ${researchPath}`, 'NO_RESEARCH_FILES');
-    }
+    const extractionPrompt = `
+# Research Topic Extraction
 
-    // Prepare research file data
-    const fileData = researchFiles.map(file => ({
-      filename: file.name,
-      content: file.content || '',
-      lastModified: (file as any).lastModified || new Date().toISOString(),
-      size: file.size || 0,
-    }));
+Please extract key topics and findings from research files that could impact architectural decisions.
 
-    const extractionPrompt = generateResearchTopicExtractionPrompt(fileData, existingTopics);
+## File Discovery Instructions
+
+${researchFileDiscoveryPrompt.prompt}
+
+## Implementation Steps
+
+${researchFileDiscoveryPrompt.instructions}
+
+## Existing Topics Context
+
+${existingTopics ? `
+### Current Topics (${existingTopics.length})
+${existingTopics.map((topic, index) => `${index + 1}. ${topic}`).join('\n')}
+` : 'No existing topics provided.'}
+
+## Topic Extraction Requirements
+
+For each research file discovered:
+1. Extract key architectural insights and findings
+2. Identify potential impacts on existing decisions
+3. Categorize topics by relevance and priority
+4. Generate actionable recommendations
+5. Assess integration opportunities with current ADRs
+`;
 
     const instructions = `
 # Research Topic Extraction Instructions
@@ -177,9 +200,8 @@ This analysis will extract key topics and findings from research files that coul
 
 ## Research Analysis
 - **Research Path**: ${researchPath}
-- **Files Analyzed**: ${researchFiles.length} files
 - **Existing Topics**: ${existingTopics?.length || 0} topics
-- **Total Content**: ${fileData.reduce((sum, f) => sum + f.content.length, 0)} characters
+- **Analysis Focus**: Topic extraction, impact assessment, integration opportunities
 
 ## Next Steps
 1. **Submit the extraction prompt** to an AI agent for topic analysis
@@ -224,34 +246,46 @@ export async function evaluateResearchImpact(
 ): Promise<{ evaluationPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateResearchImpactEvaluationPrompt } = await import(
-      '../prompts/research-integration-prompts.js'
-    );
 
-    // Find existing ADRs
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+    // Generate ADR file discovery prompt for AI delegation
+    const adrFileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
       includeContent: true,
     });
 
-    if (adrFiles.length === 0) {
-      throw new McpAdrError(`No ADR files found in ${adrDirectory}`, 'NO_ADRS_FOUND');
-    }
+    const evaluationPrompt = `
+# Research Impact Evaluation
 
-    // Prepare ADR data
-    const adrData = adrFiles.map(file => {
-      const titleMatch = file.content?.match(/^#\s+(.+)$/m);
-      const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
+Please analyze how research findings impact existing ADRs and suggest necessary updates.
 
-      return {
-        id: file.name.replace(/\.md$/, ''),
-        title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
-        status: statusMatch?.[1] || 'Unknown',
-        content: file.content || '',
-        category: extractAdrCategory(file.content || ''),
-      };
-    });
+## ADR Discovery Instructions
 
-    const evaluationPrompt = generateResearchImpactEvaluationPrompt(researchTopics, adrData);
+${adrFileDiscoveryPrompt.prompt}
+
+## Implementation Steps
+
+${adrFileDiscoveryPrompt.instructions}
+
+## Research Topics Analysis
+
+Please evaluate the following research topics for their impact on existing ADRs:
+
+${researchTopics.map((topic, index) => `
+### ${index + 1}. ${topic.title}
+- **Relevance Score**: ${topic.relevanceScore}
+- **Key Findings**: ${topic.keyFindings.join(', ')}
+- **Evidence**: ${topic.evidence.join(', ')}
+- **Analysis**: Research topic analysis and implications
+`).join('')}
+
+## Impact Assessment Requirements
+
+For each research topic:
+1. Identify affected ADRs based on content analysis
+2. Assess the severity of impact (low, medium, high)
+3. Determine required updates or new decisions
+4. Prioritize changes based on business impact
+5. Generate specific update recommendations
+`;
 
     const instructions = `
 # Research Impact Evaluation Instructions
@@ -260,7 +294,6 @@ This analysis will evaluate how research findings impact existing ADRs and sugge
 
 ## Impact Analysis
 - **Research Topics**: ${researchTopics.length} topics
-- **Existing ADRs**: ${adrFiles.length} ADRs
 - **ADR Directory**: ${adrDirectory}
 - **High Relevance Topics**: ${researchTopics.filter(t => t.relevanceScore > 0.7).length} topics
 
@@ -313,35 +346,57 @@ export async function generateAdrUpdateSuggestions(
 ): Promise<{ updatePrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateAdrUpdateSuggestionPrompt } = await import(
-      '../prompts/research-integration-prompts.js'
-    );
 
-    // Find the specific ADR
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+    // Generate ADR file discovery prompt for AI delegation
+    const adrFileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
       includeContent: true,
     });
-    const targetAdr = adrFiles.find(
-      file =>
-        file.name.includes(adrId) || file.content?.includes(adrId) || file.path.includes(adrId)
-    );
 
-    if (!targetAdr) {
-      throw new McpAdrError(`ADR not found: ${adrId}`, 'ADR_NOT_FOUND');
-    }
+    const updatePrompt = `
+# ADR Update Suggestion
 
-    // Extract ADR metadata
-    const titleMatch = targetAdr.content?.match(/^#\s+(.+)$/m);
-    const statusMatch = targetAdr.content?.match(/##\s+Status\s*\n\s*(.+)/i);
+Please find and update the specified ADR based on research findings.
 
-    const adrData = {
-      id: adrId,
-      title: titleMatch?.[1] || targetAdr.name.replace(/\.md$/, ''),
-      content: targetAdr.content || '',
-      status: statusMatch?.[1] || 'Unknown',
-    };
+## ADR Discovery Instructions
 
-    const updatePrompt = generateAdrUpdateSuggestionPrompt(adrData, researchFindings, updateType);
+${adrFileDiscoveryPrompt.prompt}
+
+## Implementation Steps
+
+${adrFileDiscoveryPrompt.instructions}
+
+## Target ADR Identification
+
+Please locate the ADR with ID: **${adrId}**
+- Search by filename containing the ID
+- Search by content containing the ID
+- Search by path containing the ID
+
+## Research Findings to Incorporate
+
+${researchFindings.map((finding, index) => `
+### ${index + 1}. ${finding.finding}
+- **Evidence**: ${finding.evidence.join(', ')}
+- **Impact**: ${finding.impact}
+`).join('')}
+
+## Update Requirements
+
+- **Update Type**: ${updateType}
+- **Focus Areas**: ${updateType === 'content' ? 'Decision content and rationale' :
+                   updateType === 'status' ? 'Decision status and lifecycle' :
+                   updateType === 'consequences' ? 'Consequences and outcomes' :
+                   updateType === 'alternatives' ? 'Alternative options and trade-offs' :
+                   'Deprecation and superseding decisions'}
+
+## Required Output Format
+
+Please provide the updated ADR content with:
+1. Clear indication of what was changed
+2. Integration of research findings
+3. Updated metadata and timestamps
+4. Preservation of ADR structure and format
+`;
 
     const instructions = `
 # ADR Update Suggestion Instructions
@@ -350,8 +405,8 @@ This will generate specific update suggestions for an ADR based on research find
 
 ## Update Details
 - **ADR ID**: ${adrId}
-- **ADR Title**: ${adrData.title}
-- **Current Status**: ${adrData.status}
+- **Target ADR**: Will be identified during analysis
+- **Update Focus**: ${updateType}
 - **Update Type**: ${updateType}
 - **Research Findings**: ${researchFindings.length} findings
 
@@ -391,29 +446,7 @@ const result = await generateAdrUpdateSuggestions(adrId, findings, updateType);
   }
 }
 
-/**
- * Extract category from ADR content
- */
-function extractAdrCategory(content: string): string {
-  const categoryPatterns = [
-    { pattern: /framework|library|dependency/i, category: 'technology' },
-    { pattern: /database|storage|persistence/i, category: 'database' },
-    { pattern: /api|rest|graphql|endpoint/i, category: 'api' },
-    { pattern: /security|authentication|authorization/i, category: 'security' },
-    { pattern: /deployment|infrastructure|cloud/i, category: 'deployment' },
-    { pattern: /test|testing|quality/i, category: 'testing' },
-    { pattern: /architecture|pattern|design/i, category: 'architecture' },
-    { pattern: /process|workflow|methodology/i, category: 'process' },
-  ];
 
-  for (const { pattern, category } of categoryPatterns) {
-    if (pattern.test(content)) {
-      return category;
-    }
-  }
-
-  return 'general';
-}
 
 /**
  * Create research file template

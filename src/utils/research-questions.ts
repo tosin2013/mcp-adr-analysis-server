@@ -131,36 +131,50 @@ export async function findRelevantAdrPatterns(
 ): Promise<{ relevancePrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateRelevantAdrPatternPrompt } = await import(
-      '../prompts/research-question-prompts.js'
-    );
 
-    // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+    // Generate ADR file discovery prompt for AI delegation
+    const adrFileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
       includeContent: true,
-    });
-
-    // Prepare ADR data
-    const availableAdrs = adrFiles.map(file => {
-      const titleMatch = file.content?.match(/^#\s+(.+)$/m);
-      const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
-
-      return {
-        id: file.name.replace(/\.md$/, ''),
-        title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
-        content: file.content || '',
-        status: statusMatch?.[1] || 'Unknown',
-      };
     });
 
     // Extract patterns from project (simplified for this implementation)
     const availablePatterns = extractArchitecturalPatterns();
 
-    const relevancePrompt = generateRelevantAdrPatternPrompt(
-      researchContext,
-      availableAdrs,
-      availablePatterns
-    );
+    const relevancePrompt = `
+# Relevant ADR Pattern Identification
+
+Please identify relevant ADR patterns based on research context.
+
+## ADR Discovery Instructions
+
+${adrFileDiscoveryPrompt.prompt}
+
+## Implementation Steps
+
+${adrFileDiscoveryPrompt.instructions}
+
+## Research Context Analysis
+
+${researchContext}
+
+## Available Architectural Patterns
+
+${availablePatterns.map((pattern, index) => `
+### ${index + 1}. ${pattern.name}
+- **Category**: ${pattern.category}
+- **Description**: ${pattern.description}
+- **Applications**: Various architectural applications
+`).join('')}
+
+## Pattern Relevance Assessment
+
+For each discovered ADR and available pattern:
+1. Analyze relevance to the research context
+2. Identify potential applications and benefits
+3. Assess implementation complexity and trade-offs
+4. Generate specific recommendations for adoption
+5. Prioritize patterns by impact and feasibility
+`;
 
     const instructions = `
 # Relevant ADR and Pattern Discovery Instructions
@@ -170,7 +184,7 @@ This analysis will identify ADRs and patterns relevant to the research context.
 ## Discovery Scope
 - **Research Topic**: ${researchContext.topic}
 - **Research Category**: ${researchContext.category}
-- **Available ADRs**: ${availableAdrs.length} ADRs
+- **ADR Directory**: ${adrDirectory}
 - **Available Patterns**: ${availablePatterns.length} patterns
 - **Research Objectives**: ${researchContext.objectives.length} objectives
 

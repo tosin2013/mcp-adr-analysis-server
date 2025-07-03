@@ -96,13 +96,13 @@ export function createLogger(config: ServerConfig) {
 
   return {
     debug: (message: string, ...args: any[]) => {
-      if (currentLevel <= 0) console.debug(`[DEBUG] ${message}`, ...args);
+      if (currentLevel <= 0) console.error(`[DEBUG] ${message}`, ...args);
     },
     info: (message: string, ...args: any[]) => {
-      if (currentLevel <= 1) console.info(`[INFO] ${message}`, ...args);
+      if (currentLevel <= 1) console.error(`[INFO] ${message}`, ...args);
     },
     warn: (message: string, ...args: any[]) => {
-      if (currentLevel <= 2) console.warn(`[WARN] ${message}`, ...args);
+      if (currentLevel <= 2) console.error(`[WARN] ${message}`, ...args);
     },
     error: (message: string, ...args: any[]) => {
       if (currentLevel <= 3) console.error(`[ERROR] ${message}`, ...args);

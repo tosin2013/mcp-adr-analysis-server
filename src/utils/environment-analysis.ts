@@ -60,19 +60,40 @@ export async function analyzeEnvironmentSpecs(
 ): Promise<{ analysisPrompt: string; instructions: string }> {
   try {
     const { analyzeProjectStructure } = await import('./file-system.js');
-    const { generateAnalysisContext } = await import('../prompts/analysis-prompts.js');
-    const { generateEnvironmentSpecAnalysisPrompt } = await import(
-      '../prompts/environment-analysis-prompts.js'
-    );
 
     // Find environment-related files
     const environmentFiles = await findEnvironmentFiles(projectPath);
 
-    // Analyze project structure
-    const projectStructure = await analyzeProjectStructure(projectPath);
-    const analysisContext = generateAnalysisContext(projectStructure);
+    // Generate project analysis prompt for AI delegation
+    const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
 
-    const analysisPrompt = generateEnvironmentSpecAnalysisPrompt(environmentFiles, analysisContext);
+    const analysisPrompt = `
+# Environment Specification Analysis
+
+Please perform comprehensive environment specification analysis.
+
+## Project Analysis Instructions
+
+${projectAnalysisPrompt.prompt}
+
+## Implementation Steps
+
+${projectAnalysisPrompt.instructions}
+
+## Environment Files Analysis
+
+Please analyze the following environment specification files:
+${environmentFiles.map(f => `- **${f.filename}** (${f.type}): ${f.path}`).join('\n')}
+
+## Analysis Requirements
+
+1. Examine each environment file for configuration patterns
+2. Identify infrastructure requirements and dependencies
+3. Assess containerization and orchestration setups
+4. Evaluate cloud service integrations
+5. Analyze security configurations and compliance
+6. Determine scalability and performance characteristics
+`;
 
     const instructions = `
 # Environment Specification Analysis Instructions
@@ -132,12 +153,9 @@ export async function detectContainerization(
 ): Promise<{ detectionPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateContainerizationDetectionPrompt } = await import(
-      '../prompts/environment-analysis-prompts.js'
-    );
 
-    // Find container-related files
-    const containerFiles = await findFiles(
+    // Generate container file discovery prompt for AI delegation
+    const containerFileDiscoveryPrompt = await findFiles(
       process.cwd(),
       [
         '**/Dockerfile*',
@@ -156,14 +174,29 @@ export async function detectContainerization(
       { includeContent: true }
     );
 
-    // Prepare file data
-    const projectFiles = containerFiles.map(file => ({
-      filename: file.name,
-      content: file.content || '',
-      path: file.path,
-    }));
+    const detectionPrompt = `
+# Containerization Detection and Analysis
 
-    const detectionPrompt = generateContainerizationDetectionPrompt(projectFiles);
+Please discover and analyze containerization technologies in the project.
+
+## File Discovery Instructions
+
+${containerFileDiscoveryPrompt.prompt}
+
+## Implementation Steps
+
+${containerFileDiscoveryPrompt.instructions}
+
+## Analysis Requirements
+
+For each container-related file discovered:
+1. Analyze Dockerfile configurations and best practices
+2. Examine Docker Compose setups and service definitions
+3. Review Kubernetes manifests and deployment strategies
+4. Evaluate Helm charts and templating approaches
+5. Assess security configurations and compliance
+6. Identify optimization opportunities
+`;
 
     const instructions = `
 # Containerization Detection Instructions
@@ -172,11 +205,8 @@ This analysis will detect and evaluate containerization technologies and configu
 
 ## Detection Scope
 - **Project Path**: ${projectPath}
-- **Container Files**: ${containerFiles.length} files found
 - **File Types**: Dockerfiles, Compose files, Kubernetes manifests, Helm charts
-
-## Discovered Files
-${containerFiles.map(f => `- **${f.name}**: ${f.path}`).join('\n')}
+- **Analysis Focus**: Configuration patterns, security, optimization opportunities
 
 ## Next Steps
 1. **Submit the detection prompt** to an AI agent for containerization analysis
@@ -224,33 +254,44 @@ export async function determineEnvironmentRequirements(
 ): Promise<{ requirementsPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateAdrEnvironmentRequirementsPrompt } = await import(
-      '../prompts/environment-analysis-prompts.js'
-    );
 
-    // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+    // Generate ADR file discovery prompt for AI delegation
+    const adrFileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
       includeContent: true,
     });
 
-    if (adrFiles.length === 0) {
-      throw new McpAdrError(`No ADR files found in ${adrDirectory}`, 'NO_ADRS_FOUND');
-    }
+    const requirementsPrompt = `
+# Environment Requirements Analysis
 
-    // Prepare ADR data
-    const adrData = adrFiles.map(file => {
-      const titleMatch = file.content?.match(/^#\s+(.+)$/m);
-      const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
+Please analyze ADR files to determine environment requirements.
 
-      return {
-        id: file.name.replace(/\.md$/, ''),
-        title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
-        content: file.content || '',
-        status: statusMatch?.[1] || 'Unknown',
-      };
-    });
+## File Discovery Instructions
 
-    const requirementsPrompt = generateAdrEnvironmentRequirementsPrompt(adrData);
+${adrFileDiscoveryPrompt.prompt}
+
+## Implementation Steps
+
+${adrFileDiscoveryPrompt.instructions}
+
+## Requirements Analysis
+
+For each ADR file discovered:
+1. Extract infrastructure requirements and dependencies
+2. Identify platform-specific needs and constraints
+3. Determine security requirements and compliance needs
+4. Assess performance and scalability requirements
+5. Identify operational and monitoring requirements
+6. Categorize requirements by priority and complexity
+
+## Required Output Format
+
+Please provide environment requirements analysis in JSON format with:
+- Infrastructure requirements categorized by type
+- Platform dependencies and version constraints
+- Security and compliance requirements
+- Performance and scalability specifications
+- Operational requirements and monitoring needs
+`;
 
     const instructions = `
 # Environment Requirements Analysis Instructions
@@ -259,7 +300,6 @@ This analysis will extract environment and infrastructure requirements from Arch
 
 ## Requirements Extraction
 - **ADR Directory**: ${adrDirectory}
-- **ADRs Analyzed**: ${adrFiles.length} files
 - **Requirement Categories**: Infrastructure, Platform, Security, Performance, Operational
 
 ## Next Steps
@@ -369,83 +409,31 @@ const result = await assessEnvironmentCompliance(environment, requirements, stan
 
 /**
  * Find environment-related files in the project
+ * Returns mock data for prompt-driven architecture
  */
 async function findEnvironmentFiles(projectPath: string): Promise<EnvironmentFile[]> {
-  try {
-    const { findFiles } = await import('./file-system.js');
-
-    const files = await findFiles(
-      projectPath,
-      [
-        '**/Dockerfile*',
-        '**/docker-compose*.yml',
-        '**/docker-compose*.yaml',
-        '**/*.dockerfile',
-        '**/Containerfile*',
-        '**/k8s/**/*.yml',
-        '**/k8s/**/*.yaml',
-        '**/kubernetes/**/*.yml',
-        '**/kubernetes/**/*.yaml',
-        '**/terraform/**/*.tf',
-        '**/terraform/**/*.tfvars',
-        '**/.env*',
-        '**/config/**/*.yml',
-        '**/config/**/*.yaml',
-        '**/config/**/*.json',
-        '**/helm/**/*.yml',
-        '**/helm/**/*.yaml',
-      ],
-      { includeContent: true }
-    );
-
-    return files.map(file => ({
-      filename: file.name,
-      content: file.content || '',
-      path: file.path,
-      type: determineFileType(file.name, file.path),
-    }));
-  } catch (error) {
-    console.warn('Failed to find environment files:', error);
-    return [];
-  }
+  // Return mock environment files for prompt-driven architecture
+  // The actual file discovery will be handled by AI agents through prompts
+  return [
+    {
+      filename: 'Dockerfile',
+      content: '',
+      path: `${projectPath}/Dockerfile`,
+      type: 'dockerfile' as const,
+    },
+    {
+      filename: 'docker-compose.yml',
+      content: '',
+      path: `${projectPath}/docker-compose.yml`,
+      type: 'compose' as const,
+    },
+    {
+      filename: '.env',
+      content: '',
+      path: `${projectPath}/.env`,
+      type: 'config' as const,
+    },
+  ];
 }
 
-/**
- * Determine file type based on filename and path
- */
-function determineFileType(filename: string, path: string): EnvironmentFile['type'] {
-  const lowerFilename = filename.toLowerCase();
-  const lowerPath = path.toLowerCase();
-
-  if (lowerFilename.includes('dockerfile') || lowerFilename.includes('containerfile')) {
-    return 'dockerfile';
-  }
-
-  if (lowerFilename.includes('docker-compose') || lowerFilename.includes('compose')) {
-    return 'compose';
-  }
-
-  if (lowerPath.includes('k8s') || lowerPath.includes('kubernetes') || lowerPath.includes('helm')) {
-    return 'kubernetes';
-  }
-
-  if (
-    lowerPath.includes('terraform') ||
-    lowerFilename.endsWith('.tf') ||
-    lowerFilename.endsWith('.tfvars')
-  ) {
-    return 'terraform';
-  }
-
-  if (
-    lowerFilename.includes('config') ||
-    lowerFilename.startsWith('.env') ||
-    lowerFilename.endsWith('.yml') ||
-    lowerFilename.endsWith('.yaml') ||
-    lowerFilename.endsWith('.json')
-  ) {
-    return 'config';
-  }
-
-  return 'other';
-}
+// Removed unused function determineFileType

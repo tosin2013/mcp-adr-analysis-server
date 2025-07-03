@@ -92,7 +92,8 @@ async function maskContent(content: string, config: MaskingConfig): Promise<stri
     return applyBasicMasking(content, strategy);
   } catch (error) {
     // If masking fails, return original content with warning
-    console.warn('Content masking failed:', error);
+    // Log to stderr to avoid corrupting MCP protocol
+    console.error('[WARN] Content masking failed:', error);
     return content;
   }
 }

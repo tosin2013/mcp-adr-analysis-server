@@ -70,39 +70,55 @@ export async function extractRulesFromAdrs(
 ): Promise<{ extractionPrompt: string; instructions: string }> {
   try {
     const { findFiles } = await import('./file-system.js');
-    const { generateRuleExtractionPrompt } = await import('../prompts/rule-generation-prompts.js');
 
-    // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+    // Generate ADR file discovery prompt for AI delegation
+    const adrFileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
       includeContent: true,
     });
 
-    if (adrFiles.length === 0) {
-      throw new McpAdrError(`No ADR files found in ${adrDirectory}`, 'NO_ADRS_FOUND');
-    }
+    const extractionPrompt = `
+# Architectural Rule Extraction
 
-    // Prepare ADR data
-    const adrData = adrFiles.map(file => {
-      const titleMatch = file.content?.match(/^#\s+(.+)$/m);
-      const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
+Please extract actionable architectural rules from ADRs for code validation and compliance checking.
 
-      return {
-        id: file.name.replace(/\.md$/, ''),
-        title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
-        content: file.content || '',
-        status: statusMatch?.[1] || 'Unknown',
-        category: extractAdrCategory(file.content || ''),
-      };
-    });
+## ADR Discovery Instructions
 
-    // Prepare existing rules data
-    const existingRulesData = existingRules?.map(rule => ({
-      id: rule.id,
-      name: rule.name,
-      description: rule.description,
-    }));
+${adrFileDiscoveryPrompt.prompt}
 
-    const extractionPrompt = generateRuleExtractionPrompt(adrData, existingRulesData);
+## Implementation Steps
+
+${adrFileDiscoveryPrompt.instructions}
+
+## Existing Rules Context
+
+${existingRules ? `
+### Current Rules (${existingRules.length})
+${existingRules.map((rule, index) => `
+#### ${index + 1}. ${rule.name}
+- **ID**: ${rule.id}
+- **Description**: ${rule.description}
+`).join('')}
+` : 'No existing rules provided.'}
+
+## Rule Extraction Requirements
+
+For each ADR discovered:
+1. Extract actionable architectural rules and constraints
+2. Identify technology-specific requirements and standards
+3. Define coding standards and best practices
+4. Establish process and workflow requirements
+5. Capture security and compliance rules
+6. Define performance and scalability constraints
+
+## Rule Categories to Extract
+
+- **Architectural**: Component structure, dependencies, patterns
+- **Technology**: Framework choices, library usage, platform requirements
+- **Coding**: Style guides, naming conventions, code organization
+- **Process**: Development workflow, review requirements, deployment
+- **Security**: Authentication, authorization, data protection
+- **Performance**: Response times, resource limits, scalability targets
+`;
 
     const instructions = `
 # Rule Extraction Instructions
@@ -111,7 +127,7 @@ This analysis will extract actionable architectural rules from ADRs that can be 
 
 ## Extraction Scope
 - **ADR Directory**: ${adrDirectory}
-- **ADRs Analyzed**: ${adrFiles.length} files
+- **ADR Directory**: ${adrDirectory}
 - **Existing Rules**: ${existingRules?.length || 0} rules
 - **Rule Categories**: Architectural, Technology, Coding, Process, Security, Performance
 
@@ -159,23 +175,51 @@ export async function generateRulesFromPatterns(
 ): Promise<{ generationPrompt: string; instructions: string }> {
   try {
     const { analyzeProjectStructure } = await import('./file-system.js');
-    const { generateAnalysisContext } = await import('../prompts/analysis-prompts.js');
-    const { generatePatternBasedRulePrompt } = await import(
-      '../prompts/rule-generation-prompts.js'
-    );
 
-    // Analyze project structure
-    const projectStructure = await analyzeProjectStructure(projectPath);
-    const analysisContext = generateAnalysisContext(projectStructure);
+    // Generate project analysis prompt for AI delegation
+    const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
 
-    // Extract code patterns
-    const codePatterns = extractCodePatterns(projectStructure);
+    const generationPrompt = `
+# Pattern-Based Rule Generation
 
-    const generationPrompt = generatePatternBasedRulePrompt(
-      analysisContext,
-      codePatterns,
-      existingRules
-    );
+Please analyze project patterns and generate architectural rules for code validation.
+
+## Project Analysis Instructions
+
+${projectAnalysisPrompt.prompt}
+
+## Implementation Steps
+
+${projectAnalysisPrompt.instructions}
+
+## Existing Rules Context
+
+${existingRules ? `
+### Current Rules (${existingRules.length})
+${existingRules.map((rule, index) => `
+#### ${index + 1}. ${rule}
+`).join('')}
+` : 'No existing rules provided.'}
+
+## Pattern Analysis Requirements
+
+1. **Code Structure Analysis**: Examine project organization and module structure
+2. **Dependency Pattern Detection**: Identify import/export patterns and dependencies
+3. **Naming Convention Analysis**: Extract naming patterns for files, functions, classes
+4. **Architecture Pattern Recognition**: Identify architectural patterns in use
+5. **Technology Stack Analysis**: Determine technology choices and configurations
+6. **Quality Pattern Assessment**: Analyze code quality and testing patterns
+
+## Rule Generation Focus
+
+Generate rules that enforce:
+- Consistent code organization and structure
+- Proper dependency management
+- Naming convention compliance
+- Architectural pattern adherence
+- Technology stack consistency
+- Code quality standards
+`;
 
     const instructions = `
 # Pattern-Based Rule Generation Instructions
@@ -184,8 +228,7 @@ This analysis will generate architectural rules based on observed code patterns 
 
 ## Pattern Analysis
 - **Project Path**: ${projectPath}
-- **Files Analyzed**: ${projectStructure.totalFiles} files
-- **Code Patterns**: ${codePatterns.length} patterns detected
+- **Analysis Focus**: Code structure, dependencies, naming conventions, architecture patterns
 - **Existing Rules**: ${existingRules?.length || 0} rules
 
 ## Next Steps
@@ -378,91 +421,6 @@ const result = await generateRuleDeviationReport(validationResults, rules, repor
   }
 }
 
-/**
- * Extract code patterns from project structure
- */
-function extractCodePatterns(projectStructure: any): Array<{
-  pattern: string;
-  frequency: number;
-  examples: string[];
-  category: string;
-}> {
-  const patterns: Array<{
-    pattern: string;
-    frequency: number;
-    examples: string[];
-    category: string;
-  }> = [];
+// Removed unused function extractCodePatterns
 
-  try {
-    // Extract patterns from file types
-    if (projectStructure.filesByType) {
-      Object.entries(projectStructure.filesByType).forEach(([type, files]: [string, any]) => {
-        if (Array.isArray(files) && files.length > 0) {
-          patterns.push({
-            pattern: `${type} file organization`,
-            frequency: files.length,
-            examples: files.slice(0, 3).map((f: any) => f.name || f),
-            category: 'structure',
-          });
-        }
-      });
-    }
-
-    // Extract patterns from directory structure
-    if (projectStructure.directories) {
-      patterns.push({
-        pattern: 'Directory organization',
-        frequency: projectStructure.directories.length,
-        examples: projectStructure.directories.slice(0, 3),
-        category: 'structure',
-      });
-    }
-
-    // Extract patterns from detected technologies
-    if (projectStructure.detectedTechnologies) {
-      patterns.push({
-        pattern: 'Technology stack',
-        frequency: projectStructure.detectedTechnologies.length,
-        examples: projectStructure.detectedTechnologies.slice(0, 3),
-        category: 'technology',
-      });
-    }
-
-    return patterns;
-  } catch (error) {
-    console.warn('Failed to extract code patterns:', error);
-    return [
-      {
-        pattern: 'Basic project structure',
-        frequency: 1,
-        examples: ['Unable to extract specific patterns'],
-        category: 'general',
-      },
-    ];
-  }
-}
-
-/**
- * Extract ADR category from content
- */
-function extractAdrCategory(content: string): string {
-  const categoryPatterns = [
-    { pattern: /framework|library|dependency/i, category: 'technology' },
-    { pattern: /database|storage|persistence/i, category: 'database' },
-    { pattern: /api|rest|graphql|endpoint/i, category: 'api' },
-    { pattern: /security|authentication|authorization/i, category: 'security' },
-    { pattern: /deployment|infrastructure|cloud/i, category: 'deployment' },
-    { pattern: /test|testing|quality/i, category: 'testing' },
-    { pattern: /architecture|pattern|design/i, category: 'architecture' },
-    { pattern: /process|workflow|methodology/i, category: 'process' },
-  ];
-
-  for (const { pattern, category } of categoryPatterns) {
-    if (pattern.test(content)) {
-      return category;
-    }
-  }
-
-  return 'general';
-}
+// Removed unused function extractAdrCategory

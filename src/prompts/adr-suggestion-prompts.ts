@@ -4,38 +4,43 @@
  */
 
 /**
- * AI prompt for detecting implicit architectural decisions from code patterns
+ * AI prompt for detecting implicit architectural decisions by scanning project files
  */
 export function generateImplicitDecisionDetectionPrompt(
-  projectStructure: string,
-  codePatterns: string[],
+  projectPath: string,
   existingAdrs?: string[]
 ): string {
   return `
 # Implicit Architectural Decision Detection
 
-Please analyze the following project structure and code patterns to identify implicit architectural decisions that should be documented as ADRs.
+Please analyze the project at **${projectPath}** to identify implicit architectural decisions that should be documented as ADRs.
 
-## Project Structure
-\`\`\`
-${projectStructure}
-\`\`\`
+## Your Analysis Tasks
 
-## Code Patterns Detected
-${codePatterns
-  .map(
-    (pattern, index) => `
-### Pattern ${index + 1}
-\`\`\`
-${pattern}
-\`\`\`
-`
-  )
-  .join('')}
+### 1. **Project Structure Analysis**
+First, examine the project structure to understand the codebase:
+- Use file system tools to list directories and files
+- Identify the main programming languages and frameworks
+- Analyze the overall project organization and architecture
+- Look for configuration files, build scripts, and dependency files
+
+### 2. **Code Pattern Detection**
+Scan the codebase for architectural patterns and decisions:
+- Read key source files to identify patterns
+- Examine configuration files for technology choices
+- Look for established conventions and standards
+- Identify design patterns and architectural styles
+
+### 3. **Technology Stack Analysis**
+Identify the technology decisions reflected in the codebase:
+- Framework and library choices
+- Database and data access patterns
+- API and integration patterns
+- Testing and deployment configurations
 
 ${
   existingAdrs
-    ? `## Existing ADRs
+    ? `## Existing ADRs (avoid duplicating)
 ${existingAdrs.map(adr => `- ${adr}`).join('\n')}
 `
     : ''

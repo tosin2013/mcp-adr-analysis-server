@@ -128,10 +128,10 @@ This comprehensive analysis will identify all potential ADRs for your project.
 
 ## Project Analysis
 - **Project Path**: ${projectPath}
-- **Existing ADRs**: ${existingAdrs?.length || 0} ADRs found
-- **Analysis Type**: Comprehensive (implicit decisions + patterns)
+- **Existing ADRs**: ${existingAdrs?.length || 0} ADRs provided
+- **Analysis Type**: Comprehensive (AI-driven file scanning)
 
-## Implicit Decisions Analysis
+## AI Analysis Instructions
 
 ${implicitResult.instructions}
 
@@ -301,7 +301,7 @@ Before finalizing the ADR, ensure:
 }
 
 /**
- * Discover existing ADRs in the project
+ * Generate prompt for AI to discover existing ADRs in the project
  */
 export async function discoverExistingAdrs(args: {
   adrDirectory?: string;
@@ -309,114 +309,100 @@ export async function discoverExistingAdrs(args: {
 }): Promise<any> {
   const { adrDirectory = 'docs/adrs', includeContent = false } = args;
 
-  try {
-    const { findFiles } = await import('../utils/file-system.js');
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `# ADR Discovery: AI-Driven Scan
 
-    // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
-      includeContent,
-    });
+## Instructions for AI Agent
 
-    if (adrFiles.length === 0) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# ADR Discovery Results
+Please scan the project directory **${adrDirectory}** to discover existing ADRs.
 
-## No ADRs Found
-No ADR files were found in the directory: \`${adrDirectory}\`
+### Your Discovery Tasks
 
-## Suggestions
-1. **Check directory path**: Ensure the ADR directory path is correct
-2. **Initialize ADR directory**: Create the directory if it doesn't exist
-3. **Use different pattern**: ADRs might be stored with different naming conventions
-4. **Start fresh**: Begin documenting architectural decisions with new ADRs
+1. **Directory Scanning**
+   - Use file system tools to list all files in \`${adrDirectory}\`
+   - Look for files with \`.md\` extension
+   - Check for common ADR naming patterns (e.g., \`ADR-001-\`, \`001-\`, etc.)
 
-## Getting Started
-Use the \`suggest_adrs\` tool to identify decisions that should be documented:
-\`\`\`
+2. **Content Analysis** ${includeContent ? '(with content)' : '(metadata only)'}
+   - Read each ADR file to extract metadata
+   - Identify title, status, date, and key information
+   - ${includeContent ? 'Extract full content for analysis' : 'Focus on headers and metadata'}
+
+3. **ADR Inventory Generation**
+   - Create a list of all discovered ADRs
+   - Extract titles, statuses, and dates
+   - Generate a summary of the ADR collection
+
+### Expected Output Format
+
+Please provide your findings in this JSON format:
+
+\`\`\`json
 {
-  "tool": "suggest_adrs",
-  "args": {
-    "analysisType": "comprehensive"
-  }
+  "discoveryResults": {
+    "directory": "${adrDirectory}",
+    "totalAdrs": 0,
+    "adrs": [
+      {
+        "filename": "adr-001-example.md",
+        "path": "full/path/to/file",
+        "title": "Example Decision",
+        "status": "Accepted",
+        "date": "2024-01-01",
+        "size": 1234${includeContent ? ',\n        "content": "full ADR content"' : ''}
+      }
+    ]
+  },
+  "summary": {
+    "byStatus": {
+      "accepted": 5,
+      "proposed": 2,
+      "deprecated": 1
+    },
+    "byCategory": {
+      "architecture": 3,
+      "technology": 2,
+      "process": 3
+    }
+  },
+  "recommendations": [
+    "Next steps based on discovered ADRs"
+  ]
 }
 \`\`\`
-`,
-          },
-        ],
-      };
-    }
 
-    // Extract ADR metadata
-    const adrList = adrFiles.map(file => {
-      const titleMatch = file.content?.match(/^#\s+(.+)$/m);
-      const statusMatch = file.content?.match(/##\s+Status\s*\n\s*(.+)/i);
-      const dateMatch = file.content?.match(/\b(\d{4}-\d{2}-\d{2})\b/);
+### Search Patterns
 
-      return {
-        filename: file.name,
-        path: file.path,
-        title: titleMatch?.[1] || file.name.replace(/\.md$/, ''),
-        status: statusMatch?.[1] || 'Unknown',
-        date: dateMatch?.[1] || 'Unknown',
-        size: file.size,
-      };
-    });
+Look for files matching these patterns:
+- \`${adrDirectory}/**/*.md\`
+- Files starting with numbers (e.g., \`001-\`, \`0001-\`)
+- Files containing "ADR" in the name
+- Files with architectural decision keywords
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `# ADR Discovery Results
+### Alternative Locations
 
-## Summary
-- **Directory**: ${adrDirectory}
-- **Total ADRs**: ${adrFiles.length}
-- **Total Size**: ${adrFiles.reduce((sum, f) => sum + (f.size || 0), 0)} bytes
-
-## Discovered ADRs
-${adrList
-  .map(
-    (adr, index) => `
-### ${index + 1}. ${adr.title}
-- **File**: ${adr.filename}
-- **Path**: ${adr.path}
-- **Status**: ${adr.status}
-- **Date**: ${adr.date}
-- **Size**: ${adr.size} bytes
-`
-  )
-  .join('')}
-
-## ADR Titles (for reference)
-${adrList.map(adr => `- ${adr.title}`).join('\n')}
+If no ADRs are found in \`${adrDirectory}\`, also check:
+- \`docs/\` directory
+- \`documentation/\` directory
+- \`decisions/\` directory
+- Root directory for isolated ADR files
 
 ## Next Steps
-1. **Review existing ADRs** for completeness and currency
-2. **Identify gaps** using the \`suggest_adrs\` tool
-3. **Update outdated ADRs** as needed
-4. **Establish ADR workflow** for future decisions
 
-## Usage with ADR Tools
-Use the discovered ADR titles with other tools:
+After discovery, use the results with:
 \`\`\`
 {
   "tool": "suggest_adrs",
   "args": {
-    "existingAdrs": [${adrList.map(adr => `"${adr.title}"`).join(', ')}]
+    "existingAdrs": ["list of discovered ADR titles"]
   }
 }
 \`\`\`
 `,
-        },
-      ],
-    };
-  } catch (error) {
-    throw new McpAdrError(
-      `Failed to discover ADRs: ${error instanceof Error ? error.message : String(error)}`,
-      'DISCOVERY_ERROR'
-    );
-  }
+      },
+    ],
+  };
 }

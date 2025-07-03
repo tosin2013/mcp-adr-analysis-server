@@ -74,29 +74,19 @@ export interface GeneratedAdr {
 }
 
 /**
- * Analyze project for implicit architectural decisions
+ * Generate prompt for AI to analyze project for implicit architectural decisions
  */
 export async function analyzeImplicitDecisions(
   projectPath: string,
   existingAdrs?: string[]
 ): Promise<{ analysisPrompt: string; instructions: string }> {
   try {
-    const { analyzeProjectStructure } = await import('./file-system.js');
-    const { generateAnalysisContext } = await import('../prompts/analysis-prompts.js');
     const { generateImplicitDecisionDetectionPrompt } = await import(
       '../prompts/adr-suggestion-prompts.js'
     );
 
-    // Analyze project structure
-    const projectStructure = await analyzeProjectStructure(projectPath);
-    const analysisContext = generateAnalysisContext(projectStructure);
-
-    // Extract code patterns from project structure
-    const codePatterns = extractCodePatterns(projectStructure);
-
     const analysisPrompt = generateImplicitDecisionDetectionPrompt(
-      analysisContext,
-      codePatterns,
+      projectPath,
       existingAdrs
     );
 
@@ -107,9 +97,7 @@ This analysis will identify architectural decisions that are implicit in the cod
 
 ## Analysis Scope
 - **Project Path**: ${projectPath}
-- **Files Analyzed**: ${projectStructure.totalFiles} files
-- **Directories**: ${projectStructure.totalDirectories} directories
-- **Existing ADRs**: ${existingAdrs?.length || 0} ADRs
+- **Existing ADRs**: ${existingAdrs?.length || 0} ADRs provided
 
 ## Next Steps
 1. **Submit the analysis prompt** to an AI agent for decision detection
@@ -138,7 +126,7 @@ const result = await analyzeImplicitDecisions(projectPath, existingAdrs);
     };
   } catch (error) {
     throw new McpAdrError(
-      `Failed to analyze implicit decisions: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to generate analysis prompt: ${error instanceof Error ? error.message : String(error)}`,
       'ANALYSIS_ERROR'
     );
   }
@@ -272,51 +260,6 @@ const result = await generateAdrFromDecision(decisionData, 'nygard', existingAdr
   }
 }
 
-/**
- * Extract code patterns from project structure for analysis
- */
-function extractCodePatterns(projectStructure: any): string[] {
-  const patterns: string[] = [];
-
-  try {
-    // Extract patterns from file structure
-    if (projectStructure.filesByType) {
-      Object.entries(projectStructure.filesByType).forEach(([type, files]: [string, any]) => {
-        if (Array.isArray(files) && files.length > 0) {
-          patterns.push(
-            `${type} files: ${files
-              .slice(0, 5)
-              .map((f: any) => f.name || f)
-              .join(', ')}${files.length > 5 ? ` and ${files.length - 5} more` : ''}`
-          );
-        }
-      });
-    }
-
-    // Extract patterns from directory structure
-    if (projectStructure.directories) {
-      const dirNames = projectStructure.directories.slice(0, 10).join(', ');
-      patterns.push(
-        `Directory structure: ${dirNames}${projectStructure.directories.length > 10 ? ` and ${projectStructure.directories.length - 10} more` : ''}`
-      );
-    }
-
-    // Extract patterns from detected technologies
-    if (projectStructure.detectedTechnologies) {
-      patterns.push(`Technologies: ${projectStructure.detectedTechnologies.join(', ')}`);
-    }
-
-    // Add basic project metrics
-    patterns.push(
-      `Project metrics: ${projectStructure.totalFiles} files, ${projectStructure.totalDirectories} directories`
-    );
-
-    return patterns;
-  } catch (error) {
-    console.warn('Failed to extract code patterns:', error);
-    return ['Unable to extract code patterns from project structure'];
-  }
-}
 
 /**
  * Generate next ADR number based on existing ADRs
@@ -336,7 +279,8 @@ export function generateNextAdrNumber(existingAdrs: string[]): string {
 
     return `ADR-${nextNumber.toString().padStart(4, '0')}`;
   } catch (error) {
-    console.warn('Failed to generate ADR number:', error);
+    // Log to stderr to avoid corrupting MCP protocol
+    console.error('[WARN] Failed to generate ADR number:', error);
     return 'ADR-0001';
   }
 }
@@ -356,7 +300,8 @@ export function suggestAdrFilename(title: string, adrNumber?: string): string {
 
     return `${number.toLowerCase()}-${cleanTitle}.md`;
   } catch (error) {
-    console.warn('Failed to suggest filename:', error);
+    // Log to stderr to avoid corrupting MCP protocol
+    console.error('[WARN] Failed to suggest filename:', error);
     return 'adr-new-decision.md';
   }
 }

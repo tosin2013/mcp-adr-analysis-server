@@ -120,14 +120,66 @@ export async function configureCustomPatterns(args: {
 
   try {
     const { analyzeProjectStructure } = await import('../utils/file-system.js');
-    const { generateAnalysisContext } = await import('../prompts/analysis-prompts.js');
-    const { generateCustomPatternConfiguration } = await import('../utils/content-masking.js');
 
-    // Analyze project structure for context
-    const projectStructure = await analyzeProjectStructure(projectPath);
-    const projectContext = generateAnalysisContext(projectStructure);
+    // Generate project analysis prompt for AI delegation
+    const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
 
-    const result = await generateCustomPatternConfiguration(projectContext, existingPatterns);
+    const customPatternPrompt = `
+# Custom Pattern Configuration Generation
+
+Please analyze the project structure and generate custom content masking patterns.
+
+## Project Analysis Instructions
+
+${projectAnalysisPrompt.prompt}
+
+## Implementation Steps
+
+${projectAnalysisPrompt.instructions}
+
+## Existing Patterns Context
+
+${existingPatterns ? `
+### Current Patterns (${existingPatterns.length})
+${existingPatterns.map((pattern, index) => `
+#### ${index + 1}. ${pattern}
+`).join('')}
+` : 'No existing patterns provided.'}
+
+## Pattern Generation Requirements
+
+1. **Analyze project-specific content types** that need masking
+2. **Identify sensitive data patterns** in code and documentation
+3. **Generate regex patterns** for consistent content masking
+4. **Create appropriate replacements** that maintain context
+5. **Ensure patterns don't conflict** with existing ones
+6. **Provide clear descriptions** for each pattern
+
+## Required Output Format
+
+Please provide custom pattern configuration in JSON format:
+\`\`\`json
+{
+  "patterns": [
+    {
+      "name": "pattern-name",
+      "pattern": "regex-pattern",
+      "replacement": "replacement-text",
+      "description": "pattern-description",
+      "category": "pattern-category"
+    }
+  ],
+  "recommendations": ["list", "of", "recommendations"],
+  "conflicts": ["any", "potential", "conflicts"]
+}
+\`\`\`
+`;
+
+    const result = {
+      configurationPrompt: customPatternPrompt,
+      instructions: projectAnalysisPrompt.instructions,
+      context: projectAnalysisPrompt.context
+    };
 
     return {
       content: [

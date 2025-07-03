@@ -1,0 +1,236 @@
+# 🚀 MCP ADR Analysis Server - Usage Guide
+
+A comprehensive guide for using the MCP ADR Analysis Server across different project scenarios. This guide provides practical examples with actual tool calls for three common use cases.
+
+## 📋 Quick Setup
+
+### Installation
+```bash
+# Global installation (recommended)
+npm install -g mcp-adr-analysis-server
+
+# Verify installation
+mcp-adr-analysis-server --version
+```
+
+### MCP Client Configuration
+
+Add to your MCP client configuration (e.g., Claude Desktop):
+
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/path/to/your/project",
+        "ADR_DIRECTORY": "docs/adrs",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+## 🎯 Three Main Use Cases
+
+### 1. 📚 Projects with Existing ADRs
+
+**Scenario**: You have a project with existing Architectural Decision Records and want to analyze, enhance, or maintain them.
+
+#### Key Tools for This Scenario:
+- `discover_existing_adrs` - Find and catalog existing ADRs
+- `analyze_project_ecosystem` - Understand current architecture
+- `suggest_adrs` - Identify missing decisions
+- `generate_adr_todo` - Create action items from ADRs
+
+#### Step-by-Step Workflow:
+
+**Step 1: Discover Existing ADRs**
+```
+Tool: discover_existing_adrs
+Parameters:
+{
+  "adrDirectory": "docs/adrs"
+}
+```
+*This will scan your ADR directory and catalog all existing decisions.*
+
+**Step 2: Analyze Project Architecture**
+```
+Tool: analyze_project_ecosystem
+Parameters: {}
+```
+*Analyzes your entire project to understand the current technology stack and patterns.*
+
+**Step 3: Identify Missing Decisions**
+```
+Tool: suggest_adrs
+Parameters:
+{
+  "analysisType": "comprehensive",
+  "existingAdrs": ["Use React for Frontend", "PostgreSQL for Database"]
+}
+```
+*Suggests new ADRs based on code analysis and existing decisions.*
+
+**Step 4: Generate Action Items**
+```
+Tool: generate_adr_todo
+Parameters:
+{
+  "scope": "all"
+}
+```
+*Creates a todo.md file with actionable items from your ADRs.*
+
+### 2. 🆕 Projects Without Any ADRs
+
+**Scenario**: You have an existing codebase but no documented architectural decisions. You want to start documenting your architecture.
+
+#### Key Tools for This Scenario:
+- `analyze_project_ecosystem` - Understand current architecture
+- `suggest_adrs` - Discover implicit decisions
+- `generate_adr_from_decision` - Create formal ADRs
+
+#### Step-by-Step Workflow:
+
+**Step 1: Analyze Your Project**
+```
+Tool: analyze_project_ecosystem
+Parameters: {
+  "includePatterns": ["*.js", "*.ts", "*.py", "*.java", "package.json", "requirements.txt"]
+}
+```
+*Discovers your technology stack, frameworks, and architectural patterns.*
+
+**Step 2: Discover Implicit Decisions**
+```
+Tool: suggest_adrs
+Parameters: {
+  "analysisType": "implicit_decisions"
+}
+```
+*Identifies architectural decisions that are implicit in your code but not documented.*
+
+**Step 3: Create Your First ADRs**
+```
+Tool: generate_adr_from_decision
+Parameters: {
+  "decisionData": {
+    "title": "Use Express.js for API Server",
+    "context": "Need a web framework for our Node.js backend API",
+    "decision": "We will use Express.js as our web application framework",
+    "consequences": "Fast development, large ecosystem, but requires additional middleware for advanced features",
+    "alternatives": ["Fastify", "Koa.js", "NestJS"]
+  }
+}
+```
+*Creates a properly formatted ADR from decision data.*
+
+### 3. 📋 New Projects with PRD.md
+
+**Scenario**: You're starting a new project and have a Product Requirements Document (PRD.md). You want to generate ADRs from your requirements.
+
+#### Key Tools for This Scenario:
+- `generate_adrs_from_prd` - Convert PRD to ADRs
+- `analyze_project_ecosystem` - Validate generated decisions
+- `generate_adr_todo` - Create implementation tasks
+
+#### Step-by-Step Workflow:
+
+**Step 1: Generate ADRs from PRD**
+```
+Tool: generate_adrs_from_prd
+Parameters: {
+  "prdPath": "PRD.md",
+  "outputDirectory": "docs/adrs"
+}
+```
+*Analyzes your PRD.md and generates appropriate ADRs for architectural decisions.*
+
+**Step 2: Validate Against Project Context**
+```
+Tool: analyze_project_ecosystem
+Parameters: {}
+```
+*Ensures generated ADRs align with your project structure and constraints.*
+
+**Step 3: Create Implementation Tasks**
+```
+Tool: generate_adr_todo
+Parameters: {
+  "scope": "pending"
+}
+```
+*Generates actionable tasks from your newly created ADRs.*
+
+## 🔧 Advanced Features
+
+### Content Security & Masking
+Protect sensitive information in your analysis:
+
+```
+Tool: analyze_content_security
+Parameters: {
+  "content": "Your code or documentation",
+  "contentType": "code"
+}
+```
+
+### Research Integration
+Incorporate research findings into decisions:
+
+```
+Tool: generate_research_questions
+Parameters: {
+  "context": "Choosing between microservices and monolith",
+  "scope": "architecture"
+}
+```
+
+### Rule Generation & Validation
+Create and enforce architectural rules:
+
+```
+Tool: generate_rules
+Parameters: {
+  "adrDirectory": "docs/adrs",
+  "includeCompliance": true
+}
+```
+
+## 📊 Available Resources
+
+Access structured data through MCP resources:
+
+- **`adr://architectural_knowledge_graph`** - Complete project analysis graph
+- **`adr://analysis_report`** - Comprehensive project reports  
+- **`adr://adr_list`** - ADR inventory and metadata
+
+## 🆘 Common Workflows
+
+### Weekly ADR Review
+1. `discover_existing_adrs` - Check current state
+2. `suggest_adrs` - Find new decisions needed
+3. `generate_adr_todo` - Update action items
+
+### New Feature Planning
+1. `analyze_project_ecosystem` - Understand current state
+2. `suggest_adrs` - Identify decisions needed for feature
+3. `generate_adr_from_decision` - Document decisions
+
+### Architecture Audit
+1. `analyze_project_ecosystem` - Full project analysis
+2. `generate_rules` - Extract current rules
+3. `validate_rules` - Check compliance
+
+## 🔗 Next Steps
+
+- **[Detailed Setup Guide](getting-started-no-adrs.md)** - Complete installation and configuration
+- **[ADR Examples](adrs/)** - See real ADRs from this project
+- **[NPM Publishing](NPM_PUBLISHING.md)** - Deploy your own MCP server
+
+---
+
+**Need Help?** Open an issue on [GitHub](https://github.com/tosin2013/mcp-adr-analysis-server/issues)

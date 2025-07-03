@@ -21,24 +21,23 @@ export async function generateArchitecturalKnowledgeGraph(
 ): Promise<ResourceGenerationResult> {
   try {
     const { analyzeProjectStructure } = await import('../utils/file-system.js');
-    const { generateAnalysisContext, generateComprehensiveAnalysisPrompt } = await import(
-      '../prompts/analysis-prompts.js'
-    );
 
-    // Analyze project structure
-    const projectStructure = await analyzeProjectStructure(projectPath);
-    const analysisContext = generateAnalysisContext(projectStructure);
+    // Generate project analysis prompt for AI delegation
+    const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
 
-    // Generate comprehensive analysis prompt
-    const analysisPrompt = generateComprehensiveAnalysisPrompt(analysisContext);
-
-    // Create knowledge graph structure with prompt for AI completion
+    // Create comprehensive knowledge graph generation prompt
     const knowledgeGraphPrompt = `
 # Architectural Knowledge Graph Generation
 
-Please generate a complete architectural knowledge graph based on the following project analysis.
+Please perform a comprehensive project analysis and generate a complete architectural knowledge graph.
 
-${analysisPrompt}
+## Project Analysis Instructions
+
+${projectAnalysisPrompt.prompt}
+
+## Implementation Steps
+
+${projectAnalysisPrompt.instructions}
 
 ## Required Output Format
 
@@ -54,8 +53,8 @@ Please provide the architectural knowledge graph in the following JSON structure
     "version": "detected-version",
     "lastAnalyzed": "ISO-8601-timestamp",
     "analysisVersion": "1.0.0",
-    "fileCount": ${projectStructure.totalFiles},
-    "directoryCount": ${projectStructure.totalDirectories}
+    "fileCount": "total-files-discovered",
+    "directoryCount": "total-directories-discovered"
   },
   "technologies": [
     {
@@ -161,7 +160,8 @@ The knowledge graph includes:
 Submit the prompt to generate the actual knowledge graph data.
         `,
         projectPath,
-        analysisContext: JSON.parse(analysisContext),
+        promptInstructions: projectAnalysisPrompt.instructions,
+        context: projectAnalysisPrompt.context,
       },
       contentType: 'application/json',
       lastModified: new Date().toISOString(),
@@ -185,26 +185,27 @@ export async function generateAnalysisReport(
 ): Promise<ResourceGenerationResult> {
   try {
     const { analyzeProjectStructure } = await import('../utils/file-system.js');
-    const { generateAnalysisContext } = await import('../prompts/analysis-prompts.js');
 
-    // Analyze project structure
-    const projectStructure = await analyzeProjectStructure(projectPath);
-    const analysisContext = generateAnalysisContext(projectStructure);
+    // Generate project analysis prompt for AI delegation
+    const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
 
     const reportPrompt = `
 # Project Analysis Report Generation
 
-Please generate a comprehensive analysis report for this project.
+Please perform a comprehensive project analysis and generate a detailed analysis report.
 
-## Project Context
-\`\`\`json
-${analysisContext}
-\`\`\`
+## Project Analysis Instructions
+
+${projectAnalysisPrompt.prompt}
+
+## Implementation Steps
+
+${projectAnalysisPrompt.instructions}
 
 ${
   focusAreas
     ? `## Focus Areas
-${focusAreas.join(', ')}`
+Please pay special attention to the following areas: ${focusAreas.join(', ')}`
     : ''
 }
 
@@ -324,7 +325,8 @@ Submit the prompt to generate the actual analysis report.
         `,
         projectPath,
         focusAreas,
-        analysisContext: JSON.parse(analysisContext),
+        promptInstructions: projectAnalysisPrompt.instructions,
+        context: projectAnalysisPrompt.context,
       },
       contentType: 'application/json',
       lastModified: new Date().toISOString(),
@@ -348,35 +350,32 @@ export async function generateAdrList(
   try {
     const { findFiles } = await import('../utils/file-system.js');
 
-    // Find all ADR files
-    const adrFiles = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+    // Generate file discovery prompt for AI delegation
+    const fileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
       includeContent: true,
     });
 
     const adrListPrompt = `
 # ADR List Resource Generation
 
-Please analyze the following ADR files and generate a structured ADR list resource.
+Please discover and analyze ADR files to generate a structured ADR list resource.
 
-## ADR Files Found
-${
-  adrFiles.length === 0
-    ? 'No ADR files found in the specified directory.'
-    : adrFiles
-        .map(
-          (file, index) => `
-### ${index + 1}. ${file.name}
-**Path**: ${file.path}
-**Size**: ${file.size} bytes
+## File Discovery Instructions
 
-**Content Preview**:
-\`\`\`markdown
-${file.content?.slice(0, 1000) || 'No content available'}${(file.content?.length || 0) > 1000 ? '\n... (truncated)' : ''}
-\`\`\`
-`
-        )
-        .join('')
-}
+${fileDiscoveryPrompt.prompt}
+
+## Implementation Steps
+
+${fileDiscoveryPrompt.instructions}
+
+## Analysis Requirements
+
+For each ADR file discovered:
+1. Extract the file name, path, and size
+2. Read and analyze the content
+3. Identify the ADR status (proposed, accepted, deprecated, superseded)
+4. Extract key metadata (title, date, decision, consequences)
+5. Determine implementation status and coverage
 
 ## Required Output Format
 
@@ -388,7 +387,7 @@ Please provide the ADR list in the following JSON structure:
   "timestamp": "ISO-8601-timestamp",
   "directory": "${adrDirectory}",
   "summary": {
-    "totalAdrs": ${adrFiles.length},
+    "totalAdrs": "count-of-discovered-adrs",
     "statusBreakdown": {
       "proposed": 0,
       "accepted": 0,
@@ -486,8 +485,8 @@ The ADR list includes:
 Submit the prompt to generate the actual ADR list data.
         `,
         adrDirectory,
-        fileCount: adrFiles.length,
-        files: adrFiles.map(f => ({ name: f.name, path: f.path, size: f.size })),
+        promptInstructions: fileDiscoveryPrompt.instructions,
+        context: fileDiscoveryPrompt.context,
       },
       contentType: 'application/json',
       lastModified: new Date().toISOString(),
