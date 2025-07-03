@@ -114,7 +114,7 @@ export function createTestMemory(overrides: any = {}) {
  * Mock knowledge generation function
  */
 export function createMockKnowledgeGeneration() {
-  return jest.fn().mockResolvedValue({
+  return jest.fn<() => Promise<{prompt: string; instructions: string; context: any}>>().mockResolvedValue({
     prompt: 'Mock generated knowledge prompt',
     instructions: 'Mock knowledge instructions',
     context: {
@@ -129,7 +129,7 @@ export function createMockKnowledgeGeneration() {
  * Mock APE optimization function
  */
 export function createMockAPEOptimization() {
-  return jest.fn().mockResolvedValue({
+  return jest.fn<() => Promise<{prompt: string; instructions: string; context: any}>>().mockResolvedValue({
     prompt: 'Mock optimized prompt',
     instructions: 'Mock optimization instructions',
     context: {
@@ -144,7 +144,7 @@ export function createMockAPEOptimization() {
  * Mock Reflexion execution function
  */
 export function createMockReflexionExecution() {
-  return jest.fn().mockResolvedValue({
+  return jest.fn<() => Promise<{prompt: string; instructions: string; context: any}>>().mockResolvedValue({
     prompt: 'Mock reflexion-enhanced prompt',
     instructions: 'Mock reflexion instructions',
     context: {
@@ -159,7 +159,7 @@ export function createMockReflexionExecution() {
  * Mock memory retrieval function
  */
 export function createMockMemoryRetrieval() {
-  return jest.fn().mockResolvedValue({
+  return jest.fn<() => Promise<{prompt: string; instructions: string; context: any}>>().mockResolvedValue({
     prompt: 'Mock memory retrieval prompt',
     instructions: 'Mock memory retrieval instructions',
     context: {
@@ -333,8 +333,8 @@ export function assessPromptQuality(prompt: string): {
   };
   
   // Normalize criteria scores to 0-1
-  Object.keys(criteria).forEach(key => {
-    criteria[key] = Math.min(criteria[key], 1);
+  Object.entries(criteria).forEach(([key, value]) => {
+    (criteria as any)[key] = Math.min(value, 1);
   });
   
   const score = Object.values(criteria).reduce((sum, value) => sum + value, 0) / Object.keys(criteria).length;

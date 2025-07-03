@@ -2,6 +2,8 @@
 
 This guide helps you set up ADR analysis in an existing repository that has no Architectural Decision Records (ADRs). You'll learn how to discover architectural decisions hidden in your codebase and generate your first ADRs automatically.
 
+> **💡 NEW**: For intelligent workflow recommendations, see the [Workflow & Development Guidance](getting-started-workflow-guidance.md) guide that provides AI-powered tool sequence recommendations based on your specific goals.
+
 ## 📋 Prerequisites
 
 ### Required Software

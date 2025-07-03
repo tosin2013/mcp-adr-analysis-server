@@ -230,11 +230,81 @@ This relevance analysis provides:
           projectPath
         );
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `# Context-Aware Research Question Generation with File Persistence
+        // Execute the research question generation with AI if enabled, otherwise return prompt
+        const { executeResearchPrompt, formatMCPResponse } = await import('../utils/prompt-execution.js');
+        const executionResult = await executeResearchPrompt(
+          result.questionPrompt,
+          result.instructions,
+          {
+            temperature: 0.2, // Slightly higher for creativity in research questions
+            maxTokens: 6000,
+            systemPrompt: `You are a research specialist who generates comprehensive research questions and methodologies.
+Create detailed research plans that help teams investigate architectural decisions and technologies.
+Focus on practical research approaches that can be executed by development teams.
+Provide clear guidance on research methods, success criteria, and expected outcomes.
+IMPORTANT: Save the generated research questions to the docs/research directory as specified in the instructions.`,
+            responseFormat: 'text'
+          }
+        );
+
+        if (executionResult.isAIGenerated) {
+          // AI execution successful - return actual research question generation results
+          return formatMCPResponse({
+            ...executionResult,
+            content: `# Context-Aware Research Question Generation Results
+
+## Research Context
+- **Topic**: ${effectiveResearchContext.topic}
+- **Category**: ${effectiveResearchContext.category}
+- **Scope**: ${effectiveResearchContext.scope}
+- **Timeline**: ${effectiveResearchContext.timeline}
+- **Project Path**: ${projectPath}
+
+## AI Research Question Generation Results
+
+${executionResult.content}
+
+## Next Steps
+
+Based on the generated research questions:
+
+1. **Review Generated Questions**: Examine each research question for relevance and feasibility
+2. **Prioritize Research**: Order questions by importance and impact
+3. **Create Research Plan**: Develop timeline and methodology for each question
+4. **Assign Responsibilities**: Determine who will investigate each question
+5. **Track Progress**: Use the research tracking system to monitor progress
+
+## Research Excellence Features
+
+This generation provides:
+- **Comprehensive Coverage**: All aspects of research topic addressed
+- **Actionable Questions**: Questions that can be answered through research
+- **Context Awareness**: Questions tailored to project and architectural context
+- **Priority Guidance**: Clear prioritization for research execution
+- **Quality Standards**: Built-in quality assurance and validation
+- **Persistent Documentation**: Research questions saved for future reference and tracking
+
+## Follow-up Actions
+
+To track research progress:
+\`\`\`json
+{
+  "tool": "generate_research_questions",
+  "args": {
+    "analysisType": "tracking",
+    "researchQuestions": [questions from above]
+  }
+}
+\`\`\`
+`,
+          });
+        } else {
+          // Fallback to prompt-only mode
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `# Context-Aware Research Question Generation with File Persistence
 
 ${result.instructions}
 
@@ -250,32 +320,11 @@ The AI agent must save the generated research questions to the docs/research dir
 2. **Generate Research Questions**: Process the question generation prompt to create comprehensive questions
 3. **Save to File**: Create a markdown file with all generated research questions and plans
 4. **Confirm Persistence**: Verify that the research questions file has been created successfully
-
-## Expected Output
-
-The AI will provide:
-- **Research Question Generation**: Metadata and quality metrics for generated questions
-- **Primary Questions**: Core research questions with detailed specifications
-- **Secondary Questions**: Supporting questions for comprehensive coverage
-- **Methodological Questions**: Questions about research approach and methodology
-- **Research Plan**: Phased research plan with timelines and dependencies
-- **Quality Assurance**: Quality control and validation approach
-- **Expected Impact**: Anticipated benefits and outcomes of the research
-- **File Creation Confirmation**: Confirmation that research questions have been saved to docs/research directory
-
-## Research Excellence
-
-This question generation ensures:
-- **Comprehensive Coverage**: All aspects of research topic addressed
-- **Actionable Questions**: Questions that can be answered through research
-- **Context Awareness**: Questions tailored to project and architectural context
-- **Priority Guidance**: Clear prioritization for research execution
-- **Quality Standards**: Built-in quality assurance and validation
-- **Persistent Documentation**: Research questions saved for future reference and tracking
 `,
-            },
-          ],
-        };
+              },
+            ],
+          };
+        }
       }
 
       case 'tracking': {

@@ -6,7 +6,7 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-blue)](https://www.typescriptlang.org/)
 
-A comprehensive Model Context Protocol (MCP) server for AI-powered architectural decision analysis and management. This enterprise-ready solution provides intelligent analysis of Architectural Decision Records (ADRs), project ecosystems, and development workflows through 23 specialized MCP tools.
+A comprehensive Model Context Protocol (MCP) server that provides **AI-powered architectural analysis** with **immediate, actionable results**. Unlike traditional MCP tools that return prompts, this server executes analysis internally using OpenRouter.ai and returns actual insights, ADR suggestions, and architectural recommendations.
 
 **Author**: [Tosin Akinosho](https://github.com/tosin2013)
 **Repository**: [https://github.com/tosin2013/mcp-adr-analysis-server.git](https://github.com/tosin2013/mcp-adr-analysis-server.git)
@@ -21,8 +21,14 @@ This MCP server enhances AI assistants with deep architectural analysis capabili
 
 ## ✨ Key Features
 
+### 🤖 **AI-Powered Execution (NEW)**
+- **Immediate Results**: Get actual ADR suggestions, not prompts to submit elsewhere
+- **OpenRouter.ai Integration**: Supports Claude, GPT-4, and cost-effective models
+- **Smart Caching**: Intelligent response caching with configurable TTL
+- **Graceful Fallback**: Automatic fallback to prompt-only mode when AI unavailable
+
 ### 🏗️ **Architectural Analysis & Intelligence**
-- **Technology Detection**: AI-powered identification of ANY technology stack (React, Python, Terraform, Kubernetes, etc.)
+- **Technology Detection**: AI-powered identification of ANY technology stack
 - **Pattern Recognition**: Intelligent detection of architectural patterns and best practices
 - **Dependency Analysis**: Comprehensive project structure and dependency mapping
 - **Knowledge Graph Generation**: Create interconnected architectural knowledge representations
@@ -32,12 +38,6 @@ This MCP server enhances AI assistants with deep architectural analysis capabili
 - **Intelligent ADR Suggestions**: Auto-suggest ADRs from implicit code decisions
 - **ADR Lifecycle Management**: Complete ADR creation, analysis, and maintenance workflows
 - **Template Support**: Multiple ADR formats (Nygard, MADR, custom templates)
-
-### 🔍 **Research & Documentation Intelligence**
-- **Research Integration**: Monitor and incorporate research findings into architectural decisions
-- **Context-Aware Research Questions**: Generate targeted research questions based on project context
-- **Documentation Analysis**: Extract insights from existing documentation and codebases
-- **Knowledge Synthesis**: Combine multiple information sources for comprehensive analysis
 
 ### 🛡️ **Enterprise Security & Compliance**
 - **Content Masking**: Automatic detection and masking of sensitive information
@@ -51,39 +51,49 @@ This MCP server enhances AI assistants with deep architectural analysis capabili
 - **Environment Analysis**: Analyze and optimize deployment environments
 - **Rule Generation & Validation**: Extract and validate architectural rules from decisions
 
-## 🛠️ Available MCP Tools
+## 🛠️ Available MCP Tools (25 Total)
 
-### Core Analysis Tools
+### 🎯 **Workflow & Development Guidance** (AI-Powered ✅) **NEW!**
+- **`get_workflow_guidance`** - Intelligent workflow advisor that recommends optimal tool sequences based on your goals and project context
+- **`get_development_guidance`** - Comprehensive development guidance that translates architectural decisions into specific coding tasks and implementation roadmap
+
+### 🏗️ **Core Analysis Tools** (AI-Powered ✅)
 - **`analyze_project_ecosystem`** - Comprehensive technology and pattern detection
-- **`get_architectural_context`** - Generate intelligent architectural insights
+- **`get_architectural_context`** - Generate intelligent architectural insights + automatic ADR setup
 - **`generate_adrs_from_prd`** - Convert requirements to structured ADRs
-- **`generate_adr_todo`** - Create actionable task lists from ADRs
+- **`analyze_content_security`** - Detect sensitive information patterns
 
-### Advanced Intelligence Tools
+### 📋 **ADR Management Tools** (AI-Powered ✅)
 - **`suggest_adrs`** - Auto-suggest ADRs from implicit decisions
 - **`generate_adr_from_decision`** - Create ADRs from specific decisions
 - **`discover_existing_adrs`** - Intelligent ADR discovery and analysis
-- **`incorporate_research`** - Integrate research findings into decisions
+- **`generate_adr_todo`** - Create actionable task lists from ADRs
+
+### 🔍 **Research & Documentation Tools** (AI-Powered ✅)
 - **`generate_research_questions`** - Create context-aware research questions
+- **`incorporate_research`** - Integrate research findings into decisions
+- **`create_research_template`** - Generate research documentation templates
 
-### Security & Compliance Tools
-- **`analyze_sensitive_content`** - Detect sensitive information patterns
-- **`mask_content`** - Intelligent content masking and protection
-- **`configure_masking`** - Customize security and masking settings
-- **`validate_content_security`** - Comprehensive security validation
-- **`apply_security_guidance`** - Proactive security recommendations
+### 🛡️ **Security & Compliance Tools** (AI-Powered ✅)
+- **`generate_content_masking`** - Intelligent content masking and protection
+- **`configure_custom_patterns`** - Customize security and masking settings
+- **`apply_basic_content_masking`** - Basic content masking (fallback)
+- **`validate_content_masking`** - Validate masking effectiveness
 
-### Workflow & Management Tools
+### 🏗️ **Rule & Governance Tools** (AI-Powered ✅)
 - **`generate_rules`** - Extract architectural rules from ADRs
 - **`validate_rules`** - Validate code against architectural rules
 - **`create_rule_set`** - Create comprehensive rule management systems
+
+### 🚀 **Deployment & Environment Tools** (AI-Powered ✅)
 - **`analyze_environment`** - Environment analysis and optimization
 - **`analyze_deployment_progress`** - Deployment tracking and verification
 
-### Utility & Integration Tools
-- **`clear_cache`** - Cache management and optimization
-- **`create_research_template`** - Generate research documentation templates
+### ⚙️ **Utility & Management Tools**
+- **`manage_cache`** - Cache management and optimization
+- **`configure_output_masking`** - Configure global output masking
 - **`request_action_confirmation`** - Interactive user confirmation workflows
+- **`check_ai_execution_status`** - Diagnostic tool to troubleshoot AI execution configuration issues
 
 ## 📦 Installation
 
@@ -111,32 +121,51 @@ npm run build
 npm start
 ```
 
-## ⚙️ Configuration
+## 🤖 AI Execution Configuration
+
+The MCP server supports **AI-powered execution** that transforms tools from returning prompts to returning actual results. This solves the fundamental UX issue where AI agents receive prompts instead of actionable data.
+
+### Quick Setup
+
+1. **Get OpenRouter API Key**: Visit [https://openrouter.ai/keys](https://openrouter.ai/keys)
+2. **Set Environment Variables**:
+   ```bash
+   OPENROUTER_API_KEY=your_openrouter_api_key_here
+   EXECUTION_MODE=full
+   AI_MODEL=anthropic/claude-3-sonnet
+   ```
+3. **Restart MCP Server**: Tools now return actual results instead of prompts!
 
 ### Environment Variables
 
-The MCP server supports the following environment variables:
+#### **AI Execution (Recommended)**
+- **`OPENROUTER_API_KEY`** (Required for AI): OpenRouter API key from https://openrouter.ai/keys
+- **`EXECUTION_MODE`** (Optional): `full` (AI execution) or `prompt-only` (legacy)
+- **`AI_MODEL`** (Optional): AI model to use (see supported models below)
 
+#### **Performance Tuning (Optional)**
+- **`AI_TEMPERATURE`** (Optional): Response consistency (0-1, default: 0.1)
+- **`AI_MAX_TOKENS`** (Optional): Response length limit (default: 4000)
+- **`AI_TIMEOUT`** (Optional): Request timeout in ms (default: 60000)
+- **`AI_CACHE_ENABLED`** (Optional): Enable response caching (default: true)
+
+#### **Project Configuration**
 - **`PROJECT_PATH`** (Required): Path to the project directory to analyze
-  - Use `.` for current directory in project-specific configs
-  - Use `${workspaceFolder}` in VS Code/Cline for workspace root
-  - Use absolute paths for global configurations
+- **`ADR_DIRECTORY`** (Optional): Directory containing ADR files (default: `docs/adrs`)
+- **`LOG_LEVEL`** (Optional): Logging level (DEBUG, INFO, WARN, ERROR)
 
-- **`ADR_DIRECTORY`** (Optional): Directory containing ADR files
-  - Default: `docs/adrs`
-  - Relative to PROJECT_PATH
+### Supported AI Models
 
-- **`LOG_LEVEL`** (Optional): Logging level
-  - Options: `DEBUG`, `INFO`, `WARN`, `ERROR`
-  - Default: `INFO`
+| Model | Provider | Use Case | Input Cost | Output Cost |
+|-------|----------|----------|------------|-------------|
+| `anthropic/claude-3-sonnet` | Anthropic | Analysis, reasoning | $3.00/1K | $15.00/1K |
+| `anthropic/claude-3-haiku` | Anthropic | Quick tasks | $0.25/1K | $1.25/1K |
+| `openai/gpt-4o` | OpenAI | Versatile analysis | $5.00/1K | $15.00/1K |
+| `openai/gpt-4o-mini` | OpenAI | Cost-effective | $0.15/1K | $0.60/1K |
 
-- **`CACHE_ENABLED`** (Optional): Enable/disable caching
-  - Options: `true`, `false`
-  - Default: `true`
+## ⚙️ Client Configuration
 
-### Client Configurations
-
-### Claude Desktop
+### Claude Desktop (Recommended Setup)
 Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
 ```json
@@ -146,6 +175,10 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
       "command": "mcp-adr-analysis-server",
       "env": {
         "PROJECT_PATH": "/path/to/your/project",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet",
+        "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "docs/adrs",
         "LOG_LEVEL": "ERROR"
       }
@@ -428,30 +461,99 @@ npm run typecheck     # Run TypeScript type checking
 - **Security**: Content masking and secret prevention
 - **MCP Compliance**: Strict adherence to Model Context Protocol specification
 
+
+
 ## 🚀 Getting Started
 
-### Quick Start with Claude Desktop
-1. Install the MCP server:
-   ```bash
-   npm install -g mcp-adr-analysis-server
-   ```
+### Quick Start (3 Steps)
 
-2. Add to your Claude Desktop configuration:
-   ```json
-   {
-     "mcpServers": {
-       "adr-analysis": {
-         "command": "mcp-adr-analysis-server"
-       }
-     }
+1. **Install**: `npm install -g mcp-adr-analysis-server`
+2. **Get API Key**: Visit [https://openrouter.ai/keys](https://openrouter.ai/keys)
+3. **Configure Claude Desktop**: Add to your configuration:
+
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/path/to/your/project",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet"
+      }
+    }
+  }
    }
    ```
 
-3. Restart Claude Desktop and start analyzing your projects!
+4. **Restart Claude Desktop** and start getting AI-powered architectural insights!
+
+### Example Usage
+
+Once configured, you can ask Claude:
+
+> "Analyze this React project's architecture and suggest ADRs for any implicit decisions"
+
+> "Generate ADRs from the PRD.md file and create a todo.md with implementation tasks"
+
+> "Check this codebase for security issues and provide masking recommendations"
+
+The server will now return **actual analysis results** instead of prompts to submit elsewhere!
+
+## 🚀 Complete Development Lifecycle
+
+The MCP server now provides a **complete development lifecycle assistant** with intelligent workflow guidance:
+
+### **🎯 Step 1: Get Workflow Guidance**
+```
+get_workflow_guidance
+```
+**Parameters:**
+```json
+{
+  "goal": "analyze new project and set up architectural documentation",
+  "projectContext": "new_project",
+  "availableAssets": ["codebase"],
+  "timeframe": "thorough_review"
+}
+```
+
+**Result**: Intelligent tool sequence recommendations and workflow guidance.
+
+### **🏗️ Step 2: Get Development Guidance**
+```
+get_development_guidance
+```
+**Parameters:**
+```json
+{
+  "developmentPhase": "implementation",
+  "adrsToImplement": ["ADR-001: API Design", "ADR-002: Database Schema"],
+  "technologyStack": ["TypeScript", "React", "Node.js"],
+  "teamContext": {"size": "small_team", "experienceLevel": "mixed"}
+}
+```
+
+**Result**: Specific coding tasks, implementation patterns, and development roadmap.
+
+### **📊 Step 3: Execute Recommended Tools**
+Follow the workflow guidance to execute the recommended tool sequence for your specific goals.
+
+### **🔄 Complete Workflow Examples**
+
+#### **New Project Setup**
+1. `get_workflow_guidance` → 2. `analyze_project_ecosystem` → 3. `get_architectural_context` → 4. `suggest_adrs` → 5. `get_development_guidance`
+
+#### **Existing Project Analysis**
+1. `get_workflow_guidance` → 2. `discover_existing_adrs` → 3. `get_architectural_context` → 4. `generate_adr_todo` → 5. `get_development_guidance`
+
+#### **Security Audit**
+1. `get_workflow_guidance` → 2. `analyze_content_security` → 3. `generate_content_masking` → 4. `validate_content_masking`
 
 ### Configuration Examples
 
-#### Example 1: Single Project Analysis
+#### Example 1: AI-Powered Project Analysis
 ```json
 {
   "mcpServers": {
@@ -460,6 +562,10 @@ npm run typecheck     # Run TypeScript type checking
       "env": {
         "PROJECT_PATH": "/Users/username/my-react-app",
         "ADR_DIRECTORY": "docs/decisions",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet",
+        "AI_TEMPERATURE": "0.1",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -467,7 +573,42 @@ npm run typecheck     # Run TypeScript type checking
 }
 ```
 
-#### Example 2: Multi-Project Setup (Different configs for different projects)
+#### Example 2: Cost-Effective Setup
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/Users/username/my-project",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-haiku",
+        "AI_MAX_TOKENS": "2000",
+        "AI_TEMPERATURE": "0.05"
+      }
+    }
+  }
+}
+```
+
+#### Example 3: Prompt-Only Mode (Legacy)
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/Users/username/my-project",
+        "EXECUTION_MODE": "prompt-only",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+#### Example 4: Multi-Project Setup
 ```json
 {
   "mcpServers": {
@@ -476,6 +617,9 @@ npm run typecheck     # Run TypeScript type checking
       "env": {
         "PROJECT_PATH": "/Users/username/frontend-app",
         "ADR_DIRECTORY": "docs/adrs",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "openai/gpt-4o-mini",
         "LOG_LEVEL": "ERROR"
       }
     },
@@ -484,6 +628,9 @@ npm run typecheck     # Run TypeScript type checking
       "env": {
         "PROJECT_PATH": "/Users/username/backend-api",
         "ADR_DIRECTORY": "architecture/decisions",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet",
         "LOG_LEVEL": "DEBUG"
       }
     }
@@ -491,7 +638,7 @@ npm run typecheck     # Run TypeScript type checking
 }
 ```
 
-#### Example 3: Development vs Production
+#### Example 5: Development Environment
 ```json
 {
   "mcpServers": {
@@ -500,33 +647,130 @@ npm run typecheck     # Run TypeScript type checking
       "env": {
         "PROJECT_PATH": "${workspaceFolder}",
         "ADR_DIRECTORY": "docs/adrs",
-        "LOG_LEVEL": "DEBUG",
-        "CACHE_ENABLED": "true",
-        "ANALYSIS_TIMEOUT": "60000"
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-haiku",
+        "AI_CACHE_ENABLED": "true",
+        "AI_CACHE_TTL": "1800",
+        "LOG_LEVEL": "DEBUG"
       }
     }
   }
 }
 ```
 
-### Example Prompts for AI Assistants
 
-**Project Analysis:**
-```
-Using the MCP ADR Analysis Server, analyze this React TypeScript project and generate architectural insights focusing on scalability and security.
+
+## � Troubleshooting
+
+### ⚠️ **CRITICAL**: Tools Return Prompts Instead of Results
+
+**Symptom**: When calling tools like `suggest_adrs`, you receive large detailed instructions and prompts instead of actual ADR suggestions.
+
+**Root Cause**: AI execution is not properly configured. The tool is falling back to prompt-only mode.
+
+**Solution**: Add these **required** environment variables to your MCP configuration:
+
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/path/to/your/project",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet"
+      }
+    }
+  }
+}
 ```
 
-**ADR Generation:**
+**Verification**: After adding these variables and restarting, tools should return actual results like:
+- `suggest_adrs` → Actual ADR suggestions with titles and reasoning
+- `analyze_project_ecosystem` → Real technology analysis and recommendations
+- `generate_content_masking` → Actual masked content, not masking instructions
+
+**Quick Diagnostic**: Use the built-in diagnostic tool:
 ```
-Using the ADR analysis tools, convert the PRD.md file into structured ADRs and create a todo.md with actionable tasks.
+check_ai_execution_status
+```
+This will show exactly what's wrong with your configuration and provide step-by-step fix instructions.
+
+### Other AI Execution Issues
+
+**Problem**: "AI execution not available" errors
+```bash
+# Check execution mode
+echo $EXECUTION_MODE
+
+# Verify API key is set
+echo $OPENROUTER_API_KEY | head -c 10
+
+# Test AI connectivity
+curl -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+     https://openrouter.ai/api/v1/models
 ```
 
-**Security Analysis:**
-```
-Analyze this codebase for sensitive content and provide security recommendations using the content masking tools.
+**Problem**: "AI execution not available" errors
+- ✅ Verify `OPENROUTER_API_KEY` is set correctly
+- ✅ Check `EXECUTION_MODE=full` in environment
+- ✅ Ensure API key has sufficient credits
+- ✅ Verify network connectivity to OpenRouter
+
+**Problem**: Slow AI responses
+```bash
+# Reduce token limits for faster responses
+AI_MAX_TOKENS=2000
+AI_TEMPERATURE=0.05
+
+# Enable caching for repeated queries
+AI_CACHE_ENABLED=true
+AI_CACHE_TTL=3600
 ```
 
-## 🔒 Security Features
+**Problem**: High API costs
+```bash
+# Use cost-effective models
+AI_MODEL=anthropic/claude-3-haiku
+# or
+AI_MODEL=openai/gpt-4o-mini
+
+# Reduce token usage
+AI_MAX_TOKENS=2000
+AI_TEMPERATURE=0.1
+```
+
+### Environment Configuration
+
+**Check current configuration:**
+```bash
+# View AI execution status
+node -e "
+const { getAIExecutionStatus } = require('./dist/utils/prompt-execution.js');
+console.log(JSON.stringify(getAIExecutionStatus(), null, 2));
+"
+```
+
+**Reset configuration:**
+```bash
+# Clear cache and restart
+rm -rf .mcp-adr-cache
+npm run build
+```
+
+### Common Issues
+
+| Issue | Solution |
+|-------|----------|
+| "Module not found" errors | Run `npm install && npm run build` |
+| TypeScript compilation errors | Check Node.js version >= 18.0.0 |
+| Permission denied | Check file permissions and project path |
+| API rate limits | Reduce `AI_MAX_TOKENS` or increase `AI_TIMEOUT` |
+| Cache issues | Clear cache with `rm -rf .mcp-adr-cache` |
+
+## �🔒 Security Features
 
 ### Content Protection
 - **Automatic Secret Detection**: Identifies API keys, passwords, and sensitive data

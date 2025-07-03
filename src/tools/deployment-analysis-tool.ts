@@ -64,11 +64,70 @@ export async function analyzeDeploymentProgress(args: {
       case 'tasks': {
         const result = await identifyDeploymentTasks(adrDirectory, todoPath);
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `# Deployment Task Identification
+        // Execute the deployment task identification with AI if enabled, otherwise return prompt
+        const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
+        const executionResult = await executePromptWithFallback(
+          result.identificationPrompt,
+          result.instructions,
+          {
+            temperature: 0.1,
+            maxTokens: 5000,
+            systemPrompt: `You are a DevOps expert specializing in deployment task identification and management.
+Analyze the provided ADRs and project context to identify comprehensive deployment tasks.
+Focus on creating actionable tasks with clear verification criteria and proper sequencing.
+Provide detailed risk assessment and practical implementation guidance.`,
+            responseFormat: 'text'
+          }
+        );
+
+        if (executionResult.isAIGenerated) {
+          // AI execution successful - return actual deployment task identification results
+          return formatMCPResponse({
+            ...executionResult,
+            content: `# Deployment Task Identification Results
+
+## Analysis Information
+- **ADR Directory**: ${adrDirectory}
+- **Todo Path**: ${todoPath || 'Not specified'}
+
+## AI Deployment Task Analysis Results
+
+${executionResult.content}
+
+## Next Steps
+
+Based on the identified deployment tasks:
+
+1. **Review Task List**: Examine each deployment task for completeness and accuracy
+2. **Validate Dependencies**: Confirm task sequencing and dependency relationships
+3. **Assign Responsibilities**: Determine who will execute each deployment task
+4. **Create Timeline**: Establish deployment schedule with milestones
+5. **Set Up Monitoring**: Implement progress tracking and verification systems
+
+## Deployment Task Management
+
+Use the identified tasks to:
+- **Track Progress**: Monitor deployment progress across all categories
+- **Manage Dependencies**: Ensure proper task sequencing and coordination
+- **Assess Risks**: Identify and mitigate deployment risks
+- **Verify Completion**: Use verification criteria for completion validation
+- **Optimize Process**: Improve deployment efficiency and reliability
+
+## Follow-up Analysis
+
+For deeper deployment insights:
+- **CI/CD Analysis**: \`analyze_deployment_progress\` with \`analysisType: "cicd"\`
+- **Progress Tracking**: \`analyze_deployment_progress\` with \`analysisType: "progress"\`
+- **Completion Verification**: \`analyze_deployment_progress\` with \`analysisType: "completion"\`
+`,
+          });
+        } else {
+          // Fallback to prompt-only mode
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `# Deployment Task Identification
 
 ${result.instructions}
 
@@ -82,29 +141,11 @@ ${result.identificationPrompt}
 2. **Parse the JSON response** to get deployment tasks and phases
 3. **Review task dependencies** and deployment sequencing
 4. **Use tasks** for deployment progress tracking and management
-
-## Expected Output
-
-The AI will provide:
-- **Deployment Task Analysis**: Overall analysis metadata and confidence scores
-- **Identified Tasks**: Detailed deployment tasks with verification criteria
-- **Deployment Phases**: Organized phases with sequencing and dependencies
-- **Deployment Dependencies**: Task dependencies and constraints
-- **Risk Assessment**: Deployment risks and mitigation strategies
-- **Recommendations**: Process and tooling improvement recommendations
-
-## Deployment Task Management
-
-Use the identified tasks to:
-- **Track Progress**: Monitor deployment progress across all categories
-- **Manage Dependencies**: Ensure proper task sequencing and coordination
-- **Assess Risks**: Identify and mitigate deployment risks
-- **Verify Completion**: Use verification criteria for completion validation
-- **Optimize Process**: Improve deployment efficiency and reliability
 `,
-            },
-          ],
-        };
+              },
+            ],
+          };
+        }
       }
 
       case 'cicd': {

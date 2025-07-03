@@ -35,7 +35,7 @@ const SERVER_INFO = {
 /**
  * Main server class
  */
-class McpAdrAnalysisServer {
+export class McpAdrAnalysisServer {
   private server: Server;
   private maskingConfig: any;
   private config: ServerConfig;
@@ -94,7 +94,7 @@ class McpAdrAnalysisServer {
         tools: [
           {
             name: 'analyze_project_ecosystem',
-            description: 'Analyze the project ecosystem with advanced prompting techniques (Knowledge Generation + Reflexion learning)',
+            description: 'Comprehensive recursive project ecosystem analysis including technology stack, patterns, architecture, and automatic environment analysis for complete project understanding',
             inputSchema: {
               type: 'object',
               properties: {
@@ -132,6 +132,22 @@ class McpAdrAnalysisServer {
                   enum: ['basic', 'detailed', 'comprehensive'],
                   description: 'Depth of ecosystem analysis',
                   default: 'comprehensive'
+                },
+                includeEnvironment: {
+                  type: 'boolean',
+                  description: 'Automatically include comprehensive environment analysis (default: true)',
+                  default: true
+                },
+                recursiveDepth: {
+                  type: 'string',
+                  description: 'Depth of recursive project analysis',
+                  enum: ['shallow', 'moderate', 'deep', 'comprehensive'],
+                  default: 'comprehensive'
+                },
+                analysisScope: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Specific analysis areas to focus on (e.g., ["security", "performance", "architecture", "dependencies"])'
                 }
               },
               required: []
@@ -139,7 +155,7 @@ class McpAdrAnalysisServer {
           },
           {
             name: 'get_architectural_context',
-            description: 'Get detailed architectural context for specific files or the entire project',
+            description: 'Get detailed architectural context for specific files or the entire project, automatically sets up ADR infrastructure if missing, and provides outcome-focused workflow for project success',
             inputSchema: {
               type: 'object',
               properties: {
@@ -970,6 +986,100 @@ class McpAdrAnalysisServer {
                 }
               }
             }
+          },
+          {
+            name: 'check_ai_execution_status',
+            description: 'Check AI execution configuration and status for debugging prompt-only mode issues',
+            inputSchema: {
+              type: 'object',
+              properties: {},
+              required: []
+            }
+          },
+          {
+            name: 'get_workflow_guidance',
+            description: 'Get intelligent workflow guidance and tool recommendations based on your goals and project context to achieve expected outcomes efficiently',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                goal: {
+                  type: 'string',
+                  description: 'What you want to accomplish (e.g., "analyze new project", "document existing decisions", "security audit", "modernize legacy system")'
+                },
+                projectContext: {
+                  type: 'string',
+                  description: 'Current state of your project (e.g., "new project", "existing project with ADRs", "legacy codebase", "greenfield development")',
+                  enum: ['new_project', 'existing_with_adrs', 'existing_without_adrs', 'legacy_codebase', 'greenfield', 'maintenance_mode', 'unknown']
+                },
+                availableAssets: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'What assets you already have (e.g., ["PRD.md", "existing ADRs", "codebase", "documentation", "test suite"])'
+                },
+                timeframe: {
+                  type: 'string',
+                  description: 'Available time/effort level',
+                  enum: ['quick_analysis', 'thorough_review', 'comprehensive_audit', 'ongoing_process']
+                },
+                primaryConcerns: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Main areas of concern (e.g., ["security", "performance", "maintainability", "scalability", "compliance"])'
+                }
+              },
+              required: ['goal', 'projectContext']
+            }
+          },
+          {
+            name: 'get_development_guidance',
+            description: 'Get comprehensive development guidance that translates architectural decisions and workflow recommendations into specific coding tasks, implementation patterns, and development roadmap',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                developmentPhase: {
+                  type: 'string',
+                  description: 'Current development phase',
+                  enum: ['planning', 'setup', 'implementation', 'testing', 'deployment', 'maintenance', 'refactoring']
+                },
+                adrsToImplement: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'List of ADR titles or file paths that need to be implemented in code'
+                },
+                technologyStack: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Current technology stack (e.g., ["TypeScript", "React", "Node.js", "PostgreSQL", "Docker"])'
+                },
+                currentProgress: {
+                  type: 'string',
+                  description: 'What has already been implemented or current state of development'
+                },
+                teamContext: {
+                  type: 'object',
+                  properties: {
+                    size: {
+                      type: 'string',
+                      enum: ['solo', 'small_team', 'medium_team', 'large_team']
+                    },
+                    experienceLevel: {
+                      type: 'string',
+                      enum: ['junior', 'mixed', 'senior', 'expert']
+                    }
+                  }
+                },
+                timeline: {
+                  type: 'string',
+                  description: 'Development timeline or deadline constraints'
+                },
+                focusAreas: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Specific areas to focus on (e.g., ["API design", "database schema", "testing strategy", "deployment pipeline"])'
+                }
+              },
+              required: ['developmentPhase']
+            }
           }
         ]
       };
@@ -1051,6 +1161,15 @@ class McpAdrAnalysisServer {
             break;
           case 'analyze_deployment_progress':
             response = await this.analyzeDeploymentProgress(args);
+            break;
+          case 'check_ai_execution_status':
+            response = await this.checkAIExecutionStatus(args);
+            break;
+          case 'get_workflow_guidance':
+            response = await this.getWorkflowGuidance(args);
+            break;
+          case 'get_development_guidance':
+            response = await this.getDevelopmentGuidance(args);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -1176,6 +1295,543 @@ class McpAdrAnalysisServer {
   /**
    * Tool implementations
    */
+  private async checkAIExecutionStatus(_args: any): Promise<any> {
+    try {
+      const { getAIExecutionStatus } = await import('./utils/prompt-execution.js');
+      const status = getAIExecutionStatus();
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# AI Execution Status Diagnostic
+
+## Current Configuration
+- **AI Execution Enabled**: ${status.isEnabled ? '✅ YES' : '❌ NO'}
+- **Has API Key**: ${status.hasApiKey ? '✅ YES' : '❌ NO'}
+- **Execution Mode**: ${status.executionMode}
+- **AI Model**: ${status.model}
+
+${status.reason ? `## ⚠️ Issue Detected
+**Problem**: ${status.reason}
+
+## Solution
+${!status.hasApiKey ? `
+1. Get an OpenRouter API key from https://openrouter.ai/keys
+2. Add it to your MCP configuration:
+   \`\`\`json
+   {
+     "mcpServers": {
+       "adr-analysis": {
+         "command": "mcp-adr-analysis-server",
+         "env": {
+           "OPENROUTER_API_KEY": "your_api_key_here",
+           "EXECUTION_MODE": "full",
+           "AI_MODEL": "anthropic/claude-3-sonnet"
+         }
+       }
+     }
+   }
+   \`\`\`
+3. Restart your MCP client (Claude Desktop, etc.)
+` : status.executionMode !== 'full' ? `
+1. Update your MCP configuration to set EXECUTION_MODE to "full":
+   \`\`\`json
+   {
+     "mcpServers": {
+       "adr-analysis": {
+         "env": {
+           "EXECUTION_MODE": "full"
+         }
+       }
+     }
+   }
+   \`\`\`
+2. Restart your MCP client
+` : ''}` : `## ✅ Configuration Looks Good!
+
+AI execution is properly configured. Tools should return actual results instead of prompts.
+
+If you're still seeing prompts instead of results, try:
+1. Restart your MCP client
+2. Check your OpenRouter API key has sufficient credits
+3. Verify network connectivity to OpenRouter.ai`}
+
+## Environment Variables Expected
+- **OPENROUTER_API_KEY**: Your OpenRouter API key
+- **EXECUTION_MODE**: Set to "full" for AI execution
+- **AI_MODEL**: AI model to use (optional, defaults to claude-3-sonnet)
+
+## Testing
+After fixing the configuration, try calling \`suggest_adrs\` - it should return actual ADR suggestions instead of prompts.
+`
+          }
+        ]
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# AI Execution Status Check Failed
+
+**Error**: ${error instanceof Error ? error.message : String(error)}
+
+This diagnostic tool helps identify why tools return prompts instead of actual results.
+
+## Manual Check
+Verify these environment variables are set in your MCP configuration:
+- OPENROUTER_API_KEY
+- EXECUTION_MODE=full
+- AI_MODEL (optional)
+`
+          }
+        ]
+      };
+    }
+  }
+
+  private async getWorkflowGuidance(args: any): Promise<any> {
+    const {
+      goal,
+      projectContext,
+      availableAssets = [],
+      timeframe = 'thorough_review',
+      primaryConcerns = []
+    } = args;
+
+    try {
+      const workflowPrompt = `
+# Workflow Guidance & Tool Recommendation System
+
+## User Context Analysis
+- **Goal**: ${goal}
+- **Project Context**: ${projectContext}
+- **Available Assets**: ${availableAssets.length > 0 ? availableAssets.join(', ') : 'None specified'}
+- **Timeframe**: ${timeframe}
+- **Primary Concerns**: ${primaryConcerns.length > 0 ? primaryConcerns.join(', ') : 'General analysis'}
+
+## Available MCP Tools (24 Total)
+
+### 🎯 **Core Analysis Tools** (AI-Powered ✅)
+1. **analyze_project_ecosystem** - Comprehensive technology and pattern detection
+2. **get_architectural_context** - Generate intelligent architectural insights + ADR setup
+3. **generate_adrs_from_prd** - Convert requirements to structured ADRs
+4. **analyze_content_security** - Detect sensitive information patterns
+
+### 📋 **ADR Management Tools** (AI-Powered ✅)
+5. **suggest_adrs** - Auto-suggest ADRs from implicit decisions
+6. **generate_adr_from_decision** - Create ADRs from specific decisions
+7. **discover_existing_adrs** - Intelligent ADR discovery and analysis
+8. **generate_adr_todo** - Create actionable task lists from ADRs
+
+### 🔍 **Research & Documentation Tools** (AI-Powered ✅)
+9. **generate_research_questions** - Create context-aware research questions
+10. **incorporate_research** - Integrate research findings into decisions
+11. **create_research_template** - Generate research documentation templates
+
+### 🛡️ **Security & Compliance Tools** (AI-Powered ✅)
+12. **generate_content_masking** - Intelligent content masking and protection
+13. **configure_custom_patterns** - Customize security and masking settings
+14. **apply_basic_content_masking** - Basic content masking (fallback)
+15. **validate_content_masking** - Validate masking effectiveness
+
+### 🏗️ **Rule & Governance Tools** (AI-Powered ✅)
+16. **generate_rules** - Extract architectural rules from ADRs
+17. **validate_rules** - Validate code against architectural rules
+18. **create_rule_set** - Create comprehensive rule management systems
+
+### 🚀 **Deployment & Environment Tools** (AI-Powered ✅)
+19. **analyze_environment** - Environment analysis and optimization
+20. **analyze_deployment_progress** - Deployment tracking and verification
+
+### ⚙️ **Utility & Management Tools**
+21. **manage_cache** - Cache management and optimization
+22. **configure_output_masking** - Configure global output masking
+23. **request_action_confirmation** - Interactive user confirmation workflows
+24. **get_workflow_guidance** - This tool - intelligent workflow advisor
+
+## Workflow Recommendation Instructions
+
+Based on the user's goal, project context, available assets, timeframe, and concerns, provide:
+
+### 1. **Recommended Tool Sequence**
+Provide a step-by-step workflow with:
+- **Tool Name**: Exact tool to call
+- **Purpose**: Why this tool is needed
+- **Expected Outcome**: What it will deliver
+- **Parameters**: Suggested parameters for the tool call
+- **Success Criteria**: How to know it worked
+
+### 2. **Alternative Workflows**
+Provide 2-3 alternative approaches based on:
+- Different time constraints
+- Different priorities
+- Different starting points
+
+### 3. **Expected Timeline & Effort**
+For each recommended workflow:
+- **Estimated Time**: How long each step takes
+- **Effort Level**: Low/Medium/High effort required
+- **Dependencies**: Which steps must be completed first
+
+### 4. **Success Metrics**
+Define how to measure success:
+- **Immediate Indicators**: Quick wins and early signals
+- **Progress Milestones**: Key checkpoints
+- **Final Outcomes**: Ultimate success criteria
+
+### 5. **Common Pitfalls & Tips**
+- **What to Avoid**: Common mistakes in this workflow
+- **Pro Tips**: Best practices for maximum effectiveness
+- **Troubleshooting**: What to do if steps fail
+
+## Common Workflow Patterns
+
+### **New Project Setup**
+1. analyze_project_ecosystem → 2. get_architectural_context → 3. suggest_adrs → 4. generate_adr_from_decision
+
+### **Existing Project Analysis**
+1. discover_existing_adrs → 2. get_architectural_context → 3. generate_adr_todo → 4. validate_rules
+
+### **Security Audit**
+1. analyze_content_security → 2. generate_content_masking → 3. configure_custom_patterns → 4. validate_content_masking
+
+### **PRD to Implementation**
+1. generate_adrs_from_prd → 2. generate_adr_todo → 3. analyze_deployment_progress
+
+### **Legacy Modernization**
+1. analyze_project_ecosystem → 2. get_architectural_context → 3. suggest_adrs → 4. generate_rules → 5. validate_rules
+
+## Output Format
+
+Provide a comprehensive workflow guide that includes:
+
+1. **🎯 Recommended Primary Workflow** (step-by-step with tool calls)
+2. **🔄 Alternative Approaches** (2-3 different paths)
+3. **⏱️ Timeline & Effort Estimates** (realistic expectations)
+4. **📊 Success Metrics** (how to measure progress)
+5. **💡 Pro Tips & Best Practices** (maximize effectiveness)
+6. **⚠️ Common Pitfalls** (what to avoid)
+
+Make the guidance **actionable, specific, and outcome-focused** so the user can immediately start executing the recommended workflow.
+`;
+
+      // Execute the workflow guidance with AI if enabled
+      const { executePromptWithFallback, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const executionResult = await executePromptWithFallback(
+        workflowPrompt,
+        'Analyze the user context and provide intelligent workflow guidance with specific tool recommendations.',
+        {
+          temperature: 0.1,
+          maxTokens: 6000,
+          systemPrompt: `You are an expert workflow advisor for the MCP ADR Analysis Server.
+Your role is to analyze user goals and project context, then recommend the optimal sequence of tools to achieve their objectives efficiently.
+Provide specific, actionable guidance with clear tool sequences, expected outcomes, and success criteria.
+Focus on practical workflows that deliver measurable results.`
+        }
+      );
+
+      if (executionResult.isAIGenerated) {
+        // AI execution successful - return actual workflow guidance
+        return formatMCPResponse({
+          ...executionResult,
+          content: `# Workflow Guidance & Tool Recommendations
+
+## Your Context
+- **Goal**: ${goal}
+- **Project Context**: ${projectContext}
+- **Available Assets**: ${availableAssets.length > 0 ? availableAssets.join(', ') : 'None specified'}
+- **Timeframe**: ${timeframe}
+- **Primary Concerns**: ${primaryConcerns.length > 0 ? primaryConcerns.join(', ') : 'General analysis'}
+
+## AI-Generated Workflow Guidance
+
+${executionResult.content}
+
+## Quick Reference: Available Tools
+
+**Core Analysis**: analyze_project_ecosystem, get_architectural_context, generate_adrs_from_prd, analyze_content_security
+**ADR Management**: suggest_adrs, generate_adr_from_decision, discover_existing_adrs, generate_adr_todo
+**Security**: generate_content_masking, configure_custom_patterns, validate_content_masking
+**Governance**: generate_rules, validate_rules, create_rule_set
+**Environment**: analyze_environment, analyze_deployment_progress
+**Utilities**: manage_cache, configure_output_masking, check_ai_execution_status
+
+## Next Steps
+
+1. **Start with the recommended primary workflow** above
+2. **Call the first tool** with the suggested parameters
+3. **Review the results** and proceed to the next step
+4. **Track progress** using the success metrics provided
+5. **Adjust as needed** based on your specific findings
+
+This guidance is tailored to your specific context and goals for maximum effectiveness!
+`,
+        });
+      } else {
+        // Fallback to prompt-only mode
+        return {
+          content: [
+            {
+              type: 'text',
+              text: workflowPrompt
+            }
+          ]
+        };
+      }
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to generate workflow guidance: ${error instanceof Error ? error.message : String(error)}`,
+        'WORKFLOW_ERROR'
+      );
+    }
+  }
+
+  private async getDevelopmentGuidance(args: any): Promise<any> {
+    const {
+      developmentPhase,
+      adrsToImplement = [],
+      technologyStack = [],
+      currentProgress = '',
+      teamContext = { size: 'small_team', experienceLevel: 'mixed' },
+      timeline = '',
+      focusAreas = []
+    } = args;
+
+    try {
+      // Generate prompts for ADR discovery if ADRs are specified
+      const { findFiles } = await import('./utils/file-system.js');
+      let adrAnalysisPrompt = '';
+
+      if (adrsToImplement.length > 0) {
+        const { getAdrDirectoryPath } = await import('./utils/config.js');
+        const absoluteAdrPath = getAdrDirectoryPath(this.config);
+
+        const adrFileDiscovery = await findFiles(this.config.projectPath, [`${absoluteAdrPath}/**/*.md`], {
+          includeContent: true,
+        });
+        adrAnalysisPrompt = `
+## ADR Analysis for Implementation
+
+${adrFileDiscovery.prompt}
+
+**ADRs to Implement**: ${adrsToImplement.join(', ')}
+**ADR Directory**: ${absoluteAdrPath}
+`;
+      }
+
+      const developmentPrompt = `
+# Development Guidance & Implementation Roadmap
+
+## Development Context
+- **Development Phase**: ${developmentPhase}
+- **Technology Stack**: ${technologyStack.length > 0 ? technologyStack.join(', ') : 'Not specified'}
+- **Current Progress**: ${currentProgress || 'Starting fresh'}
+- **Team Size**: ${teamContext.size}
+- **Team Experience**: ${teamContext.experienceLevel}
+- **Timeline**: ${timeline || 'Not specified'}
+- **Focus Areas**: ${focusAreas.length > 0 ? focusAreas.join(', ') : 'General development'}
+
+${adrAnalysisPrompt}
+
+## Development Guidance Instructions
+
+Based on the development context, ADRs to implement, and technology stack, provide comprehensive development guidance including:
+
+### 1. **Implementation Roadmap**
+Create a detailed development plan with:
+- **Phase-by-Phase Breakdown**: Logical development phases
+- **Task Prioritization**: Order tasks by dependencies and impact
+- **Milestone Definition**: Clear checkpoints and deliverables
+- **Risk Assessment**: Potential blockers and mitigation strategies
+
+### 2. **Code Structure & Architecture**
+Provide specific guidance on:
+- **Project Structure**: How to organize code files and directories
+- **Module Architecture**: How to structure components/modules
+- **Design Patterns**: Which patterns to use and where
+- **Code Organization**: Separation of concerns and layering
+
+### 3. **Implementation Patterns & Best Practices**
+For each technology in the stack, provide:
+- **Framework-Specific Patterns**: Best practices for the chosen frameworks
+- **API Design**: How to structure APIs and endpoints
+- **Data Layer**: Database schema and data access patterns
+- **State Management**: How to handle application state
+- **Error Handling**: Consistent error handling strategies
+
+### 4. **ADR-to-Code Translation**
+For each ADR to implement:
+- **Implementation Tasks**: Specific coding tasks derived from the ADR
+- **Code Examples**: Pseudo-code or pattern examples
+- **Integration Points**: How this ADR affects other parts of the system
+- **Validation Criteria**: How to verify the ADR is properly implemented
+
+### 5. **Testing Strategy**
+Comprehensive testing approach:
+- **Unit Testing**: What to test and how
+- **Integration Testing**: API and component integration tests
+- **End-to-End Testing**: User workflow testing
+- **Performance Testing**: Load and performance validation
+- **Security Testing**: Security validation approaches
+
+### 6. **Development Workflow**
+Team-specific guidance:
+- **Git Workflow**: Branching strategy and code review process
+- **CI/CD Pipeline**: Automated testing and deployment
+- **Code Quality**: Linting, formatting, and quality gates
+- **Documentation**: What to document and how
+
+### 7. **Quality Gates & Checkpoints**
+Define success criteria:
+- **Code Quality Metrics**: Coverage, complexity, maintainability
+- **Performance Benchmarks**: Response times, throughput targets
+- **Security Checkpoints**: Security validation at each phase
+- **Architectural Compliance**: Adherence to ADR decisions
+
+### 8. **Technology-Specific Implementation**
+For each technology in the stack, provide:
+- **Setup Instructions**: Environment and tooling setup
+- **Configuration**: Framework and tool configuration
+- **Optimization**: Performance and build optimization
+- **Deployment**: Technology-specific deployment considerations
+
+## Expected Output Format
+
+Provide a comprehensive development guide that includes:
+
+### 📋 **1. Development Roadmap**
+- **Phase 1-N**: Logical development phases with tasks
+- **Dependencies**: Task dependencies and critical path
+- **Timeline**: Estimated effort and duration
+- **Milestones**: Key deliverables and checkpoints
+
+### 🏗️ **2. Implementation Guide**
+- **Code Structure**: Detailed project organization
+- **Design Patterns**: Specific patterns to implement
+- **API Design**: Endpoint structure and conventions
+- **Data Architecture**: Database and data flow design
+
+### 🧪 **3. Testing & Quality Strategy**
+- **Test Types**: Unit, integration, e2e testing approach
+- **Quality Gates**: Code quality and performance criteria
+- **Automation**: CI/CD and automated testing setup
+
+### 🚀 **4. Deployment & Operations**
+- **Environment Setup**: Development, staging, production
+- **Deployment Pipeline**: Automated deployment process
+- **Monitoring**: Logging, metrics, and alerting
+- **Maintenance**: Ongoing maintenance and updates
+
+### 📊 **5. Progress Tracking**
+- **Success Metrics**: How to measure development progress
+- **Quality Indicators**: Code quality and performance metrics
+- **Milestone Validation**: How to verify milestone completion
+- **Risk Monitoring**: Early warning signs and mitigation
+
+### 💡 **6. Team-Specific Recommendations**
+Based on team size (${teamContext.size}) and experience (${teamContext.experienceLevel}):
+- **Workflow Adaptations**: Process adjustments for team context
+- **Skill Development**: Areas for team skill building
+- **Tool Recommendations**: Development tools and practices
+- **Communication**: Coordination and documentation practices
+
+## Integration with Architectural Decisions
+
+Ensure all development guidance:
+- **Aligns with ADRs**: Every recommendation supports architectural decisions
+- **Maintains Consistency**: Consistent patterns across the codebase
+- **Enables Evolution**: Flexible design for future changes
+- **Supports Quality**: Built-in quality and maintainability
+
+Make the guidance **actionable, specific, and immediately implementable** so developers can start coding with confidence and architectural alignment.
+`;
+
+      // Execute the development guidance with AI if enabled
+      const { executePromptWithFallback, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const executionResult = await executePromptWithFallback(
+        developmentPrompt,
+        'Analyze the development context and provide comprehensive implementation guidance that translates architectural decisions into specific coding tasks and development roadmap.',
+        {
+          temperature: 0.1,
+          maxTokens: 8000,
+          systemPrompt: `You are an expert software development advisor specializing in translating architectural decisions into practical implementation guidance.
+Your role is to bridge the gap between architectural planning and actual code development.
+Provide specific, actionable development guidance with clear implementation steps, code patterns, and quality criteria.
+Focus on practical guidance that ensures architectural decisions are properly implemented in code.
+Consider team context, technology stack, and development phase to provide tailored recommendations.`
+        }
+      );
+
+      if (executionResult.isAIGenerated) {
+        // AI execution successful - return actual development guidance
+        return formatMCPResponse({
+          ...executionResult,
+          content: `# Development Guidance & Implementation Roadmap
+
+## Your Development Context
+- **Development Phase**: ${developmentPhase}
+- **Technology Stack**: ${technologyStack.length > 0 ? technologyStack.join(', ') : 'Not specified'}
+- **Current Progress**: ${currentProgress || 'Starting fresh'}
+- **Team Context**: ${teamContext.size} team with ${teamContext.experienceLevel} experience
+- **Timeline**: ${timeline || 'Not specified'}
+- **Focus Areas**: ${focusAreas.length > 0 ? focusAreas.join(', ') : 'General development'}
+- **ADRs to Implement**: ${adrsToImplement.length > 0 ? adrsToImplement.join(', ') : 'None specified'}
+
+## AI-Generated Development Guidance
+
+${executionResult.content}
+
+## Integration with Workflow Tools
+
+This development guidance works seamlessly with other MCP tools:
+
+### **Workflow Integration**
+1. **get_workflow_guidance** → Recommends architectural process
+2. **get_development_guidance** → Guides implementation (this tool)
+3. **validate_rules** → Ensures code follows architectural decisions
+4. **analyze_deployment_progress** → Tracks implementation progress
+
+### **Quality Assurance Tools**
+- **generate_rules** → Extract coding standards from ADRs
+- **validate_rules** → Validate code against architectural rules
+- **analyze_content_security** → Security validation during development
+
+### **Documentation Tools**
+- **generate_adr_todo** → Create implementation task lists
+- **discover_existing_adrs** → Reference existing architectural decisions
+
+## Next Steps: From Architecture to Code
+
+1. **📋 Review the Development Roadmap** above
+2. **🏗️ Set Up Project Structure** as recommended
+3. **🧪 Implement Testing Strategy** early in development
+4. **📊 Track Progress** using the success metrics provided
+5. **🔄 Iterate and Refine** based on implementation learnings
+
+This guidance ensures your development work is **architecturally aligned**, **quality-focused**, and **efficiently executed**!
+`,
+        });
+      } else {
+        // Fallback to prompt-only mode
+        return {
+          content: [
+            {
+              type: 'text',
+              text: developmentPrompt
+            }
+          ]
+        };
+      }
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to generate development guidance: ${error instanceof Error ? error.message : String(error)}`,
+        'DEVELOPMENT_ERROR'
+      );
+    }
+  }
+
   private async analyzeProjectEcosystem(args: any): Promise<any> {
     // Use configured project path if not provided in args
     const projectPath = args.projectPath || this.config.projectPath;
@@ -1185,11 +1841,16 @@ class McpAdrAnalysisServer {
       knowledgeEnhancement = true,
       learningEnabled = true,
       technologyFocus = [],
-      analysisDepth = 'comprehensive'
+      analysisDepth = 'comprehensive',
+      includeEnvironment = true,
+      recursiveDepth = 'comprehensive',
+      analysisScope = []
     } = args;
 
-    this.logger.info(`Generating enhanced analysis prompt for project ecosystem at: ${projectPath}`);
-    this.logger.info(`Enhancement features - Knowledge: ${knowledgeEnhancement}, Learning: ${learningEnabled}, Depth: ${analysisDepth}`);
+    this.logger.info(`Generating comprehensive ecosystem analysis for project at: ${projectPath}`);
+    this.logger.info(`Analysis configuration - Depth: ${analysisDepth}, Recursive: ${recursiveDepth}, Environment: ${includeEnvironment}`);
+    this.logger.info(`Enhancement features - Knowledge: ${knowledgeEnhancement}, Learning: ${learningEnabled}`);
+    this.logger.info(`Analysis scope: ${analysisScope.length > 0 ? analysisScope.join(', ') : 'Full ecosystem analysis'}`);
 
     try {
       // Import utilities dynamically to avoid circular dependencies
@@ -1271,11 +1932,46 @@ ${memoryResult.prompt}
         }
       }
 
-      // Step 3: Generate base project analysis prompt
+      // Step 3: Generate base project analysis prompt with recursive depth
       const baseProjectAnalysisPrompt = await analyzeProjectStructure(projectPath);
 
-      // Step 4: Apply Reflexion execution if learning is enabled
-      let enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt;
+      // Step 4: Generate environment analysis if enabled
+      let environmentAnalysisContext = '';
+      if (includeEnvironment) {
+        try {
+          this.logger.info('Including comprehensive environment analysis in ecosystem analysis');
+          const { analyzeEnvironment } = await import('./tools/environment-analysis-tool.js');
+
+          // Call environment analysis with comprehensive scope
+          const environmentResult = await analyzeEnvironment({
+            projectPath,
+            adrDirectory: this.config.adrDirectory,
+            analysisType: 'comprehensive'
+          });
+
+          // Extract environment analysis content
+          if (environmentResult.content && environmentResult.content[0]) {
+            environmentAnalysisContext = `
+## Integrated Environment Analysis
+
+${environmentResult.content[0].text}
+
+---
+`;
+          }
+        } catch (error) {
+          this.logger.warn('Environment analysis integration failed:', error);
+          environmentAnalysisContext = `
+## Environment Analysis
+<!-- Environment analysis unavailable: ${error instanceof Error ? error.message : 'Unknown error'} -->
+
+---
+`;
+        }
+      }
+
+      // Step 5: Apply Reflexion execution if learning is enabled
+      let enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt + environmentAnalysisContext;
       if (enhancedMode && learningEnabled && executeWithReflexion && createToolReflexionConfig) {
         try {
           const reflexionConfig = createToolReflexionConfig('analyze_project_ecosystem', {
@@ -1285,13 +1981,16 @@ ${memoryResult.prompt}
           });
 
           const reflexionResult = await executeWithReflexion({
-            prompt: baseProjectAnalysisPrompt.prompt + knowledgeContext,
+            prompt: baseProjectAnalysisPrompt.prompt + knowledgeContext + environmentAnalysisContext,
             instructions: baseProjectAnalysisPrompt.instructions,
             context: {
               projectPath,
               analysisDepth,
+              recursiveDepth,
               technologyFocus,
               includePatterns,
+              includeEnvironment,
+              analysisScope,
               knowledgeEnhanced: knowledgeEnhancement,
               learningEnabled: true
             }
@@ -1300,29 +1999,107 @@ ${memoryResult.prompt}
           enhancedAnalysisPrompt = reflexionResult.prompt;
         } catch (error) {
           this.logger.warn('Reflexion execution failed:', error);
-          enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt + knowledgeContext;
+          enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt + knowledgeContext + environmentAnalysisContext;
         }
       } else {
-        enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt + knowledgeContext;
+        enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt + knowledgeContext + environmentAnalysisContext;
       }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# Enhanced Project Ecosystem Analysis
+      // Execute the analysis with AI if enabled, otherwise return prompt
+      const { executeEcosystemAnalysisPrompt, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const executionResult = await executeEcosystemAnalysisPrompt(
+        enhancedAnalysisPrompt,
+        baseProjectAnalysisPrompt.instructions,
+        {
+          temperature: 0.1,
+          maxTokens: 6000,
+        }
+      );
 
-This enhanced analysis uses advanced prompting techniques to provide superior ecosystem insights.
+      if (executionResult.isAIGenerated) {
+        // AI execution successful - return actual analysis results
+        return formatMCPResponse({
+          ...executionResult,
+          content: `# Comprehensive Project Ecosystem Analysis Results
+
+## Analysis Configuration
+- **Project Path**: ${projectPath}
+- **Analysis Depth**: ${analysisDepth}
+- **Recursive Depth**: ${recursiveDepth}
+- **Environment Analysis**: ${includeEnvironment ? '✅ Included' : '❌ Excluded'}
+- **Analysis Scope**: ${analysisScope.length > 0 ? analysisScope.join(', ') : 'Full ecosystem analysis'}
 
 ## Enhancement Features
 - **Knowledge Generation**: ${enhancedMode && knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
 - **Reflexion Learning**: ${enhancedMode && learningEnabled ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
-- **Analysis Depth**: ${analysisDepth}
 - **Technology Focus**: ${technologyFocus.length > 0 ? technologyFocus.join(', ') : 'Auto-detect'}
 
-## Project Information
+${knowledgeContext}
+
+${reflexionContext}
+
+## Comprehensive Ecosystem Analysis Results
+
+${executionResult.content}
+
+${includeEnvironment ? `
+
+## Environment Integration Summary
+
+The analysis above includes comprehensive environment analysis covering:
+- **Infrastructure Specifications**: Deployment and runtime environment details
+- **Containerization**: Docker, Kubernetes, and container orchestration analysis
+- **Environment Requirements**: Configuration and dependency requirements
+- **Compliance Assessment**: Security and regulatory compliance evaluation
+
+This integrated approach provides complete understanding of both codebase patterns AND operational environment.
+` : ''}
+
+## Next Steps: Complete Ecosystem Understanding
+
+Based on the comprehensive analysis above:
+
+### **Immediate Actions**
+1. **Review Ecosystem Overview**: Examine the complete technology stack and environment context
+2. **Assess Integration Points**: Understand how code patterns relate to operational environment
+3. **Identify Critical Dependencies**: Focus on key dependencies between code and infrastructure
+
+### **Strategic Planning**
+4. **Address Architectural Issues**: Prioritize improvements based on both code and environment analysis
+5. **Plan Environment Optimization**: Optimize deployment and operational configurations
+6. **Update Documentation**: Document both architectural decisions and environment specifications
+
+### **Implementation Roadmap**
+7. **Implement Code Improvements**: Execute code-level architectural enhancements
+8. **Optimize Environment**: Improve infrastructure and deployment configurations
+9. **Monitor Integration**: Ensure code and environment changes work together effectively
+
+This comprehensive ecosystem analysis provides the foundation for informed architectural and operational decisions.
+`,
+        });
+      } else {
+        // Fallback to prompt-only mode
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `# Comprehensive Project Ecosystem Analysis
+
+This comprehensive analysis provides deep recursive project understanding with integrated environment analysis.
+
+## Analysis Configuration
 - **Project Path**: ${projectPath}
+- **Analysis Depth**: ${analysisDepth}
+- **Recursive Depth**: ${recursiveDepth}
+- **Environment Analysis**: ${includeEnvironment ? '✅ Included' : '❌ Excluded'}
+- **Analysis Scope**: ${analysisScope.length > 0 ? analysisScope.join(', ') : 'Full ecosystem analysis'}
+
+## Enhancement Features
+- **Knowledge Generation**: ${enhancedMode && knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **Reflexion Learning**: ${enhancedMode && learningEnabled ? '✅ Enabled' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Technology Focus**: ${technologyFocus.length > 0 ? technologyFocus.join(', ') : 'Auto-detect'}
 - **Include Patterns**: ${includePatterns?.length ? includePatterns.join(', ') : 'Default patterns'}
 
 ${knowledgeContext}
@@ -1368,9 +2145,10 @@ The enhanced analysis should provide:
 - Verify technology-specific knowledge is properly applied
 - Confirm learning insights improve analysis accuracy
 - Validate recommendations align with domain best practices`
-          }
-        ]
-      };
+            }
+          ]
+        };
+      }
     } catch (error) {
       throw new McpAdrError(
         `Failed to analyze project ecosystem: ${error instanceof Error ? error.message : String(error)}`,
@@ -1380,53 +2158,247 @@ The enhanced analysis should provide:
   }
 
   private async getArchitecturalContext(args: any): Promise<any> {
-    const { filePath } = args;
+    const { filePath, includeCompliance = true } = args;
 
     try {
-      const { analyzeProjectStructure } = await import('./utils/file-system.js');
+      const { analyzeProjectStructure, fileExists, ensureDirectory } = await import('./utils/file-system.js');
+      const path = await import('path');
 
       // Determine project path
       const projectPath = filePath ? filePath.split('/').slice(0, -1).join('/') : this.config.projectPath;
+      const adrDirectory = path.join(projectPath, this.config.adrDirectory);
+
+      // Generate prompts for ADR directory setup
+      const adrDirectoryCheckPrompt = await fileExists(adrDirectory);
+      const adrDirectorySetupPrompt = await ensureDirectory(adrDirectory);
 
       // Generate architectural analysis prompt
       const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
 
       const architecturalPrompt = `
-# Architectural Context Analysis
+# Architectural Context Analysis & Project Setup
 
-${filePath ? `## Target File: ${filePath}` : '## Project-wide Analysis'}
+## Project Overview
+**Project Path**: ${projectPath}
+**Analysis Scope**: ${filePath ? `Specific file: ${filePath}` : 'Entire project'}
+**ADR Directory**: ${this.config.adrDirectory}
+**Include Compliance**: ${includeCompliance ? 'Yes' : 'No'}
+
+## 🚀 ADR Infrastructure Setup
+
+This analysis will include setting up ADR infrastructure if needed:
+
+### ADR Directory Check
+${adrDirectoryCheckPrompt.prompt}
+
+### ADR Directory Setup (if needed)
+${adrDirectorySetupPrompt.prompt}
+
+## Comprehensive Project Analysis
 
 ${projectAnalysisPrompt.prompt}
 
-## Additional Architectural Focus
+## Enhanced Architectural Focus
 
-Please pay special attention to:
-1. **Design Patterns**: Identify common design patterns in use
-2. **Architectural Layers**: Analyze the layered architecture approach
-3. **Component Relationships**: Map dependencies and interactions
-4. **Code Organization**: Evaluate modular structure and separation of concerns
-5. **Configuration Management**: Assess how configuration is handled
-${filePath ? `6. **File-specific Context**: Analyze how ${filePath} fits into the overall architecture` : ''}
+Please provide a **comprehensive, outcome-focused analysis** including:
 
-## Expected Architectural Analysis
+### 1. Technology Stack & Infrastructure Analysis
+- **Core Technologies**: Programming languages, frameworks, runtime environments
+- **Dependencies**: Package managers, third-party libraries, version constraints
+- **Build & Deployment**: CI/CD pipelines, build tools, deployment strategies
+- **Data Layer**: Databases, caching, data storage and retrieval patterns
 
-Include in your analysis:
-- Architectural style (MVC, microservices, layered, etc.)
-- Design patterns identified
-- Component interaction patterns
-- Configuration and dependency management
-- Code organization principles
-- Potential architectural improvements
+### 2. Architectural Pattern & Design Analysis
+- **System Architecture**: Monolith, microservices, serverless, hybrid patterns
+- **Code Organization**: Module structure, separation of concerns, layering
+- **API Design**: REST, GraphQL, RPC patterns and conventions
+- **Data Flow**: Request/response cycles, event handling, state management
+${filePath ? `- **File-specific Context**: How ${filePath} fits into the overall architecture` : ''}
+
+### 3. Quality, Security & Performance Assessment
+- **Code Quality**: Structure, naming, documentation, testing strategies
+- **Security Implementation**: Authentication, authorization, data protection
+- **Performance Patterns**: Caching, optimization, scalability considerations
+- **Monitoring & Observability**: Logging, metrics, error tracking
+
+### 4. Architectural Decision Discovery & Documentation
+- **Explicit Decisions**: Find existing documentation and decision records
+- **Implicit Decisions**: Identify significant undocumented architectural choices
+- **Technology Rationale**: Understand selection criteria and trade-offs
+- **Evolution Path**: How the architecture has changed over time
+
+${includeCompliance ? `### 5. Compliance & Standards Assessment
+- **Industry Standards**: Adherence to relevant industry standards and best practices
+- **Security Compliance**: Security standards compliance (OWASP, SOC2, etc.)
+- **Code Standards**: Coding standards and style guide compliance
+- **Architectural Compliance**: Adherence to established architectural principles
+- **Regulatory Requirements**: Any regulatory compliance requirements (GDPR, HIPAA, etc.)` : ''}
+
+## Expected Output: Outcome-Focused Architectural Context
+
+Provide a **comprehensive architectural context** with **clear project outcomes**:
+
+### 📋 **1. Executive Summary & Project Outcomes**
+- **Current State**: What the project is and what it does
+- **Architectural Maturity**: Assessment of current architectural practices
+- **Key Strengths**: What's working well architecturally
+- **Critical Gaps**: What needs immediate attention
+- **Success Metrics**: How to measure architectural improvements
+
+### 🔧 **2. Technology & Infrastructure Inventory**
+- **Technology Stack**: Complete inventory with versions and purposes
+- **Infrastructure Components**: Deployment, monitoring, data storage
+- **Dependencies**: Critical dependencies and potential risks
+- **Tool Chain**: Development, testing, and deployment tools
+
+### 🏗️ **3. Architectural Patterns & Design Decisions**
+- **System Design**: Overall architectural approach and patterns
+- **Component Architecture**: How major components interact
+- **Data Architecture**: How data flows and is managed
+- **Integration Patterns**: How external systems are integrated
+
+### 📊 **4. Quality & Compliance Assessment**
+- **Code Quality Score**: Assessment of current code quality
+- **Security Posture**: Security implementation and gaps
+- **Performance Profile**: Current performance characteristics
+- **Maintainability Index**: How easy the system is to maintain and evolve
+
+### 🎯 **5. Outcome-Focused Action Plan**
+Based on the analysis, provide a **clear workflow** with **projected outcomes**:
+
+#### **Immediate Actions (Next 1-2 weeks)**
+- **Priority 1**: Most critical architectural issues to address
+- **Quick Wins**: Low-effort, high-impact improvements
+- **Documentation**: Essential decisions that need immediate documentation
+
+#### **Short-term Goals (Next 1-3 months)**
+- **Architectural Improvements**: Planned enhancements with expected outcomes
+- **Technical Debt**: Priority technical debt to address
+- **Process Improvements**: Development workflow enhancements
+
+#### **Long-term Vision (3-12 months)**
+- **Strategic Architecture**: Long-term architectural evolution
+- **Scalability Roadmap**: How to scale the system effectively
+- **Innovation Opportunities**: Areas for architectural innovation
+
+### 📈 **6. Success Metrics & Outcomes**
+Define **measurable outcomes** for architectural improvements:
+
+- **Performance Metrics**: Response times, throughput, resource utilization
+- **Quality Metrics**: Code coverage, bug rates, maintainability scores
+- **Developer Experience**: Build times, deployment frequency, developer satisfaction
+- **Business Impact**: Feature delivery speed, system reliability, cost efficiency
+
+### 🏗️ **7. ADR Infrastructure & Documentation Plan**
+
+If ADR directory doesn't exist, also provide:
+
+1. **Create Directory Structure**:
+   \`\`\`
+   ${this.config.adrDirectory}/
+   ├── 0001-record-architecture-decisions.md (template)
+   ├── README.md (ADR process guide)
+   └── template.md (ADR template)
+   \`\`\`
+
+2. **Generate Initial ADRs** for discovered architectural decisions
+3. **Create ADR Process Guide** for the team
+4. **Establish ADR Workflow** for future decisions
+
+### 🔄 **8. Continuous Improvement Workflow**
+Establish ongoing architectural governance:
+
+- **Regular Reviews**: Monthly architectural health checks
+- **Decision Documentation**: Process for documenting new architectural decisions
+- **Compliance Monitoring**: Ongoing adherence to architectural standards
+- **Evolution Planning**: Quarterly architectural roadmap updates
+
+## Next Steps: Grounded Project Workflow
+
+After this analysis, follow this **outcome-focused workflow**:
+
+1. **📋 Review Analysis**: Examine the architectural context and recommendations
+2. **🎯 Set Priorities**: Choose 3-5 most impactful improvements based on outcomes
+3. **📝 Document Decisions**: Create ADRs for significant architectural choices
+4. **🔧 Implement Changes**: Execute improvements in priority order
+5. **📊 Measure Progress**: Track success metrics and outcomes
+6. **🔄 Iterate**: Regular reviews and continuous improvement
+
+This approach ensures that architectural work is **grounded in measurable outcomes** and **aligned with project success**.
 `;
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: architecturalPrompt
-          }
-        ]
-      };
+      // Execute the analysis with AI if enabled, otherwise return prompt
+      const { executeEcosystemAnalysisPrompt, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const executionResult = await executeEcosystemAnalysisPrompt(
+        architecturalPrompt,
+        projectAnalysisPrompt.instructions,
+        {
+          temperature: 0.1,
+          maxTokens: 5000,
+          systemPrompt: `You are a senior software architect specializing in architectural context analysis.
+Analyze the provided project to understand its architectural patterns, design decisions, and structural organization.
+Focus on providing actionable insights about the architecture that can guide development decisions.`
+        }
+      );
+
+      if (executionResult.isAIGenerated) {
+        // AI execution successful - return actual analysis results
+        return formatMCPResponse({
+          ...executionResult,
+          content: `# Architectural Context Analysis Results
+
+${filePath ? `## Target File: ${filePath}` : '## Project-wide Analysis'}
+
+## Project Information
+- **Project Path**: ${projectPath}
+- **Analysis Scope**: ${filePath ? 'File-specific' : 'Project-wide'}
+- **ADR Directory**: ${this.config.adrDirectory}
+
+## ADR Infrastructure Setup
+
+The analysis includes automatic ADR infrastructure setup:
+
+${adrDirectoryCheckPrompt.instructions}
+
+${adrDirectorySetupPrompt.instructions}
+
+## AI Analysis Results
+
+${executionResult.content}
+
+## Outcome-Focused Next Steps
+
+Based on the architectural analysis, follow this **grounded workflow**:
+
+### **Immediate Actions (This Week)**
+1. **Review Analysis**: Examine the architectural context and recommendations above
+2. **Set Up ADRs**: Ensure ADR directory structure is created and ready
+3. **Identify Quick Wins**: Focus on low-effort, high-impact improvements
+
+### **Short-term Goals (Next Month)**
+4. **Document Key Decisions**: Create ADRs for the most significant architectural choices
+5. **Address Critical Issues**: Tackle the highest-priority architectural concerns
+6. **Establish Metrics**: Set up measurement for the success metrics identified
+
+### **Long-term Vision (Next Quarter)**
+7. **Implement Roadmap**: Execute the architectural improvement plan
+8. **Monitor Progress**: Track success metrics and adjust approach as needed
+9. **Continuous Improvement**: Establish regular architectural reviews
+
+This **outcome-focused approach** ensures architectural work delivers **measurable value** and keeps the project **grounded in clear objectives**.
+`,
+        });
+      } else {
+        // Fallback to prompt-only mode
+        return {
+          content: [
+            {
+              type: 'text',
+              text: architecturalPrompt
+            }
+          ]
+        };
+      }
     } catch (error) {
       throw new McpAdrError(
         `Failed to get architectural context: ${error instanceof Error ? error.message : String(error)}`,
@@ -1583,11 +2555,71 @@ For each generated ADR, create a file creation prompt using the following patter
 - Confirm all decisions are traceable back to PRD requirements with domain context
 `;
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# Enhanced ADR Generation from PRD: ${prdPath}
+      // Execute the ADR generation with AI if enabled, otherwise return prompt
+      const { executeADRGenerationPrompt, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const executionResult = await executeADRGenerationPrompt(
+        adrPrompt,
+        'Generate comprehensive ADRs from PRD analysis with enhanced domain knowledge and optimization',
+        {
+          temperature: 0.1,
+          maxTokens: 8000,
+          systemPrompt: `You are an expert software architect who creates comprehensive Architectural Decision Records (ADRs) from Product Requirements Documents (PRDs).
+Generate well-structured ADRs that follow best practices and include all necessary sections.
+Focus on extracting architectural decisions from the PRD and creating actionable ADRs with clear reasoning.`
+        }
+      );
+
+      if (executionResult.isAIGenerated) {
+        // AI execution successful - return actual ADR generation results
+        return formatMCPResponse({
+          ...executionResult,
+          content: `# ADR Generation from PRD Results
+
+## Enhancement Features
+- **APE Optimization**: ${enhancedMode && promptOptimization ? '✅ Enabled' : '❌ Disabled'}
+- **Knowledge Generation**: ${enhancedMode && knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **PRD Type Optimization**: ${prdType}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+
+## Source Information
+- **PRD Path**: ${prdPath}
+- **Output Directory**: ${outputDirectory}
+
+## Generated ADRs
+
+${executionResult.content}
+
+## Next Steps
+
+1. **Review Generated ADRs**: Examine each ADR for completeness and accuracy
+2. **Save ADR Files**: Create individual .md files for each ADR in ${outputDirectory}
+3. **Update ADR Index**: Add new ADRs to your project's ADR catalog
+4. **Stakeholder Review**: Share ADRs with team for feedback and approval
+5. **Implementation Planning**: Create tasks for implementing the architectural decisions
+
+## File Creation Commands
+
+To save the generated ADRs, create individual files in ${outputDirectory}:
+
+\`\`\`bash
+# Create ADR directory if it doesn't exist
+mkdir -p ${outputDirectory}
+
+# Save each ADR as a separate file (example)
+# Replace [NUMBER] and [TITLE] with actual values from generated ADRs
+# cat > "${outputDirectory}/001-example-decision.md" << 'EOF'
+# [ADR content here]
+# EOF
+\`\`\`
+`,
+        });
+      } else {
+        // Fallback to prompt-only mode
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `# Enhanced ADR Generation from PRD: ${prdPath}
 
 ## Advanced Prompt-Driven ADR Generation Process
 
@@ -1648,9 +2680,10 @@ ${enhancedMode && promptOptimization ? `
 7. Confirm with user before writing files to: ${outputDirectory}
 
 The enhanced process maintains full traceability from PRD requirements to generated ADRs while providing superior quality through advanced prompting techniques and ensuring security and user control over file operations.`
-          }
-        ]
-      };
+            }
+          ]
+        };
+      }
     } catch (error) {
       throw new McpAdrError(
         `Failed to generate ADR prompts from PRD: ${error instanceof Error ? error.message : String(error)}`,
@@ -1661,15 +2694,24 @@ The enhanced process maintains full traceability from PRD requirements to genera
 
   private async generateAdrTodo(args: any): Promise<any> {
     const { scope = 'all' } = args;
+    const { getAdrDirectoryPath } = await import('./utils/config.js');
+    const path = await import('path');
+
+    // Use absolute ADR path relative to project
+    const absoluteAdrPath = args.adrDirectory ?
+      path.resolve(this.config.projectPath, args.adrDirectory) :
+      getAdrDirectoryPath(this.config);
+
+    // Keep relative path for display purposes
     const adrDirectory = args.adrDirectory || this.config.adrDirectory;
 
-    this.logger.info(`Generating todo prompt for ADRs in: ${adrDirectory}`);
+    this.logger.info(`Generating todo prompt for ADRs in: ${absoluteAdrPath}`);
 
     try {
       const { findFiles } = await import('./utils/file-system.js');
 
-      // Generate file discovery prompt for ADR files
-      const adrFilesPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], { includeContent: true });
+      // Generate file discovery prompt for ADR files using project path as base
+      const adrFilesPrompt = await findFiles(this.config.projectPath, [`${absoluteAdrPath}/**/*.md`], { includeContent: true });
 
       // Generate comprehensive todo creation prompt
       const todoPrompt = `
@@ -1728,14 +2770,80 @@ Please provide:
 5. Implementation recommendations
 `;
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `ADR todo generation for: ${adrDirectory}\n\nPlease generate todo.md using the following prompt:\n\n${todoPrompt}`
-          }
-        ]
-      };
+      // Execute the todo generation with AI if enabled, otherwise return prompt
+      const { executePromptWithFallback, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const executionResult = await executePromptWithFallback(
+        todoPrompt,
+        'Generate comprehensive todo.md file from ADR analysis with task extraction and progress tracking',
+        {
+          temperature: 0.1,
+          maxTokens: 6000,
+          systemPrompt: `You are an expert project manager specializing in ADR implementation tracking.
+Analyze the provided ADRs to extract actionable tasks and create a comprehensive todo.md file.
+Focus on identifying concrete implementation steps, tracking progress, and providing clear priorities.
+Ensure the todo.md file follows the specified format and includes all necessary details.`,
+          responseFormat: 'text'
+        }
+      );
+
+      if (executionResult.isAIGenerated) {
+        // AI execution successful - return actual todo generation results
+        return formatMCPResponse({
+          ...executionResult,
+          content: `# ADR Todo Generation Results
+
+## Analysis Information
+- **ADR Directory**: ${adrDirectory}
+- **Scope**: ${scope}
+
+## AI Todo Generation Results
+
+${executionResult.content}
+
+## Next Steps
+
+Based on the generated todo list:
+
+1. **Review Generated Tasks**: Examine each task for accuracy and completeness
+2. **Prioritize Implementation**: Order tasks by importance and dependencies
+3. **Assign Responsibilities**: Determine who will work on each task
+4. **Track Progress**: Use the todo.md file to monitor implementation progress
+5. **Update Regularly**: Keep the todo list current as work progresses
+
+## Todo Management
+
+The generated todo.md file includes:
+- **Overall Progress**: Percentage completion tracking
+- **Task Categories**: Tasks organized by ADR
+- **Status Indicators**: Clear progress markers ([ ], [x], [/])
+- **Priority Levels**: High, medium, low priority assignments
+- **Implementation Guidance**: Specific steps for each task
+
+## Integration Commands
+
+To update the todo list as work progresses:
+\`\`\`json
+{
+  "tool": "generate_adr_todo",
+  "args": {
+    "adrDirectory": "${adrDirectory}",
+    "scope": "pending"
+  }
+}
+\`\`\`
+`,
+        });
+      } else {
+        // Fallback to prompt-only mode
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `ADR todo generation for: ${adrDirectory}\n\nPlease generate todo.md using the following prompt:\n\n${todoPrompt}`
+            }
+          ]
+        };
+      }
     } catch (error) {
       throw new McpAdrError(
         `Failed to generate ADR todo: ${error instanceof Error ? error.message : String(error)}`,
@@ -2347,10 +3455,16 @@ Please provide:
 
         case 'adr_list': {
           const { generateAdrList } = await import('./resources/index.js');
-          const adrDirectory = params['adrDirectory'] || 'docs/adrs';
+          const { getAdrDirectoryPath } = await import('./utils/config.js');
+          const path = await import('path');
+
+          // Use absolute ADR path relative to project
+          const absoluteAdrPath = params['adrDirectory'] ?
+            path.resolve(this.config.projectPath, params['adrDirectory']) :
+            getAdrDirectoryPath(this.config);
 
           // Generate resource directly (caching is now handled through AI delegation)
-          const result = await generateAdrList(adrDirectory);
+          const result = await generateAdrList(absoluteAdrPath, this.config.projectPath);
 
           return {
             contents: [

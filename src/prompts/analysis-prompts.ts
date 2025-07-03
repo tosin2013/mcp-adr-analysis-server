@@ -41,7 +41,7 @@ export function generateAnalysisContext(projectStructure: ProjectStructure): str
     sampleFilePaths: projectStructure.files.slice(0, 100).map(file => file.path),
 
     // All unique file extensions
-    allExtensions: [...new Set(projectStructure.files.map(f => f.extension))].sort(),
+    allExtensions: Array.from(new Set(projectStructure.files.map(f => f.extension))).sort(),
 
     // Interesting files that might indicate specific technologies
     interestingFiles: projectStructure.files

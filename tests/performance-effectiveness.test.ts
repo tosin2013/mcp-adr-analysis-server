@@ -3,7 +3,6 @@
  * Validates that enhancements provide measurable improvements
  */
 
-import { jest } from '@jest/globals';
 import {
   generateArchitecturalKnowledge,
   optimizePromptWithAPE,
@@ -17,8 +16,7 @@ import {
   measureExecutionTime,
   runBenchmark,
   comparePromptQuality,
-  assessPromptQuality,
-  DEFAULT_BENCHMARK_CONFIG
+  assessPromptQuality
 } from './utils/advanced-prompting-test-utils.js';
 
 describe('Performance and Effectiveness Tests', () => {
@@ -139,11 +137,11 @@ describe('Performance and Effectiveness Tests', () => {
       }
 
       // Performance should scale reasonably with candidate count
-      expect(benchmarks[1]).toBeGreaterThan(benchmarks[0]); // 5 candidates > 3 candidates
-      expect(benchmarks[2]).toBeGreaterThan(benchmarks[1]); // 7 candidates > 5 candidates
-      
+      expect(benchmarks[1]).toBeGreaterThan(benchmarks[0]!); // 5 candidates > 3 candidates
+      expect(benchmarks[2]).toBeGreaterThan(benchmarks[1]!); // 7 candidates > 5 candidates
+
       // But not exponentially
-      const ratio = benchmarks[2] / benchmarks[0];
+      const ratio = benchmarks[2]! / benchmarks[0]!;
       expect(ratio).toBeLessThan(3); // 7 candidates should not be 3x slower than 3
     });
 
@@ -163,10 +161,10 @@ describe('Performance and Effectiveness Tests', () => {
       }
 
       // More rounds should take longer but not exponentially
-      expect(benchmarks[1]).toBeGreaterThan(benchmarks[0]);
-      expect(benchmarks[2]).toBeGreaterThan(benchmarks[1]);
-      
-      const ratio = benchmarks[2] / benchmarks[0];
+      expect(benchmarks[1]).toBeGreaterThan(benchmarks[0]!);
+      expect(benchmarks[2]).toBeGreaterThan(benchmarks[1]!);
+
+      const ratio = benchmarks[2]! / benchmarks[0]!;
       expect(ratio).toBeLessThan(4); // 3 rounds should not be 4x slower than 1
     });
   });
@@ -199,10 +197,10 @@ describe('Performance and Effectiveness Tests', () => {
       }
 
       // Deeper reflection should take longer but reasonably
-      expect(benchmarks[1]).toBeGreaterThan(benchmarks[0]); // detailed > basic
-      expect(benchmarks[2]).toBeGreaterThan(benchmarks[1]); // comprehensive > detailed
-      
-      const ratio = benchmarks[2] / benchmarks[0];
+      expect(benchmarks[1]).toBeGreaterThan(benchmarks[0]!); // detailed > basic
+      expect(benchmarks[2]).toBeGreaterThan(benchmarks[1]!); // comprehensive > detailed
+
+      const ratio = benchmarks[2]! / benchmarks[0]!;
       expect(ratio).toBeLessThan(2.5); // comprehensive should not be 2.5x slower than basic
     });
 
@@ -271,9 +269,9 @@ describe('Performance and Effectiveness Tests', () => {
       const qualityAssessment = assessPromptQuality(apeResult.prompt);
 
       expect(qualityAssessment.score).toBeGreaterThan(0.6);
-      expect(qualityAssessment.criteria.structure).toBeGreaterThan(0.5);
-      expect(qualityAssessment.criteria.clarity).toBeGreaterThan(0.5);
-      expect(qualityAssessment.criteria.specificity).toBeGreaterThan(0.3);
+      expect(qualityAssessment.criteria['structure']).toBeGreaterThan(0.5);
+      expect(qualityAssessment.criteria['clarity']).toBeGreaterThan(0.5);
+      expect(qualityAssessment.criteria['specificity']).toBeGreaterThan(0.3);
     });
 
     it('should maintain context relevance in enhanced prompts', async () => {
@@ -293,7 +291,6 @@ describe('Performance and Effectiveness Tests', () => {
   describe('Combined Techniques Effectiveness', () => {
     it('should provide cumulative benefits when combining techniques', async () => {
       const originalPrompt = 'Suggest architectural decisions';
-      const basePrompt = createTestPrompt({ prompt: originalPrompt });
 
       // Step 1: Apply Knowledge Generation
       const projectInfo = {
@@ -326,7 +323,6 @@ describe('Performance and Effectiveness Tests', () => {
     });
 
     it('should maintain performance when combining techniques', async () => {
-      const basePrompt = createTestPrompt();
       const projectInfo = {
         projectPath: './test-project',
         technologies: ['react'],

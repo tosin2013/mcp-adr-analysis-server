@@ -5,6 +5,130 @@ All notable changes to the MCP ADR Analysis Server will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2025-01-03
+
+### 🎯 WORKFLOW & DEVELOPMENT GUIDANCE SYSTEM
+
+This release introduces **intelligent workflow guidance** and **development guidance** tools that create a complete development lifecycle assistant, plus critical path resolution fixes.
+
+### ✨ Added
+
+#### Workflow & Development Guidance Tools
+- **`get_workflow_guidance`**: Intelligent workflow advisor that recommends optimal tool sequences
+  - Context-aware tool recommendations based on project goals
+  - Alternative workflow paths with timeline estimates
+  - Success metrics and best practices guidance
+  - Integration with all 25 MCP tools for comprehensive workflows
+
+- **`get_development_guidance`**: Development implementation assistant
+  - Translates architectural decisions into specific coding tasks
+  - Phase-specific guidance (planning, implementation, testing, deployment)
+  - Technology stack-aware recommendations
+  - Team context consideration (size, experience level)
+  - ADR-to-code translation with implementation patterns
+
+- **`check_ai_execution_status`**: Diagnostic tool for AI execution troubleshooting
+  - Real-time configuration status checking
+  - Step-by-step fix instructions for common issues
+  - Environment variable validation and guidance
+
+#### Path Resolution Fixes
+- **Fixed ADR directory path resolution**: All tools now correctly resolve ADR paths relative to PROJECT_PATH
+- **Enhanced `get_architectural_context`**: Automatic ADR infrastructure setup with outcome-focused workflows
+- **Improved file system operations**: Consistent project-relative path handling across all tools
+
+#### Documentation Enhancements
+- **New guide**: `docs/getting-started-workflow-guidance.md` - Comprehensive workflow guidance tutorial
+- **Updated README.md**: Complete development lifecycle examples and tool integration
+- **Enhanced troubleshooting**: Built-in diagnostic tool guidance
+
+## [2.1.0] - 2025-01-03
+
+### 🤖 AI EXECUTION ENGINE INTEGRATION
+
+This release introduced **AI-powered execution capabilities** that transform the MCP server from returning prompts to returning actual results, solving the fundamental UX issue where AI agents receive prompts instead of actionable data.
+
+### ✨ Added
+
+#### OpenRouter.ai Integration
+- **`src/config/ai-config.ts`**: Comprehensive AI configuration management
+  - Support for multiple AI models (Claude, GPT-4, etc.)
+  - Environment variable configuration with validation
+  - Cost optimization and performance tuning options
+  - Model selection based on use case and budget
+
+- **`src/utils/ai-executor.ts`**: Core AI execution service
+  - OpenRouter.ai API integration with OpenAI SDK compatibility
+  - Intelligent caching system with configurable TTL
+  - Retry mechanisms with exponential backoff
+  - Token usage tracking and optimization
+  - Error handling with graceful fallback to prompt-only mode
+
+- **`src/utils/prompt-execution.ts`**: Hybrid execution utilities
+  - Execute prompts with AI when enabled, return prompts when disabled
+  - Specialized execution functions for different tool types
+  - Response formatting for MCP tool compatibility
+  - AI execution status monitoring and configuration
+
+#### Enhanced Tool Capabilities
+- **TRANSFORMED**: `suggest_adrs` now generates actual ADR suggestions using AI
+- **TRANSFORMED**: `generate_adr_from_decision` creates complete ADRs automatically
+- **ENHANCED**: All tools support both AI execution and prompt-only modes
+- **IMPROVED**: Consistent response formatting with AI metadata
+
+#### Environment Configuration
+- **NEW**: `.env.example` with comprehensive configuration options
+- **NEW**: Support for 4 AI models with cost/performance trade-offs
+- **NEW**: Execution mode switching (`full` vs `prompt-only`)
+- **NEW**: Performance tuning (temperature, tokens, timeout, retries)
+
+### 🔧 Configuration
+
+#### Required Environment Variables (for AI execution)
+```bash
+OPENROUTER_API_KEY=your_openrouter_api_key_here
+EXECUTION_MODE=full
+AI_MODEL=anthropic/claude-3-sonnet
+```
+
+#### Optional Performance Tuning
+```bash
+AI_TEMPERATURE=0.1          # Response consistency (0-1)
+AI_MAX_TOKENS=4000          # Response length limit
+AI_TIMEOUT=60000            # Request timeout (ms)
+AI_MAX_RETRIES=3            # Retry attempts
+AI_CACHE_ENABLED=true       # Enable response caching
+AI_CACHE_TTL=3600           # Cache lifetime (seconds)
+```
+
+### 📊 Supported AI Models
+
+| Model | Provider | Use Case | Input Cost | Output Cost |
+|-------|----------|----------|------------|-------------|
+| `anthropic/claude-3-sonnet` | Anthropic | Analysis, reasoning | $3.00/1K | $15.00/1K |
+| `anthropic/claude-3-haiku` | Anthropic | Quick tasks | $0.25/1K | $1.25/1K |
+| `openai/gpt-4o` | OpenAI | Versatile analysis | $5.00/1K | $15.00/1K |
+| `openai/gpt-4o-mini` | OpenAI | Cost-effective | $0.15/1K | $0.60/1K |
+
+### 🔄 Migration Guide
+
+#### Backward Compatibility
+- **✅ Fully backward compatible**: Existing configurations continue to work
+- **✅ Graceful fallback**: AI execution failures fall back to prompt-only mode
+- **✅ No breaking changes**: All existing tools maintain their interfaces
+
+#### Upgrading to AI Execution
+1. Get OpenRouter API key from https://openrouter.ai/keys
+2. Add environment variables to your configuration
+3. Restart the MCP server
+4. Tools will now return actual results instead of prompts
+
+### 📚 Documentation Updates
+- **ENHANCED**: README with comprehensive AI execution setup guide
+- **ADDED**: Troubleshooting section for AI execution issues
+- **ADDED**: Configuration examples for different use cases
+- **IMPROVED**: Environment variable documentation with examples
+
 ## [2.0.0] - 2025-01-03
 
 ### 🚀 MAJOR ARCHITECTURAL TRANSFORMATION

@@ -645,3 +645,63 @@ export function getSupportedDomains(): ArchitecturalDomain[] {
     'security-patterns', 'performance-optimization', 'api-design', 'data-architecture'
   ];
 }
+
+/**
+ * Get supported knowledge depths
+ */
+export function getSupportedDepths(): Array<'basic' | 'intermediate' | 'advanced'> {
+  return ['basic', 'intermediate', 'advanced'];
+}
+
+/**
+ * Validate knowledge generation configuration
+ */
+export function validateKnowledgeConfig(config: Partial<KnowledgeGenerationConfig>): void {
+  if (config.maxKnowledgeItems && config.maxKnowledgeItems <= 0) {
+    throw new Error('Max knowledge items must be positive');
+  }
+
+  if (config.depth && !['basic', 'intermediate', 'advanced'].includes(config.depth)) {
+    throw new Error('Invalid depth');
+  }
+
+  if (config.domains && config.domains.length === 0) {
+    throw new Error('At least one domain must be specified');
+  }
+}
+
+/**
+ * Create domain-specific knowledge configuration
+ */
+export function createDomainKnowledgeConfig(domain: ArchitecturalDomain): KnowledgeGenerationConfig {
+  return {
+    domains: [domain],
+    depth: 'intermediate',
+    cacheEnabled: true,
+    maxKnowledgeItems: 50
+  };
+}
+
+/**
+ * Generate domain-specific knowledge
+ */
+export async function generateDomainKnowledge(
+  domain: ArchitecturalDomain,
+  depth: 'basic' | 'intermediate' | 'advanced'
+): Promise<any> {
+  const supportedDomains = getSupportedDomains();
+  if (!supportedDomains.includes(domain)) {
+    throw new Error(`Unsupported domain: ${domain}`);
+  }
+
+  return {
+    prompt: `Domain Knowledge Generation Request for ${domain}`,
+    instructions: `Generate ${depth} level knowledge for ${domain}`,
+    context: {
+      operation: 'knowledge_generation',
+      domain,
+      depth,
+      knowledgeGenerated: true
+    }
+  };
+}

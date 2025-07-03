@@ -3,14 +3,12 @@
  * Tests the Actor-Evaluator-Self-Reflection pattern implementation
  */
 
-import { jest } from '@jest/globals';
 import {
   executeWithReflexion,
   retrieveRelevantMemories,
   persistReflexionMemory,
   getLearningProgress,
   generateReflexionCacheKey,
-  getDefaultReflexionConfig,
   validateReflexionConfig,
   getSupportedMemoryTypes,
   getSupportedEvaluationCriteria,
@@ -30,6 +28,9 @@ import {
   measureExecutionTime,
   runBenchmark
 } from './utils/advanced-prompting-test-utils.js';
+import {
+  MemoryType
+} from '../src/types/reflexion-framework.js';
 
 describe('Reflexion Module', () => {
   
@@ -116,7 +117,7 @@ describe('Reflexion Module', () => {
       const queries = [
         { maxResults: 3, relevanceThreshold: 0.7 },
         { maxResults: 10, relevanceThreshold: 0.5 },
-        { memoryTypes: ['episodic', 'semantic'] }
+        { memoryTypes: ['episodic', 'semantic'] as MemoryType[] }
       ];
       
       for (const query of queries) {
@@ -161,7 +162,7 @@ describe('Reflexion Module', () => {
     });
 
     it('should handle different memory types', async () => {
-      const memoryTypes = ['episodic', 'semantic', 'procedural', 'meta'];
+      const memoryTypes: MemoryType[] = ['episodic', 'semantic', 'procedural', 'meta'];
       
       for (const memoryType of memoryTypes) {
         const memory = createTestMemory({ memoryType });
@@ -319,7 +320,7 @@ describe('Reflexion Module', () => {
       expect(query.taskType).toBe(taskType);
       expect(query.context).toBe(context);
       expect(Array.isArray(query.keywords)).toBe(true);
-      expect(query.keywords.length).toBeGreaterThan(0);
+      expect(query.keywords?.length).toBeGreaterThan(0);
     });
 
     it('should generate consistent cache keys', () => {
@@ -437,8 +438,8 @@ describe('Reflexion Module', () => {
     });
 
     it('should handle invalid memory objects', async () => {
-      const invalidMemory = { memoryId: 'invalid' }; // Missing required fields
-      
+      const invalidMemory = { memoryId: 'invalid' } as any; // Missing required fields
+
       await expect(persistReflexionMemory(invalidMemory))
         .rejects.toThrow();
     });

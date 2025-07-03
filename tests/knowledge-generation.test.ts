@@ -3,7 +3,6 @@
  * Tests the prompt-driven knowledge generation functionality
  */
 
-import { jest } from '@jest/globals';
 import {
   generateArchitecturalKnowledge,
   generateDomainKnowledge,
@@ -14,6 +13,11 @@ import {
   createDomainKnowledgeConfig,
   generateKnowledgeCacheKey
 } from '../src/utils/knowledge-generation.js';
+import {
+  ArchitecturalDomain,
+  KnowledgeDepth,
+  KnowledgeGenerationConfig
+} from '../src/types/knowledge-generation.js';
 import {
   createTestPrompt,
   createTestKnowledgeConfig,
@@ -129,10 +133,10 @@ describe('Knowledge Generation Module', () => {
 
   describe('generateDomainKnowledge', () => {
     it('should generate domain-specific knowledge', async () => {
-      const domains = ['api-design', 'database-design'];
-      
+      const domains: ArchitecturalDomain[] = ['api-design', 'database-design'];
+
       for (const domain of domains) {
-        const result = await generateDomainKnowledge(domain, 'intermediate');
+        const result = await generateDomainKnowledge(domain, 'intermediate' as KnowledgeDepth);
         
         expect(validateKnowledgeResult(result)).toBe(true);
         expect(result.prompt).toContain(domain);
@@ -141,7 +145,7 @@ describe('Knowledge Generation Module', () => {
     });
 
     it('should handle invalid domains gracefully', async () => {
-      await expect(generateDomainKnowledge('invalid-domain', 'basic'))
+      await expect(generateDomainKnowledge('invalid-domain' as ArchitecturalDomain, 'basic' as KnowledgeDepth))
         .rejects.toThrow('Unsupported domain');
     });
   });
@@ -149,12 +153,12 @@ describe('Knowledge Generation Module', () => {
   describe('enhancePromptWithKnowledge', () => {
     it('should enhance prompt with knowledge context', async () => {
       const basePrompt = createTestPrompt();
-      const knowledgeContext = 'Generated architectural knowledge content';
-      
-      const result = await enhancePromptWithKnowledge(basePrompt, knowledgeContext);
+      const domains: ArchitecturalDomain[] = ['api-design', 'database-design'];
+
+      const result = await enhancePromptWithKnowledge(basePrompt, domains);
       
       expect(result.prompt).toContain(basePrompt.prompt);
-      expect(result.prompt).toContain(knowledgeContext);
+      expect(result.prompt).toContain('api-design');
       expect(result.context.knowledgeEnhanced).toBe(true);
     });
 
@@ -162,9 +166,9 @@ describe('Knowledge Generation Module', () => {
       const basePrompt = createTestPrompt({
         context: { customField: 'customValue' }
       });
-      const knowledgeContext = 'Knowledge content';
-      
-      const result = await enhancePromptWithKnowledge(basePrompt, knowledgeContext);
+      const domains: ArchitecturalDomain[] = ['web-applications'];
+
+      const result = await enhancePromptWithKnowledge(basePrompt, domains);
       
       expect(result.context.customField).toBe('customValue');
       expect(result.context.knowledgeEnhanced).toBe(true);
@@ -226,16 +230,17 @@ describe('Knowledge Generation Module', () => {
     });
 
     it('should generate consistent cache keys', () => {
-      const projectInfo = {
+      const domains: ArchitecturalDomain[] = ['web-applications', 'api-design'];
+      const context = {
         projectPath: './test',
         technologies: ['react'],
         patterns: [],
         projectType: 'web-app'
       };
-      const config = createTestKnowledgeConfig();
-      
-      const key1 = generateKnowledgeCacheKey(projectInfo, config);
-      const key2 = generateKnowledgeCacheKey(projectInfo, config);
+      const config: KnowledgeGenerationConfig = createTestKnowledgeConfig();
+
+      const key1 = generateKnowledgeCacheKey(domains, context, config);
+      const key2 = generateKnowledgeCacheKey(domains, context, config);
       
       expect(key1).toBe(key2);
       expect(key1).toContain('knowledge');

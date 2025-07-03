@@ -37,11 +37,71 @@ export async function analyzeEnvironment(args: {
       case 'specs': {
         const result = await analyzeEnvironmentSpecs(projectPath);
 
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `# Environment Specification Analysis
+        // Execute the environment analysis with AI if enabled, otherwise return prompt
+        const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
+        const executionResult = await executePromptWithFallback(
+          result.analysisPrompt,
+          result.instructions,
+          {
+            temperature: 0.1,
+            maxTokens: 5000,
+            systemPrompt: `You are a DevOps and infrastructure expert specializing in environment analysis.
+Analyze the provided project to understand its infrastructure requirements, deployment patterns, and environment configuration.
+Focus on providing actionable insights for environment optimization, security, and scalability.
+Provide specific recommendations with implementation guidance.`,
+            responseFormat: 'text'
+          }
+        );
+
+        if (executionResult.isAIGenerated) {
+          // AI execution successful - return actual environment analysis results
+          return formatMCPResponse({
+            ...executionResult,
+            content: `# Environment Specification Analysis Results
+
+## Analysis Information
+- **Project Path**: ${projectPath}
+- **ADR Directory**: ${adrDirectory}
+- **Analysis Type**: Environment Specifications
+
+## AI Environment Analysis Results
+
+${executionResult.content}
+
+## Next Steps
+
+Based on the environment analysis:
+
+1. **Review Infrastructure Requirements**: Examine identified infrastructure needs
+2. **Optimize Resource Allocation**: Right-size compute and storage resources
+3. **Improve Security Posture**: Implement security best practices and compliance
+4. **Enhance Scalability**: Design for growth and load handling
+5. **Plan Implementation**: Create tasks for environment improvements
+
+## Environment Optimization Areas
+
+Use the analysis results to:
+- **Optimize Resource Allocation**: Right-size compute and storage resources
+- **Improve Security Posture**: Implement security best practices and compliance
+- **Enhance Scalability**: Design for growth and load handling
+- **Reduce Costs**: Optimize cloud service usage and resource efficiency
+- **Increase Reliability**: Implement redundancy and disaster recovery
+
+## Follow-up Analysis
+
+For deeper insights, consider running:
+- **Containerization Analysis**: \`analyze_environment\` with \`analysisType: "containerization"\`
+- **Compliance Assessment**: \`analyze_environment\` with \`analysisType: "compliance"\`
+- **Requirements Analysis**: \`analyze_environment\` with \`analysisType: "requirements"\`
+`,
+          });
+        } else {
+          // Fallback to prompt-only mode
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `# Environment Specification Analysis
 
 ${result.instructions}
 
@@ -55,31 +115,11 @@ ${result.analysisPrompt}
 2. **Parse the JSON response** to get environment specifications and infrastructure details
 3. **Review infrastructure requirements** and quality attributes
 4. **Use findings** for environment optimization and planning
-
-## Expected Output
-
-The AI will provide:
-- **Environment Analysis**: Overall environment type, complexity, and maturity assessment
-- **Infrastructure Details**: Compute, networking, storage, and security components
-- **Containerization**: Container technology detection and configuration analysis
-- **Cloud Services**: Cloud platform and managed service identification
-- **Configuration**: Environment variable and secret management analysis
-- **Quality Attributes**: Availability, scalability, performance, and security assessment
-- **Recommendations**: Prioritized improvement suggestions with implementation guidance
-- **Gaps**: Missing or inadequate infrastructure components
-
-## Environment Optimization
-
-Use the analysis results to:
-- **Optimize Resource Allocation**: Right-size compute and storage resources
-- **Improve Security Posture**: Implement security best practices and compliance
-- **Enhance Scalability**: Design for growth and load handling
-- **Reduce Costs**: Optimize cloud service usage and resource efficiency
-- **Increase Reliability**: Implement redundancy and disaster recovery
 `,
-            },
-          ],
-        };
+              },
+            ],
+          };
+        }
       }
 
       case 'containerization': {

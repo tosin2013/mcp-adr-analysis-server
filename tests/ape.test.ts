@@ -3,7 +3,6 @@
  * Tests the prompt optimization and evaluation functionality
  */
 
-import { jest } from '@jest/globals';
 import {
   optimizePromptWithAPE,
   generatePromptCandidates,
@@ -16,6 +15,12 @@ import {
   createToolAPEConfig,
   generateAPECacheKey
 } from '../src/utils/automatic-prompt-engineering.js';
+import {
+  GenerationStrategy,
+  EvaluationCriterion,
+  PromptCandidate,
+  ToolOptimizationConfig
+} from '../src/types/ape-framework.js';
 import {
   createTestPrompt,
   createTestAPEConfig,
@@ -109,7 +114,7 @@ describe('Automatic Prompt Engineering (APE) Module', () => {
   describe('generatePromptCandidates', () => {
     it('should generate multiple prompt candidates', async () => {
       const basePrompt = createTestPrompt();
-      const strategies = ['template-variation', 'semantic-variation'];
+      const strategies: GenerationStrategy[] = ['template-variation', 'semantic-variation'];
       const candidateCount = 4;
       
       const result = await generatePromptCandidates(basePrompt, strategies, candidateCount);
@@ -134,12 +139,57 @@ describe('Automatic Prompt Engineering (APE) Module', () => {
 
   describe('evaluatePromptPerformance', () => {
     it('should evaluate prompt candidates', async () => {
-      const candidates = [
-        'Candidate prompt 1',
-        'Candidate prompt 2',
-        'Candidate prompt 3'
+      const candidates: PromptCandidate[] = [
+        {
+          id: 'candidate-1',
+          prompt: 'Candidate prompt 1',
+          instructions: 'Test instructions 1',
+          context: {},
+          generationStrategy: 'template-variation',
+          metadata: {
+            generatedAt: new Date().toISOString(),
+            generationTime: 100,
+            strategy: 'template-variation',
+            complexity: 0.5,
+            estimatedQuality: 0.7,
+            tokens: 50
+          },
+          generation: 1
+        },
+        {
+          id: 'candidate-2',
+          prompt: 'Candidate prompt 2',
+          instructions: 'Test instructions 2',
+          context: {},
+          generationStrategy: 'semantic-variation',
+          metadata: {
+            generatedAt: new Date().toISOString(),
+            generationTime: 120,
+            strategy: 'semantic-variation',
+            complexity: 0.6,
+            estimatedQuality: 0.8,
+            tokens: 60
+          },
+          generation: 1
+        },
+        {
+          id: 'candidate-3',
+          prompt: 'Candidate prompt 3',
+          instructions: 'Test instructions 3',
+          context: {},
+          generationStrategy: 'style-variation',
+          metadata: {
+            generatedAt: new Date().toISOString(),
+            generationTime: 110,
+            strategy: 'style-variation',
+            complexity: 0.4,
+            estimatedQuality: 0.6,
+            tokens: 45
+          },
+          generation: 1
+        }
       ];
-      const criteria = ['task-completion', 'clarity'];
+      const criteria: EvaluationCriterion[] = ['task-completion', 'clarity'];
       const context = { task: 'test-evaluation' };
       
       const result = await evaluatePromptPerformance(candidates, criteria, context);
@@ -152,9 +202,24 @@ describe('Automatic Prompt Engineering (APE) Module', () => {
     });
 
     it('should handle different evaluation criteria', async () => {
-      const candidates = ['Test prompt'];
-      const allCriteria = ['task-completion', 'clarity', 'specificity', 'robustness', 'efficiency'];
-      
+      const candidates: PromptCandidate[] = [{
+        id: 'test-candidate',
+        prompt: 'Test prompt',
+        instructions: 'Test instructions',
+        context: {},
+        generationStrategy: 'template-variation',
+        metadata: {
+          generatedAt: new Date().toISOString(),
+          generationTime: 100,
+          strategy: 'template-variation',
+          complexity: 0.5,
+          estimatedQuality: 0.7,
+          tokens: 20
+        },
+        generation: 1
+      }];
+      const allCriteria: EvaluationCriterion[] = ['task-completion', 'clarity', 'specificity', 'robustness', 'efficiency'];
+
       for (const criterion of allCriteria) {
         const result = await evaluatePromptPerformance(candidates, [criterion], {});
         
@@ -167,9 +232,16 @@ describe('Automatic Prompt Engineering (APE) Module', () => {
     it('should optimize tool-specific prompts', async () => {
       const toolNames = ['suggest_adrs', 'generate_adrs_from_prd', 'analyze_project_ecosystem'];
       const basePrompt = createTestPrompt();
-      
+
       for (const toolName of toolNames) {
-        const result = await optimizeToolPrompt(toolName, basePrompt);
+        const toolConfig: ToolOptimizationConfig = {
+          toolName,
+          taskType: 'analysis',
+          apeConfig: createTestAPEConfig(),
+          contextRequirements: ['project-context', 'architectural-knowledge'],
+          successCriteria: ['accuracy', 'completeness']
+        };
+        const result = await optimizeToolPrompt(toolName, basePrompt, toolConfig);
         
         expect(validateAPEResult(result)).toBe(true);
         expect(result.prompt).toContain(toolName);
@@ -179,7 +251,14 @@ describe('Automatic Prompt Engineering (APE) Module', () => {
 
     it('should use tool-specific configurations', async () => {
       const basePrompt = createTestPrompt();
-      const result = await optimizeToolPrompt('suggest_adrs', basePrompt);
+      const toolConfig: ToolOptimizationConfig = {
+        toolName: 'suggest_adrs',
+        taskType: 'suggestion',
+        apeConfig: createTestAPEConfig(),
+        contextRequirements: ['adr-context', 'project-patterns'],
+        successCriteria: ['relevance', 'actionability']
+      };
+      const result = await optimizeToolPrompt('suggest_adrs', basePrompt, toolConfig);
       
       // Should use suggest_adrs specific configuration
       expect(result.context.toolOptimized).toBe(true);
@@ -352,8 +431,15 @@ describe('Automatic Prompt Engineering (APE) Module', () => {
 
     it('should handle invalid tool names', async () => {
       const basePrompt = createTestPrompt();
-      
-      const result = await optimizeToolPrompt('invalid-tool', basePrompt);
+      const toolConfig: ToolOptimizationConfig = {
+        toolName: 'invalid-tool',
+        taskType: 'unknown',
+        apeConfig: createTestAPEConfig(),
+        contextRequirements: [],
+        successCriteria: ['basic-functionality']
+      };
+
+      const result = await optimizeToolPrompt('invalid-tool', basePrompt, toolConfig);
       
       // Should not throw, but should use default configuration
       expect(validateAPEResult(result)).toBe(true);

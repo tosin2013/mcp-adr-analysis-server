@@ -1102,7 +1102,7 @@ function extractKeywordsFromContext(context: any): string[] {
   }
 
   // Remove duplicates and return
-  return [...new Set(keywords)];
+  return Array.from(new Set(keywords));
 }
 
 /**

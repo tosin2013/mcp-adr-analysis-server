@@ -24,14 +24,63 @@ export async function analyzeContentSecurity(args: {
 
     const result = await analyzeSensitiveContent(content, contentType, userDefinedPatterns);
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `# Sensitive Content Analysis\n\n${result.instructions}\n\n## AI Analysis Prompt\n\n${result.analysisPrompt}`,
-        },
-      ],
-    };
+    // Execute the security analysis with AI if enabled, otherwise return prompt
+    const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
+    const executionResult = await executePromptWithFallback(
+      result.analysisPrompt,
+      result.instructions,
+      {
+        temperature: 0.1,
+        maxTokens: 4000,
+        systemPrompt: `You are a cybersecurity expert specializing in sensitive information detection.
+Analyze the provided content to identify potential security risks, secrets, and sensitive data.
+Provide detailed findings with confidence scores and practical remediation recommendations.
+Focus on actionable security insights that can prevent data exposure.`,
+        responseFormat: 'text'
+      }
+    );
+
+    if (executionResult.isAIGenerated) {
+      // AI execution successful - return actual security analysis results
+      return formatMCPResponse({
+        ...executionResult,
+        content: `# Content Security Analysis Results
+
+## Analysis Information
+- **Content Type**: ${contentType}
+- **Content Length**: ${content.length} characters
+- **User-Defined Patterns**: ${userDefinedPatterns?.length || 0} patterns
+
+## AI Security Analysis
+
+${executionResult.content}
+
+## Next Steps
+
+Based on the security analysis:
+
+1. **Review Identified Issues**: Examine each flagged item for actual sensitivity
+2. **Apply Recommended Masking**: Use suggested masking strategies for sensitive content
+3. **Update Security Policies**: Incorporate findings into security guidelines
+4. **Implement Monitoring**: Set up detection for similar patterns in the future
+5. **Train Team**: Share findings to improve security awareness
+
+## Remediation Commands
+
+To apply masking to identified sensitive content, use the \`generate_content_masking\` tool with the detected items.
+`,
+      });
+    } else {
+      // Fallback to prompt-only mode
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Sensitive Content Analysis\n\n${result.instructions}\n\n## AI Analysis Prompt\n\n${result.analysisPrompt}`,
+          },
+        ],
+      };
+    }
   } catch (error) {
     throw new McpAdrError(
       `Failed to analyze content security: ${error instanceof Error ? error.message : String(error)}`,
@@ -93,14 +142,68 @@ export async function generateContentMasking(args: {
 
     const result = await generateMaskingInstructions(content, sensitiveItems, maskingStrategy);
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `# Content Masking Instructions\n\n${result.instructions}\n\n## AI Masking Prompt\n\n${result.maskingPrompt}`,
-        },
-      ],
-    };
+    // Execute the content masking with AI if enabled, otherwise return prompt
+    const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
+    const executionResult = await executePromptWithFallback(
+      result.maskingPrompt,
+      result.instructions,
+      {
+        temperature: 0.1,
+        maxTokens: 4000,
+        systemPrompt: `You are a cybersecurity expert specializing in intelligent content masking.
+Apply appropriate masking to sensitive content while preserving functionality and readability.
+Focus on balancing security with usability, maintaining context where possible.
+Provide detailed explanations for masking decisions and security recommendations.`,
+        responseFormat: 'text'
+      }
+    );
+
+    if (executionResult.isAIGenerated) {
+      // AI execution successful - return actual content masking results
+      return formatMCPResponse({
+        ...executionResult,
+        content: `# Content Masking Results
+
+## Masking Information
+- **Content Length**: ${content.length} characters
+- **Detected Items**: ${detectedItems.length} sensitive items
+- **Masking Strategy**: ${maskingStrategy}
+
+## AI Content Masking Results
+
+${executionResult.content}
+
+## Next Steps
+
+Based on the masking results:
+
+1. **Review Masked Content**: Examine the masked content for accuracy and completeness
+2. **Validate Functionality**: Ensure masked content still functions as intended
+3. **Apply to Production**: Use the masked content in documentation or sharing
+4. **Update Security Policies**: Incorporate findings into security guidelines
+5. **Monitor for Similar Patterns**: Set up detection for similar sensitive content
+
+## Security Benefits
+
+The applied masking provides:
+- **Data Protection**: Sensitive information is properly redacted
+- **Context Preservation**: Enough context remains for understanding
+- **Consistent Approach**: Uniform masking patterns across content
+- **Compliance Support**: Helps meet data protection requirements
+- **Usability Balance**: Security without sacrificing functionality
+`,
+      });
+    } else {
+      // Fallback to prompt-only mode
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Content Masking Instructions\n\n${result.instructions}\n\n## AI Masking Prompt\n\n${result.maskingPrompt}`,
+          },
+        ],
+      };
+    }
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate masking instructions: ${error instanceof Error ? error.message : String(error)}`,

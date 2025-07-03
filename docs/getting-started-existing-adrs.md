@@ -2,6 +2,8 @@
 
 This guide helps you enhance and maintain projects that already have Architectural Decision Records (ADRs). You'll learn how to analyze existing decisions, identify gaps, and keep your ADR collection up-to-date.
 
+> **💡 NEW**: For intelligent workflow recommendations, see the [Workflow & Development Guidance](getting-started-workflow-guidance.md) guide that provides AI-powered tool sequence recommendations based on your specific goals.
+
 ## 📋 Prerequisites
 
 ### Required Software

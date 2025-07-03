@@ -345,13 +345,17 @@ Submit the prompt to generate the actual analysis report.
  * Generate ADR list resource
  */
 export async function generateAdrList(
-  adrDirectory: string = 'docs/adrs'
+  adrDirectory: string = 'docs/adrs',
+  projectPath?: string
 ): Promise<ResourceGenerationResult> {
   try {
     const { findFiles } = await import('../utils/file-system.js');
 
+    // Use provided project path or fall back to current working directory
+    const basePath = projectPath || process.cwd();
+
     // Generate file discovery prompt for AI delegation
-    const fileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
+    const fileDiscoveryPrompt = await findFiles(basePath, [`${adrDirectory}/**/*.md`], {
       includeContent: true,
     });
 
