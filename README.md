@@ -6,94 +6,25 @@
 [![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-blue)](https://www.typescriptlang.org/)
 
-A comprehensive Model Context Protocol (MCP) server that provides **AI-powered architectural analysis** with **immediate, actionable results**. Unlike traditional MCP tools that return prompts, this server executes analysis internally using OpenRouter.ai and returns actual insights, ADR suggestions, and architectural recommendations.
+**AI-powered architectural analysis for intelligent development workflows.** This Model Context Protocol (MCP) server provides immediate, actionable architectural insights instead of prompts. Get real ADR suggestions, technology analysis, and security recommendations through OpenRouter.ai integration.
 
-**Author**: [Tosin Akinosho](https://github.com/tosin2013)
-**Repository**: [https://github.com/tosin2013/mcp-adr-analysis-server.git](https://github.com/tosin2013/mcp-adr-analysis-server.git)
+**Key Differentiator**: Returns actual analysis results, not prompts to submit elsewhere.
 
-## 🚀 What is the Model Context Protocol (MCP)?
+**Author**: [Tosin Akinosho](https://github.com/tosin2013) | **Repository**: [GitHub](https://github.com/tosin2013/mcp-adr-analysis-server.git)
 
-> The Model Context Protocol (MCP) is an open protocol that enables seamless integration between LLM applications and external data sources and tools. Whether you're building an AI-powered IDE, enhancing a chat interface, or creating custom AI workflows, MCP provides a standardized way to connect LLMs with the context they need.
->
-> — [Model Context Protocol README](https://github.com/modelcontextprotocol#:~:text=The%20Model%20Context,context%20they%20need.)
+## What is MCP?
 
-This MCP server enhances AI assistants with deep architectural analysis capabilities, enabling intelligent code generation, decision tracking, and development workflow automation.
+The Model Context Protocol enables seamless integration between AI assistants and external tools. This server enhances AI assistants with deep architectural analysis capabilities, enabling intelligent code generation, decision tracking, and development workflow automation.
 
-## ✨ Key Features
+## ✨ Core Capabilities
 
-### 🤖 **AI-Powered Execution (NEW)**
-- **Immediate Results**: Get actual ADR suggestions, not prompts to submit elsewhere
-- **OpenRouter.ai Integration**: Supports Claude, GPT-4, and cost-effective models
-- **Smart Caching**: Intelligent response caching with configurable TTL
-- **Graceful Fallback**: Automatic fallback to prompt-only mode when AI unavailable
+🤖 **AI-Powered Analysis** - Immediate architectural insights with OpenRouter.ai integration
+🏗️ **Technology Detection** - Identify any tech stack and architectural patterns
+📋 **ADR Management** - Generate, suggest, and maintain Architectural Decision Records
+🛡️ **Security & Compliance** - Detect and mask sensitive content automatically
+📊 **Workflow Automation** - Todo generation, deployment tracking, and rule validation
 
-### 🏗️ **Architectural Analysis & Intelligence**
-- **Technology Detection**: AI-powered identification of ANY technology stack
-- **Pattern Recognition**: Intelligent detection of architectural patterns and best practices
-- **Dependency Analysis**: Comprehensive project structure and dependency mapping
-- **Knowledge Graph Generation**: Create interconnected architectural knowledge representations
 
-### 📋 **ADR Management & Generation**
-- **ADR Generation from PRD**: Convert Product Requirements Documents to structured ADRs
-- **Intelligent ADR Suggestions**: Auto-suggest ADRs from implicit code decisions
-- **ADR Lifecycle Management**: Complete ADR creation, analysis, and maintenance workflows
-- **Template Support**: Multiple ADR formats (Nygard, MADR, custom templates)
-
-### 🛡️ **Enterprise Security & Compliance**
-- **Content Masking**: Automatic detection and masking of sensitive information
-- **Secret Prevention**: Proactive guidance to prevent secret exposure
-- **Security Hardening**: Built-in security best practices and validation
-- **Compliance Tracking**: Ensure architectural decisions meet enterprise standards
-
-### 📊 **Development Workflow Automation**
-- **Todo Management**: Generate actionable task lists from ADRs and project analysis
-- **Deployment Tracking**: Monitor deployment progress and completion verification
-- **Environment Analysis**: Analyze and optimize deployment environments
-- **Rule Generation & Validation**: Extract and validate architectural rules from decisions
-
-## 🛠️ Available MCP Tools (25 Total)
-
-### 🎯 **Workflow & Development Guidance** (AI-Powered ✅) **NEW!**
-- **`get_workflow_guidance`** - Intelligent workflow advisor that recommends optimal tool sequences based on your goals and project context
-- **`get_development_guidance`** - Comprehensive development guidance that translates architectural decisions into specific coding tasks and implementation roadmap
-
-### 🏗️ **Core Analysis Tools** (AI-Powered ✅)
-- **`analyze_project_ecosystem`** - Comprehensive technology and pattern detection
-- **`get_architectural_context`** - Generate intelligent architectural insights + automatic ADR setup
-- **`generate_adrs_from_prd`** - Convert requirements to structured ADRs
-- **`analyze_content_security`** - Detect sensitive information patterns
-
-### 📋 **ADR Management Tools** (AI-Powered ✅)
-- **`suggest_adrs`** - Auto-suggest ADRs from implicit decisions
-- **`generate_adr_from_decision`** - Create ADRs from specific decisions
-- **`discover_existing_adrs`** - Intelligent ADR discovery and analysis
-- **`generate_adr_todo`** - Create actionable task lists from ADRs
-
-### 🔍 **Research & Documentation Tools** (AI-Powered ✅)
-- **`generate_research_questions`** - Create context-aware research questions
-- **`incorporate_research`** - Integrate research findings into decisions
-- **`create_research_template`** - Generate research documentation templates
-
-### 🛡️ **Security & Compliance Tools** (AI-Powered ✅)
-- **`generate_content_masking`** - Intelligent content masking and protection
-- **`configure_custom_patterns`** - Customize security and masking settings
-- **`apply_basic_content_masking`** - Basic content masking (fallback)
-- **`validate_content_masking`** - Validate masking effectiveness
-
-### 🏗️ **Rule & Governance Tools** (AI-Powered ✅)
-- **`generate_rules`** - Extract architectural rules from ADRs
-- **`validate_rules`** - Validate code against architectural rules
-- **`create_rule_set`** - Create comprehensive rule management systems
-
-### 🚀 **Deployment & Environment Tools** (AI-Powered ✅)
-- **`analyze_environment`** - Environment analysis and optimization
-- **`analyze_deployment_progress`** - Deployment tracking and verification
-
-### ⚙️ **Utility & Management Tools**
-- **`manage_cache`** - Cache management and optimization
-- **`configure_output_masking`** - Configure global output masking
-- **`request_action_confirmation`** - Interactive user confirmation workflows
-- **`check_ai_execution_status`** - Diagnostic tool to troubleshoot AI execution configuration issues
 
 ## 📦 Installation
 

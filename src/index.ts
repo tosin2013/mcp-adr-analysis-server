@@ -3573,7 +3573,12 @@ Examples:
 
 // Start the server if this file is run directly
 // Jest-compatible check: avoid import.meta.url which Jest cannot handle
-if (process.argv[1] && (process.argv[1].endsWith('index.js') || process.argv[1].endsWith('index.ts'))) {
+// Handle both direct execution and npm global package symlinks
+if (process.argv[1] && (
+  process.argv[1].endsWith('index.js') ||
+  process.argv[1].endsWith('index.ts') ||
+  process.argv[1].endsWith('mcp-adr-analysis-server')
+)) {
   main().catch((error) => {
     console.error('Unhandled error:', error);
     process.exit(1);

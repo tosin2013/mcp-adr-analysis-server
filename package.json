@@ -9,7 +9,7 @@
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/src/index.js",
     "dev": "tsx src/index.ts",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -21,7 +21,7 @@
     "test:quality": "./scripts/test-advanced-prompting.sh quality",
     "lint": "npm run typecheck",
     "lint:fix": "npm run typecheck",
-    "clean": "rm -rf dist coverage .mcp-adr-cache",
+    "clean": "sudo rm -rf dist coverage .mcp-adr-cache || rm -rf dist coverage .mcp-adr-cache",
     "prepare": "test -d src && npm run build || echo 'Skipping build - no src directory (likely packaging)'",
     "prepublishOnly": "npm run build && npm test && npm run lint",
     "start": "node dist/src/index.js",
