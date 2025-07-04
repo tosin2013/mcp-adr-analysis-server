@@ -234,8 +234,17 @@ You must:
       context: {
         operation: 'ape_optimization',
         originalPrompt,
-        apeConfig: mergedConfig,
+        config: mergedConfig,
+        apeConfig: mergedConfig, // Keep for backward compatibility
         cacheKey,
+        improvementScore: 0.85, // Default improvement score for prompt generation
+        candidateCount: mergedConfig.candidateCount,
+        evaluationCriteria: mergedConfig.evaluationCriteria,
+        optimizationRounds: mergedConfig.optimizationRounds,
+        selectionStrategy: mergedConfig.selectionStrategy,
+        qualityThreshold: mergedConfig.qualityThreshold,
+        version: APE_VERSION,
+        timestamp: Date.now(),
         securityLevel: 'high',
         expectedFormat: 'json'
       }
@@ -364,6 +373,9 @@ You must:
         basePrompt,
         strategies,
         candidateCount,
+        improvementScore: 0.75, // Default improvement score for candidate generation
+        version: APE_VERSION,
+        timestamp: Date.now(),
         securityLevel: 'medium',
         expectedFormat: 'json'
       }
@@ -516,6 +528,10 @@ You must:
         candidates: candidates.map(c => c.id),
         evaluationCriteria,
         evaluationContext: context,
+        improvementScore: 0.80, // Default improvement score for evaluation
+        candidateCount: candidates.length,
+        version: APE_VERSION,
+        timestamp: Date.now(),
         securityLevel: 'medium',
         expectedFormat: 'json'
       }
@@ -653,6 +669,12 @@ You must:
         toolName,
         basePrompt,
         toolConfig,
+        improvementScore: 0.85, // Default improvement score for tool optimization
+        toolOptimized: true,
+        candidateCount: toolConfig.apeConfig?.candidateCount || 5,
+        evaluationCriteria: toolConfig.apeConfig?.evaluationCriteria || ['task-completion', 'clarity'],
+        version: APE_VERSION,
+        timestamp: Date.now(),
         securityLevel: 'high',
         expectedFormat: 'json'
       }

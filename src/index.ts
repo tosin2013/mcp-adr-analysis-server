@@ -3572,7 +3572,8 @@ Examples:
 }
 
 // Start the server if this file is run directly
-if (import.meta.url === `file://${process.argv[1]}`) {
+// Jest-compatible check: avoid import.meta.url which Jest cannot handle
+if (process.argv[1] && (process.argv[1].endsWith('index.js') || process.argv[1].endsWith('index.ts'))) {
   main().catch((error) => {
     console.error('Unhandled error:', error);
     process.exit(1);

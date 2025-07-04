@@ -220,8 +220,8 @@ export class AIExecutor {
       systemPrompt?: string;
     } = {}
   ): Promise<{ data: T; raw: AIExecutionResult }> {
-    const systemPrompt = options.systemPrompt || 
-      'You are a helpful assistant that responds with valid JSON. Always return properly formatted JSON that matches the requested schema.';
+    const systemPrompt = options.systemPrompt ||
+      'You are a helpful assistant that responds with valid JSON. Always return properly formatted JSON that matches the requested schema. Do not wrap the JSON in markdown code blocks.';
 
     const result = await this.executePrompt(prompt, {
       ...options,
@@ -230,8 +230,10 @@ export class AIExecutor {
     });
 
     try {
-      const data = JSON.parse(result.content) as T;
-      
+      // Extract JSON from response, handling markdown code blocks
+      const jsonContent = this.extractJsonFromResponse(result.content);
+      const data = JSON.parse(jsonContent) as T;
+
       // Basic schema validation if provided
       if (schema && typeof schema.parse === 'function') {
         schema.parse(data);
@@ -246,6 +248,35 @@ export class AIExecutor {
         error
       );
     }
+  }
+
+  /**
+   * Extract JSON content from AI response, handling markdown code blocks
+   */
+  private extractJsonFromResponse(content: string): string {
+    // Remove leading/trailing whitespace
+    content = content.trim();
+
+    // Check if content is wrapped in markdown code blocks
+    const codeBlockMatch = content.match(/^```(?:json)?\s*\n?([\s\S]*?)\n?```$/);
+    if (codeBlockMatch && codeBlockMatch[1]) {
+      return codeBlockMatch[1].trim();
+    }
+
+    // Check for inline code blocks
+    const inlineCodeMatch = content.match(/^`([\s\S]*?)`$/);
+    if (inlineCodeMatch && inlineCodeMatch[1]) {
+      return inlineCodeMatch[1].trim();
+    }
+
+    // Try to find JSON object/array in the content
+    const jsonMatch = content.match(/(\{[\s\S]*\}|\[[\s\S]*\])/);
+    if (jsonMatch && jsonMatch[1]) {
+      return jsonMatch[1].trim();
+    }
+
+    // Return as-is if no patterns match
+    return content;
   }
 
   /**

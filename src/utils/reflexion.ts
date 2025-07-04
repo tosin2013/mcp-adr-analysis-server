@@ -47,6 +47,14 @@ export async function executeWithReflexion(
   config: Partial<ReflexionConfig> = {}
 ): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
+    // Validate input prompt
+    if (!basePrompt.prompt || basePrompt.prompt.trim() === '') {
+      throw new McpAdrError('Prompt cannot be empty', 'INVALID_INPUT');
+    }
+
+    // Validate configuration
+    validateReflexionConfig(config);
+
     const mergedConfig = { ...DEFAULT_REFLEXION_CONFIG, ...config };
     console.error(`[DEBUG] Generating reflexion execution prompt with learning enabled`);
 
@@ -75,14 +83,14 @@ ${basePrompt.instructions}
 ${JSON.stringify(basePrompt.context, null, 2)}
 
 ## Reflexion Configuration
-- **Memory Enabled**: ${mergedConfig.memoryEnabled}
-- **Max Memory Entries**: ${mergedConfig.maxMemoryEntries}
-- **Reflection Depth**: ${mergedConfig.reflectionDepth}
-- **Evaluation Criteria**: ${mergedConfig.evaluationCriteria.join(', ')}
-- **Learning Rate**: ${mergedConfig.learningRate}
-- **Memory Retention**: ${mergedConfig.memoryRetention} days
-- **Relevance Threshold**: ${mergedConfig.relevanceThreshold}
-- **Confidence Threshold**: ${mergedConfig.confidenceThreshold}
+- Memory Enabled: ${mergedConfig.memoryEnabled}
+- Max Memory Entries: ${mergedConfig.maxMemoryEntries}
+- Reflection Depth: ${mergedConfig.reflectionDepth}
+- Evaluation Criteria: ${mergedConfig.evaluationCriteria.join(', ')}
+- Learning Rate: ${mergedConfig.learningRate}
+- Memory Retention: ${mergedConfig.memoryRetention} days
+- Relevance Threshold: ${mergedConfig.relevanceThreshold}
+- Confidence Threshold: ${mergedConfig.confidenceThreshold}
 
 ## Reflexion Learning Process
 
@@ -351,8 +359,19 @@ You must:
       context: {
         operation: 'reflexion_execution',
         originalPrompt: basePrompt,
-        reflexionConfig: mergedConfig,
+        config: mergedConfig,
+        reflexionConfig: mergedConfig, // Keep for backward compatibility
         cacheKey,
+        memoriesUsed: [], // Required by validation function - empty array for prompt generation
+        reflectionDepth: mergedConfig.reflectionDepth,
+        evaluationCriteria: mergedConfig.evaluationCriteria,
+        memoryEnabled: mergedConfig.memoryEnabled,
+        maxMemoryEntries: mergedConfig.maxMemoryEntries,
+        learningRate: mergedConfig.learningRate,
+        relevanceThreshold: mergedConfig.relevanceThreshold,
+        confidenceThreshold: mergedConfig.confidenceThreshold,
+        version: REFLEXION_VERSION,
+        timestamp: Date.now(),
         securityLevel: 'high',
         expectedFormat: 'json'
       }
@@ -388,11 +407,11 @@ Please search and retrieve relevant memories for the current task context.
 - **Context**: ${JSON.stringify(context, null, 2)}
 
 ## Memory Query Parameters
-- **Memory Types**: ${query.memoryTypes?.join(', ') || 'All types'}
-- **Keywords**: ${query.keywords?.join(', ') || 'Auto-detect from context'}
-- **Time Range**: ${query.timeRange ? `${query.timeRange.start} to ${query.timeRange.end}` : 'All time'}
-- **Relevance Threshold**: ${query.relevanceThreshold || 0.6}
-- **Max Results**: ${query.maxResults || 10}
+- Memory Types: ${query.memoryTypes?.join(', ') || 'All types'}
+- Keywords: ${query.keywords?.join(', ') || 'Auto-detect from context'}
+- Time Range: ${query.timeRange ? `${query.timeRange.start} to ${query.timeRange.end}` : 'All time'}
+- Relevance Threshold: ${query.relevanceThreshold || 0.6}
+- Max Results: ${query.maxResults || 10}
 
 ## Memory Search Process
 
@@ -530,6 +549,9 @@ You must:
         taskType,
         searchContext: context,
         queryParameters: query,
+        memoriesUsed: [], // Required by validation function - empty for search operation
+        version: REFLEXION_VERSION,
+        timestamp: Date.now(),
         securityLevel: 'medium',
         expectedFormat: 'json'
       }
@@ -915,7 +937,7 @@ export function getDefaultReflexionConfig(): Required<ReflexionConfig> {
  * Validate reflexion configuration
  */
 export function validateReflexionConfig(config: Partial<ReflexionConfig>): void {
-  if (config.maxMemoryEntries && (config.maxMemoryEntries < 1 || config.maxMemoryEntries > 1000)) {
+  if (config.maxMemoryEntries !== undefined && (config.maxMemoryEntries < 1 || config.maxMemoryEntries > 1000)) {
     throw new McpAdrError('Max memory entries must be between 1 and 1000', 'INVALID_CONFIG');
   }
 
@@ -1163,9 +1185,12 @@ Execute the task with memory-informed decision making and document how past expe
       instructions: basePrompt.instructions,
       context: {
         ...basePrompt.context,
+        operation: 'reflexion_execution', // Add operation for validation
         memoriesUsed: memories.map(m => m.memoryId),
         memoryEnhanced: true,
-        memoryCount: memories.length
+        memoryCount: memories.length,
+        version: REFLEXION_VERSION,
+        timestamp: Date.now()
       }
     };
 
