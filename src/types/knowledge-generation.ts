@@ -134,6 +134,7 @@ export interface KnowledgeGenerationConfig {
   securityValidation?: boolean;
   customTemplates?: DomainTemplate[];
   maxKnowledgeItems?: number;
+  maxTokens?: number;
   relevanceThreshold?: number; // 0-1 scale
   parallelGeneration?: boolean;
 }
@@ -146,6 +147,7 @@ export const KnowledgeGenerationConfigSchema = z.object({
   securityValidation: z.boolean().optional(),
   customTemplates: z.array(z.any()).optional(),
   maxKnowledgeItems: z.number().optional(),
+  maxTokens: z.number().optional(),
   relevanceThreshold: z.number().min(0).max(1).optional(),
   parallelGeneration: z.boolean().optional(),
 });

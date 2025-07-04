@@ -19,7 +19,7 @@ const createMockTools = () => ({
   tools: [
     {
       name: 'suggest_adrs',
-      description: 'Suggest architectural decisions with advanced prompting techniques',
+      description: 'Suggest architectural decisions with advanced prompting techniques (Knowledge Generation + Reflexion)',
       inputSchema: {
         type: 'object',
         properties: {
@@ -34,21 +34,23 @@ const createMockTools = () => ({
           knowledgeEnhancement: { type: 'boolean', default: true, description: 'Enable Knowledge Generation' },
           beforeCode: { type: 'string' },
           afterCode: { type: 'string' },
-          changeDescription: { type: 'string' }
+          changeDescription: { type: 'string' },
+          existingAdrs: { type: 'array', items: { type: 'string' } }
         },
         required: ['projectPath']
       }
     },
     {
       name: 'generate_adrs_from_prd',
-      description: 'Generate ADRs from PRD with advanced prompting techniques',
+      description: 'Generate ADRs from PRD with advanced prompting techniques (APE + Knowledge Generation)',
       inputSchema: {
         type: 'object',
         properties: {
           prdPath: { type: 'string' },
+          outputDirectory: { type: 'string' },
           prdType: {
             type: 'string',
-            enum: ['web-application', 'mobile-app', 'data-platform', 'api-service', 'general'],
+            enum: ['web-application', 'mobile-app', 'microservices', 'data-platform', 'api-service', 'general'],
             default: 'general'
           },
           enhancedMode: { type: 'boolean', default: true },
@@ -60,7 +62,7 @@ const createMockTools = () => ({
     },
     {
       name: 'analyze_project_ecosystem',
-      description: 'Analyze project ecosystem with advanced prompting techniques',
+      description: 'Analyze project ecosystem with advanced prompting techniques (Knowledge Generation + Reflexion)',
       inputSchema: {
         type: 'object',
         properties: {
@@ -73,7 +75,8 @@ const createMockTools = () => ({
           enhancedMode: { type: 'boolean', default: true },
           knowledgeEnhancement: { type: 'boolean', default: true },
           learningEnabled: { type: 'boolean', default: true },
-          technologyFocus: { type: 'array', items: { type: 'string' } }
+          technologyFocus: { type: 'array', items: { type: 'string' } },
+          includePatterns: { type: 'array', items: { type: 'string' } }
         },
         required: []
       }

@@ -26,6 +26,7 @@ const DEFAULT_CONFIG: Required<KnowledgeGenerationConfig> = {
   securityValidation: true,
   customTemplates: [],
   maxKnowledgeItems: 50,
+  maxTokens: 5000,
   relevanceThreshold: 0.6,
   parallelGeneration: true
 };
@@ -45,6 +46,11 @@ export async function generateArchitecturalKnowledge(
   config: KnowledgeGenerationConfig = {}
 ): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
+    // Validate input
+    if (!context.projectPath || context.projectPath.trim() === '') {
+      throw new McpAdrError('Project path is required', 'INVALID_INPUT');
+    }
+
     const mergedConfig = { ...DEFAULT_CONFIG, ...config };
     console.error(`[DEBUG] Generating knowledge generation prompt for domains: ${mergedConfig.domains.join(', ')}`);
 
@@ -55,25 +61,28 @@ export async function generateArchitecturalKnowledge(
       targetDomains = ['web-applications', 'api-design'];
     }
 
-    // Get domain templates for knowledge generation
+    // Get domain templates for knowledge generation (optimized)
     const domainTemplatesInfo = targetDomains.map(domain => {
       const template = getDomainTemplate(domain);
       return {
         domain,
         hasTemplate: !!template,
-        categories: template?.categories.map(cat => ({
-          category: cat.category,
-          itemCount: cat.items.length,
-          priority: cat.priority,
-          applicability: cat.applicability
-        })) || []
+        categoryCount: template?.categories.length || 0,
+        // Only include detailed categories for small technology lists to avoid exponential growth
+        categories: (context.technologies?.length || 0) <= 5 ?
+          template?.categories.map(cat => ({
+            category: cat.category,
+            itemCount: cat.items.length,
+            priority: cat.priority,
+            applicability: cat.applicability
+          })) || [] : []
       };
     });
 
-    // Generate cache key for this knowledge request
-    const contextHash = Buffer.from(JSON.stringify(context)).toString('base64').substring(0, 16);
-    const configHash = Buffer.from(JSON.stringify(mergedConfig)).toString('base64').substring(0, 16);
-    const cacheKey = `knowledge:${targetDomains.join('+')}-${contextHash}-${configHash}`;
+    // Generate cache key for this knowledge request (optimized for performance)
+    const contextKey = `${context.projectPath}-${context.technologies?.length || 0}-${context.projectType || 'unknown'}`;
+    const configKey = `${targetDomains.join('+')}-${mergedConfig.depth}-${mergedConfig.maxKnowledgeItems}`;
+    const cacheKey = `knowledge:${configKey}-${Buffer.from(contextKey).toString('base64').substring(0, 12)}`;
 
     // Create comprehensive knowledge generation prompt
     const prompt = `
@@ -86,7 +95,11 @@ ${targetDomains.map((domain, index) => `${index + 1}. **${domain}**`).join('\n')
 
 ## Project Context
 - **Project Path**: ${context.projectPath || 'Not specified'}
-- **Technologies**: ${context.technologies?.join(', ') || 'Not specified'}
+- **Technologies**: ${context.technologies?.length ?
+    (context.technologies.length <= 5 ?
+      context.technologies.join(', ') :
+      `${context.technologies.slice(0, 5).join(', ')} and ${context.technologies.length - 5} more`
+    ) : 'auto-detect from project context'}
 - **Patterns**: ${context.patterns?.join(', ') || 'Not specified'}
 - **Existing ADRs**: ${context.existingAdrs?.length || 0} ADRs
 - **Project Type**: ${context.projectType || 'Not specified'}
@@ -104,8 +117,10 @@ ${targetDomains.map((domain, index) => `${index + 1}. **${domain}**`).join('\n')
 ${domainTemplatesInfo.map(info => `
 ### ${info.domain}
 - **Template Available**: ${info.hasTemplate ? 'Yes' : 'No'}
-- **Categories**: ${info.categories.length}
-${info.categories.map(cat => `  - ${cat.category} (${cat.itemCount} items, priority: ${cat.priority})`).join('\n')}
+- **Categories**: ${info.categoryCount}${info.categories.length > 0 ?
+  `\n${info.categories.map(cat => `  - ${cat.category} (${cat.itemCount} items, priority: ${cat.priority})`).join('\n')}` :
+  ' (details omitted for performance)'
+}
 `).join('\n')}
 
 ## Required Knowledge Generation Tasks
@@ -237,6 +252,7 @@ This is a comprehensive architectural knowledge generation task. You must:
         operation: 'knowledge_generation',
         domains: targetDomains,
         config: mergedConfig,
+        depth: mergedConfig.depth,
         cacheKey,
         securityLevel: 'high',
         expectedFormat: 'json'
@@ -266,8 +282,15 @@ export async function enhancePromptWithKnowledge(
 
     const mergedConfig = { ...DEFAULT_CONFIG, ...config, domains };
 
+    // Merge context from original prompt with provided context
+    const enhancedContext = {
+      projectPath: './default-project', // Fallback project path
+      ...originalPrompt.context,
+      ...context
+    };
+
     // Generate knowledge generation prompt first
-    const knowledgePrompt = await generateArchitecturalKnowledge(context, mergedConfig);
+    const knowledgePrompt = await generateArchitecturalKnowledge(enhancedContext, mergedConfig);
 
     const prompt = `
 # Prompt Enhancement with Architectural Knowledge
@@ -345,10 +368,12 @@ You must:
       prompt,
       instructions,
       context: {
+        ...originalPrompt.context, // Preserve original context
         operation: 'prompt_enhancement',
         domains,
         originalPrompt,
         config: mergedConfig,
+        knowledgeEnhanced: true,
         securityLevel: 'high',
         expectedFormat: 'enhanced_prompt'
       }
@@ -659,6 +684,10 @@ export function getSupportedDepths(): Array<'basic' | 'intermediate' | 'advanced
 export function validateKnowledgeConfig(config: Partial<KnowledgeGenerationConfig>): void {
   if (config.maxKnowledgeItems && config.maxKnowledgeItems <= 0) {
     throw new Error('Max knowledge items must be positive');
+  }
+
+  if (config.maxTokens !== undefined && config.maxTokens <= 0) {
+    throw new Error('Max tokens must be positive');
   }
 
   if (config.depth && !['basic', 'intermediate', 'advanced'].includes(config.depth)) {

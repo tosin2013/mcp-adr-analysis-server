@@ -94,7 +94,7 @@ export class McpAdrAnalysisServer {
         tools: [
           {
             name: 'analyze_project_ecosystem',
-            description: 'Comprehensive recursive project ecosystem analysis including technology stack, patterns, architecture, and automatic environment analysis for complete project understanding',
+            description: 'Comprehensive recursive project ecosystem analysis with advanced prompting techniques (Knowledge Generation + Reflexion)',
             inputSchema: {
               type: 'object',
               properties: {
@@ -395,7 +395,7 @@ export class McpAdrAnalysisServer {
           },
           {
             name: 'suggest_adrs',
-            description: 'Suggest ADRs based on project analysis with advanced prompting techniques (Knowledge Generation + Reflexion learning)',
+            description: 'Suggest architectural decisions with advanced prompting techniques (Knowledge Generation + Reflexion)',
             inputSchema: {
               type: 'object',
               properties: {
