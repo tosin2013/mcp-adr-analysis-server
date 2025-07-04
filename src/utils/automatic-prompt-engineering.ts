@@ -46,6 +46,14 @@ export async function optimizePromptWithAPE(
   config: Partial<APEConfig> = {}
 ): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
+    // Validate input prompt
+    if (!originalPrompt.prompt || originalPrompt.prompt.trim() === '') {
+      throw new McpAdrError('Prompt cannot be empty', 'INVALID_INPUT');
+    }
+
+    // Validate configuration
+    validateAPEConfig(config);
+
     const mergedConfig = { ...DEFAULT_APE_CONFIG, ...config };
     console.error(`[DEBUG] Generating APE optimization prompt for prompt optimization`);
 
@@ -56,7 +64,7 @@ export async function optimizePromptWithAPE(
 
     // Create comprehensive APE optimization prompt
     const prompt = `
-# Automatic Prompt Engineering (APE) Optimization Request
+# APE-Optimized Prompt
 
 Please optimize the following prompt using APE techniques for better performance and effectiveness.
 
@@ -83,7 +91,7 @@ ${JSON.stringify(originalPrompt.context, null, 2)}
 
 ## APE Optimization Process
 
-### Step 1: Generate Prompt Candidates (${mergedConfig.candidateCount} candidates)
+### Step 1: Generate Prompt Candidates (${mergedConfig.candidateCount} prompt candidates)
 Create ${mergedConfig.candidateCount} prompt variations using these strategies:
 
 #### Template-based Variation
@@ -273,7 +281,7 @@ export async function generatePromptCandidates(
     const prompt = `
 # Prompt Candidate Generation Request
 
-Please generate ${candidateCount} prompt variations using the specified strategies.
+Please generate ${candidateCount} candidates using the specified strategies.
 
 ## Base Prompt to Vary
 \`\`\`
@@ -404,7 +412,7 @@ export async function evaluatePromptPerformance(
     const prompt = `
 # Prompt Performance Evaluation Request
 
-Please evaluate the following prompt candidates using the specified criteria.
+Please evaluate the following ${candidates.length} candidates using the specified criteria.
 
 ## Candidates to Evaluate
 ${candidates.map((candidate, index) => `
@@ -665,7 +673,7 @@ You must:
       prompt,
       instructions,
       context: {
-        operation: 'tool_optimization',
+        operation: 'ape_optimization',
         toolName,
         basePrompt,
         toolConfig,
@@ -801,19 +809,23 @@ export function getDefaultAPEConfig(): Required<APEConfig> {
  * Validate APE configuration
  */
 export function validateAPEConfig(config: Partial<APEConfig>): void {
-  if (config.candidateCount && (config.candidateCount < 1 || config.candidateCount > 20)) {
-    throw new McpAdrError('Candidate count must be between 1 and 20', 'INVALID_CONFIG');
+  if (config.candidateCount !== undefined && (config.candidateCount < 1 || config.candidateCount > 10)) {
+    throw new McpAdrError('Candidate count must be between 1 and 10', 'INVALID_CONFIG');
   }
 
-  if (config.optimizationRounds && (config.optimizationRounds < 1 || config.optimizationRounds > 10)) {
-    throw new McpAdrError('Optimization rounds must be between 1 and 10', 'INVALID_CONFIG');
+  if (config.optimizationRounds !== undefined && (config.optimizationRounds < 1 || config.optimizationRounds > 5)) {
+    throw new McpAdrError('Optimization rounds must be between 1 and 5', 'INVALID_CONFIG');
   }
 
-  if (config.qualityThreshold && (config.qualityThreshold < 0 || config.qualityThreshold > 1)) {
+  if (config.qualityThreshold !== undefined && (config.qualityThreshold < 0 || config.qualityThreshold > 1)) {
     throw new McpAdrError('Quality threshold must be between 0 and 1', 'INVALID_CONFIG');
   }
 
-  if (config.diversityWeight && (config.diversityWeight < 0 || config.diversityWeight > 1)) {
+  if (config.maxOptimizationTime !== undefined && config.maxOptimizationTime <= 0) {
+    throw new McpAdrError('Max optimization time must be positive', 'INVALID_CONFIG');
+  }
+
+  if (config.diversityWeight !== undefined && (config.diversityWeight < 0 || config.diversityWeight > 1)) {
     throw new McpAdrError('Diversity weight must be between 0 and 1', 'INVALID_CONFIG');
   }
 }
