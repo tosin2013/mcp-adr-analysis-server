@@ -37,12 +37,6 @@ npm install -g mcp-adr-analysis-server
 npm install mcp-adr-analysis-server
 ```
 
-### Using with uvx (Python-style)
-```bash
-# Run directly with uvx
-uvx mcp-adr-analysis-server@latest
-```
-
 ### From Source
 ```bash
 git clone https://github.com/tosin2013/mcp-adr-analysis-server.git
@@ -165,25 +159,6 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
     "adr-analysis": {
       "command": "mcp-adr-analysis-server",
       "args": [],
-      "env": {
-        "PROJECT_PATH": "/path/to/your/project",
-        "ADR_DIRECTORY": "docs/adrs",
-        "LOG_LEVEL": "ERROR"
-      }
-    }
-  }
-}
-```
-
-### Amazon Q CLI
-Add to `~/.aws/amazonq/mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "uvx",
-      "args": ["mcp-adr-analysis-server@latest"],
       "env": {
         "PROJECT_PATH": "/path/to/your/project",
         "ADR_DIRECTORY": "docs/adrs",
