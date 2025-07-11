@@ -15,9 +15,9 @@ export function generateEnvironmentSpecAnalysisPrompt(
   projectStructure: string
 ): string {
   return `
-# System Environment Specification Analysis
+# System Environment Specification Analysis Guide
 
-Please analyze the following environment specifications and project structure to understand the deployment environment and infrastructure requirements.
+**Note: Use this as guidance for analyzing environment specifications and project structure to understand deployment environment and infrastructure requirements. Focus on the most relevant aspects for this specific system.**
 
 ## Environment Files
 ${environmentFiles
@@ -74,7 +74,7 @@ Please analyze the environment specifications for:
 
 ## Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your analysis (adapt fields as needed):
 
 \`\`\`json
 {
@@ -210,7 +210,7 @@ ${file.content.slice(0, 1000)}${file.content.length > 1000 ? '\n... (truncated)'
 
 ## Detection Requirements
 
-Please identify:
+Consider identifying where applicable:
 
 ### 🐳 **Container Technologies**
 - **Docker**: Dockerfile, docker-compose.yml, .dockerignore
@@ -242,7 +242,7 @@ Please identify:
 
 ## Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your analysis (adapt fields as needed):
 
 \`\`\`json
 {
@@ -372,7 +372,7 @@ ${adr.content.slice(0, 1200)}${adr.content.length > 1200 ? '\n... (truncated)' :
 
 ## Requirements Extraction
 
-Please identify environment requirements in these categories:
+Consider identifying environment requirements from these categories where relevant:
 
 ### 🏗️ **Infrastructure Requirements**
 - **Compute**: CPU, memory, processing requirements
@@ -408,7 +408,7 @@ Please identify environment requirements in these categories:
 
 ## Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your analysis (adapt fields as needed):
 
 \`\`\`json
 {

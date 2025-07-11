@@ -60,9 +60,9 @@ export function generateTechnologyDetectionPrompt(
   packageJsonContent?: string
 ): string {
   return `
-# Technology Stack Analysis Request
+# Technology Stack Analysis Guide
 
-Please analyze the following project structure and identify all technologies, frameworks, libraries, tools, and platforms being used.
+**Note: Use this as guidance for analyzing the project structure to identify technologies, frameworks, libraries, tools, and platforms. Focus on what's most relevant and evident in this specific project.**
 
 ## Project Context
 \`\`\`json
@@ -80,7 +80,7 @@ ${packageJsonContent}
 
 ## Analysis Requirements
 
-Please provide a comprehensive analysis in the following JSON format:
+The following JSON structure provides a template for organizing your analysis (adapt fields as needed):
 
 \`\`\`json
 {
@@ -142,18 +142,18 @@ Please analyze thoroughly and provide detailed, accurate results.
  */
 export function generatePatternDetectionPrompt(projectContext: string): string {
   return `
-# Architectural Pattern Analysis Request
+# Architectural Pattern Analysis Guide
 
-Please analyze the following project structure and identify architectural patterns, design patterns, and organizational patterns being used.
+**Note: Use this as guidance for analyzing the project structure to identify architectural patterns, design patterns, and organizational patterns. Focus on patterns that are clearly evident and relevant to this specific project.**
 
 ## Project Context
 \`\`\`json
 ${projectContext}
 \`\`\`
 
-## Analysis Requirements
+## Suggested Analysis Approach
 
-Please provide a comprehensive analysis in the following JSON format:
+The following JSON structure provides a template for organizing your pattern analysis (adapt fields as needed):
 
 \`\`\`json
 {

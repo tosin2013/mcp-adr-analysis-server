@@ -12,9 +12,9 @@ export function generateSensitiveContentDetectionPrompt(
   userDefinedPatterns?: string[]
 ): string {
   return `
-# Sensitive Information Detection Request
+# Sensitive Information Detection Guide
 
-Please analyze the following content and identify any sensitive information that should be masked or redacted.
+**Note: Use this as guidance for analyzing the content to identify sensitive information that should be masked or redacted. Focus on the most critical security patterns for this specific content type.**
 
 ## Content Type
 ${contentType}
@@ -32,9 +32,9 @@ ${userDefinedPatterns.map(pattern => `- ${pattern}`).join('\n')}
     : ''
 }
 
-## Detection Requirements
+## Suggested Detection Categories (focus on what's applicable)
 
-Please identify ALL instances of sensitive information including:
+Consider identifying instances of sensitive information from these categories where relevant:
 
 ### 🔑 **API Keys & Tokens**
 - API keys (AWS, Google, GitHub, Stripe, etc.)
@@ -71,9 +71,9 @@ Please identify ALL instances of sensitive information including:
 - Customer data or identifiers
 - Financial information
 
-## Analysis Output Format
+## Suggested Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your security analysis (adapt fields as needed):
 
 \`\`\`json
 {

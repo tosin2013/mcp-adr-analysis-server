@@ -11,32 +11,32 @@ export function generateImplicitDecisionDetectionPrompt(
   existingAdrs?: string[]
 ): string {
   return `
-# Implicit Architectural Decision Detection
+# Implicit Architectural Decision Detection Guide
 
-Please analyze the project at **${projectPath}** to identify implicit architectural decisions that should be documented as ADRs.
+**Note: Use this as a guide for analyzing the project at ${projectPath} to identify implicit architectural decisions. Adapt the approach based on what's most relevant to the specific project.**
 
-## Your Analysis Tasks
+## Suggested Analysis Approach
 
-### 1. **Project Structure Analysis**
-First, examine the project structure to understand the codebase:
-- Use file system tools to list directories and files
-- Identify the main programming languages and frameworks
-- Analyze the overall project organization and architecture
-- Look for configuration files, build scripts, and dependency files
+### 1. **Project Structure Analysis** (adapt as needed)
+Consider examining the project structure to understand the codebase:
+- Use available tools to explore directories and files
+- Identify the main programming languages and frameworks where relevant
+- Analyze the overall project organization and architecture patterns
+- Look for configuration files, build scripts, and dependency files that reveal decisions
 
-### 2. **Code Pattern Detection**
-Scan the codebase for architectural patterns and decisions:
-- Read key source files to identify patterns
-- Examine configuration files for technology choices
+### 2. **Code Pattern Detection** (focus on what's applicable)
+Scan the codebase for architectural patterns and decisions where relevant:
+- Review key source files to identify established patterns
+- Examine configuration files for explicit technology choices
 - Look for established conventions and standards
-- Identify design patterns and architectural styles
+- Identify design patterns and architectural styles that are evident
 
-### 3. **Technology Stack Analysis**
-Identify the technology decisions reflected in the codebase:
-- Framework and library choices
-- Database and data access patterns
-- API and integration patterns
-- Testing and deployment configurations
+### 3. **Technology Stack Analysis** (as applicable to the project)
+Consider identifying technology decisions reflected in the codebase:
+- Framework and library choices that represent architectural decisions
+- Database and data access patterns where present
+- API and integration patterns if applicable
+- Testing and deployment configurations that reveal decisions
 
 ${
   existingAdrs
@@ -48,7 +48,7 @@ ${existingAdrs.map(adr => `- ${adr}`).join('\n')}
 
 ## Detection Requirements
 
-Please identify implicit architectural decisions by analyzing:
+Consider identifying implicit architectural decisions by analyzing where relevant:
 
 ### 🏗️ **Architectural Patterns**
 - Framework choices and configuration patterns
@@ -79,9 +79,9 @@ Please identify implicit architectural decisions by analyzing:
 - Development workflow patterns
 - Monitoring and observability setups
 
-## Analysis Output Format
+## Suggested Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your findings (adapt as needed for your specific analysis):
 
 \`\`\`json
 {
@@ -154,9 +154,9 @@ export function generateCodeChangeAnalysisPrompt(
   commitMessages?: string[]
 ): string {
   return `
-# Code Change Analysis for Architectural Decisions
+# Code Change Analysis Guide for Architectural Decisions
 
-Please analyze the following code changes to identify architectural decisions that should be documented as ADRs.
+**Note: Use this as guidance for analyzing code changes to identify architectural decisions that should be documented as ADRs. Focus on the most significant architectural implications of these specific changes.**
 
 ## Change Description
 ${changeDescription}
@@ -181,7 +181,7 @@ ${afterCode.slice(0, 3000)}${afterCode.length > 3000 ? '\n... (truncated)' : ''}
 
 ## Analysis Requirements
 
-Please identify architectural decisions by analyzing:
+Consider identifying architectural decisions by analyzing where applicable:
 
 ### 🔄 **Change Types**
 - **Technology Changes**: New frameworks, libraries, or tools introduced
@@ -206,7 +206,7 @@ Please identify architectural decisions by analyzing:
 
 ## Analysis Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your analysis (adapt fields as needed):
 
 \`\`\`json
 {

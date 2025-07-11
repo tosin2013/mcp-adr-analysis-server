@@ -16,9 +16,9 @@ export function generateResearchTopicExtractionPrompt(
   existingTopics?: string[]
 ): string {
   return `
-# Research Topic Extraction
+# Research Topic Extraction Guide
 
-Please analyze the following research files and extract key topics, findings, and insights that could impact architectural decisions.
+**Note: Use this as guidance for analyzing research files to extract key topics, findings, and insights that could impact architectural decisions. Focus on the most relevant and actionable information.**
 
 ## Research Files
 ${researchFiles
@@ -44,9 +44,9 @@ ${existingTopics.map(topic => `- ${topic}`).join('\n')}
     : ''
 }
 
-## Extraction Requirements
+## Suggested Extraction Areas (focus on what's applicable)
 
-Please identify and extract:
+Consider identifying and extracting information from these areas where relevant:
 
 ### 🔬 **Research Topics**
 - **Technology Evaluations**: New frameworks, libraries, tools, platforms
@@ -70,9 +70,9 @@ Please identify and extract:
 - **Non-functional Requirements**: Performance, security, scalability impacts
 - **Process Changes**: Development or operational process improvements
 
-## Output Format
+## Suggested Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your research extraction (adapt fields as needed):
 
 \`\`\`json
 {
@@ -221,7 +221,7 @@ Please evaluate:
 
 ## Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your analysis (adapt fields as needed):
 
 \`\`\`json
 {

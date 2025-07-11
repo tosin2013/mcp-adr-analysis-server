@@ -37,9 +37,9 @@ export const goalSpecificationPrompt: PromptTemplate = {
       required: false,
     },
   ],
-  template: `# Project Goal Specification
+  template: `# Project Goal Specification Guide
 
-Please help me define clear goals and requirements for this project analysis.
+**Note: Use this as guidance to help define clear goals and requirements for project analysis. Adapt the questions and approach based on what's most relevant to your specific project.**
 
 ## Project Context
 {{#if project_type}}
@@ -61,7 +61,7 @@ Please help me define clear goals and requirements for this project analysis.
 5. **Integration Requirements**: Does this project need to integrate with other systems?
 6. **Deployment Environment**: Where will this project be deployed?
 
-Please provide detailed answers to help guide the architectural analysis and recommendations.`,
+Consider providing detailed answers where relevant to help guide the architectural analysis and recommendations.`,
 };
 
 /**
@@ -265,7 +265,9 @@ export const baselineAnalysisPrompt: PromptTemplate = {
       required: false,
     },
   ],
-  template: `# Baseline Analysis Request
+  template: `# Baseline Analysis Guide
+
+**Note: Use this as guidance for conducting a comprehensive baseline analysis of existing projects. Focus on the areas most relevant to your specific project and requirements.**
 
 ## Project Information
 **Project Path**: {{project_path}}
@@ -313,7 +315,7 @@ This baseline analysis will examine your existing project to provide:
 4. **Generated/Updated todo.md**
 5. **Architectural Recommendations**
 
-Please confirm to proceed with the baseline analysis.`,
+Consider confirming to proceed with the baseline analysis if this scope meets your requirements.`,
 };
 
 /**

@@ -16,9 +16,9 @@ export function generateDeploymentTaskIdentificationPrompt(
   todoContent?: string
 ): string {
   return `
-# Deployment Task Identification from ADRs
+# Deployment Task Identification Guide
 
-Please analyze the following ADRs and todo content to identify deployment-related tasks and requirements.
+**Note: Use this as guidance for analyzing ADRs and todo content to identify deployment-related tasks and requirements. Focus on the most critical deployment aspects for this specific context.**
 
 ## ADR Files
 ${adrFiles
@@ -48,7 +48,7 @@ ${todoContent.slice(0, 1500)}${todoContent.length > 1500 ? '\n... (truncated)' :
 
 ## Task Identification Requirements
 
-Please identify deployment-related tasks in these categories:
+Consider identifying deployment-related tasks from these categories where applicable:
 
 ### 🚀 **Infrastructure Deployment**
 - **Environment Setup**: Development, staging, production environments
@@ -80,7 +80,7 @@ Please identify deployment-related tasks in these categories:
 
 ## Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your analysis (adapt fields as needed):
 
 \`\`\`json
 {
@@ -256,7 +256,7 @@ Please analyze the CI/CD pipeline for:
 
 ## Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your analysis (adapt fields as needed):
 
 \`\`\`json
 {

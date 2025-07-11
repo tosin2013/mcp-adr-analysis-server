@@ -22,9 +22,9 @@ export function generateProblemKnowledgeCorrelationPrompt(
   }
 ): string {
   return `
-# Problem-Knowledge Graph Correlation Analysis
+# Problem-Knowledge Graph Correlation Analysis Guide
 
-Please analyze the following problems and correlate them with the architectural knowledge graph to identify research opportunities and knowledge gaps.
+**Note: Use this as guidance for analyzing problems and correlating them with the architectural knowledge graph to identify research opportunities and knowledge gaps. Focus on the most relevant correlations for this specific context.**
 
 ## Identified Problems
 ${problems
@@ -52,9 +52,9 @@ ${knowledgeGraph.adrs.map(adr => `- **${adr.title}**: ${adr.status}`).join('\n')
 ### Relationships
 ${knowledgeGraph.relationships.map(rel => `- ${rel.source} → ${rel.target} (${rel.type})`).join('\n')}
 
-## Correlation Analysis Requirements
+## Suggested Correlation Analysis Areas (focus on what's applicable)
 
-Please identify correlations and research opportunities:
+Consider identifying correlations and research opportunities from these areas where relevant:
 
 ### 🔍 **Problem-Knowledge Correlations**
 - **Direct Correlations**: Problems directly related to known technologies/patterns
@@ -77,9 +77,9 @@ Please identify correlations and research opportunities:
 - **Risk Mitigation**: Research to address high-severity problems
 - **Innovation Opportunities**: Research for competitive advantage
 
-## Output Format
+## Suggested Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your correlation analysis (adapt fields as needed):
 
 \`\`\`json
 {
@@ -246,7 +246,7 @@ Please identify relevant elements for the research:
 
 ## Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your analysis (adapt fields as needed):
 
 \`\`\`json
 {

@@ -21,9 +21,11 @@ export function generateRuleExtractionPrompt(
   }>
 ): string {
   return `
-# Architectural Rule Extraction from ADRs
+# Architectural Rule Extraction Guide
 
-Please analyze the following Architectural Decision Records and extract actionable rules that can be used to validate code and architectural compliance.
+**Note: Use this as guidance for analyzing the following Architectural Decision Records to extract actionable rules. Focus on rules that would be most valuable for validating code and architectural compliance in this specific context.**
+
+Consider analyzing the ADRs below and extracting relevant rules where applicable.
 
 ## ADR Files
 ${adrFiles
@@ -50,9 +52,9 @@ ${existingRules.map(rule => `- **${rule.name}**: ${rule.description}`).join('\n'
     : ''
 }
 
-## Rule Extraction Requirements
+## Suggested Rule Categories (focus on what's relevant)
 
-Please identify and extract rules in the following categories:
+Consider identifying and extracting rules from these categories where applicable to the specific ADRs:
 
 ### 🏗️ **Architectural Rules**
 - **Component Structure**: How components should be organized and structured
@@ -87,7 +89,7 @@ Please identify and extract rules in the following categories:
 
 ## Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your rule analysis (adapt fields as needed):
 
 \`\`\`json
 {
@@ -238,7 +240,7 @@ Please analyze patterns to generate rules for:
 
 ## Output Format
 
-Please provide your analysis in the following JSON format:
+The following JSON structure provides a template for organizing your rule analysis (adapt fields as needed):
 
 \`\`\`json
 {

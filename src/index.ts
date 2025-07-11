@@ -19,16 +19,29 @@ import {
   GetPromptRequestSchema
 } from '@modelcontextprotocol/sdk/types.js';
 
+import { readFileSync } from 'fs';
 import { McpAdrError } from './types/index.js';
 import { maskMcpResponse, createMaskingConfig } from './utils/output-masking.js';
 import { loadConfig, validateProjectPath, createLogger, printConfigSummary, type ServerConfig } from './utils/config.js';
+
+/**
+ * Get version from package.json
+ */
+function getPackageVersion(): string {
+  try {
+    const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
+    return packageJson.version;
+  } catch {
+    return '2.0.2'; // fallback version
+  }
+}
 
 /**
  * Server configuration
  */
 const SERVER_INFO = {
   name: 'mcp-adr-analysis-server',
-  version: '1.0.0',
+  version: getPackageVersion(),
   description: 'MCP server for analyzing Architectural Decision Records and project architecture'
 };
 
