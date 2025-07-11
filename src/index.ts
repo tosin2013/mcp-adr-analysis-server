@@ -212,7 +212,7 @@ export class McpAdrAnalysisServer {
           },
           {
             name: 'generate_adr_todo',
-            description: 'Generate or update todo.md from existing ADRs',
+            description: 'Generate TDD-focused todo.md from existing ADRs with two-phase approach: test generation and production code',
             inputSchema: {
               type: 'object',
               properties: {
@@ -225,6 +225,83 @@ export class McpAdrAnalysisServer {
                   enum: ['all', 'pending', 'in_progress'],
                   description: 'Scope of tasks to include',
                   default: 'all'
+                },
+                phase: {
+                  type: 'string',
+                  enum: ['both', 'test', 'production'],
+                  description: 'TDD phase: both (default), test (mock test generation), production (implementation after tests)',
+                  default: 'both'
+                },
+                linkAdrs: {
+                  type: 'boolean',
+                  description: 'Link all ADRs to create comprehensive system test coverage',
+                  default: true
+                },
+                includeRules: {
+                  type: 'boolean',
+                  description: 'Include architectural rules validation in TDD tasks',
+                  default: true
+                },
+                ruleSource: {
+                  type: 'string',
+                  enum: ['adrs', 'patterns', 'both'],
+                  description: 'Source for architectural rules (only used if includeRules is true)',
+                  default: 'both'
+                }
+              }
+            }
+          },
+          {
+            name: 'compare_adr_progress',
+            description: 'Compare TODO.md progress against ADRs and current environment to validate implementation status',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                todoPath: {
+                  type: 'string',
+                  description: 'Path to TODO.md file to analyze',
+                  default: 'TODO.md'
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory containing ADR files',
+                  default: 'docs/adrs'
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project root for environment analysis',
+                  default: '.'
+                },
+                validationType: {
+                  type: 'string',
+                  enum: ['full', 'todo-only', 'adr-only', 'environment-only'],
+                  description: 'Type of validation to perform',
+                  default: 'full'
+                },
+                includeFileChecks: {
+                  type: 'boolean',
+                  description: 'Include file existence and implementation checks',
+                  default: true
+                },
+                includeRuleValidation: {
+                  type: 'boolean',
+                  description: 'Include architectural rule compliance validation',
+                  default: true
+                },
+                deepCodeAnalysis: {
+                  type: 'boolean',
+                  description: 'Perform deep code analysis to distinguish mock from production implementations',
+                  default: true
+                },
+                functionalValidation: {
+                  type: 'boolean',
+                  description: 'Validate that code actually functions according to ADR goals, not just exists',
+                  default: true
+                },
+                strictMode: {
+                  type: 'boolean',
+                  description: 'Enable strict validation mode with reality-check mechanisms against overconfident assessments',
+                  default: true
                 }
               }
             }
@@ -1104,6 +1181,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'generate_adr_todo':
             response = await this.generateAdrTodo(args);
+            break;
+          case 'compare_adr_progress':
+            response = await this.compareAdrProgress(args);
             break;
           case 'analyze_content_security':
             response = await this.analyzeContentSecurity(args);
@@ -2693,7 +2773,7 @@ The enhanced process maintains full traceability from PRD requirements to genera
   }
 
   private async generateAdrTodo(args: any): Promise<any> {
-    const { scope = 'all' } = args;
+    const { scope = 'all', phase = 'both', linkAdrs = true, includeRules = true, ruleSource = 'both' } = args;
     const { getAdrDirectoryPath } = await import('./utils/config.js');
     const path = await import('path');
 
@@ -2705,7 +2785,7 @@ The enhanced process maintains full traceability from PRD requirements to genera
     // Keep relative path for display purposes
     const adrDirectory = args.adrDirectory || this.config.adrDirectory;
 
-    this.logger.info(`Generating todo prompt for ADRs in: ${absoluteAdrPath}`);
+    this.logger.info(`Generating TDD-focused todo for ADRs in: ${absoluteAdrPath} (phase: ${phase})`);
 
     try {
       const { findFiles } = await import('./utils/file-system.js');
@@ -2713,75 +2793,196 @@ The enhanced process maintains full traceability from PRD requirements to genera
       // Generate file discovery prompt for ADR files using project path as base
       const adrFilesPrompt = await findFiles(this.config.projectPath, [`${absoluteAdrPath}/**/*.md`], { includeContent: true });
 
-      // Generate comprehensive todo creation prompt
+      // For ADR linking, also discover all project structure
+      let projectStructurePrompt = '';
+      if (linkAdrs) {
+        const projectFiles = await findFiles(this.config.projectPath, [
+          '**/*.{ts,js,py,java,cs,go,rb,php,swift,kt,rs,cpp,c,h}',
+          '!node_modules/**',
+          '!dist/**', 
+          '!build/**',
+          '!.git/**'
+        ], { 
+          includeContent: false
+        });
+        projectStructurePrompt = `
+## Project Structure (for ADR linking)
+${projectFiles.prompt}
+`;
+      }
+
+      // For rules integration, extract architectural rules from ADRs
+      let rulesPrompt = '';
+      if (includeRules) {
+        try {
+          const rulesResult = await this.generateRules({
+            source: ruleSource,
+            adrDirectory: adrDirectory,
+            projectPath: this.config.projectPath,
+            outputFormat: 'json'
+          });
+          
+          if (rulesResult.content) {
+            rulesPrompt = `
+## Architectural Rules (for compliance validation)
+The following architectural rules have been extracted from ADRs and should be validated in tests:
+
+${Array.isArray(rulesResult.content) ? rulesResult.content.map((c: any) => c.text || c).join('\n') : rulesResult.content}
+`;
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to extract rules: ${error instanceof Error ? error.message : String(error)}`);
+          rulesPrompt = `
+## Architectural Rules (failed to extract)
+Note: Could not extract architectural rules automatically. Manual rule validation may be needed.
+`;
+        }
+      }
+
+      // Generate TDD-focused todo creation prompt
       const todoPrompt = `
-# ADR Todo Generation Request
+# TDD-Focused ADR Todo Generation Request
 
 ## Step 1: File Discovery
 ${adrFilesPrompt.prompt}
+${projectStructurePrompt}
+${rulesPrompt}
 
-## Step 2: Todo Generation Analysis
+## Step 2: TDD Todo Generation Analysis
 
-Once you have discovered and read the ADR files, please analyze them and generate a comprehensive todo.md file.
+Once you have discovered and read the ADR files, please analyze them and generate a comprehensive TDD-focused todo.md file.
+
+## TDD Phase: ${phase}
+${phase === 'test' ? '**Focus on Phase 1: Mock Test Generation Only**' : ''}
+${phase === 'production' ? '**Focus on Phase 2: Production Code Implementation (assumes tests exist)**' : ''}
+${phase === 'both' ? '**Generate both Phase 1 (Tests) and Phase 2 (Production) tasks**' : ''}
 
 ## Requirements
 
 1. **Extract Tasks**: Identify all implementation tasks from ADRs
-2. **Categorize**: Group tasks by ADR and priority
-3. **Status Detection**: Determine task completion status based on:
-   - File existence checks
-   - Code analysis hints
-   - Implementation evidence
-4. **Progress Tracking**: Calculate overall progress
-5. **Scope Filter**: ${scope === 'all' ? 'Include all tasks' : `Focus on ${scope} tasks only`}
+2. **TDD Approach**: For each task, create:
+   - Phase 1: Mock test specifications
+   - Phase 2: Production implementation tasks
+3. **ADR Linking**: ${linkAdrs ? 'Link related ADRs to create comprehensive system tests' : 'Focus on individual ADR tasks'}
+4. **Rules Integration**: ${includeRules ? `Include architectural rules validation in tests (source: ${ruleSource})` : 'Skip architectural rules validation'}
+5. **Categorize**: Group tasks by ADR and testing phase
+6. **Status Detection**: Determine task completion status
+7. **Progress Tracking**: Calculate overall progress for both test and implementation phases
+8. **Scope Filter**: ${scope === 'all' ? 'Include all tasks' : `Focus on ${scope} tasks only`}
 
-## Todo.md Format
+## TDD Todo.md Format
 
 \`\`\`markdown
-# ADR Implementation Progress
+# TDD-Focused ADR Implementation Progress
 
 **Last Updated**: [Date]
 **Overall Progress**: [X]% Complete
+**Test Coverage**: [X]% Complete
+**Implementation Coverage**: [X]% Complete
 
 ## Summary
 - Total ADRs: [count]
-- Total Tasks: [count]
+- Total Tasks: [count] (Tests: [count], Implementation: [count])
 - Completed: [count]
 - In Progress: [count]
 - Pending: [count]
 
-## Tasks by ADR
+## System Architecture Overview (from linked ADRs)
+[Brief summary of how all ADRs connect to form the complete system]
+
+## Phase 1: Test Generation Tasks
 
 ### ADR-001: [Title]
-- [ ] Task 1 description
-- [x] Task 2 description (completed)
-- [/] Task 3 description (in progress)
+#### Test Specifications
+- [ ] TEST: Unit test for [component/function]
+  - Mock: [what to mock]
+  - Expected: [expected behavior]
+  - Coverage: [what this tests]
+- [ ] TEST: Integration test for [feature]
+  - Setup: [test environment]
+  - Scenario: [test scenario]
+  - Assertions: [what to verify]
+${includeRules ? `- [ ] RULE: Architectural rule validation test for [rule name]
+  - Validation: [what rule to check]
+  - Pattern: [validation pattern/regex]
+  - Expected: [compliant behavior]` : ''}
 
 ### ADR-002: [Title]
-- [ ] Task 1 description
+#### Test Specifications
+- [ ] TEST: [test description]
+${includeRules ? '- [ ] RULE: [rule validation test]' : ''}
 ...
+
+## Phase 2: Production Implementation Tasks
+
+### ADR-001: [Title]
+#### Implementation Tasks (after tests pass)
+- [ ] IMPL: Implement [component/function]
+  - Precondition: Unit test for [component] exists
+  - Definition: [what to implement]
+  - Acceptance: All related tests pass
+${includeRules ? `  - Compliance: Must pass architectural rule validation` : ''}
+- [ ] IMPL: [implementation task]
+
+### ADR-002: [Title]
+#### Implementation Tasks
+- [ ] IMPL: [implementation description]
+${includeRules ? '  - Compliance: [specific rule requirements]' : ''}
+...
+
+## ADR Dependencies and Links
+- ADR-001 → ADR-002: [relationship description]
+- ADR-002 → ADR-003: [relationship description]
+
+## Test-First Development Workflow
+1. Complete all Phase 1 tests for a component
+${includeRules ? '2. Complete architectural rule validation tests' : ''}
+${includeRules ? '3' : '2'}. Run tests (they should fail)
+${includeRules ? '4' : '3'}. Implement Phase 2 production code
+${includeRules ? '5' : '4'}. Run tests (they should pass)
+${includeRules ? '6. Validate architectural rule compliance' : ''}
+${includeRules ? '7' : '5'}. Refactor if needed while maintaining rule compliance
 \`\`\`
 
 Please provide:
 1. Comprehensive task extraction from all ADRs
-2. Status assessment for each task
-3. Progress calculation
-4. Prioritized task list
-5. Implementation recommendations
+2. Test specifications for each implementation task
+${includeRules ? '3. Architectural rule validation tests and compliance checks' : ''}
+${includeRules ? '4' : '3'}. Clear separation of test and implementation phases
+${includeRules ? '5' : '4'}. ADR relationship mapping for system-wide test coverage
+${includeRules ? '6' : '5'}. TDD workflow recommendations with rule compliance integration
 `;
 
       // Execute the todo generation with AI if enabled, otherwise return prompt
       const { executePromptWithFallback, formatMCPResponse } = await import('./utils/prompt-execution.js');
       const executionResult = await executePromptWithFallback(
         todoPrompt,
-        'Generate comprehensive todo.md file from ADR analysis with task extraction and progress tracking',
+        'Generate TDD-focused todo.md file from ADR analysis with test-first approach and system-wide coverage',
         {
           temperature: 0.1,
-          maxTokens: 6000,
-          systemPrompt: `You are an expert project manager specializing in ADR implementation tracking.
-Analyze the provided ADRs to extract actionable tasks and create a comprehensive todo.md file.
-Focus on identifying concrete implementation steps, tracking progress, and providing clear priorities.
-Ensure the todo.md file follows the specified format and includes all necessary details.`,
+          maxTokens: 8000,
+          systemPrompt: `You are an expert in Test-Driven Development (TDD) and architectural implementation.
+Analyze the provided ADRs to extract actionable tasks following a strict TDD approach.
+
+Key responsibilities:
+1. For each implementation task, FIRST define the test specifications
+2. Create mock test descriptions that verify the expected behavior
+3. Link related ADRs to ensure comprehensive system test coverage
+4. Separate test generation (Phase 1) from production code (Phase 2)
+5. Ensure every production task has corresponding test coverage
+6. Map ADR dependencies to identify integration test requirements
+${includeRules ? '7. Include architectural rule validation in test specifications' : ''}
+${includeRules ? '8. Create compliance checks for extracted architectural rules' : ''}
+${includeRules ? '9. Ensure implementation tasks include rule compliance verification' : ''}
+
+Follow the TDD red-green-refactor cycle:
+- Red: Write failing tests first (Phase 1)${includeRules ? ' including rule validation tests' : ''}
+- Green: Implement minimal code to pass tests (Phase 2)
+- Refactor: Improve code while keeping tests green${includeRules ? ' and maintaining rule compliance' : ''}
+
+${includeRules ? 'The architectural rules provide constraints and patterns that must be validated in tests and followed in implementation.' : ''}
+
+The todo.md should serve as the glue connecting all ADRs into a cohesive, testable${includeRules ? ', rule-compliant' : ''} system.`,
           responseFormat: 'text'
         }
       );
@@ -2790,44 +2991,85 @@ Ensure the todo.md file follows the specified format and includes all necessary 
         // AI execution successful - return actual todo generation results
         return formatMCPResponse({
           ...executionResult,
-          content: `# ADR Todo Generation Results
+          content: `# TDD-Focused ADR Todo Generation Results
 
 ## Analysis Information
 - **ADR Directory**: ${adrDirectory}
 - **Scope**: ${scope}
+- **TDD Phase**: ${phase}
+- **ADR Linking**: ${linkAdrs ? 'Enabled' : 'Disabled'}
+- **Rules Integration**: ${includeRules ? `Enabled (${ruleSource})` : 'Disabled'}
 
-## AI Todo Generation Results
+## AI-Generated TDD Todo Results
 
 ${executionResult.content}
 
-## Next Steps
+## TDD Implementation Workflow
 
-Based on the generated todo list:
+### Phase 1: Test Generation (Red Phase)
+1. **Review Test Specifications**: Examine each test task for completeness
+2. **Create Mock Tests**: Implement test files with proper mocking
+3. **Define Assertions**: Ensure tests verify expected behavior
+4. **Run Tests**: Confirm all tests fail (red phase)
 
-1. **Review Generated Tasks**: Examine each task for accuracy and completeness
-2. **Prioritize Implementation**: Order tasks by importance and dependencies
-3. **Assign Responsibilities**: Determine who will work on each task
-4. **Track Progress**: Use the todo.md file to monitor implementation progress
-5. **Update Regularly**: Keep the todo list current as work progresses
+### Phase 2: Production Implementation (Green Phase)
+1. **Implement Minimal Code**: Write just enough code to pass tests
+2. **Run Tests Again**: Verify tests now pass (green phase)
+3. **Check Coverage**: Ensure all ADR requirements are tested
+4. **Integration Testing**: Verify ADR interactions work correctly
 
-## Todo Management
+### Phase 3: Refactoring (Refactor Phase)
+1. **Improve Code Quality**: Refactor while keeping tests green
+2. **Update Documentation**: Keep ADRs and tests in sync
+3. **Performance Optimization**: Optimize without breaking tests
 
-The generated todo.md file includes:
-- **Overall Progress**: Percentage completion tracking
-- **Task Categories**: Tasks organized by ADR
-- **Status Indicators**: Clear progress markers ([ ], [x], [/])
-- **Priority Levels**: High, medium, low priority assignments
-- **Implementation Guidance**: Specific steps for each task
+## ADR System Integration
+
+The todo.md serves as the glue connecting all ADRs by:
+- **Mapping Dependencies**: Shows how ADRs relate to each other
+- **System-wide Coverage**: Ensures no gaps in test coverage
+- **Progress Tracking**: Monitors both test and implementation completion
+- **Working Environment**: Defines the expected system outcome
 
 ## Integration Commands
 
-To update the todo list as work progresses:
+### Generate Test Phase Only:
 \`\`\`json
 {
   "tool": "generate_adr_todo",
   "args": {
     "adrDirectory": "${adrDirectory}",
-    "scope": "pending"
+    "phase": "test",
+    "linkAdrs": true,
+    "includeRules": true,
+    "ruleSource": "both"
+  }
+}
+\`\`\`
+
+### Generate Production Phase Only:
+\`\`\`json
+{
+  "tool": "generate_adr_todo",
+  "args": {
+    "adrDirectory": "${adrDirectory}",
+    "phase": "production",
+    "scope": "pending",
+    "includeRules": true
+  }
+}
+\`\`\`
+
+### Update Full TDD Todo with Rules:
+\`\`\`json
+{
+  "tool": "generate_adr_todo",
+  "args": {
+    "adrDirectory": "${adrDirectory}",
+    "phase": "both",
+    "linkAdrs": true,
+    "includeRules": true,
+    "ruleSource": "both"
   }
 }
 \`\`\`
@@ -2839,7 +3081,7 @@ To update the todo list as work progresses:
           content: [
             {
               type: 'text',
-              text: `ADR todo generation for: ${adrDirectory}\n\nPlease generate todo.md using the following prompt:\n\n${todoPrompt}`
+              text: `TDD-focused ADR todo generation for: ${adrDirectory}\n\nPhase: ${phase}\nADR Linking: ${linkAdrs ? 'Enabled' : 'Disabled'}\nRules Integration: ${includeRules ? `Enabled (${ruleSource})` : 'Disabled'}\nScope: ${scope}\n\nPlease generate a TDD-focused todo.md using the following prompt:\n\n${todoPrompt}`
             }
           ]
         };
@@ -2848,6 +3090,414 @@ To update the todo list as work progresses:
       throw new McpAdrError(
         `Failed to generate ADR todo: ${error instanceof Error ? error.message : String(error)}`,
         'GENERATION_ERROR'
+      );
+    }
+  }
+
+  private async compareAdrProgress(args: any): Promise<any> {
+    const { 
+      todoPath = 'TODO.md', 
+      adrDirectory = this.config.adrDirectory, 
+      projectPath = this.config.projectPath,
+      validationType = 'full',
+      includeFileChecks = true,
+      includeRuleValidation = true,
+      deepCodeAnalysis = true,
+      functionalValidation = true,
+      strictMode = true
+    } = args;
+    
+    const { getAdrDirectoryPath } = await import('./utils/config.js');
+    const path = await import('path');
+
+    // Resolve paths
+    const absoluteTodoPath = path.resolve(projectPath, todoPath);
+    const absoluteAdrPath = adrDirectory ?
+      path.resolve(projectPath, adrDirectory) :
+      getAdrDirectoryPath(this.config);
+
+    this.logger.info(`Comparing ADR progress: TODO(${absoluteTodoPath}) vs ADRs(${absoluteAdrPath}) vs Environment(${projectPath})`);
+
+    try {
+      const { findFiles } = await import('./utils/file-system.js');
+
+      // Step 1: Discover TODO.md file
+      let todoPrompt = '';
+      if (validationType === 'full' || validationType === 'todo-only') {
+        try {
+          const todoContent = await findFiles(projectPath, [todoPath], { includeContent: true });
+          todoPrompt = `
+## TODO.md Analysis
+${todoContent.prompt}
+`;
+        } catch (error) {
+          todoPrompt = `
+## TODO.md Analysis
+Error: Could not read TODO.md file at ${absoluteTodoPath}
+`;
+        }
+      }
+
+      // Step 2: Discover ADR files
+      let adrPrompt = '';
+      if (validationType === 'full' || validationType === 'adr-only') {
+        const adrFiles = await findFiles(projectPath, [`${absoluteAdrPath}/**/*.md`], { includeContent: true });
+        adrPrompt = `
+## ADR Files Analysis
+${adrFiles.prompt}
+`;
+      }
+
+      // Step 3: Discover project environment
+      let environmentPrompt = '';
+      if (validationType === 'full' || validationType === 'environment-only') {
+        const includeContent = deepCodeAnalysis || functionalValidation;
+        const projectFiles = await findFiles(projectPath, [
+          '**/*.{ts,js,py,java,cs,go,rb,php,swift,kt,rs,cpp,c,h,json,yaml,yml,md}',
+          '!node_modules/**',
+          '!dist/**',
+          '!build/**',
+          '!.git/**',
+          '!coverage/**',
+          '!.mcp-adr-cache/**'
+        ], { includeContent });
+        environmentPrompt = `
+## Project Environment Analysis
+${projectFiles.prompt}
+`;
+      }
+
+      // Step 4: Include architectural rules if requested
+      let rulesPrompt = '';
+      if (includeRuleValidation) {
+        try {
+          const rulesResult = await this.generateRules({
+            source: 'both',
+            adrDirectory: adrDirectory,
+            projectPath: projectPath,
+            outputFormat: 'json'
+          });
+          
+          if (rulesResult.content) {
+            rulesPrompt = `
+## Architectural Rules Validation
+${Array.isArray(rulesResult.content) ? rulesResult.content.map((c: any) => c.text || c).join('\n') : rulesResult.content}
+`;
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to extract rules for validation: ${error instanceof Error ? error.message : String(error)}`);
+          rulesPrompt = `
+## Architectural Rules Validation
+Note: Could not extract architectural rules for validation.
+`;
+        }
+      }
+
+      // Generate comparison prompt
+      const comparisonPrompt = `
+# ADR Progress Validation Request
+
+## Validation Type: ${validationType}
+${todoPrompt}
+${adrPrompt}
+${environmentPrompt}
+${rulesPrompt}
+
+## Validation Requirements
+
+Please perform a comprehensive comparison and validation between the TODO.md, ADRs, and current project environment:
+
+### 1. TODO vs ADR Alignment
+- Verify that all tasks in TODO.md correspond to actual ADR requirements
+- Identify missing tasks that should be in TODO.md based on ADRs
+- Check for obsolete tasks that no longer align with current ADRs
+- Validate that task descriptions match ADR specifications
+
+### 2. Implementation Status Verification
+${includeFileChecks ? `- Check file existence for tasks marked as completed
+- Verify that implemented code matches task specifications
+- Identify discrepancies between TODO status and actual implementation
+- Validate that file structures align with ADR requirements` : '- File existence checks disabled'}
+
+${deepCodeAnalysis ? `### 2.1. Deep Code Analysis (Mock vs Production Detection)
+- **Mock Detection**: Identify placeholder functions, TODO comments, and stub implementations
+- **Production Readiness**: Verify code has actual business logic, not just interfaces
+- **Implementation Depth**: Check for proper error handling, edge cases, and real functionality
+- **Completeness Validation**: Ensure functions do more than return mock data or throw NotImplementedException` : ''}
+
+${functionalValidation ? `### 2.2. Functional Validation Against ADR Goals
+- **Goal Alignment**: Verify implementations actually achieve the architectural goals stated in ADRs
+- **Environment Testing**: Check if code can run in the intended environment described by ADRs
+- **Integration Verification**: Validate that components work together as architected
+- **Performance Requirements**: Verify non-functional requirements from ADRs are met` : ''}
+
+### 3. Environment vs ADR Compliance
+- Compare current project structure with ADR decisions
+- Identify technology choices that deviate from ADRs
+- Verify that architectural patterns are implemented as specified
+- Check for missing components or files required by ADRs
+
+${includeRuleValidation ? `### 4. Architectural Rule Compliance
+- Validate current code against extracted architectural rules
+- Identify rule violations in the existing codebase
+- Check if TODO tasks include necessary rule compliance steps
+- Verify that completed tasks maintain rule compliance` : ''}
+
+## Expected Output Format
+
+\`\`\`markdown
+# ADR Progress Validation Report
+
+**Validation Date**: [Date]
+**Validation Type**: ${validationType}
+**Project Path**: ${projectPath}
+
+## Summary
+- **Total ADRs**: [count]
+- **Total TODO Tasks**: [count] 
+- **Completed Tasks**: [count]
+- **Alignment Score**: [percentage]%
+- **Compliance Score**: [percentage]%
+
+## Alignment Analysis
+
+### ✅ Properly Aligned Tasks
+- [Task name]: Correctly implements [ADR reference]
+- [Task name]: Status verified, implementation complete
+
+### ⚠️ Misaligned Tasks  
+- [Task name]: Description doesn't match [ADR reference]
+- [Task name]: Status marked complete but implementation missing
+
+### ❌ Missing Tasks
+- [Missing task]: Required by [ADR reference] but not in TODO
+- [Missing task]: Implementation needed for [specific requirement]
+
+### 🗑️ Obsolete Tasks
+- [Task name]: No longer needed due to [ADR change/superseded]
+
+## Implementation Status
+
+### File Existence Validation
+${includeFileChecks ? `- ✅ [filename]: Exists and matches expectations
+- ❌ [filename]: Missing but marked as implemented
+- ⚠️ [filename]: Exists but doesn't match specifications` : '- File checks disabled'}
+
+${deepCodeAnalysis ? `### Mock vs Production Code Analysis
+- ✅ **Production Ready**: [component] - Full implementation with business logic
+- ⚠️ **Partial Implementation**: [component] - Some functionality missing or incomplete
+- ❌ **Mock/Stub Only**: [component] - Contains only placeholders, interfaces, or TODO comments
+- 🔍 **Requires Verification**: [component] - Implementation exists but needs deeper inspection
+
+#### Mock Detection Indicators Found:
+- TODO comments: [count] instances
+- Placeholder functions: [count] instances  
+- NotImplementedException: [count] instances
+- Mock return values: [count] instances
+- Empty function bodies: [count] instances` : ''}
+
+${functionalValidation ? `### Functional Validation Results
+- ✅ **ADR Goal Achieved**: [goal] - Implementation fully meets architectural objective
+- ⚠️ **Partial Goal Achievement**: [goal] - Implementation partially meets requirements
+- ❌ **Goal Not Met**: [goal] - Implementation doesn't achieve stated ADR objective
+- 🚫 **Environment Incompatible**: [component] - Code won't run in target environment
+
+#### Environment Readiness Assessment:
+- **Dependency Management**: [status] - All required dependencies available
+- **Configuration**: [status] - Environment-specific config properly handled
+- **Integration Points**: [status] - External system connections functional
+- **Performance Criteria**: [status] - Meets ADR performance requirements` : ''}
+
+### Code Implementation Review
+- [Component]: Implementation status and quality assessment
+- [Feature]: Comparison with ADR requirements
+
+## Environment Compliance
+
+### Architecture Alignment
+- ✅ [Decision]: Correctly implemented
+- ❌ [Decision]: Not implemented or incorrectly implemented
+- ⚠️ [Decision]: Partially implemented
+
+### Technology Stack Validation
+- [Technology]: Usage aligns with [ADR reference]
+- [Technology]: Deviation from [ADR decision]
+
+${includeRuleValidation ? `## Rule Compliance Analysis
+
+### Rule Violations
+- [Rule name]: [violation description and location]
+- [Rule name]: [compliance status]
+
+### Compliance Recommendations
+- [Recommendation]: Steps to achieve compliance
+- [Fix]: Specific changes needed` : ''}
+
+## Recommendations
+
+### High Priority Actions
+1. [Action]: [Reason and expected outcome]
+2. [Action]: [Priority justification]
+
+### Medium Priority Actions
+1. [Action]: [Impact and timeline]
+
+### Low Priority Actions
+1. [Action]: [Optional improvements]
+
+## Next Steps
+1. Address high-priority alignment issues
+2. Update TODO.md with missing tasks
+3. Verify implementation of completed tasks
+4. Resolve rule compliance violations
+\`\`\`
+
+Please provide a comprehensive validation report that helps ensure the TODO.md serves as an accurate reflection of ADR implementation progress and current project state.
+`;
+
+      // Execute the comparison with AI if enabled, otherwise return prompt
+      const { executePromptWithFallback, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const executionResult = await executePromptWithFallback(
+        comparisonPrompt,
+        'Compare TODO.md progress against ADRs and project environment for validation and alignment',
+        {
+          temperature: 0.1,
+          maxTokens: 10000,
+          systemPrompt: `You are an expert project auditor specializing in ADR implementation validation.
+Your role is to ensure that TODO lists accurately reflect ADR requirements and implementation reality.
+
+Key responsibilities:
+1. Cross-reference TODO tasks with ADR specifications
+2. Verify implementation status against actual project state
+3. Identify gaps, misalignments, and obsolete items
+4. Validate architectural rule compliance
+5. Provide actionable recommendations for improvement
+
+${strictMode ? `## STRICT VALIDATION MODE ENABLED
+
+**CRITICAL**: Apply maximum scrutiny to distinguish between mock and production code:
+
+### Mock Detection (Mark as ❌ or ⚠️):
+- Functions that only return hardcoded values or throw NotImplementedException
+- Classes with empty method bodies or only getter/setter stubs  
+- TODO comments indicating incomplete work
+- Interface definitions without concrete implementations
+- Test data or placeholder responses instead of real business logic
+- Comments like "// TODO: implement this" or "// placeholder"
+
+### Production Verification (Only mark ✅ if ALL criteria met):
+- Complete business logic implementation with proper error handling
+- Real data processing, not just mock responses
+- Proper integration with external systems/databases as specified in ADRs
+- Environment-specific configuration and dependency management
+- Performance and security requirements from ADRs actually implemented
+
+### ADR Goal Achievement (Be highly critical):
+- Implementation MUST actually solve the architectural problem stated in the ADR
+- Code MUST run successfully in the intended environment described by ADRs
+- Non-functional requirements (performance, security, scalability) MUST be demonstrably met
+- Integration points MUST be functional, not just stubbed
+
+**DO NOT** be lenient about completion status. If there's ANY doubt about production readiness, mark as incomplete.` : ''}
+
+Focus on accuracy, completeness, and practical next steps.
+Be thorough but concise in your analysis.
+Prioritize findings by impact and urgency.
+${strictMode ? 'Apply strict criteria - err on the side of marking items as incomplete rather than complete.' : ''}`,
+          responseFormat: 'text'
+        }
+      );
+
+      if (executionResult.isAIGenerated) {
+        // AI execution successful
+        return formatMCPResponse({
+          ...executionResult,
+          content: `# ADR Progress Validation Results
+
+## Validation Information
+- **TODO Path**: ${todoPath}
+- **ADR Directory**: ${adrDirectory}
+- **Project Path**: ${projectPath}
+- **Validation Type**: ${validationType}
+- **File Checks**: ${includeFileChecks ? 'Enabled' : 'Disabled'}
+- **Rule Validation**: ${includeRuleValidation ? 'Enabled' : 'Disabled'}
+- **Deep Code Analysis**: ${deepCodeAnalysis ? 'Enabled' : 'Disabled'}
+- **Functional Validation**: ${functionalValidation ? 'Enabled' : 'Disabled'}
+- **Strict Mode**: ${strictMode ? 'Enabled - High scrutiny for mock vs production' : 'Disabled'}
+
+## AI-Generated Validation Report
+
+${executionResult.content}
+
+## Integration Commands
+
+### Regenerate TODO after fixes:
+\`\`\`json
+{
+  "tool": "generate_adr_todo",
+  "args": {
+    "adrDirectory": "${adrDirectory}",
+    "phase": "both",
+    "linkAdrs": true,
+    "includeRules": ${includeRuleValidation}
+  }
+}
+\`\`\`
+
+### Validate architectural rules:
+\`\`\`json
+{
+  "tool": "validate_rules",
+  "args": {
+    "projectPath": "${projectPath}",
+    "adrDirectory": "${adrDirectory}"
+  }
+}
+\`\`\`
+
+### Re-run strict validation after updates:
+\`\`\`json
+{
+  "tool": "compare_adr_progress",
+  "args": {
+    "todoPath": "${todoPath}",
+    "adrDirectory": "${adrDirectory}",
+    "validationType": "full",
+    "deepCodeAnalysis": true,
+    "functionalValidation": true,
+    "strictMode": true
+  }
+}
+\`\`\`
+
+### Quick validation (environment only):
+\`\`\`json
+{
+  "tool": "compare_adr_progress",
+  "args": {
+    "validationType": "environment-only",
+    "functionalValidation": true,
+    "strictMode": false
+  }
+}
+\`\`\`
+`,
+        });
+      } else {
+        // Fallback to prompt-only mode
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `ADR progress comparison for: ${todoPath}\n\nValidation Type: ${validationType}\nFile Checks: ${includeFileChecks ? 'Enabled' : 'Disabled'}\nRule Validation: ${includeRuleValidation ? 'Enabled' : 'Disabled'}\nDeep Code Analysis: ${deepCodeAnalysis ? 'Enabled' : 'Disabled'}\nFunctional Validation: ${functionalValidation ? 'Enabled' : 'Disabled'}\nStrict Mode: ${strictMode ? 'Enabled' : 'Disabled'}\n\nPlease perform ADR progress validation using the following prompt:\n\n${comparisonPrompt}`
+            }
+          ]
+        };
+      }
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to compare ADR progress: ${error instanceof Error ? error.message : String(error)}`,
+        'VALIDATION_ERROR'
       );
     }
   }

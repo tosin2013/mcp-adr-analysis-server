@@ -74,15 +74,32 @@ Parameters:
 ```
 *Suggests new ADRs based on code analysis and existing decisions.*
 
-**Step 4: Generate Action Items**
+**Step 4: Generate Enhanced TDD Action Items**
 ```
 Tool: generate_adr_todo
 Parameters:
 {
-  "scope": "all"
+  "scope": "all",
+  "phase": "both",
+  "linkAdrs": true,
+  "includeRules": true
 }
 ```
-*Creates a todo.md file with actionable items from your ADRs.*
+*Creates a comprehensive todo.md with two-phase TDD approach, linking all ADRs and including architectural rules validation.*
+
+**Step 5: Validate Implementation Progress**
+```
+Tool: compare_adr_progress
+Parameters:
+{
+  "todoPath": "todo.md",
+  "adrDirectory": "docs/adrs",
+  "deepCodeAnalysis": true,
+  "functionalValidation": true,
+  "strictMode": true
+}
+```
+*Validates that implementations are production-ready and meet ADR goals, with sophisticated mock vs production detection.*
 
 ### 2. 🆕 Projects Without Any ADRs
 
@@ -165,6 +182,62 @@ Parameters: {
 ```
 *Generates actionable tasks from your newly created ADRs.*
 
+## 🧪 Enhanced TDD Workflow
+
+The server now provides a sophisticated Test-Driven Development workflow that integrates all ADRs in your system:
+
+### Two-Phase TDD Approach
+
+**Phase 1: Generate Test Specifications**
+```
+Tool: generate_adr_todo
+Parameters: {
+  "phase": "test",
+  "linkAdrs": true,
+  "includeRules": true,
+  "outputPath": "todo-tests.md"
+}
+```
+*Generates comprehensive mock test specifications that link all ADRs for complete system coverage.*
+
+**Phase 2: Generate Production Implementation**
+```
+Tool: generate_adr_todo
+Parameters: {
+  "phase": "production", 
+  "linkAdrs": true,
+  "includeRules": true,
+  "outputPath": "todo-implementation.md"
+}
+```
+*Creates production-ready implementation tasks that pass the mock tests and meet ADR goals.*
+
+### Advanced Validation System
+
+**Comprehensive Progress Validation**
+```
+Tool: compare_adr_progress
+Parameters: {
+  "todoPath": "todo.md",
+  "adrDirectory": "docs/adrs",
+  "projectPath": "/path/to/project",
+  "deepCodeAnalysis": true,        // Distinguish mock from production code
+  "functionalValidation": true,    // Validate code actually works
+  "strictMode": true,             // Reality-check mechanisms
+  "includeTestCoverage": true,     // Validate test coverage
+  "validateDependencies": true,    // Check cross-ADR dependencies
+  "environmentValidation": true    // Test in realistic environments
+}
+```
+*Prevents LLM overconfidence by detecting mock implementations masquerading as production code.*
+
+### Mock vs Production Detection
+
+The validation system includes sophisticated patterns to detect:
+- **Mock Implementations**: Console.log returns, hardcoded values, TODO comments
+- **Production Code**: Error handling, input validation, integration tests, real database connections
+- **ADR Goal Compliance**: Validates implementations actually achieve ADR objectives
+
 ## 🔧 Advanced Features
 
 ### Content Security & Masking
@@ -213,17 +286,33 @@ Access structured data through MCP resources:
 ### Weekly ADR Review
 1. `discover_existing_adrs` - Check current state
 2. `suggest_adrs` - Find new decisions needed
-3. `generate_adr_todo` - Update action items
+3. `generate_adr_todo` - Update action items with TDD approach
+4. `compare_adr_progress` - Validate implementation progress
 
 ### New Feature Planning
 1. `analyze_project_ecosystem` - Understand current state
 2. `suggest_adrs` - Identify decisions needed for feature
 3. `generate_adr_from_decision` - Document decisions
+4. `generate_adr_todo` - Create TDD implementation plan
 
 ### Architecture Audit
 1. `analyze_project_ecosystem` - Full project analysis
 2. `generate_rules` - Extract current rules
 3. `validate_rules` - Check compliance
+4. `compare_adr_progress` - Validate production readiness
+
+### TDD Implementation Cycle
+1. `generate_adr_todo` (phase: "test") - Create test specifications
+2. Implement mock tests based on generated specifications
+3. `generate_adr_todo` (phase: "production") - Create implementation tasks
+4. Implement production code to pass tests
+5. `compare_adr_progress` - Validate against ADR goals and detect mock patterns
+
+### Quality Assurance Review
+1. `compare_adr_progress` (strictMode: true) - Deep validation
+2. `generate_rules` - Extract architectural rules
+3. `validate_rules` - Check rule compliance
+4. Address any mock implementations flagged by validation
 
 ## 🔗 Next Steps
 

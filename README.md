@@ -23,6 +23,8 @@ The Model Context Protocol enables seamless integration between AI assistants an
 📋 **ADR Management** - Generate, suggest, and maintain Architectural Decision Records
 🛡️ **Security & Compliance** - Detect and mask sensitive content automatically
 📊 **Workflow Automation** - Todo generation, deployment tracking, and rule validation
+🧪 **TDD Integration** - Two-phase Test-Driven Development with ADR linking and validation
+🔍 **Mock Detection** - Sophisticated analysis to distinguish mock from production code
 
 
 
@@ -195,10 +197,44 @@ const adrs = await generateAdrsFromPrd({
   template: "nygard"
 });
 
-// Generate actionable todos from ADRs
+// Generate actionable todos from ADRs with enhanced TDD approach
 const todos = await generateAdrTodo({
   adrDirectory: "docs/adrs",
-  outputPath: "todo.md"
+  outputPath: "todo.md",
+  phase: "both",           // Two-phase TDD: test + production
+  linkAdrs: true,          // Link all ADRs for system-wide coverage
+  includeRules: true       // Include architectural rules validation
+});
+```
+
+### Enhanced TDD Workflow
+```typescript
+// Phase 1: Generate comprehensive test specifications
+const testPhase = await generateAdrTodo({
+  adrDirectory: "docs/adrs",
+  outputPath: "todo-tests.md",
+  phase: "test",           // Generate mock test specifications
+  linkAdrs: true,          // Connect all ADRs for complete test coverage
+  includeRules: true       // Validate against architectural rules
+});
+
+// Phase 2: Generate production implementation tasks
+const prodPhase = await generateAdrTodo({
+  adrDirectory: "docs/adrs", 
+  outputPath: "todo-implementation.md",
+  phase: "production",     // Generate production-ready implementation tasks
+  linkAdrs: true,          // Ensure system-wide consistency
+  includeRules: true       // Enforce architectural compliance
+});
+
+// Validate progress and detect mock vs production code
+const validation = await compareAdrProgress({
+  todoPath: "todo.md",
+  adrDirectory: "docs/adrs",
+  projectPath: "/path/to/project",
+  deepCodeAnalysis: true,     // Distinguish mock from production code
+  functionalValidation: true, // Validate code actually works
+  strictMode: true           // Reality-check against LLM overconfidence
 });
 ```
 
@@ -232,15 +268,46 @@ const updatedAdrs = await incorporateResearch({
 });
 ```
 
+### Advanced Validation & Quality Assurance
+```typescript
+// Comprehensive validation with mock detection
+const qualityCheck = await compareAdrProgress({
+  todoPath: "todo.md",
+  adrDirectory: "docs/adrs",
+  projectPath: "/path/to/project",
+  
+  // Prevent LLM deception about code completeness
+  deepCodeAnalysis: true,        // Detects mock patterns vs real implementation
+  functionalValidation: true,    // Tests if code actually works
+  strictMode: true,             // Reality-check mechanisms
+  
+  // Advanced analysis options
+  includeTestCoverage: true,     // Validate test coverage meets ADR goals
+  validateDependencies: true,    // Check cross-ADR dependencies
+  environmentValidation: true    // Test in realistic environments
+});
+
+// Generate architectural rules from ADRs and patterns
+const rules = await generateRules({
+  source: "both",               // Extract from ADRs and code patterns
+  adrDirectory: "docs/adrs",
+  projectPath: "/path/to/project",
+  outputFormat: "json"          // Machine-readable format
+});
+```
+
 ## 🎯 Use Cases
 
 ### 👨‍💻 **AI Coding Assistants**
 *Enhance AI coding assistants like Cline, Cursor, and Claude Code*
 
+- **Test-Driven Development**: Two-phase TDD workflow with comprehensive ADR integration
 - **Intelligent Code Generation**: Generate code that follows architectural patterns and best practices
+- **Mock vs Production Detection**: Prevent AI assistants from claiming mock code is production-ready
 - **Architecture-Aware Refactoring**: Refactor code while maintaining architectural integrity
 - **Decision Documentation**: Automatically document architectural decisions as you code
 - **Pattern Recognition**: Identify and suggest architectural patterns for new features
+- **Quality Validation**: Reality-check mechanisms against overconfident AI assessments
 
 ### 💬 **Conversational AI Assistants**
 *Enhance chatbots and business agents with architectural intelligence*

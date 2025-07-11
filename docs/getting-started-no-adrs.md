@@ -207,9 +207,9 @@ generate_adr_from_decision
 - Saves to your configured ADR directory with proper numbering
 - Follows ADR template and formatting standards
 
-### Step 5: Generate Implementation Tasks
+### Step 5: Generate Enhanced TDD Implementation Tasks
 
-Create actionable tasks from your newly created ADRs:
+Create actionable tasks using the new two-phase TDD approach:
 
 **Tool Call:**
 ```
@@ -219,25 +219,65 @@ generate_adr_todo
 **Parameters:**
 ```json
 {
-  "scope": "all"
+  "scope": "all",
+  "phase": "both",
+  "linkAdrs": true,
+  "includeRules": true
 }
 ```
 
 **What this does:**
-- Reviews all your ADRs for implementation tasks
-- Extracts actionable items and next steps
-- Creates a prioritized todo.md file
-- Identifies dependencies between tasks
+- Reviews all your ADRs for implementation tasks with TDD approach
+- Links all ADRs to create system-wide test coverage
+- Integrates architectural rules validation
+- Creates both test specifications and implementation tasks
+- Generates a prioritized todo.md file with validation checkpoints
 
 **Expected Output:**
-- `todo.md` file with structured task list
-- Priority levels and estimated effort
-- Dependencies and sequencing information
+- `todo.md` file with TDD-focused structured task list
+- Test specifications linking all ADRs for comprehensive coverage
+- Implementation tasks with architectural rule compliance checks
+- Priority levels, estimated effort, and dependencies
+- Production readiness validation criteria
 
 **Example tasks you might get:**
-- "Implement TypeScript migration plan" (High priority, 2 weeks)
-- "Set up Express.js security middleware" (Medium priority, 3 days)
-- "Document API endpoints" (Low priority, 1 week)
+- **Phase 1 (Tests)**: "Create TypeScript integration tests for all modules" (High priority, 1 week)
+- **Phase 2 (Implementation)**: "Implement TypeScript migration with error handling" (High priority, 2 weeks)
+- **Validation**: "Verify production-ready TypeScript setup meets ADR goals" (Critical, 2 days)
+
+### Step 6: Establish Quality Validation
+
+Set up validation to ensure implementations meet ADR goals:
+
+**Tool Call:**
+```
+compare_adr_progress
+```
+
+**Parameters:**
+```json
+{
+  "todoPath": "todo.md",
+  "adrDirectory": "docs/adrs",
+  "deepCodeAnalysis": true,
+  "functionalValidation": true,
+  "strictMode": true
+}
+```
+
+**What this does:**
+- Validates that implementations are production-ready and meet ADR goals
+- Distinguishes mock implementations from production code
+- Checks functional correctness in realistic environments
+- Provides reality-check mechanisms against overconfident assessments
+- Validates cross-ADR dependencies and consistency
+
+**Expected Output:**
+- Comprehensive validation report
+- Mock vs production code analysis
+- ADR goal compliance assessment
+- Specific recommendations for improving implementation quality
+- Quality gates for deployment readiness
 
 ## 📊 Expected Outputs
 
@@ -287,6 +327,92 @@ We will adopt TypeScript for all new development and gradually migrate existing 
 - Learning curve for team members unfamiliar with TypeScript
 - Additional tooling and configuration required
 ```
+
+## 🧪 TDD Workflow for New ADR Implementation
+
+Once you have your initial ADRs, use the enhanced TDD workflow to ensure proper implementation:
+
+### Phase 1: Generate Test Specifications from ADRs
+
+**Create comprehensive test specifications:**
+
+```
+Tool: generate_adr_todo
+Parameters: {
+  "phase": "test",
+  "linkAdrs": true,
+  "includeRules": true,
+  "outputPath": "todo-tests.md"
+}
+```
+
+**Benefits for new projects:**
+- Establishes clear testing boundaries before implementation
+- Links all ADRs to create comprehensive system test coverage
+- Defines success criteria for each architectural decision
+- Prevents scope creep and implementation drift
+
+### Phase 2: Generate Production Implementation Tasks
+
+**Create implementation roadmap:**
+
+```
+Tool: generate_adr_todo
+Parameters: {
+  "phase": "production",
+  "linkAdrs": true,
+  "includeRules": true,
+  "outputPath": "todo-implementation.md"
+}
+```
+
+**Benefits for new projects:**
+- Clear implementation path that follows test specifications
+- Architectural rule compliance built into every task
+- Cross-ADR dependency validation
+- Production readiness criteria for each component
+
+### Quality Assurance and Mock Detection
+
+**Prevent common pitfalls in new implementations:**
+
+```
+Tool: compare_adr_progress
+Parameters: {
+  "todoPath": "todo.md",
+  "adrDirectory": "docs/adrs",
+  "projectPath": "/path/to/project",
+  "deepCodeAnalysis": true,
+  "functionalValidation": true,
+  "strictMode": true
+}
+```
+
+**Common issues this prevents in new projects:**
+- Mock implementations being mistaken for production code
+- Incomplete implementations that don't meet ADR goals
+- Missing error handling and input validation
+- Inadequate integration testing
+- Configuration issues that prevent real deployment
+
+### Validation Patterns for New Projects
+
+The validation system will check for:
+
+**Mock Implementation Patterns (to avoid):**
+- Console.log returns instead of real functionality
+- Hardcoded values instead of configurable settings
+- TODO comments in production paths
+- Missing database connections or file I/O
+- Stub functions without real implementation
+
+**Production-Ready Patterns (to achieve):**
+- Proper error handling and recovery
+- Input validation and sanitization
+- Real database or API integrations
+- Configuration management
+- Logging and monitoring setup
+- Performance considerations
 
 ## 🔍 Troubleshooting
 

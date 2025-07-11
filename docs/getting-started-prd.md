@@ -131,9 +131,9 @@ analyze_project_ecosystem
 - Recommendations for adjustments
 - Technology stack compatibility analysis
 
-### Step 3: Create Implementation Roadmap
+### Step 3: Create Enhanced TDD Implementation Roadmap
 
-Generate actionable tasks from your new ADRs:
+Generate actionable tasks using the new two-phase TDD approach:
 
 **Tool Call:**
 ```
@@ -143,22 +143,63 @@ generate_adr_todo
 **Parameters:**
 ```json
 {
-  "scope": "pending"
+  "scope": "pending",
+  "phase": "both",
+  "linkAdrs": true,
+  "includeRules": true
 }
 ```
 
 **What this does:**
-- Extracts implementation tasks from ADRs
-- Creates prioritized action items
-- Identifies dependencies between decisions
-- Generates development roadmap
+- Extracts implementation tasks from ADRs with TDD approach
+- Links all ADRs to create system-wide test coverage
+- Integrates architectural rules validation
+- Creates both test specifications and implementation tasks
+- Generates comprehensive development roadmap with validation checkpoints
 
 **Expected Output:**
-- `todo.md` file with implementation tasks
-- Prioritized list of architectural work
-- Dependencies and sequencing information
+- `todo.md` file with TDD-focused implementation tasks
+- Test specifications linking all ADRs for comprehensive coverage
+- Implementation tasks with architectural rule compliance checks
+- Prioritized list of architectural work with production readiness criteria
+- Dependencies and sequencing information with validation gates
 
-### Step 4: Research Critical Decisions
+### Step 4: Establish Quality Validation Framework
+
+Set up validation to ensure implementations meet ADR goals from the start:
+
+**Tool Call:**
+```
+compare_adr_progress
+```
+
+**Parameters:**
+```json
+{
+  "todoPath": "todo.md",
+  "adrDirectory": "docs/adrs",
+  "deepCodeAnalysis": true,
+  "functionalValidation": true,
+  "strictMode": true,
+  "includeTestCoverage": true,
+  "validateDependencies": true
+}
+```
+
+**What this does:**
+- Establishes quality gates for new implementations
+- Sets up mock vs production code detection patterns
+- Creates validation criteria for each ADR goal
+- Provides reality-check mechanisms for implementation progress
+- Validates cross-ADR dependencies and system consistency
+
+**Expected Output:**
+- Quality validation framework configuration
+- Implementation standards and patterns
+- Validation checkpoints for each development phase
+- Clear criteria for production readiness assessment
+
+### Step 5: Research Critical Decisions
 
 For complex decisions, generate research questions:
 
@@ -268,6 +309,90 @@ incorporate_research
 - Offline data strategy
 - Push notification system
 - App store deployment
+
+## 🧪 TDD Workflow for PRD-Based Projects
+
+When starting from a PRD, the TDD workflow ensures your implementation matches the requirements:
+
+### Phase 1: Generate Test Specifications from PRD-Generated ADRs
+
+**Create comprehensive test specifications:**
+
+```
+Tool: generate_adr_todo
+Parameters: {
+  "phase": "test",
+  "linkAdrs": true,
+  "includeRules": true,
+  "outputPath": "todo-tests.md"
+}
+```
+
+**Benefits for PRD-based projects:**
+- Validates that all PRD requirements are testable
+- Creates system-wide test coverage based on architectural decisions
+- Establishes clear acceptance criteria for each requirement
+- Links business requirements to technical implementation through ADRs
+
+### Phase 2: Generate Production Implementation from Tests
+
+**Create implementation roadmap:**
+
+```
+Tool: generate_adr_todo
+Parameters: {
+  "phase": "production",
+  "linkAdrs": true,
+  "includeRules": true,
+  "outputPath": "todo-implementation.md"
+}
+```
+
+**Benefits for PRD-based projects:**
+- Ensures implementation directly addresses PRD requirements
+- Maintains traceability from PRD to ADRs to implementation
+- Includes architectural rule compliance for all PRD-driven decisions
+- Provides clear production readiness criteria
+
+### Validation Against PRD Requirements
+
+**Ensure implementations meet original PRD goals:**
+
+```
+Tool: compare_adr_progress
+Parameters: {
+  "todoPath": "todo.md",
+  "adrDirectory": "docs/adrs",
+  "projectPath": "/path/to/project",
+  "deepCodeAnalysis": true,
+  "functionalValidation": true,
+  "strictMode": true,
+  "prdValidation": true
+}
+```
+
+**PRD-specific validation patterns:**
+- Verifies functional requirements are actually implemented
+- Checks non-functional requirements (performance, security) are met
+- Validates business logic matches PRD specifications
+- Ensures user experience requirements are addressed
+- Confirms compliance requirements are satisfied
+
+### Common PRD Implementation Pitfalls to Avoid
+
+The validation system helps prevent:
+
+**Requirements Drift:**
+- Mock implementations that don't meet actual PRD requirements
+- Features that work in isolation but don't integrate properly
+- Performance implementations that don't meet PRD criteria
+- Security implementations that don't address PRD compliance needs
+
+**Traceability Loss:**
+- Code that implements features not described in the PRD
+- Missing implementations for critical PRD requirements
+- ADRs that don't align with actual PRD priorities
+- Tests that don't validate real PRD acceptance criteria
 
 ## 📊 Advanced Features
 

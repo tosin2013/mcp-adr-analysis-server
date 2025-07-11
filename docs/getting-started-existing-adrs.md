@@ -139,9 +139,9 @@ suggest_adrs
 - Recommendations for updating existing ADRs
 - Priority ranking for each suggestion
 
-### Step 4: Generate Action Items
+### Step 4: Generate Enhanced TDD Action Items
 
-Create a roadmap for maintaining your ADRs:
+Create a comprehensive roadmap using the new two-phase TDD approach:
 
 **Tool Call:**
 ```
@@ -151,20 +151,58 @@ generate_adr_todo
 **Parameters:**
 ```json
 {
-  "scope": "all"
+  "scope": "all",
+  "phase": "both",
+  "linkAdrs": true,
+  "includeRules": true
 }
 ```
 
 **What this does:**
-- Extracts action items from existing ADRs
-- Creates implementation tasks
-- Identifies review and update needs
-- Generates a prioritized todo list
+- Extracts action items from existing ADRs with TDD approach
+- Links all ADRs for system-wide test coverage
+- Integrates architectural rules validation
+- Creates both test specifications and implementation tasks
+- Generates a prioritized todo list with validation checkpoints
 
 **Expected Output:**
-- `todo.md` file with actionable items
-- Implementation tasks organized by priority
-- Review schedule for existing ADRs
+- `todo.md` file with TDD-focused actionable items
+- Test specifications linking all ADRs
+- Implementation tasks with rule compliance checks
+- Production readiness validation criteria
+
+### Step 5: Validate Implementation Progress
+
+Use the new validation system to ensure quality implementation:
+
+**Tool Call:**
+```
+compare_adr_progress
+```
+
+**Parameters:**
+```json
+{
+  "todoPath": "todo.md",
+  "adrDirectory": "docs/adrs",
+  "deepCodeAnalysis": true,
+  "functionalValidation": true,
+  "strictMode": true
+}
+```
+
+**What this does:**
+- Validates that implementations meet ADR goals
+- Distinguishes mock implementations from production code
+- Checks functional correctness in realistic environments
+- Provides reality-check mechanisms against LLM overconfidence
+- Validates cross-ADR dependencies and consistency
+
+**Expected Output:**
+- Comprehensive validation report
+- Mock vs production code analysis
+- ADR goal compliance assessment
+- Actionable recommendations for improving implementation quality
 
 ## 🔄 Ongoing Maintenance Workflows
 
@@ -179,11 +217,24 @@ Parameters: {
 }
 ```
 
-**2. Update Todo List**
+**2. Update Todo List with TDD Approach**
 ```
 Tool: generate_adr_todo
 Parameters: {
-  "scope": "pending"
+  "scope": "pending",
+  "phase": "both",
+  "linkAdrs": true,
+  "includeRules": true
+}
+```
+
+**3. Validate Current Implementation**
+```
+Tool: compare_adr_progress
+Parameters: {
+  "todoPath": "todo.md",
+  "adrDirectory": "docs/adrs",
+  "strictMode": true
 }
 ```
 
@@ -214,6 +265,74 @@ Parameters: {
   "rulesPath": "docs/architectural-rules.json"
 }
 ```
+
+## 🧪 Enhanced TDD Workflow for Existing ADRs
+
+When you have existing ADRs, you can use the enhanced TDD workflow to ensure proper implementation:
+
+### Phase 1: Generate Test Specifications
+
+**Create comprehensive test specifications from your existing ADRs:**
+
+```
+Tool: generate_adr_todo
+Parameters: {
+  "phase": "test",
+  "linkAdrs": true,
+  "includeRules": true,
+  "outputPath": "todo-tests.md"
+}
+```
+
+**What this does:**
+- Links all existing ADRs to create comprehensive test coverage
+- Generates mock test specifications for each architectural decision
+- Creates system-wide integration tests that validate ADR goals
+- Establishes clear testing boundaries for implementation
+
+### Phase 2: Generate Production Implementation
+
+**Create production implementation tasks:**
+
+```
+Tool: generate_adr_todo
+Parameters: {
+  "phase": "production",
+  "linkAdrs": true,
+  "includeRules": true,
+  "outputPath": "todo-implementation.md"
+}
+```
+
+**What this does:**
+- Creates implementation tasks that pass the test specifications
+- Ensures production code meets ADR goals and architectural rules
+- Validates cross-ADR dependencies and consistency
+- Provides clear criteria for production readiness
+
+### Validation and Quality Assurance
+
+**Prevent mock implementations from being considered production-ready:**
+
+```
+Tool: compare_adr_progress
+Parameters: {
+  "todoPath": "todo.md",
+  "adrDirectory": "docs/adrs",
+  "projectPath": "/path/to/project",
+  "deepCodeAnalysis": true,
+  "functionalValidation": true,
+  "strictMode": true,
+  "includeTestCoverage": true,
+  "validateDependencies": true
+}
+```
+
+**Mock Detection Patterns:**
+- Detects console.log returns, hardcoded values, TODO comments
+- Identifies missing error handling, input validation
+- Validates real database connections vs mock data
+- Ensures integration tests vs unit tests
 
 ## 📊 Advanced Analysis
 

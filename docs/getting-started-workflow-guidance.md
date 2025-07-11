@@ -148,9 +148,10 @@ get_development_guidance
 
 **Expected Workflow**:
 1. `generate_adrs_from_prd` → Convert PRD to ADRs
-2. `generate_adr_todo` → Create implementation tasks
+2. `generate_adr_todo` (phase: "both", linkAdrs: true) → Create TDD implementation tasks
 3. `get_development_guidance` → Get detailed development plan
-4. `analyze_deployment_progress` → Track implementation
+4. `compare_adr_progress` → Validate implementation quality and detect mock patterns
+5. `analyze_deployment_progress` → Track implementation
 
 ## 🔧 Development Guidance Deep Dive
 
@@ -198,6 +199,80 @@ The `get_development_guidance` tool provides phase-specific guidance:
 
 **Focus**: Deployment strategies, environment configuration, monitoring setup
 
+### Validation & Quality Assurance Phase
+```json
+{
+  "developmentPhase": "validation",
+  "focusAreas": ["mock detection", "ADR compliance", "production readiness"]
+}
+```
+
+**Focus**: Implementation validation, mock vs production detection, ADR goal compliance
+
+## 🧪 Enhanced TDD and Validation Workflow
+
+The MCP server now includes sophisticated validation capabilities to ensure high-quality implementations:
+
+### New Validation-Focused Scenarios
+
+#### Scenario 5: TDD Implementation with Validation
+
+**Goal**: Implement ADRs using test-driven development with comprehensive validation.
+
+```json
+{
+  "goal": "implement ADRs using TDD with quality validation",
+  "projectContext": "existing_with_adrs",
+  "availableAssets": ["codebase", "ADRs"],
+  "timeframe": "thorough_review",
+  "primaryConcerns": ["code_quality", "test_coverage", "production_readiness"]
+}
+```
+
+**Expected Workflow**:
+1. `generate_adr_todo` (phase: "test") → Generate test specifications
+2. Implement mock tests based on specifications
+3. `generate_adr_todo` (phase: "production") → Generate implementation tasks
+4. Implement production code to pass tests
+5. `compare_adr_progress` (strictMode: true) → Validate against ADR goals and detect mock patterns
+6. `get_development_guidance` → Refine implementation based on validation results
+
+#### Scenario 6: Quality Assurance and Mock Detection
+
+**Goal**: Validate existing implementations and detect mock code masquerading as production.
+
+```json
+{
+  "goal": "validate implementation quality and detect mock patterns",
+  "projectContext": "existing_with_adrs",
+  "availableAssets": ["codebase", "ADRs", "todo.md"],
+  "primaryConcerns": ["production_readiness", "ADR_compliance"]
+}
+```
+
+**Expected Workflow**:
+1. `compare_adr_progress` (deepCodeAnalysis: true) → Comprehensive validation
+2. `generate_rules` → Extract architectural rules
+3. `validate_rules` → Check rule compliance
+4. `get_development_guidance` → Create remediation plan for issues found
+
+### Key Validation Parameters
+
+When using workflow guidance, consider these validation-specific parameters:
+
+```json
+{
+  "validationRequirements": {
+    "mockDetection": true,
+    "adrCompliance": true,
+    "functionalValidation": true,
+    "strictMode": true
+  },
+  "qualityGates": ["test_coverage", "error_handling", "integration_tests"],
+  "productionCriteria": ["real_database_connections", "proper_error_handling", "input_validation"]
+}
+```
+
 ## 💡 Pro Tips
 
 ### 1. Start with Workflow Guidance
@@ -231,6 +306,30 @@ Specify focus areas to get targeted guidance:
 ### 5. Iterate and Refine
 Use the guidance as a starting point and refine based on your specific findings and constraints.
 
+### 6. Always Validate Implementation Quality
+Include validation steps in every workflow:
+```json
+{
+  "includeValidation": true,
+  "validationLevel": "strict",
+  "mockDetection": true,
+  "adrCompliance": true
+}
+```
+
+### 7. Use TDD Approach for New Implementations
+For new ADR implementations, always use the two-phase TDD approach:
+- **Phase 1**: Generate test specifications with `generate_adr_todo` (phase: "test")
+- **Phase 2**: Generate implementation tasks with `generate_adr_todo` (phase: "production")
+- **Validation**: Use `compare_adr_progress` to ensure production readiness
+
+### 8. Prevent Mock Code in Production
+Always run `compare_adr_progress` with `strictMode: true` to prevent common issues:
+- Mock implementations being considered production-ready
+- Missing error handling and input validation
+- Inadequate integration testing
+- Configuration issues that prevent real deployment
+
 ## 🎯 Success Metrics
 
 Track your progress using the success metrics provided by the tools:
@@ -245,7 +344,9 @@ The workflow and development guidance tools work seamlessly with all other MCP t
 
 - **Analysis Tools**: `analyze_project_ecosystem`, `get_architectural_context`
 - **ADR Tools**: `suggest_adrs`, `generate_adr_from_decision`, `discover_existing_adrs`
-- **Quality Tools**: `generate_rules`, `validate_rules`, `analyze_content_security`
+- **TDD Tools**: `generate_adr_todo` (enhanced with phase-based approach)
+- **Validation Tools**: `compare_adr_progress`, `generate_rules`, `validate_rules`
+- **Quality Tools**: `analyze_content_security`, `generate_content_masking`
 - **Utility Tools**: `check_ai_execution_status`, `manage_cache`
 
 ## 🚀 Next Steps
