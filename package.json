@@ -11,9 +11,9 @@
   "scripts": {
     "build": "tsc && chmod +x dist/src/index.js",
     "dev": "tsx src/index.ts",
-    "test": "jest",
-    "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "test:coverage": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "test:advanced": "./scripts/test-advanced-prompting.sh",
     "test:unit": "./scripts/test-advanced-prompting.sh unit",
     "test:integration": "./scripts/test-advanced-prompting.sh integration",

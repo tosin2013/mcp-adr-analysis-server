@@ -32,15 +32,39 @@ import { loadConfig, validateProjectPath, createLogger, printConfigSummary, type
  */
 function getPackageVersion(): string {
   try {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = dirname(__filename);
-    // When running from src/index.ts, go up one level to project root
-    // When running from dist/src/index.js, go up two levels to project root
-    const packageJsonPath = __dirname.includes('dist') 
-      ? join(__dirname, '..', '..', 'package.json')
-      : join(__dirname, '..', 'package.json');
-    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
-    return packageJson.version;
+    // Handle both Jest environment and normal execution
+    let currentDir: string;
+    
+    if (typeof import.meta !== 'undefined' && import.meta.url) {
+      // Normal ESM execution
+      const __filename = fileURLToPath(import.meta.url);
+      currentDir = dirname(__filename);
+    } else {
+      // Jest or other environments without import.meta support
+      // Use process.cwd() as fallback
+      currentDir = process.cwd();
+    }
+    
+    // Try multiple possible locations for package.json
+    const possiblePaths = [
+      join(currentDir, 'package.json'),
+      join(currentDir, '..', 'package.json'),
+      join(currentDir, '..', '..', 'package.json'),
+      join(process.cwd(), 'package.json')
+    ];
+    
+    for (const packageJsonPath of possiblePaths) {
+      try {
+        const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+        if (packageJson.name === 'mcp-adr-analysis-server') {
+          return packageJson.version;
+        }
+      } catch {
+        // Try next path
+      }
+    }
+    
+    return '2.0.2'; // fallback version
   } catch (error) {
     console.error('Error reading package.json:', error);
     return '2.0.2'; // fallback version
