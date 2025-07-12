@@ -2,27 +2,31 @@
  * Tests for MCP server functionality
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 
-// Mock the MCP SDK
-const mockServer = {
-  setRequestHandler: jest.fn(),
-  connect: jest.fn(),
-  close: jest.fn(),
-};
+// Set up mocks before imports
+jest.unstable_mockModule('@modelcontextprotocol/sdk/server/index.js', () => {
+  const mockServer = {
+    setRequestHandler: jest.fn(),
+    connect: jest.fn(),
+    close: jest.fn(),
+  };
+  
+  return {
+    Server: jest.fn().mockImplementation(() => mockServer),
+  };
+});
 
-const mockTransport = {
-  start: jest.fn(),
-  close: jest.fn(),
-};
-
-jest.mock('@modelcontextprotocol/sdk/server/index.js', () => ({
-  Server: jest.fn().mockImplementation(() => mockServer),
-}));
-
-jest.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
-  StdioServerTransport: jest.fn().mockImplementation(() => mockTransport),
-}));
+jest.unstable_mockModule('@modelcontextprotocol/sdk/server/stdio.js', () => {
+  const mockTransport = {
+    start: jest.fn(),
+    close: jest.fn(),
+  };
+  
+  return {
+    StdioServerTransport: jest.fn().mockImplementation(() => mockTransport),
+  };
+});
 
 describe('MCP ADR Analysis Server Components', () => {
   beforeEach(() => {
