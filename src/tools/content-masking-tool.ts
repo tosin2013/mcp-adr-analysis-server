@@ -1,19 +1,29 @@
 /**
  * MCP Tool for content masking and sensitive information detection
  * Implements prompt-driven security analysis
+ * Enhanced with Generated Knowledge Prompting (GKP) for security and privacy expertise
  */
 
 import { McpAdrError } from '../types/index.js';
 
 /**
  * Analyze content for sensitive information
+ * Enhanced with Generated Knowledge Prompting for security and privacy expertise
  */
 export async function analyzeContentSecurity(args: {
   content: string;
   contentType?: 'code' | 'documentation' | 'configuration' | 'logs' | 'general';
   userDefinedPatterns?: string[];
+  knowledgeEnhancement?: boolean; // Enable GKP for security and privacy knowledge
+  enhancedMode?: boolean; // Enable advanced prompting features
 }): Promise<any> {
-  const { content, contentType = 'general', userDefinedPatterns } = args;
+  const { 
+    content, 
+    contentType = 'general', 
+    userDefinedPatterns,
+    knowledgeEnhancement = true, // Default to GKP enabled
+    enhancedMode = true // Default to enhanced mode
+  } = args;
 
   try {
     const { analyzeSensitiveContent } = await import('../utils/content-masking.js');
@@ -22,20 +32,48 @@ export async function analyzeContentSecurity(args: {
       throw new McpAdrError('Content is required for security analysis', 'INVALID_INPUT');
     }
 
+    let enhancedPrompt = '';
+    let knowledgeContext = '';
+    
+    // Generate security and privacy knowledge if enabled
+    if (enhancedMode && knowledgeEnhancement) {
+      try {
+        const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
+        const knowledgeResult = await generateArchitecturalKnowledge({
+          projectPath: process.cwd(),
+          technologies: [],
+          patterns: [],
+          projectType: 'security-content-analysis'
+        }, {
+          domains: ['security-patterns'],
+          depth: 'intermediate',
+          cacheEnabled: true
+        });
+
+        knowledgeContext = `\n## Security & Privacy Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
+      } catch (error) {
+        console.error('[WARNING] GKP knowledge generation failed for content security analysis:', error);
+        knowledgeContext = '<!-- Security knowledge generation unavailable -->\n';
+      }
+    }
+
     const result = await analyzeSensitiveContent(content, contentType, userDefinedPatterns);
+    enhancedPrompt = knowledgeContext + result.analysisPrompt;
 
     // Execute the security analysis with AI if enabled, otherwise return prompt
     const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
     const executionResult = await executePromptWithFallback(
-      result.analysisPrompt,
+      enhancedPrompt,
       result.instructions,
       {
         temperature: 0.1,
         maxTokens: 4000,
         systemPrompt: `You are a cybersecurity expert specializing in sensitive information detection.
 Analyze the provided content to identify potential security risks, secrets, and sensitive data.
+Leverage the provided cybersecurity and data privacy knowledge to create comprehensive, industry-standard analysis.
 Provide detailed findings with confidence scores and practical remediation recommendations.
-Focus on actionable security insights that can prevent data exposure.`,
+Consider regulatory compliance requirements, data classification standards, and modern security practices.
+Focus on actionable security insights that can prevent data exposure and ensure compliance.`,
         responseFormat: 'text'
       }
     );
@@ -44,10 +82,20 @@ Focus on actionable security insights that can prevent data exposure.`,
       // AI execution successful - return actual security analysis results
       return formatMCPResponse({
         ...executionResult,
-        content: `# Content Security Analysis Results
+        content: `# Content Security Analysis Results (GKP Enhanced)
+
+## Enhancement Features
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Knowledge Domains**: Cybersecurity, data privacy, regulatory compliance, secret management
 
 ## Analysis Information
 - **Content Type**: ${contentType}
+
+${knowledgeContext ? `## Applied Security Knowledge
+
+${knowledgeContext}
+` : ''}
 - **Content Length**: ${content.length} characters
 - **User-Defined Patterns**: ${userDefinedPatterns?.length || 0} patterns
 
@@ -76,7 +124,7 @@ To apply masking to identified sensitive content, use the \`generate_content_mas
         content: [
           {
             type: 'text',
-            text: `# Sensitive Content Analysis\n\n${result.instructions}\n\n## AI Analysis Prompt\n\n${result.analysisPrompt}`,
+            text: `# Sensitive Content Analysis (GKP Enhanced)\n\n## Enhancement Status\n- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '\u2705 Applied' : '\u274c Disabled'}\n- **Enhanced Mode**: ${enhancedMode ? '\u2705 Applied' : '\u274c Disabled'}\n\n${knowledgeContext ? `## Security Knowledge Context\n\n${knowledgeContext}\n` : ''}\n\n${result.instructions}\n\n## Enhanced AI Analysis Prompt\n\n${enhancedPrompt}`,
           },
         ],
       };
@@ -91,6 +139,7 @@ To apply masking to identified sensitive content, use the \`generate_content_mas
 
 /**
  * Generate masking instructions for detected sensitive content
+ * Enhanced with Generated Knowledge Prompting for security and privacy expertise
  */
 export async function generateContentMasking(args: {
   content: string;
@@ -106,8 +155,14 @@ export async function generateContentMasking(args: {
     suggestedMask?: string;
   }>;
   maskingStrategy?: 'full' | 'partial' | 'placeholder' | 'environment';
+  knowledgeEnhancement?: boolean; // Enable GKP for security and privacy knowledge
+  enhancedMode?: boolean; // Enable advanced prompting features
 }): Promise<any> {
-  const { content, detectedItems, maskingStrategy = 'full' } = args;
+  const { 
+    content, 
+    detectedItems, 
+    maskingStrategy = 'full'
+  } = args;
 
   try {
     const { generateMaskingInstructions } = await import('../utils/content-masking.js');
@@ -222,23 +277,57 @@ export async function configureCustomPatterns(args: {
   const { projectPath, existingPatterns } = args;
 
   try {
-    const { analyzeProjectStructure } = await import('../utils/file-system.js');
+    // Use actual file operations to scan project structure
+    const { scanProjectStructure } = await import('../utils/actual-file-operations.js');
 
-    // Generate project analysis prompt for AI delegation
-    const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
+    // Actually scan project structure
+    const projectStructure = await scanProjectStructure(projectPath, { readContent: true, maxFileSize: 10000 });
 
     const customPatternPrompt = `
 # Custom Pattern Configuration Generation
 
-Please analyze the project structure and generate custom content masking patterns.
+Based on actual project structure analysis, here are the findings:
 
-## Project Analysis Instructions
+## Project Structure
+- **Root Path**: ${projectStructure.rootPath}
+- **Total Files**: ${projectStructure.totalFiles}
+- **Directories**: ${projectStructure.directories.join(', ')}
 
-${projectAnalysisPrompt.prompt}
+## Package Management Files
+${projectStructure.packageFiles.length > 0 ? 
+  projectStructure.packageFiles.map(f => `
+### ${f.filename}
+\`\`\`
+${f.content.slice(0, 500)}${f.content.length > 500 ? '\n... (truncated)' : ''}
+\`\`\`
+`).join('\n') : '- No package files found'}
 
-## Implementation Steps
+## Environment Configuration Files
+${projectStructure.environmentFiles.length > 0 ? 
+  projectStructure.environmentFiles.map(f => `
+### ${f.filename}
+\`\`\`
+${f.content.slice(0, 300)}${f.content.length > 300 ? '\n... (truncated)' : ''}
+\`\`\`
+`).join('\n') : '- No environment files found'}
 
-${projectAnalysisPrompt.instructions}
+## Configuration Files
+${projectStructure.configFiles.length > 0 ? 
+  projectStructure.configFiles.map(f => `
+### ${f.filename}
+\`\`\`
+${f.content.slice(0, 300)}${f.content.length > 300 ? '\n... (truncated)' : ''}
+\`\`\`
+`).join('\n') : '- No config files found'}
+
+## Script Files
+${projectStructure.scriptFiles.length > 0 ? 
+  projectStructure.scriptFiles.map(f => `
+### ${f.filename}
+\`\`\`
+${f.content.slice(0, 400)}${f.content.length > 400 ? '\n... (truncated)' : ''}
+\`\`\`
+`).join('\n') : '- No script files found'}
 
 ## Existing Patterns Context
 
@@ -251,8 +340,8 @@ ${existingPatterns.map((pattern, index) => `
 
 ## Pattern Generation Requirements
 
-1. **Analyze project-specific content types** that need masking
-2. **Identify sensitive data patterns** in code and documentation
+1. **Analyze project-specific content types** that need masking based on actual file content
+2. **Identify sensitive data patterns** in code and documentation shown above
 3. **Generate regex patterns** for consistent content masking
 4. **Create appropriate replacements** that maintain context
 5. **Ensure patterns don't conflict** with existing ones
@@ -278,10 +367,53 @@ Please provide custom pattern configuration in JSON format:
 \`\`\`
 `;
 
+    const instructions = `
+# Custom Pattern Configuration Instructions
+
+This analysis provides **actual project file contents** for comprehensive pattern generation.
+
+## Analysis Scope
+- **Project Path**: ${projectPath}
+- **Package Files**: ${projectStructure.packageFiles.length} found
+- **Environment Files**: ${projectStructure.environmentFiles.length} found
+- **Config Files**: ${projectStructure.configFiles.length} found
+- **Script Files**: ${projectStructure.scriptFiles.length} found
+- **Total Files Analyzed**: ${projectStructure.totalFiles}
+- **Existing Patterns**: ${existingPatterns?.length || 0} patterns
+
+## Next Steps
+1. **Submit the configuration prompt** to an AI agent for pattern analysis
+2. **Parse the JSON response** to get custom patterns and recommendations
+3. **Review generated patterns** for accuracy and completeness
+4. **Implement patterns** in the content masking system
+
+## Expected AI Response Format
+The AI will return a JSON object with:
+- \`patterns\`: Array of custom pattern configurations
+- \`recommendations\`: Best practices and implementation guidance
+- \`conflicts\`: Potential conflicts with existing patterns
+
+## Usage Example
+\`\`\`typescript
+const result = await configureCustomPatterns({ projectPath, existingPatterns });
+// Submit result.configurationPrompt to AI agent
+// Parse AI response for custom pattern configuration
+\`\`\`
+`;
+
     const result = {
       configurationPrompt: customPatternPrompt,
-      instructions: projectAnalysisPrompt.instructions,
-      context: projectAnalysisPrompt.context
+      instructions,
+      actualData: {
+        projectStructure,
+        summary: {
+          totalFiles: projectStructure.totalFiles,
+          packageFiles: projectStructure.packageFiles.length,
+          environmentFiles: projectStructure.environmentFiles.length,
+          configFiles: projectStructure.configFiles.length,
+          scriptFiles: projectStructure.scriptFiles.length
+        }
+      }
     };
 
     return {

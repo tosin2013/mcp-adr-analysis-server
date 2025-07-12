@@ -5,6 +5,157 @@ All notable changes to the MCP ADR Analysis Server will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.4] - 2025-01-12
+
+### 🚀 UNIVERSAL LLM COMPATIBILITY & FILE SYSTEM REVOLUTION
+
+This release transforms the MCP ADR Analysis Server from a prompt-only system to a **hybrid intelligent architecture** that provides universal compatibility with all LLM providers while delivering sophisticated AI-enhanced analysis.
+
+### ✨ Added
+
+#### Universal LLM Provider Compatibility
+- **NEW**: Three fundamental file system tools for universal LLM compatibility:
+  - `read_file` - Read contents of any file with security validation
+  - `write_file` - Write content to files with proper permissions
+  - `list_directory` - List directory contents with filtering
+- **BREAKTHROUGH**: Fixed Google Gemini "tool didn't function as expected" error
+- **ENHANCED**: All MCP tools now work with Claude, Gemini, OpenAI, and any LLM provider
+
+#### Intelligent Hybrid Architecture
+- **NEW**: `src/utils/adr-discovery.js` - Actual ADR file reading and parsing engine
+- **NEW**: `src/utils/actual-file-operations.js` - Comprehensive project structure scanning
+- **ENHANCED**: Internal AI processing with intelligent fallback strategy
+- **SMART**: Tools return either AI analysis or structured prompts based on capabilities
+
+#### Enhanced File Operations
+- **ADDED**: Shell script detection and analysis (`.sh`, `.bash` files)
+- **IMPROVED**: Project structure scanning with configurable content reading
+- **SECURITY**: Path validation and sandboxing for all file operations
+- **PERFORMANCE**: Intelligent file filtering and content truncation
+
+### 🔧 Fixed
+
+#### Critical LLM Compatibility Issues
+- **RESOLVED**: Google Gemini compatibility - now receives actual file content instead of prompts
+- **FIXED**: OpenAI integration issues with file system operations  
+- **CORRECTED**: Template-based responses vs actual analysis confusion
+
+#### Tool Implementation Fixes
+- **FIXED**: `rule-generation-tool` now reads ADR files directly using `discoverAdrsInDirectory()`
+- **FIXED**: `research-question-tool` uses actual file operations via `scanProjectStructure()`
+- **FIXED**: `content-masking-tool` performs real project analysis instead of prompts
+- **FIXED**: `research-integration-tool` reads and writes files directly
+- **FIXED**: `deployment-analysis-tool` reads actual ADR and TODO file content
+
+#### TypeScript & Build Issues
+- **RESOLVED**: All TypeScript strict mode compliance issues
+- **FIXED**: Type errors in research-integration.ts with proper function annotations
+- **CORRECTED**: CommonJS import issues with fast-glob package
+- **IMPROVED**: Unused variable warnings and missing property issues
+
+### 🏗️ Architecture Changes
+
+#### Before vs After Transformation
+```
+BEFORE (2.2.0):
+LLM Client → MCP Server → Generate Prompt Template → Return Template
+↳ Client must process externally (❌ Failed with Gemini/OpenAI)
+
+AFTER (2.0.4): 
+LLM Client → MCP Server → Read Actual Files → AI Processing → Smart Response
+↳ Returns either AI insights or structured data (✅ Works with all LLMs)
+```
+
+#### New Communication Flow
+- **Enhanced**: MCP protocol handling with proper JSON-RPC validation
+- **Improved**: Security validation with absolute path requirements
+- **Added**: Comprehensive error handling and graceful fallbacks
+- **Streamlined**: Resource and prompt management
+
+### 🛡️ Security Enhancements
+
+#### File System Security
+```typescript
+// Path security validation
+if (!path.isAbsolute(filePath)) {
+  throw new McpAdrError('File path must be absolute', 'INVALID_PATH');
+}
+
+// Project boundary validation  
+if (!filePath.startsWith(projectPath)) {
+  throw new McpAdrError('Access denied: file outside project', 'ACCESS_DENIED');
+}
+```
+
+#### Content Protection
+- **ENHANCED**: Sensitive data detection and masking
+- **IMPROVED**: Pattern-based content filtering
+- **ADDED**: Project boundary enforcement
+- **SECURED**: Validation for all file operations
+
+### 📊 Performance Improvements
+
+#### Caching & Optimization
+- **IMPROVED**: File content caching with TTL management
+- **OPTIMIZED**: Lazy loading of utility modules  
+- **ENHANCED**: Intelligent file filtering based on content type
+- **ADDED**: Configurable project scanning limits
+
+#### Resource Management
+- **REDUCED**: Memory usage through streaming file operations
+- **IMPROVED**: Response time with efficient file reading
+- **ENHANCED**: Error handling to prevent resource leaks
+
+### 📚 Documentation
+
+#### New Architecture Documentation
+- **NEW**: `docs/architecture-overview.md` - Comprehensive architecture documentation
+- **ADDED**: Mermaid diagrams showing communication flow and system architecture
+- **ENHANCED**: Integration examples for different LLM providers
+- **IMPROVED**: Security and deployment guidance
+
+#### Technical Specifications  
+- **DETAILED**: File system tool implementation examples
+- **COMPREHENSIVE**: AI integration patterns and fallback strategies
+- **PRACTICAL**: Migration notes for existing users
+
+### 🔄 Migration & Compatibility
+
+#### Backward Compatibility
+- **✅ FULLY COMPATIBLE**: All existing tool calls continue to work
+- **✅ ENHANCED RESULTS**: Better analysis with actual file content
+- **✅ NO BREAKING CHANGES**: Existing configurations unchanged
+
+#### For Existing Users
+- **AUTOMATIC**: Improved results without configuration changes
+- **ENHANCED**: More reliable analysis across all LLM providers  
+- **ROBUST**: Better error handling and validation
+
+#### For New Users
+- **SIMPLIFIED**: Easier setup with universal LLM compatibility
+- **COMPREHENSIVE**: Full feature access regardless of LLM provider
+- **RELIABLE**: Consistent behavior and error handling
+
+### 🎯 Impact Summary
+
+This release transforms the MCP ADR Analysis Server into a **universal intelligent platform**:
+
+1. **🌐 Universal Compatibility**: Works with any LLM provider (Claude, Gemini, OpenAI, etc.)
+2. **🧠 Intelligent Processing**: Actual file analysis with AI-enhanced insights  
+3. **🔒 Robust Security**: Validated file operations with content protection
+4. **⚡ Enhanced Performance**: Optimized caching and resource management
+5. **🛠️ Developer-Friendly**: Better error handling and comprehensive documentation
+
+The server evolution: **Prompt Generator** → **Intelligent Analysis Platform**
+
+### 🔗 Related Links
+
+- [Architecture Overview](docs/architecture-overview.md) - Complete system architecture documentation
+- [Usage Guide](docs/USAGE_GUIDE.md) - Comprehensive usage instructions
+- [Repository](https://github.com/tosin2013/mcp-adr-analysis-server) - Source code and issues
+
+---
+
 ## [2.2.0] - 2025-01-03
 
 ### 🎯 WORKFLOW & DEVELOPMENT GUIDANCE SYSTEM

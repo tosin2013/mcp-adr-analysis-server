@@ -4,6 +4,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import { ConversationContext, formatContextForPrompt } from '../types/conversation-context.js';
 
 export interface ImplicitDecision {
   id: string;
@@ -78,17 +79,24 @@ export interface GeneratedAdr {
  */
 export async function analyzeImplicitDecisions(
   projectPath: string,
-  existingAdrs?: string[]
+  existingAdrs?: string[],
+  conversationContext?: ConversationContext
 ): Promise<{ analysisPrompt: string; instructions: string }> {
   try {
     const { generateImplicitDecisionDetectionPrompt } = await import(
       '../prompts/adr-suggestion-prompts.js'
     );
 
-    const analysisPrompt = generateImplicitDecisionDetectionPrompt(
+    let analysisPrompt = generateImplicitDecisionDetectionPrompt(
       projectPath,
       existingAdrs
     );
+
+    // Enhance prompt with conversation context if available
+    if (conversationContext) {
+      const contextSection = formatContextForPrompt(conversationContext);
+      analysisPrompt = contextSection + analysisPrompt;
+    }
 
     const instructions = `
 # Implicit Decision Analysis Instructions

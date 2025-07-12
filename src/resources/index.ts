@@ -349,28 +349,41 @@ export async function generateAdrList(
   projectPath?: string
 ): Promise<ResourceGenerationResult> {
   try {
-    const { findFiles } = await import('../utils/file-system.js');
+    const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
+    const path = await import('path');
 
     // Use provided project path or fall back to current working directory
     const basePath = projectPath || process.cwd();
 
-    // Generate file discovery prompt for AI delegation
-    const fileDiscoveryPrompt = await findFiles(basePath, [`${adrDirectory}/**/*.md`], {
-      includeContent: true,
-    });
+    // Use absolute path for ADR directory
+    const absoluteAdrPath = path.isAbsolute(adrDirectory) 
+      ? adrDirectory 
+      : path.resolve(basePath, adrDirectory);
+
+    // Use actual ADR discovery
+    const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, basePath);
+
+    let adrListContent = '';
+    if (discoveryResult.adrs.length > 0) {
+      adrListContent = `Found ${discoveryResult.adrs.length} ADRs in ${adrDirectory}:\n\n`;
+      discoveryResult.adrs.forEach(adr => {
+        adrListContent += `### ${adr.title}\n`;
+        adrListContent += `- **File**: ${adr.filename}\n`;
+        adrListContent += `- **Status**: ${adr.status}\n`;
+        adrListContent += `- **Context**: ${adr.context}\n`;
+        adrListContent += `- **Decision**: ${adr.decision}\n`;
+        adrListContent += `- **Consequences**: ${adr.consequences}\n\n`;
+      });
+    } else {
+      adrListContent = `No ADRs found in ${adrDirectory}.\n\n`;
+    }
 
     const adrListPrompt = `
 # ADR List Resource Generation
 
-Please discover and analyze ADR files to generate a structured ADR list resource.
+## ADR Discovery Results
 
-## File Discovery Instructions
-
-${fileDiscoveryPrompt.prompt}
-
-## Implementation Steps
-
-${fileDiscoveryPrompt.instructions}
+${adrListContent}
 
 ## Analysis Requirements
 
@@ -489,8 +502,12 @@ The ADR list includes:
 Submit the prompt to generate the actual ADR list data.
         `,
         adrDirectory,
-        promptInstructions: fileDiscoveryPrompt.instructions,
-        context: fileDiscoveryPrompt.context,
+        adrCount: discoveryResult.adrs.length,
+        discoveredAdrs: discoveryResult.adrs.map(adr => ({
+          title: adr.title,
+          filename: adr.filename,
+          status: adr.status
+        })),
       },
       contentType: 'application/json',
       lastModified: new Date().toISOString(),

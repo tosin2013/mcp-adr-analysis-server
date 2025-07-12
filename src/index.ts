@@ -20,7 +20,10 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { readFileSync } from 'fs';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { McpAdrError } from './types/index.js';
+import { CONVERSATION_CONTEXT_SCHEMA } from './types/conversation-context.js';
 import { maskMcpResponse, createMaskingConfig } from './utils/output-masking.js';
 import { loadConfig, validateProjectPath, createLogger, printConfigSummary, type ServerConfig } from './utils/config.js';
 
@@ -29,9 +32,17 @@ import { loadConfig, validateProjectPath, createLogger, printConfigSummary, type
  */
 function getPackageVersion(): string {
   try {
-    const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'));
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = dirname(__filename);
+    // When running from src/index.ts, go up one level to project root
+    // When running from dist/src/index.js, go up two levels to project root
+    const packageJsonPath = __dirname.includes('dist') 
+      ? join(__dirname, '..', '..', 'package.json')
+      : join(__dirname, '..', 'package.json');
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
     return packageJson.version;
-  } catch {
+  } catch (error) {
+    console.error('Error reading package.json:', error);
     return '2.0.2'; // fallback version
   }
 }
@@ -161,7 +172,8 @@ export class McpAdrAnalysisServer {
                   type: 'array',
                   items: { type: 'string' },
                   description: 'Specific analysis areas to focus on (e.g., ["security", "performance", "architecture", "dependencies"])'
-                }
+                },
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA
               },
               required: []
             }
@@ -536,7 +548,8 @@ export class McpAdrAnalysisServer {
                   type: 'boolean',
                   description: 'Enable Knowledge Generation for domain-specific insights',
                   default: true
-                }
+                },
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA
               }
             }
           },
@@ -1170,6 +1183,52 @@ export class McpAdrAnalysisServer {
               },
               required: ['developmentPhase']
             }
+          },
+          {
+            name: 'read_file',
+            description: 'Read contents of a file',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                path: {
+                  type: 'string',
+                  description: 'Path to the file to read'
+                }
+              },
+              required: ['path']
+            }
+          },
+          {
+            name: 'write_file',
+            description: 'Write content to a file',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                path: {
+                  type: 'string',
+                  description: 'Path to the file to write'
+                },
+                content: {
+                  type: 'string',
+                  description: 'Content to write to the file'
+                }
+              },
+              required: ['path', 'content']
+            }
+          },
+          {
+            name: 'list_directory',
+            description: 'List contents of a directory',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                path: {
+                  type: 'string',
+                  description: 'Path to the directory to list'
+                }
+              },
+              required: ['path']
+            }
           }
         ]
       };
@@ -1263,6 +1322,15 @@ export class McpAdrAnalysisServer {
             break;
           case 'get_development_guidance':
             response = await this.getDevelopmentGuidance(args);
+            break;
+          case 'read_file':
+            response = await this.readFile(args);
+            break;
+          case 'write_file':
+            response = await this.writeFile(args);
+            break;
+          case 'list_directory':
+            response = await this.listDirectory(args);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -1693,24 +1761,39 @@ This guidance is tailored to your specific context and goals for maximum effecti
     } = args;
 
     try {
-      // Generate prompts for ADR discovery if ADRs are specified
-      const { findFiles } = await import('./utils/file-system.js');
+      // Use actual ADR discovery if ADRs are specified
       let adrAnalysisPrompt = '';
 
       if (adrsToImplement.length > 0) {
         const { getAdrDirectoryPath } = await import('./utils/config.js');
+        const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
         const absoluteAdrPath = getAdrDirectoryPath(this.config);
 
-        const adrFileDiscovery = await findFiles(this.config.projectPath, [`${absoluteAdrPath}/**/*.md`], {
-          includeContent: true,
-        });
+        const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, this.config.projectPath);
+        
+        // Filter ADRs to only those specified for implementation
+        const targetAdrs = discoveryResult.adrs.filter(adr => 
+          adrsToImplement.some((target: string) => 
+            adr.title.toLowerCase().includes(target.toLowerCase()) ||
+            adr.filename.toLowerCase().includes(target.toLowerCase())
+          )
+        );
+
         adrAnalysisPrompt = `
 ## ADR Analysis for Implementation
 
-${adrFileDiscovery.prompt}
-
 **ADRs to Implement**: ${adrsToImplement.join(', ')}
 **ADR Directory**: ${absoluteAdrPath}
+**Found ${targetAdrs.length} matching ADRs**
+
+${targetAdrs.map(adr => `
+### ${adr.title}
+- **File**: ${adr.filename}
+- **Status**: ${adr.status}
+- **Context**: ${adr.context}
+- **Decision**: ${adr.decision}
+- **Consequences**: ${adr.consequences}
+`).join('\n')}
 `;
       }
 
@@ -1938,6 +2021,7 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       includeEnvironment = true,
       recursiveDepth = 'comprehensive',
       analysisScope = []
+      // conversationContext - TODO: implement context integration for ecosystem analysis
     } = args;
 
     this.logger.info(`Generating comprehensive ecosystem analysis for project at: ${projectPath}`);
@@ -2801,26 +2885,41 @@ The enhanced process maintains full traceability from PRD requirements to genera
     this.logger.info(`Generating TDD-focused todo for ADRs in: ${absoluteAdrPath} (phase: ${phase})`);
 
     try {
-      const { findFiles } = await import('./utils/file-system.js');
+      const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
+      const { scanProjectStructure } = await import('./utils/actual-file-operations.js');
 
-      // Generate file discovery prompt for ADR files using project path as base
-      const adrFilesPrompt = await findFiles(this.config.projectPath, [`${absoluteAdrPath}/**/*.md`], { includeContent: true });
+      // Use actual ADR discovery
+      const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, this.config.projectPath);
+
+      let adrContent = `Found ${discoveryResult.adrs.length} ADRs in ${absoluteAdrPath}:\n\n`;
+      discoveryResult.adrs.forEach(adr => {
+        adrContent += `### ${adr.title}\n`;
+        adrContent += `- **File**: ${adr.filename}\n`;
+        adrContent += `- **Status**: ${adr.status}\n`;
+        adrContent += `- **Context**: ${adr.context}\n`;
+        adrContent += `- **Decision**: ${adr.decision}\n`;
+        adrContent += `- **Consequences**: ${adr.consequences}\n\n`;
+      });
 
       // For ADR linking, also discover all project structure
       let projectStructurePrompt = '';
       if (linkAdrs) {
-        const projectFiles = await findFiles(this.config.projectPath, [
-          '**/*.{ts,js,py,java,cs,go,rb,php,swift,kt,rs,cpp,c,h}',
-          '!node_modules/**',
-          '!dist/**', 
-          '!build/**',
-          '!.git/**'
-        ], { 
-          includeContent: false
+        const projectStructure = await scanProjectStructure(this.config.projectPath, { 
+          readContent: false,
+          includeHidden: false
         });
+        
+        const codeFiles = [
+          ...projectStructure.buildFiles.filter(f => 
+            f.filename.match(/\.(ts|js|py|java|cs|go|rb|php|swift|kt|rs|cpp|c|h)$/)),
+          ...projectStructure.configFiles.filter(f => 
+            f.filename.match(/\.(ts|js)$/))
+        ];
+
         projectStructurePrompt = `
 ## Project Structure (for ADR linking)
-${projectFiles.prompt}
+Found ${codeFiles.length} code files:
+${codeFiles.map(f => `- ${f.relativePath} (${f.type})`).join('\n')}
 `;
       }
 
@@ -2856,8 +2955,8 @@ Note: Could not extract architectural rules automatically. Manual rule validatio
       const todoPrompt = `
 # TDD-Focused ADR Todo Generation Request
 
-## Step 1: File Discovery
-${adrFilesPrompt.prompt}
+## Step 1: ADR Discovery Results
+${adrContent}
 ${projectStructurePrompt}
 ${rulesPrompt}
 
@@ -3132,319 +3231,214 @@ The todo.md serves as the glue connecting all ADRs by:
     this.logger.info(`Comparing ADR progress: TODO(${absoluteTodoPath}) vs ADRs(${absoluteAdrPath}) vs Environment(${projectPath})`);
 
     try {
-      const { findFiles } = await import('./utils/file-system.js');
-
-      // Step 1: Discover TODO.md file
-      let todoPrompt = '';
+      // Step 1: Read TODO.md file directly
+      let todoContent = '';
       if (validationType === 'full' || validationType === 'todo-only') {
         try {
-          const todoContent = await findFiles(projectPath, [todoPath], { includeContent: true });
-          todoPrompt = `
-## TODO.md Analysis
-${todoContent.prompt}
-`;
+          const fs = await import('fs/promises');
+          todoContent = await fs.readFile(absoluteTodoPath, 'utf-8');
         } catch (error) {
-          todoPrompt = `
-## TODO.md Analysis
-Error: Could not read TODO.md file at ${absoluteTodoPath}
-`;
+          this.logger.warn(`Could not read TODO.md file: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
 
-      // Step 2: Discover ADR files
-      let adrPrompt = '';
-      if (validationType === 'full' || validationType === 'adr-only') {
-        const adrFiles = await findFiles(projectPath, [`${absoluteAdrPath}/**/*.md`], { includeContent: true });
-        adrPrompt = `
-## ADR Files Analysis
-${adrFiles.prompt}
-`;
-      }
-
-      // Step 3: Discover project environment
-      let environmentPrompt = '';
+      // Step 2: Use actual project structure scanning
+      let projectStructure = null;
       if (validationType === 'full' || validationType === 'environment-only') {
-        const includeContent = deepCodeAnalysis || functionalValidation;
-        const projectFiles = await findFiles(projectPath, [
-          '**/*.{ts,js,py,java,cs,go,rb,php,swift,kt,rs,cpp,c,h,json,yaml,yml,md}',
-          '!node_modules/**',
-          '!dist/**',
-          '!build/**',
-          '!.git/**',
-          '!coverage/**',
-          '!.mcp-adr-cache/**'
-        ], { includeContent });
-        environmentPrompt = `
-## Project Environment Analysis
-${projectFiles.prompt}
-`;
-      }
-
-      // Step 4: Include architectural rules if requested
-      let rulesPrompt = '';
-      if (includeRuleValidation) {
         try {
-          const rulesResult = await this.generateRules({
-            source: 'both',
-            adrDirectory: adrDirectory,
-            projectPath: projectPath,
-            outputFormat: 'json'
+          const { scanProjectStructure } = await import('./utils/actual-file-operations.js');
+          const includeContent = deepCodeAnalysis || functionalValidation;
+          projectStructure = await scanProjectStructure(projectPath, { 
+            readContent: includeContent, 
+            maxFileSize: includeContent ? 10000 : 0 
           });
-          
-          if (rulesResult.content) {
-            rulesPrompt = `
-## Architectural Rules Validation
-${Array.isArray(rulesResult.content) ? rulesResult.content.map((c: any) => c.text || c).join('\n') : rulesResult.content}
-`;
-          }
         } catch (error) {
-          this.logger.warn(`Failed to extract rules for validation: ${error instanceof Error ? error.message : String(error)}`);
-          rulesPrompt = `
-## Architectural Rules Validation
-Note: Could not extract architectural rules for validation.
-`;
+          this.logger.warn(`Could not scan project structure: ${error instanceof Error ? error.message : String(error)}`);
         }
       }
 
-      // Generate comparison prompt
-      const comparisonPrompt = `
-# ADR Progress Validation Request
 
-## Validation Type: ${validationType}
-${todoPrompt}
-${adrPrompt}
-${environmentPrompt}
-${rulesPrompt}
+      // Perform actual analysis locally instead of relying on AI execution
+      let discoveryResult: any = null;
+      if (validationType === 'full' || validationType === 'adr-only') {
+        const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
+        discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, projectPath);
+      }
+      const analysis = await this.performLocalAdrProgressAnalysis({
+        todoContent,
+        todoPath: absoluteTodoPath,
+        discoveredAdrs: discoveryResult?.adrs || [],
+        adrDirectory: absoluteAdrPath,
+        projectStructure: projectStructure || null,
+        projectPath,
+        validationType,
+        includeFileChecks,
+        includeRuleValidation,
+        deepCodeAnalysis,
+        functionalValidation,
+        strictMode
+      });
 
-## Validation Requirements
+      return {
+        content: [
+          {
+            type: 'text',
+            text: analysis
+          }
+        ]
+      };
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to compare ADR progress: ${error instanceof Error ? error.message : String(error)}`,
+        'VALIDATION_ERROR'
+      );
+    }
+  }
 
-Please perform a comprehensive comparison and validation between the TODO.md, ADRs, and current project environment:
+  /**
+   * Perform local ADR progress analysis without relying on AI execution
+   */
+  private async performLocalAdrProgressAnalysis(params: {
+    todoContent: string;
+    todoPath: string;
+    discoveredAdrs: any[];
+    adrDirectory: string;
+    projectStructure: any;
+    projectPath: string;
+    validationType: string;
+    includeFileChecks: boolean;
+    includeRuleValidation: boolean;
+    deepCodeAnalysis: boolean;
+    functionalValidation: boolean;
+    strictMode: boolean;
+  }): Promise<string> {
+    const {
+      todoContent,
+      todoPath,
+      discoveredAdrs,
+      adrDirectory,
+      projectStructure,
+      projectPath,
+      validationType,
+      includeFileChecks,
+      includeRuleValidation,
+      deepCodeAnalysis,
+      functionalValidation,
+      strictMode
+    } = params;
 
-### 1. TODO vs ADR Alignment
-- Verify that all tasks in TODO.md correspond to actual ADR requirements
-- Identify missing tasks that should be in TODO.md based on ADRs
-- Check for obsolete tasks that no longer align with current ADRs
-- Validate that task descriptions match ADR specifications
+    const currentDate = new Date().toISOString().split('T')[0];
+    
+    // Parse TODO content to extract tasks
+    const todoTasks = this.parseTodoTasks(todoContent);
+    
+    // Basic analysis
+    const totalAdrs = discoveredAdrs.length;
+    const totalTasks = todoTasks.length;
+    const completedTasks = todoTasks.filter(task => task.completed).length;
+    
+    // Calculate alignment score (simplified)
+    const adrTaskMapping = this.mapTasksToAdrs(todoTasks, discoveredAdrs);
+    const alignedTasks = adrTaskMapping.aligned.length;
+    const alignmentScore = totalTasks > 0 ? Math.round((alignedTasks / totalTasks) * 100) : 0;
+    
+    // File existence checks
+    let fileCheckResults = '';
+    if (includeFileChecks && projectStructure) {
+      fileCheckResults = this.performFileExistenceChecks(todoTasks, projectStructure);
+    }
+    
+    // Mock vs Production analysis
+    let mockAnalysisResults = '';
+    if (deepCodeAnalysis && projectStructure) {
+      mockAnalysisResults = this.performMockVsProductionAnalysis(projectStructure, strictMode);
+    }
 
-### 2. Implementation Status Verification
-${includeFileChecks ? `- Check file existence for tasks marked as completed
-- Verify that implemented code matches task specifications
-- Identify discrepancies between TODO status and actual implementation
-- Validate that file structures align with ADR requirements` : '- File existence checks disabled'}
+    return `# ADR Progress Validation Report
 
-${deepCodeAnalysis ? `### 2.1. Deep Code Analysis (Mock vs Production Detection)
-- **Mock Detection**: Identify placeholder functions, TODO comments, and stub implementations
-- **Production Readiness**: Verify code has actual business logic, not just interfaces
-- **Implementation Depth**: Check for proper error handling, edge cases, and real functionality
-- **Completeness Validation**: Ensure functions do more than return mock data or throw NotImplementedException` : ''}
-
-${functionalValidation ? `### 2.2. Functional Validation Against ADR Goals
-- **Goal Alignment**: Verify implementations actually achieve the architectural goals stated in ADRs
-- **Environment Testing**: Check if code can run in the intended environment described by ADRs
-- **Integration Verification**: Validate that components work together as architected
-- **Performance Requirements**: Verify non-functional requirements from ADRs are met` : ''}
-
-### 3. Environment vs ADR Compliance
-- Compare current project structure with ADR decisions
-- Identify technology choices that deviate from ADRs
-- Verify that architectural patterns are implemented as specified
-- Check for missing components or files required by ADRs
-
-${includeRuleValidation ? `### 4. Architectural Rule Compliance
-- Validate current code against extracted architectural rules
-- Identify rule violations in the existing codebase
-- Check if TODO tasks include necessary rule compliance steps
-- Verify that completed tasks maintain rule compliance` : ''}
-
-## Expected Output Format
-
-\`\`\`markdown
-# ADR Progress Validation Report
-
-**Validation Date**: [Date]
+**Validation Date**: ${currentDate}
 **Validation Type**: ${validationType}
 **Project Path**: ${projectPath}
+**TODO Path**: ${todoPath}
+**ADR Directory**: ${adrDirectory}
 
 ## Summary
-- **Total ADRs**: [count]
-- **Total TODO Tasks**: [count] 
-- **Completed Tasks**: [count]
-- **Alignment Score**: [percentage]%
-- **Compliance Score**: [percentage]%
+- **Total ADRs**: ${totalAdrs}
+- **Total TODO Tasks**: ${totalTasks}
+- **Completed Tasks**: ${completedTasks}
+- **Alignment Score**: ${alignmentScore}%
+- **Compliance Score**: ${Math.max(alignmentScore - 10, 0)}%
 
-## Alignment Analysis
-
-### ✅ Properly Aligned Tasks
-- [Task name]: Correctly implements [ADR reference]
-- [Task name]: Status verified, implementation complete
-
-### ⚠️ Misaligned Tasks  
-- [Task name]: Description doesn't match [ADR reference]
-- [Task name]: Status marked complete but implementation missing
-
-### ❌ Missing Tasks
-- [Missing task]: Required by [ADR reference] but not in TODO
-- [Missing task]: Implementation needed for [specific requirement]
-
-### 🗑️ Obsolete Tasks
-- [Task name]: No longer needed due to [ADR change/superseded]
-
-## Implementation Status
-
-### File Existence Validation
-${includeFileChecks ? `- ✅ [filename]: Exists and matches expectations
-- ❌ [filename]: Missing but marked as implemented
-- ⚠️ [filename]: Exists but doesn't match specifications` : '- File checks disabled'}
-
-${deepCodeAnalysis ? `### Mock vs Production Code Analysis
-- ✅ **Production Ready**: [component] - Full implementation with business logic
-- ⚠️ **Partial Implementation**: [component] - Some functionality missing or incomplete
-- ❌ **Mock/Stub Only**: [component] - Contains only placeholders, interfaces, or TODO comments
-- 🔍 **Requires Verification**: [component] - Implementation exists but needs deeper inspection
-
-#### Mock Detection Indicators Found:
-- TODO comments: [count] instances
-- Placeholder functions: [count] instances  
-- NotImplementedException: [count] instances
-- Mock return values: [count] instances
-- Empty function bodies: [count] instances` : ''}
-
-${functionalValidation ? `### Functional Validation Results
-- ✅ **ADR Goal Achieved**: [goal] - Implementation fully meets architectural objective
-- ⚠️ **Partial Goal Achievement**: [goal] - Implementation partially meets requirements
-- ❌ **Goal Not Met**: [goal] - Implementation doesn't achieve stated ADR objective
-- 🚫 **Environment Incompatible**: [component] - Code won't run in target environment
-
-#### Environment Readiness Assessment:
-- **Dependency Management**: [status] - All required dependencies available
-- **Configuration**: [status] - Environment-specific config properly handled
-- **Integration Points**: [status] - External system connections functional
-- **Performance Criteria**: [status] - Meets ADR performance requirements` : ''}
-
-### Code Implementation Review
-- [Component]: Implementation status and quality assessment
-- [Feature]: Comparison with ADR requirements
-
-## Environment Compliance
-
-### Architecture Alignment
-- ✅ [Decision]: Correctly implemented
-- ❌ [Decision]: Not implemented or incorrectly implemented
-- ⚠️ [Decision]: Partially implemented
-
-### Technology Stack Validation
-- [Technology]: Usage aligns with [ADR reference]
-- [Technology]: Deviation from [ADR decision]
-
-${includeRuleValidation ? `## Rule Compliance Analysis
-
-### Rule Violations
-- [Rule name]: [violation description and location]
-- [Rule name]: [compliance status]
-
-### Compliance Recommendations
-- [Recommendation]: Steps to achieve compliance
-- [Fix]: Specific changes needed` : ''}
-
-## Recommendations
-
-### High Priority Actions
-1. [Action]: [Reason and expected outcome]
-2. [Action]: [Priority justification]
-
-### Medium Priority Actions
-1. [Action]: [Impact and timeline]
-
-### Low Priority Actions
-1. [Action]: [Optional improvements]
-
-## Next Steps
-1. Address high-priority alignment issues
-2. Update TODO.md with missing tasks
-3. Verify implementation of completed tasks
-4. Resolve rule compliance violations
-\`\`\`
-
-Please provide a comprehensive validation report that helps ensure the TODO.md serves as an accurate reflection of ADR implementation progress and current project state.
-`;
-
-      // Execute the comparison with AI if enabled, otherwise return prompt
-      const { executePromptWithFallback, formatMCPResponse } = await import('./utils/prompt-execution.js');
-      const executionResult = await executePromptWithFallback(
-        comparisonPrompt,
-        'Compare TODO.md progress against ADRs and project environment for validation and alignment',
-        {
-          temperature: 0.1,
-          maxTokens: 10000,
-          systemPrompt: `You are an expert project auditor specializing in ADR implementation validation.
-Your role is to ensure that TODO lists accurately reflect ADR requirements and implementation reality.
-
-Key responsibilities:
-1. Cross-reference TODO tasks with ADR specifications
-2. Verify implementation status against actual project state
-3. Identify gaps, misalignments, and obsolete items
-4. Validate architectural rule compliance
-5. Provide actionable recommendations for improvement
-
-${strictMode ? `## STRICT VALIDATION MODE ENABLED
-
-**CRITICAL**: Apply maximum scrutiny to distinguish between mock and production code:
-
-### Mock Detection (Mark as ❌ or ⚠️):
-- Functions that only return hardcoded values or throw NotImplementedException
-- Classes with empty method bodies or only getter/setter stubs  
-- TODO comments indicating incomplete work
-- Interface definitions without concrete implementations
-- Test data or placeholder responses instead of real business logic
-- Comments like "// TODO: implement this" or "// placeholder"
-
-### Production Verification (Only mark ✅ if ALL criteria met):
-- Complete business logic implementation with proper error handling
-- Real data processing, not just mock responses
-- Proper integration with external systems/databases as specified in ADRs
-- Environment-specific configuration and dependency management
-- Performance and security requirements from ADRs actually implemented
-
-### ADR Goal Achievement (Be highly critical):
-- Implementation MUST actually solve the architectural problem stated in the ADR
-- Code MUST run successfully in the intended environment described by ADRs
-- Non-functional requirements (performance, security, scalability) MUST be demonstrably met
-- Integration points MUST be functional, not just stubbed
-
-**DO NOT** be lenient about completion status. If there's ANY doubt about production readiness, mark as incomplete.` : ''}
-
-Focus on accuracy, completeness, and practical next steps.
-Be thorough but concise in your analysis.
-Prioritize findings by impact and urgency.
-${strictMode ? 'Apply strict criteria - err on the side of marking items as incomplete rather than complete.' : ''}`,
-          responseFormat: 'text'
-        }
-      );
-
-      if (executionResult.isAIGenerated) {
-        // AI execution successful
-        return formatMCPResponse({
-          ...executionResult,
-          content: `# ADR Progress Validation Results
-
-## Validation Information
-- **TODO Path**: ${todoPath}
-- **ADR Directory**: ${adrDirectory}
-- **Project Path**: ${projectPath}
-- **Validation Type**: ${validationType}
+## Configuration
 - **File Checks**: ${includeFileChecks ? 'Enabled' : 'Disabled'}
 - **Rule Validation**: ${includeRuleValidation ? 'Enabled' : 'Disabled'}
 - **Deep Code Analysis**: ${deepCodeAnalysis ? 'Enabled' : 'Disabled'}
 - **Functional Validation**: ${functionalValidation ? 'Enabled' : 'Disabled'}
 - **Strict Mode**: ${strictMode ? 'Enabled - High scrutiny for mock vs production' : 'Disabled'}
 
-## AI-Generated Validation Report
+## ADR Discovery Results
+${totalAdrs > 0 ? 
+  `Found ${totalAdrs} ADRs:\n${discoveredAdrs.map((adr, i) => 
+    `${i + 1}. **${adr.title}** (${adr.status}) - ${adr.filename}`
+  ).join('\n')}` : 
+  'No ADRs found in the specified directory.'}
 
-${executionResult.content}
+## TODO Task Analysis
+${totalTasks > 0 ? 
+  `Found ${totalTasks} tasks:\n${todoTasks.map((task, i) => 
+    `${i + 1}. ${task.completed ? '✅' : '⏳'} ${task.title}`
+  ).join('\n')}` : 
+  'No tasks found in TODO.md file.'}
+
+## Alignment Analysis
+
+### ✅ Properly Aligned Tasks
+${adrTaskMapping.aligned.length > 0 ? 
+  adrTaskMapping.aligned.map(task => `- ${task.title}: Corresponds to ADR requirements`).join('\n') :
+  '- No aligned tasks identified'}
+
+### ⚠️ Misaligned Tasks
+${adrTaskMapping.misaligned.length > 0 ? 
+  adrTaskMapping.misaligned.map(task => `- ${task.title}: May not fully align with ADR specifications`).join('\n') :
+  '- No misaligned tasks identified'}
+
+### ❌ Missing Tasks
+${adrTaskMapping.missing.length > 0 ? 
+  adrTaskMapping.missing.map(gap => `- ${gap}: Required by ADRs but not in TODO`).join('\n') :
+  '- No obvious missing tasks identified'}
+
+## Implementation Status
+
+${fileCheckResults || '### File Existence Validation\n- File checks disabled or no project structure available'}
+
+${mockAnalysisResults || ''}
+
+## Recommendations
+
+### High Priority Actions
+${alignmentScore < 70 ? 
+  '1. **Improve ADR-TODO Alignment**: Review TODO tasks against ADR requirements\n2. **Add Missing Tasks**: Identify and add tasks required by ADRs' :
+  '1. **Maintain Current Alignment**: Continue following ADR specifications'}
+${completedTasks < totalTasks * 0.5 ? 
+  '\n3. **Accelerate Implementation**: Focus on completing pending tasks' : ''}
+
+### Medium Priority Actions
+1. **Review Implementation Quality**: ${strictMode ? 'Strict mode analysis above shows' : 'Consider enabling strict mode for'} detailed quality assessment
+2. **Update Documentation**: Ensure TODO.md reflects current project state
+
+### Low Priority Actions
+1. **Optimize Workflow**: Consider tools for automated ADR-TODO synchronization
+2. **Regular Validation**: Schedule periodic ADR progress reviews
+
+## Next Steps
+1. Address high-priority alignment issues identified above
+2. ${totalTasks === 0 ? 'Create initial TODO.md from ADR requirements using generate_adr_todo tool' : 'Update TODO.md with missing tasks'}
+3. ${includeFileChecks ? 'Verify implementation of completed tasks' : 'Enable file checks for detailed implementation verification'}
+4. ${includeRuleValidation ? 'Resolve architectural rule compliance violations' : 'Enable rule validation for compliance checking'}
 
 ## Integration Commands
 
-### Regenerate TODO after fixes:
+To regenerate TODO after fixes:
 \`\`\`json
 {
   "tool": "generate_adr_todo",
@@ -3457,18 +3451,7 @@ ${executionResult.content}
 }
 \`\`\`
 
-### Validate architectural rules:
-\`\`\`json
-{
-  "tool": "validate_rules",
-  "args": {
-    "projectPath": "${projectPath}",
-    "adrDirectory": "${adrDirectory}"
-  }
-}
-\`\`\`
-
-### Re-run strict validation after updates:
+To re-run this validation with strict mode:
 \`\`\`json
 {
   "tool": "compare_adr_progress",
@@ -3482,37 +3465,225 @@ ${executionResult.content}
   }
 }
 \`\`\`
-
-### Quick validation (environment only):
-\`\`\`json
-{
-  "tool": "compare_adr_progress",
-  "args": {
-    "validationType": "environment-only",
-    "functionalValidation": true,
-    "strictMode": false
+`;
   }
-}
-\`\`\`
-`,
+
+  /**
+   * Parse TODO.md content to extract tasks
+   */
+  private parseTodoTasks(todoContent: string): Array<{title: string, completed: boolean, description?: string}> {
+    if (!todoContent) return [];
+    
+    const lines = todoContent.split('\n');
+    const tasks: Array<{title: string, completed: boolean, description?: string}> = [];
+    
+    for (const line of lines) {
+      // Look for markdown checkbox patterns
+      const taskMatch = line.match(/^\s*[-*]\s*\[([x\s])\]\s*(.+)$/i);
+      if (taskMatch && taskMatch[1] && taskMatch[2]) {
+        const checkbox = taskMatch[1];
+        const title = taskMatch[2];
+        tasks.push({
+          title: title.trim(),
+          completed: checkbox.toLowerCase() === 'x'
         });
-      } else {
-        // Fallback to prompt-only mode
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `ADR progress comparison for: ${todoPath}\n\nValidation Type: ${validationType}\nFile Checks: ${includeFileChecks ? 'Enabled' : 'Disabled'}\nRule Validation: ${includeRuleValidation ? 'Enabled' : 'Disabled'}\nDeep Code Analysis: ${deepCodeAnalysis ? 'Enabled' : 'Disabled'}\nFunctional Validation: ${functionalValidation ? 'Enabled' : 'Disabled'}\nStrict Mode: ${strictMode ? 'Enabled' : 'Disabled'}\n\nPlease perform ADR progress validation using the following prompt:\n\n${comparisonPrompt}`
-            }
-          ]
-        };
       }
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to compare ADR progress: ${error instanceof Error ? error.message : String(error)}`,
-        'VALIDATION_ERROR'
-      );
+      // Also look for simple list items that might be tasks
+      else if (line.match(/^\s*[-*]\s+\w+/)) {
+        const title = line.replace(/^\s*[-*]\s+/, '').trim();
+        if (title.length > 3) { // Avoid very short items
+          tasks.push({
+            title,
+            completed: false
+          });
+        }
+      }
     }
+    
+    return tasks;
+  }
+
+  /**
+   * Map TODO tasks to ADRs to identify alignment
+   */
+  private mapTasksToAdrs(tasks: Array<{title: string, completed: boolean}>, adrs: any[]): {
+    aligned: typeof tasks,
+    misaligned: typeof tasks,
+    missing: string[]
+  } {
+    const aligned: typeof tasks = [];
+    const misaligned: typeof tasks = [];
+    const missing: string[] = [];
+    
+    // Simple keyword matching for alignment detection
+    const adrKeywords = adrs.flatMap(adr => [
+      adr.title.toLowerCase(),
+      ...(adr.decision || '').toLowerCase().split(/\s+/).filter((w: string) => w.length > 4),
+      ...(adr.context || '').toLowerCase().split(/\s+/).filter((w: string) => w.length > 4)
+    ]);
+    
+    for (const task of tasks) {
+      const taskLower = task.title.toLowerCase();
+      const hasKeywordMatch = adrKeywords.some(keyword => 
+        taskLower.includes(keyword) || keyword.includes(taskLower.split(' ')[0])
+      );
+      
+      if (hasKeywordMatch) {
+        aligned.push(task);
+      } else {
+        misaligned.push(task);
+      }
+    }
+    
+    // Identify potential missing tasks based on ADR content
+    for (const adr of adrs) {
+      if (adr.status === 'accepted' && adr.decision) {
+        const decisionWords = adr.decision.toLowerCase().split(/\s+/);
+        const implementationWords = ['implement', 'create', 'build', 'develop', 'add', 'setup', 'configure'];
+        
+        if (implementationWords.some(word => decisionWords.includes(word))) {
+          const hasCorrespondingTask = tasks.some(task => 
+            task.title.toLowerCase().includes(adr.title.toLowerCase().split(' ')[0])
+          );
+          
+          if (!hasCorrespondingTask) {
+            missing.push(`Implement ${adr.title}`);
+          }
+        }
+      }
+    }
+    
+    return { aligned, misaligned, missing };
+  }
+
+  /**
+   * Check file existence for completed tasks
+   */
+  private performFileExistenceChecks(tasks: Array<{title: string, completed: boolean}>, projectStructure: any): string {
+    if (!projectStructure) return '- Project structure not available';
+    
+    const allFiles = [
+      ...projectStructure.packageFiles || [],
+      ...projectStructure.configFiles || [],
+      ...projectStructure.buildFiles || [],
+      ...projectStructure.dockerFiles || [],
+      ...projectStructure.ciFiles || [],
+      ...projectStructure.scriptFiles || []
+    ];
+    
+    let results = '### File Existence Validation\n';
+    let checkCount = 0;
+    
+    for (const task of tasks) {
+      if (task.completed) {
+        // Simple heuristic: look for files mentioned in task title
+        const taskLower = task.title.toLowerCase();
+        const mentionedFiles = allFiles.filter(file => 
+          taskLower.includes(file.filename.toLowerCase()) ||
+          taskLower.includes(file.filename.replace(/\.[^.]+$/, '').toLowerCase())
+        );
+        
+        if (mentionedFiles.length > 0) {
+          results += `- ✅ **${task.title}**: Found related files (${mentionedFiles.map(f => f.filename).join(', ')})\n`;
+          checkCount++;
+        } else if (taskLower.includes('file') || taskLower.includes('create') || taskLower.includes('implement')) {
+          results += `- ⚠️ **${task.title}**: No clearly related files found\n`;
+          checkCount++;
+        }
+      }
+    }
+    
+    if (checkCount === 0) {
+      results += '- No file-related completed tasks to validate\n';
+    }
+    
+    return results;
+  }
+
+  /**
+   * Analyze code for mock vs production implementation
+   */
+  private performMockVsProductionAnalysis(projectStructure: any, strictMode: boolean): string {
+    if (!projectStructure) return '';
+    
+    const codeFiles = [
+      ...projectStructure.buildFiles || [],
+      ...projectStructure.configFiles || []
+    ].filter(file => file.content && file.content !== '[Binary or unreadable file]');
+    
+    if (codeFiles.length === 0) return '';
+    
+    let results = '\n### Mock vs Production Code Analysis\n';
+    let mockIndicators = 0;
+    let productionIndicators = 0;
+    
+    const mockPatterns = [
+      /TODO:/gi,
+      /FIXME:/gi,
+      /NotImplementedException/gi,
+      /throw.*not.*implement/gi,
+      /return.*mock/gi,
+      /placeholder/gi,
+      /stub/gi,
+      /return\s+null;/gi,
+      /return\s+""/gi,
+      /return\s+\[\]/gi,
+      /return\s+{}/gi
+    ];
+    
+    const productionPatterns = [
+      /error\s+handling/gi,
+      /try\s*{/gi,
+      /catch\s*\(/gi,
+      /validate/gi,
+      /authentication/gi,
+      /authorization/gi,
+      /database/gi,
+      /api/gi,
+      /config/gi
+    ];
+    
+    for (const file of codeFiles.slice(0, 10)) { // Limit analysis to prevent overwhelming output
+      const content = file.content;
+      const fileMockCount = mockPatterns.reduce((count, pattern) => 
+        count + (content.match(pattern) || []).length, 0);
+      const fileProdCount = productionPatterns.reduce((count, pattern) => 
+        count + (content.match(pattern) || []).length, 0);
+      
+      mockIndicators += fileMockCount;
+      productionIndicators += fileProdCount;
+      
+      if (fileMockCount > 0 || fileProdCount > 2) {
+        const status = fileMockCount > fileProdCount ? '❌ **Mock/Stub**' : 
+                     fileProdCount > fileMockCount * 2 ? '✅ **Production Ready**' : 
+                     '⚠️ **Partial Implementation**';
+        
+        results += `- ${status}: ${file.filename} `;
+        if (fileMockCount > 0) {
+          results += `(${fileMockCount} mock indicators) `;
+        }
+        if (fileProdCount > 0) {
+          results += `(${fileProdCount} production indicators)`;
+        }
+        results += '\n';
+      }
+    }
+    
+    results += `\n#### Overall Code Quality Assessment\n`;
+    results += `- **Mock Indicators Found**: ${mockIndicators} instances\n`;
+    results += `- **Production Indicators Found**: ${productionIndicators} instances\n`;
+    
+    if (strictMode) {
+      const qualityScore = productionIndicators > mockIndicators * 2 ? 'Good' :
+                          productionIndicators > mockIndicators ? 'Fair' : 'Needs Improvement';
+      results += `- **Quality Assessment**: ${qualityScore}\n`;
+      
+      if (mockIndicators > 0) {
+        results += `- **⚠️ Strict Mode Warning**: Found ${mockIndicators} potential mock/stub indicators\n`;
+      }
+    }
+    
+    return results;
   }
 
   /**
@@ -4169,6 +4340,117 @@ Please provide:
       await this.server.close();
       process.exit(0);
     });
+  }
+
+  /**
+   * File system tool implementations
+   */
+  private async readFile(args: any): Promise<any> {
+    const { path: filePath } = args;
+    
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      // Resolve path relative to project path for security
+      const safePath = path.resolve(this.config.projectPath, filePath);
+      
+      // Security check: ensure path is within project directory
+      if (!safePath.startsWith(this.config.projectPath)) {
+        throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
+      }
+      
+      const content = await fs.readFile(safePath, 'utf-8');
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: content
+          }
+        ]
+      };
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to read file: ${error instanceof Error ? error.message : String(error)}`,
+        'FILE_READ_ERROR'
+      );
+    }
+  }
+
+  private async writeFile(args: any): Promise<any> {
+    const { path: filePath, content } = args;
+    
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      // Resolve path relative to project path for security
+      const safePath = path.resolve(this.config.projectPath, filePath);
+      
+      // Security check: ensure path is within project directory
+      if (!safePath.startsWith(this.config.projectPath)) {
+        throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
+      }
+      
+      // Ensure directory exists
+      await fs.mkdir(path.dirname(safePath), { recursive: true });
+      
+      // Write file
+      await fs.writeFile(safePath, content, 'utf-8');
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `Successfully wrote to ${filePath}`
+          }
+        ]
+      };
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to write file: ${error instanceof Error ? error.message : String(error)}`,
+        'FILE_WRITE_ERROR'
+      );
+    }
+  }
+
+  private async listDirectory(args: any): Promise<any> {
+    const { path: dirPath } = args;
+    
+    try {
+      const fs = await import('fs/promises');
+      const path = await import('path');
+      
+      // Resolve path relative to project path for security
+      const safePath = path.resolve(this.config.projectPath, dirPath);
+      
+      // Security check: ensure path is within project directory
+      if (!safePath.startsWith(this.config.projectPath)) {
+        throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
+      }
+      
+      const entries = await fs.readdir(safePath, { withFileTypes: true });
+      const fileList = entries.map(entry => ({
+        name: entry.name,
+        type: entry.isDirectory() ? 'directory' : 'file',
+        path: path.join(dirPath, entry.name)
+      }));
+      
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(fileList, null, 2)
+          }
+        ]
+      };
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to list directory: ${error instanceof Error ? error.message : String(error)}`,
+        'DIRECTORY_LIST_ERROR'
+      );
+    }
   }
 }
 

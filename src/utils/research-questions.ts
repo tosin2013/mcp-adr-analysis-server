@@ -130,12 +130,11 @@ export async function findRelevantAdrPatterns(
   adrDirectory: string = 'docs/adrs'
 ): Promise<{ relevancePrompt: string; instructions: string }> {
   try {
-    const { findFiles } = await import('./file-system.js');
+    // Use actual ADR discovery instead of prompts
+    const { discoverAdrsInDirectory } = await import('./adr-discovery.js');
 
-    // Generate ADR file discovery prompt for AI delegation
-    const adrFileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
-      includeContent: true,
-    });
+    // Actually read ADR files
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
 
     // Extract patterns from project (simplified for this implementation)
     const availablePatterns = extractArchitecturalPatterns();
@@ -143,19 +142,34 @@ export async function findRelevantAdrPatterns(
     const relevancePrompt = `
 # Relevant ADR Pattern Identification
 
-Please identify relevant ADR patterns based on research context.
+Based on actual ADR file analysis, here are the discovered ADRs with their full content:
 
-## ADR Discovery Instructions
+## Discovered ADRs (${discoveryResult.totalAdrs} total)
 
-${adrFileDiscoveryPrompt.prompt}
+${discoveryResult.adrs.length > 0 ? 
+  discoveryResult.adrs.map((adr, index) => `
+### ${index + 1}. ${adr.title}
+- **File**: ${adr.filename}
+- **Status**: ${adr.status}
+- **Path**: ${adr.path}
+${adr.metadata?.number ? `- **Number**: ${adr.metadata.number}` : ''}
 
-## Implementation Steps
+#### ADR Content:
+\`\`\`markdown
+${adr.content || 'Content not available'}
+\`\`\`
 
-${adrFileDiscoveryPrompt.instructions}
+---
+`).join('\n') : 'No ADRs found in the specified directory.'}
 
 ## Research Context Analysis
 
-${researchContext}
+**Topic**: ${researchContext.topic}
+**Category**: ${researchContext.category}  
+**Scope**: ${researchContext.scope}
+**Objectives**: ${researchContext.objectives.join(', ')}
+**Constraints**: ${researchContext.constraints?.join(', ') || 'None specified'}
+**Timeline**: ${researchContext.timeline || 'Not specified'}
 
 ## Available Architectural Patterns
 
@@ -169,7 +183,7 @@ ${availablePatterns.map((pattern, index) => `
 ## Pattern Relevance Assessment
 
 For each discovered ADR and available pattern:
-1. Analyze relevance to the research context
+1. Analyze relevance to the research context based on **actual ADR content**
 2. Identify potential applications and benefits
 3. Assess implementation complexity and trade-offs
 4. Generate specific recommendations for adoption
@@ -179,34 +193,39 @@ For each discovered ADR and available pattern:
     const instructions = `
 # Relevant ADR and Pattern Discovery Instructions
 
-This analysis will identify ADRs and patterns relevant to the research context.
+This analysis provides **actual ADR content** to identify ADRs and patterns relevant to the research context.
 
 ## Discovery Scope
 - **Research Topic**: ${researchContext.topic}
 - **Research Category**: ${researchContext.category}
 - **ADR Directory**: ${adrDirectory}
+- **ADRs Found**: ${discoveryResult.totalAdrs} files
+- **ADRs with Content**: ${discoveryResult.adrs.filter(adr => adr.content).length} ADRs
 - **Available Patterns**: ${availablePatterns.length} patterns
 - **Research Objectives**: ${researchContext.objectives.length} objectives
 
+## Discovered ADR Summary
+${discoveryResult.adrs.map(adr => `- **${adr.title}** (${adr.status})`).join('\n')}
+
 ## Next Steps
-1. **Submit the relevance prompt** to an AI agent for analysis
+1. **Submit the relevance prompt** to an AI agent for analysis based on **actual ADR content**
 2. **Parse the JSON response** to get relevant ADRs and patterns
 3. **Review research implications** and constraints
 4. **Use findings** to inform research question generation
 
 ## Expected AI Response Format
 The AI will return a JSON object with:
-- \`relevanceAnalysis\`: Overall relevance statistics and confidence
-- \`relevantAdrs\`: ADRs relevant to the research context
-- \`relevantPatterns\`: Patterns applicable to the research
-- \`researchImplications\`: Constraints, opportunities, dependencies, conflicts
-- \`researchGuidance\`: Specific guidance for research approach
+- \`relevanceAnalysis\`: Overall relevance statistics and confidence based on actual content
+- \`relevantAdrs\`: ADRs relevant to the research context with specific reasoning
+- \`relevantPatterns\`: Patterns applicable to the research with evidence from ADRs
+- \`researchImplications\`: Constraints, opportunities, dependencies, conflicts derived from ADR content
+- \`researchGuidance\`: Specific guidance for research approach based on existing decisions
 
 ## Usage Example
 \`\`\`typescript
 const result = await findRelevantAdrPatterns(researchContext, adrDirectory);
 // Submit result.relevancePrompt to AI agent
-// Parse AI response for relevant knowledge
+// Parse AI response for relevant knowledge based on actual ADR content
 \`\`\`
 `;
 
@@ -236,27 +255,25 @@ export async function generateContextAwareQuestions(
   projectPath: string = process.cwd()
 ): Promise<{ questionPrompt: string; instructions: string }> {
   try {
-    const { analyzeProjectStructure, ensureDirectory } = await import('./file-system.js');
+    // Use actual file operations to scan project structure
+    const { scanProjectStructure } = await import('./actual-file-operations.js');
     const { generateContextAwareResearchQuestionsPrompt } = await import(
       '../prompts/research-question-prompts.js'
     );
 
-    // Analyze project context
-    const projectStructure = await analyzeProjectStructure(projectPath);
+    // Actually scan project context
+    const projectStructure = await scanProjectStructure(projectPath, { readContent: false });
     const projectContext = {
-      technologies: (projectStructure as any).detectedTechnologies || [],
+      technologies: extractTechnologiesFromStructure(projectStructure),
       architecture: inferArchitectureType(projectStructure),
       domain: inferDomainType(projectStructure),
       scale: inferProjectScale(projectStructure),
     };
 
-    // Generate directory creation prompt for docs/research
-    const researchDir = `${projectPath}/docs/research`;
-    const ensureDirPrompt = await ensureDirectory(researchDir);
-
     // Generate file creation prompts for research questions
     const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
     const researchFileName = `research-questions-${timestamp}.md`;
+    const researchDir = `${projectPath}/docs/research`;
     const researchFilePath = `${researchDir}/${researchFileName}`;
 
     const questionPrompt = generateContextAwareResearchQuestionsPrompt(
@@ -280,6 +297,8 @@ This analysis will generate specific, actionable research questions based on com
 - **Architecture Type**: ${projectContext.architecture}
 - **Domain**: ${projectContext.domain}
 - **Project Scale**: ${projectContext.scale}
+- **Total Files**: ${projectStructure.totalFiles}
+- **Directories**: ${projectStructure.directories.length}
 - **Relevant ADRs**: ${relevantKnowledge.adrs.length}
 - **Relevant Patterns**: ${relevantKnowledge.patterns.length}
 - **Knowledge Gaps**: ${relevantKnowledge.gaps.length}
@@ -288,7 +307,7 @@ This analysis will generate specific, actionable research questions based on com
 ## File Creation Requirements
 
 ### Step 1: Create Research Directory
-${ensureDirPrompt.prompt}
+Ensure the research directory exists: ${researchDir}
 
 ### Step 2: Generate Research Questions
 Execute the research question generation prompt below to create comprehensive research questions.
@@ -307,10 +326,10 @@ The file should contain:
 - Expected outcomes and impact
 
 ## Next Steps
-1. **Execute directory creation** from Step 1 to ensure docs/research directory exists
+1. **Ensure docs/research directory exists** before proceeding
 2. **Submit the question prompt** to an AI agent for comprehensive question generation
 3. **Parse the JSON response** to get structured research questions
-4. **Create markdown file** with the research questions using the file creation prompt
+4. **Create markdown file** with the research questions at ${researchFilePath}
 5. **Review research plan** and prioritize questions
 6. **Create research tasks** using the task tracking system
 
@@ -422,6 +441,65 @@ const result = await createResearchTaskTracking(questions, progress);
 }
 
 /**
+ * Extract technologies from project structure
+ */
+function extractTechnologiesFromStructure(projectStructure: any): string[] {
+  const technologies: string[] = [];
+  
+  // Analyze package files for technologies
+  if (projectStructure.packageFiles) {
+    projectStructure.packageFiles.forEach((file: any) => {
+      if (file.filename === 'package.json' && file.content) {
+        try {
+          const packageData = JSON.parse(file.content);
+          if (packageData.dependencies) {
+            Object.keys(packageData.dependencies).forEach(dep => {
+              if (dep.includes('react')) technologies.push('React');
+              if (dep.includes('vue')) technologies.push('Vue');
+              if (dep.includes('angular')) technologies.push('Angular');
+              if (dep.includes('express')) technologies.push('Express.js');
+              if (dep.includes('typescript')) technologies.push('TypeScript');
+            });
+          }
+        } catch {
+          // Invalid JSON, skip
+        }
+      }
+      if (file.filename === 'requirements.txt') technologies.push('Python');
+      if (file.filename === 'Cargo.toml') technologies.push('Rust');
+      if (file.filename === 'go.mod') technologies.push('Go');
+      if (file.filename === 'pom.xml') technologies.push('Java/Maven');
+    });
+  }
+  
+  // Analyze config files
+  if (projectStructure.configFiles) {
+    projectStructure.configFiles.forEach((file: any) => {
+      if (file.filename === 'tsconfig.json') technologies.push('TypeScript');
+      if (file.filename.includes('webpack')) technologies.push('Webpack');
+      if (file.filename.includes('vite')) technologies.push('Vite');
+    });
+  }
+  
+  // Analyze Docker files
+  if (projectStructure.dockerFiles && projectStructure.dockerFiles.length > 0) {
+    technologies.push('Docker');
+  }
+  
+  // Analyze Kubernetes files
+  if (projectStructure.kubernetesFiles && projectStructure.kubernetesFiles.length > 0) {
+    technologies.push('Kubernetes');
+  }
+  
+  // Analyze CI files
+  if (projectStructure.ciFiles && projectStructure.ciFiles.length > 0) {
+    technologies.push('CI/CD');
+  }
+  
+  return [...new Set(technologies)]; // Remove duplicates
+}
+
+/**
  * Extract architectural patterns from project structure
  */
 function extractArchitecturalPatterns(): Array<{
@@ -463,14 +541,19 @@ function extractArchitecturalPatterns(): Array<{
  * Infer architecture type from project structure
  */
 function inferArchitectureType(projectStructure: any): string {
-  if (projectStructure.directories?.some((dir: string) => dir.includes('service'))) {
+  const directories = projectStructure.directories || [];
+  
+  if (directories.some((dir: string) => dir.includes('service') || dir.includes('microservice'))) {
     return 'microservices';
   }
-  if (projectStructure.directories?.some((dir: string) => dir.includes('layer'))) {
+  if (directories.some((dir: string) => dir.includes('layer') || dir.includes('tier'))) {
     return 'layered';
   }
-  if (projectStructure.detectedTechnologies?.includes('kubernetes')) {
+  if (projectStructure.kubernetesFiles?.length > 0 || projectStructure.dockerFiles?.length > 0) {
     return 'cloud-native';
+  }
+  if (directories.some((dir: string) => dir.includes('component') || dir.includes('module'))) {
+    return 'modular';
   }
   return 'monolithic';
 }
@@ -479,20 +562,31 @@ function inferArchitectureType(projectStructure: any): string {
  * Infer domain type from project structure
  */
 function inferDomainType(projectStructure: any): string {
-  const technologies = projectStructure.detectedTechnologies || [];
+  const technologies = extractTechnologiesFromStructure(projectStructure);
 
   if (
     technologies.some(
-      (tech: string) => tech.includes('react') || tech.includes('vue') || tech.includes('angular')
+      (tech: string) => tech.toLowerCase().includes('react') || 
+                      tech.toLowerCase().includes('vue') || 
+                      tech.toLowerCase().includes('angular')
     )
   ) {
     return 'web-application';
   }
-  if (technologies.some((tech: string) => tech.includes('api') || tech.includes('rest'))) {
+  if (technologies.some((tech: string) => 
+    tech.toLowerCase().includes('express') || 
+    tech.toLowerCase().includes('api')
+  )) {
     return 'api-service';
   }
-  if (technologies.some((tech: string) => tech.includes('data') || tech.includes('analytics'))) {
+  if (technologies.some((tech: string) => 
+    tech.toLowerCase().includes('data') || 
+    tech.toLowerCase().includes('analytics')
+  )) {
     return 'data-platform';
+  }
+  if (projectStructure.dockerFiles?.length > 0 || projectStructure.kubernetesFiles?.length > 0) {
+    return 'infrastructure-platform';
   }
   return 'general-software';
 }
@@ -502,7 +596,7 @@ function inferDomainType(projectStructure: any): string {
  */
 function inferProjectScale(projectStructure: any): string {
   const fileCount = projectStructure.totalFiles || 0;
-  const dirCount = projectStructure.totalDirectories || 0;
+  const dirCount = projectStructure.directories?.length || 0;
 
   if (fileCount > 1000 || dirCount > 100) {
     return 'enterprise';

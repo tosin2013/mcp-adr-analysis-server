@@ -1,12 +1,14 @@
 /**
  * MCP Tool for research question generation
  * Implements prompt-driven research question generation and task tracking
+ * Enhanced with Generated Knowledge Prompting (GKP) for research methodology expertise
  */
 
 import { McpAdrError } from '../types/index.js';
 
 /**
  * Generate research questions and create research tracking system
+ * Enhanced with Generated Knowledge Prompting for research methodology expertise
  */
 export async function generateResearchQuestions(args: {
   analysisType?: 'correlation' | 'relevance' | 'questions' | 'tracking' | 'comprehensive';
@@ -54,6 +56,8 @@ export async function generateResearchQuestions(args: {
   }>;
   projectPath?: string;
   adrDirectory?: string;
+  knowledgeEnhancement?: boolean; // Enable GKP for research methodology knowledge
+  enhancedMode?: boolean; // Enable advanced prompting features
 }): Promise<any> {
   const {
     analysisType = 'comprehensive',
@@ -65,6 +69,8 @@ export async function generateResearchQuestions(args: {
     currentProgress,
     projectPath = process.cwd(),
     adrDirectory = 'docs/adrs',
+    knowledgeEnhancement = true, // Default to GKP enabled
+    enhancedMode = true, // Default to enhanced mode
   } = args;
 
   try {
@@ -84,19 +90,55 @@ export async function generateResearchQuestions(args: {
           );
         }
 
+        let enhancedPrompt = '';
+        let knowledgeContext = '';
+        
+        // Generate research methodology knowledge if enabled
+        if (enhancedMode && knowledgeEnhancement) {
+          try {
+            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
+            const knowledgeResult = await generateArchitecturalKnowledge({
+              projectPath,
+              technologies: [],
+              patterns: [],
+              projectType: 'research-methodology'
+            }, {
+              domains: ['data-architecture'],
+              depth: 'intermediate',
+              cacheEnabled: true
+            });
+
+            knowledgeContext = `\n## Research Methodology Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
+          } catch (error) {
+            console.error('[WARNING] GKP knowledge generation failed for research correlation analysis:', error);
+            knowledgeContext = '<!-- Research methodology knowledge generation unavailable -->\n';
+          }
+        }
+
         const result = await correlateProblemKnowledge(problems, knowledgeGraph);
+        enhancedPrompt = knowledgeContext + result.correlationPrompt;
 
         return {
           content: [
             {
               type: 'text',
-              text: `# Problem-Knowledge Correlation Analysis
+              text: `# Problem-Knowledge Correlation Analysis (GKP Enhanced)
+
+## Enhancement Status
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Applied' : '❌ Disabled'}
+- **Knowledge Domains**: Research methods, statistical analysis, knowledge mapping, scientific inquiry
+
+${knowledgeContext ? `## Research Methodology Context
+
+${knowledgeContext}
+` : ''}
 
 ${result.instructions}
 
-## AI Correlation Prompt
+## Enhanced AI Correlation Prompt
 
-${result.correlationPrompt}
+${enhancedPrompt}
 
 ## Next Steps
 

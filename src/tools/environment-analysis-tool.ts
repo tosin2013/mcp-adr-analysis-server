@@ -1,12 +1,14 @@
 /**
  * MCP Tool for environment context analysis
  * Implements prompt-driven environment analysis and compliance assessment
+ * Enhanced with Generated Knowledge Prompting (GKP) for DevOps and infrastructure expertise
  */
 
 import { McpAdrError } from '../types/index.js';
 
 /**
  * Analyze environment context and provide optimization recommendations
+ * Enhanced with Generated Knowledge Prompting for DevOps and infrastructure expertise
  */
 export async function analyzeEnvironment(args: {
   projectPath?: string;
@@ -15,6 +17,8 @@ export async function analyzeEnvironment(args: {
   currentEnvironment?: any;
   requirements?: any;
   industryStandards?: string[];
+  knowledgeEnhancement?: boolean; // Enable GKP for DevOps and infrastructure knowledge
+  enhancedMode?: boolean; // Enable advanced prompting features
 }): Promise<any> {
   const {
     projectPath = process.cwd(),
@@ -23,6 +27,8 @@ export async function analyzeEnvironment(args: {
     currentEnvironment,
     requirements,
     industryStandards,
+    knowledgeEnhancement = true, // Default to GKP enabled
+    enhancedMode = true, // Default to enhanced mode
   } = args;
 
   try {
@@ -35,19 +41,47 @@ export async function analyzeEnvironment(args: {
 
     switch (analysisType) {
       case 'specs': {
+        let enhancedPrompt = '';
+        let knowledgeContext = '';
+        
+        // Generate domain-specific knowledge for environment analysis if enabled
+        if (enhancedMode && knowledgeEnhancement) {
+          try {
+            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
+            const knowledgeResult = await generateArchitecturalKnowledge({
+              projectPath,
+              technologies: [],
+              patterns: [],
+              projectType: 'infrastructure-environment-analysis'
+            }, {
+              domains: ['cloud-infrastructure', 'devops-cicd'],
+              depth: 'intermediate',
+              cacheEnabled: true
+            });
+
+            knowledgeContext = `\n## Infrastructure & DevOps Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
+          } catch (error) {
+            console.error('[WARNING] GKP knowledge generation failed for environment analysis:', error);
+            knowledgeContext = '<!-- Infrastructure knowledge generation unavailable -->\n';
+          }
+        }
+        
         const result = await analyzeEnvironmentSpecs(projectPath);
+        enhancedPrompt = knowledgeContext + result.analysisPrompt;
 
         // Execute the environment analysis with AI if enabled, otherwise return prompt
         const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
         const executionResult = await executePromptWithFallback(
-          result.analysisPrompt,
+          enhancedPrompt,
           result.instructions,
           {
             temperature: 0.1,
             maxTokens: 5000,
             systemPrompt: `You are a DevOps and infrastructure expert specializing in environment analysis.
 Analyze the provided project to understand its infrastructure requirements, deployment patterns, and environment configuration.
-Focus on providing actionable insights for environment optimization, security, and scalability.
+Leverage the provided cloud infrastructure and DevOps knowledge to create comprehensive, industry-standard recommendations.
+Focus on providing actionable insights for environment optimization, security, scalability, and modern DevOps practices.
+Consider cloud-native patterns, containerization best practices, and deployment automation.
 Provide specific recommendations with implementation guidance.`,
             responseFormat: 'text'
           }
@@ -57,12 +91,22 @@ Provide specific recommendations with implementation guidance.`,
           // AI execution successful - return actual environment analysis results
           return formatMCPResponse({
             ...executionResult,
-            content: `# Environment Specification Analysis Results
+            content: `# Environment Specification Analysis Results (GKP Enhanced)
+
+## Enhancement Features
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Knowledge Domains**: Cloud infrastructure, DevOps practices, containerization, deployment patterns
 
 ## Analysis Information
 - **Project Path**: ${projectPath}
 - **ADR Directory**: ${adrDirectory}
 - **Analysis Type**: Environment Specifications
+
+${knowledgeContext ? `## Applied Infrastructure Knowledge
+
+${knowledgeContext}
+` : ''}
 
 ## AI Environment Analysis Results
 
@@ -101,13 +145,22 @@ For deeper insights, consider running:
             content: [
               {
                 type: 'text',
-                text: `# Environment Specification Analysis
+                text: `# Environment Specification Analysis (GKP Enhanced)
+
+## Enhancement Status
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Applied' : '❌ Disabled'}
+
+${knowledgeContext ? `## Infrastructure Knowledge Context
+
+${knowledgeContext}
+` : ''}
 
 ${result.instructions}
 
-## AI Analysis Prompt
+## Enhanced AI Analysis Prompt
 
-${result.analysisPrompt}
+${enhancedPrompt}
 
 ## Next Steps
 
@@ -123,19 +176,55 @@ ${result.analysisPrompt}
       }
 
       case 'containerization': {
+        let enhancedPrompt = '';
+        let knowledgeContext = '';
+        
+        // Generate containerization-specific knowledge if enabled
+        if (enhancedMode && knowledgeEnhancement) {
+          try {
+            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
+            const knowledgeResult = await generateArchitecturalKnowledge({
+              projectPath,
+              technologies: [],
+              patterns: [],
+              projectType: 'containerization-analysis'
+            }, {
+              domains: ['cloud-infrastructure', 'devops-cicd'],
+              depth: 'intermediate',
+              cacheEnabled: true
+            });
+
+            knowledgeContext = `\n## Containerization Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
+          } catch (error) {
+            console.error('[WARNING] GKP knowledge generation failed for containerization analysis:', error);
+            knowledgeContext = '<!-- Containerization knowledge generation unavailable -->\n';
+          }
+        }
+        
         const result = await detectContainerization(projectPath);
+        enhancedPrompt = knowledgeContext + result.detectionPrompt;
 
         return {
           content: [
             {
               type: 'text',
-              text: `# Containerization Technology Detection
+              text: `# Containerization Technology Detection (GKP Enhanced)
+
+## Enhancement Status
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Applied' : '❌ Disabled'}
+- **Knowledge Domains**: Containerization, Kubernetes, Docker best practices, container security
+
+${knowledgeContext ? `## Containerization Knowledge Context
+
+${knowledgeContext}
+` : ''}
 
 ${result.instructions}
 
-## AI Detection Prompt
+## Enhanced AI Detection Prompt
 
-${result.detectionPrompt}
+${enhancedPrompt}
 
 ## Next Steps
 
@@ -172,19 +261,55 @@ Use the detection results to:
       }
 
       case 'requirements': {
-        const result = await determineEnvironmentRequirements(adrDirectory);
+        let enhancedPrompt = '';
+        let knowledgeContext = '';
+        
+        // Generate requirements analysis knowledge if enabled
+        if (enhancedMode && knowledgeEnhancement) {
+          try {
+            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
+            const knowledgeResult = await generateArchitecturalKnowledge({
+              projectPath,
+              technologies: [],
+              patterns: [],
+              projectType: 'requirements-analysis'
+            }, {
+              domains: ['cloud-infrastructure', 'performance-optimization'],
+              depth: 'intermediate',
+              cacheEnabled: true
+            });
+
+            knowledgeContext = `\n## Requirements Engineering Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
+          } catch (error) {
+            console.error('[WARNING] GKP knowledge generation failed for requirements analysis:', error);
+            knowledgeContext = '<!-- Requirements knowledge generation unavailable -->\n';
+          }
+        }
+        
+        const result = await determineEnvironmentRequirements(adrDirectory, projectPath);
+        enhancedPrompt = knowledgeContext + result.requirementsPrompt;
 
         return {
           content: [
             {
               type: 'text',
-              text: `# Environment Requirements from ADRs
+              text: `# Environment Requirements from ADRs (GKP Enhanced)
+
+## Enhancement Status
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Applied' : '❌ Disabled'}
+- **Knowledge Domains**: Requirements engineering, infrastructure planning, performance requirements, security requirements
+
+${knowledgeContext ? `## Requirements Knowledge Context
+
+${knowledgeContext}
+` : ''}
 
 ${result.instructions}
 
-## AI Requirements Prompt
+## Enhanced AI Requirements Prompt
 
-${result.requirementsPrompt}
+${enhancedPrompt}
 
 ## Next Steps
 
@@ -227,23 +352,59 @@ Use the extracted requirements to:
           );
         }
 
+        let enhancedPrompt = '';
+        let knowledgeContext = '';
+        
+        // Generate compliance-specific knowledge if enabled
+        if (enhancedMode && knowledgeEnhancement) {
+          try {
+            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
+            const knowledgeResult = await generateArchitecturalKnowledge({
+              projectPath,
+              technologies: [],
+              patterns: [],
+              projectType: 'compliance-assessment'
+            }, {
+              domains: ['security-patterns', 'cloud-infrastructure'],
+              depth: 'intermediate',
+              cacheEnabled: true
+            });
+
+            knowledgeContext = `\n## Compliance & Security Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
+          } catch (error) {
+            console.error('[WARNING] GKP knowledge generation failed for compliance assessment:', error);
+            knowledgeContext = '<!-- Compliance knowledge generation unavailable -->\n';
+          }
+        }
+
         const result = await assessEnvironmentCompliance(
           currentEnvironment,
           requirements,
           industryStandards
         );
+        enhancedPrompt = knowledgeContext + result.compliancePrompt;
 
         return {
           content: [
             {
               type: 'text',
-              text: `# Environment Compliance Assessment
+              text: `# Environment Compliance Assessment (GKP Enhanced)
+
+## Enhancement Status
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Applied' : '❌ Disabled'}
+- **Knowledge Domains**: Compliance frameworks, security standards, regulatory requirements, audit practices
+
+${knowledgeContext ? `## Compliance Knowledge Context
+
+${knowledgeContext}
+` : ''}
 
 ${result.instructions}
 
-## AI Compliance Prompt
+## Enhanced AI Compliance Prompt
 
-${result.compliancePrompt}
+${enhancedPrompt}
 
 ## Next Steps
 
@@ -280,15 +441,50 @@ Use the assessment results to:
       }
 
       case 'comprehensive': {
+        let comprehensiveKnowledgeContext = '';
+        
+        // Generate comprehensive environment knowledge if enabled
+        if (enhancedMode && knowledgeEnhancement) {
+          try {
+            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
+            const knowledgeResult = await generateArchitecturalKnowledge({
+              projectPath,
+              technologies: [],
+              patterns: [],
+              projectType: 'comprehensive-environment-analysis'
+            }, {
+              domains: ['cloud-infrastructure', 'devops-cicd', 'security-patterns'],
+              depth: 'advanced',
+              cacheEnabled: true
+            });
+
+            comprehensiveKnowledgeContext = `\n## Comprehensive Environment Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
+          } catch (error) {
+            console.error('[WARNING] GKP knowledge generation failed for comprehensive environment analysis:', error);
+            comprehensiveKnowledgeContext = '<!-- Comprehensive environment knowledge generation unavailable -->\n';
+          }
+        }
+        
         const specsResult = await analyzeEnvironmentSpecs(projectPath);
         const containerResult = await detectContainerization(projectPath);
-        const requirementsResult = await determineEnvironmentRequirements(adrDirectory);
+        const requirementsResult = await determineEnvironmentRequirements(adrDirectory, projectPath);
 
         return {
           content: [
             {
               type: 'text',
-              text: `# Comprehensive Environment Analysis
+              text: `# Comprehensive Environment Analysis (GKP Enhanced)
+
+## Enhancement Features
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Knowledge Domains**: Cloud infrastructure, DevOps practices, containerization, deployment patterns, compliance frameworks, security standards
+- **Knowledge Depth**: Advanced (comprehensive coverage)
+
+${comprehensiveKnowledgeContext ? `## Applied Comprehensive Knowledge
+
+${comprehensiveKnowledgeContext}
+` : ''}
 
 This comprehensive analysis will examine all aspects of your environment context and provide optimization recommendations.
 
@@ -296,25 +492,25 @@ This comprehensive analysis will examine all aspects of your environment context
 
 ${specsResult.instructions}
 
-### Environment Analysis Prompt
+### Enhanced Environment Analysis Prompt
 
-${specsResult.analysisPrompt}
+${comprehensiveKnowledgeContext + specsResult.analysisPrompt}
 
 ## Containerization Detection
 
 ${containerResult.instructions}
 
-### Containerization Detection Prompt
+### Enhanced Containerization Detection Prompt
 
-${containerResult.detectionPrompt}
+${comprehensiveKnowledgeContext + containerResult.detectionPrompt}
 
 ## Environment Requirements from ADRs
 
 ${requirementsResult.instructions}
 
-### Requirements Analysis Prompt
+### Enhanced Requirements Analysis Prompt
 
-${requirementsResult.requirementsPrompt}
+${comprehensiveKnowledgeContext + requirementsResult.requirementsPrompt}
 
 ## Comprehensive Workflow
 

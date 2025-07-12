@@ -66,44 +66,59 @@ export interface ValidationResult {
  */
 export async function extractRulesFromAdrs(
   adrDirectory: string = 'docs/adrs',
-  existingRules?: ArchitecturalRule[]
-): Promise<{ extractionPrompt: string; instructions: string }> {
+  existingRules?: ArchitecturalRule[],
+  projectPath: string = process.cwd()
+): Promise<{ extractionPrompt: string; instructions: string; actualData?: any }> {
   try {
-    const { findFiles } = await import('./file-system.js');
+    // Use actual ADR discovery instead of prompts
+    const { discoverAdrsInDirectory } = await import('./adr-discovery.js');
 
-    // Generate ADR file discovery prompt for AI delegation
-    const adrFileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
-      includeContent: true,
-    });
+    // Actually read ADR files
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
 
     const extractionPrompt = `
 # Architectural Rule Extraction
 
-Please extract actionable architectural rules from ADRs for code validation and compliance checking.
+Based on actual ADR file analysis, here are the discovered ADRs with their full content:
 
-## ADR Discovery Instructions
+## Discovered ADRs (${discoveryResult.totalAdrs} total)
 
-${adrFileDiscoveryPrompt.prompt}
+${discoveryResult.adrs.length > 0 ? 
+  discoveryResult.adrs.map((adr, index) => `
+### ${index + 1}. ${adr.title}
+- **File**: ${adr.filename}
+- **Status**: ${adr.status}
+- **Path**: ${adr.path}
+${adr.metadata?.number ? `- **Number**: ${adr.metadata.number}` : ''}
 
-## Implementation Steps
+#### ADR Content:
+\`\`\`markdown
+${adr.content || 'Content not available'}
+\`\`\`
 
-${adrFileDiscoveryPrompt.instructions}
+---
+`).join('\n') : 'No ADRs found in the specified directory.'}
 
 ## Existing Rules Context
 
-${existingRules ? `
+${existingRules && existingRules.length > 0 ? `
 ### Current Rules (${existingRules.length})
 ${existingRules.map((rule, index) => `
 #### ${index + 1}. ${rule.name}
 - **ID**: ${rule.id}
 - **Description**: ${rule.description}
+- **Category**: ${rule.category}
+- **Severity**: ${rule.severity}
+- **Type**: ${rule.type}
+- **Scope**: ${rule.scope}
 `).join('')}
 ` : 'No existing rules provided.'}
 
 ## Rule Extraction Requirements
 
-For each ADR discovered:
-1. Extract actionable architectural rules and constraints
+For each ADR above, analyze the **actual content** to extract:
+
+1. **Actionable architectural rules and constraints**
 2. Identify technology-specific requirements and standards
 3. Define coding standards and best practices
 4. Establish process and workflow requirements
@@ -123,40 +138,55 @@ For each ADR discovered:
     const instructions = `
 # Rule Extraction Instructions
 
-This analysis will extract actionable architectural rules from ADRs that can be used for code validation and compliance checking.
+This analysis provides **actual ADR content** for comprehensive architectural rule extraction.
 
 ## Extraction Scope
 - **ADR Directory**: ${adrDirectory}
-- **ADR Directory**: ${adrDirectory}
+- **ADRs Found**: ${discoveryResult.totalAdrs} files
 - **Existing Rules**: ${existingRules?.length || 0} rules
+- **Content Available**: ${discoveryResult.adrs.filter(adr => adr.content).length} ADRs with content
 - **Rule Categories**: Architectural, Technology, Coding, Process, Security, Performance
 
+## Discovered ADR Summary
+${discoveryResult.adrs.map(adr => `- **${adr.title}** (${adr.status})`).join('\n')}
+
 ## Next Steps
-1. **Submit the extraction prompt** to an AI agent for comprehensive rule analysis
-2. **Parse the JSON response** to get extracted rules and metadata
-3. **Review the extracted rules** for accuracy and completeness
-4. **Save rules** in machine-readable format (JSON/YAML)
-5. **Integrate with validation tools** for automated compliance checking
+1. **Analyze the actual ADR content** provided above to extract architectural rules
+2. **Generate structured rules** with clear validation criteria
+3. **Categorize rules** by type and priority
+4. **Define validation strategies** for each rule
+5. **Create implementation guidance** for rule enforcement
 
-## Expected AI Response Format
-The AI will return a JSON object with:
-- \`extractedRules\`: Array of actionable architectural rules
-- \`ruleCategories\`: Rule organization and prioritization
-- \`ruleDependencies\`: Relationships between rules
-- \`validationStrategies\`: Approaches for rule validation
-- \`implementationGuidance\`: Prioritized implementation plan
+## Expected Output Format
+Generate a JSON response with extracted rules including:
+- Rule ID, name, description, and category
+- Validation criteria and implementation methods
+- Severity levels and enforcement priorities
+- Dependencies and relationships between rules
 
-## Usage Example
-\`\`\`typescript
-const result = await extractRulesFromAdrs(adrDirectory, existingRules);
-// Submit result.extractionPrompt to AI agent
-// Parse AI response as rule extraction results
-\`\`\`
+## Rule Quality Standards
+Each extracted rule should be:
+- **Specific**: Clearly defined and unambiguous
+- **Measurable**: Can be validated automatically or through review
+- **Actionable**: Provides clear guidance for implementation
+- **Relevant**: Derived from actual ADR decisions
+- **Time-bound**: Includes context about when rule applies
 `;
 
     return {
       extractionPrompt,
       instructions,
+      actualData: {
+        discoveryResult,
+        adrCount: discoveryResult.totalAdrs,
+        adrWithContent: discoveryResult.adrs.filter(adr => adr.content).length,
+        existingRulesCount: existingRules?.length || 0,
+        summary: {
+          totalAdrs: discoveryResult.totalAdrs,
+          byStatus: discoveryResult.summary.byStatus,
+          byCategory: discoveryResult.summary.byCategory
+        }
+      }
     };
   } catch (error) {
     throw new McpAdrError(

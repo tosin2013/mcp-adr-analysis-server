@@ -5,6 +5,33 @@
 
 import { McpAdrError } from '../types/index.js';
 
+/**
+ * Helper function to get file extension for syntax highlighting
+ */
+function getFileExtension(filename: string): string {
+  const ext = filename.split('.').pop()?.toLowerCase();
+  const mapping: Record<string, string> = {
+    'json': 'json',
+    'yml': 'yaml',
+    'yaml': 'yaml',
+    'js': 'javascript',
+    'ts': 'typescript',
+    'py': 'python',
+    'md': 'markdown',
+    'dockerfile': 'dockerfile',
+    'toml': 'toml',
+    'xml': 'xml',
+    'sh': 'bash',
+    'bash': 'bash',
+    'zsh': 'bash',
+    'fish': 'fish',
+    'ps1': 'powershell',
+    'bat': 'batch',
+    'cmd': 'batch'
+  };
+  return mapping[ext || ''] || 'bash'; // Default to bash for script files
+}
+
 export interface EnvironmentFile {
   filename: string;
   content: string;
@@ -57,53 +84,106 @@ export interface ComplianceAssessment {
  */
 export async function analyzeEnvironmentSpecs(
   projectPath: string = process.cwd()
-): Promise<{ analysisPrompt: string; instructions: string }> {
+): Promise<{ analysisPrompt: string; instructions: string; actualData?: any }> {
   try {
-    const { analyzeProjectStructure } = await import('./file-system.js');
+    // Use actual file operations to scan project structure
+    const { scanProjectStructure, findActualEnvironmentFiles } = await import('./actual-file-operations.js');
 
-    // Find environment-related files
-    const environmentFiles = await findEnvironmentFiles(projectPath);
-
-    // Generate project analysis prompt for AI delegation
-    const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
+    // Actually read environment files
+    const environmentFiles = await findActualEnvironmentFiles(projectPath);
+    const projectStructure = await scanProjectStructure(projectPath, { readContent: true });
 
     const analysisPrompt = `
 # Environment Specification Analysis
 
-Please perform comprehensive environment specification analysis.
+Based on actual file system analysis, here are the findings:
 
-## Project Analysis Instructions
+## Project Structure
+- **Root Path**: ${projectStructure.rootPath}
+- **Total Files Analyzed**: ${projectStructure.totalFiles}
+- **Directories**: ${projectStructure.directories.join(', ')}
 
-${projectAnalysisPrompt.prompt}
+## Package Management
+${projectStructure.packageFiles.length > 0 ? 
+  projectStructure.packageFiles.map(f => `
+### ${f.filename}
+\`\`\`${getFileExtension(f.filename)}
+${f.content.slice(0, 1000)}${f.content.length > 1000 ? '\n... (truncated)' : ''}
+\`\`\`
+`).join('\n') : '- No package files found'}
 
-## Implementation Steps
+## Docker Configuration
+${projectStructure.dockerFiles.length > 0 ? 
+  projectStructure.dockerFiles.map(f => `
+### ${f.filename}
+\`\`\`${getFileExtension(f.filename)}
+${f.content.slice(0, 1000)}${f.content.length > 1000 ? '\n... (truncated)' : ''}
+\`\`\`
+`).join('\n') : '- No Docker files found'}
 
-${projectAnalysisPrompt.instructions}
+## Environment Configuration
+${environmentFiles.filter(f => f.filename.includes('.env')).length > 0 ? 
+  environmentFiles.filter(f => f.filename.includes('.env')).map(f => `
+### ${f.filename}
+\`\`\`bash
+${f.content.slice(0, 500)}${f.content.length > 500 ? '\n... (truncated)' : ''}
+\`\`\`
+`).join('\n') : '- No environment files found'}
 
-## Environment Files Analysis
+## Kubernetes Manifests
+${projectStructure.kubernetesFiles.length > 0 ? 
+  projectStructure.kubernetesFiles.map(f => `
+### ${f.filename}
+\`\`\`yaml
+${f.content.slice(0, 800)}${f.content.length > 800 ? '\n... (truncated)' : ''}
+\`\`\`
+`).join('\n') : '- No Kubernetes manifests found'}
 
-Please analyze the following environment specification files:
-${environmentFiles.map(f => `- **${f.filename}** (${f.type}): ${f.path}`).join('\n')}
+## CI/CD Configuration
+${projectStructure.ciFiles.length > 0 ? 
+  projectStructure.ciFiles.map(f => `
+### ${f.filename}
+\`\`\`yaml
+${f.content.slice(0, 600)}${f.content.length > 600 ? '\n... (truncated)' : ''}
+\`\`\`
+`).join('\n') : '- No CI/CD files found'}
+
+## Shell Scripts & Automation
+${projectStructure.scriptFiles.length > 0 ? 
+  projectStructure.scriptFiles.map(f => `
+### ${f.filename}
+\`\`\`${getFileExtension(f.filename)}
+${f.content.slice(0, 800)}${f.content.length > 800 ? '\n... (truncated)' : ''}
+\`\`\`
+`).join('\n') : '- No shell scripts found'}
 
 ## Analysis Requirements
 
-1. Examine each environment file for configuration patterns
-2. Identify infrastructure requirements and dependencies
-3. Assess containerization and orchestration setups
-4. Evaluate cloud service integrations
-5. Analyze security configurations and compliance
-6. Determine scalability and performance characteristics
+Please analyze the above **actual file contents** to:
+
+1. **Infrastructure Assessment**: Determine deployment patterns and infrastructure requirements
+2. **Containerization Analysis**: Evaluate Docker and container orchestration setup
+3. **Environment Configuration**: Analyze environment variables and configuration management
+4. **Security Review**: Identify security configurations and potential vulnerabilities
+5. **Scalability Assessment**: Evaluate scalability and performance characteristics
+6. **Compliance Check**: Assess adherence to best practices and standards
+7. **Optimization Recommendations**: Suggest improvements for deployment and operations
 `;
 
     const instructions = `
 # Environment Specification Analysis Instructions
 
-This analysis will examine environment specifications and infrastructure configurations to understand deployment requirements.
+This analysis provides **actual file contents** from the project for comprehensive environment assessment.
 
 ## Analysis Scope
 - **Project Path**: ${projectPath}
 - **Environment Files**: ${environmentFiles.length} files found
-- **File Types**: ${Array.from(new Set(environmentFiles.map(f => f.type))).join(', ')}
+- **Package Files**: ${projectStructure.packageFiles.length} found
+- **Docker Files**: ${projectStructure.dockerFiles.length} found
+- **Kubernetes Files**: ${projectStructure.kubernetesFiles.length} found
+- **CI/CD Files**: ${projectStructure.ciFiles.length} found
+- **Script Files**: ${projectStructure.scriptFiles.length} found
+- **Total Files Analyzed**: ${projectStructure.totalFiles}
 
 ## Discovered Files
 ${environmentFiles.map(f => `- **${f.filename}** (${f.type}): ${f.path}`).join('\n')}
@@ -136,6 +216,19 @@ const result = await analyzeEnvironmentSpecs(projectPath);
     return {
       analysisPrompt,
       instructions,
+      actualData: {
+        projectStructure,
+        environmentFiles,
+        summary: {
+          totalFiles: projectStructure.totalFiles,
+          packageFiles: projectStructure.packageFiles.length,
+          dockerFiles: projectStructure.dockerFiles.length,
+          kubernetesFiles: projectStructure.kubernetesFiles.length,
+          ciFiles: projectStructure.ciFiles.length,
+          scriptFiles: projectStructure.scriptFiles.length,
+          environmentFiles: environmentFiles.length
+        }
+      }
     };
   } catch (error) {
     throw new McpAdrError(
@@ -152,40 +245,44 @@ export async function detectContainerization(
   projectPath: string = process.cwd()
 ): Promise<{ detectionPrompt: string; instructions: string }> {
   try {
-    const { findFiles } = await import('./file-system.js');
+    const { scanProjectStructure } = await import('./actual-file-operations.js');
 
-    // Generate container file discovery prompt for AI delegation
-    const containerFileDiscoveryPrompt = await findFiles(
-      process.cwd(),
-      [
-        '**/Dockerfile*',
-        '**/docker-compose*.yml',
-        '**/docker-compose*.yaml',
-        '**/*.dockerfile',
-        '**/Containerfile*',
-        '**/k8s/**/*.yml',
-        '**/k8s/**/*.yaml',
-        '**/kubernetes/**/*.yml',
-        '**/kubernetes/**/*.yaml',
-        '**/helm/**/*.yml',
-        '**/helm/**/*.yaml',
-        '**/.dockerignore',
-      ],
-      { includeContent: true }
-    );
+    // Use actual project structure scanning
+    const projectStructure = await scanProjectStructure(projectPath, { 
+      readContent: true,
+      includeHidden: false
+    });
+
+    // Get container-related files
+    const containerFiles = [
+      ...projectStructure.dockerFiles,
+      ...projectStructure.kubernetesFiles
+    ];
+
+    let containerAnalysis = '';
+    if (containerFiles.length > 0) {
+      containerAnalysis = `Found ${containerFiles.length} container-related files:\n\n`;
+      containerFiles.forEach(file => {
+        containerAnalysis += `### ${file.filename}\n`;
+        containerAnalysis += `- **Path**: ${file.relativePath}\n`;
+        containerAnalysis += `- **Type**: ${file.type}\n`;
+        containerAnalysis += `- **Size**: ${file.size} bytes\n`;
+        if (file.content && file.content !== '[Binary or unreadable file]') {
+          containerAnalysis += `- **Content**:\n\`\`\`\n${file.content.substring(0, 1000)}${file.content.length > 1000 ? '...' : ''}\n\`\`\`\n\n`;
+        } else {
+          containerAnalysis += `- **Content**: Binary or unreadable\n\n`;
+        }
+      });
+    } else {
+      containerAnalysis = 'No containerization files found in the project.\n\n';
+    }
 
     const detectionPrompt = `
 # Containerization Detection and Analysis
 
-Please discover and analyze containerization technologies in the project.
+## Container File Analysis Results
 
-## File Discovery Instructions
-
-${containerFileDiscoveryPrompt.prompt}
-
-## Implementation Steps
-
-${containerFileDiscoveryPrompt.instructions}
+${containerAnalysis}
 
 ## Analysis Requirements
 
@@ -250,28 +347,42 @@ const result = await detectContainerization(projectPath);
  * Determine environment requirements from ADRs
  */
 export async function determineEnvironmentRequirements(
-  adrDirectory: string = 'docs/adrs'
+  adrDirectory: string = 'docs/adrs',
+  projectPath: string = process.cwd()
 ): Promise<{ requirementsPrompt: string; instructions: string }> {
   try {
-    const { findFiles } = await import('./file-system.js');
+    const { discoverAdrsInDirectory } = await import('./adr-discovery.js');
+    const path = await import('path');
 
-    // Generate ADR file discovery prompt for AI delegation
-    const adrFileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
-      includeContent: true,
-    });
+    // Use absolute path for ADR directory
+    const absoluteAdrPath = path.isAbsolute(adrDirectory) 
+      ? adrDirectory 
+      : path.resolve(projectPath, adrDirectory);
+
+    // Use actual ADR discovery
+    const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, projectPath);
+
+    let adrAnalysis = '';
+    if (discoveryResult.adrs.length > 0) {
+      adrAnalysis = `Found ${discoveryResult.adrs.length} ADRs to analyze for environment requirements:\n\n`;
+      discoveryResult.adrs.forEach(adr => {
+        adrAnalysis += `### ${adr.title}\n`;
+        adrAnalysis += `- **File**: ${adr.filename}\n`;
+        adrAnalysis += `- **Status**: ${adr.status}\n`;
+        adrAnalysis += `- **Context**: ${adr.context}\n`;
+        adrAnalysis += `- **Decision**: ${adr.decision}\n`;
+        adrAnalysis += `- **Consequences**: ${adr.consequences}\n\n`;
+      });
+    } else {
+      adrAnalysis = `No ADRs found in ${absoluteAdrPath}. Cannot determine environment requirements from ADRs.\n\n`;
+    }
 
     const requirementsPrompt = `
 # Environment Requirements Analysis
 
-Please analyze ADR files to determine environment requirements.
+## ADR Analysis Results
 
-## File Discovery Instructions
-
-${adrFileDiscoveryPrompt.prompt}
-
-## Implementation Steps
-
-${adrFileDiscoveryPrompt.instructions}
+${adrAnalysis}
 
 ## Requirements Analysis
 
@@ -411,29 +522,5 @@ const result = await assessEnvironmentCompliance(environment, requirements, stan
  * Find environment-related files in the project
  * Returns mock data for prompt-driven architecture
  */
-async function findEnvironmentFiles(projectPath: string): Promise<EnvironmentFile[]> {
-  // Return mock environment files for prompt-driven architecture
-  // The actual file discovery will be handled by AI agents through prompts
-  return [
-    {
-      filename: 'Dockerfile',
-      content: '',
-      path: `${projectPath}/Dockerfile`,
-      type: 'dockerfile' as const,
-    },
-    {
-      filename: 'docker-compose.yml',
-      content: '',
-      path: `${projectPath}/docker-compose.yml`,
-      type: 'compose' as const,
-    },
-    {
-      filename: '.env',
-      content: '',
-      path: `${projectPath}/.env`,
-      type: 'config' as const,
-    },
-  ];
-}
 
 // Removed unused function determineFileType

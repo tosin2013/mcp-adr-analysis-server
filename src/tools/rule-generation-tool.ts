@@ -1,12 +1,14 @@
 /**
  * MCP Tools for rule generation and validation
  * Implements prompt-driven architectural rule management
+ * Enhanced with Generated Knowledge Prompting (GKP) for architectural governance expertise
  */
 
 import { McpAdrError } from '../types/index.js';
 
 /**
  * Generate architectural rules from ADRs and code patterns
+ * Enhanced with Generated Knowledge Prompting for architectural governance expertise
  */
 export async function generateRules(args: {
   source?: 'adrs' | 'patterns' | 'both';
@@ -18,6 +20,8 @@ export async function generateRules(args: {
     description: string;
   }>;
   outputFormat?: 'json' | 'yaml' | 'both';
+  knowledgeEnhancement?: boolean; // Enable GKP for architectural governance knowledge
+  enhancedMode?: boolean; // Enable advanced prompting features
 }): Promise<any> {
   const {
     source = 'both',
@@ -25,6 +29,8 @@ export async function generateRules(args: {
     projectPath = process.cwd(),
     existingRules,
     outputFormat = 'json',
+    knowledgeEnhancement = true, // Default to GKP enabled
+    enhancedMode = true, // Default to enhanced mode
   } = args;
 
   try {
@@ -34,20 +40,48 @@ export async function generateRules(args: {
 
     switch (source) {
       case 'adrs': {
-        const result = await extractRulesFromAdrs(adrDirectory, existingRules as any);
+        let enhancedPrompt = '';
+        let knowledgeContext = '';
+        
+        // Generate domain-specific knowledge for rule extraction if enabled
+        if (enhancedMode && knowledgeEnhancement) {
+          try {
+            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
+            const knowledgeResult = await generateArchitecturalKnowledge({
+              projectPath,
+              technologies: [],
+              patterns: [],
+              projectType: 'architectural-governance'
+            }, {
+              domains: ['api-design', 'security-patterns'],
+              depth: 'intermediate',
+              cacheEnabled: true
+            });
+
+            knowledgeContext = `\n## Architectural Governance Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
+          } catch (error) {
+            console.error('[WARNING] GKP knowledge generation failed for rule extraction:', error);
+            knowledgeContext = '<!-- Governance knowledge generation unavailable -->\n';
+          }
+        }
+        
+        const result = await extractRulesFromAdrs(adrDirectory, existingRules as any, projectPath);
+        enhancedPrompt = knowledgeContext + result.extractionPrompt;
 
         // Execute the rule extraction with AI if enabled, otherwise return prompt
         const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
         const executionResult = await executePromptWithFallback(
-          result.extractionPrompt,
+          enhancedPrompt,
           result.instructions,
           {
             temperature: 0.1,
             maxTokens: 6000,
-            systemPrompt: `You are an expert software architect specializing in architectural rule extraction.
+            systemPrompt: `You are an expert software architect specializing in architectural rule extraction and governance.
 Analyze the provided ADRs to extract actionable architectural rules and governance policies.
+Leverage the provided architectural governance knowledge to create comprehensive, industry-standard rules.
 Focus on creating specific, measurable rules that can be validated automatically.
-Provide clear reasoning for each rule and practical implementation guidance.`,
+Provide clear reasoning for each rule and practical implementation guidance.
+Consider compliance standards, governance frameworks, and architectural best practices.`,
             responseFormat: 'text'
           }
         );
@@ -56,12 +90,22 @@ Provide clear reasoning for each rule and practical implementation guidance.`,
           // AI execution successful - return actual rule extraction results
           return formatMCPResponse({
             ...executionResult,
-            content: `# ADR-Based Rule Generation Results
+            content: `# ADR-Based Rule Generation Results (GKP Enhanced)
+
+## Enhancement Features
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Knowledge Domains**: Governance frameworks, software architecture, compliance standards
 
 ## Analysis Information
 - **ADR Directory**: ${adrDirectory}
 - **Existing Rules**: ${existingRules?.length || 0} rules
 - **Output Format**: ${outputFormat.toUpperCase()}
+
+${knowledgeContext ? `## Applied Governance Knowledge
+
+${knowledgeContext}
+` : ''}
 
 ## AI Rule Extraction Results
 
@@ -109,13 +153,22 @@ To create a machine-readable rule set:
             content: [
               {
                 type: 'text',
-                text: `# Rule Generation: ADR-Based Rules
+                text: `# Rule Generation: ADR-Based Rules (GKP Enhanced)
+
+## Enhancement Status
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Applied' : '❌ Disabled'}
+
+${knowledgeContext ? `## Governance Knowledge Context
+
+${knowledgeContext}
+` : ''}
 
 ${result.instructions}
 
-## AI Analysis Prompt
+## Enhanced AI Analysis Prompt
 
-${result.extractionPrompt}
+${enhancedPrompt}
 
 ## Next Steps
 
@@ -132,20 +185,48 @@ ${result.extractionPrompt}
       }
 
       case 'patterns': {
+        let enhancedPrompt = '';
+        let knowledgeContext = '';
+        
+        // Generate domain-specific knowledge for pattern analysis if enabled
+        if (enhancedMode && knowledgeEnhancement) {
+          try {
+            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
+            const knowledgeResult = await generateArchitecturalKnowledge({
+              projectPath,
+              technologies: [],
+              patterns: [],
+              projectType: 'code-pattern-analysis'
+            }, {
+              domains: ['api-design', 'performance-optimization'],
+              depth: 'intermediate',
+              cacheEnabled: true
+            });
+
+            knowledgeContext = `\n## Code Pattern Analysis Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
+          } catch (error) {
+            console.error('[WARNING] GKP knowledge generation failed for pattern analysis:', error);
+            knowledgeContext = '<!-- Pattern analysis knowledge generation unavailable -->\n';
+          }
+        }
+        
         const existingRuleNames = existingRules?.map(r => r.name);
         const result = await generateRulesFromPatterns(projectPath, existingRuleNames);
+        enhancedPrompt = knowledgeContext + result.generationPrompt;
 
         // Execute the pattern-based rule generation with AI if enabled, otherwise return prompt
         const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
         const executionResult = await executePromptWithFallback(
-          result.generationPrompt,
+          enhancedPrompt,
           result.instructions,
           {
             temperature: 0.1,
             maxTokens: 6000,
             systemPrompt: `You are an expert software architect specializing in code pattern analysis and rule generation.
 Analyze the provided codebase to identify consistent patterns and generate actionable architectural rules.
+Leverage the provided design pattern and code quality knowledge to create comprehensive, industry-standard rules.
 Focus on creating rules that enforce consistency, quality, and maintainability based on observed patterns.
+Consider established design patterns, code quality metrics, and architectural best practices.
 Provide confidence scores and practical implementation guidance for each rule.`,
             responseFormat: 'text'
           }
@@ -155,12 +236,22 @@ Provide confidence scores and practical implementation guidance for each rule.`,
           // AI execution successful - return actual pattern-based rule generation results
           return formatMCPResponse({
             ...executionResult,
-            content: `# Pattern-Based Rule Generation Results
+            content: `# Pattern-Based Rule Generation Results (GKP Enhanced)
+
+## Enhancement Features
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Knowledge Domains**: Design patterns, code quality, software architecture
 
 ## Analysis Information
 - **Project Path**: ${projectPath}
 - **Existing Rules**: ${existingRules?.length || 0} rules
 - **Output Format**: ${outputFormat.toUpperCase()}
+
+${knowledgeContext ? `## Applied Pattern Knowledge
+
+${knowledgeContext}
+` : ''}
 
 ## AI Pattern Analysis Results
 
@@ -229,12 +320,36 @@ ${result.generationPrompt}
       }
 
       case 'both': {
-        const adrResult = await extractRulesFromAdrs(adrDirectory, existingRules as any);
+        let comprehensiveKnowledgeContext = '';
+        
+        // Generate comprehensive domain knowledge if enabled
+        if (enhancedMode && knowledgeEnhancement) {
+          try {
+            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
+            const knowledgeResult = await generateArchitecturalKnowledge({
+              projectPath,
+              technologies: [],
+              patterns: [],
+              projectType: 'comprehensive-rule-generation'
+            }, {
+              domains: ['api-design', 'security-patterns', 'performance-optimization'],
+              depth: 'advanced',
+              cacheEnabled: true
+            });
+
+            comprehensiveKnowledgeContext = `\n## Comprehensive Architectural Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
+          } catch (error) {
+            console.error('[WARNING] GKP knowledge generation failed for comprehensive analysis:', error);
+            comprehensiveKnowledgeContext = '<!-- Comprehensive knowledge generation unavailable -->\n';
+          }
+        }
+        
+        const adrResult = await extractRulesFromAdrs(adrDirectory, existingRules as any, projectPath);
         const existingRuleNames = existingRules?.map(r => r.name);
         const patternResult = await generateRulesFromPatterns(projectPath, existingRuleNames);
 
-        // Create comprehensive prompt combining both ADR and pattern analysis
-        const comprehensivePrompt = `
+        // Create comprehensive prompt combining both ADR and pattern analysis with knowledge enhancement
+        const comprehensivePrompt = `${comprehensiveKnowledgeContext}
 # Comprehensive Architectural Rule Generation
 
 Generate a complete set of architectural rules by analyzing both ADRs and code patterns.
@@ -278,8 +393,10 @@ Provide a unified rule set with:
             maxTokens: 8000,
             systemPrompt: `You are an expert software architect specializing in comprehensive architectural rule generation.
 Analyze both ADRs and code patterns to create a unified, actionable rule set for the project.
+Leverage the provided comprehensive architectural knowledge including governance frameworks, design patterns, and compliance standards.
 Focus on creating rules that are specific, measurable, and can be validated automatically.
-Prioritize explicit architectural decisions (ADRs) over implicit patterns when conflicts arise.`,
+Prioritize explicit architectural decisions (ADRs) over implicit patterns when conflicts arise.
+Consider industry best practices, compliance requirements, and established architectural principles.`,
             responseFormat: 'text'
           }
         );
@@ -288,13 +405,24 @@ Prioritize explicit architectural decisions (ADRs) over implicit patterns when c
           // AI execution successful - return actual comprehensive rule generation results
           return formatMCPResponse({
             ...executionResult,
-            content: `# Comprehensive Rule Generation Results
+            content: `# Comprehensive Rule Generation Results (GKP Enhanced)
+
+## Enhancement Features
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Knowledge Domains**: Governance frameworks, software architecture, design patterns, compliance standards, code quality
+- **Knowledge Depth**: Advanced (comprehensive coverage)
 
 ## Analysis Information
 - **ADR Directory**: ${adrDirectory}
 - **Project Path**: ${projectPath}
 - **Existing Rules**: ${existingRules?.length || 0} rules
 - **Output Format**: ${outputFormat.toUpperCase()}
+
+${comprehensiveKnowledgeContext ? `## Applied Comprehensive Knowledge
+
+${comprehensiveKnowledgeContext}
+` : ''}
 
 ## AI Comprehensive Analysis Results
 

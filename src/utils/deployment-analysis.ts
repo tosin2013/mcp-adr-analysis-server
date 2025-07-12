@@ -43,41 +43,67 @@ export interface DeploymentProgress {
 export async function identifyDeploymentTasks(
   adrDirectory: string = 'docs/adrs',
   todoPath?: string
-): Promise<{ identificationPrompt: string; instructions: string }> {
+): Promise<{ identificationPrompt: string; instructions: string; actualData?: any }> {
   try {
-    const { findFiles } = await import('./file-system.js');
+    // Use actual ADR discovery instead of prompts
+    const { discoverAdrsInDirectory } = await import('./adr-discovery.js');
 
-    // Generate file discovery prompt for AI delegation
-    const adrFileDiscoveryPrompt = await findFiles(process.cwd(), [`${adrDirectory}/**/*.md`], {
-      includeContent: true,
-    });
+    // Actually read ADR files
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
+
+    // Read TODO file if provided
+    let todoContent = '';
+    if (todoPath) {
+      try {
+        const fs = await import('fs/promises');
+        const path = await import('path');
+        const fullTodoPath = path.resolve(process.cwd(), todoPath);
+        todoContent = await fs.readFile(fullTodoPath, 'utf-8');
+      } catch (error) {
+        console.warn(`Could not read TODO file at ${todoPath}: ${error}`);
+        todoContent = `[TODO file at ${todoPath} could not be read]`;
+      }
+    }
 
     // Create comprehensive deployment task identification prompt
     const deploymentAnalysisPrompt = `
 # Deployment Task Identification
 
-Please analyze ADR files and todo content to identify deployment-related tasks.
+Based on actual ADR file analysis and TODO content, identify deployment-related tasks:
 
-## File Discovery Instructions
+## Discovered ADRs (${discoveryResult.totalAdrs} total)
 
-${adrFileDiscoveryPrompt.prompt}
+${discoveryResult.adrs.length > 0 ? 
+  discoveryResult.adrs.map((adr, index) => `
+### ${index + 1}. ${adr.title}
+- **File**: ${adr.filename}
+- **Status**: ${adr.status}
+- **Path**: ${adr.path}
+${adr.metadata?.number ? `- **Number**: ${adr.metadata.number}` : ''}
 
-## Implementation Steps
+#### ADR Content:
+\`\`\`markdown
+${adr.content || 'Content not available'}
+\`\`\`
 
-${adrFileDiscoveryPrompt.instructions}
+---
+`).join('\n') : 'No ADRs found in the specified directory.'}
 
-## Additional Analysis Requirements
+## TODO Content Analysis
 
 ${todoPath ? `
-### Todo File Analysis
-Please also read and analyze the todo file at: ${todoPath}
-Extract any deployment-related tasks, infrastructure requirements, or operational concerns.
-` : ''}
+### TODO File: ${todoPath}
+\`\`\`
+${todoContent}
+\`\`\`
+
+Extract any deployment-related tasks, infrastructure requirements, or operational concerns from the actual TODO content above.
+` : '**No TODO file provided.** Only ADR content will be analyzed for deployment tasks.'}
 
 ## Task Identification Criteria
 
-For each ADR file discovered:
-1. Extract deployment-related decisions and requirements
+For each ADR with **actual content** and TODO content shown above:
+1. Extract deployment-related decisions and requirements from **actual ADR content**
 2. Identify infrastructure components mentioned
 3. Find CI/CD pipeline requirements
 4. Detect operational concerns and monitoring needs
@@ -86,23 +112,48 @@ For each ADR file discovered:
 ## Required Output Format
 
 Please provide deployment task analysis in JSON format with:
-- Task identification and categorization
+- Task identification and categorization based on actual content
 - Priority and complexity assessment
-- Dependencies between tasks
+- Dependencies between tasks derived from actual ADR content
 - Implementation timeline recommendations
-
-## Next Steps
-1. **Submit the identification prompt** to an AI agent for comprehensive task analysis
-2. **Parse the JSON response** to get identified deployment tasks
-3. **Review task dependencies** and deployment phases
-4. **Use tasks** for deployment progress tracking and management
 
 ## Expected AI Response Format
 The AI will return a JSON object with:
 - \`deploymentTaskAnalysis\`: Overall analysis metadata and confidence
-- \`identifiedTasks\`: Detailed deployment tasks with verification criteria
+- \`identifiedTasks\`: Detailed deployment tasks with verification criteria based on actual content
 - \`deploymentPhases\`: Organized deployment phases and sequencing
-- \`deploymentDependencies\`: Task dependencies and constraints
+- \`deploymentDependencies\`: Task dependencies and constraints from actual ADRs
+- \`riskAssessment\`: Deployment risks and mitigation strategies
+- \`recommendations\`: Process and tooling recommendations
+`;
+
+    const instructions = `
+# Deployment Task Identification Instructions
+
+This analysis provides **actual ADR content and TODO content** to identify deployment-related tasks for comprehensive deployment tracking.
+
+## Analysis Scope
+- **ADR Directory**: ${adrDirectory}
+- **ADRs Found**: ${discoveryResult.totalAdrs} files
+- **ADRs with Content**: ${discoveryResult.adrs.filter(adr => adr.content).length} ADRs
+- **Todo Content**: ${todoPath ? `✅ Included (${todoContent.length} characters)` : '❌ Not provided'}
+- **Task Categories**: Infrastructure, Application, CI/CD, Operational
+
+## Discovered ADR Summary
+${discoveryResult.adrs.map(adr => `- **${adr.title}** (${adr.status})`).join('\n')}
+
+## Next Steps
+1. **Submit the analysis prompt** to an AI agent for deployment task identification based on **actual content**
+2. **Parse the JSON response** to get categorized deployment tasks
+3. **Review task priorities** and dependencies derived from actual ADR content
+4. **Use findings** for deployment planning and execution
+
+## Expected AI Response Format
+The AI will return a JSON object with:
+- \`deploymentTaskAnalysis\`: Overall analysis metadata and confidence
+- \`identifiedTasks\`: Detailed deployment tasks with verification criteria based on actual ADR content
+- \`deploymentPhases\`: Organized deployment phases and sequencing
+- \`deploymentDependencies\`: Task dependencies and constraints from actual ADRs
 - \`riskAssessment\`: Deployment risks and mitigation strategies
 - \`recommendations\`: Process and tooling recommendations
 
@@ -110,32 +161,24 @@ The AI will return a JSON object with:
 \`\`\`typescript
 const result = await identifyDeploymentTasks(adrDirectory, todoPath);
 // Submit result.identificationPrompt to AI agent
-// Parse AI response for deployment tasks
+// Parse AI response for deployment tasks based on actual ADR and TODO content
 \`\`\`
-`;
-
-    const instructions = `
-# Deployment Task Identification Instructions
-
-This analysis will identify deployment-related tasks from ADRs and todo content for comprehensive deployment tracking.
-
-## Analysis Scope
-- **ADR Directory**: ${adrDirectory}
-- **Todo Content**: ${todoPath ? 'Included' : 'Not provided'}
-- **Task Categories**: Infrastructure, Application, CI/CD, Operational
-
-## Next Steps
-1. **Submit the analysis prompt** to an AI agent for deployment task identification
-2. **Parse the JSON response** to get categorized deployment tasks
-3. **Review task priorities** and dependencies
-4. **Use findings** for deployment planning and execution
-
-Submit the prompt to generate deployment task analysis.
 `;
 
     return {
       identificationPrompt: deploymentAnalysisPrompt,
       instructions,
+      actualData: {
+        discoveryResult,
+        todoContent,
+        todoPath,
+        summary: {
+          totalAdrs: discoveryResult.totalAdrs,
+          adrsWithContent: discoveryResult.adrs.filter(adr => adr.content).length,
+          todoProvided: !!todoPath,
+          todoLength: todoContent.length
+        }
+      }
     };
   } catch (error) {
     throw new McpAdrError(

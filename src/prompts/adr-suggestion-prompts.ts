@@ -1,7 +1,10 @@
 /**
  * AI prompts for ADR suggestion and implicit decision detection
  * Following prompt-driven development approach
+ * Enhanced with Chain-of-Thought prompting to reduce LLM confusion
  */
+
+import { enhancePromptWithCoT, COT_PATTERNS } from '../utils/chain-of-thought-template.js';
 
 /**
  * AI prompt for detecting implicit architectural decisions by scanning project files
@@ -10,10 +13,16 @@ export function generateImplicitDecisionDetectionPrompt(
   projectPath: string,
   existingAdrs?: string[]
 ): string {
-  return `
-# Implicit Architectural Decision Detection Guide
+  const basePrompt = `
+# Context-Aware Architectural Decision Detection
 
-**Note: Use this as a guide for analyzing the project at ${projectPath} to identify implicit architectural decisions. Adapt the approach based on what's most relevant to the specific project.**
+## User Context Integration
+Primary Goals: {{userGoals}}
+Focus Areas: {{focusAreas}}
+Constraints: {{constraints}}
+Project Phase: {{projectPhase}}
+
+**Analyze the project at ${projectPath} to identify implicit architectural decisions that align with the user's goals and focus areas above.**
 
 ## Suggested Analysis Approach
 
@@ -48,7 +57,7 @@ ${existingAdrs.map(adr => `- ${adr}`).join('\n')}
 
 ## Detection Requirements
 
-Consider identifying implicit architectural decisions by analyzing where relevant:
+**Prioritize analysis based on the user's stated goals and focus areas above.** Consider identifying implicit architectural decisions by analyzing where relevant:
 
 ### 🏗️ **Architectural Patterns**
 - Framework choices and configuration patterns
@@ -139,9 +148,10 @@ The following JSON structure provides a template for organizing your findings (a
 3. **Prioritize Impact**: Focus on decisions with significant architectural impact
 4. **Consider Context**: Understand the business and technical context
 5. **Cluster Related**: Group related decisions that could be documented together
-
-Please provide a comprehensive analysis of implicit architectural decisions.
 `;
+
+  // Enhance the base prompt with Chain-of-Thought reasoning
+  return enhancePromptWithCoT(basePrompt, COT_PATTERNS.ADR_SUGGESTION);
 }
 
 /**

@@ -1,10 +1,12 @@
 /**
  * File system utilities for MCP ADR Analysis Server
  * Generates prompts for AI-driven file discovery, reading, and analysis operations
+ * Enhanced with Chain-of-Thought prompting to reduce LLM confusion
  */
 
 import { dirname } from 'path';
 import { FileSystemError } from '../types/index.js';
+import { enhancePromptWithCoT, COT_PATTERNS } from './chain-of-thought-template.js';
 
 export interface FileInfo {
   path: string;
@@ -61,53 +63,36 @@ export async function analyzeProjectStructure(projectPath: string): Promise<Proj
     console.error(`[DEBUG] Generated prompt for file patterns:`, filePatterns);
     console.error(`[DEBUG] Target directory: ${safeProjectPath}`);
 
-    // Generate comprehensive analysis prompt
-    const prompt = `
+    // Generate Chain-of-Thought enhanced analysis prompt
+    const basePrompt = `
 # Project Structure Analysis Request
 
-Please analyze the project structure at: **${safeProjectPath}**
-
-## Path Resolution Instructions
-
-The AI agent should:
-1. **Resolve the project path safely**: If path is "." or "./", use the current working directory
-2. **Validate path security**: Ensure the path is not a system directory (/, /usr, /bin, etc.)
-3. **Handle relative paths**: Resolve relative paths from the current working directory
-4. **Prevent unauthorized access**: Reject any attempts to scan system or sensitive directories
-
-## Prerequisites
-
-1. **Path Validation**: First verify the path exists and is accessible
-   - Check if the path exists and is a directory
-   - Report any access issues or invalid paths
-   - Proceed with analysis only if the path is valid
+Analyze the project structure at: **${safeProjectPath}**
 
 ## Analysis Requirements
 
-2. **File Discovery**: Scan the directory using the following patterns:
-   ${filePatterns.map(pattern => `   - ${pattern}`).join('\n')}
+**File Discovery**: Scan the directory using the following patterns:
+${filePatterns.map(pattern => `   - ${pattern}`).join('\n')}
 
-3. **Technology Stack Detection**: Identify:
-   - Programming languages (based on file extensions)
-   - Frameworks and libraries (from package.json, requirements.txt, etc.)
-   - Build tools and configuration files
-   - Testing frameworks and tools
+**Technology Stack Detection**: Identify:
+- Programming languages (based on file extensions)
+- Frameworks and libraries (from package.json, requirements.txt, etc.)
+- Build tools and configuration files
+- Testing frameworks and tools
 
-4. **Architectural Patterns**: Analyze:
-   - Directory structure and organization
-   - Code organization patterns (MVC, microservices, etc.)
-   - Configuration management approaches
-   - Documentation patterns
+**Architectural Patterns**: Analyze:
+- Directory structure and organization
+- Code organization patterns (MVC, microservices, etc.)
+- Configuration management approaches
+- Documentation patterns
 
-5. **Project Ecosystem**: Examine:
-   - Dependencies and package management
-   - Development tools and workflows
-   - CI/CD configurations
-   - Documentation and README files
+**Project Ecosystem**: Examine:
+- Dependencies and package management
+- Development tools and workflows
+- CI/CD configurations
+- Documentation and README files
 
 ## Expected Output Format
-
-Please provide a structured analysis including:
 
 \`\`\`json
 {
@@ -143,17 +128,10 @@ Please provide a structured analysis including:
   "summary": "Brief project description and key findings"
 }
 \`\`\`
-
-## Analysis Instructions
-
-1. Start by scanning the resolved project directory (safely resolve the provided path)
-2. Apply the file patterns to exclude unnecessary files
-3. Categorize files by type and purpose
-4. Identify technology stack from file extensions and configuration files
-5. Analyze directory structure for architectural patterns
-6. Provide confidence scores for technology detection
-7. Include evidence for all findings
 `;
+
+    // Enhance the base prompt with Chain-of-Thought reasoning
+    const prompt = enhancePromptWithCoT(basePrompt, COT_PATTERNS.PROJECT_ANALYSIS);
 
     const instructions = `
 ## Implementation Steps

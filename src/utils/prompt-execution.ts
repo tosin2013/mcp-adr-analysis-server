@@ -105,10 +105,92 @@ export async function executePromptWithFallback(
 }
 
 /**
- * Format a prompt for external execution
+ * Enhanced context placeholder system for prompts
  */
-function formatPromptForExternal(prompt: string, instructions: string): string {
-  return `${instructions}\n\n${prompt}`;
+interface ContextPlaceholder {
+  placeholder: string;
+  description: string;
+  example: string;
+}
+
+/**
+ * Standard context placeholders used across tools
+ */
+const STANDARD_CONTEXT_PLACEHOLDERS: ContextPlaceholder[] = [
+  {
+    placeholder: "{{userGoals}}",
+    description: "User's primary objectives from the conversation",
+    example: "microservices migration for better scalability"
+  },
+  {
+    placeholder: "{{focusAreas}}",
+    description: "Specific areas of concern or interest",
+    example: "security, performance, maintainability"
+  },
+  {
+    placeholder: "{{constraints}}",
+    description: "Limitations, compliance requirements, or restrictions",
+    example: "GDPR compliance required, budget under $50k, minimal downtime"
+  },
+  {
+    placeholder: "{{projectPhase}}",
+    description: "Current project phase or stage",
+    example: "planning, development, migration, production"
+  },
+  {
+    placeholder: "{{userRole}}",
+    description: "User's role or expertise level",
+    example: "senior architect, developer, project manager"
+  }
+];
+
+/**
+ * Format a prompt for external execution with enhanced LLM instructions
+ */
+function formatPromptForExternal(
+  prompt: string, 
+  instructions: string,
+  contextPlaceholders: ContextPlaceholder[] = STANDARD_CONTEXT_PLACEHOLDERS
+): string {
+  // Check if prompt contains context placeholders
+  const hasPlaceholders = contextPlaceholders.some(cp => 
+    prompt.includes(cp.placeholder)
+  );
+
+  const response = {
+    executionMode: "prompt-only",
+    prompt: prompt,
+    instructions: {
+      howToUse: "Execute this prompt within your current conversation context to preserve user goals and discussion history",
+      contextIntegration: hasPlaceholders ? 
+        "This prompt includes placeholders for conversation context. Replace them with relevant information from your discussion with the user before executing." :
+        "This prompt will work better if you provide context about the user's goals and constraints when executing it.",
+      expectedOutput: instructions,
+      bestPractices: [
+        "Maintain the user's stated objectives when executing this prompt",
+        "Include any constraints or preferences mentioned in the conversation", 
+        "Consider the project phase and user's role when interpreting results",
+        "Tailor the analysis to address the user's specific concerns"
+      ]
+    },
+    ...(hasPlaceholders && {
+      contextPlaceholders: contextPlaceholders.reduce((acc, cp) => ({
+        ...acc,
+        [cp.placeholder]: {
+          description: cp.description,
+          example: cp.example
+        }
+      }), {}),
+      exampleUsage: `Before executing, customize the prompt. For example, replace:\n${contextPlaceholders.slice(0, 2).map(cp => `  ${cp.placeholder} → "${cp.example}"`).join('\n')}`
+    }),
+    tips: [
+      "The more context you provide, the more tailored and useful the analysis will be",
+      "Consider what the user has already discussed when executing this prompt",
+      "Focus the analysis on areas that matter most to the user's goals"
+    ]
+  };
+
+  return JSON.stringify(response, null, 2);
 }
 
 /**

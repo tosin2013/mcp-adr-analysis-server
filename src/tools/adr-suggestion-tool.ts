@@ -5,6 +5,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import { ConversationContext } from '../types/conversation-context.js';
 import { generateArchitecturalKnowledge } from '../utils/knowledge-generation.js';
 import { executeWithReflexion, retrieveRelevantMemories, createToolReflexionConfig } from '../utils/reflexion.js';
 import { executeADRSuggestionPrompt, formatMCPResponse } from '../utils/prompt-execution.js';
@@ -24,6 +25,7 @@ export async function suggestAdrs(args: {
   enhancedMode?: boolean; // Enable advanced prompting features
   learningEnabled?: boolean; // Enable Reflexion learning
   knowledgeEnhancement?: boolean; // Enable Knowledge Generation
+  conversationContext?: ConversationContext; // Context from calling LLM
 }): Promise<any> {
   const {
     projectPath = process.cwd(),
@@ -36,6 +38,7 @@ export async function suggestAdrs(args: {
     enhancedMode = true, // Default to enhanced mode
     learningEnabled = true, // Default to learning enabled
     knowledgeEnhancement = true, // Default to knowledge enhancement
+    conversationContext, // Context from calling LLM
   } = args;
 
   try {
@@ -76,7 +79,7 @@ export async function suggestAdrs(args: {
           if (learningEnabled) {
             try {
               const reflexionConfig = createToolReflexionConfig('suggest_adrs');
-              const baseResult = await analyzeImplicitDecisions(projectPath, existingAdrs);
+              const baseResult = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
 
               const reflexionResult = await executeWithReflexion({
                 prompt: baseResult.analysisPrompt + knowledgeContext,
@@ -94,11 +97,11 @@ export async function suggestAdrs(args: {
 `;
             } catch (error) {
               console.error('[WARNING] Reflexion enhancement failed:', error);
-              const result = await analyzeImplicitDecisions(projectPath, existingAdrs);
+              const result = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
               enhancedPrompt = result.analysisPrompt + knowledgeContext;
             }
           } else {
-            const result = await analyzeImplicitDecisions(projectPath, existingAdrs);
+            const result = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
             enhancedPrompt = result.analysisPrompt + knowledgeContext;
             enhancementInfo = `
 ## Enhancement Status
@@ -108,7 +111,7 @@ export async function suggestAdrs(args: {
 `;
           }
         } else {
-          const result = await analyzeImplicitDecisions(projectPath, existingAdrs);
+          const result = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
           enhancedPrompt = result.analysisPrompt;
           enhancementInfo = `
 ## Enhancement Status
@@ -118,7 +121,7 @@ export async function suggestAdrs(args: {
 `;
         }
 
-        const baseResult = await analyzeImplicitDecisions(projectPath, existingAdrs);
+        const baseResult = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
 
         return {
           content: [
@@ -364,7 +367,7 @@ ${memoryResult.prompt}
         }
 
         // Step 3: Get the base analysis
-        const implicitResult = await analyzeImplicitDecisions(projectPath, existingAdrs);
+        const implicitResult = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
 
         // Step 4: Apply Reflexion execution if learning is enabled
         if (learningEnabled) {
@@ -694,123 +697,96 @@ ${writeFilePrompt.prompt}
 }
 
 /**
- * Generate prompt for AI to discover existing ADRs in the project
+ * Discover existing ADRs in the project using internal file system tools
  */
 export async function discoverExistingAdrs(args: {
   adrDirectory?: string;
   includeContent?: boolean;
+  projectPath?: string;
 }): Promise<any> {
-  const { adrDirectory = 'docs/adrs', includeContent = false } = args;
+  const { 
+    adrDirectory = 'docs/adrs', 
+    includeContent = false,
+    projectPath = process.cwd()
+  } = args;
 
-  // Create the discovery prompt
-  const discoveryPrompt = `
-# ADR Discovery Request
+  try {
+    // Use the new ADR discovery utility
+    const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
+    
+    const discoveryResult = await discoverAdrsInDirectory(
+      adrDirectory,
+      includeContent,
+      projectPath
+    );
 
-Please scan the project directory **${adrDirectory}** to discover existing ADRs.
+    // Format the results for MCP response
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# ADR Discovery Results
 
-## Discovery Tasks
-
-1. **Directory Scanning**
-   - Use file system tools to list all files in \`${adrDirectory}\`
-   - Look for files with \`.md\` extension
-   - Check for common ADR naming patterns (e.g., \`ADR-001-\`, \`001-\`, etc.)
-
-2. **Content Analysis** ${includeContent ? '(with content)' : '(metadata only)'}
-   - Read each ADR file to extract metadata
-   - Identify title, status, date, and key information
-   - ${includeContent ? 'Extract full content for analysis' : 'Focus on headers and metadata'}
-
-3. **ADR Inventory Generation**
-   - Create a list of all discovered ADRs
-   - Extract titles, statuses, and dates
-   - Generate a summary of the ADR collection
-
-## Search Patterns
-
-Look for files matching these patterns:
-- \`${adrDirectory}/**/*.md\`
-- Files starting with numbers (e.g., \`001-\`, \`0001-\`)
-- Files containing "ADR" in the name
-- Files with architectural decision keywords
-
-## Alternative Locations
-
-If no ADRs are found in \`${adrDirectory}\`, also check:
-- \`docs/\` directory
-- \`documentation/\` directory
-- \`decisions/\` directory
-- Root directory for isolated ADR files
-
-## Output Format
-
-Provide findings in JSON format with:
-- discoveryResults: directory, totalAdrs, adrs array
-- summary: byStatus and byCategory breakdowns
-- recommendations: next steps based on discovered ADRs
-`;
-
-  const instructions = `
-# ADR Discovery Instructions
-
-1. **Scan Directory**: Use file system tools to scan ${adrDirectory}
-2. **Identify ADRs**: Look for markdown files with ADR patterns
-3. **Extract Metadata**: Get title, status, date from each ADR
-4. **Generate Summary**: Create categorized summary of findings
-5. **Provide Recommendations**: Suggest next steps based on discovery
-
-## Expected Output
-
-Return a comprehensive JSON object with discovery results, summary statistics, and actionable recommendations.
-`;
-
-  // Execute the ADR discovery with AI if enabled, otherwise return prompt
-  const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
-  const executionResult = await executePromptWithFallback(
-    discoveryPrompt,
-    instructions,
-    {
-      temperature: 0.1,
-      maxTokens: 4000,
-      systemPrompt: `You are an expert in architectural documentation analysis and file system operations.
-Scan the specified directory to discover existing ADRs and provide comprehensive analysis.
-Focus on extracting accurate metadata and providing actionable insights about the ADR collection.
-Use appropriate file system tools to scan directories and read file contents.`,
-      responseFormat: 'text'
-    }
-  );
-
-  if (executionResult.isAIGenerated) {
-    // AI execution successful - return actual ADR discovery results
-    return formatMCPResponse({
-      ...executionResult,
-      content: `# ADR Discovery Results
-
-## Discovery Information
-- **ADR Directory**: ${adrDirectory}
+## Discovery Summary
+- **Directory**: ${discoveryResult.directory}
+- **Total ADRs Found**: ${discoveryResult.totalAdrs}
 - **Include Content**: ${includeContent ? 'Yes' : 'No (metadata only)'}
 
-## AI Discovery Results
+## Discovered ADRs
 
-${executionResult.content}
+${discoveryResult.adrs.length > 0 ? 
+  discoveryResult.adrs.map(adr => `
+### ${adr.title}
+- **File**: ${adr.filename}
+- **Status**: ${adr.status}
+- **Date**: ${adr.date || 'Not specified'}
+- **Path**: ${adr.path}
+${adr.metadata?.number ? `- **Number**: ${adr.metadata.number}` : ''}
+${adr.metadata?.category ? `- **Category**: ${adr.metadata.category}` : ''}
+${adr.metadata?.tags?.length ? `- **Tags**: ${adr.metadata.tags.join(', ')}` : ''}
+${includeContent && adr.content ? `
+
+#### Content Preview
+\`\`\`markdown
+${adr.content.slice(0, 500)}${adr.content.length > 500 ? '...' : ''}
+\`\`\`
+` : ''}
+`).join('\n') 
+  : 'No ADRs found in the specified directory.'
+}
+
+## Summary Statistics
+
+### By Status
+${Object.entries(discoveryResult.summary.byStatus)
+  .map(([status, count]) => `- **${status}**: ${count}`)
+  .join('\n') || 'No status information available'}
+
+### By Category
+${Object.entries(discoveryResult.summary.byCategory)
+  .map(([category, count]) => `- **${category}**: ${count}`)
+  .join('\n') || 'No category information available'}
+
+## Recommendations
+
+${discoveryResult.recommendations.map(rec => `- ${rec}`).join('\n')}
 
 ## Next Steps
 
-Based on the discovered ADRs:
+Based on the discovered ADRs, you can:
 
-1. **Review ADR Collection**: Examine the discovered ADRs for completeness
-2. **Identify Gaps**: Look for missing architectural decisions
-3. **Update Outdated ADRs**: Review and update deprecated or outdated decisions
-4. **Generate New ADRs**: Use discovered patterns to suggest new ADRs
-5. **Create ADR Index**: Maintain an up-to-date catalog of all ADRs
+1. **Analyze for Missing Decisions**: Use the \`suggest_adrs\` tool with the discovered ADR titles
+2. **Generate Implementation TODOs**: Use the \`generate_adr_todo\` tool
+3. **Create New ADRs**: Use the \`generate_adr_from_decision\` tool for new decisions
 
-## Integration Commands
+### Example Commands
 
 To suggest new ADRs based on discovered ones:
 \`\`\`json
 {
   "tool": "suggest_adrs",
   "args": {
-    "existingAdrs": ["list of discovered ADR titles"],
+    "existingAdrs": ${JSON.stringify(discoveryResult.adrs.map(adr => adr.title))},
     "analysisType": "comprehensive"
   }
 }
@@ -826,30 +802,23 @@ To generate a todo list from discovered ADRs:
   }
 }
 \`\`\`
-`,
-    });
-  } else {
-    // Fallback to prompt-only mode
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `# ADR Discovery: AI-Driven Scan
 
-## Instructions for AI Agent
+## Raw Discovery Data
 
-Please scan the project directory **${adrDirectory}** to discover existing ADRs.
+For programmatic use, the raw discovery data is:
 
-${discoveryPrompt}
-
-${instructions}
-
-## Next Steps
-
-After discovery, use the results with other ADR tools for comprehensive analysis.
-`,
-        },
-      ],
+\`\`\`json
+${JSON.stringify(discoveryResult, null, 2)}
+\`\`\`
+`
+        }
+      ]
     };
+    
+  } catch (error) {
+    throw new McpAdrError(
+      `Failed to discover ADRs: ${error instanceof Error ? error.message : String(error)}`,
+      'DISCOVERY_ERROR'
+    );
   }
 }
