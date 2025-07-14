@@ -46,7 +46,7 @@ interface ValidationIssue {
 }
 
 /**
- * Main smart git push function
+ * Main smart git push function - MCP Safe Version
  */
 export async function smartGitPush(args: SmartGitPushArgs): Promise<any> {
   const {
@@ -55,7 +55,6 @@ export async function smartGitPush(args: SmartGitPushArgs): Promise<any> {
     skipValidation = false,
     allowedArtifacts = [],
     sensitivityLevel = 'moderate',
-    interactiveMode = true,
     dryRun = false,
     projectPath = process.cwd(),
     checkReleaseReadiness = false,
@@ -66,12 +65,16 @@ export async function smartGitPush(args: SmartGitPushArgs): Promise<any> {
     // Step 1: Check release readiness if requested
     let releaseReadinessResult = null;
     if (checkReleaseReadiness) {
-      const { analyzeReleaseReadiness } = await import('../utils/release-readiness-detector.js');
-      releaseReadinessResult = await analyzeReleaseReadiness({
-        projectPath,
-        releaseType,
-        includeAnalysis: true
-      });
+      try {
+        const { analyzeReleaseReadiness } = await import('../utils/release-readiness-detector.js');
+        releaseReadinessResult = await analyzeReleaseReadiness({
+          projectPath,
+          releaseType,
+          includeAnalysis: true
+        });
+      } catch (error) {
+        console.error('Release readiness analysis failed:', error);
+      }
     }
 
     // Step 2: Get staged files using git CLI
@@ -92,6 +95,7 @@ No staged files found. Use \`git add\` to stage files before pushing.
       // Add release readiness info if checked
       if (releaseReadinessResult) {
         responseText += `
+
 ## Release Readiness Analysis
 ${releaseReadinessResult.summary}
 
@@ -123,7 +127,7 @@ ${releaseReadinessResult.isReady ?
       });
     }
 
-    // Step 4: Handle interactive approval if needed
+    // Step 4: Check for blocking conditions (MCP Safe - No Interactive Mode)
     const issues = validationResults.filter(r => r.issues.length > 0);
     
     // Check if release readiness should block push
@@ -134,17 +138,23 @@ ${releaseReadinessResult.isReady ?
         releaseReadinessBlocked = true;
       }
     }
+    
+    // Check for blocking conditions
+    const hasBlockingErrors = issues.some(issue => 
+      issue.issues.some(i => i.severity === 'error')
+    );
+    
+    const shouldBlock = hasBlockingErrors || releaseReadinessBlocked;
+    
+    if (shouldBlock && !dryRun) {
+      let cancelText = `# Smart Git Push - Blocked
 
-    if ((issues.length > 0 || releaseReadinessBlocked) && interactiveMode) {
-      const approvalResult = await handleInteractiveApproval(issues, dryRun);
-      if (!approvalResult.proceed) {
-        let cancelText = `# Smart Git Push - Cancelled
-            
-## User Decision
-Push cancelled due to validation issues.
+## Validation Issues
+Push blocked due to critical issues that must be resolved.
 
 ## Issues Found
 ${issues.map(issue => `
+
 ### ${issue.file}
 ${issue.issues.map(i => `- **${i.severity.toUpperCase()}**: ${i.message}`).join('\n')}
 
@@ -153,9 +163,10 @@ ${issue.suggestions.map(s => `- ${s}`).join('\n')}
 `).join('\n')}
 `;
 
-        // Add release readiness info if checked and blocked
-        if (releaseReadinessResult && releaseReadinessBlocked) {
-          cancelText += `
+      // Add release readiness info if checked and blocked
+      if (releaseReadinessResult && releaseReadinessBlocked) {
+        cancelText += `
+
 ## Release Readiness Issues
 ${releaseReadinessResult.summary}
 
@@ -165,15 +176,14 @@ ${releaseReadinessResult.blockers.filter(b => b.severity === 'error').map(b => `
 ### Recommendations
 ${releaseReadinessResult.recommendations.map(r => `- ${r}`).join('\n')}
 `;
-        }
-
-        return {
-          content: [{
-            type: 'text',
-            text: cancelText
-          }]
-        };
       }
+
+      return {
+        content: [{
+          type: 'text',
+          text: cancelText
+        }]
+      };
     }
 
     // Step 5: Execute git push if not dry run
@@ -194,14 +204,17 @@ ${checkReleaseReadiness ? `- **Release Readiness**: ${releaseReadinessResult?.is
 ${stagedFiles.map(f => `- ${f.path} (${f.status})`).join('\n')}
 
 ${issues.length > 0 ? `
-## Validation Issues (Approved)
+
+## Validation Issues (Auto-Approved)
 ${issues.map(issue => `
+
 ### ${issue.file}
 ${issue.issues.map(i => `- **${i.severity.toUpperCase()}**: ${i.message}`).join('\n')}
 `).join('\n')}
 ` : ''}
 
 ${releaseReadinessResult ? `
+
 ## Release Readiness Analysis
 ${releaseReadinessResult.summary}
 
@@ -247,8 +260,10 @@ ${checkReleaseReadiness ? `- **Release Readiness**: ${releaseReadinessResult?.is
 ${stagedFiles.map(f => `- ${f.path} (${f.status}) - ${f.size} bytes`).join('\n')}
 
 ${issues.length > 0 ? `
+
 ## Validation Issues Found
 ${issues.map(issue => `
+
 ### ${issue.file}
 ${issue.issues.map(i => `- **${i.severity.toUpperCase()}**: ${i.message}`).join('\n')}
 
@@ -258,6 +273,7 @@ ${issue.suggestions.map(s => `- ${s}`).join('\n')}
 ` : '## ✅ No Validation Issues Found'}
 
 ${releaseReadinessResult ? `
+
 ## Release Readiness Analysis
 ${releaseReadinessResult.summary}
 
@@ -552,80 +568,6 @@ function generateSuggestions(filePath: string, issues: ValidationIssue[]): strin
 }
 
 /**
- * Handle interactive approval using enhanced approval system
- */
-async function handleInteractiveApproval(
-  issues: ValidationResult[],
-  dryRun: boolean
-): Promise<{ proceed: boolean; approved: string[] }> {
-  try {
-    // Use enhanced interactive approval
-    const { handleInteractiveApproval } = await import('../utils/interactive-approval.js');
-    
-    // Convert ValidationResult to ApprovalItem format
-    const approvalItems = issues.map(issue => ({
-      filePath: issue.file,
-      issues: issue.issues.map(i => ({
-        type: i.type,
-        message: i.message,
-        severity: i.severity,
-        ...(i.pattern && { pattern: i.pattern }),
-        ...(i.line && { line: i.line })
-      })),
-      suggestions: issue.suggestions,
-      severity: issue.issues.reduce((highest, i) => {
-        const severityOrder = { error: 3, warning: 2, info: 1 };
-        return severityOrder[i.severity] > severityOrder[highest] ? i.severity : highest;
-      }, 'info' as 'error' | 'warning' | 'info'),
-      allowedInLocation: true, // Simplified for now
-      confidence: 0.8 // Default confidence
-    }));
-    
-    const options = {
-      interactiveMode: true,
-      autoApproveInfo: false,
-      autoRejectErrors: false,
-      dryRun,
-      batchMode: false
-    };
-    
-    const result = await handleInteractiveApproval(approvalItems, options);
-    
-    return {
-      proceed: result.proceed,
-      approved: result.approved
-    };
-  } catch (error) {
-    console.error('Interactive approval failed:', error);
-    
-    // Fallback to simple approval
-    console.log('\n=== Smart Git Push - Validation Issues ===');
-    console.log(`Found ${issues.length} files with issues:`);
-    
-    for (const issue of issues) {
-      console.log(`\n${issue.file}:`);
-      for (const i of issue.issues) {
-        console.log(`  - ${i.severity.toUpperCase()}: ${i.message}`);
-      }
-    }
-    
-    if (dryRun) {
-      return { proceed: true, approved: [] };
-    }
-    
-    // Auto-approve info and warnings, block errors
-    const hasErrors = issues.some(issue => 
-      issue.issues.some(i => i.severity === 'error')
-    );
-    
-    return {
-      proceed: !hasErrors,
-      approved: hasErrors ? [] : issues.map(i => i.file)
-    };
-  }
-}
-
-/**
  * Execute git push
  */
 async function executePush(
@@ -661,4 +603,3 @@ async function executePush(
     );
   }
 }
-
