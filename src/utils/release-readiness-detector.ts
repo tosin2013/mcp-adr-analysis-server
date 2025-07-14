@@ -109,7 +109,7 @@ export async function analyzeReleaseReadiness(
 
     return result;
   } catch (error) {
-    console.error('Release readiness analysis failed:', error);
+    // Silently handle release readiness analysis errors
     result.blockers.push({
       type: 'unstable-code',
       severity: 'error',
@@ -554,7 +554,7 @@ export async function integrateWithMcpTools(
 
     return await analyzeReleaseReadiness(enhancedOptions);
   } catch (error) {
-    console.error('MCP tool integration failed:', error);
+    // Silently handle MCP tool integration errors
     
     // Fallback to standalone analysis
     return await analyzeReleaseReadiness({

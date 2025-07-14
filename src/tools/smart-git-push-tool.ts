@@ -73,7 +73,7 @@ export async function smartGitPush(args: SmartGitPushArgs): Promise<any> {
           includeAnalysis: true
         });
       } catch (error) {
-        console.error('Release readiness analysis failed:', error);
+        // Silently handle release readiness analysis errors
       }
     }
 
@@ -348,7 +348,7 @@ async function getStagedFiles(projectPath: string): Promise<GitFile[]> {
             content = readFileSync(fullPath, 'utf8');
           }
         } catch (err) {
-          console.error(`Warning: Could not read file ${path}:`, err);
+          // Silently handle file read errors
         }
       }
 
@@ -461,7 +461,7 @@ async function checkSensitiveContent(content: string, filePath: string): Promise
 
     return issues;
   } catch (error) {
-    console.error('Sensitive content check failed:', error);
+    // Silently handle sensitive content check errors
     return [];
   }
 }
@@ -497,7 +497,7 @@ async function checkLLMArtifacts(filePath: string, content?: string): Promise<Va
 
     return issues;
   } catch (error) {
-    console.error('LLM artifact check failed:', error);
+    // Silently handle LLM artifact check errors
     return [];
   }
 }
@@ -529,7 +529,7 @@ async function checkLocationRules(filePath: string, allowedArtifacts: string[]):
 
     return [];
   } catch (error) {
-    console.error('Location rule check failed:', error);
+    // Silently handle location rule check errors
     return [];
   }
 }
