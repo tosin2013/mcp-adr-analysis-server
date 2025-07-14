@@ -74,6 +74,23 @@ async function _smartGitPushInternal(args: SmartGitPushArgs): Promise<any> {
           releaseType,
           includeAnalysis: true
         });
+        
+        // Update deployment readiness score in health scoring system
+        try {
+          const { ProjectHealthScoring } = await import('../utils/project-health-scoring.js');
+          const healthScoring = new ProjectHealthScoring(projectPath);
+          
+          await healthScoring.updateDeploymentReadinessScore({
+            releaseScore: releaseReadinessResult.score,
+            milestoneCompletion: releaseReadinessResult.milestones.length > 0 ? 
+              releaseReadinessResult.milestones.reduce((sum: number, m: any) => sum + m.completionRate, 0) / releaseReadinessResult.milestones.length : 0.5,
+            criticalBlockers: releaseReadinessResult.blockers.filter((b: any) => b.severity === 'error').length,
+            warningBlockers: releaseReadinessResult.blockers.filter((b: any) => b.severity === 'warning').length,
+            gitHealthScore: releaseReadinessResult.blockers.some((b: any) => b.type === 'unstable-code') ? 30 : 80
+          });
+        } catch (healthError) {
+          // Silently handle health scoring errors
+        }
       } catch (error) {
         // Silently handle release readiness analysis errors
       }
