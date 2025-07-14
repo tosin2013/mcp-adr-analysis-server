@@ -260,7 +260,7 @@ describe('TODO Management Tool', () => {
         preserveCustom: true
       });
       
-      expect(result.content[0].text).toContain('ADR Merge Analysis');
+      expect(result.content[0].text).toContain('ADR Merge Completed');
       expect(result.content[0].text).toContain('Current TODO Status');
       expect(result.content[0].text).toContain('Preserve Completed: true');
       expect(result.content[0].text).toContain('Preserve Custom: true');

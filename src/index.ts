@@ -296,6 +296,16 @@ export class McpAdrAnalysisServer {
                   enum: ['adrs', 'patterns', 'both'],
                   description: 'Source for architectural rules (only used if includeRules is true)',
                   default: 'both'
+                },
+                todoPath: {
+                  type: 'string',
+                  description: 'Path to TODO.md file (relative to project root)',
+                  default: 'todo.md'
+                },
+                preserveExisting: {
+                  type: 'boolean',
+                  description: 'Preserve existing TODO.md content by merging instead of overwriting',
+                  default: true
                 }
               }
             }
@@ -1466,6 +1476,89 @@ export class McpAdrAnalysisServer {
                 }
               }
             }
+          },
+          {
+            name: 'troubleshoot_guided_workflow',
+            description: 'Guided troubleshooting workflow with ADR and TODO alignment',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                operation: {
+                  type: 'string',
+                  enum: ['collect_issue', 'full_workflow'],
+                  description: 'Type of troubleshooting operation'
+                },
+                issue: {
+                  type: 'object',
+                  properties: {
+                    description: {
+                      type: 'string',
+                      description: 'What is happening? Describe the issue in detail'
+                    },
+                    expectedBehavior: {
+                      type: 'string',
+                      description: 'What should be happening instead?'
+                    },
+                    symptoms: {
+                      type: 'array',
+                      items: { type: 'string' },
+                      description: 'Observable symptoms, error messages, or behaviors'
+                    },
+                    context: {
+                      type: 'object',
+                      properties: {
+                        environment: {
+                          type: 'string',
+                          description: 'Environment where issue occurs (dev, staging, prod)'
+                        },
+                        recentChanges: {
+                          type: 'string',
+                          description: 'What changed recently that might be related?'
+                        },
+                        affectedSystems: {
+                          type: 'array',
+                          items: { type: 'string' },
+                          description: 'Systems or components affected'
+                        },
+                        errorLogs: {
+                          type: 'string',
+                          description: 'Relevant error logs or stack traces'
+                        },
+                        reproducibility: {
+                          type: 'string',
+                          enum: ['always', 'sometimes', 'once'],
+                          description: 'How reliably can this be reproduced?'
+                        }
+                      }
+                    }
+                  },
+                  description: 'Issue details (required for collect_issue operation)'
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project directory'
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'ADR directory path',
+                  default: 'docs/adrs'
+                },
+                todoPath: {
+                  type: 'string',
+                  description: 'Path to TODO.md file',
+                  default: 'todo.md'
+                },
+                skipSteps: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    enum: ['baseline', 'todo_alignment', 'questions', 'adr_validation', 'recommendations']
+                  },
+                  description: 'Steps to skip in full workflow'
+                }
+              },
+              required: ['operation']
+            }
           }
         ]
       };
@@ -1577,6 +1670,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'smart_git_push':
             response = await this.smartGitPush(args);
+            break;
+          case 'troubleshoot_guided_workflow':
+            response = await this.troubleshootGuidedWorkflow(args);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -3116,9 +3212,18 @@ The enhanced process maintains full traceability from PRD requirements to genera
   }
 
   private async generateAdrTodo(args: any): Promise<any> {
-    const { scope = 'all', phase = 'both', linkAdrs = true, includeRules = true, ruleSource = 'both' } = args;
+    const { 
+      scope = 'all', 
+      phase = 'both', 
+      linkAdrs = true, 
+      includeRules = true, 
+      ruleSource = 'both',
+      todoPath = 'todo.md',
+      preserveExisting = true 
+    } = args;
     const { getAdrDirectoryPath } = await import('./utils/config.js');
     const path = await import('path');
+    const fs = await import('fs/promises');
 
     // Use absolute ADR path relative to project
     const absoluteAdrPath = args.adrDirectory ?
@@ -3128,9 +3233,67 @@ The enhanced process maintains full traceability from PRD requirements to genera
     // Keep relative path for display purposes
     const adrDirectory = args.adrDirectory || this.config.adrDirectory;
 
+    // Resolve absolute TODO path
+    const absoluteTodoPath = path.resolve(this.config.projectPath, todoPath);
+
     this.logger.info(`Generating TDD-focused todo for ADRs in: ${absoluteAdrPath} (phase: ${phase})`);
 
     try {
+      // Check if TODO.md already exists
+      let existingTodoExists = false;
+      
+      try {
+        await fs.access(absoluteTodoPath);
+        existingTodoExists = true;
+        this.logger.info(`Existing TODO.md found at: ${absoluteTodoPath}`);
+      } catch (error: any) {
+        if (error.code !== 'ENOENT') {
+          this.logger.error(`Error accessing existing TODO.md: ${error.message}`);
+        }
+      }
+
+      // If preserving existing content and file exists, use manageTodo merge instead
+      if (preserveExisting && existingTodoExists) {
+        this.logger.info('Preserving existing TODO.md content, using merge approach');
+        
+        // Use manageTodo to merge ADR updates with existing content
+        const { manageTodo } = await import('./tools/todo-management-tool.js');
+        const mergeResult = await manageTodo({
+          operation: 'merge_adr_updates',
+          todoPath: absoluteTodoPath,
+          adrDirectory: absoluteAdrPath,
+          preserveCompleted: true,
+          preserveCustom: true
+        }, this.config.projectPath);
+
+        return {
+          content: [{
+            type: 'text',
+            text: `# TODO.md Merge Completed
+
+## Existing File Preserved
+- **Location**: ${absoluteTodoPath}
+- **Action**: Merged ADR updates with existing content
+- **Preservation**: Custom tasks and completed items preserved
+
+## Analysis Information
+- **ADR Directory**: ${adrDirectory}
+- **Scope**: ${scope}
+- **TDD Phase**: ${phase}
+- **ADR Linking**: ${linkAdrs ? 'Enabled' : 'Disabled'}
+- **Rules Integration**: ${includeRules ? `Enabled (${ruleSource})` : 'Disabled'}
+
+${mergeResult.content[0].text}
+
+## Next Steps
+1. Review merged TODO.md content
+2. Update task statuses as needed using \`manage_todo\`
+3. Use \`compare_adr_progress\` to validate implementation status
+
+*To force regeneration, set \`preserveExisting: false\` in the request*`
+          }]
+        };
+      }
       const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
       const { scanProjectStructure } = await import('./utils/actual-file-operations.js');
 
@@ -4702,7 +4865,7 @@ Please provide:
   private async manageTodo(args: any): Promise<any> {
     try {
       const { manageTodo } = await import('./tools/todo-management-tool.js');
-      return await manageTodo(args);
+      return await manageTodo(args, this.config.projectPath);
     } catch (error) {
       throw new McpAdrError(
         `TODO management failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -4731,6 +4894,18 @@ Please provide:
       throw new McpAdrError(
         `Smart git push failed: ${error instanceof Error ? error.message : String(error)}`,
         'SMART_GIT_PUSH_ERROR'
+      );
+    }
+  }
+
+  private async troubleshootGuidedWorkflow(args: any): Promise<any> {
+    try {
+      const { troubleshootGuidedWorkflow } = await import('./tools/troubleshoot-guided-workflow-tool.js');
+      return await troubleshootGuidedWorkflow(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `Troubleshoot guided workflow failed: ${error instanceof Error ? error.message : String(error)}`,
+        'TROUBLESHOOT_GUIDED_WORKFLOW_ERROR'
       );
     }
   }
