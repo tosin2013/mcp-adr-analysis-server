@@ -1253,6 +1253,161 @@ export class McpAdrAnalysisServer {
               },
               required: ['path']
             }
+          },
+          {
+            name: 'manage_todo',
+            description: 'Manage TODO.md files with incremental updates, task status tracking, and smart merging',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                operation: {
+                  type: 'string',
+                  enum: ['update_status', 'add_tasks', 'merge_adr_updates', 'sync_progress', 'analyze_progress'],
+                  description: 'Operation to perform on TODO.md'
+                },
+                todoPath: {
+                  type: 'string',
+                  default: 'todo.md',
+                  description: 'Path to TODO.md file'
+                },
+                updates: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      taskId: { type: 'string' },
+                      status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'] },
+                      notes: { type: 'string' },
+                      assignee: { type: 'string' }
+                    },
+                    required: ['taskId', 'status']
+                  },
+                  description: 'Status updates to apply (for update_status operation)'
+                },
+                tasks: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      title: { type: 'string' },
+                      status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'] },
+                      priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
+                      category: { type: 'string' },
+                      assignee: { type: 'string' },
+                      notes: { type: 'string' },
+                      estimatedHours: { type: 'number' }
+                    },
+                    required: ['title', 'status']
+                  },
+                  description: 'New tasks to add (for add_tasks operation)'
+                },
+                section: {
+                  type: 'string',
+                  description: 'Section to add tasks to (for add_tasks operation)'
+                },
+                adrDirectory: {
+                  type: 'string',
+                  default: 'docs/adrs',
+                  description: 'ADR directory path (for merge_adr_updates and sync_progress operations)'
+                },
+                preserveCompleted: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Keep completed tasks during merge (for merge_adr_updates operation)'
+                },
+                preserveCustom: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Keep manually added tasks during merge (for merge_adr_updates operation)'
+                },
+                updateAdrs: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Update ADR status based on TODO progress (for sync_progress operation)'
+                },
+                timeframe: {
+                  type: 'string',
+                  enum: ['day', 'week', 'month', 'all'],
+                  default: 'week',
+                  description: 'Analysis timeframe (for analyze_progress operation)'
+                },
+                includeVelocity: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Include velocity metrics in analysis (for analyze_progress operation)'
+                }
+              },
+              required: ['operation']
+            }
+          },
+          {
+            name: 'generate_deployment_guidance',
+            description: 'Generate deployment guidance and instructions from ADRs with environment-specific configurations',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                adrDirectory: {
+                  type: 'string',
+                  default: 'docs/adrs',
+                  description: 'Directory containing ADR files'
+                },
+                environment: {
+                  type: 'string',
+                  enum: ['development', 'staging', 'production', 'all'],
+                  default: 'production',
+                  description: 'Target deployment environment'
+                },
+                format: {
+                  type: 'string',
+                  enum: ['markdown', 'scripts', 'structured', 'all'],
+                  default: 'markdown',
+                  description: 'Output format for guidance'
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project root path (optional, uses configured PROJECT_PATH if not provided)'
+                },
+                includeScripts: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Generate deployment scripts'
+                },
+                includeConfigs: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Generate configuration files'
+                },
+                includeValidation: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Include validation and health checks'
+                },
+                technologyFilter: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    enum: ['containerization', 'database', 'web-server', 'cache', 'message-queue', 'monitoring', 'security', 'ci-cd', 'infrastructure']
+                  },
+                  description: 'Filter by specific technology categories'
+                },
+                customRequirements: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Additional custom requirements'
+                },
+                includeRollback: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Include rollback procedures'
+                },
+                generateFiles: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Actually generate files (vs just guidance)'
+                }
+              },
+              required: []
+            }
           }
         ]
       };
@@ -1355,6 +1510,12 @@ export class McpAdrAnalysisServer {
             break;
           case 'list_directory':
             response = await this.listDirectory(args);
+            break;
+          case 'manage_todo':
+            response = await this.manageTodo(args);
+            break;
+          case 'generate_deployment_guidance':
+            response = await this.generateDeploymentGuidance(args);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -4473,6 +4634,30 @@ Please provide:
       throw new McpAdrError(
         `Failed to list directory: ${error instanceof Error ? error.message : String(error)}`,
         'DIRECTORY_LIST_ERROR'
+      );
+    }
+  }
+
+  private async manageTodo(args: any): Promise<any> {
+    try {
+      const { manageTodo } = await import('./tools/todo-management-tool.js');
+      return await manageTodo(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `TODO management failed: ${error instanceof Error ? error.message : String(error)}`,
+        'TODO_MANAGEMENT_ERROR'
+      );
+    }
+  }
+
+  private async generateDeploymentGuidance(args: any): Promise<any> {
+    try {
+      const { generateDeploymentGuidance } = await import('./tools/deployment-guidance-tool.js');
+      return await generateDeploymentGuidance(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `Deployment guidance generation failed: ${error instanceof Error ? error.message : String(error)}`,
+        'DEPLOYMENT_GUIDANCE_ERROR'
       );
     }
   }

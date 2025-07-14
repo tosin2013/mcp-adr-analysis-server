@@ -1,6 +1,6 @@
 {
   "name": "mcp-adr-analysis-server",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "MCP server for analyzing Architectural Decision Records and project architecture",
   "main": "dist/src/index.js",
   "type": "module",
@@ -21,7 +21,7 @@
     "test:quality": "./scripts/test-advanced-prompting.sh quality",
     "lint": "npm run typecheck",
     "lint:fix": "npm run typecheck",
-    "clean": "sudo rm -rf dist coverage .mcp-adr-cache || rm -rf dist coverage .mcp-adr-cache",
+    "clean": "rm -rf dist coverage .mcp-adr-cache",
     "prepare": "test -d src && npm run build || echo 'Skipping build - no src directory (likely packaging)'",
     "prepublishOnly": "npm run build && npm test && npm run lint",
     "start": "node dist/src/index.js",
