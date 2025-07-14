@@ -1408,6 +1408,64 @@ export class McpAdrAnalysisServer {
               },
               required: []
             }
+          },
+          {
+            name: 'smart_git_push',
+            description: 'Intelligent git push with sensitive content filtering, LLM artifact detection, and release readiness analysis',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                branch: {
+                  type: 'string',
+                  description: 'Target branch for push (optional, uses current branch if not specified)'
+                },
+                message: {
+                  type: 'string',
+                  description: 'Commit message (optional, commits staged files if provided)'
+                },
+                skipValidation: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Skip content validation'
+                },
+                allowedArtifacts: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Files to allow despite being flagged as artifacts'
+                },
+                sensitivityLevel: {
+                  type: 'string',
+                  enum: ['strict', 'moderate', 'permissive'],
+                  default: 'moderate',
+                  description: 'Sensitivity level for content detection'
+                },
+                interactiveMode: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Enable interactive approval workflow'
+                },
+                dryRun: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Show what would be pushed without actually pushing'
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project directory (defaults to current working directory)'
+                },
+                checkReleaseReadiness: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Analyze TODO.md and project state to determine if ready for release'
+                },
+                releaseType: {
+                  type: 'string',
+                  enum: ['major', 'minor', 'patch'],
+                  default: 'minor',
+                  description: 'Type of release to check readiness for'
+                }
+              }
+            }
           }
         ]
       };
@@ -1516,6 +1574,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'generate_deployment_guidance':
             response = await this.generateDeploymentGuidance(args);
+            break;
+          case 'smart_git_push':
+            response = await this.smartGitPush(args);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -4658,6 +4719,18 @@ Please provide:
       throw new McpAdrError(
         `Deployment guidance generation failed: ${error instanceof Error ? error.message : String(error)}`,
         'DEPLOYMENT_GUIDANCE_ERROR'
+      );
+    }
+  }
+
+  private async smartGitPush(args: any): Promise<any> {
+    try {
+      const { smartGitPush } = await import('./tools/smart-git-push-tool.js');
+      return await smartGitPush(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `Smart git push failed: ${error instanceof Error ? error.message : String(error)}`,
+        'SMART_GIT_PUSH_ERROR'
       );
     }
   }
