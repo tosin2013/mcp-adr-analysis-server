@@ -143,7 +143,7 @@ export const LLM_ARTIFACT_PATTERNS: LLMArtifactPattern[] = [
     description: 'Analysis or report file that may be temporary',
     category: 'temporary',
     severity: 'info',
-    filePattern: /^analysis_.*|^report_.*|^output_.*|^results_.*\.(txt|md|json)$/,
+    filePattern: /^analysis_.*|^report_.*|^output_.*|^results_.*\.(txt|md|json|csv)$/,
     contentPattern: /analysis.*results|generated.*on|report.*summary|output.*from/i,
     locationExceptions: ['reports/', 'analysis/', 'output/', 'dev/'],
     confidence: 0.5
@@ -427,6 +427,20 @@ function generateRecommendations(
     recommendations.push('✅ File is in an appropriate location for its type');
   } else {
     recommendations.push('❌ File should be moved to an appropriate directory');
+    
+    // Add specific suggestions from matches
+    const uniqueSuggestions = new Set<string>();
+    matches.forEach(match => {
+      match.suggestions.forEach(suggestion => {
+        if (suggestion.includes('Move') || suggestion.includes('scripts/') || suggestion.includes('tests/') || suggestion.includes('tools/')) {
+          uniqueSuggestions.add(suggestion);
+        }
+      });
+    });
+    
+    uniqueSuggestions.forEach(suggestion => {
+      recommendations.push(suggestion);
+    });
   }
   
   // Count by severity

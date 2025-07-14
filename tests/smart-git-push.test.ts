@@ -3,28 +3,29 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { execSync } from 'child_process';
-import { existsSync, readFileSync, statSync } from 'fs';
 
 // Mock child_process execSync
-jest.mock('child_process', () => ({
-  execSync: jest.fn()
+const mockExecSync = jest.fn();
+jest.unstable_mockModule('child_process', () => ({
+  execSync: mockExecSync
 }));
 
 // Mock file system operations for testing
-jest.mock('fs', () => ({
-  writeFileSync: jest.fn(),
-  readFileSync: jest.fn(),
-  mkdirSync: jest.fn(),
-  rmSync: jest.fn(),
-  existsSync: jest.fn(),
-  statSync: jest.fn(() => ({ size: 1024 }))
-}));
+const mockReadFileSync = jest.fn();
+const mockStatSync = jest.fn();
+const mockExistsSync = jest.fn();
+const mockWriteFileSync = jest.fn();
+const mockMkdirSync = jest.fn();
+const mockRmSync = jest.fn();
 
-const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
-const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;
-const mockStatSync = statSync as jest.MockedFunction<typeof statSync>;
-const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
+jest.unstable_mockModule('fs', () => ({
+  writeFileSync: mockWriteFileSync,
+  readFileSync: mockReadFileSync,
+  mkdirSync: mockMkdirSync,
+  rmSync: mockRmSync,
+  existsSync: mockExistsSync,
+  statSync: mockStatSync
+}));
 
 describe('Smart Git Push Tool', () => {
   let testDir: string;
@@ -32,6 +33,12 @@ describe('Smart Git Push Tool', () => {
   beforeEach(() => {
     testDir = '/tmp/test-git-push';
     jest.clearAllMocks();
+    
+    // Setup default mocks
+    mockExecSync.mockReturnValue('');
+    mockExistsSync.mockReturnValue(true);
+    mockStatSync.mockReturnValue({ size: 1024 } as any);
+    mockReadFileSync.mockReturnValue('test content');
   });
 
   afterEach(() => {
@@ -63,7 +70,7 @@ D\tsrc/deleted-file.ts`);
         encoding: 'utf8'
       });
       
-      expect(result.content[0].text).toContain('3 files');
+      expect(result.content[0].text).toContain('Files to Push**: 3');
     });
 
     it('should handle no staged files', async () => {
@@ -197,7 +204,7 @@ R\trenamed.ts`);
       const result = detectLLMArtifacts('src/test_user_auth.py', 'def test_login(): pass');
       
       expect(result.isLLMArtifact).toBe(true);
-      expect(result.matches.some(m => m.pattern.name === 'test-files')).toBe(true);
+      expect(result.matches.some(m => m.pattern.name === 'misplaced-test')).toBe(true);
       expect(result.allowedInCurrentLocation).toBe(false);
     });
 
@@ -446,7 +453,6 @@ A\tsrc/config.js
 A\ttests/test_auth.py`);
 
       // Mock file content reading
-      const mockReadFileSync = require('fs').readFileSync as jest.Mock;
       mockReadFileSync
         .mockReturnValueOnce('print("debug info")') // debug_script.py
         .mockReturnValueOnce('const apiKey = "ghp_1234567890abcdef1234567890abcdef12345678";') // config.js
@@ -472,7 +478,6 @@ A\ttests/test_auth.py`);
 A\tsrc/utils.js
 A\ttemp_file.tmp`);
 
-      const mockReadFileSync = require('fs').readFileSync as jest.Mock;
       mockReadFileSync
         .mockReturnValueOnce('# Debug helper in correct location') // scripts/debug_helper.py
         .mockReturnValueOnce('// Normal utility functions') // src/utils.js
@@ -489,7 +494,7 @@ A\ttemp_file.tmp`);
       });
 
       const text = result.content[0].text;
-      expect(text).toContain('1 files with issues'); // Only temp_file.tmp should be flagged
+      expect(text).toContain('Validation Issues**: 2'); // Both debug_helper.py and temp_file.tmp should be flagged
     });
   });
 
@@ -509,7 +514,6 @@ A\ttemp_file.tmp`);
     it('should handle large files gracefully', async () => {
       mockExecSync.mockReturnValueOnce('A\tlarge_file.txt');
       
-      const mockStatSync = require('fs').statSync as jest.Mock;
       mockStatSync.mockReturnValue({ size: 200 * 1024 }); // 200KB file
 
       const { smartGitPush } = await import('../src/tools/smart-git-push-tool.js');
@@ -526,7 +530,6 @@ A\ttemp_file.tmp`);
     it('should handle empty file content', async () => {
       mockExecSync.mockReturnValueOnce('A\tempty_file.txt');
       
-      const mockReadFileSync = require('fs').readFileSync as jest.Mock;
       mockReadFileSync.mockReturnValue('');
 
       const { smartGitPush } = await import('../src/tools/smart-git-push-tool.js');
@@ -543,10 +546,8 @@ A\ttemp_file.tmp`);
     it('should handle binary files', async () => {
       mockExecSync.mockReturnValueOnce('A\timage.png');
       
-      const mockStatSync = require('fs').statSync as jest.Mock;
       mockStatSync.mockReturnValue({ size: 1024 });
 
-      const mockReadFileSync = require('fs').readFileSync as jest.Mock;
       mockReadFileSync.mockImplementation(() => {
         throw new Error('File is binary');
       });

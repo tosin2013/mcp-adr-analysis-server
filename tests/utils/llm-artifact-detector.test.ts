@@ -51,7 +51,7 @@ describe('LLM Artifact Detector', () => {
       const result = detectLLMArtifacts('src/test_user_auth.py', 'def test_login(): pass');
       
       expect(result.isLLMArtifact).toBe(true);
-      expect(result.matches.some(m => m.pattern.name === 'test-files')).toBe(true);
+      expect(result.matches.some(m => m.pattern.name === 'misplaced-test')).toBe(true);
       expect(result.severity).toBe('error');
       expect(result.allowedInCurrentLocation).toBe(false);
     });
@@ -77,7 +77,7 @@ describe('LLM Artifact Detector', () => {
       for (const file of testFiles) {
         const result = detectLLMArtifacts(`src/${file}`, 'test content');
         expect(result.isLLMArtifact).toBe(true);
-        expect(result.matches.some(m => m.pattern.name === 'test-files')).toBe(true);
+        expect(result.matches.some(m => m.pattern.name === 'misplaced-test')).toBe(true);
       }
     });
   });

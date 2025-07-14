@@ -3,28 +3,30 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import { existsSync, readFileSync } from 'fs';
-import { execSync } from 'child_process';
 import { join } from 'path';
 
 // Mock file system operations
-jest.mock('fs', () => ({
-  readFileSync: jest.fn(),
-  writeFileSync: jest.fn(),
-  mkdirSync: jest.fn(),
-  rmSync: jest.fn(),
-  existsSync: jest.fn(),
-  statSync: jest.fn(() => ({ size: 1024 }))
+const mockReadFileSync = jest.fn();
+const mockWriteFileSync = jest.fn();
+const mockMkdirSync = jest.fn();
+const mockRmSync = jest.fn();
+const mockExistsSync = jest.fn();
+const mockStatSync = jest.fn();
+
+jest.unstable_mockModule('fs', () => ({
+  readFileSync: mockReadFileSync,
+  writeFileSync: mockWriteFileSync,
+  mkdirSync: mockMkdirSync,
+  rmSync: mockRmSync,
+  existsSync: mockExistsSync,
+  statSync: mockStatSync
 }));
 
 // Mock child_process for git commands
-jest.mock('child_process', () => ({
-  execSync: jest.fn()
+const mockExecSync = jest.fn();
+jest.unstable_mockModule('child_process', () => ({
+  execSync: mockExecSync
 }));
-
-const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;
-const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
-const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 
 describe('Release Readiness Detector', () => {
   let testDir: string;
@@ -32,6 +34,12 @@ describe('Release Readiness Detector', () => {
   beforeEach(() => {
     testDir = '/tmp/test-release-readiness';
     jest.clearAllMocks();
+    
+    // Setup default mocks
+    mockExistsSync.mockReturnValue(true);
+    mockReadFileSync.mockReturnValue('');
+    mockExecSync.mockReturnValue('');
+    mockStatSync.mockReturnValue({ size: 1024 } as any);
   });
 
   afterEach(() => {
@@ -646,7 +654,7 @@ No TODO items yet.
       });
 
       expect(result.summary).toContain('Release Readiness:');
-      expect(result.summary).toContain('Score:');
+      expect(result.summary).toContain('**Score**:');
       expect(result.summary).toContain('Milestone Status');
       expect(result.summary).toContain('Feature A');
       expect(result.summary).toContain('Feature B');

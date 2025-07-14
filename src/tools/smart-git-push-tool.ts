@@ -396,11 +396,11 @@ async function validateStagedFiles(
     }
 
     // 2. Check for LLM artifacts
-    const llmIssues = checkLLMArtifacts(file.path, file.content);
+    const llmIssues = await checkLLMArtifacts(file.path, file.content);
     issues.push(...llmIssues);
 
     // 3. Check location rules
-    const locationIssues = checkLocationRules(file.path, options.allowedArtifacts);
+    const locationIssues = await checkLocationRules(file.path, options.allowedArtifacts);
     issues.push(...locationIssues);
 
     // 4. Generate suggestions
@@ -453,10 +453,10 @@ async function checkSensitiveContent(content: string, filePath: string): Promise
 /**
  * Check for LLM artifacts using enhanced detector
  */
-function checkLLMArtifacts(filePath: string, content?: string): ValidationIssue[] {
+async function checkLLMArtifacts(filePath: string, content?: string): Promise<ValidationIssue[]> {
   try {
     // Use enhanced LLM artifact detector
-    const { detectLLMArtifacts } = require('../utils/llm-artifact-detector.js');
+    const { detectLLMArtifacts } = await import('../utils/llm-artifact-detector.js');
     
     const result = detectLLMArtifacts(filePath, content || '');
     
@@ -464,14 +464,19 @@ function checkLLMArtifacts(filePath: string, content?: string): ValidationIssue[
     const issues: ValidationIssue[] = [];
     
     for (const match of result.matches) {
-      issues.push({
+      const issue: ValidationIssue = {
         type: 'llm-artifact',
         severity: match.pattern.severity === 'error' ? 'error' : 
                  match.pattern.severity === 'warning' ? 'warning' : 'info',
         message: `${match.pattern.description}: ${match.match}`,
-        pattern: match.pattern.name,
-        line: match.line
-      });
+        pattern: match.pattern.name
+      };
+      
+      if (match.line !== undefined) {
+        issue.line = match.line;
+      }
+      
+      issues.push(issue);
     }
 
     return issues;
@@ -484,10 +489,10 @@ function checkLLMArtifacts(filePath: string, content?: string): ValidationIssue[
 /**
  * Check location rules using enhanced location filter
  */
-function checkLocationRules(filePath: string, allowedArtifacts: string[]): ValidationIssue[] {
+async function checkLocationRules(filePath: string, allowedArtifacts: string[]): Promise<ValidationIssue[]> {
   try {
     // Use enhanced location filter
-    const { validateFileLocation } = require('../utils/location-filter.js');
+    const { validateFileLocation } = await import('../utils/location-filter.js');
     
     // Skip if explicitly allowed
     if (allowedArtifacts.includes(basename(filePath)) || allowedArtifacts.includes(filePath)) {

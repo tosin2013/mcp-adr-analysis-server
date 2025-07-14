@@ -69,7 +69,7 @@ export const GIT_SENSITIVE_PATTERNS: SensitivePattern[] = [
   },
   {
     name: 'generic-api-key',
-    pattern: /[Aa]pi[_-]?[Kk]ey['"\s]*[:=]['"\s]*[a-zA-Z0-9_\-]{20,}/,
+    pattern: /[Aa][Pp][Ii][_-]?[Kk][Ee][Yy]['"\s]*[:=]['"\s]*[a-zA-Z0-9_\-]{20,}/,
     description: 'Generic API Key',
     category: 'credentials',
     severity: 'high'
@@ -189,7 +189,7 @@ export const GIT_SENSITIVE_PATTERNS: SensitivePattern[] = [
   // Development/Debug Information
   {
     name: 'debug-info',
-    pattern: /console\.log\(['"`].*(?:password|secret|token|key).*['"`]\)/i,
+    pattern: /console\.log\(.*(?:password|secret|token|key).*\)/i,
     description: 'Debug logging of sensitive information',
     category: 'development',
     severity: 'medium'
@@ -331,7 +331,7 @@ function calculateConfidence(
     confidence -= 0.1; // Documentation files are less likely to contain real secrets
   }
   
-  if (fileExt === '.env' || fileName.includes('config')) {
+  if (fileExt === '.env' || fileName === '.env' || fileName.includes('config')) {
     confidence += 0.2; // Config files are more likely to contain real secrets
   }
   
