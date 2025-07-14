@@ -131,8 +131,7 @@ describe('Smart Git Push with Release Readiness', () => {
         projectPath: testDir,
         dryRun: true,
         checkReleaseReadiness: true,
-        releaseType: 'minor',
-        interactiveMode: false
+        releaseType: 'minor'
       });
 
       expect(result.content[0].text).toContain('Release Readiness Analysis');
@@ -191,8 +190,7 @@ describe('Smart Git Push with Release Readiness', () => {
         dryRun: false,
         checkReleaseReadiness: true,
         releaseType: 'minor',
-        message: 'Release v1.0',
-        interactiveMode: false
+        message: 'Release v1.0'
       });
 
       expect(result.content[0].text).toContain('Smart Git Push - Success ✅');
@@ -320,7 +318,6 @@ describe('Smart Git Push with Release Readiness', () => {
         projectPath: testDir,
         dryRun: true,
         checkReleaseReadiness: true,
-        interactiveMode: false, // Auto-reject for testing
         releaseType: 'minor'
       });
 
