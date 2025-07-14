@@ -233,9 +233,9 @@ export function getLocationSuggestions(
   if (matchingRules.length > 0) {
     const rule = matchingRules[0]; // Use first matching rule
     return {
-      suggestions: rule.allowedPaths,
-      reasoning: rule.description,
-      category: rule.category
+      suggestions: rule!.allowedPaths,
+      reasoning: rule!.description,
+      category: rule!.category
     };
   }
   
@@ -296,7 +296,6 @@ export function shouldIgnoreFile(filePath: string): {
   severity: 'error' | 'warning' | 'info';
 } {
   const fileName = basename(filePath);
-  const fileExt = extname(filePath);
   
   // Temporary files that should definitely be ignored
   const temporaryPatterns = [
@@ -365,7 +364,7 @@ export function createLocationRule(
     name,
     description,
     filePattern: new RegExp(filePattern),
-    contentPattern: contentPattern ? new RegExp(contentPattern, 'i') : undefined,
+    ...(contentPattern && { contentPattern: new RegExp(contentPattern, 'i') }),
     allowedPaths,
     blockedPaths,
     severity,
@@ -376,7 +375,7 @@ export function createLocationRule(
 /**
  * Load location rules from project configuration
  */
-export function loadLocationRules(projectPath: string): LocationRule[] {
+export function loadLocationRules(_projectPath: string): LocationRule[] {
   // This would load from .smartgit.json or similar configuration file
   // For now, return default rules
   return DEFAULT_LOCATION_RULES;

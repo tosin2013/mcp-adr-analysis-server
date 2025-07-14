@@ -496,9 +496,9 @@ describe('LLM Artifact Detector', () => {
       const results = batchDetectLLMArtifacts(files);
       
       expect(results).toHaveLength(3);
-      expect(results[0].isLLMArtifact).toBe(true); // debug_script.py
-      expect(results[1].isLLMArtifact).toBe(true); // temp_file.tmp
-      expect(results[2].isLLMArtifact).toBe(false); // src/main.py
+      expect(results[0]?.isLLMArtifact).toBe(true); // debug_script.py
+      expect(results[1]?.isLLMArtifact).toBe(true); // temp_file.tmp
+      expect(results[2]?.isLLMArtifact).toBe(false); // src/main.py
     });
   });
 

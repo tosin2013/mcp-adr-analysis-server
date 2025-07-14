@@ -4,8 +4,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { execSync } from 'child_process';
-import { writeFileSync, mkdirSync, rmSync, existsSync, readFileSync, statSync } from 'fs';
-import { join } from 'path';
+import { existsSync, readFileSync, statSync } from 'fs';
 
 // Mock child_process execSync
 jest.mock('child_process', () => ({
@@ -56,9 +55,7 @@ D\tsrc/deleted-file.ts`);
         projectPath: testDir,
         dryRun: true,
         checkReleaseReadiness: false,
-        skipValidation: true,
-        checkReleaseReadiness: false,
-        checkReleaseReadiness: false
+        skipValidation: true
       });
 
       expect(mockExecSync).toHaveBeenCalledWith('git diff --cached --name-status', {
@@ -95,9 +92,7 @@ R\trenamed.ts`);
         projectPath: testDir,
         dryRun: true,
         checkReleaseReadiness: false,
-        skipValidation: true,
-        checkReleaseReadiness: false,
-        checkReleaseReadiness: false
+        skipValidation: true
       });
 
       const text = result.content[0].text;
@@ -388,8 +383,7 @@ R\trenamed.ts`);
         message: 'Add new feature',
         skipValidation: true,
         checkReleaseReadiness: false,
-        dryRun: false,
-        checkReleaseReadiness: false
+        dryRun: false
       });
 
       expect(mockExecSync).toHaveBeenCalledWith('git commit -m "Add new feature"', {
@@ -412,13 +406,12 @@ R\trenamed.ts`);
 
       const { smartGitPush } = await import('../src/tools/smart-git-push-tool.js');
       
-      const result = await smartGitPush({
+      await smartGitPush({
         projectPath: testDir,
         branch: 'feature-branch',
         skipValidation: true,
         checkReleaseReadiness: false,
-        dryRun: false,
-        checkReleaseReadiness: false
+        dryRun: false
       });
 
       expect(mockExecSync).toHaveBeenCalledWith('git push origin feature-branch', {
@@ -440,8 +433,7 @@ R\trenamed.ts`);
         projectPath: testDir,
         skipValidation: true,
         checkReleaseReadiness: false,
-        dryRun: false,
-        checkReleaseReadiness: false
+        dryRun: false
       })).rejects.toThrow('Smart git push failed');
     });
   });
