@@ -476,7 +476,7 @@ export async function integrateWithContentMasking(
       }
     }
   } catch (error) {
-    console.warn('Could not integrate with existing content masking tool:', error);
+    // Silently handle content masking tool integration errors
   }
   
   // Combine recommendations
