@@ -9,6 +9,8 @@ import { McpAdrError } from '../types/index.js';
 import { execSync } from 'child_process';
 import { readFileSync, existsSync, statSync } from 'fs';
 import { join, basename } from 'path';
+import { jsonSafeFilePath, jsonSafeMarkdownList, jsonSafeError, jsonSafeUserInput } from '../utils/json-safe.js';
+import { validateMcpResponse } from '../utils/mcp-response-validator.js';
 
 interface SmartGitPushArgs {
   branch?: string;
@@ -46,9 +48,9 @@ interface ValidationIssue {
 }
 
 /**
- * Main smart git push function - MCP Safe Version
+ * Main smart git push function - MCP Safe Version with Response Validation
  */
-export async function smartGitPush(args: SmartGitPushArgs): Promise<any> {
+async function _smartGitPushInternal(args: SmartGitPushArgs): Promise<any> {
   const {
     branch,
     message,
@@ -97,10 +99,10 @@ No staged files found. Use \`git add\` to stage files before pushing.
         responseText += `
 
 ## Release Readiness Analysis
-${releaseReadinessResult.summary}
+${jsonSafeUserInput(releaseReadinessResult.summary)}
 
 ### Recommendations
-${releaseReadinessResult.recommendations.map(r => `- ${r}`).join('\n')}
+${jsonSafeMarkdownList(releaseReadinessResult.recommendations)}
 
 ${releaseReadinessResult.isReady ? 
   '✅ **Project is ready for release!** Consider creating a release after staging files.' : 
@@ -155,11 +157,11 @@ Push blocked due to critical issues that must be resolved.
 ## Issues Found
 ${issues.map(issue => `
 
-### ${issue.file}
-${issue.issues.map(i => `- **${i.severity.toUpperCase()}**: ${i.message}`).join('\n')}
+### ${jsonSafeFilePath(issue.file)}
+${issue.issues.map(i => `- **${i.severity.toUpperCase()}**: ${jsonSafeUserInput(i.message)}`).join('\n')}
 
 **Suggestions:**
-${issue.suggestions.map(s => `- ${s}`).join('\n')}
+${jsonSafeMarkdownList(issue.suggestions)}
 `).join('\n')}
 `;
 
@@ -168,13 +170,13 @@ ${issue.suggestions.map(s => `- ${s}`).join('\n')}
         cancelText += `
 
 ## Release Readiness Issues
-${releaseReadinessResult.summary}
+${jsonSafeUserInput(releaseReadinessResult.summary)}
 
 ### Critical Blockers
-${releaseReadinessResult.blockers.filter(b => b.severity === 'error').map(b => `- **${b.type}**: ${b.message}`).join('\n')}
+${releaseReadinessResult.blockers.filter(b => b.severity === 'error').map(b => `- **${b.type}**: ${jsonSafeUserInput(b.message)}`).join('\n')}
 
 ### Recommendations
-${releaseReadinessResult.recommendations.map(r => `- ${r}`).join('\n')}
+${jsonSafeMarkdownList(releaseReadinessResult.recommendations)}
 `;
       }
 
@@ -201,25 +203,25 @@ ${releaseReadinessResult.recommendations.map(r => `- ${r}`).join('\n')}
 ${checkReleaseReadiness ? `- **Release Readiness**: ${releaseReadinessResult?.isReady ? '✅ Ready' : '❌ Not Ready'}` : ''}
 
 ## Files Pushed
-${stagedFiles.map(f => `- ${f.path} (${f.status})`).join('\n')}
+${stagedFiles.map(f => `- ${jsonSafeFilePath(f.path)} (${f.status})`).join('\n')}
 
 ${issues.length > 0 ? `
 
 ## Validation Issues (Auto-Approved)
 ${issues.map(issue => `
 
-### ${issue.file}
-${issue.issues.map(i => `- **${i.severity.toUpperCase()}**: ${i.message}`).join('\n')}
+### ${jsonSafeFilePath(issue.file)}
+${issue.issues.map(i => `- **${i.severity.toUpperCase()}**: ${jsonSafeUserInput(i.message)}`).join('\n')}
 `).join('\n')}
 ` : ''}
 
 ${releaseReadinessResult ? `
 
 ## Release Readiness Analysis
-${releaseReadinessResult.summary}
+${jsonSafeUserInput(releaseReadinessResult.summary)}
 
 ### Post-Push Recommendations
-${releaseReadinessResult.recommendations.map(r => `- ${r}`).join('\n')}
+${jsonSafeMarkdownList(releaseReadinessResult.recommendations)}
 
 ${releaseReadinessResult.isReady ? 
   '🎉 **Congratulations!** This push completed a release-ready state. Consider creating a release tag.' : 
@@ -229,7 +231,7 @@ ${releaseReadinessResult.isReady ?
 
 ## Git Output
 \`\`\`
-${pushResult.output}
+${jsonSafeUserInput(pushResult.output)}
 \`\`\`
 
 ## Next Steps
@@ -257,28 +259,28 @@ ${releaseReadinessResult?.isReady ? '- Consider creating a release tag or publis
 ${checkReleaseReadiness ? `- **Release Readiness**: ${releaseReadinessResult?.isReady ? '✅ Ready' : '❌ Not Ready'}` : ''}
 
 ## Staged Files
-${stagedFiles.map(f => `- ${f.path} (${f.status}) - ${f.size} bytes`).join('\n')}
+${stagedFiles.map(f => `- ${jsonSafeFilePath(f.path)} (${f.status}) - ${f.size} bytes`).join('\n')}
 
 ${issues.length > 0 ? `
 
 ## Validation Issues Found
 ${issues.map(issue => `
 
-### ${issue.file}
-${issue.issues.map(i => `- **${i.severity.toUpperCase()}**: ${i.message}`).join('\n')}
+### ${jsonSafeFilePath(issue.file)}
+${issue.issues.map(i => `- **${i.severity.toUpperCase()}**: ${jsonSafeUserInput(i.message)}`).join('\n')}
 
 **Suggestions:**
-${issue.suggestions.map(s => `- ${s}`).join('\n')}
+${jsonSafeMarkdownList(issue.suggestions)}
 `).join('\n')}
 ` : '## ✅ No Validation Issues Found'}
 
 ${releaseReadinessResult ? `
 
 ## Release Readiness Analysis
-${releaseReadinessResult.summary}
+${jsonSafeUserInput(releaseReadinessResult.summary)}
 
 ### Pre-Push Recommendations
-${releaseReadinessResult.recommendations.map(r => `- ${r}`).join('\n')}
+${jsonSafeMarkdownList(releaseReadinessResult.recommendations)}
 
 ${releaseReadinessResult.isReady ? 
   '🎉 **Ready for Release!** This push would complete all release requirements.' : 
@@ -305,7 +307,7 @@ git push${branch ? ` origin ${branch}` : ''}
 
   } catch (error) {
     throw new McpAdrError(
-      `Smart git push failed: ${error instanceof Error ? error.message : String(error)}`,
+      `Smart git push failed: ${jsonSafeError(error)}`,
       'GIT_PUSH_ERROR'
     );
   }
@@ -363,7 +365,7 @@ async function getStagedFiles(projectPath: string): Promise<GitFile[]> {
     return files;
   } catch (error) {
     throw new McpAdrError(
-      `Failed to get staged files: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to get staged files: ${jsonSafeError(error)}`,
       'GIT_STATUS_ERROR'
     );
   }
@@ -598,8 +600,36 @@ async function executePush(
     return { output, success: true };
   } catch (error) {
     throw new McpAdrError(
-      `Git push failed: ${error instanceof Error ? error.message : String(error)}`,
+      `Git push failed: ${jsonSafeError(error)}`,
       'GIT_PUSH_FAILED'
     );
+  }
+}
+
+/**
+ * Exported smart git push function with JSON-safe content escaping
+ */
+export async function smartGitPush(args: SmartGitPushArgs): Promise<any> {
+  const result = await _smartGitPushInternal(args);
+  return validateMcpResponse(result);
+}
+
+/**
+ * MCP-safe wrapper for smart git push that never throws
+ */
+export async function smartGitPushMcpSafe(args: SmartGitPushArgs): Promise<any> {
+  try {
+    const result = await _smartGitPushInternal(args);
+    return validateMcpResponse(result);
+  } catch (error) {
+    // Always return a safe MCP response, never throw
+    const errorResponse = {
+      content: [{
+        type: 'text',
+        text: `# Smart Git Push - Error\n\n**Error**: ${jsonSafeError(error)}\n\nPlease check your git configuration and try again.`
+      }],
+      isError: true
+    };
+    return validateMcpResponse(errorResponse);
   }
 }
