@@ -40,15 +40,15 @@ describe('Smart Git Push with Release Readiness', () => {
       mockExecSync.mockReturnValueOnce('A\tsrc/feature.ts\nM\tREADME.md');
       
       // Mock file reading
-      mockExistsSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) return true;
-        if (path.includes('feature.ts')) return true;
-        if (path.includes('README.md')) return true;
+      mockExistsSync.mockImplementation((path: any) => {
+        if (String(path).includes('TODO.md')) return true;
+        if (String(path).includes('feature.ts')) return true;
+        if (String(path).includes('README.md')) return true;
         return false;
       });
       
-      mockReadFileSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) {
+      mockReadFileSync.mockImplementation((path: any, _encoding?: any): any => {
+        if (String(path).includes('TODO.md')) {
           return `# Project TODO
 
 ## Core Features
@@ -63,10 +63,10 @@ describe('Smart Git Push with Release Readiness', () => {
 - [x] E2E tests
 `;
         }
-        if (path.includes('feature.ts')) {
+        if (String(path).includes('feature.ts')) {
           return 'export function newFeature() { return "Hello World"; }';
         }
-        if (path.includes('README.md')) {
+        if (String(path).includes('README.md')) {
           return '# Project\n\nThis is a test project.';
         }
         return '';
@@ -94,14 +94,14 @@ describe('Smart Git Push with Release Readiness', () => {
       mockExecSync.mockReturnValueOnce('A\tsrc/feature.ts');
       
       // Mock file reading with critical TODOs
-      mockExistsSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) return true;
-        if (path.includes('feature.ts')) return true;
+      mockExistsSync.mockImplementation((path: any) => {
+        if (String(path).includes('TODO.md')) return true;
+        if (String(path).includes('feature.ts')) return true;
         return false;
       });
       
-      mockReadFileSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) {
+      mockReadFileSync.mockImplementation((path: any, _encoding?: any): any => {
+        if (String(path).includes('TODO.md')) {
           return `# Project TODO
 
 ## Critical Issues
@@ -114,7 +114,7 @@ describe('Smart Git Push with Release Readiness', () => {
 - [ ] Enhanced features
 `;
         }
-        if (path.includes('feature.ts')) {
+        if (String(path).includes('feature.ts')) {
           return 'export function newFeature() { return "Hello World"; }';
         }
         return '';
@@ -146,14 +146,14 @@ describe('Smart Git Push with Release Readiness', () => {
         .mockReturnValueOnce('Push successful'); // git push
       
       // Mock file reading with completed TODOs
-      mockExistsSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) return true;
-        if (path.includes('feature.ts')) return true;
+      mockExistsSync.mockImplementation((path: any) => {
+        if (String(path).includes('TODO.md')) return true;
+        if (String(path).includes('feature.ts')) return true;
         return false;
       });
       
-      mockReadFileSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) {
+      mockReadFileSync.mockImplementation((path: any, _encoding?: any): any => {
+        if (String(path).includes('TODO.md')) {
           return `# Project TODO
 
 ## Release 1.0
@@ -167,7 +167,7 @@ describe('Smart Git Push with Release Readiness', () => {
 - [ ] Additional features (low priority)
 `;
         }
-        if (path.includes('feature.ts')) {
+        if (String(path).includes('feature.ts')) {
           return 'export function newFeature() { return "Hello World"; }';
         }
         return '';
@@ -233,8 +233,8 @@ describe('Smart Git Push with Release Readiness', () => {
       
       // Mock partial completion
       mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) {
+      mockReadFileSync.mockImplementation((path: any, _encoding?: any): any => {
+        if (String(path).includes('TODO.md')) {
           return `# Project TODO
 
 ## Major Features
@@ -282,14 +282,14 @@ describe('Smart Git Push with Release Readiness', () => {
       mockExecSync.mockReturnValueOnce('A\tdebug_script.py');
       
       // Mock problematic file and critical TODOs
-      mockExistsSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) return true;
-        if (path.includes('debug_script.py')) return true;
+      mockExistsSync.mockImplementation((path: any) => {
+        if (String(path).includes('TODO.md')) return true;
+        if (String(path).includes('debug_script.py')) return true;
         return false;
       });
       
-      mockReadFileSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) {
+      mockReadFileSync.mockImplementation((path: any, _encoding?: any): any => {
+        if (String(path).includes('TODO.md')) {
           return `# Project TODO
 
 ## Critical Issues
@@ -297,7 +297,7 @@ describe('Smart Git Push with Release Readiness', () => {
 - [ ] Memory leak in production (blocker)
 `;
         }
-        if (path.includes('debug_script.py')) {
+        if (String(path).includes('debug_script.py')) {
           return 'print("Debug information")';
         }
         return '';
@@ -327,14 +327,14 @@ describe('Smart Git Push with Release Readiness', () => {
       mockExecSync.mockReturnValueOnce('A\tsrc/feature.ts');
       
       // Mock TODO.md read error
-      mockExistsSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) return true;
-        if (path.includes('feature.ts')) return true;
+      mockExistsSync.mockImplementation((path: any) => {
+        if (String(path).includes('TODO.md')) return true;
+        if (String(path).includes('feature.ts')) return true;
         return false;
       });
       
-      mockReadFileSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) {
+      mockReadFileSync.mockImplementation((path: any, _encoding?: any): any => {
+        if (String(path).includes('TODO.md')) {
           throw new Error('File read error');
         }
         return 'export function test() {}';
@@ -391,8 +391,8 @@ describe('Smart Git Push with Release Readiness', () => {
       
       // Mock medium-sized TODO.md
       mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) {
+      mockReadFileSync.mockImplementation((path: any, _encoding?: any): any => {
+        if (String(path).includes('TODO.md')) {
           let content = '# Project TODO\n\n';
           for (let i = 0; i < 10; i++) {
             content += `## Feature ${i}\n`;
@@ -430,8 +430,8 @@ describe('Smart Git Push with Release Readiness', () => {
       
       // Mock TODO.md with specific completion rates
       mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) {
+      mockReadFileSync.mockImplementation((path: any, _encoding?: any): any => {
+        if (String(path).includes('TODO.md')) {
           return `# Project TODO
 
 ## Core Features
@@ -480,8 +480,8 @@ describe('Smart Git Push with Release Readiness', () => {
       
       // Mock empty TODO.md
       mockExistsSync.mockReturnValue(true);
-      mockReadFileSync.mockImplementation((path: string) => {
-        if (path.includes('TODO.md')) {
+      mockReadFileSync.mockImplementation((path: any, _encoding?: any): any => {
+        if (String(path).includes('TODO.md')) {
           return '# Project TODO\n\nNo current tasks.';
         }
         return 'export function test() {}';

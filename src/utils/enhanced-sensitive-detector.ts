@@ -220,15 +220,17 @@ export async function analyzeSensitiveContent(
     const line = lines[lineIndex];
     const lineNumber = lineIndex + 1;
     
+    if (!line) continue;
+    
     for (const pattern of allPatterns) {
       const regex = new RegExp(pattern.pattern, 'g');
-      let match;
+      let match: RegExpExecArray | null;
       
       while ((match = regex.exec(line)) !== null) {
         // Check for false positives
         if (pattern.falsePositivePatterns) {
           const isFalsePositive = pattern.falsePositivePatterns.some(fp => 
-            fp.test(match[0])
+            fp.test(match![0])
           );
           if (isFalsePositive) {
             continue;
@@ -241,16 +243,16 @@ export async function analyzeSensitiveContent(
         const context = lines.slice(contextStart, contextEnd).join('\n');
         
         // Calculate confidence based on context and pattern specificity
-        const confidence = calculateConfidence(pattern, match[0], context, filePath);
+        const confidence = calculateConfidence(pattern, match![0], context, filePath);
         
         // Generate suggestions
-        const suggestions = generateSuggestions(pattern, filePath, match[0]);
+        const suggestions = generateSuggestions(pattern, filePath);
         
         matches.push({
           pattern,
-          match: match[0],
+          match: match![0],
           line: lineNumber,
-          column: match.index || 0,
+          column: match!.index || 0,
           context,
           confidence,
           suggestions
@@ -277,7 +279,7 @@ export async function analyzeSensitiveContent(
   };
   
   // Generate recommendations
-  const recommendations = generateRecommendations(matches, filePath);
+  const recommendations = generateRecommendations(matches);
   
   return {
     filePath,
@@ -346,8 +348,7 @@ function calculateConfidence(
  */
 function generateSuggestions(
   pattern: SensitivePattern,
-  filePath: string,
-  match: string
+  filePath: string
 ): string[] {
   const suggestions: string[] = [];
   const fileName = basename(filePath);
@@ -403,8 +404,7 @@ function generateSuggestions(
  * Generate overall recommendations
  */
 function generateRecommendations(
-  matches: SensitiveMatch[],
-  filePath: string
+  matches: SensitiveMatch[]
 ): string[] {
   const recommendations: string[] = [];
   
@@ -472,7 +472,7 @@ export async function integrateWithContentMasking(
       // Extract existing recommendations
       const recMatch = resultText.match(/## Next Steps\n\n(.*?)(?=\n##|$)/s);
       if (recMatch) {
-        existingRecommendations = recMatch[1].split('\n').filter(line => line.trim());
+        existingRecommendations = recMatch[1].split('\n').filter((line: string) => line.trim());
       }
     }
   } catch (error) {
@@ -487,7 +487,7 @@ export async function integrateWithContentMasking(
   
   return {
     sensitiveAnalysis,
-    maskingPrompt,
+    ...(maskingPrompt && { maskingPrompt }),
     combinedRecommendations
   };
 }

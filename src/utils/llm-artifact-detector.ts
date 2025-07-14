@@ -5,7 +5,7 @@
  * Focuses on development artifacts, debug scripts, and temporary files
  */
 
-import { basename, dirname, extname } from 'path';
+import { basename, dirname } from 'path';
 
 export interface LLMArtifactPattern {
   name: string;
@@ -203,7 +203,7 @@ export const LLM_ARTIFACT_PATTERNS: LLMArtifactPattern[] = [
     description: 'Unusually verbose comments typical of LLM generation',
     category: 'documentation',
     severity: 'info',
-    combinedPattern: (fileName: string, content: string) => {
+    combinedPattern: (_fileName: string, content: string) => {
       // Check for excessive commenting ratio
       const lines = content.split('\n');
       const commentLines = lines.filter(line => 
@@ -307,11 +307,11 @@ function checkPattern(
     if (contentMatches) {
       const lines = content.split('\n');
       for (let i = 0; i < lines.length; i++) {
-        if (pattern.contentPattern.test(lines[i])) {
+        if (pattern.contentPattern.test(lines[i]!)) {
           matches.push({
             pattern,
             matchType: 'content',
-            match: contentMatches[0],
+            match: lines[i] || '',
             line: i + 1,
             context: getLineContext(lines, i, 2),
             confidence: pattern.confidence * 0.9, // Slightly lower confidence for content matches
@@ -352,11 +352,10 @@ function getLineContext(lines: string[], lineIndex: number, contextSize: number)
 function generateSuggestions(
   pattern: LLMArtifactPattern,
   filePath: string,
-  matchType: string
+  _matchType: string
 ): string[] {
   const suggestions: string[] = [];
   const fileName = basename(filePath);
-  const dirPath = dirname(filePath);
   
   // Category-specific suggestions
   switch (pattern.category) {
@@ -415,7 +414,7 @@ function generateSuggestions(
  */
 function generateRecommendations(
   matches: LLMArtifactMatch[],
-  filePath: string,
+  _filePath: string,
   allowedInCurrentLocation: boolean
 ): string[] {
   const recommendations: string[] = [];
@@ -540,8 +539,8 @@ export function createLLMPattern(
     description,
     category,
     severity,
-    filePattern: options.filePattern ? new RegExp(options.filePattern) : undefined,
-    contentPattern: options.contentPattern ? new RegExp(options.contentPattern, 'i') : undefined,
+    ...(options.filePattern && { filePattern: new RegExp(options.filePattern) }),
+    ...(options.contentPattern && { contentPattern: new RegExp(options.contentPattern, 'i') }),
     locationExceptions: options.locationExceptions || [],
     confidence: options.confidence || 0.7
   };

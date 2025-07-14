@@ -8,7 +8,7 @@
 import { McpAdrError } from '../types/index.js';
 import { execSync } from 'child_process';
 import { readFileSync, existsSync, statSync } from 'fs';
-import { join, dirname, basename, extname } from 'path';
+import { join, basename } from 'path';
 
 interface SmartGitPushArgs {
   branch?: string;
@@ -26,7 +26,7 @@ interface SmartGitPushArgs {
 interface GitFile {
   path: string;
   status: 'added' | 'modified' | 'deleted' | 'renamed';
-  content?: string;
+  content: string;
   size: number;
 }
 
@@ -338,8 +338,8 @@ async function getStagedFiles(projectPath: string): Promise<GitFile[]> {
 
       files.push({
         path,
-        status: mapGitStatus(status),
-        content,
+        status: mapGitStatus(status || 'M'),
+        content: content || '',
         size
       });
     }
@@ -564,8 +564,8 @@ async function handleInteractiveApproval(
         type: i.type,
         message: i.message,
         severity: i.severity,
-        pattern: i.pattern,
-        line: i.line
+        ...(i.pattern && { pattern: i.pattern }),
+        ...(i.line && { line: i.line })
       })),
       suggestions: issue.suggestions,
       severity: issue.issues.reduce((highest, i) => {
@@ -657,27 +657,3 @@ async function executePush(
   }
 }
 
-/**
- * Get content type for file analysis
- */
-function getContentType(filePath: string): 'code' | 'documentation' | 'configuration' | 'logs' | 'general' {
-  const ext = extname(filePath).toLowerCase();
-  
-  if (['.js', '.ts', '.py', '.java', '.cpp', '.c', '.go', '.rs'].includes(ext)) {
-    return 'code';
-  }
-  
-  if (['.md', '.txt', '.rst', '.doc'].includes(ext)) {
-    return 'documentation';
-  }
-  
-  if (['.json', '.yaml', '.yml', '.ini', '.conf', '.config'].includes(ext)) {
-    return 'configuration';
-  }
-  
-  if (['.log', '.out', '.err'].includes(ext)) {
-    return 'logs';
-  }
-  
-  return 'general';
-}

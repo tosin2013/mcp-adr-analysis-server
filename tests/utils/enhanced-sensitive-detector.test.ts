@@ -2,7 +2,7 @@
  * Test suite for enhanced sensitive content detector
  */
 
-import { describe, it, expect, jest } from '@jest/globals';
+import { describe, it, expect } from '@jest/globals';
 
 describe('Enhanced Sensitive Content Detector', () => {
   describe('GitHub Token Detection', () => {
@@ -327,7 +327,7 @@ describe('Enhanced Sensitive Content Detector', () => {
       
       const githubMatches = result.matches.filter(m => m.pattern.name === 'github-token');
       expect(githubMatches.length).toBeGreaterThan(0);
-      expect(githubMatches[0].confidence).toBeGreaterThan(0.7);
+      expect(githubMatches[0]?.confidence).toBeGreaterThan(0.7);
     });
 
     it('should assign lower confidence to example content', async () => {
@@ -344,7 +344,7 @@ describe('Enhanced Sensitive Content Detector', () => {
       
       const apiKeyMatches = result.matches.filter(m => m.pattern.name === 'generic-api-key');
       if (apiKeyMatches.length > 0) {
-        expect(apiKeyMatches[0].confidence).toBeLessThan(0.5);
+        expect(apiKeyMatches[0]?.confidence).toBeLessThan(0.5);
       }
     });
 
@@ -357,7 +357,7 @@ describe('Enhanced Sensitive Content Detector', () => {
       
       const matches = result.matches.filter(m => m.pattern.name === 'generic-api-key');
       expect(matches.length).toBeGreaterThan(0);
-      expect(matches[0].confidence).toBeGreaterThan(0.5);
+      expect(matches[0]?.confidence).toBeGreaterThan(0.5);
     });
   });
 
@@ -382,7 +382,7 @@ describe('Enhanced Sensitive Content Detector', () => {
       
       const criticalMatches = result.matches.filter(m => m.pattern.severity === 'critical');
       expect(criticalMatches.length).toBeGreaterThan(0);
-      expect(criticalMatches[0].suggestions).toContain('🚨 ROTATE THIS CREDENTIAL IMMEDIATELY');
+      expect(criticalMatches[0]?.suggestions).toContain('🚨 ROTATE THIS CREDENTIAL IMMEDIATELY');
     });
   });
 
@@ -400,7 +400,7 @@ describe('Enhanced Sensitive Content Detector', () => {
       const docMatches = docResult.matches.filter(m => m.pattern.name === 'generic-secret');
       
       if (configMatches.length > 0 && docMatches.length > 0) {
-        expect(configMatches[0].confidence).toBeGreaterThan(docMatches[0].confidence);
+        expect(configMatches[0]?.confidence).toBeGreaterThan(docMatches[0]?.confidence || 0);
       }
     });
   });

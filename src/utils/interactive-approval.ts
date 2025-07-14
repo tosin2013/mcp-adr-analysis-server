@@ -329,7 +329,7 @@ function getMoveTarget(item: ApprovalItem): string {
     const firstSuggestion = moveSuggestions[0];
     if (firstSuggestion) {
       const dirMatch = firstSuggestion.match(/(?:to|in)\s+(\w+\/)/);
-      return dirMatch ? dirMatch[1] : 'scripts/';
+      return dirMatch ? dirMatch[1]! : 'scripts/';
     }
   }
   
