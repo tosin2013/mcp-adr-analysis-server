@@ -1272,7 +1272,7 @@ export class McpAdrAnalysisServer {
               properties: {
                 operation: {
                   type: 'string',
-                  enum: ['update_status', 'add_tasks', 'merge_adr_updates', 'sync_progress', 'analyze_progress'],
+                  enum: ['update_status', 'add_tasks', 'merge_adr_updates', 'sync_progress', 'analyze_progress', 'delete_task', 'edit_task', 'move_task', 'manage_section', 'search_tasks'],
                   description: 'Operation to perform on TODO.md'
                 },
                 todoPath: {
@@ -1559,6 +1559,115 @@ export class McpAdrAnalysisServer {
               },
               required: ['operation']
             }
+          },
+          {
+            name: 'smart_score',
+            description: 'Central coordination for project health scoring system - recalculate, sync, diagnose, optimize, and reset scores across all MCP tools',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                operation: {
+                  type: 'string',
+                  enum: ['recalculate_scores', 'sync_scores', 'diagnose_scores', 'optimize_weights', 'reset_scores'],
+                  description: 'Smart scoring operation to perform'
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project directory'
+                },
+                components: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    enum: ['task_completion', 'deployment_readiness', 'architecture_compliance', 'security_posture', 'code_quality', 'all']
+                  },
+                  default: ['all'],
+                  description: 'Score components to recalculate (for recalculate_scores operation)'
+                },
+                forceUpdate: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Force update even if data is fresh'
+                },
+                updateSources: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Trigger source tool updates before recalculating'
+                },
+                todoPath: {
+                  type: 'string',
+                  default: 'todo.md',
+                  description: 'Path to TODO.md file (for sync_scores operation)'
+                },
+                triggerTools: {
+                  type: 'array',
+                  items: {
+                    type: 'string',
+                    enum: ['manage_todo', 'smart_git_push', 'compare_adr_progress', 'analyze_content_security', 'validate_rules']
+                  },
+                  description: 'Tools to trigger for fresh data (for sync_scores operation)'
+                },
+                rebalanceWeights: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Recalculate optimal scoring weights (for sync_scores operation)'
+                },
+                includeHistory: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Include score history analysis (for diagnose_scores operation)'
+                },
+                checkDataFreshness: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Validate data freshness across tools (for diagnose_scores operation)'
+                },
+                suggestImprovements: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Provide score improvement suggestions (for diagnose_scores operation)'
+                },
+                analysisMode: {
+                  type: 'string',
+                  enum: ['current_state', 'historical_data', 'project_type'],
+                  default: 'current_state',
+                  description: 'Method for weight optimization (for optimize_weights operation)'
+                },
+                customWeights: {
+                  type: 'object',
+                  properties: {
+                    taskCompletion: { type: 'number', minimum: 0, maximum: 1 },
+                    deploymentReadiness: { type: 'number', minimum: 0, maximum: 1 },
+                    architectureCompliance: { type: 'number', minimum: 0, maximum: 1 },
+                    securityPosture: { type: 'number', minimum: 0, maximum: 1 },
+                    codeQuality: { type: 'number', minimum: 0, maximum: 1 }
+                  },
+                  description: 'Custom weight overrides (for optimize_weights operation)'
+                },
+                previewOnly: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Preview changes without applying (for optimize_weights operation)'
+                },
+                component: {
+                  type: 'string',
+                  enum: ['task_completion', 'deployment_readiness', 'architecture_compliance', 'security_posture', 'code_quality', 'all'],
+                  default: 'all',
+                  description: 'Score component to reset (for reset_scores operation)'
+                },
+                preserveHistory: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Preserve score history in backup (for reset_scores operation)'
+                },
+                recalculateAfterReset: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Immediately recalculate after reset (for reset_scores operation)'
+                }
+              },
+              required: ['operation', 'projectPath']
+            }
           }
         ]
       };
@@ -1673,6 +1782,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'troubleshoot_guided_workflow':
             response = await this.troubleshootGuidedWorkflow(args);
+            break;
+          case 'smart_score':
+            response = await this.smartScore(args);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -4906,6 +5018,18 @@ Please provide:
       throw new McpAdrError(
         `Troubleshoot guided workflow failed: ${error instanceof Error ? error.message : String(error)}`,
         'TROUBLESHOOT_GUIDED_WORKFLOW_ERROR'
+      );
+    }
+  }
+
+  private async smartScore(args: any): Promise<any> {
+    try {
+      const { smartScore } = await import('./tools/smart-score-tool.js');
+      return await smartScore(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `Smart score analysis failed: ${error instanceof Error ? error.message : String(error)}`,
+        'SMART_SCORE_ERROR'
       );
     }
   }
