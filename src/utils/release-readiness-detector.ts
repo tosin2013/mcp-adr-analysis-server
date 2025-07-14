@@ -72,7 +72,7 @@ export async function analyzeReleaseReadiness(
   try {
     // 1. Analyze TODO.md if it exists
     if (existsSync(todoPath)) {
-      const todoAnalysis = await analyzeTodoFile(todoPath);
+      const todoAnalysis = await analyzeTodoFile(todoPath, minCompletionRate);
       result.milestones = todoAnalysis.milestones;
       result.blockers.push(...todoAnalysis.blockers);
     }
@@ -123,7 +123,7 @@ export async function analyzeReleaseReadiness(
 /**
  * Analyze TODO.md file for completion status
  */
-async function analyzeTodoFile(todoPath: string): Promise<{
+async function analyzeTodoFile(todoPath: string, minCompletionRate: number = 0.7): Promise<{
   milestones: MilestoneStatus[];
   blockers: ReleaseBlocker[];
 }> {
@@ -153,7 +153,7 @@ async function analyzeTodoFile(todoPath: string): Promise<{
       });
     }
 
-    if (milestone.completionRate < 0.7) {
+    if (milestone.completionRate < minCompletionRate) {
       blockers.push({
         type: 'incomplete-features',
         severity: milestone.completionRate < 0.5 ? 'error' : 'warning',
@@ -271,23 +271,28 @@ async function analyzeProjectState(projectPath: string): Promise<{
   const blockers: ReleaseBlocker[] = [];
 
   try {
-    // Check if tests are passing (look for test scripts)
+    // Check if tests are configured (look for test scripts)
     const packageJsonPath = join(projectPath, 'package.json');
     if (existsSync(packageJsonPath)) {
-      const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-      if (packageJson.scripts && packageJson.scripts.test) {
-        // In a real implementation, we'd run the tests
-        // For now, we'll just note that tests should be run
-        blockers.push({
-          type: 'test-failures',
-          severity: 'warning',
-          message: 'Tests should be run before release',
-          suggestedActions: [
-            'Run test suite: npm test',
-            'Ensure all tests pass',
-            'Review test coverage'
-          ]
-        });
+      try {
+        const packageJsonContent = readFileSync(packageJsonPath, 'utf8');
+        const packageJson = JSON.parse(packageJsonContent);
+        if (packageJson.scripts && packageJson.scripts.test) {
+          // In a real implementation, we'd run the tests
+          // For now, we'll just note that tests should be run
+          blockers.push({
+            type: 'test-failures',
+            severity: 'warning',
+            message: 'Tests should be run before release',
+            suggestedActions: [
+              'Run test suite: npm test',
+              'Ensure all tests pass',
+              'Review test coverage'
+            ]
+          });
+        }
+      } catch (parseError) {
+        // Invalid package.json, skip test analysis
       }
     }
 
@@ -323,7 +328,7 @@ async function analyzeCommitPatterns(projectPath: string): Promise<{
 
   try {
     // Check recent commit activity
-    const { execSync } = require('child_process');
+    const { execSync } = await import('child_process');
     
     // Get recent commits
     const recentCommits = execSync('git log --oneline -n 10', {
@@ -415,9 +420,9 @@ function calculateReadinessScore(
     confidence *= Math.max(0.5, 1 - completionVariance);
   }
 
-  // Factor in blockers
+  // Factor in blockers (excluding test-failures warnings for base scoring)
   const errorCount = blockers.filter(b => b.severity === 'error').length;
-  const warningCount = blockers.filter(b => b.severity === 'warning').length;
+  const warningCount = blockers.filter(b => b.severity === 'warning' && b.type !== 'test-failures').length;
 
   score *= Math.max(0, 1 - (errorCount * 0.3 + warningCount * 0.1));
 
@@ -427,8 +432,9 @@ function calculateReadinessScore(
     score *= 0.3; // Heavily penalize critical todos
   }
 
-  // Determine readiness
-  const isReady = score >= options.minCompletionRate && errorCount === 0 && criticalTodos <= options.maxCriticalTodos;
+  // Determine readiness (ignore test-failures warnings for readiness check)
+  const criticalBlockers = blockers.filter(b => b.severity === 'error' || (b.severity === 'warning' && b.type !== 'test-failures'));
+  const isReady = score >= options.minCompletionRate && criticalBlockers.length === 0 && criticalTodos <= options.maxCriticalTodos;
 
   return { score, confidence, isReady };
 }
@@ -468,6 +474,12 @@ function generateReleaseRecommendations(
     recommendations.push('🚨 Critical blockers must be resolved:');
     criticalBlockers.forEach(blocker => {
       recommendations.push(`  - ${blocker.message}`);
+      // Add specific TODO items if available
+      if (blocker.todoItems && blocker.todoItems.length > 0) {
+        blocker.todoItems.forEach(todo => {
+          recommendations.push(`    • ${todo}`);
+        });
+      }
     });
   }
 
