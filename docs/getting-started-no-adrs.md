@@ -245,7 +245,64 @@ generate_adr_todo
 - **Phase 2 (Implementation)**: "Implement TypeScript migration with error handling" (High priority, 2 weeks)
 - **Validation**: "Verify production-ready TypeScript setup meets ADR goals" (Critical, 2 days)
 
-### Step 6: Establish Quality Validation
+### Step 6: AI-Powered Workflow Orchestration
+
+When starting from scratch, let AI plan your implementation workflow:
+
+**Tool Call:**
+```
+tool_chain_orchestrator
+```
+
+**Parameters:**
+```json
+{
+  "operation": "generate_plan",
+  "userRequest": "Set up complete ADR infrastructure and generate initial implementations for new project",
+  "includeContext": true,
+  "optimizeFor": "comprehensive"
+}
+```
+
+**What this does:**
+- AI analyzes your project needs and generates optimal tool execution sequence
+- Prevents confusion with structured workflow planning
+- Provides clear dependencies and execution order
+- Includes confidence scoring and alternative approaches
+
+### Step 7: Advanced TODO Management
+
+Use the sophisticated TODO management system:
+
+**Tool Call:**
+```
+manage_todo
+```
+
+**Parameters:**
+```json
+{
+  "operation": "add_tasks",
+  "todoPath": "TODO.md",
+  "section": "Architecture Implementation",
+  "tasks": [
+    {
+      "title": "Implement TypeScript setup",
+      "status": "pending",
+      "priority": "high",
+      "assignee": "dev-team"
+    }
+  ]
+}
+```
+
+**Advanced TODO Features:**
+- Complete task lifecycle management (pending → in_progress → completed)
+- Dynamic health scoring integration
+- Progress analytics with velocity metrics
+- Smart merging with ADR-generated tasks
+
+### Step 8: Establish Quality Validation
 
 Set up validation to ensure implementations meet ADR goals:
 
@@ -414,6 +471,69 @@ The validation system will check for:
 - Logging and monitoring setup
 - Performance considerations
 
+## 🤖 AI-Powered Problem Solving
+
+### When LLMs Get Confused
+
+If you're stuck or LLMs seem confused, use the human override system:
+
+**Tool Call:**
+```
+human_override
+```
+
+**Parameters:**
+```json
+{
+  "taskDescription": "Create ADRs for new TypeScript project and set up development workflow",
+  "forceExecution": true,
+  "includeContext": true
+}
+```
+
+**What this does:**
+- Forces AI-powered planning through OpenRouter.ai
+- Cuts through LLM confusion with structured execution plans
+- Provides clear command schemas for LLM understanding
+- Includes confidence scoring and execution notes
+
+### Systematic Troubleshooting
+
+For comprehensive problem analysis:
+
+**Tool Call:**
+```
+troubleshoot_guided_workflow
+```
+
+**Parameters:**
+```json
+{
+  "operation": "full_workflow",
+  "failureType": "build_failure",
+  "description": "New project setup failing during initial ADR implementation",
+  "severity": "medium"
+}
+```
+
+### Smart Project Health Monitoring
+
+Track your progress with intelligent scoring:
+
+**Tool Call:**
+```
+smart_score
+```
+
+**Parameters:**
+```json
+{
+  "operation": "diagnose_scores",
+  "includeRecommendations": true,
+  "focusAreas": ["todo", "architecture", "setup"]
+}
+```
+
 ## 🔍 Troubleshooting
 
 ### Common Issues
@@ -461,6 +581,18 @@ chmod 755 docs/adrs
 rm -rf .mcp-adr-cache/
 # Or disable cache temporarily
 export CACHE_ENABLED="false"
+```
+
+#### 5. AI Planning Issues
+**Problem:** Tool orchestration not working as expected
+**Solution:**
+```bash
+# Use human override to force planning
+{
+  "operation": "human_override",
+  "taskDescription": "Your task description",
+  "forceExecution": true
+}
 ```
 
 ### Validation Steps

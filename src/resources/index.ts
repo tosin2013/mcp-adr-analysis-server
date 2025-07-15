@@ -4,6 +4,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import { KnowledgeGraphManager } from '../utils/knowledge-graph-manager.js';
 
 export interface ResourceGenerationResult {
   data: any;
@@ -21,6 +22,10 @@ export async function generateArchitecturalKnowledgeGraph(
 ): Promise<ResourceGenerationResult> {
   try {
     const { analyzeProjectStructure } = await import('../utils/file-system.js');
+    
+    // Load knowledge graph data
+    const kgManager = new KnowledgeGraphManager();
+    const knowledgeGraphSnapshot = await kgManager.loadKnowledgeGraph();
 
     // Generate project analysis prompt for AI delegation
     const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
@@ -114,7 +119,49 @@ Please provide the architectural knowledge graph in the following JSON structure
       "strength": 0.0-1.0,
       "description": "relationship-description"
     }
-  ]
+  ],
+  "intentSnapshots": [
+    {
+      "intentId": "intent-id",
+      "humanRequest": "original-user-request",
+      "parsedGoals": ["goal1", "goal2"],
+      "priority": "high|medium|low",
+      "timestamp": "ISO-8601-timestamp",
+      "currentStatus": "planning|executing|completed|failed",
+      "toolChain": [
+        {
+          "toolName": "tool-name",
+          "parameters": {},
+          "result": {},
+          "todoTasksCreated": ["task-id"],
+          "todoTasksModified": ["task-id"],
+          "executionTime": "ISO-8601-timestamp",
+          "success": true
+        }
+      ],
+      "todoMdSnapshot": "snapshot-content",
+      "goalProgression": 0.0-1.0
+    }
+  ],
+  "analytics": {
+    "totalIntents": 0,
+    "completedIntents": 0,
+    "activeIntents": 0,
+    "averageGoalCompletion": 0.0-1.0,
+    "mostUsedTools": [
+      {
+        "toolName": "tool-name",
+        "usageCount": 0
+      }
+    ],
+    "successfulPatterns": [
+      {
+        "pattern": "pattern-description",
+        "successRate": 0.0-1.0,
+        "examples": ["example-intent-ids"]
+      }
+    ]
+  }
 }
 \`\`\`
 
@@ -162,6 +209,30 @@ Submit the prompt to generate the actual knowledge graph data.
         projectPath,
         promptInstructions: projectAnalysisPrompt.instructions,
         context: projectAnalysisPrompt.context,
+        // Include actual knowledge graph snapshot data
+        knowledgeGraphSnapshot: {
+          version: knowledgeGraphSnapshot.version,
+          timestamp: knowledgeGraphSnapshot.timestamp,
+          intents: knowledgeGraphSnapshot.intents.map(intent => ({
+            intentId: intent.intentId,
+            humanRequest: intent.humanRequest,
+            parsedGoals: intent.parsedGoals,
+            priority: intent.priority,
+            timestamp: intent.timestamp,
+            currentStatus: intent.currentStatus,
+            toolChainSummary: {
+              totalTools: intent.toolChain.length,
+              completedTools: intent.toolChain.filter(t => t.success).length,
+              failedTools: intent.toolChain.filter(t => !t.success).length,
+              lastExecution: intent.toolChain.length > 0 ? intent.toolChain[intent.toolChain.length - 1]?.executionTime || null : null
+            },
+            todoTasksCreated: intent.toolChain.flatMap(t => t.todoTasksCreated),
+            todoTasksModified: intent.toolChain.flatMap(t => t.todoTasksModified),
+            hasSnapshots: !!intent.todoMdSnapshot
+          })),
+          todoSyncState: knowledgeGraphSnapshot.todoSyncState,
+          analytics: knowledgeGraphSnapshot.analytics
+        }
       },
       contentType: 'application/json',
       lastModified: new Date().toISOString(),

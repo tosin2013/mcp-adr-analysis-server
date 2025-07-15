@@ -11,21 +11,66 @@ import { tmpdir } from 'os';
 jest.unstable_mockModule('fs/promises', () => ({
   readFile: jest.fn(),
   writeFile: jest.fn(),
+  mkdir: jest.fn(),
+  access: jest.fn(),
+}));
+
+// Mock fs (synchronous version)
+jest.unstable_mockModule('fs', () => ({
+  mkdirSync: jest.fn(),
+  writeFileSync: jest.fn(),
+  readFileSync: jest.fn(),
+  existsSync: jest.fn(() => true),
+}));
+
+// Mock the project health scoring module entirely to avoid fs issues
+jest.unstable_mockModule('../src/utils/project-health-scoring.js', () => ({
+  ProjectHealthScoring: jest.fn().mockImplementation(() => ({
+    updateTaskCompletionScore: jest.fn(),
+    generateHealthSummary: jest.fn(() => ({
+      overallScore: 85,
+      breakdown: {
+        todo: 80,
+        architecture: 90,
+        security: 85
+      },
+      lastUpdated: new Date().toISOString()
+    }))
+  }))
+}));
+
+// Mock knowledge graph manager to avoid path/fs issues
+jest.unstable_mockModule('../src/utils/knowledge-graph-manager.js', () => ({
+  KnowledgeGraphManager: jest.fn().mockImplementation(() => ({
+    createIntent: jest.fn(async () => 'test-intent-id'),
+    addToolExecution: jest.fn(async () => undefined),
+    updateTodoSnapshot: jest.fn(async () => undefined),
+  }))
 }));
 
 describe('TODO Management Tool', () => {
   let mockFs: any;
+  let mockFsSync: any;
   let testTodoPath: string;
   let testContent: string;
 
   beforeEach(async () => {
     jest.clearAllMocks();
     
-    // Get mocked fs/promises
+    // Get mocked modules
     mockFs = await import('fs/promises');
+    mockFsSync = await import('fs');
     
     // Set up test file path
     testTodoPath = join(tmpdir(), `test-todo-${Date.now()}.md`);
+    
+    // Setup default mock behaviors
+    mockFs.access.mockResolvedValue(undefined);
+    mockFs.mkdir.mockResolvedValue(undefined);
+    mockFsSync.mkdirSync.mockReturnValue(undefined);
+    mockFsSync.writeFileSync.mockReturnValue(undefined);
+    mockFsSync.readFileSync.mockReturnValue('{}');
+    mockFsSync.existsSync.mockReturnValue(true);
     
     // Sample TODO content for testing
     testContent = `# Test TODO

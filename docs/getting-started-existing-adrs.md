@@ -171,9 +171,41 @@ generate_adr_todo
 - Implementation tasks with rule compliance checks
 - Production readiness validation criteria
 
-### Step 5: Validate Implementation Progress
+### Step 5: Advanced TODO Management
 
-Use the new validation system to ensure quality implementation:
+Use the new TODO management system for complete lifecycle tracking:
+
+**Tool Call:**
+```
+manage_todo
+```
+
+**Parameters:**
+```json
+{
+  "operation": "analyze_progress",
+  "todoPath": "TODO.md",
+  "timeframe": "month",
+  "includeVelocity": true
+}
+```
+
+**What this does:**
+- Complete TODO.md lifecycle management with smart parsing
+- Task status transitions (pending → in_progress → completed/blocked)
+- Dynamic health scoring integration
+- Progress analytics with velocity metrics
+- Interactive operations with confirmation flows
+
+**Advanced TODO Operations:**
+- `update_status` - Update task statuses with notes and assignees
+- `add_tasks` - Add new tasks to specific sections with metadata
+- `merge_adr_updates` - Smart merge with ADR-generated tasks
+- `sync_progress` - Bidirectional sync between TODO.md and ADR status
+
+### Step 6: Validate Implementation Progress
+
+Use the enhanced validation system to ensure quality implementation:
 
 **Tool Call:**
 ```
@@ -334,7 +366,87 @@ Parameters: {
 - Validates real database connections vs mock data
 - Ensures integration tests vs unit tests
 
-## 📊 Advanced Analysis
+## 📊 Advanced Analysis and AI-Powered Workflows
+
+### AI-Powered Tool Orchestration
+
+When working with complex multi-step tasks, let AI plan the optimal tool sequence:
+
+**Tool Call:**
+```
+tool_chain_orchestrator
+```
+
+**Parameters:**
+```json
+{
+  "operation": "generate_plan",
+  "userRequest": "Update all ADRs for our microservices migration and ensure TODO tasks are aligned",
+  "includeContext": true,
+  "optimizeFor": "comprehensive"
+}
+```
+
+**What this does:**
+- AI analyzes your request to generate optimal tool execution sequence
+- Prevents LLM confusion with reality checks and hallucination detection
+- Provides structured execution plans with dependencies
+- Includes confidence scoring and alternative approaches
+
+### Human Override for Complex Tasks
+
+When LLMs get confused or stuck, force AI-powered planning:
+
+**Tool Call:**
+```
+human_override
+```
+
+**Parameters:**
+```json
+{
+  "taskDescription": "Review and update ADRs after architecture changes",
+  "forceExecution": true,
+  "includeContext": true
+}
+```
+
+### Troubleshooting Workflow
+
+For systematic problem solving with ADR/TODO alignment:
+
+**Tool Call:**
+```
+troubleshoot_guided_workflow
+```
+
+**Parameters:**
+```json
+{
+  "operation": "full_workflow",
+  "failureType": "build_failure",
+  "description": "Build failing after implementing ADR decisions",
+  "severity": "high"
+}
+```
+
+### Smart Project Health Scoring
+
+Get comprehensive project health metrics across all dimensions:
+
+**Tool Call:**
+```
+smart_score
+```
+
+**Parameters:**
+```json
+{
+  "operation": "diagnose_scores",
+  "includeRecommendations": true,
+  "focusAreas": ["todo", "architecture", "deployment"]
+}
+```
 
 ### Research Integration
 

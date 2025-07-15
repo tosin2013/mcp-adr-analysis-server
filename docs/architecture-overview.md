@@ -182,9 +182,10 @@ graph LR
 
 ### 1. MCP Server Core (`src/index.ts`)
 - **Entry Point**: Main server initialization and protocol handling
-- **Tool Registry**: 23 MCP tools for comprehensive ADR analysis
+- **Tool Registry**: 31 MCP tools for comprehensive ADR analysis and project management
 - **Resource Registry**: 3 MCP resources for structured data access
 - **Prompt Registry**: AI-ready templates for analysis tasks
+- **Knowledge Graph**: Advanced intent tracking and TODO synchronization
 
 ### 2. File System Layer (New)
 Three new fundamental tools that enable universal LLM compatibility:
@@ -268,10 +269,24 @@ const analysisPrompt = generatePrompt(result.actualContent);
 const aiResult = await executePromptWithFallback(analysisPrompt);
 ```
 
+#### AI-Powered Tool Orchestration
+- **OpenRouter.ai Integration**: Advanced AI planning through external LLM services
+- **Dynamic Tool Sequencing**: AI generates optimal tool execution sequences
+- **Hallucination Detection**: Reality checks prevent AI confusion and loops
+- **Human Override Patterns**: Predefined workflows bypass AI confusion
+
 #### Generated Knowledge Prompting (GKP)
 - **Enhanced Analysis**: Leverages architectural knowledge for better insights
 - **Context-Aware**: Understands project-specific patterns and technologies
 - **Confidence Scoring**: Provides reliability metrics for recommendations
+
+#### Intelligent Workflow Management
+```typescript
+// AI-powered tool orchestration
+const plan = await generateToolPlan(userIntent, availableTools);
+const sequence = await validateToolSequence(plan.tools);
+const execution = await executeWithFallback(sequence);
+```
 
 #### Fallback Strategy
 ```typescript
@@ -309,6 +324,20 @@ The server provides both AI-enhanced analysis and raw data depending on capabili
 - **Generated Knowledge Prompting**: Domain expertise enhancement
 - **Context Awareness**: Project-specific analysis
 - **Risk Assessment**: Confidence scoring and impact evaluation
+
+### 6. Advanced Project Management Tools
+- **Smart Scoring System**: Dynamic project health assessment across all dimensions
+- **TODO Lifecycle Management**: Complete task tracking with status transitions
+- **AI-Powered Troubleshooting**: Systematic failure analysis with test plan generation
+- **Intelligent Tool Orchestration**: Dynamic workflow automation based on user intent
+- **Human Override System**: Force planning when LLMs get confused or stuck
+- **Smart Git Operations**: Release readiness analysis with sensitive content filtering
+
+### 7. Knowledge Graph Integration
+- **Intent Tracking**: Comprehensive tracking of human requests and AI responses
+- **Tool Execution History**: Complete audit trail of all tool executions
+- **TODO Synchronization**: Bidirectional sync between TODO.md and knowledge graph
+- **Analytics Generation**: Real-time project insights and completion metrics
 
 ## Communication Protocols
 
@@ -382,6 +411,35 @@ const adrAnalysis = await mcpClient.call('discover_existing_adrs', {
 // Returns structured data they can process independently
 ```
 
+## Tool Categories and Advanced Features
+
+### Core Analysis Tools (Original)
+- `discover_existing_adrs` - ADR discovery and cataloging
+- `analyze_project_ecosystem` - Technology stack analysis
+- `suggest_adrs` - Implicit decision identification
+- `generate_adrs_from_prd` - Requirements-driven ADR generation
+
+### Enhanced TDD and TODO Management
+- `generate_adr_todo` - Two-phase TDD task generation with ADR linking
+- `manage_todo` - Advanced TODO.md lifecycle management
+- `compare_adr_progress` - Implementation validation with mock detection
+
+### AI-Powered Orchestration and Planning
+- `tool_chain_orchestrator` - Dynamic tool sequencing based on user intent
+- `human_override` - Force AI planning when LLMs get confused
+- `troubleshoot_guided_workflow` - Systematic failure analysis with test plans
+
+### Project Health and Operations
+- `smart_score` - Cross-tool project health scoring coordination
+- `smart_git_push` - Release readiness analysis with content security
+- `generate_deployment_guidance` - AI-driven deployment guidance generation
+
+### Knowledge Graph and Analytics
+- Comprehensive intent tracking and execution history
+- Real-time TODO.md synchronization and change detection
+- Cross-ADR dependency validation and analytics
+- Project completion metrics and velocity tracking
+
 ## Future Enhancements
 
 ### Planned Improvements
@@ -390,12 +448,15 @@ const adrAnalysis = await mcpClient.call('discover_existing_adrs', {
 3. **Enhanced Security**: Role-based access control
 4. **Performance Metrics**: Analysis timing and resource usage
 5. **Plugin Architecture**: Extensible tool framework
+6. **Advanced AI Integration**: More sophisticated hallucination detection
+7. **Multi-Repository Support**: Cross-repository architectural analysis
 
 ### Integration Opportunities
 - **CI/CD Pipelines**: Automated ADR compliance checking
 - **IDE Extensions**: Real-time architectural guidance
 - **Documentation Systems**: Automated documentation generation
 - **Compliance Tools**: Regulatory requirement tracking
+- **Team Collaboration**: Shared knowledge graphs and scoring metrics
 
 ## Conclusion
 
