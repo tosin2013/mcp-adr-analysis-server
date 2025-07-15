@@ -465,7 +465,7 @@ describe('Smart Git Push with Release Readiness', () => {
       
       // Check for proper markdown formatting
       expect(text).toContain('## Release Readiness Analysis');
-      expect(text).toContain('### Recommendations');
+      expect(text).toContain('### Pre-Push Recommendations');
       expect(text).toContain('**Score**:');
       expect(text).toContain('Confidence:');
       

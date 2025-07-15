@@ -93,7 +93,7 @@ const TOOL_CAPABILITIES = {
 
 // Operation schema
 const ToolChainOrchestratorSchema = z.object({
-  operation: z.enum(['generate_plan', 'analyze_intent', 'suggest_tools', 'validate_plan', 'reality_check', 'session_guidance', 'human_override']).describe('Orchestrator operation'),
+  operation: z.enum(['generate_plan', 'analyze_intent', 'suggest_tools', 'validate_plan', 'reality_check', 'session_guidance']).describe('Orchestrator operation'),
   userRequest: z.string().describe('Natural language user request'),
   projectContext: z.object({
     projectPath: z.string().describe('Path to project directory'),
@@ -116,73 +116,11 @@ const ToolChainOrchestratorSchema = z.object({
     confusionIndicators: z.array(z.string()).optional().describe('Signs that LLM might be confused or hallucinating'),
     lastSuccessfulAction: z.string().optional().describe('Last action that produced good results'),
     stuckOnTask: z.string().optional().describe('Task the LLM seems stuck on')
-  }).optional().describe('Session context for hallucination prevention'),
-  humanOverride: z.object({
-    taskType: z.enum(['analyze_project', 'generate_docs', 'fix_security', 'deploy_ready', 'troubleshoot_issue', 'update_todos', 'custom']).describe('Predefined task type or custom'),
-    forceExecution: z.boolean().default(true).describe('Skip all AI analysis and force direct execution'),
-    priority: z.enum(['low', 'medium', 'high', 'critical']).default('high').describe('Task priority level'),
-    deadline: z.string().optional().describe('When this must be completed'),
-    specificRequirement: z.string().optional().describe('Exact requirement that must be fulfilled'),
-    bypassSafety: z.boolean().default(false).describe('Bypass safety checks (use with caution)')
-  }).optional().describe('Human override settings for forced execution')
+  }).optional().describe('Session context for hallucination prevention')
 });
 
 type ToolChainOrchestratorArgs = z.infer<typeof ToolChainOrchestratorSchema>;
 type ToolChainPlan = z.infer<typeof ToolChainPlanSchema>;
-type ToolChainStep = z.infer<typeof ToolChainStepSchema>;
-
-// Predefined task patterns for human override
-const PREDEFINED_TASK_PATTERNS = {
-  'analyze_project': {
-    description: 'Complete project analysis including ecosystem, security, and health scoring',
-    steps: [
-      { tool: 'analyze_project_ecosystem', params: {} },
-      { tool: 'analyze_content_security', params: {} },
-      { tool: 'smart_score', params: { operation: 'recalculate_scores' } }
-    ]
-  },
-  'generate_docs': {
-    description: 'Generate comprehensive project documentation',
-    steps: [
-      { tool: 'suggest_adrs', params: {} },
-      { tool: 'generate_adr_todo', params: {} },
-      { tool: 'generate_deployment_guidance', params: {} }
-    ]
-  },
-  'fix_security': {
-    description: 'Security audit and remediation workflow',
-    steps: [
-      { tool: 'analyze_content_security', params: {} },
-      { tool: 'security_audit', params: {} },
-      { tool: 'suggest_improvements', params: { focusArea: 'security' } }
-    ]
-  },
-  'deploy_ready': {
-    description: 'Full deployment readiness check and preparation',
-    steps: [
-      { tool: 'compare_adr_progress', params: {} },
-      { tool: 'smart_git_push', params: { checkReleaseReadiness: true } },
-      { tool: 'generate_deployment_guidance', params: {} },
-      { tool: 'deployment_checklist', params: {} }
-    ]
-  },
-  'troubleshoot_issue': {
-    description: 'Systematic troubleshooting workflow',
-    steps: [
-      { tool: 'troubleshoot_guided_workflow', params: { operation: 'analyze_with_tools' } },
-      { tool: 'compare_adr_progress', params: {} },
-      { tool: 'manage_todo', params: { operation: 'analyze_progress' } }
-    ]
-  },
-  'update_todos': {
-    description: 'Complete TODO management and synchronization',
-    steps: [
-      { tool: 'generate_adr_todo', params: {} },
-      { tool: 'manage_todo', params: { operation: 'sync_progress' } },
-      { tool: 'smart_score', params: { operation: 'sync_scores' } }
-    ]
-  }
-} as const;
 
 /**
  * Generate AI-powered tool execution plan
@@ -408,124 +346,6 @@ Return JSON with:
   return fallbackIntentAnalysis(args.userRequest);
 }
 
-/**
- * Human override - Generate tool chain based on predefined patterns
- */
-function generateHumanOverridePlan(args: ToolChainOrchestratorArgs): ToolChainPlan {
-  if (!args.humanOverride) {
-    throw new McpAdrError('Human override settings required for this operation', 'MISSING_OVERRIDE');
-  }
-
-  const override = args.humanOverride;
-  const planId = `human-override-${Date.now()}`;
-
-  // Handle predefined task types
-  if (override.taskType !== 'custom' && PREDEFINED_TASK_PATTERNS[override.taskType]) {
-    const pattern = PREDEFINED_TASK_PATTERNS[override.taskType];
-    
-    const steps: ToolChainStep[] = pattern.steps.map((step, index) => ({
-      stepId: `override-step-${index + 1}`,
-      toolName: step.tool,
-      parameters: {
-        ...step.params,
-        projectPath: args.projectContext.projectPath,
-        adrDirectory: args.projectContext.adrDirectory,
-        todoPath: args.projectContext.todoPath
-      },
-      description: `Execute ${step.tool} as part of ${override.taskType} workflow`,
-      dependsOn: index > 0 ? [`override-step-${index}`] : [],
-      conditional: false,
-      retryable: !override.bypassSafety
-    }));
-
-    return {
-      planId,
-      userIntent: `HUMAN OVERRIDE: ${pattern.description}${override.specificRequirement ? ` - ${override.specificRequirement}` : ''}`,
-      confidence: 1.0, // Human override = 100% confidence
-      estimatedDuration: override.priority === 'critical' ? '1-3 minutes' : '3-10 minutes',
-      steps,
-      fallbackSteps: override.bypassSafety ? [] : [{
-        stepId: 'fallback-manual',
-        toolName: 'troubleshoot_guided_workflow',
-        parameters: { operation: 'full_workflow' },
-        description: 'Manual troubleshooting if automated workflow fails',
-        dependsOn: [],
-        conditional: true,
-        retryable: true
-      }],
-      prerequisites: override.bypassSafety ? [] : ['Human has confirmed this action is necessary'],
-      expectedOutputs: [
-        `${pattern.description} completed`,
-        'Structured results for each tool execution',
-        override.deadline ? `Completion by ${override.deadline}` : 'Task completion confirmation'
-      ]
-    };
-  }
-
-  // Handle custom task type
-  if (override.taskType === 'custom') {
-    if (!override.specificRequirement) {
-      throw new McpAdrError('Specific requirement must be provided for custom human override', 'MISSING_REQUIREMENT');
-    }
-
-    // Use simple keyword matching for custom tasks
-    const request = override.specificRequirement.toLowerCase();
-    const suggestedTools: string[] = [];
-
-    // Map common keywords to tools
-    if (request.includes('analyze') || request.includes('analysis')) {
-      suggestedTools.push('analyze_project_ecosystem', 'analyze_content_security');
-    }
-    if (request.includes('todo') || request.includes('task')) {
-      suggestedTools.push('manage_todo', 'generate_adr_todo');
-    }
-    if (request.includes('adr') || request.includes('decision')) {
-      suggestedTools.push('suggest_adrs', 'compare_adr_progress');
-    }
-    if (request.includes('deploy') || request.includes('release')) {
-      suggestedTools.push('smart_git_push', 'generate_deployment_guidance');
-    }
-    if (request.includes('score') || request.includes('health')) {
-      suggestedTools.push('smart_score');
-    }
-
-    // If no tools matched, default to analysis
-    if (suggestedTools.length === 0) {
-      suggestedTools.push('analyze_project_ecosystem', 'troubleshoot_guided_workflow');
-    }
-
-    const steps: ToolChainStep[] = suggestedTools.map((tool, index) => ({
-      stepId: `custom-step-${index + 1}`,
-      toolName: tool,
-      parameters: {
-        projectPath: args.projectContext.projectPath,
-        adrDirectory: args.projectContext.adrDirectory,
-        todoPath: args.projectContext.todoPath
-      },
-      description: `Execute ${tool} for custom requirement: ${override.specificRequirement}`,
-      dependsOn: index > 0 ? [`custom-step-${index}`] : [],
-      conditional: false,
-      retryable: !override.bypassSafety
-    }));
-
-    return {
-      planId,
-      userIntent: `HUMAN OVERRIDE (CUSTOM): ${override.specificRequirement}`,
-      confidence: 0.8, // Slightly lower for custom tasks
-      estimatedDuration: override.priority === 'critical' ? '2-5 minutes' : '5-15 minutes',
-      steps,
-      fallbackSteps: [],
-      prerequisites: override.bypassSafety ? [] : ['Human has specified exact requirement'],
-      expectedOutputs: [
-        'Custom requirement fulfilled',
-        'Tool execution results',
-        'Confirmation of task completion'
-      ]
-    };
-  }
-
-  throw new McpAdrError(`Unknown task type: ${override.taskType}`, 'UNKNOWN_TASK_TYPE');
-}
 
 /**
  * Reality check - Detect if LLM is hallucinating or confused
@@ -591,13 +411,13 @@ function performRealityCheck(args: ToolChainOrchestratorArgs): {
 
   if (hallucinationRisk === 'high') {
     suggestedActions.push(
-      'IMMEDIATE: Use human_override operation to force structured execution',
+      'IMMEDIATE: Start fresh session with analyze_project_ecosystem to reload context',
       'Avoid further AI planning - use predefined task patterns',
       'Consider resetting the conversation context'
     );
   } else if (hallucinationRisk === 'medium') {
     suggestedActions.push(
-      'Use human_override for critical tasks',
+      'Use predefined task patterns for critical tasks',
       'Limit AI planning to simple operations',
       'Monitor for increasing confusion indicators'
     );
@@ -638,15 +458,15 @@ function generateSessionGuidance(args: ToolChainOrchestratorArgs): {
   if (realityCheck.hallucinationRisk === 'high') {
     sessionStatus = 'critical';
     humanInterventionNeeded = true;
-    recommendedNextStep = 'Use human_override immediately';
+    recommendedNextStep = 'Start fresh session with analyze_project_ecosystem';
     guidance.push('🚨 CRITICAL: High hallucination risk detected');
     guidance.push('LLM appears confused or stuck in loops');
-    guidance.push('Human override strongly recommended to restore focus');
+    guidance.push('Fresh session with context reload strongly recommended');
   } else if (realityCheck.hallucinationRisk === 'medium') {
     sessionStatus = 'concerning';
-    recommendedNextStep = 'Consider human_override for next critical task';
+    recommendedNextStep = 'Consider fresh session for critical tasks';
     guidance.push('⚠️ WARNING: Session showing signs of confusion');
-    guidance.push('Monitor closely and be ready to intervene');
+    guidance.push('Monitor closely and prepare to restart with fresh context');
   } else {
     guidance.push('✅ Session appears healthy');
     guidance.push('AI planning can continue safely');
@@ -808,50 +628,12 @@ export async function toolChainOrchestrator(args: ToolChainOrchestratorArgs): Pr
         };
       }
 
-      case 'human_override': {
-        // Create intent for human override
-        intentId = await kgManager.createIntent(
-          validatedArgs.userRequest,
-          ['Execute human override plan', 'Force structured execution'],
-          validatedArgs.humanOverride?.priority === 'critical' ? 'high' : (validatedArgs.humanOverride?.priority || 'high')
-        );
-        
-        const plan = generateHumanOverridePlan(validatedArgs);
-        
-        // Store human override plan in knowledge graph
-        await kgManager.addToolExecution(
-          intentId,
-          'tool_chain_orchestrator_human_override',
-          validatedArgs,
-          { plan },
-          true,
-          [],
-          [],
-          undefined
-        );
-        
-        return {
-          content: [{
-            type: 'text',
-            text: `# 🚨 HUMAN OVERRIDE ACTIVATED\n\n## Override Details\n**Task Type**: ${validatedArgs.humanOverride?.taskType}\n**Priority**: ${validatedArgs.humanOverride?.priority}\n**Force Execution**: ${validatedArgs.humanOverride?.forceExecution ? 'YES' : 'NO'}\n**Bypass Safety**: ${validatedArgs.humanOverride?.bypassSafety ? 'YES - USE CAUTION' : 'NO'}\n\n## Generated Plan\n**Intent**: ${plan.userIntent}\n**Confidence**: ${(plan.confidence * 100).toFixed(0)}% (Human Override)\n**Estimated Duration**: ${plan.estimatedDuration}\n\n## Execution Steps (MANDATORY)\n\n${plan.steps.map((step, i) => `### Step ${i + 1}: ${step.description}\n\`\`\`\nTool: ${step.toolName}\nParameters: ${JSON.stringify(step.parameters, null, 2)}\n\`\`\`\n${step.dependsOn && step.dependsOn.length > 0 ? `**Depends On**: ${step.dependsOn.join(', ')}\n` : ''}**Retryable**: ${step.retryable ? 'Yes' : 'No'}\n`).join('\n')}\n\n## Expected Outputs\n${plan.expectedOutputs.map(output => `✅ ${output}`).join('\n')}\n\n${plan.prerequisites && plan.prerequisites.length > 0 ? `## Prerequisites\n${plan.prerequisites.map(req => `⚠️ ${req}`).join('\n')}\n\n` : ''}## ⚠️ IMPORTANT NOTES\n\n- **This is a HUMAN OVERRIDE** - execute all steps as specified\n- **No deviation** from the plan unless critical errors occur\n- **Report results** for each step before proceeding\n- ${validatedArgs.humanOverride?.deadline ? `**DEADLINE**: ${validatedArgs.humanOverride.deadline}` : 'Execute promptly'}\n\n*Human override bypasses AI planning to ensure task completion.*`
-          }],
-          metadata: {
-            intentId,
-            planId: plan.planId,
-            isHumanOverride: true,
-            bypassSafety: validatedArgs.humanOverride?.bypassSafety || false,
-            priority: validatedArgs.humanOverride?.priority,
-            stepCount: plan.steps.length
-          }
-        };
-      }
-
       case 'reality_check': {
         const realityCheck = performRealityCheck(validatedArgs);
         return {
           content: [{
             type: 'text',
-            text: `# 🔍 Reality Check Results\n\n## Hallucination Risk Assessment\n**Risk Level**: ${realityCheck.hallucinationRisk.toUpperCase()} ${realityCheck.hallucinationRisk === 'high' ? '🚨' : realityCheck.hallucinationRisk === 'medium' ? '⚠️' : '✅'}\n\n## Confusion Indicators\n${realityCheck.confusionIndicators.length > 0 ? realityCheck.confusionIndicators.map(indicator => `⚠️ ${indicator}`).join('\n') : '✅ No confusion indicators detected'}\n\n## Recommendations\n${realityCheck.recommendations.map(rec => `💡 ${rec}`).join('\n')}\n\n## Suggested Actions\n${realityCheck.suggestedActions.map(action => `🎯 ${action}`).join('\n')}\n\n${realityCheck.hallucinationRisk === 'high' ? '## 🚨 IMMEDIATE ACTION REQUIRED\n\nHigh hallucination risk detected. Use `human_override` operation immediately to restore control and prevent further confusion.\n\n' : ''}*Reality check helps maintain accuracy during long LLM sessions.*`
+            text: `# 🔍 Reality Check Results\n\n## Hallucination Risk Assessment\n**Risk Level**: ${realityCheck.hallucinationRisk.toUpperCase()} ${realityCheck.hallucinationRisk === 'high' ? '🚨' : realityCheck.hallucinationRisk === 'medium' ? '⚠️' : '✅'}\n\n## Confusion Indicators\n${realityCheck.confusionIndicators.length > 0 ? realityCheck.confusionIndicators.map(indicator => `⚠️ ${indicator}`).join('\n') : '✅ No confusion indicators detected'}\n\n## Recommendations\n${realityCheck.recommendations.map(rec => `💡 ${rec}`).join('\n')}\n\n## Suggested Actions\n${realityCheck.suggestedActions.map(action => `🎯 ${action}`).join('\n')}\n\n${realityCheck.hallucinationRisk === 'high' ? '## 🚨 IMMEDIATE ACTION REQUIRED\n\nHigh hallucination risk detected. Start a fresh session with `analyze_project_ecosystem` to reload context and restore control.\n\n' : ''}*Reality check helps maintain accuracy during long LLM sessions.*`
           }]
         };
       }
@@ -861,7 +643,7 @@ export async function toolChainOrchestrator(args: ToolChainOrchestratorArgs): Pr
         return {
           content: [{
             type: 'text',
-            text: `# 🧭 Session Guidance\n\n## Session Status: ${guidance.sessionStatus.toUpperCase()} ${guidance.sessionStatus === 'critical' ? '🚨' : guidance.sessionStatus === 'concerning' ? '⚠️' : '✅'}\n\n## Guidance\n${guidance.guidance.join('\n')}\n\n## Recommended Next Step\n🎯 **${guidance.recommendedNextStep}**\n\n${guidance.humanInterventionNeeded ? '## 🚨 HUMAN INTERVENTION NEEDED\n\nThe session has reached a state where human override is strongly recommended to maintain progress and accuracy.\n\n**Use the `human_override` operation to:**\n- Force structured execution\n- Break confusion cycles\n- Ensure task completion\n\n' : ''}*Session guidance helps maintain productive long conversations.*`
+            text: `# 🧭 Session Guidance\n\n## Session Status: ${guidance.sessionStatus.toUpperCase()} ${guidance.sessionStatus === 'critical' ? '🚨' : guidance.sessionStatus === 'concerning' ? '⚠️' : '✅'}\n\n## Guidance\n${guidance.guidance.join('\n')}\n\n## Recommended Next Step\n🎯 **${guidance.recommendedNextStep}**\n\n${guidance.humanInterventionNeeded ? '## 🚨 CONTEXT REFRESH NEEDED\n\nThe session has reached a state where a fresh start is strongly recommended to maintain progress and accuracy.\n\n**Start a fresh session to:**\n- Reload context with analyze_project_ecosystem\n- Break confusion cycles\n- Ensure task completion with clean state\n\n' : ''}*Session guidance helps maintain productive long conversations.*`
           }],
           metadata: {
             sessionStatus: guidance.sessionStatus,

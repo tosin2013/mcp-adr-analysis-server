@@ -54,7 +54,7 @@ Parameters:
   "adrDirectory": "docs/adrs"
 }
 ```
-*This will scan your ADR directory and catalog all existing decisions.*
+*This will scan your ADR directory, catalog all existing decisions, and initialize the `.mcp-adr-cache` infrastructure (always runs regardless of whether ADRs are found).*
 
 **Step 2: Analyze Project Architecture**
 ```

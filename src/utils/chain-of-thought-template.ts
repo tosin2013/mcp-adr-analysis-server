@@ -212,4 +212,4 @@ export const COT_PATTERNS = {
       'Rule categories are logical and non-overlapping'
     ] as string[]
   }
-} as const;
+} as const satisfies Record<string, ChainOfThoughtConfig>;

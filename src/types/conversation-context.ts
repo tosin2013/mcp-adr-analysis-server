@@ -6,6 +6,9 @@
  */
 
 export interface ConversationContext {
+  /** Original human request text for context restoration */
+  humanRequest?: string;
+  
   /** User's primary objectives from the conversation */
   userGoals?: string[];
   
@@ -41,6 +44,10 @@ export const CONVERSATION_CONTEXT_SCHEMA = {
   type: 'object' as const,
   description: 'Rich context from the calling LLM about user goals and discussion history',
   properties: {
+    humanRequest: {
+      type: 'string' as const,
+      description: 'Original human request text for context restoration and knowledge graph storage'
+    },
     userGoals: {
       type: 'array' as const,
       items: { type: 'string' as const },
@@ -93,6 +100,10 @@ export function formatContextForPrompt(context?: ConversationContext): string {
 
   const sections = [];
 
+  if (context.humanRequest) {
+    sections.push(`Human Request: "${context.humanRequest}"`);
+  }
+
   if (context.userGoals?.length) {
     sections.push(`User Goals: ${context.userGoals.join(', ')}`);
   }
@@ -131,6 +142,7 @@ export function hasMeaningfulContext(context?: ConversationContext): boolean {
   if (!context) return false;
   
   return !!(
+    context.humanRequest ||
     context.userGoals?.length ||
     context.focusAreas?.length ||
     context.constraints?.length ||

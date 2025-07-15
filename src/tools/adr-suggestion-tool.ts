@@ -698,6 +698,22 @@ ${writeFilePrompt.prompt}
 
 /**
  * Discover existing ADRs in the project using internal file system tools
+ * 
+ * IMPORTANT FOR AI ASSISTANTS: This tool performs TWO critical functions:
+ * 1. PRIMARY: Scans the specified ADR directory and catalogs all existing ADRs
+ * 2. SECONDARY: ALWAYS initializes the complete .mcp-adr-cache infrastructure
+ * 
+ * The cache initialization happens REGARDLESS of whether ADRs are found, making
+ * this the recommended FIRST STEP for any project workflow. All other MCP tools
+ * depend on this cache infrastructure to function properly.
+ * 
+ * Cache files created:
+ * - .mcp-adr-cache/todo-data.json (TODO management backend)
+ * - .mcp-adr-cache/project-health-scores.json (project health metrics)
+ * - .mcp-adr-cache/knowledge-graph-snapshots.json (architectural knowledge)
+ * - .mcp-adr-cache/todo-sync-state.json (synchronization state)
+ * 
+ * Therefore, always run this tool first, even for projects without existing ADRs.
  */
 export async function discoverExistingAdrs(args: {
   adrDirectory?: string;
@@ -711,6 +727,40 @@ export async function discoverExistingAdrs(args: {
   } = args;
 
   try {
+    // INITIALIZE COMPLETE CACHE INFRASTRUCTURE (since this is typically the first command)
+    console.log('🚀 Initializing complete cache infrastructure...');
+    
+    // 1. Initialize TodoJsonManager (creates todo-data.json and cache directory)
+    const { TodoJsonManager } = await import('../utils/todo-json-manager.js');
+    const todoManager = new TodoJsonManager(projectPath);
+    await todoManager.loadTodoData(); // Creates cache dir and todo-data.json
+    console.log('✅ Initialized todo-data.json and cache directory');
+    
+    // 2. Initialize ProjectHealthScoring (creates project-health-scores.json)
+    const { ProjectHealthScoring } = await import('../utils/project-health-scoring.js');
+    const healthScoring = new ProjectHealthScoring(projectPath);
+    await healthScoring.getProjectHealthScore(); // Creates project-health-scores.json
+    console.log('✅ Initialized project-health-scores.json');
+    
+    // 3. Initialize KnowledgeGraphManager (creates knowledge-graph-snapshots.json and todo-sync-state.json)
+    // Set PROJECT_PATH temporarily for proper initialization
+    const originalConfig = process.env['PROJECT_PATH'];
+    process.env['PROJECT_PATH'] = projectPath;
+    
+    const { KnowledgeGraphManager } = await import('../utils/knowledge-graph-manager.js');
+    const kgManager = new KnowledgeGraphManager();
+    await kgManager.loadKnowledgeGraph(); // Creates knowledge-graph-snapshots.json and todo-sync-state.json
+    console.log('✅ Initialized knowledge-graph-snapshots.json and todo-sync-state.json');
+    
+    // Restore original config
+    if (originalConfig !== undefined) {
+      process.env['PROJECT_PATH'] = originalConfig;
+    } else {
+      delete process.env['PROJECT_PATH'];
+    }
+    
+    console.log('🎯 Complete cache infrastructure ready!');
+
     // Use the new ADR discovery utility
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
     
@@ -725,9 +775,18 @@ export async function discoverExistingAdrs(args: {
       content: [
         {
           type: 'text',
-          text: `# ADR Discovery Results
+          text: `# 🎯 Complete ADR Discovery & Cache Infrastructure Initialized
 
-## Discovery Summary
+## Cache Infrastructure Status
+✅ **todo-data.json** - JSON-first TODO system initialized  
+✅ **project-health-scores.json** - Multi-component project health scoring  
+✅ **knowledge-graph-snapshots.json** - Knowledge graph system & intent tracking  
+✅ **todo-sync-state.json** - TODO synchronization state  
+✅ **Cache Directory** - Complete infrastructure ready at \`.mcp-adr-cache/\`
+
+## ADR Discovery Results
+
+### Discovery Summary
 - **Directory**: ${discoveryResult.directory}
 - **Total ADRs Found**: ${discoveryResult.totalAdrs}
 - **Include Content**: ${includeContent ? 'Yes' : 'No (metadata only)'}

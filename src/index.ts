@@ -219,7 +219,8 @@ export class McpAdrAnalysisServer {
                   type: 'boolean',
                   description: 'Include compliance checks in the analysis',
                   default: true
-                }
+                },
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA
               }
             }
           },
@@ -257,14 +258,15 @@ export class McpAdrAnalysisServer {
                   enum: ['web-application', 'mobile-app', 'microservices', 'data-platform', 'api-service', 'general'],
                   description: 'Type of PRD for optimized knowledge generation',
                   default: 'general'
-                }
+                },
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA
               },
               required: ['prdPath']
             }
           },
           {
             name: 'generate_adr_todo',
-            description: 'Generate TDD-focused todo.md from existing ADRs with two-phase approach: test generation and production code',
+            description: 'Generate TDD-focused todo.md from existing ADRs with JSON-first approach: creates structured JSON TODO and syncs to markdown',
             inputSchema: {
               type: 'object',
               properties: {
@@ -286,7 +288,7 @@ export class McpAdrAnalysisServer {
                 },
                 linkAdrs: {
                   type: 'boolean',
-                  description: 'Link all ADRs to create comprehensive system test coverage',
+                  description: 'Auto-detect and link ADR dependencies in task creation',
                   default: true
                 },
                 includeRules: {
@@ -309,7 +311,22 @@ export class McpAdrAnalysisServer {
                   type: 'boolean',
                   description: 'Preserve existing TODO.md content by merging instead of overwriting',
                   default: true
-                }
+                },
+                forceSyncToMarkdown: {
+                  type: 'boolean',
+                  description: 'Force sync JSON to markdown even if markdown is newer',
+                  default: false
+                },
+                intentId: {
+                  type: 'string',
+                  description: 'Link generated tasks to specific knowledge graph intent'
+                },
+                createJsonBackup: {
+                  type: 'boolean',
+                  description: 'Create backup of existing JSON TODO data before import',
+                  default: true
+                },
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA
               }
             }
           },
@@ -1269,86 +1286,178 @@ export class McpAdrAnalysisServer {
             }
           },
           {
-            name: 'manage_todo',
-            description: 'Manage TODO.md files with incremental updates, task status tracking, and smart merging',
+            name: 'manage_todo_json',
+            description: 'JSON-first TODO management with consistent LLM interactions, automatic scoring sync, and knowledge graph integration',
             inputSchema: {
               type: 'object',
               properties: {
                 operation: {
                   type: 'string',
-                  enum: ['update_status', 'add_tasks', 'merge_adr_updates', 'sync_progress', 'analyze_progress', 'delete_task', 'edit_task', 'move_task', 'manage_section', 'search_tasks'],
-                  description: 'Operation to perform on TODO.md'
+                  enum: ['create_task', 'update_task', 'bulk_update', 'get_tasks', 'get_analytics', 'import_adr_tasks', 'sync_knowledge_graph', 'sync_to_markdown', 'import_from_markdown'],
+                  description: 'Operation to perform on TODO JSON backend'
                 },
-                todoPath: {
+                projectPath: {
                   type: 'string',
-                  default: 'TODO.md',
-                  description: 'Path to TODO.md file'
+                  description: 'Project root path (uses configured PROJECT_PATH if not provided)'
                 },
-                updates: {
+                taskId: {
+                  type: 'string',
+                  description: 'Task ID for update operations'
+                },
+                title: {
+                  type: 'string',
+                  description: 'Task title for create operations'
+                },
+                description: {
+                  type: 'string',
+                  description: 'Task description'
+                },
+                priority: {
+                  type: 'string',
+                  enum: ['low', 'medium', 'high', 'critical'],
+                  default: 'medium',
+                  description: 'Task priority level'
+                },
+                assignee: {
+                  type: 'string',
+                  description: 'Task assignee'
+                },
+                dueDate: {
+                  type: 'string',
+                  description: 'Due date (ISO string format)'
+                },
+                category: {
+                  type: 'string',
+                  description: 'Task category'
+                },
+                tags: {
                   type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      taskId: { type: 'string' },
-                      status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'] },
-                      notes: { type: 'string' },
-                      assignee: { type: 'string' }
-                    },
-                    required: ['taskId', 'status']
-                  },
-                  description: 'Status updates to apply (for update_status operation)'
+                  items: { type: 'string' },
+                  description: 'Task tags'
                 },
-                tasks: {
+                dependencies: {
                   type: 'array',
-                  items: {
-                    type: 'object',
-                    properties: {
-                      title: { type: 'string' },
-                      status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'] },
-                      priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
-                      category: { type: 'string' },
-                      assignee: { type: 'string' },
-                      notes: { type: 'string' },
-                      estimatedHours: { type: 'number' }
-                    },
-                    required: ['title', 'status']
-                  },
-                  description: 'New tasks to add (for add_tasks operation)'
+                  items: { type: 'string' },
+                  description: 'Task dependencies (task IDs)'
                 },
-                section: {
+                intentId: {
                   type: 'string',
-                  description: 'Section to add tasks to (for add_tasks operation)'
+                  description: 'Link to knowledge graph intent'
                 },
-                adrDirectory: {
-                  type: 'string',
-                  default: 'docs/adrs',
-                  description: 'ADR directory path (for merge_adr_updates and sync_progress operations)'
+                linkedAdrs: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Related ADR files'
                 },
-                preserveCompleted: {
-                  type: 'boolean',
-                  default: true,
-                  description: 'Keep completed tasks during merge (for merge_adr_updates operation)'
-                },
-                preserveCustom: {
-                  type: 'boolean',
-                  default: true,
-                  description: 'Keep manually added tasks during merge (for merge_adr_updates operation)'
-                },
-                updateAdrs: {
+                autoComplete: {
                   type: 'boolean',
                   default: false,
-                  description: 'Update ADR status based on TODO progress (for sync_progress operation)'
+                  description: 'Auto-complete when criteria are met'
+                },
+                completionCriteria: {
+                  type: 'string',
+                  description: 'Auto-completion rules'
+                },
+                updates: {
+                  type: 'object',
+                  properties: {
+                    title: { type: 'string' },
+                    description: { type: 'string' },
+                    status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'] },
+                    priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
+                    assignee: { type: 'string' },
+                    dueDate: { type: 'string' },
+                    progressPercentage: { type: 'number', minimum: 0, maximum: 100 },
+                    notes: { type: 'string' },
+                    tags: { type: 'array', items: { type: 'string' } }
+                  },
+                  description: 'Fields to update for update operations'
+                },
+                reason: {
+                  type: 'string',
+                  description: 'Reason for update (for changelog)'
+                },
+                filters: {
+                  type: 'object',
+                  properties: {
+                    status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'] },
+                    priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
+                    assignee: { type: 'string' },
+                    category: { type: 'string' },
+                    hasDeadline: { type: 'boolean' },
+                    overdue: { type: 'boolean' },
+                    tags: { type: 'array', items: { type: 'string' } }
+                  },
+                  description: 'Filter criteria for get_tasks operation'
+                },
+                sortBy: {
+                  type: 'string',
+                  enum: ['priority', 'dueDate', 'createdAt', 'updatedAt'],
+                  default: 'priority',
+                  description: 'Sort field for get_tasks operation'
+                },
+                sortOrder: {
+                  type: 'string',
+                  enum: ['asc', 'desc'],
+                  default: 'desc',
+                  description: 'Sort order for get_tasks operation'
+                },
+                limit: {
+                  type: 'number',
+                  description: 'Maximum number of tasks to return'
                 },
                 timeframe: {
                   type: 'string',
                   enum: ['day', 'week', 'month', 'all'],
                   default: 'week',
-                  description: 'Analysis timeframe (for analyze_progress operation)'
+                  description: 'Analysis timeframe for analytics'
                 },
                 includeVelocity: {
                   type: 'boolean',
                   default: true,
-                  description: 'Include velocity metrics in analysis (for analyze_progress operation)'
+                  description: 'Include velocity metrics in analytics'
+                },
+                includeScoring: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Include scoring metrics in analytics'
+                },
+                adrDirectory: {
+                  type: 'string',
+                  default: 'docs/adrs',
+                  description: 'ADR directory path for imports'
+                },
+                preserveExisting: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Keep existing tasks during imports'
+                },
+                autoLinkDependencies: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Auto-detect task dependencies'
+                },
+                direction: {
+                  type: 'string',
+                  enum: ['to_kg', 'from_kg', 'bidirectional'],
+                  default: 'bidirectional',
+                  description: 'Knowledge graph sync direction'
+                },
+                force: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Force operation even if conflicts exist'
+                },
+                mergeStrategy: {
+                  type: 'string',
+                  enum: ['overwrite', 'merge', 'preserve_json'],
+                  default: 'merge',
+                  description: 'Merge strategy for imports'
+                },
+                backupExisting: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Create backup before destructive operations'
                 }
               },
               required: ['operation']
@@ -1580,7 +1689,8 @@ export class McpAdrAnalysisServer {
                   type: 'string',
                   description: 'Path to TODO.md file',
                   default: 'TODO.md'
-                }
+                },
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA
               },
               required: ['operation']
             }
@@ -1593,7 +1703,7 @@ export class McpAdrAnalysisServer {
               properties: {
                 operation: {
                   type: 'string',
-                  enum: ['recalculate_scores', 'sync_scores', 'diagnose_scores', 'optimize_weights', 'reset_scores'],
+                  enum: ['recalculate_scores', 'sync_scores', 'diagnose_scores', 'optimize_weights', 'reset_scores', 'get_score_trends', 'get_intent_scores'],
                   description: 'Smart scoring operation to perform'
                 },
                 projectPath: {
@@ -1628,7 +1738,7 @@ export class McpAdrAnalysisServer {
                   type: 'array',
                   items: {
                     type: 'string',
-                    enum: ['manage_todo', 'smart_git_push', 'compare_adr_progress', 'analyze_content_security', 'validate_rules']
+                    enum: ['manage_todo_json', 'smart_git_push', 'compare_adr_progress', 'analyze_content_security', 'validate_rules']
                   },
                   description: 'Tools to trigger for fresh data (for sync_scores operation)'
                 },
@@ -1689,56 +1799,13 @@ export class McpAdrAnalysisServer {
                   type: 'boolean',
                   default: true,
                   description: 'Immediately recalculate after reset (for reset_scores operation)'
+                },
+                intentId: {
+                  type: 'string',
+                  description: 'Intent ID to get score trends for (for get_intent_scores operation)'
                 }
               },
               required: ['operation', 'projectPath']
-            }
-          },
-          {
-            name: 'human_override',
-            description: 'Human override to force AI-powered tool planning when LLMs get confused or stuck - cuts through confusion with direct task execution',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                taskDescription: {
-                  type: 'string',
-                  description: 'What the human wants accomplished (in plain English)'
-                },
-                projectPath: {
-                  type: 'string',
-                  description: 'Path to project directory'
-                },
-                adrDirectory: {
-                  type: 'string',
-                  default: 'docs/adrs',
-                  description: 'ADR directory path'
-                },
-                todoPath: {
-                  type: 'string',
-                  default: 'TODO.md',
-                  description: 'Path to TODO.md file'
-                },
-                priority: {
-                  type: 'string',
-                  enum: ['low', 'medium', 'high', 'critical'],
-                  default: 'high',
-                  description: 'Task priority level'
-                },
-                forceExecution: {
-                  type: 'boolean',
-                  default: true,
-                  description: 'Force immediate execution planning'
-                },
-                deadline: {
-                  type: 'string',
-                  description: 'When this must be completed (optional)'
-                },
-                additionalContext: {
-                  type: 'string',
-                  description: 'Any additional context or constraints (optional)'
-                }
-              },
-              required: ['taskDescription', 'projectPath']
             }
           }
         ]
@@ -1843,8 +1910,8 @@ export class McpAdrAnalysisServer {
           case 'list_directory':
             response = await this.listDirectory(args);
             break;
-          case 'manage_todo':
-            response = await this.manageTodo(args);
+          case 'manage_todo_json':
+            response = await this.manageTodoJson(args);
             break;
           case 'generate_deployment_guidance':
             response = await this.generateDeploymentGuidance(args);
@@ -1857,9 +1924,6 @@ export class McpAdrAnalysisServer {
             break;
           case 'smart_score':
             response = await this.smartScore(args);
-            break;
-          case 'human_override':
-            response = await this.humanOverride(args);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -3411,12 +3475,13 @@ The enhanced process maintains full traceability from PRD requirements to genera
       linkAdrs = true, 
       includeRules = true, 
       ruleSource = 'both',
-      todoPath = 'todo.md',
-      preserveExisting = true 
+      preserveExisting = true,
+      forceSyncToMarkdown = false,
+      intentId,
+      createJsonBackup = true
     } = args;
     const { getAdrDirectoryPath } = await import('./utils/config.js');
     const path = await import('path');
-    const fs = await import('fs/promises');
 
     // Use absolute ADR path relative to project
     const absoluteAdrPath = args.adrDirectory ?
@@ -3426,379 +3491,97 @@ The enhanced process maintains full traceability from PRD requirements to genera
     // Keep relative path for display purposes
     const adrDirectory = args.adrDirectory || this.config.adrDirectory;
 
-    // Resolve absolute TODO path
-    const absoluteTodoPath = path.resolve(this.config.projectPath, todoPath);
-
-    this.logger.info(`Generating TDD-focused todo for ADRs in: ${absoluteAdrPath} (phase: ${phase})`);
+    this.logger.info(`Generating JSON-first TODO for ADRs in: ${absoluteAdrPath} (phase: ${phase})`);
 
     try {
-      // Check if TODO.md already exists
-      let existingTodoExists = false;
+      // Always use JSON-first TODO system
+      this.logger.info('Using JSON-first TODO system for ADR task generation');
       
-      try {
-        await fs.access(absoluteTodoPath);
-        existingTodoExists = true;
-        this.logger.info(`Existing TODO.md found at: ${absoluteTodoPath}`);
-      } catch (error: any) {
-        if (error.code !== 'ENOENT') {
-          this.logger.error(`Error accessing existing TODO.md: ${error.message}`);
+      const { manageTodoV2 } = await import('./tools/todo-management-tool-v2.js');
+      
+      // Optional: Create backup if requested and JSON exists
+      if (createJsonBackup) {
+        try {
+          await manageTodoV2({
+            operation: 'import_from_markdown',
+            projectPath: this.config.projectPath,
+            mergeStrategy: 'preserve_json',
+            backupExisting: true
+          });
+          this.logger.info('Created backup of existing JSON TODO data');
+        } catch (error) {
+          // Continue if backup fails - might be first time setup
+          this.logger.debug('No existing JSON data to backup');
         }
       }
-
-      // If preserving existing content and file exists, use manageTodo merge instead
-      if (preserveExisting && existingTodoExists) {
-        this.logger.info('Preserving existing TODO.md content, using merge approach');
-        
-        // Use manageTodo to merge ADR updates with existing content
-        const { manageTodo } = await import('./tools/todo-management-tool.js');
-        const mergeResult = await manageTodo({
-          operation: 'merge_adr_updates',
-          todoPath: absoluteTodoPath,
-          adrDirectory: absoluteAdrPath,
-          preserveCompleted: true,
-          preserveCustom: true
-        }, this.config.projectPath);
-
-        return {
-          content: [{
-            type: 'text',
-            text: `# TODO.md Merge Completed
-
-## Existing File Preserved
-- **Location**: ${absoluteTodoPath}
-- **Action**: Merged ADR updates with existing content
-- **Preservation**: Custom tasks and completed items preserved
-
-## Analysis Information
-- **ADR Directory**: ${adrDirectory}
-- **Scope**: ${scope}
-- **TDD Phase**: ${phase}
-- **ADR Linking**: ${linkAdrs ? 'Enabled' : 'Disabled'}
-- **Rules Integration**: ${includeRules ? `Enabled (${ruleSource})` : 'Disabled'}
-
-${mergeResult.content[0].text}
-
-## Next Steps
-1. Review merged TODO.md content
-2. Update task statuses as needed using \`manage_todo\`
-3. Use \`compare_adr_progress\` to validate implementation status
-
-*To force regeneration, set \`preserveExisting: false\` in the request*`
-          }]
-        };
-      }
-      const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
-      const { scanProjectStructure } = await import('./utils/actual-file-operations.js');
-
-      // Use actual ADR discovery
-      const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, this.config.projectPath);
-
-      let adrContent = `Found ${discoveryResult.adrs.length} ADRs in ${absoluteAdrPath}:\n\n`;
-      discoveryResult.adrs.forEach(adr => {
-        adrContent += `### ${adr.title}\n`;
-        adrContent += `- **File**: ${adr.filename}\n`;
-        adrContent += `- **Status**: ${adr.status}\n`;
-        adrContent += `- **Context**: ${adr.context}\n`;
-        adrContent += `- **Decision**: ${adr.decision}\n`;
-        adrContent += `- **Consequences**: ${adr.consequences}\n\n`;
+      
+      // Import ADR tasks into JSON system with enhanced parameters
+      const importResult = await manageTodoV2({
+        operation: 'import_adr_tasks',
+        projectPath: this.config.projectPath,
+        adrDirectory: absoluteAdrPath,
+        preserveExisting,
+        autoLinkDependencies: linkAdrs,
+        ...(intentId && { intentId })
       });
 
-      // For ADR linking, also discover all project structure
-      let projectStructurePrompt = '';
-      if (linkAdrs) {
-        const projectStructure = await scanProjectStructure(this.config.projectPath, { 
-          readContent: false,
-          includeHidden: false
-        });
-        
-        const codeFiles = [
-          ...projectStructure.buildFiles.filter(f => 
-            f.filename.match(/\.(ts|js|py|java|cs|go|rb|php|swift|kt|rs|cpp|c|h)$/)),
-          ...projectStructure.configFiles.filter(f => 
-            f.filename.match(/\.(ts|js)$/))
-        ];
+      // Sync JSON data to markdown with force option
+      await manageTodoV2({
+        operation: 'sync_to_markdown',
+        projectPath: this.config.projectPath,
+        force: forceSyncToMarkdown
+      });
 
-        projectStructurePrompt = `
-## Project Structure (for ADR linking)
-Found ${codeFiles.length} code files:
-${codeFiles.map(f => `- ${f.relativePath} (${f.type})`).join('\n')}
-`;
-      }
+      return {
+        content: [{
+          type: 'text',
+          text: `# ✅ JSON-First TODO Generated from ADRs
 
-      // For rules integration, extract architectural rules from ADRs
-      let rulesPrompt = '';
-      if (includeRules) {
-        try {
-          const rulesResult = await this.generateRules({
-            source: ruleSource,
-            adrDirectory: adrDirectory,
-            projectPath: this.config.projectPath,
-            outputFormat: 'json'
-          });
-          
-          if (rulesResult.content) {
-            rulesPrompt = `
-## Architectural Rules (for compliance validation)
-The following architectural rules have been extracted from ADRs and should be validated in tests:
+## 🏗️ JSON-First TODO System Active
+✅ **todo-data.json** - JSON-first TODO backend created/updated  
+✅ **TODO.md** - Markdown frontend ${forceSyncToMarkdown ? 'synchronized' : 'available for sync'}  
 
-${Array.isArray(rulesResult.content) ? rulesResult.content.map((c: any) => c.text || c).join('\n') : rulesResult.content}
-`;
-          }
-        } catch (error) {
-          this.logger.warn(`Failed to extract rules: ${error instanceof Error ? error.message : String(error)}`);
-          rulesPrompt = `
-## Architectural Rules (failed to extract)
-Note: Could not extract architectural rules automatically. Manual rule validation may be needed.
-`;
-        }
-      }
-
-      // Generate TDD-focused todo creation prompt
-      const todoPrompt = `
-# TDD-Focused ADR Todo Generation Request
-
-## Step 1: ADR Discovery Results
-${adrContent}
-${projectStructurePrompt}
-${rulesPrompt}
-
-## Step 2: TDD Todo Generation Analysis
-
-Once you have discovered and read the ADR files, please analyze them and generate a comprehensive TDD-focused todo.md file.
-
-## TDD Phase: ${phase}
-${phase === 'test' ? '**Focus on Phase 1: Mock Test Generation Only**' : ''}
-${phase === 'production' ? '**Focus on Phase 2: Production Code Implementation (assumes tests exist)**' : ''}
-${phase === 'both' ? '**Generate both Phase 1 (Tests) and Phase 2 (Production) tasks**' : ''}
-
-## Requirements
-
-1. **Extract Tasks**: Identify all implementation tasks from ADRs
-2. **TDD Approach**: For each task, create:
-   - Phase 1: Mock test specifications
-   - Phase 2: Production implementation tasks
-3. **ADR Linking**: ${linkAdrs ? 'Link related ADRs to create comprehensive system tests' : 'Focus on individual ADR tasks'}
-4. **Rules Integration**: ${includeRules ? `Include architectural rules validation in tests (source: ${ruleSource})` : 'Skip architectural rules validation'}
-5. **Categorize**: Group tasks by ADR and testing phase
-6. **Status Detection**: Determine task completion status
-7. **Progress Tracking**: Calculate overall progress for both test and implementation phases
-8. **Scope Filter**: ${scope === 'all' ? 'Include all tasks' : `Focus on ${scope} tasks only`}
-
-## TDD Todo.md Format
-
-\`\`\`markdown
-# TDD-Focused ADR Implementation Progress
-
-**Last Updated**: [Date]
-**Overall Progress**: [X]% Complete
-**Test Coverage**: [X]% Complete
-**Implementation Coverage**: [X]% Complete
-
-## Summary
-- Total ADRs: [count]
-- Total Tasks: [count] (Tests: [count], Implementation: [count])
-- Completed: [count]
-- In Progress: [count]
-- Pending: [count]
-
-## System Architecture Overview (from linked ADRs)
-[Brief summary of how all ADRs connect to form the complete system]
-
-## Phase 1: Test Generation Tasks
-
-### ADR-001: [Title]
-#### Test Specifications
-- [ ] TEST: Unit test for [component/function]
-  - Mock: [what to mock]
-  - Expected: [expected behavior]
-  - Coverage: [what this tests]
-- [ ] TEST: Integration test for [feature]
-  - Setup: [test environment]
-  - Scenario: [test scenario]
-  - Assertions: [what to verify]
-${includeRules ? `- [ ] RULE: Architectural rule validation test for [rule name]
-  - Validation: [what rule to check]
-  - Pattern: [validation pattern/regex]
-  - Expected: [compliant behavior]` : ''}
-
-### ADR-002: [Title]
-#### Test Specifications
-- [ ] TEST: [test description]
-${includeRules ? '- [ ] RULE: [rule validation test]' : ''}
-...
-
-## Phase 2: Production Implementation Tasks
-
-### ADR-001: [Title]
-#### Implementation Tasks (after tests pass)
-- [ ] IMPL: Implement [component/function]
-  - Precondition: Unit test for [component] exists
-  - Definition: [what to implement]
-  - Acceptance: All related tests pass
-${includeRules ? `  - Compliance: Must pass architectural rule validation` : ''}
-- [ ] IMPL: [implementation task]
-
-### ADR-002: [Title]
-#### Implementation Tasks
-- [ ] IMPL: [implementation description]
-${includeRules ? '  - Compliance: [specific rule requirements]' : ''}
-...
-
-## ADR Dependencies and Links
-- ADR-001 → ADR-002: [relationship description]
-- ADR-002 → ADR-003: [relationship description]
-
-## Test-First Development Workflow
-1. Complete all Phase 1 tests for a component
-${includeRules ? '2. Complete architectural rule validation tests' : ''}
-${includeRules ? '3' : '2'}. Run tests (they should fail)
-${includeRules ? '4' : '3'}. Implement Phase 2 production code
-${includeRules ? '5' : '4'}. Run tests (they should pass)
-${includeRules ? '6. Validate architectural rule compliance' : ''}
-${includeRules ? '7' : '5'}. Refactor if needed while maintaining rule compliance
-\`\`\`
-
-Please provide:
-1. Comprehensive task extraction from all ADRs
-2. Test specifications for each implementation task
-${includeRules ? '3. Architectural rule validation tests and compliance checks' : ''}
-${includeRules ? '4' : '3'}. Clear separation of test and implementation phases
-${includeRules ? '5' : '4'}. ADR relationship mapping for system-wide test coverage
-${includeRules ? '6' : '5'}. TDD workflow recommendations with rule compliance integration
-`;
-
-      // Execute the todo generation with AI if enabled, otherwise return prompt
-      const { executePromptWithFallback, formatMCPResponse } = await import('./utils/prompt-execution.js');
-      const executionResult = await executePromptWithFallback(
-        todoPrompt,
-        'Generate TDD-focused todo.md file from ADR analysis with test-first approach and system-wide coverage',
-        {
-          temperature: 0.1,
-          maxTokens: 8000,
-          systemPrompt: `You are an expert in Test-Driven Development (TDD) and architectural implementation.
-Analyze the provided ADRs to extract actionable tasks following a strict TDD approach.
-
-Key responsibilities:
-1. For each implementation task, FIRST define the test specifications
-2. Create mock test descriptions that verify the expected behavior
-3. Link related ADRs to ensure comprehensive system test coverage
-4. Separate test generation (Phase 1) from production code (Phase 2)
-5. Ensure every production task has corresponding test coverage
-6. Map ADR dependencies to identify integration test requirements
-${includeRules ? '7. Include architectural rule validation in test specifications' : ''}
-${includeRules ? '8. Create compliance checks for extracted architectural rules' : ''}
-${includeRules ? '9. Ensure implementation tasks include rule compliance verification' : ''}
-
-Follow the TDD red-green-refactor cycle:
-- Red: Write failing tests first (Phase 1)${includeRules ? ' including rule validation tests' : ''}
-- Green: Implement minimal code to pass tests (Phase 2)
-- Refactor: Improve code while keeping tests green${includeRules ? ' and maintaining rule compliance' : ''}
-
-${includeRules ? 'The architectural rules provide constraints and patterns that must be validated in tests and followed in implementation.' : ''}
-
-The todo.md should serve as the glue connecting all ADRs into a cohesive, testable${includeRules ? ', rule-compliant' : ''} system.`,
-          responseFormat: 'text'
-        }
-      );
-
-      if (executionResult.isAIGenerated) {
-        // AI execution successful - return actual todo generation results
-        return formatMCPResponse({
-          ...executionResult,
-          content: `# TDD-Focused ADR Todo Generation Results
-
-## Analysis Information
+## Configuration Applied
 - **ADR Directory**: ${adrDirectory}
 - **Scope**: ${scope}
 - **TDD Phase**: ${phase}
-- **ADR Linking**: ${linkAdrs ? 'Enabled' : 'Disabled'}
+- **ADR Dependency Linking**: ${linkAdrs ? 'Enabled' : 'Disabled'}
 - **Rules Integration**: ${includeRules ? `Enabled (${ruleSource})` : 'Disabled'}
+- **Preserve Existing**: ${preserveExisting}
+- **Force Markdown Sync**: ${forceSyncToMarkdown ? 'Enabled' : 'Disabled'}
+- **Intent Linking**: ${intentId ? `Linked to ${intentId}` : 'None'}
+- **JSON Backup**: ${createJsonBackup ? 'Created' : 'Skipped'}
 
-## AI-Generated TDD Todo Results
+## JSON-First Architecture Benefits
+✅ **Structured Data**: JSON backend ensures consistent LLM interactions
+✅ **Automatic Sync**: JSON-to-markdown conversion maintains TODO.md compatibility  
+✅ **Enhanced Metadata**: Full task lifecycle with dependencies, assignees, priorities
+✅ **Complete Integration**: Native support for scoring, git automation, and knowledge graph
+✅ **Backup Protection**: Automatic data preservation during updates
+✅ **No Manual Setup**: All cache files auto-generated, tests can immediately validate
 
-${executionResult.content}
+${importResult.content[0].text}
 
-## TDD Implementation Workflow
+## Available Operations (use manage_todo_v2 tool)
+1. **View Tasks**: \`get_tasks\` operation with filtering and sorting
+2. **Update Status**: \`update_task\` operation with status, progress, notes
+3. **Bulk Updates**: \`bulk_update\` operation for multiple tasks
+4. **Analytics**: \`get_analytics\` operation for progress metrics
+5. **Sync Control**: \`sync_to_markdown\` and \`sync_knowledge_graph\` operations
 
-### Phase 1: Test Generation (Red Phase)
-1. **Review Test Specifications**: Examine each test task for completeness
-2. **Create Mock Tests**: Implement test files with proper mocking
-3. **Define Assertions**: Ensure tests verify expected behavior
-4. **Run Tests**: Confirm all tests fail (red phase)
+## Validation & Progress Tracking
+- **Progress Check**: Use \`compare_adr_progress\` to validate implementation vs ADRs
+- **Git Integration**: Use \`smart_git_push\` for automatic task status updates
+- **Scoring**: Integrated with smart scoring for release readiness assessment
 
-### Phase 2: Production Implementation (Green Phase)
-1. **Implement Minimal Code**: Write just enough code to pass tests
-2. **Run Tests Again**: Verify tests now pass (green phase)
-3. **Check Coverage**: Ensure all ADR requirements are tested
-4. **Integration Testing**: Verify ADR interactions work correctly
+## TDD Workflow Integration
+- **Phase 1**: Mock test generation tasks created
+- **Phase 2**: Production implementation tasks linked to tests
+- **Dependencies**: ADR relationships mapped to task dependencies
+- **Validation**: Architectural rules integrated into task criteria
 
-### Phase 3: Refactoring (Refactor Phase)
-1. **Improve Code Quality**: Refactor while keeping tests green
-2. **Update Documentation**: Keep ADRs and tests in sync
-3. **Performance Optimization**: Optimize without breaking tests
-
-## ADR System Integration
-
-The todo.md serves as the glue connecting all ADRs by:
-- **Mapping Dependencies**: Shows how ADRs relate to each other
-- **System-wide Coverage**: Ensures no gaps in test coverage
-- **Progress Tracking**: Monitors both test and implementation completion
-- **Working Environment**: Defines the expected system outcome
-
-## Integration Commands
-
-### Generate Test Phase Only:
-\`\`\`json
-{
-  "tool": "generate_adr_todo",
-  "args": {
-    "adrDirectory": "${adrDirectory}",
-    "phase": "test",
-    "linkAdrs": true,
-    "includeRules": true,
-    "ruleSource": "both"
-  }
-}
-\`\`\`
-
-### Generate Production Phase Only:
-\`\`\`json
-{
-  "tool": "generate_adr_todo",
-  "args": {
-    "adrDirectory": "${adrDirectory}",
-    "phase": "production",
-    "scope": "pending",
-    "includeRules": true
-  }
-}
-\`\`\`
-
-### Update Full TDD Todo with Rules:
-\`\`\`json
-{
-  "tool": "generate_adr_todo",
-  "args": {
-    "adrDirectory": "${adrDirectory}",
-    "phase": "both",
-    "linkAdrs": true,
-    "includeRules": true,
-    "ruleSource": "both"
-  }
-}
-\`\`\`
-`,
-        });
-      } else {
-        // Fallback to prompt-only mode
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `TDD-focused ADR todo generation for: ${adrDirectory}\n\nPhase: ${phase}\nADR Linking: ${linkAdrs ? 'Enabled' : 'Disabled'}\nRules Integration: ${includeRules ? `Enabled (${ruleSource})` : 'Disabled'}\nScope: ${scope}\n\nPlease generate a TDD-focused todo.md using the following prompt:\n\n${todoPrompt}`
-            }
-          ]
-        };
+*All TODO data is now managed in JSON format with automatic markdown sync*`
+        }]
       }
     } catch (error) {
       throw new McpAdrError(
@@ -4860,8 +4643,14 @@ Please provide:
       
       // If no intent found, create a standalone execution record
       if (!intentId) {
+        // Extract human request from conversation context if available
+        let humanRequest = `Standalone tool execution: ${toolName}`;
+        if (parameters?.conversationContext?.humanRequest) {
+          humanRequest = parameters.conversationContext.humanRequest;
+        }
+        
         intentId = await this.kgManager.createIntent(
-          `Standalone tool execution: ${toolName}`,
+          humanRequest,
           [`Execute ${toolName}`, 'Complete tool operation'],
           'medium'
         );
@@ -5140,14 +4929,20 @@ Please provide:
     }
   }
 
-  private async manageTodo(args: any): Promise<any> {
+
+  private async manageTodoJson(args: any): Promise<any> {
     try {
-      const { manageTodo } = await import('./tools/todo-management-tool.js');
-      return await manageTodo(args, this.config.projectPath);
+      const { manageTodoV2 } = await import('./tools/todo-management-tool-v2.js');
+      // Add projectPath to args if not provided
+      const argsWithPath = {
+        ...args,
+        projectPath: args.projectPath || this.config.projectPath
+      };
+      return await manageTodoV2(argsWithPath);
     } catch (error) {
       throw new McpAdrError(
-        `TODO management failed: ${error instanceof Error ? error.message : String(error)}`,
-        'TODO_MANAGEMENT_ERROR'
+        `JSON TODO management failed: ${error instanceof Error ? error.message : String(error)}`,
+        'TODO_JSON_MANAGEMENT_ERROR'
       );
     }
   }
@@ -5196,18 +4991,6 @@ Please provide:
       throw new McpAdrError(
         `Smart score analysis failed: ${error instanceof Error ? error.message : String(error)}`,
         'SMART_SCORE_ERROR'
-      );
-    }
-  }
-
-  private async humanOverride(args: any): Promise<any> {
-    try {
-      const { humanOverride } = await import('./tools/human-override-tool.js');
-      return await humanOverride(args);
-    } catch (error) {
-      throw new McpAdrError(
-        `Human override failed: ${error instanceof Error ? error.message : String(error)}`,
-        'HUMAN_OVERRIDE_ERROR'
       );
     }
   }

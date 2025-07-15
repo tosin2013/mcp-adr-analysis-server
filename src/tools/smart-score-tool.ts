@@ -6,6 +6,20 @@
  * - Manual score recalculation and rebalancing
  * - Health score diagnostics and validation
  * - Automated score updates and maintenance
+ * 
+ * IMPORTANT FOR AI ASSISTANTS: This tool depends on cache infrastructure and
+ * works best when other tools have already populated data.
+ * 
+ * Cache Dependencies:
+ * - Requires: .mcp-adr-cache/project-health-scores.json (main scoring data)
+ * - May read: .mcp-adr-cache/todo-data.json (for task completion scoring)
+ * - Updates: .mcp-adr-cache/project-health-scores.json (with new scores)
+ * 
+ * Workflow Timing:
+ * - Run AFTER other tools have populated cache data
+ * - Use 'recalculate_scores' to refresh stale data
+ * - Use 'sync_scores' to synchronize across tools
+ * - Use 'optimize_weights' for score tuning
  */
 
 import { z } from 'zod';
@@ -59,12 +73,25 @@ const ResetScoresSchema = z.object({
 });
 
 // Main operation schema
+const GetScoreTrendsSchema = z.object({
+  operation: z.literal('get_score_trends'),
+  projectPath: z.string().describe('Path to project directory')
+});
+
+const GetIntentScoresSchema = z.object({
+  operation: z.literal('get_intent_scores'),
+  projectPath: z.string().describe('Path to project directory'),
+  intentId: z.string().describe('Intent ID to get score trends for')
+});
+
 const SmartScoreSchema = z.union([
   RecalculateScoresSchema,
   SyncScoresSchema,
   DiagnoseScoresSchema,
   OptimizeWeightsSchema,
-  ResetScoresSchema
+  ResetScoresSchema,
+  GetScoreTrendsSchema,
+  GetIntentScoresSchema
 ]);
 
 type SmartScoreArgs = z.infer<typeof SmartScoreSchema>;
@@ -72,7 +99,7 @@ type SmartScoreArgs = z.infer<typeof SmartScoreSchema>;
 /**
  * Trigger score updates from source tools
  */
-async function triggerSourceToolUpdates(projectPath: string, tools: string[], todoPath?: string): Promise<Record<string, any>> {
+async function triggerSourceToolUpdates(projectPath: string, tools: string[]): Promise<Record<string, any>> {
   const results: Record<string, any> = {};
 
   for (const tool of tools) {
@@ -80,13 +107,14 @@ async function triggerSourceToolUpdates(projectPath: string, tools: string[], to
       switch (tool) {
         case 'manage_todo':
           // Trigger TODO analysis to update task completion scores
-          const { manageTodo } = await import('./todo-management-tool.js');
-          results[tool] = await manageTodo({
-            operation: 'analyze_progress',
-            todoPath: todoPath || 'TODO.md',
+          const { manageTodoV2 } = await import('./todo-management-tool-v2.js');
+          results[tool] = await manageTodoV2({
+            operation: 'get_analytics',
+            projectPath,
             timeframe: 'all',
-            includeVelocity: true
-          }, projectPath);
+            includeVelocity: true,
+            includeScoring: true
+          });
           break;
 
         case 'smart_git_push':
@@ -346,19 +374,19 @@ ${Object.entries(sourceResults).map(([tool, result]: [string, any]) =>
         if (validatedArgs.triggerTools && validatedArgs.triggerTools.length > 0) {
           triggerResults = await triggerSourceToolUpdates(
             validatedArgs.projectPath, 
-            validatedArgs.triggerTools,
-            validatedArgs.todoPath
+            validatedArgs.triggerTools
           );
         }
 
         // Force a TODO update to sync task completion scores
-        const { manageTodo } = await import('./todo-management-tool.js');
-        const todoAnalysis = await manageTodo({
-          operation: 'analyze_progress',
-          todoPath: validatedArgs.todoPath,
+        const { manageTodoV2 } = await import('./todo-management-tool-v2.js');
+        const todoAnalysis = await manageTodoV2({
+          operation: 'get_analytics',
+          projectPath: validatedArgs.projectPath,
           timeframe: 'all',
-          includeVelocity: true
-        }, validatedArgs.projectPath);
+          includeVelocity: true,
+          includeScoring: true
+        });
         
         // Extract task completion data from TODO analysis
         let todoCompletionData = null;
@@ -659,6 +687,73 @@ ${backupPath ? `## Backup Created: \`${backupPath}\`` : ''}
 ${validatedArgs.recalculateAfterReset ? '## Recalculation: ✅ Fresh data collected from available tools' : '## Recalculation: ⏸️ Skipped (use recalculate_scores to refresh)'}
 
 *Health scoring system has been reset to baseline values.*`
+          }]
+        };
+      }
+
+      case 'get_score_trends': {
+        const { KnowledgeGraphManager } = await import('../utils/knowledge-graph-manager.js');
+        const kgManager = new KnowledgeGraphManager();
+        
+        const trends = await kgManager.getProjectScoreTrends();
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `# 📊 Project Score Trends
+
+## Current Score: ${trends.currentScore}%
+
+## Score History (${trends.scoreHistory.length} entries):
+${trends.scoreHistory.slice(-10).map(entry => 
+  `- **${new Date(entry.timestamp).toLocaleString()}**: ${entry.score}% (${entry.triggerEvent})`
+).join('\n')}
+
+## Performance Analytics:
+- **Average Improvement**: ${trends.averageImprovement.toFixed(1)}%
+- **Score Entries**: ${trends.scoreHistory.length}
+
+## Top Impacting Intents:
+${trends.topImpactingIntents.map(intent => 
+  `- **${intent.scoreImprovement > 0 ? '+' : ''}${intent.scoreImprovement.toFixed(1)}%**: ${intent.humanRequest.substring(0, 80)}...`
+).join('\n')}
+
+*Score trends track the impact of human intents on project health over time.*`
+          }]
+        };
+      }
+
+      case 'get_intent_scores': {
+        const { KnowledgeGraphManager } = await import('../utils/knowledge-graph-manager.js');
+        const kgManager = new KnowledgeGraphManager();
+        
+        if (!validatedArgs.intentId) {
+          throw new McpAdrError('intentId is required for get_intent_scores operation', 'INVALID_INPUT');
+        }
+        
+        const intentTrends = await kgManager.getIntentScoreTrends(validatedArgs.intentId);
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `# 🎯 Intent Score Analysis
+
+## Intent Progress:
+- **Initial Score**: ${intentTrends.initialScore}%
+- **Current Score**: ${intentTrends.currentScore}%
+- **Progress**: ${intentTrends.progress.toFixed(1)}%
+
+## Component Scores:
+${Object.entries(intentTrends.componentTrends).map(([component, score]) => 
+  `- **${component.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}**: ${score}%`
+).join('\n')}
+
+## Score History for this Intent:
+${intentTrends.scoreHistory.map(entry => 
+  `- **${new Date(entry.timestamp).toLocaleString()}**: ${entry.score}% (${entry.triggerEvent})`
+).join('\n')}
+
+*Intent scores track how specific human requests impact project health metrics.*`
           }]
         };
       }

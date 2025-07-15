@@ -69,7 +69,7 @@ generate_adr_todo         # Create implementation tasks
 
 #### For Existing ADRs
 ```
-discover_existing_adrs    # Catalog current ADRs
+discover_existing_adrs    # Catalog current ADRs + initialize cache infrastructure
 suggest_adrs             # Find missing decisions
 generate_adr_todo        # Extract action items
 ```

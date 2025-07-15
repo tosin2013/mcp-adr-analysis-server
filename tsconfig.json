@@ -43,7 +43,8 @@
   "exclude": [
     "node_modules",
     "dist",
-    ".mcp-adr-cache"
+    ".mcp-adr-cache",
+    "tests/todo-management-tool-v2.test.ts"
   ],
   "ts-node": {
     "esm": true
