@@ -26,6 +26,7 @@ import { McpAdrError } from './types/index.js';
 import { CONVERSATION_CONTEXT_SCHEMA } from './types/conversation-context.js';
 import { maskMcpResponse, createMaskingConfig } from './utils/output-masking.js';
 import { loadConfig, validateProjectPath, createLogger, printConfigSummary, type ServerConfig } from './utils/config.js';
+import { KnowledgeGraphManager } from './utils/knowledge-graph-manager.js';
 
 /**
  * Get version from package.json
@@ -88,11 +89,13 @@ export class McpAdrAnalysisServer {
   private maskingConfig: any;
   private config: ServerConfig;
   private logger: ReturnType<typeof createLogger>;
+  private kgManager: KnowledgeGraphManager;
 
   constructor() {
     // Load and validate configuration
     this.config = loadConfig();
     this.logger = createLogger(this.config);
+    this.kgManager = new KnowledgeGraphManager();
 
     // Print configuration summary
     printConfigSummary(this.config);
@@ -300,7 +303,7 @@ export class McpAdrAnalysisServer {
                 todoPath: {
                   type: 'string',
                   description: 'Path to TODO.md file (relative to project root)',
-                  default: 'todo.md'
+                  default: 'TODO.md'
                 },
                 preserveExisting: {
                   type: 'boolean',
@@ -1060,7 +1063,8 @@ export class McpAdrAnalysisServer {
                 },
                 todoPath: {
                   type: 'string',
-                  description: 'Path to todo.md file for task identification'
+                  description: 'Path to TODO.md file for task identification',
+                  default: 'TODO.md'
                 },
                 cicdLogs: {
                   type: 'string',
@@ -1277,7 +1281,7 @@ export class McpAdrAnalysisServer {
                 },
                 todoPath: {
                   type: 'string',
-                  default: 'todo.md',
+                  default: 'TODO.md',
                   description: 'Path to TODO.md file'
                 },
                 updates: {
@@ -1479,64 +1483,93 @@ export class McpAdrAnalysisServer {
           },
           {
             name: 'troubleshoot_guided_workflow',
-            description: 'Guided troubleshooting workflow with ADR and TODO alignment',
+            description: 'Structured failure analysis and test plan generation - provide JSON failure info to get specific test commands',
             inputSchema: {
               type: 'object',
               properties: {
                 operation: {
                   type: 'string',
-                  enum: ['collect_issue', 'full_workflow'],
+                  enum: ['analyze_failure', 'generate_test_plan', 'full_workflow'],
                   description: 'Type of troubleshooting operation'
                 },
-                issue: {
+                failure: {
                   type: 'object',
                   properties: {
-                    description: {
+                    failureType: {
                       type: 'string',
-                      description: 'What is happening? Describe the issue in detail'
+                      enum: ['test_failure', 'deployment_failure', 'build_failure', 'runtime_error', 'performance_issue', 'security_issue', 'other'],
+                      description: 'Type of failure'
                     },
-                    expectedBehavior: {
-                      type: 'string',
-                      description: 'What should be happening instead?'
-                    },
-                    symptoms: {
-                      type: 'array',
-                      items: { type: 'string' },
-                      description: 'Observable symptoms, error messages, or behaviors'
+                    failureDetails: {
+                      type: 'object',
+                      properties: {
+                        command: {
+                          type: 'string',
+                          description: 'Command that failed (optional)'
+                        },
+                        exitCode: {
+                          type: 'number',
+                          description: 'Exit code of failed process (optional)'
+                        },
+                        errorMessage: {
+                          type: 'string',
+                          description: 'Primary error message'
+                        },
+                        stackTrace: {
+                          type: 'string',
+                          description: 'Stack trace if available (optional)'
+                        },
+                        logOutput: {
+                          type: 'string',
+                          description: 'Relevant log output (optional)'
+                        },
+                        environment: {
+                          type: 'string',
+                          description: 'Environment where failure occurred (optional)'
+                        },
+                        timestamp: {
+                          type: 'string',
+                          description: 'When the failure occurred (optional)'
+                        },
+                        affectedFiles: {
+                          type: 'array',
+                          items: { type: 'string' },
+                          description: 'Files involved in the failure (optional)'
+                        }
+                      },
+                      required: ['errorMessage'],
+                      description: 'Detailed failure information'
                     },
                     context: {
                       type: 'object',
                       properties: {
-                        environment: {
-                          type: 'string',
-                          description: 'Environment where issue occurs (dev, staging, prod)'
-                        },
                         recentChanges: {
                           type: 'string',
-                          description: 'What changed recently that might be related?'
+                          description: 'Recent changes that might be related (optional)'
                         },
-                        affectedSystems: {
-                          type: 'array',
-                          items: { type: 'string' },
-                          description: 'Systems or components affected'
+                        reproducible: {
+                          type: 'boolean',
+                          description: 'Whether the failure is reproducible (optional)'
                         },
-                        errorLogs: {
+                        frequency: {
                           type: 'string',
-                          description: 'Relevant error logs or stack traces'
+                          description: 'How often this failure occurs (optional)'
                         },
-                        reproducibility: {
+                        impact: {
                           type: 'string',
-                          enum: ['always', 'sometimes', 'once'],
-                          description: 'How reliably can this be reproduced?'
+                          enum: ['low', 'medium', 'high', 'critical'],
+                          description: 'Impact level of the failure (optional)'
                         }
-                      }
+                      },
+                      description: 'Additional context about the failure (optional)'
                     }
                   },
-                  description: 'Issue details (required for collect_issue operation)'
+                  required: ['failureType', 'failureDetails'],
+                  description: 'Structured failure information (required for analyze_failure and generate_test_plan)'
                 },
                 projectPath: {
                   type: 'string',
-                  description: 'Path to project directory'
+                  description: 'Path to project directory (optional)'
                 },
                 adrDirectory: {
                   type: 'string',
@@ -1546,15 +1579,7 @@ export class McpAdrAnalysisServer {
                 todoPath: {
                   type: 'string',
                   description: 'Path to TODO.md file',
-                  default: 'todo.md'
-                },
-                skipSteps: {
-                  type: 'array',
-                  items: {
-                    type: 'string',
-                    enum: ['baseline', 'todo_alignment', 'questions', 'adr_validation', 'recommendations']
-                  },
-                  description: 'Steps to skip in full workflow'
+                  default: 'TODO.md'
                 }
               },
               required: ['operation']
@@ -1596,7 +1621,7 @@ export class McpAdrAnalysisServer {
                 },
                 todoPath: {
                   type: 'string',
-                  default: 'todo.md',
+                  default: 'TODO.md',
                   description: 'Path to TODO.md file (for sync_scores operation)'
                 },
                 triggerTools: {
@@ -1667,6 +1692,53 @@ export class McpAdrAnalysisServer {
                 }
               },
               required: ['operation', 'projectPath']
+            }
+          },
+          {
+            name: 'human_override',
+            description: 'Human override to force AI-powered tool planning when LLMs get confused or stuck - cuts through confusion with direct task execution',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                taskDescription: {
+                  type: 'string',
+                  description: 'What the human wants accomplished (in plain English)'
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project directory'
+                },
+                adrDirectory: {
+                  type: 'string',
+                  default: 'docs/adrs',
+                  description: 'ADR directory path'
+                },
+                todoPath: {
+                  type: 'string',
+                  default: 'TODO.md',
+                  description: 'Path to TODO.md file'
+                },
+                priority: {
+                  type: 'string',
+                  enum: ['low', 'medium', 'high', 'critical'],
+                  default: 'high',
+                  description: 'Task priority level'
+                },
+                forceExecution: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Force immediate execution planning'
+                },
+                deadline: {
+                  type: 'string',
+                  description: 'When this must be completed (optional)'
+                },
+                additionalContext: {
+                  type: 'string',
+                  description: 'Any additional context or constraints (optional)'
+                }
+              },
+              required: ['taskDescription', 'projectPath']
             }
           }
         ]
@@ -1786,13 +1858,22 @@ export class McpAdrAnalysisServer {
           case 'smart_score':
             response = await this.smartScore(args);
             break;
+          case 'human_override':
+            response = await this.humanOverride(args);
+            break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
         }
 
         // Apply content masking to response
+        // Track tool execution in knowledge graph
+        await this.trackToolExecution(name, args, response, true);
+        
         return await this.applyOutputMasking(response);
       } catch (error) {
+        // Track failed execution
+        await this.trackToolExecution(name, args, {}, false, error instanceof Error ? error.message : String(error));
+        
         if (error instanceof McpAdrError) {
           throw error;
         }
@@ -4749,6 +4830,91 @@ Please provide:
   /**
    * Apply content masking to MCP response
    */
+  /**
+   * Track tool execution in knowledge graph
+   */
+  private async trackToolExecution(
+    toolName: string,
+    parameters: any,
+    result: any,
+    success: boolean,
+    error?: string
+  ): Promise<void> {
+    try {
+      // Extract intentId from metadata if available
+      let intentId: string | undefined;
+      
+      if (result?.metadata?.intentId) {
+        intentId = result.metadata.intentId;
+      } else {
+        // Check for active intents that might be related to this tool execution
+        const activeIntents = await this.kgManager.getActiveIntents();
+        if (activeIntents.length > 0) {
+          // Use the most recent active intent
+          const latestIntent = activeIntents[activeIntents.length - 1];
+          if (latestIntent) {
+            intentId = latestIntent.intentId;
+          }
+        }
+      }
+      
+      // If no intent found, create a standalone execution record
+      if (!intentId) {
+        intentId = await this.kgManager.createIntent(
+          `Standalone tool execution: ${toolName}`,
+          [`Execute ${toolName}`, 'Complete tool operation'],
+          'medium'
+        );
+      }
+      
+      // Determine tasks created/modified from tool operation
+      const todoTasksCreated: string[] = [];
+      const todoTasksModified: string[] = [];
+      
+      // Extract task information from result metadata
+      if (result?.metadata) {
+        if (result.metadata.tasksCreated) {
+          todoTasksCreated.push(...result.metadata.tasksCreated);
+        }
+        if (result.metadata.tasksModified) {
+          todoTasksModified.push(...result.metadata.tasksModified);
+        }
+        if (result.metadata.taskIds) {
+          todoTasksModified.push(...result.metadata.taskIds);
+        }
+      }
+      
+      // Store execution in knowledge graph
+      await this.kgManager.addToolExecution(
+        intentId,
+        toolName,
+        parameters,
+        result,
+        success,
+        todoTasksCreated,
+        todoTasksModified,
+        error
+      );
+      
+      // If execution completed successfully, update intent status
+      if (success && !error) {
+        // Check if this might be the final tool in a chain
+        const intent = await this.kgManager.getIntentById(intentId);
+        if (intent && intent.currentStatus === 'executing') {
+          // Simple heuristic: if tool is a "completion" type tool, mark intent as completed
+          const completionTools = ['smart_git_push', 'generate_deployment_guidance', 'smart_score'];
+          if (completionTools.includes(toolName)) {
+            await this.kgManager.updateIntentStatus(intentId, 'completed');
+          }
+        }
+      }
+      
+    } catch (trackingError) {
+      // Don't let tracking errors break tool execution
+      console.error('[WARN] Knowledge graph tracking failed:', trackingError);
+    }
+  }
+
   private async applyOutputMasking(response: any): Promise<any> {
     try {
       return await maskMcpResponse(response, this.maskingConfig);
@@ -5030,6 +5196,18 @@ Please provide:
       throw new McpAdrError(
         `Smart score analysis failed: ${error instanceof Error ? error.message : String(error)}`,
         'SMART_SCORE_ERROR'
+      );
+    }
+  }
+
+  private async humanOverride(args: any): Promise<any> {
+    try {
+      const { humanOverride } = await import('./tools/human-override-tool.js');
+      return await humanOverride(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `Human override failed: ${error instanceof Error ? error.message : String(error)}`,
+        'HUMAN_OVERRIDE_ERROR'
       );
     }
   }

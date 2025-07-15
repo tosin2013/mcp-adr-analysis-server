@@ -3,6 +3,8 @@
  * 
  * Analyzes TODO.md, project state, and commit patterns to determine
  * if a release is ready, preventing endless development cycles
+ * 
+ * Supports both TODO.md (standard) and todo.md (legacy) for compatibility
  */
 
 import { readFileSync, existsSync } from 'fs';

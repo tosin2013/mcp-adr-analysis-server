@@ -164,7 +164,77 @@ generate_adr_todo
 - Prioritized list of architectural work with production readiness criteria
 - Dependencies and sequencing information with validation gates
 
-### Step 4: Establish Quality Validation Framework
+### Step 4: AI-Powered Development Planning
+
+Let AI orchestrate your implementation workflow based on PRD requirements:
+
+**Tool Call:**
+```
+tool_chain_orchestrator
+```
+
+**Parameters:**
+```json
+{
+  "operation": "generate_plan",
+  "userRequest": "Implement PRD requirements with full ADR coverage and deployment readiness",
+  "includeContext": true,
+  "optimizeFor": "prd_implementation"
+}
+```
+
+**What this does:**
+- AI analyzes PRD-generated ADRs to create optimal implementation sequence
+- Generates comprehensive tool execution plan with dependencies
+- Provides structured workflow preventing implementation gaps
+- Includes confidence scoring and alternative approaches
+
+### Step 5: Advanced Deployment Guidance
+
+Generate comprehensive deployment guidance from your ADRs:
+
+**Tool Call:**
+```
+generate_deployment_guidance
+```
+
+**Parameters:**
+```json
+{
+  "adrDirectory": "docs/adrs",
+  "environmentType": "production",
+  "includeInfrastructure": true,
+  "includeSecurityChecklist": true,
+  "technologyFilter": ["web", "database", "api"]
+}
+```
+
+**What this does:**
+- Extracts deployment requirements from ADR technology decisions
+- Generates environment-specific deployment procedures
+- Creates comprehensive infrastructure setup guides
+- Provides actionable deployment instructions with commands
+- Includes security checklists and validation procedures
+
+### Step 6: Smart Project Health Monitoring
+
+Track implementation progress against PRD goals:
+
+**Tool Call:**
+```
+smart_score
+```
+
+**Parameters:**
+```json
+{
+  "operation": "sync_scores",
+  "includeWeightOptimization": true,
+  "focusAreas": ["todo", "architecture", "deployment", "prd_compliance"]
+}
+```
+
+### Step 7: Establish Quality Validation Framework
 
 Set up validation to ensure implementations meet ADR goals from the start:
 
@@ -182,7 +252,8 @@ compare_adr_progress
   "functionalValidation": true,
   "strictMode": true,
   "includeTestCoverage": true,
-  "validateDependencies": true
+  "validateDependencies": true,
+  "prdValidation": true
 }
 ```
 
@@ -192,14 +263,16 @@ compare_adr_progress
 - Creates validation criteria for each ADR goal
 - Provides reality-check mechanisms for implementation progress
 - Validates cross-ADR dependencies and system consistency
+- Ensures implementations meet original PRD requirements
 
 **Expected Output:**
 - Quality validation framework configuration
 - Implementation standards and patterns
 - Validation checkpoints for each development phase
 - Clear criteria for production readiness assessment
+- PRD compliance validation reports
 
-### Step 5: Research Critical Decisions
+### Step 8: Research Critical Decisions
 
 For complex decisions, generate research questions:
 
@@ -394,7 +467,75 @@ The validation system helps prevent:
 - ADRs that don't align with actual PRD priorities
 - Tests that don't validate real PRD acceptance criteria
 
-## 📊 Advanced Features
+## 📊 Advanced Features and AI-Powered Workflows
+
+### AI-Powered Troubleshooting
+
+When implementing PRD requirements runs into issues:
+
+**Tool Call:**
+```
+troubleshoot_guided_workflow
+```
+
+**Parameters:**
+```json
+{
+  "operation": "full_workflow",
+  "failureType": "deployment_failure",
+  "description": "PRD implementation deployment failing in production environment",
+  "severity": "high"
+}
+```
+
+**What this does:**
+- Systematic analysis of implementation vs PRD requirements
+- AI-generated test plans with specific diagnostic commands
+- Integration with other MCP tools for comprehensive troubleshooting
+- Fallback templates when AI services are unavailable
+
+### Human Override for Complex PRD Tasks
+
+When LLMs get confused during complex PRD implementation:
+
+**Tool Call:**
+```
+human_override
+```
+
+**Parameters:**
+```json
+{
+  "taskDescription": "Implement complex microservices architecture from PRD requirements with full deployment pipeline",
+  "forceExecution": true,
+  "includeContext": true
+}
+```
+
+**What this does:**
+- Forces AI-powered planning through OpenRouter.ai
+- Cuts through LLM confusion with structured execution plans
+- Provides clear command schemas for complex PRD implementation
+- Includes confidence scoring and detailed execution notes
+
+### Smart Git Operations for PRD Projects
+
+Ensure release readiness before pushing PRD implementations:
+
+**Tool Call:**
+```
+smart_git_push
+```
+
+**Parameters:**
+```json
+{
+  "branchName": "feature/prd-implementation",
+  "commitMessage": "Implement core PRD requirements with ADR compliance",
+  "skipHealthCheck": false,
+  "includeContentSecurity": true
+}
+```
 
 ### Environment Analysis
 

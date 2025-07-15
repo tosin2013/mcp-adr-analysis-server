@@ -5,6 +5,7 @@
 
 import { z } from 'zod';
 import { McpAdrError } from '../types/index.js';
+import { KnowledgeGraphManager } from '../utils/knowledge-graph-manager.js';
 
 // Task status enumeration
 const TaskStatus = z.enum(['pending', 'in_progress', 'completed', 'blocked', 'cancelled']);
@@ -49,7 +50,7 @@ const TodoStructure = z.object({
 // Operation schemas
 const UpdateTaskStatusSchema = z.object({
   operation: z.literal('update_status'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   updates: z.array(z.object({
     taskId: z.string().describe('Task ID to update'),
     status: TaskStatus.describe('New status'),
@@ -60,14 +61,14 @@ const UpdateTaskStatusSchema = z.object({
 
 const AddTasksSchema = z.object({
   operation: z.literal('add_tasks'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   tasks: z.array(TaskSchema.omit({ id: true, createdAt: true, updatedAt: true })).describe('New tasks to add'),
   section: z.string().optional().describe('Section to add tasks to (will create if not exists)')
 });
 
 const MergeAdrSchema = z.object({
   operation: z.literal('merge_adr_updates'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   adrDirectory: z.string().default('docs/adrs').describe('ADR directory path'),
   preserveCompleted: z.boolean().default(true).describe('Keep completed tasks'),
   preserveCustom: z.boolean().default(true).describe('Keep manually added tasks')
@@ -75,14 +76,14 @@ const MergeAdrSchema = z.object({
 
 const SyncProgressSchema = z.object({
   operation: z.literal('sync_progress'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   adrDirectory: z.string().default('docs/adrs').describe('ADR directory path'),
   updateAdrs: z.boolean().default(false).describe('Update ADR status based on TODO progress')
 });
 
 const AnalyzeProgressSchema = z.object({
   operation: z.literal('analyze_progress'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   timeframe: z.enum(['day', 'week', 'month', 'all']).default('week').describe('Analysis timeframe'),
   includeVelocity: z.boolean().default(true).describe('Include velocity metrics')
 });
@@ -90,7 +91,7 @@ const AnalyzeProgressSchema = z.object({
 // New Interactive Operations
 const DeleteTaskSchema = z.object({
   operation: z.literal('delete_task'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   taskIds: z.array(z.string()).describe('Task IDs to delete'),
   force: z.boolean().default(false).describe('Skip interactive confirmation if true'),
   preserveComments: z.boolean().default(true).describe('Preserve task notes in deletion log')
@@ -98,7 +99,7 @@ const DeleteTaskSchema = z.object({
 
 const EditTaskSchema = z.object({
   operation: z.literal('edit_task'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   taskId: z.string().describe('Task ID to edit'),
   updates: z.object({
     title: z.string().optional().describe('New task title'),
@@ -114,7 +115,7 @@ const EditTaskSchema = z.object({
 
 const MoveTaskSchema = z.object({
   operation: z.literal('move_task'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   taskId: z.string().describe('Task ID to move'),
   targetSection: z.string().optional().describe('Target section name'),
   position: z.number().optional().describe('Position in target section (0-based)'),
@@ -124,7 +125,7 @@ const MoveTaskSchema = z.object({
 
 const ManageSectionSchema = z.object({
   operation: z.literal('manage_section'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   action: z.enum(['create', 'delete', 'rename', 'reorder']).describe('Section management action'),
   sectionName: z.string().describe('Section name to operate on'),
   newName: z.string().optional().describe('New name for rename action'),
@@ -135,7 +136,7 @@ const ManageSectionSchema = z.object({
 
 const SearchTasksSchema = z.object({
   operation: z.literal('search_tasks'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   query: z.string().optional().describe('Text to search in task titles and notes'),
   filters: z.object({
     status: TaskStatus.optional(),
@@ -216,11 +217,12 @@ function calculatePriorityWeightedScore(structure: TodoStructure): number {
 
 /**
  * Parse TODO.md file into structured format
+ * Supports both TODO.md and todo.md for compatibility
  */
 async function parseTodoFile(todoPath: string): Promise<TodoStructure> {
   try {
-    const fs = await import('fs/promises');
-    const content = await fs.readFile(todoPath, 'utf-8');
+    const { readFile } = await import('fs/promises');
+    const content = await readFile(todoPath, 'utf-8');
     
     const lines = content.split('\n');
     const structure: TodoStructure = {
@@ -654,8 +656,8 @@ async function checkNeedsScoreInitialization(todoPath: string, projectPath?: str
   }
   
   try {
-    const fs = await import('fs/promises');
-    const content = await fs.readFile(todoPath, 'utf-8');
+    const { readFile } = await import('fs/promises');
+    const content = await readFile(todoPath, 'utf-8');
     
     // Check if file has health scoring header
     const lines = content.split('\n');
@@ -684,11 +686,48 @@ export async function manageTodo(args: ManageTodoArgs, projectPath?: string): Pr
   try {
     const validatedArgs = ManageTodoSchema.parse(args);
     
+    // Initialize knowledge graph manager
+    const kgManager = new KnowledgeGraphManager();
+    let intentId: string | undefined;
+    
+    // Track operation intent in knowledge graph
+    if (['update_status', 'add_tasks', 'merge_adr_updates', 'sync_progress'].includes(validatedArgs.operation)) {
+      intentId = await kgManager.createIntent(
+        `TODO Management: ${validatedArgs.operation}`,
+        [`Execute ${validatedArgs.operation} operation`, 'Update TODO.md file'],
+        'medium'
+      );
+    }
+    
     // Resolve absolute TODO path consistently
     const { resolve } = await import('path');
-    const absoluteTodoPath = projectPath ? 
-      resolve(projectPath, validatedArgs.todoPath) : 
-      resolve(process.cwd(), validatedArgs.todoPath);
+    const { readFile, access, writeFile } = await import('fs/promises');
+    
+    // Support both TODO.md and todo.md for backward compatibility
+    let todoPath = validatedArgs.todoPath;
+    const basePath = projectPath || process.cwd();
+    
+    // If path is just the filename, check both cases
+    if (todoPath === 'TODO.md' || todoPath === 'todo.md') {
+      const upperPath = resolve(basePath, 'TODO.md');
+      const lowerPath = resolve(basePath, 'todo.md');
+      
+      // Check which exists
+      try {
+        await access(upperPath);
+        todoPath = 'TODO.md';
+      } catch {
+        try {
+          await access(lowerPath);
+          todoPath = 'todo.md';
+        } catch {
+          // Neither exists, use standard TODO.md
+          todoPath = 'TODO.md';
+        }
+      }
+    }
+    
+    const absoluteTodoPath = resolve(basePath, todoPath);
     
     // Check if file exists and has health scoring header
     const needsScoreInitialization = await checkNeedsScoreInitialization(absoluteTodoPath, projectPath);
@@ -699,8 +738,29 @@ export async function manageTodo(args: ManageTodoArgs, projectPath?: string): Pr
         const updatedStructure = updateTaskStatuses(structure, validatedArgs.updates);
         const markdown = await formatTodoAsMarkdown(updatedStructure, projectPath);
         
-        const fs = await import('fs/promises');
-        await fs.writeFile(absoluteTodoPath, markdown, 'utf-8');
+        await writeFile(absoluteTodoPath, markdown, 'utf-8');
+        
+        // Track operation in knowledge graph
+        if (intentId) {
+          const tasksModified = validatedArgs.updates.map(u => u.taskId);
+          await kgManager.addToolExecution(
+            intentId,
+            'manage_todo_update_status',
+            validatedArgs,
+            { 
+              updatedTasks: validatedArgs.updates.length,
+              tasksModified,
+              structureSummary: updatedStructure.summary
+            },
+            true,
+            [],
+            tasksModified,
+            undefined
+          );
+          
+          // Update TODO snapshot
+          await kgManager.updateTodoSnapshot(intentId, markdown);
+        }
         
         return {
           content: [{
@@ -728,8 +788,30 @@ Updated TODO file: \`${absoluteTodoPath}\``
         const updatedStructure = addTasksToStructure(structure, validatedArgs.tasks, validatedArgs.section);
         const markdown = await formatTodoAsMarkdown(updatedStructure, projectPath);
         
-        const fs = await import('fs/promises');
-        await fs.writeFile(absoluteTodoPath, markdown, 'utf-8');
+        await writeFile(absoluteTodoPath, markdown, 'utf-8');
+        
+        // Track operation in knowledge graph
+        if (intentId) {
+          const tasksCreated = validatedArgs.tasks.map(task => task.title);
+          await kgManager.addToolExecution(
+            intentId,
+            'manage_todo_add_tasks',
+            validatedArgs,
+            { 
+              addedTasks: validatedArgs.tasks.length,
+              section: validatedArgs.section || 'default',
+              tasksCreated,
+              structureSummary: updatedStructure.summary
+            },
+            true,
+            tasksCreated,
+            [],
+            undefined
+          );
+          
+          // Update TODO snapshot
+          await kgManager.updateTodoSnapshot(intentId, markdown);
+        }
         
         return {
           content: [{
@@ -757,12 +839,11 @@ Updated TODO file: \`${absoluteTodoPath}\``
         const currentStructure = await parseTodoFile(absoluteTodoPath);
         
         // Create backup of current TODO
-        const fs = await import('fs/promises');
         const backupPath = `${absoluteTodoPath}.backup.${Date.now()}`;
         
         try {
-          const currentContent = await fs.readFile(absoluteTodoPath, 'utf-8');
-          await fs.writeFile(backupPath, currentContent, 'utf-8');
+          const currentContent = await readFile(absoluteTodoPath, 'utf-8');
+          await writeFile(backupPath, currentContent, 'utf-8');
         } catch (error) {
           // If backup fails, continue but warn
           console.error(`Warning: Could not create backup at ${backupPath}:`, error);
@@ -796,7 +877,7 @@ Updated TODO file: \`${absoluteTodoPath}\``
         
         // Write merged structure back
         const markdown = await formatTodoAsMarkdown(mergedStructure, projectPath);
-        await fs.writeFile(absoluteTodoPath, markdown, 'utf-8');
+        await writeFile(absoluteTodoPath, markdown, 'utf-8');
         
         return {
           content: [{
@@ -964,8 +1045,7 @@ ${completionRate > 80 ? '- 🎉 Great progress! Consider adding new tasks' : ''}
         
         // Write updated structure
         const markdown = await formatTodoAsMarkdown(updatedStructure, projectPath);
-        const fs = await import('fs/promises');
-        await fs.writeFile(absoluteTodoPath, markdown, 'utf-8');
+        await writeFile(absoluteTodoPath, markdown, 'utf-8');
         
         return {
           content: [{
@@ -1038,8 +1118,7 @@ Updated TODO file: \`${absoluteTodoPath}\``
         
         // Write updated structure
         const markdown = await formatTodoAsMarkdown(updatedStructure, projectPath);
-        const fs = await import('fs/promises');
-        await fs.writeFile(absoluteTodoPath, markdown, 'utf-8');
+        await writeFile(absoluteTodoPath, markdown, 'utf-8');
         
         return {
           content: [{
@@ -1150,8 +1229,7 @@ ${availableSections.map((section, index) => `${index + 1}. ${section}`).join('\n
         
         // Write updated structure
         const markdown = await formatTodoAsMarkdown(updatedStructure, projectPath);
-        const fs = await import('fs/promises');
-        await fs.writeFile(absoluteTodoPath, markdown, 'utf-8');
+        await writeFile(absoluteTodoPath, markdown, 'utf-8');
         
         return {
           content: [{
@@ -1190,8 +1268,7 @@ Updated TODO file: \`${absoluteTodoPath}\``
           updatedStructure.lastUpdated = new Date().toISOString();
           
           const markdown = await formatTodoAsMarkdown(updatedStructure, projectPath);
-          const fs = await import('fs/promises');
-          await fs.writeFile(absoluteTodoPath, markdown, 'utf-8');
+            await writeFile(absoluteTodoPath, markdown, 'utf-8');
           
           return {
             content: [{
@@ -1277,8 +1354,7 @@ Updated TODO file: \`${absoluteTodoPath}\``
         updatedStructure.lastUpdated = new Date().toISOString();
         
         const markdown = await formatTodoAsMarkdown(updatedStructure, projectPath);
-        const fs = await import('fs/promises');
-        await fs.writeFile(absoluteTodoPath, markdown, 'utf-8');
+        await writeFile(absoluteTodoPath, markdown, 'utf-8');
         
         return {
           content: [{

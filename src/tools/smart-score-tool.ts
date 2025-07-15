@@ -23,7 +23,7 @@ const RecalculateScoresSchema = z.object({
 const SyncScoresSchema = z.object({
   operation: z.literal('sync_scores'),
   projectPath: z.string().describe('Path to project directory'),
-  todoPath: z.string().default('todo.md').describe('Path to TODO.md file'),
+  todoPath: z.string().default('TODO.md').describe('Path to TODO.md file'),
   triggerTools: z.array(z.enum(['manage_todo', 'smart_git_push', 'compare_adr_progress', 'analyze_content_security', 'validate_rules'])).optional().describe('Tools to trigger for fresh data'),
   rebalanceWeights: z.boolean().default(false).describe('Recalculate optimal scoring weights')
 });
@@ -72,8 +72,8 @@ type SmartScoreArgs = z.infer<typeof SmartScoreSchema>;
 /**
  * Trigger score updates from source tools
  */
-async function triggerSourceToolUpdates(projectPath: string, tools: string[], todoPath?: string): Promise<{ [tool: string]: any }> {
-  const results: { [tool: string]: any } = {};
+async function triggerSourceToolUpdates(projectPath: string, tools: string[], todoPath?: string): Promise<Record<string, any>> {
+  const results: Record<string, any> = {};
 
   for (const tool of tools) {
     try {
@@ -83,7 +83,7 @@ async function triggerSourceToolUpdates(projectPath: string, tools: string[], to
           const { manageTodo } = await import('./todo-management-tool.js');
           results[tool] = await manageTodo({
             operation: 'analyze_progress',
-            todoPath: todoPath || 'todo.md',
+            todoPath: todoPath || 'TODO.md',
             timeframe: 'all',
             includeVelocity: true
           }, projectPath);
@@ -281,10 +281,24 @@ export async function smartScore(args: SmartScoreArgs): Promise<any> {
         const healthScoring = new ProjectHealthScoring(validatedArgs.projectPath);
         
         // Trigger source updates if requested
-        let sourceResults = {};
+        let sourceResults: Record<string, any> = {};
+        let todoData = null;
         if (validatedArgs.updateSources) {
           const allTools = ['manage_todo', 'smart_git_push', 'compare_adr_progress', 'analyze_content_security', 'validate_rules'];
           sourceResults = await triggerSourceToolUpdates(validatedArgs.projectPath, allTools);
+          
+          // Extract TODO data if available
+          if (sourceResults['manage_todo']?.content?.[0]?.text) {
+            const analysisText = sourceResults['manage_todo'].content[0].text;
+            const completionMatch = analysisText.match(/(\d+)\/(\d+) tasks? completed \((\d+)%\)/);
+            if (completionMatch) {
+              todoData = {
+                completed: parseInt(completionMatch[1]),
+                total: parseInt(completionMatch[2]),
+                percentage: parseInt(completionMatch[3])
+              };
+            }
+          }
         }
 
         // Get current scores
@@ -304,7 +318,10 @@ export async function smartScore(args: SmartScoreArgs): Promise<any> {
 - 🛠️ **Code Quality**: ${currentScores.codeQuality}%
 
 ## Components Recalculated:
-${validatedArgs.components.includes('all') ? '- All components updated' : validatedArgs.components.map(c => `- ${c.replace('_', ' ')}`).join('\n')}
+${validatedArgs.components.includes('all') ? '- All components updated' : validatedArgs.components.map(c => `- ${c.replace('_', ' ')}`).join('\n')}${todoData ? `\n\n## TODO.md Balance Check:
+- Task Completion from TODO.md: ${todoData.percentage}%
+- Health Score Task Completion: ${currentScores.taskCompletion}%
+- ${Math.abs(todoData.percentage - currentScores.taskCompletion) > 10 ? '⚠️ Significant difference detected - consider running sync_scores' : '✅ Scores are well balanced'}` : ''}
 
 ## Source Tool Updates:
 ${Object.entries(sourceResults).map(([tool, result]: [string, any]) => 
@@ -325,7 +342,7 @@ ${Object.entries(sourceResults).map(([tool, result]: [string, any]) =>
         const healthScoring = new ProjectHealthScoring(validatedArgs.projectPath);
 
         // Trigger specific tools if requested
-        let triggerResults = {};
+        let triggerResults: Record<string, any> = {};
         if (validatedArgs.triggerTools && validatedArgs.triggerTools.length > 0) {
           triggerResults = await triggerSourceToolUpdates(
             validatedArgs.projectPath, 
@@ -336,12 +353,30 @@ ${Object.entries(sourceResults).map(([tool, result]: [string, any]) =>
 
         // Force a TODO update to sync task completion scores
         const { manageTodo } = await import('./todo-management-tool.js');
-        await manageTodo({
+        const todoAnalysis = await manageTodo({
           operation: 'analyze_progress',
           todoPath: validatedArgs.todoPath,
           timeframe: 'all',
           includeVelocity: true
         }, validatedArgs.projectPath);
+        
+        // Extract task completion data from TODO analysis
+        let todoCompletionData = null;
+        if (todoAnalysis?.content?.[0]?.text) {
+          const analysisText = todoAnalysis.content[0].text;
+          // Parse completion metrics from the analysis
+          const completionMatch = analysisText.match(/(\d+)\/(\d+) tasks? completed \((\d+)%\)/);
+          const criticalMatch = analysisText.match(/(\d+) critical\/high priority tasks? remaining/);
+          
+          if (completionMatch) {
+            todoCompletionData = {
+              completed: parseInt(completionMatch[1]),
+              total: parseInt(completionMatch[2]),
+              percentage: parseInt(completionMatch[3]),
+              criticalRemaining: criticalMatch ? parseInt(criticalMatch[1]) : 0
+            };
+          }
+        }
 
         // Get synchronized scores
         const syncedScores = await healthScoring.getProjectHealthScore();
@@ -371,7 +406,9 @@ ${Object.entries(sourceResults).map(([tool, result]: [string, any]) =>
 - 🎯 **Overall Project Health**: ${syncedScores.overall}% (${syncedScores.confidence}% confidence)
 
 ### 📊 Component Breakdown:
-- 📋 **Task Completion**: ${syncedScores.taskCompletion}% (${syncedScores.breakdown.taskCompletion.completed}/${syncedScores.breakdown.taskCompletion.total} tasks)
+- 📋 **Task Completion**: ${syncedScores.taskCompletion}% (${syncedScores.breakdown.taskCompletion.completed}/${syncedScores.breakdown.taskCompletion.total} tasks)${todoCompletionData ? `
+  - TODO.md Analysis: ${todoCompletionData.completed}/${todoCompletionData.total} (${todoCompletionData.percentage}%)
+  - Critical/High Priority Remaining: ${todoCompletionData.criticalRemaining}` : ''}
 - 🚀 **Deployment Readiness**: ${syncedScores.deploymentReadiness}% (${syncedScores.breakdown.deploymentReadiness.criticalBlockers} critical blockers)
 - 🏗️ **Architecture Compliance**: ${syncedScores.architectureCompliance}%
 - 🔒 **Security Posture**: ${syncedScores.securityPosture}% (${syncedScores.breakdown.securityPosture.vulnerabilityCount} vulnerabilities)
