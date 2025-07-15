@@ -3,6 +3,22 @@
  * 
  * Intelligent git push with sensitive content and LLM artifact filtering
  * Leverages existing content security tools and git CLI integration
+ * 
+ * IMPORTANT FOR AI ASSISTANTS: This tool has significant side effects that happen
+ * silently during execution. It not only performs git push operations but also:
+ * 
+ * Side Effects:
+ * - Updates TODO task statuses based on file changes
+ * - Recalculates project health scores
+ * - Performs release readiness analysis
+ * - Updates .mcp-adr-cache/todo-data.json
+ * - Updates .mcp-adr-cache/project-health-scores.json
+ * 
+ * Cache Dependencies:
+ * - May require: .mcp-adr-cache/todo-data.json (for task updates)
+ * - May require: .mcp-adr-cache/project-health-scores.json (for health scoring)
+ * 
+ * Use this tool when you want both git push AND project state updates.
  */
 
 import { McpAdrError } from '../types/index.js';
@@ -11,6 +27,7 @@ import { readFileSync, existsSync, statSync } from 'fs';
 import { join, basename } from 'path';
 import { jsonSafeFilePath, jsonSafeMarkdownList, jsonSafeError, jsonSafeUserInput } from '../utils/json-safe.js';
 import { validateMcpResponse } from '../utils/mcp-response-validator.js';
+import type { TodoJsonManager } from '../utils/todo-json-manager.js';
 
 interface SmartGitPushArgs {
   branch?: string;
@@ -64,7 +81,10 @@ async function _smartGitPushInternal(args: SmartGitPushArgs): Promise<any> {
   } = args;
 
   try {
-    // Step 1: Check release readiness if requested
+    // Step 1: Get staged files using git CLI
+    const stagedFiles = await getStagedFiles(projectPath);
+    
+    // Step 2: Check release readiness if requested
     let releaseReadinessResult = null;
     if (checkReleaseReadiness) {
       try {
@@ -94,10 +114,17 @@ async function _smartGitPushInternal(args: SmartGitPushArgs): Promise<any> {
       } catch (error) {
         // Silently handle release readiness analysis errors
       }
+      
+      // Update TODO tasks based on successful push
+      try {
+        const { TodoJsonManager } = await import('../utils/todo-json-manager.js');
+        const todoManager = new TodoJsonManager(projectPath);
+        
+        await updateTodoTasksFromGitPush(todoManager, stagedFiles, releaseReadinessResult);
+      } catch (todoError) {
+        // Silently handle TODO update errors
+      }
     }
-
-    // Step 2: Get staged files using git CLI
-    const stagedFiles = await getStagedFiles(projectPath);
     
     if (stagedFiles.length === 0) {
       let responseText = `# Smart Git Push - No Changes
@@ -648,5 +675,114 @@ export async function smartGitPushMcpSafe(args: SmartGitPushArgs): Promise<any> 
       isError: true
     };
     return validateMcpResponse(errorResponse);
+  }
+}
+
+/**
+ * Update TODO tasks based on successful git push
+ */
+async function updateTodoTasksFromGitPush(
+  todoManager: TodoJsonManager,
+  stagedFiles: GitFile[],
+  releaseReadinessResult?: any
+): Promise<void> {
+  try {
+    const data = await todoManager.loadTodoData();
+    const tasks = Object.values(data.tasks);
+    
+    // 1. Auto-update tasks based on file changes
+    for (const file of stagedFiles) {
+      // Look for tasks that mention this file in their title or description
+      const relatedTasks = tasks.filter(task => 
+        task.title.toLowerCase().includes(basename(file.path).toLowerCase()) ||
+        task.description?.toLowerCase().includes(basename(file.path).toLowerCase()) ||
+        task.title.toLowerCase().includes(file.path.toLowerCase())
+      );
+      
+      for (const task of relatedTasks) {
+        if (task.status === 'pending' || task.status === 'in_progress') {
+          // Update to in_progress if pending, or completed if already in_progress
+          const newStatus = task.status === 'pending' ? 'in_progress' : 'completed';
+          
+          await todoManager.updateTask({
+            taskId: task.id,
+            updates: { 
+              status: newStatus,
+              notes: `Auto-updated: ${file.path} was ${file.status} in git push`
+            },
+            reason: `Git push: ${file.path} ${file.status}`,
+            triggeredBy: 'tool'
+          });
+        }
+      }
+    }
+    
+    // 2. Create follow-up tasks based on what was pushed
+    const followUpTasks = [];
+    
+    // If documentation files were changed, create review tasks
+    const docFiles = stagedFiles.filter(f => 
+      f.path.match(/\.(md|txt|rst)$/i) && 
+      !f.path.includes('TODO.md')
+    );
+    
+    if (docFiles.length > 0) {
+      followUpTasks.push({
+        title: `Review updated documentation`,
+        description: `Review changes to: ${docFiles.map(f => f.path).join(', ')}`,
+        priority: 'medium' as const,
+        category: 'documentation',
+        tags: ['review', 'documentation']
+      });
+    }
+    
+    // If source code was changed, create testing tasks
+    const codeFiles = stagedFiles.filter(f => 
+      f.path.match(/\.(ts|js|py|java|cs|go|rb|php|swift|kt|rs|cpp|c|h)$/i)
+    );
+    
+    if (codeFiles.length > 0) {
+      followUpTasks.push({
+        title: `Test changes in ${codeFiles.length} code files`,
+        description: `Verify functionality of: ${codeFiles.map(f => f.path).join(', ')}`,
+        priority: 'high' as const,
+        category: 'testing',
+        tags: ['testing', 'verification']
+      });
+    }
+    
+    // If release readiness improved, create release tasks
+    if (releaseReadinessResult?.isReady) {
+      const existingReleaseTasks = tasks.filter(task => 
+        task.title.toLowerCase().includes('release') ||
+        task.tags?.includes('release')
+      );
+      
+      if (existingReleaseTasks.length === 0) {
+        followUpTasks.push({
+          title: `Prepare release - all requirements met`,
+          description: `Project is now release-ready. Create release tag and publish.`,
+          priority: 'critical' as const,
+          category: 'release',
+          tags: ['release', 'deployment']
+        });
+      }
+    }
+    
+    // Create follow-up tasks
+    for (const taskData of followUpTasks) {
+      await todoManager.createTask(taskData);
+    }
+    
+    // 3. Update task metadata with git information
+    const now = new Date().toISOString();
+    data.metadata.lastGitPush = now;
+    data.metadata.lastPushFiles = stagedFiles.map(f => f.path);
+    
+    await todoManager.saveTodoData(data);
+    
+  } catch (error) {
+    // Silently handle errors to avoid breaking git push
+    console.error('Error updating TODO tasks from git push:', error);
   }
 }

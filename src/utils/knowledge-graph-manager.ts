@@ -10,17 +10,20 @@ import {
   KnowledgeGraphSnapshotSchema
 } from '../types/knowledge-graph-schemas.js';
 import { loadConfig } from './config.js';
+import { ProjectHealthScoring, ProjectHealthScore } from './project-health-scoring.js';
 
 export class KnowledgeGraphManager {
   private cacheDir: string;
   private snapshotsFile: string;
   private syncStateFile: string;
+  private healthScoring: ProjectHealthScoring;
 
   constructor() {
     const config = loadConfig();
     this.cacheDir = path.join(config.projectPath, '.mcp-adr-cache');
     this.snapshotsFile = path.join(this.cacheDir, 'knowledge-graph-snapshots.json');
     this.syncStateFile = path.join(this.cacheDir, 'todo-sync-state.json');
+    this.healthScoring = new ProjectHealthScoring(config.projectPath);
   }
 
   async ensureCacheDirectory(): Promise<void> {
@@ -39,11 +42,12 @@ export class KnowledgeGraphManager {
       const parsed = JSON.parse(data);
       return KnowledgeGraphSnapshotSchema.parse(parsed);
     } catch {
+      const defaultSyncState = await this.getDefaultSyncState();
       const defaultSnapshot: KnowledgeGraphSnapshot = {
         version: '1.0.0',
         timestamp: new Date().toISOString(),
         intents: [],
-        todoSyncState: await this.getDefaultSyncState(),
+        todoSyncState: defaultSyncState,
         analytics: {
           totalIntents: 0,
           completedIntents: 0,
@@ -51,9 +55,14 @@ export class KnowledgeGraphManager {
           averageGoalCompletion: 0,
           mostUsedTools: [],
           successfulPatterns: []
-        }
+        },
+        scoreHistory: []
       };
       await this.saveKnowledgeGraph(defaultSnapshot);
+      
+      // Also create the separate sync state file
+      await fs.writeFile(this.syncStateFile, JSON.stringify(defaultSyncState, null, 2));
+      
       return defaultSnapshot;
     }
   }
@@ -71,6 +80,9 @@ export class KnowledgeGraphManager {
     const intentId = crypto.randomUUID();
     const timestamp = new Date().toISOString();
     
+    // Get current score as baseline
+    const currentScore = await this.healthScoring.getProjectHealthScore();
+    
     const intent: IntentSnapshot = {
       intentId,
       humanRequest,
@@ -79,13 +91,42 @@ export class KnowledgeGraphManager {
       timestamp,
       toolChain: [],
       currentStatus: 'planning',
-      todoMdSnapshot: ''
+      todoMdSnapshot: '',
+      scoreTracking: {
+        initialScore: currentScore.overall,
+        currentScore: currentScore.overall,
+        componentScores: {
+          taskCompletion: currentScore.taskCompletion,
+          deploymentReadiness: currentScore.deploymentReadiness,
+          architectureCompliance: currentScore.architectureCompliance,
+          securityPosture: currentScore.securityPosture,
+          codeQuality: currentScore.codeQuality
+        },
+        lastScoreUpdate: timestamp
+      }
     };
 
     const kg = await this.loadKnowledgeGraph();
     kg.intents.push(intent);
     kg.analytics.totalIntents = kg.intents.length;
     kg.analytics.activeIntents = kg.intents.filter(i => i.currentStatus !== 'completed').length;
+    
+    // Add score history entry
+    if (!kg.scoreHistory) kg.scoreHistory = [];
+    kg.scoreHistory.push({
+      timestamp,
+      intentId,
+      overallScore: currentScore.overall,
+      componentScores: {
+        taskCompletion: currentScore.taskCompletion,
+        deploymentReadiness: currentScore.deploymentReadiness,
+        architectureCompliance: currentScore.architectureCompliance,
+        securityPosture: currentScore.securityPosture,
+        codeQuality: currentScore.codeQuality
+      },
+      triggerEvent: `Intent created: ${humanRequest.substring(0, 100)}...`,
+      confidence: currentScore.confidence
+    });
     
     await this.saveKnowledgeGraph(kg);
     return intentId;
@@ -108,6 +149,9 @@ export class KnowledgeGraphManager {
       throw new Error(`Intent ${intentId} not found`);
     }
 
+    // Capture before score
+    const beforeScore = await this.healthScoring.getProjectHealthScore();
+    
     const execution: ToolExecutionSnapshot = {
       toolName,
       parameters,
@@ -121,6 +165,9 @@ export class KnowledgeGraphManager {
 
     intent.toolChain.push(execution);
     intent.currentStatus = success ? 'executing' : 'failed';
+    
+    // Update scores after tool execution and capture impact
+    await this.updateScoreTracking(intentId, toolName, beforeScore, execution);
 
     this.updateAnalytics(kg);
     await this.saveKnowledgeGraph(kg);
@@ -245,6 +292,175 @@ export class KnowledgeGraphManager {
       hasChanges: currentHash !== syncState.todoMdHash,
       currentHash,
       lastHash: syncState.todoMdHash
+    };
+  }
+
+  /**
+   * Update score tracking for an intent after tool execution
+   */
+  private async updateScoreTracking(
+    intentId: string,
+    toolName: string,
+    beforeScore: ProjectHealthScore,
+    execution: ToolExecutionSnapshot
+  ): Promise<void> {
+    const kg = await this.loadKnowledgeGraph();
+    const intent = kg.intents.find(i => i.intentId === intentId);
+    
+    if (!intent) return;
+    
+    // Get current score after tool execution
+    const afterScore = await this.healthScoring.getProjectHealthScore();
+    
+    // Calculate score impact
+    const scoreImpact = {
+      beforeScore: beforeScore.overall,
+      afterScore: afterScore.overall,
+      componentImpacts: {
+        taskCompletion: afterScore.taskCompletion - beforeScore.taskCompletion,
+        deploymentReadiness: afterScore.deploymentReadiness - beforeScore.deploymentReadiness,
+        architectureCompliance: afterScore.architectureCompliance - beforeScore.architectureCompliance,
+        securityPosture: afterScore.securityPosture - beforeScore.securityPosture,
+        codeQuality: afterScore.codeQuality - beforeScore.codeQuality
+      },
+      scoreConfidence: afterScore.confidence
+    };
+    
+    // Update execution with score impact
+    execution.scoreImpact = scoreImpact;
+    
+    // Update intent score tracking
+    if (intent.scoreTracking) {
+      intent.scoreTracking.currentScore = afterScore.overall;
+      intent.scoreTracking.componentScores = {
+        taskCompletion: afterScore.taskCompletion,
+        deploymentReadiness: afterScore.deploymentReadiness,
+        architectureCompliance: afterScore.architectureCompliance,
+        securityPosture: afterScore.securityPosture,
+        codeQuality: afterScore.codeQuality
+      };
+      intent.scoreTracking.lastScoreUpdate = new Date().toISOString();
+      
+      // Calculate progress if we have initial score
+      if (intent.scoreTracking.initialScore !== undefined) {
+        const initialScore = intent.scoreTracking.initialScore;
+        const targetScore = intent.scoreTracking.targetScore || 100;
+        const currentScore = afterScore.overall;
+        
+        // Calculate progress as percentage of improvement toward target
+        const totalPossibleImprovement = targetScore - initialScore;
+        const actualImprovement = currentScore - initialScore;
+        intent.scoreTracking.scoreProgress = totalPossibleImprovement > 0 
+          ? Math.min(100, (actualImprovement / totalPossibleImprovement) * 100)
+          : 0;
+      }
+    }
+    
+    // Add to score history
+    if (!kg.scoreHistory) kg.scoreHistory = [];
+    kg.scoreHistory.push({
+      timestamp: new Date().toISOString(),
+      intentId,
+      overallScore: afterScore.overall,
+      componentScores: {
+        taskCompletion: afterScore.taskCompletion,
+        deploymentReadiness: afterScore.deploymentReadiness,
+        architectureCompliance: afterScore.architectureCompliance,
+        securityPosture: afterScore.securityPosture,
+        codeQuality: afterScore.codeQuality
+      },
+      triggerEvent: `Tool executed: ${toolName}`,
+      confidence: afterScore.confidence
+    });
+    
+    // Keep only last 100 score history entries
+    if (kg.scoreHistory.length > 100) {
+      kg.scoreHistory = kg.scoreHistory.slice(-100);
+    }
+  }
+
+  /**
+   * Get score trends for an intent
+   */
+  async getIntentScoreTrends(intentId: string): Promise<{
+    initialScore: number;
+    currentScore: number;
+    progress: number;
+    componentTrends: Record<string, number>;
+    scoreHistory: Array<{
+      timestamp: string;
+      score: number;
+      triggerEvent: string;
+    }>;
+  }> {
+    const kg = await this.loadKnowledgeGraph();
+    const intent = kg.intents.find(i => i.intentId === intentId);
+    
+    if (!intent?.scoreTracking) {
+      throw new Error(`Intent ${intentId} not found or has no score tracking`);
+    }
+    
+    const scoreHistory = kg.scoreHistory?.filter(h => h.intentId === intentId) || [];
+    
+    return {
+      initialScore: intent.scoreTracking.initialScore || 0,
+      currentScore: intent.scoreTracking.currentScore || 0,
+      progress: intent.scoreTracking.scoreProgress || 0,
+      componentTrends: intent.scoreTracking.componentScores || {},
+      scoreHistory: scoreHistory.map(h => ({
+        timestamp: h.timestamp,
+        score: h.overallScore,
+        triggerEvent: h.triggerEvent
+      }))
+    };
+  }
+
+  /**
+   * Get overall project score trends
+   */
+  async getProjectScoreTrends(): Promise<{
+    currentScore: number;
+    scoreHistory: Array<{
+      timestamp: string;
+      score: number;
+      triggerEvent: string;
+      intentId?: string;
+    }>;
+    averageImprovement: number;
+    topImpactingIntents: Array<{
+      intentId: string;
+      humanRequest: string;
+      scoreImprovement: number;
+    }>;
+  }> {
+    const kg = await this.loadKnowledgeGraph();
+    const currentScore = await this.healthScoring.getProjectHealthScore();
+    
+    const scoreHistory = kg.scoreHistory || [];
+    const intentImpacts = kg.intents
+      .filter(i => i.scoreTracking?.initialScore !== undefined && i.scoreTracking?.currentScore !== undefined)
+      .map(i => ({
+        intentId: i.intentId,
+        humanRequest: i.humanRequest,
+        scoreImprovement: (i.scoreTracking!.currentScore! - i.scoreTracking!.initialScore!)
+      }))
+      .sort((a, b) => b.scoreImprovement - a.scoreImprovement)
+      .slice(0, 5);
+    
+    const averageImprovement = intentImpacts.length > 0 
+      ? intentImpacts.reduce((sum, i) => sum + i.scoreImprovement, 0) / intentImpacts.length
+      : 0;
+    
+    return {
+      currentScore: currentScore.overall,
+      scoreHistory: scoreHistory.map(h => ({
+        timestamp: h.timestamp,
+        score: h.overallScore,
+        triggerEvent: h.triggerEvent,
+        ...(h.intentId && { intentId: h.intentId })
+      })),
+      averageImprovement,
+      topImpactingIntents: intentImpacts
     };
   }
 }

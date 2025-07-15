@@ -241,8 +241,9 @@ Provides actual file operations and intelligent processing:
 
 #### ADR Discovery (`src/utils/adr-discovery.js`)
 - **Function**: `discoverAdrsInDirectory()`
-- **Purpose**: Actually read and parse ADR files
+- **Purpose**: Actually read and parse ADR files + initialize `.mcp-adr-cache` infrastructure
 - **Output**: Structured ADR data with content
+- **Note**: Always initializes cache infrastructure, regardless of ADR presence
 
 #### File Operations (`src/utils/actual-file-operations.js`)
 - **Function**: `scanProjectStructure()`

@@ -24,6 +24,8 @@ Project Phase: {{projectPhase}}
 
 **Analyze the project at ${projectPath} to identify implicit architectural decisions that align with the user's goals and focus areas above.**
 
+> **Note**: This analysis also initializes the \`.mcp-adr-cache\` infrastructure that other MCP tools depend on, regardless of whether ADRs are found in the project.
+
 ## Suggested Analysis Approach
 
 ### 1. **Project Structure Analysis** (adapt as needed)

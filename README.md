@@ -519,7 +519,7 @@ Follow the workflow guidance to execute the recommended tool sequence for your s
 1. `get_workflow_guidance` → 2. `analyze_project_ecosystem` → 3. `get_architectural_context` → 4. `suggest_adrs` → 5. `get_development_guidance`
 
 #### **Existing Project Analysis**
-1. `get_workflow_guidance` → 2. `discover_existing_adrs` → 3. `get_architectural_context` → 4. `generate_adr_todo` → 5. `get_development_guidance`
+1. `get_workflow_guidance` → 2. `discover_existing_adrs` (initializes cache) → 3. `get_architectural_context` → 4. `generate_adr_todo` → 5. `get_development_guidance`
 
 #### **Security Audit**
 1. `get_workflow_guidance` → 2. `analyze_content_security` → 3. `generate_content_masking` → 4. `validate_content_masking`

@@ -3,8 +3,8 @@
  * Aggregates scores from multiple MCP tools to provide real-time project health assessment
  */
 
-import { writeFileSync, readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { writeFileSync, readFileSync, existsSync, mkdirSync } from 'fs';
+import { join, dirname } from 'path';
 
 export interface ProjectHealthScore {
   overall: number;                    // 0-100 weighted composite score
@@ -455,13 +455,13 @@ export class ProjectHealthScoring {
   private saveCachedScore(score: ProjectHealthScore): void {
     try {
       // Ensure cache directory exists
-      const { mkdirSync } = require('fs');
-      const { dirname } = require('path');
       mkdirSync(dirname(this.scoringCachePath), { recursive: true });
       
       writeFileSync(this.scoringCachePath, JSON.stringify(score, null, 2));
+      console.log(`✅ ProjectHealthScoring: Successfully saved to ${this.scoringCachePath}`);
     } catch (error) {
-      // Ignore cache save errors
+      // Log the error instead of silently ignoring it
+      console.error(`❌ ProjectHealthScoring: Failed to save to ${this.scoringCachePath}:`, error);
     }
   }
 

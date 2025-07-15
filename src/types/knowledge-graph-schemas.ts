@@ -8,7 +8,13 @@ export const ToolExecutionSnapshotSchema = z.object({
   todoTasksModified: z.array(z.string()),
   executionTime: z.string(),
   success: z.boolean(),
-  error: z.string().optional()
+  error: z.string().optional(),
+  scoreImpact: z.object({
+    beforeScore: z.number().optional(),
+    afterScore: z.number().optional(),
+    componentImpacts: z.record(z.number()).optional(),
+    scoreConfidence: z.number().optional()
+  }).optional()
 });
 
 export const IntentSnapshotSchema = z.object({
@@ -21,7 +27,15 @@ export const IntentSnapshotSchema = z.object({
   currentStatus: z.enum(['planning', 'executing', 'completed', 'failed']),
   todoMdSnapshot: z.string(),
   parentIntentId: z.string().optional(),
-  tags: z.array(z.string()).optional()
+  tags: z.array(z.string()).optional(),
+  scoreTracking: z.object({
+    initialScore: z.number().optional(),
+    currentScore: z.number().optional(),
+    targetScore: z.number().optional(),
+    scoreProgress: z.number().optional(),
+    componentScores: z.record(z.number()).optional(),
+    lastScoreUpdate: z.string().optional()
+  }).optional()
 });
 
 export const TodoSyncStateSchema = z.object({
@@ -58,7 +72,21 @@ export const KnowledgeGraphSnapshotSchema = z.object({
       successRate: z.number(),
       examples: z.array(z.string())
     }))
-  })
+  }),
+  scoreHistory: z.array(z.object({
+    timestamp: z.string(),
+    intentId: z.string().optional(),
+    overallScore: z.number(),
+    componentScores: z.object({
+      taskCompletion: z.number(),
+      deploymentReadiness: z.number(),
+      architectureCompliance: z.number(),
+      securityPosture: z.number(),
+      codeQuality: z.number()
+    }),
+    triggerEvent: z.string(),
+    confidence: z.number()
+  })).optional()
 });
 
 export type ToolExecutionSnapshot = z.infer<typeof ToolExecutionSnapshotSchema>;

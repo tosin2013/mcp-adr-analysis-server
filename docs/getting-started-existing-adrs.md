@@ -71,15 +71,19 @@ discover_existing_adrs
 ```
 
 **What this does:**
-- Scans your ADR directory
-- Catalogs all existing decisions
+- Scans your ADR directory and initializes the `.mcp-adr-cache` infrastructure
+- Catalogs all existing decisions (or reports none found)
 - Identifies ADR format and structure
 - Creates an inventory of your architectural decisions
+- **Always sets up the cache infrastructure, regardless of whether ADRs are found**
 
 **Expected Output:**
-- List of all ADRs with titles, numbers, and status
+- List of all ADRs with titles, numbers, and status (or "No ADRs found" if none exist)
 - Analysis of ADR quality and completeness
 - Identification of any formatting issues
+- **Cache Infrastructure Status**: Confirms `.mcp-adr-cache` setup is complete
+
+> **💡 Important**: `discover_existing_adrs` always initializes the cache infrastructure that other tools depend on, making it the recommended first step for any project - whether it has existing ADRs or not.
 
 ### Step 2: Analyze Current Project Architecture
 
