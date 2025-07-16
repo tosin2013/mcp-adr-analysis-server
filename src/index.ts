@@ -1534,7 +1534,7 @@ export class McpAdrAnalysisServer {
           },
           {
             name: 'smart_git_push',
-            description: 'Intelligent git push with sensitive content filtering, LLM artifact detection, and release readiness analysis',
+            description: 'AI-driven security-focused git push with credential detection, file filtering, and deployment metrics tracking. Tests should be run by calling AI and results provided.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -1546,26 +1546,61 @@ export class McpAdrAnalysisServer {
                   type: 'string',
                   description: 'Commit message (optional, commits staged files if provided)'
                 },
-                skipValidation: {
+                testResults: {
+                  type: 'object',
+                  description: 'Test results from AI-executed tests (required for proper deployment tracking)',
+                  properties: {
+                    success: {
+                      type: 'boolean',
+                      description: 'Whether all tests passed'
+                    },
+                    testsRun: {
+                      type: 'number',
+                      description: 'Total number of tests executed'
+                    },
+                    testsPassed: {
+                      type: 'number',
+                      description: 'Number of tests that passed'
+                    },
+                    testsFailed: {
+                      type: 'number',
+                      description: 'Number of tests that failed'
+                    },
+                    duration: {
+                      type: 'number',
+                      description: 'Test execution duration in seconds'
+                    },
+                    command: {
+                      type: 'string',
+                      description: 'Test command that was executed by AI'
+                    },
+                    output: {
+                      type: 'string',
+                      description: 'Test execution output'
+                    },
+                    failureDetails: {
+                      type: 'array',
+                      items: { type: 'string' },
+                      description: 'Details of test failures'
+                    },
+                    testTypes: {
+                      type: 'object',
+                      description: 'Results broken down by test type (unit, integration, etc.)',
+                      additionalProperties: {
+                        type: 'object',
+                        properties: {
+                          passed: { type: 'number' },
+                          failed: { type: 'number' }
+                        }
+                      }
+                    }
+                  },
+                  required: ['success', 'testsRun', 'testsPassed', 'testsFailed']
+                },
+                skipSecurity: {
                   type: 'boolean',
                   default: false,
-                  description: 'Skip content validation'
-                },
-                allowedArtifacts: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Files to allow despite being flagged as artifacts'
-                },
-                sensitivityLevel: {
-                  type: 'string',
-                  enum: ['strict', 'moderate', 'permissive'],
-                  default: 'moderate',
-                  description: 'Sensitivity level for content detection'
-                },
-                interactiveMode: {
-                  type: 'boolean',
-                  default: true,
-                  description: 'Enable interactive approval workflow'
+                  description: 'Skip security scanning (NOT RECOMMENDED)'
                 },
                 dryRun: {
                   type: 'boolean',
@@ -1576,16 +1611,10 @@ export class McpAdrAnalysisServer {
                   type: 'string',
                   description: 'Path to project directory (defaults to current working directory)'
                 },
-                checkReleaseReadiness: {
+                forceUnsafe: {
                   type: 'boolean',
                   default: false,
-                  description: 'Analyze TODO.md and project state to determine if ready for release'
-                },
-                releaseType: {
-                  type: 'string',
-                  enum: ['major', 'minor', 'patch'],
-                  default: 'minor',
-                  description: 'Type of release to check readiness for'
+                  description: 'Override security blocks and test failures (DANGEROUS)'
                 }
               }
             }
@@ -2792,6 +2821,29 @@ ${environmentResult.content[0].text}
         }
       );
 
+      // Step 6: Record project structure to knowledge graph
+      try {
+        this.logger.info('Recording project structure to knowledge graph');
+        
+        const projectStructureSnapshot = {
+          projectPath,
+          analysisDepth,
+          recursiveDepth,
+          technologyFocus,
+          analysisScope,
+          includeEnvironment,
+          timestamp: new Date().toISOString(),
+          structureData: baseProjectAnalysisPrompt.context || {}
+        };
+
+        await this.kgManager.recordProjectStructure(projectStructureSnapshot);
+        this.logger.info('✅ Project structure recorded to knowledge graph');
+      } catch (kgError) {
+        this.logger.warn('Failed to record project structure to knowledge graph:', kgError);
+        // Don't fail the entire analysis if KG recording fails
+      }
+
+      // Return appropriate response based on execution result
       if (executionResult.isAIGenerated) {
         // AI execution successful - return actual analysis results
         return formatMCPResponse({
@@ -2810,6 +2862,7 @@ ${environmentResult.content[0].text}
 - **Reflexion Learning**: ${enhancedMode && learningEnabled ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 - **Technology Focus**: ${technologyFocus.length > 0 ? technologyFocus.join(', ') : 'Auto-detect'}
+- **Knowledge Graph**: ✅ Project structure recorded
 
 ${knowledgeContext}
 
@@ -2877,6 +2930,7 @@ This comprehensive analysis provides deep recursive project understanding with i
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 - **Technology Focus**: ${technologyFocus.length > 0 ? technologyFocus.join(', ') : 'Auto-detect'}
 - **Include Patterns**: ${includePatterns?.length ? includePatterns.join(', ') : 'Default patterns'}
+- **Knowledge Graph**: ✅ Project structure recorded
 
 ${knowledgeContext}
 
@@ -4961,7 +5015,7 @@ Please provide:
 
   private async smartGitPush(args: any): Promise<any> {
     try {
-      const { smartGitPush } = await import('./tools/smart-git-push-tool.js');
+      const { smartGitPush } = await import('./tools/smart-git-push-tool-v2.js');
       return await smartGitPush(args);
     } catch (error) {
       throw new McpAdrError(

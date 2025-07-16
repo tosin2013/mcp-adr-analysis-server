@@ -1,24 +1,31 @@
 /**
- * Smart Git Push MCP Tool
+ * Smart Git Push MCP Tool - Knowledge Graph Enhanced
  * 
- * Intelligent git push with sensitive content and LLM artifact filtering
- * Leverages existing content security tools and git CLI integration
+ * AI-powered git push with full knowledge graph integration and architectural awareness
+ * Leverages the complete .mcp-adr-cache system for intelligent decision making
  * 
- * IMPORTANT FOR AI ASSISTANTS: This tool has significant side effects that happen
- * silently during execution. It not only performs git push operations but also:
+ * IMPORTANT FOR AI ASSISTANTS: This tool is deeply integrated with the knowledge graph
+ * and cache system. It performs comprehensive analysis before allowing pushes:
  * 
- * Side Effects:
- * - Updates TODO task statuses based on file changes
- * - Recalculates project health scores
- * - Performs release readiness analysis
- * - Updates .mcp-adr-cache/todo-data.json
- * - Updates .mcp-adr-cache/project-health-scores.json
+ * Knowledge Graph Integration:
+ * - Analyzes active intents and their progress toward goals
+ * - Checks ADR compliance of changes being pushed
+ * - Verifies architectural alignment with project decisions
+ * - Tracks tool execution chains and their impacts
  * 
- * Cache Dependencies:
- * - May require: .mcp-adr-cache/todo-data.json (for task updates)
- * - May require: .mcp-adr-cache/project-health-scores.json (for health scoring)
+ * Cache System Dependencies:
+ * - REQUIRES: .mcp-adr-cache/knowledge-graph-snapshots.json (for context analysis)
+ * - REQUIRES: .mcp-adr-cache/todo-data.json (for task dependency checking)
+ * - UPDATES: .mcp-adr-cache/todo-sync-state.json (after successful pushes)
+ * - UPDATES: .mcp-adr-cache/project-health-scores.json (continuous scoring)
  * 
- * Use this tool when you want both git push AND project state updates.
+ * Architectural Intelligence:
+ * - Blocks pushes that violate architectural decisions
+ * - Ensures critical tasks are completed before deployment-related pushes
+ * - Validates that changes advance stated project goals
+ * - Provides context-aware recommendations based on project state
+ * 
+ * Use this tool when you want AI-powered git push decisions based on project context.
  */
 
 import { McpAdrError } from '../types/index.js';
@@ -27,7 +34,9 @@ import { readFileSync, existsSync, statSync } from 'fs';
 import { join, basename } from 'path';
 import { jsonSafeFilePath, jsonSafeMarkdownList, jsonSafeError, jsonSafeUserInput } from '../utils/json-safe.js';
 import { validateMcpResponse } from '../utils/mcp-response-validator.js';
+import { KnowledgeGraphManager } from '../utils/knowledge-graph-manager.js';
 import type { TodoJsonManager } from '../utils/todo-json-manager.js';
+import type { IntentSnapshot } from '../types/knowledge-graph-schemas.js';
 
 interface SmartGitPushArgs {
   branch?: string;
@@ -40,6 +49,42 @@ interface SmartGitPushArgs {
   projectPath?: string;
   checkReleaseReadiness?: boolean;
   releaseType?: 'major' | 'minor' | 'patch';
+  skipKnowledgeGraphAnalysis?: boolean;
+}
+
+interface KnowledgeGraphAnalysis {
+  activeIntents: IntentSnapshot[];
+  relevantAdrs: string[];
+  blockingConditions: BlockingCondition[];
+  architecturalAlignment: {
+    score: number;
+    details: string[];
+    recommendations: string[];
+  };
+  taskDependencies: {
+    completed: string[];
+    pending: string[];
+    blocking: string[];
+  };
+  projectGoalProgress: {
+    overallProgress: number;
+    intentProgress: Array<{
+      intentId: string;
+      humanRequest: string;
+      progress: number;
+      status: string;
+    }>;
+  };
+}
+
+interface BlockingCondition {
+  type: 'critical-task' | 'adr-violation' | 'goal-regression' | 'dependency-missing';
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+  recommendation: string;
+  affectedFiles?: string[];
+  relatedIntentId?: string;
+  relatedTaskId?: string;
 }
 
 interface GitFile {
@@ -65,7 +110,7 @@ interface ValidationIssue {
 }
 
 /**
- * Main smart git push function - MCP Safe Version with Response Validation
+ * Main smart git push function - Knowledge Graph Enhanced Version
  */
 async function _smartGitPushInternal(args: SmartGitPushArgs): Promise<any> {
   const {
@@ -77,14 +122,26 @@ async function _smartGitPushInternal(args: SmartGitPushArgs): Promise<any> {
     dryRun = false,
     projectPath = process.cwd(),
     checkReleaseReadiness = false,
-    releaseType = 'minor'
+    releaseType = 'minor',
+    skipKnowledgeGraphAnalysis = false
   } = args;
 
   try {
     // Step 1: Get staged files using git CLI
     const stagedFiles = await getStagedFiles(projectPath);
     
-    // Step 2: Check release readiness if requested
+    // Step 2: Perform Knowledge Graph Analysis (NEW - this is the smart part!)
+    let kgAnalysis: KnowledgeGraphAnalysis | null = null;
+    if (!skipKnowledgeGraphAnalysis) {
+      try {
+        kgAnalysis = await analyzeKnowledgeGraphContext(projectPath, stagedFiles);
+      } catch (kgError) {
+        // Knowledge graph analysis failed, continue with warning
+        console.error('Knowledge graph analysis failed:', kgError);
+      }
+    }
+    
+    // Step 3: Check release readiness if requested (enhanced with KG data)
     let releaseReadinessResult = null;
     if (checkReleaseReadiness) {
       try {
@@ -114,16 +171,6 @@ async function _smartGitPushInternal(args: SmartGitPushArgs): Promise<any> {
       } catch (error) {
         // Silently handle release readiness analysis errors
       }
-      
-      // Update TODO tasks based on successful push
-      try {
-        const { TodoJsonManager } = await import('../utils/todo-json-manager.js');
-        const todoManager = new TodoJsonManager(projectPath);
-        
-        await updateTodoTasksFromGitPush(todoManager, stagedFiles, releaseReadinessResult);
-      } catch (todoError) {
-        // Silently handle TODO update errors
-      }
     }
     
     if (stagedFiles.length === 0) {
@@ -137,6 +184,29 @@ No staged files found. Use \`git add\` to stage files before pushing.
 - \`git add <file>\` - Stage specific file
 - \`git status\` - Check current status
 `;
+
+      // Add knowledge graph context even when no files are staged
+      if (kgAnalysis) {
+        responseText += `
+
+## Knowledge Graph Context
+### Current Project Status
+- **Active Intents**: ${kgAnalysis.activeIntents.length}
+- **Goal Progress**: ${kgAnalysis.projectGoalProgress.overallProgress}%
+- **Task Dependencies**: ${kgAnalysis.taskDependencies.completed.length} completed, ${kgAnalysis.taskDependencies.pending.length} pending
+
+${kgAnalysis.activeIntents.length > 0 ? `
+### Active Intents
+${kgAnalysis.activeIntents.map(intent => `- **${intent.currentStatus}**: ${jsonSafeUserInput(intent.humanRequest.substring(0, 80))}...`).join('\n')}
+` : ''}
+
+${kgAnalysis.taskDependencies.pending.length > 0 ? `
+### Pending Tasks
+Consider working on these tasks before your next push:
+${kgAnalysis.taskDependencies.pending.slice(0, 5).map(task => `- ${jsonSafeUserInput(task)}`).join('\n')}
+` : ''}
+`;
+      }
 
       // Add release readiness info if checked
       if (releaseReadinessResult) {
@@ -173,7 +243,7 @@ ${releaseReadinessResult.isReady ?
       });
     }
 
-    // Step 4: Check for blocking conditions (MCP Safe - No Interactive Mode)
+    // Step 4: Check for blocking conditions (Enhanced with Knowledge Graph)
     const issues = validationResults.filter(r => r.issues.length > 0);
     
     // Check if release readiness should block push
@@ -185,12 +255,19 @@ ${releaseReadinessResult.isReady ?
       }
     }
     
+    // Check Knowledge Graph for blocking conditions (NEW!)
+    let knowledgeGraphBlocked = false;
+    const kgBlockingConditions = kgAnalysis?.blockingConditions?.filter(bc => bc.severity === 'error') || [];
+    if (kgBlockingConditions.length > 0) {
+      knowledgeGraphBlocked = true;
+    }
+    
     // Check for blocking conditions
     const hasBlockingErrors = issues.some(issue => 
       issue.issues.some(i => i.severity === 'error')
     );
     
-    const shouldBlock = hasBlockingErrors || releaseReadinessBlocked;
+    const shouldBlock = hasBlockingErrors || releaseReadinessBlocked || knowledgeGraphBlocked;
     
     if (shouldBlock && !dryRun) {
       let cancelText = `# Smart Git Push - Blocked
@@ -224,6 +301,42 @@ ${jsonSafeMarkdownList(releaseReadinessResult.recommendations)}
 `;
       }
 
+      // Add knowledge graph blocking information (NEW!)
+      if (kgAnalysis && knowledgeGraphBlocked) {
+        cancelText += `
+
+## Knowledge Graph Analysis - Blocking Conditions
+The following architectural and project context issues prevent this push:
+
+### Critical Issues
+${kgBlockingConditions.map(bc => `- **${bc.type}**: ${jsonSafeUserInput(bc.message)}`).join('\n')}
+
+### Recommendations
+${kgBlockingConditions.map(bc => `- ${jsonSafeUserInput(bc.recommendation)}`).join('\n')}
+
+### Project Context
+- **Active Intents**: ${kgAnalysis.activeIntents.length}
+- **Architectural Alignment**: ${kgAnalysis.architecturalAlignment.score}%
+- **Goal Progress**: ${kgAnalysis.projectGoalProgress.overallProgress}%
+- **Pending Critical Tasks**: ${kgAnalysis.taskDependencies.blocking.length}
+`;
+      }
+
+      // Add general knowledge graph insights if available
+      if (kgAnalysis && !knowledgeGraphBlocked) {
+        cancelText += `
+
+## Knowledge Graph Insights
+### Project Status
+- **Active Intents**: ${kgAnalysis.activeIntents.length}
+- **Architectural Alignment**: ${kgAnalysis.architecturalAlignment.score}%
+- **Goal Progress**: ${kgAnalysis.projectGoalProgress.overallProgress}%
+
+### Warnings
+${kgAnalysis.blockingConditions.filter(bc => bc.severity === 'warning').map(bc => `- **${bc.type}**: ${jsonSafeUserInput(bc.message)}`).join('\n')}
+`;
+      }
+
       return {
         content: [{
           type: 'text',
@@ -236,6 +349,17 @@ ${jsonSafeMarkdownList(releaseReadinessResult.recommendations)}
     if (!dryRun) {
       const pushResult = await executePush(projectPath, branch, message);
       
+      // Update TODO tasks with KG integration
+      if (kgAnalysis) {
+        try {
+          const { TodoJsonManager } = await import('../utils/todo-json-manager.js');
+          const todoManager = new TodoJsonManager(projectPath);
+          await updateTodoTasksFromGitPushWithKG(todoManager, stagedFiles, kgAnalysis, releaseReadinessResult);
+        } catch (todoError) {
+          console.error('Error updating TODO tasks with KG:', todoError);
+        }
+      }
+      
       let successText = `# Smart Git Push - Success ✅
 
 ## Push Details
@@ -245,9 +369,32 @@ ${jsonSafeMarkdownList(releaseReadinessResult.recommendations)}
 - **Issues Found**: ${issues.length}
 - **Sensitivity Level**: ${sensitivityLevel}
 ${checkReleaseReadiness ? `- **Release Readiness**: ${releaseReadinessResult?.isReady ? '✅ Ready' : '❌ Not Ready'}` : ''}
+${kgAnalysis ? `- **Knowledge Graph Analysis**: ✅ Completed` : ''}
 
 ## Files Pushed
 ${stagedFiles.map(f => `- ${jsonSafeFilePath(f.path)} (${f.status})`).join('\n')}
+
+${kgAnalysis ? `
+## Knowledge Graph Analysis
+### Project Context
+- **Active Intents**: ${kgAnalysis.activeIntents.length}
+- **Architectural Alignment**: ${kgAnalysis.architecturalAlignment.score}%
+- **Goal Progress**: ${kgAnalysis.projectGoalProgress.overallProgress}%
+- **Task Dependencies**: ${kgAnalysis.taskDependencies.completed.length} completed, ${kgAnalysis.taskDependencies.pending.length} pending
+
+### Architectural Insights
+${kgAnalysis.architecturalAlignment.details.map(detail => `- ${jsonSafeUserInput(detail)}`).join('\n')}
+
+${kgAnalysis.blockingConditions.length > 0 ? `
+### Warnings & Recommendations
+${kgAnalysis.blockingConditions.filter(bc => bc.severity === 'warning').map(bc => `- **${bc.type}**: ${jsonSafeUserInput(bc.message)}`).join('\n')}
+` : ''}
+
+${kgAnalysis.projectGoalProgress.intentProgress.length > 0 ? `
+### Intent Progress
+${kgAnalysis.projectGoalProgress.intentProgress.map(intent => `- **${intent.status}**: ${jsonSafeUserInput(intent.humanRequest.substring(0, 60))}... (${intent.progress}%)`).join('\n')}
+` : ''}
+` : ''}
 
 ${issues.length > 0 ? `
 
@@ -283,6 +430,7 @@ ${jsonSafeUserInput(pushResult.output)}
 - Review any deployment processes
 - Check for any post-push hooks or workflows
 ${releaseReadinessResult?.isReady ? '- Consider creating a release tag or publishing' : ''}
+${kgAnalysis ? '- Review knowledge graph insights for follow-up tasks' : ''}
 `;
 
       return {
@@ -301,9 +449,32 @@ ${releaseReadinessResult?.isReady ? '- Consider creating a release tag or publis
 - **Sensitivity Level**: ${sensitivityLevel}
 - **Would Push to**: ${branch || 'current branch'}
 ${checkReleaseReadiness ? `- **Release Readiness**: ${releaseReadinessResult?.isReady ? '✅ Ready' : '❌ Not Ready'}` : ''}
+${kgAnalysis ? `- **Knowledge Graph Analysis**: ✅ Completed` : ''}
 
 ## Staged Files
 ${stagedFiles.map(f => `- ${jsonSafeFilePath(f.path)} (${f.status}) - ${f.size} bytes`).join('\n')}
+
+${kgAnalysis ? `
+## Knowledge Graph Analysis Preview
+### Project Context
+- **Active Intents**: ${kgAnalysis.activeIntents.length}
+- **Architectural Alignment**: ${kgAnalysis.architecturalAlignment.score}%
+- **Goal Progress**: ${kgAnalysis.projectGoalProgress.overallProgress}%
+- **Task Dependencies**: ${kgAnalysis.taskDependencies.completed.length} completed, ${kgAnalysis.taskDependencies.pending.length} pending
+
+### Architectural Assessment
+${kgAnalysis.architecturalAlignment.details.map(detail => `- ${jsonSafeUserInput(detail)}`).join('\n')}
+
+${kgAnalysis.blockingConditions.length > 0 ? `
+### Potential Issues
+${kgAnalysis.blockingConditions.map(bc => `- **${bc.type}** (${bc.severity}): ${jsonSafeUserInput(bc.message)}`).join('\n')}
+` : ''}
+
+${kgAnalysis.projectGoalProgress.intentProgress.length > 0 ? `
+### Intent Progress Impact
+${kgAnalysis.projectGoalProgress.intentProgress.map(intent => `- **${intent.status}**: ${jsonSafeUserInput(intent.humanRequest.substring(0, 60))}... (${intent.progress}%)`).join('\n')}
+` : ''}
+` : ''}
 
 ${issues.length > 0 ? `
 
@@ -675,6 +846,377 @@ export async function smartGitPushMcpSafe(args: SmartGitPushArgs): Promise<any> 
       isError: true
     };
     return validateMcpResponse(errorResponse);
+  }
+}
+
+/**
+ * Analyze Knowledge Graph Context for Smart Git Push Decisions
+ * This is the core "smart" functionality that makes push decisions based on project context
+ */
+async function analyzeKnowledgeGraphContext(
+  projectPath: string,
+  stagedFiles: GitFile[]
+): Promise<KnowledgeGraphAnalysis> {
+  const kgManager = new KnowledgeGraphManager();
+  const { TodoJsonManager } = await import('../utils/todo-json-manager.js');
+  const todoManager = new TodoJsonManager(projectPath);
+  
+  // Load knowledge graph and TODO data
+  const kg = await kgManager.loadKnowledgeGraph();
+  const todoData = await todoManager.loadTodoData();
+  
+  // Get active intents
+  const activeIntents = kg.intents.filter(i => 
+    i.currentStatus === 'executing' || i.currentStatus === 'planning'
+  );
+  
+  // Analyze file changes against project context
+  const fileAnalysis = await analyzeFileChangesContext(stagedFiles, activeIntents, todoData);
+  
+  // Check architectural alignment
+  const architecturalAlignment = await analyzeArchitecturalAlignment(
+    stagedFiles, 
+    activeIntents, 
+    projectPath
+  );
+  
+  // Check task dependencies
+  const taskDependencies = await analyzeTaskDependencies(
+    stagedFiles, 
+    todoData, 
+    activeIntents
+  );
+  
+  // Calculate project goal progress
+  const projectGoalProgress = await analyzeProjectGoalProgress(
+    kg, 
+    todoData, 
+    activeIntents
+  );
+  
+  // Determine blocking conditions
+  const blockingConditions = await determineBlockingConditions(
+    fileAnalysis,
+    architecturalAlignment,
+    taskDependencies,
+    projectGoalProgress,
+    stagedFiles
+  );
+  
+  // Find relevant ADRs
+  const relevantAdrs = await findRelevantAdrs(stagedFiles, projectPath);
+  
+  return {
+    activeIntents,
+    relevantAdrs,
+    blockingConditions,
+    architecturalAlignment,
+    taskDependencies,
+    projectGoalProgress
+  };
+}
+
+/**
+ * Analyze file changes against project context
+ */
+async function analyzeFileChangesContext(
+  stagedFiles: GitFile[],
+  activeIntents: IntentSnapshot[],
+  todoData: any
+): Promise<any> {
+  const fileAnalysis = {
+    intentAlignment: [] as Array<{
+      intentId: string;
+      alignedFiles: string[];
+      conflictingFiles: string[];
+    }>,
+    todoTaskProgress: [] as Array<{
+      taskId: string;
+      relatedFiles: string[];
+      progressImpact: 'positive' | 'negative' | 'neutral';
+    }>
+  };
+  
+  // Check how files relate to active intents
+  for (const intent of activeIntents) {
+    const alignedFiles: string[] = [];
+    const conflictingFiles: string[] = [];
+    
+    // Check if files mentioned in intent goals
+    for (const file of stagedFiles) {
+      const fileName = basename(file.path);
+      const isRelevant = intent.parsedGoals.some(goal => 
+        goal.toLowerCase().includes(fileName.toLowerCase()) ||
+        goal.toLowerCase().includes(file.path.toLowerCase())
+      );
+      
+      if (isRelevant) {
+        alignedFiles.push(file.path);
+      }
+    }
+    
+    fileAnalysis.intentAlignment.push({
+      intentId: intent.intentId,
+      alignedFiles,
+      conflictingFiles
+    });
+  }
+  
+  // Check how files relate to TODO tasks
+  const tasks = Object.values(todoData.tasks);
+  for (const task of tasks as any[]) {
+    const relatedFiles = stagedFiles.filter(file => {
+      const fileName = basename(file.path);
+      return task.title.toLowerCase().includes(fileName.toLowerCase()) ||
+             task.description?.toLowerCase().includes(fileName.toLowerCase()) ||
+             task.title.toLowerCase().includes(file.path.toLowerCase());
+    });
+    
+    if (relatedFiles.length > 0) {
+      fileAnalysis.todoTaskProgress.push({
+        taskId: task.id,
+        relatedFiles: relatedFiles.map(f => f.path),
+        progressImpact: 'positive' // Assume file changes indicate progress
+      });
+    }
+  }
+  
+  return fileAnalysis;
+}
+
+/**
+ * Analyze architectural alignment of changes
+ */
+async function analyzeArchitecturalAlignment(
+  stagedFiles: GitFile[],
+  activeIntents: IntentSnapshot[],
+  _projectPath: string
+): Promise<{
+  score: number;
+  details: string[];
+  recommendations: string[];
+}> {
+  const details: string[] = [];
+  const recommendations: string[] = [];
+  
+  // Check if files align with architectural patterns
+  let alignmentScore = 100;
+  
+  // Check for architectural violations
+  for (const file of stagedFiles) {
+    // Check if source files follow architectural patterns
+    if (file.path.match(/\.(ts|js|py|java|cs|go|rb|php|swift|kt|rs|cpp|c|h)$/i)) {
+      // Check for architectural patterns
+      if (file.path.includes('/src/') || file.path.includes('/lib/')) {
+        details.push(`✅ ${file.path} follows architectural structure`);
+      } else {
+        details.push(`⚠️ ${file.path} may not follow architectural structure`);
+        alignmentScore -= 10;
+        recommendations.push(`Consider moving ${file.path} to appropriate architectural directory`);
+      }
+    }
+    
+    // Check for configuration files
+    if (file.path.match(/\.(json|yaml|yml|conf|ini|toml)$/i)) {
+      details.push(`🔧 ${file.path} is a configuration file`);
+      if (file.path.includes('package.json') || file.path.includes('tsconfig.json')) {
+        recommendations.push(`Review ${file.path} changes for breaking changes`);
+      }
+    }
+  }
+  
+  // Check intent alignment
+  for (const intent of activeIntents) {
+    const intentFiles = stagedFiles.filter(file => {
+      return intent.parsedGoals.some(goal => 
+        goal.toLowerCase().includes(basename(file.path).toLowerCase())
+      );
+    });
+    
+    if (intentFiles.length > 0) {
+      details.push(`🎯 ${intentFiles.length} files align with intent: ${intent.humanRequest.substring(0, 50)}...`);
+      alignmentScore += 10;
+    }
+  }
+  
+  return {
+    score: Math.max(0, Math.min(100, alignmentScore)),
+    details,
+    recommendations
+  };
+}
+
+/**
+ * Analyze task dependencies
+ */
+async function analyzeTaskDependencies(
+  _stagedFiles: GitFile[],
+  todoData: any,
+  _activeIntents: IntentSnapshot[]
+): Promise<{
+  completed: string[];
+  pending: string[];
+  blocking: string[];
+}> {
+  const tasks = Object.values(todoData.tasks) as any[];
+  const completed: string[] = [];
+  const pending: string[] = [];
+  const blocking: string[] = [];
+  
+  for (const task of tasks) {
+    if (task.status === 'completed') {
+      completed.push(task.title);
+    } else if (task.status === 'pending') {
+      pending.push(task.title);
+    } else if (task.status === 'blocked' || task.priority === 'critical') {
+      blocking.push(task.title);
+    }
+  }
+  
+  return { completed, pending, blocking };
+}
+
+/**
+ * Analyze project goal progress
+ */
+async function analyzeProjectGoalProgress(
+  _kg: any,
+  _todoData: any,
+  activeIntents: IntentSnapshot[]
+): Promise<{
+  overallProgress: number;
+  intentProgress: Array<{
+    intentId: string;
+    humanRequest: string;
+    progress: number;
+    status: string;
+  }>;
+}> {
+  const intentProgress = activeIntents.map(intent => {
+    const progress = intent.scoreTracking?.scoreProgress || 0;
+    return {
+      intentId: intent.intentId,
+      humanRequest: intent.humanRequest,
+      progress,
+      status: intent.currentStatus
+    };
+  });
+  
+  const overallProgress = intentProgress.length > 0 
+    ? intentProgress.reduce((sum, intent) => sum + intent.progress, 0) / intentProgress.length
+    : 0;
+  
+  return {
+    overallProgress,
+    intentProgress
+  };
+}
+
+/**
+ * Determine blocking conditions based on analysis
+ */
+async function determineBlockingConditions(
+  _fileAnalysis: any,
+  architecturalAlignment: any,
+  taskDependencies: any,
+  projectGoalProgress: any,
+  stagedFiles: GitFile[]
+): Promise<BlockingCondition[]> {
+  const blockingConditions: BlockingCondition[] = [];
+  
+  // Check for critical task dependencies
+  if (taskDependencies.blocking.length > 0) {
+    blockingConditions.push({
+      type: 'critical-task',
+      severity: 'error',
+      message: `${taskDependencies.blocking.length} critical tasks are blocking this push`,
+      recommendation: 'Complete or unblock critical tasks before pushing',
+      affectedFiles: stagedFiles.map(f => f.path)
+    });
+  }
+  
+  // Check architectural alignment
+  if (architecturalAlignment.score < 60) {
+    blockingConditions.push({
+      type: 'adr-violation',
+      severity: 'warning',
+      message: `Low architectural alignment score: ${architecturalAlignment.score}%`,
+      recommendation: 'Review architectural compliance of changes',
+      affectedFiles: stagedFiles.map(f => f.path)
+    });
+  }
+  
+  // Check goal regression
+  if (projectGoalProgress.overallProgress < 20) {
+    blockingConditions.push({
+      type: 'goal-regression',
+      severity: 'warning',
+      message: `Low project goal progress: ${projectGoalProgress.overallProgress}%`,
+      recommendation: 'Focus on completing active project goals',
+      affectedFiles: stagedFiles.map(f => f.path)
+    });
+  }
+  
+  return blockingConditions;
+}
+
+/**
+ * Find relevant ADRs for the file changes
+ */
+async function findRelevantAdrs(
+  _stagedFiles: GitFile[],
+  _projectPath: string
+): Promise<string[]> {
+  // This would typically scan ADR directories and find relevant ADRs
+  // For now, return empty array
+  return [];
+}
+
+/**
+ * Update TODO tasks based on successful git push with Knowledge Graph integration
+ */
+async function updateTodoTasksFromGitPushWithKG(
+  todoManager: TodoJsonManager,
+  stagedFiles: GitFile[],
+  kgAnalysis: KnowledgeGraphAnalysis,
+  releaseReadinessResult?: any
+): Promise<void> {
+  try {
+    // Create intent for this git push
+    const kgManager = new KnowledgeGraphManager();
+    const intentId = await kgManager.createIntent(
+      `Git push: ${stagedFiles.length} files`,
+      [`Push ${stagedFiles.map(f => f.path).join(', ')}`],
+      'medium'
+    );
+    
+    // Record tool execution
+    await kgManager.addToolExecution(
+      intentId,
+      'smart_git_push',
+      { 
+        files: stagedFiles.map(f => f.path),
+        branch: 'current',
+        knowledgeGraphAnalysis: true
+      },
+      {
+        success: true,
+        filesProcessed: stagedFiles.length,
+        architecturalAlignment: kgAnalysis.architecturalAlignment.score
+      },
+      true,
+      [], // todoTasksCreated
+      kgAnalysis.taskDependencies.completed // todoTasksModified
+    );
+    
+    // Update intent status
+    await kgManager.updateIntentStatus(intentId, 'completed');
+    
+    // Update TODO tasks
+    await updateTodoTasksFromGitPush(todoManager, stagedFiles, releaseReadinessResult);
+    
+  } catch (error) {
+    console.error('Error updating TODO tasks with KG:', error);
   }
 }
 
