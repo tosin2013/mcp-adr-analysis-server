@@ -348,6 +348,86 @@ Parameters: {
 
 ### Validation and Quality Assurance
 
+**Validate TODO completion against ADRs and environment:**
+
+```
+Tool: compare_adr_progress
+Parameters: {
+  "todoPath": "todo.md",
+  "adrDirectory": "docs/adrs",
+  "projectPath": ".",
+  "deepCodeAnalysis": true,
+  "functionalValidation": true,
+  "strictMode": true
+}
+```
+
+### Step 6: Deployment Readiness Validation
+
+Before deploying any changes based on your ADRs, ensure deployment readiness:
+
+**Tool Call:**
+```
+deployment_readiness
+```
+
+**Parameters:**
+```json
+{
+  "operation": "full_audit",
+  "targetEnvironment": "production",
+  "maxTestFailures": 0,
+  "requireTestCoverage": 80,
+  "deploymentSuccessThreshold": 80,
+  "integrateTodoTasks": true,
+  "requireAdrCompliance": true
+}
+```
+
+**What this does:**
+- Validates all tests are passing (zero tolerance by default)
+- Checks test coverage meets requirements
+- Analyzes deployment history for patterns
+- Validates ADR compliance in implementation
+- Creates blocking tasks for any issues found
+
+**Expected Output:**
+- Deployment readiness score and confidence level
+- Test validation results with failure analysis
+- Deployment history patterns and recommendations
+- Critical blockers that must be resolved
+- Emergency override instructions if needed
+
+### Step 7: Safe Deployment with Smart Git Push
+
+Use enhanced git push with deployment readiness checks:
+
+**Tool Call:**
+```
+smart_git_push
+```
+
+**Parameters:**
+```json
+{
+  "message": "Implement ADR-005: API versioning strategy",
+  "branch": "main",
+  "checkDeploymentReadiness": true,
+  "enforceDeploymentReadiness": true,
+  "targetEnvironment": "production",
+  "strictDeploymentMode": true
+}
+```
+
+**What this does:**
+- Runs comprehensive deployment readiness checks
+- Blocks push if tests are failing or coverage is low
+- Validates deployment history success rate
+- Enforces ADR compliance before allowing push
+- Provides detailed blocking reports with resolution steps
+
+### Validation and Quality Assurance
+
 **Prevent mock implementations from being considered production-ready:**
 
 ```

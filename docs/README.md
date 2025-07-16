@@ -55,6 +55,7 @@ Welcome to the comprehensive documentation for the MCP ADR Analysis Server. This
 - **[NPM Publishing Guide](NPM_PUBLISHING.md)** - Deploy your own MCP server
 - **[Architecture Decisions](adrs/)** - Example ADRs from this project
 - **[Research Templates](research/)** - Research documentation templates
+- **[Deployment Readiness Guide](deployment-readiness-guide.md)** - Zero-tolerance deployment validation
 
 ## 🛠️ Quick Reference
 

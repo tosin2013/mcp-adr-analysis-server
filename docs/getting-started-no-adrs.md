@@ -336,6 +336,71 @@ compare_adr_progress
 - Specific recommendations for improving implementation quality
 - Quality gates for deployment readiness
 
+### Step 9: Deployment Readiness Validation
+
+Before deploying your new architecture, ensure everything is ready:
+
+**Tool Call:**
+```
+deployment_readiness
+```
+
+**Parameters:**
+```json
+{
+  "operation": "full_audit",
+  "targetEnvironment": "production",
+  "maxTestFailures": 0,
+  "requireTestCoverage": 80,
+  "blockOnFailingTests": true,
+  "integrateTodoTasks": true,
+  "requireAdrCompliance": true,
+  "strictMode": true
+}
+```
+
+**What this does:**
+- Validates all tests are passing (zero tolerance)
+- Ensures minimum test coverage requirements
+- Checks deployment history (if available)
+- Validates ADR compliance in implementation
+- Creates blocking tasks for any issues found
+
+**Expected Output:**
+- Deployment readiness score (0-100)
+- Test validation results with detailed failures
+- Code quality analysis (mock vs production)
+- Critical blockers that must be resolved
+- Clear resolution steps for each issue
+
+### Step 10: Safe Deployment with Smart Git Push
+
+Deploy your changes with confidence using deployment-aware git push:
+
+**Tool Call:**
+```
+smart_git_push
+```
+
+**Parameters:**
+```json
+{
+  "message": "Initial ADR implementation with TypeScript setup",
+  "branch": "main",
+  "checkDeploymentReadiness": true,
+  "enforceDeploymentReadiness": true,
+  "targetEnvironment": "production",
+  "strictDeploymentMode": true
+}
+```
+
+**What this does:**
+- Runs comprehensive deployment readiness checks before push
+- Blocks push if any critical issues are found
+- Validates test results and coverage
+- Ensures ADR compliance
+- Provides detailed failure reports with fixes
+
 ## 📊 Expected Outputs
 
 After completing the workflow, you should have:
