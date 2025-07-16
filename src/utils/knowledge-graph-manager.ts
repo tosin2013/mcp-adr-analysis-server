@@ -463,4 +463,60 @@ export class KnowledgeGraphManager {
       topImpactingIntents: intentImpacts
     };
   }
+
+  /**
+   * Record project structure analysis to knowledge graph
+   */
+  async recordProjectStructure(structureSnapshot: {
+    projectPath: string;
+    analysisDepth: string;
+    recursiveDepth: string;
+    technologyFocus: string[];
+    analysisScope: string[];
+    includeEnvironment: boolean;
+    timestamp: string;
+    structureData: any;
+  }): Promise<void> {
+    const intentId = `project-structure-${Date.now()}`;
+    
+    const intent: IntentSnapshot = {
+      intentId: intentId,
+      humanRequest: `Analyze project ecosystem with ${structureSnapshot.analysisDepth} depth`,
+      parsedGoals: [
+        `Analyze project structure at ${structureSnapshot.projectPath}`,
+        `Record directory structure and technology patterns`,
+        `Track architectural decisions and dependencies`
+      ],
+      priority: 'medium',
+      timestamp: structureSnapshot.timestamp,
+      toolChain: [{
+        toolName: 'analyze_project_ecosystem',
+        parameters: {
+          projectPath: structureSnapshot.projectPath,
+          analysisDepth: structureSnapshot.analysisDepth,
+          recursiveDepth: structureSnapshot.recursiveDepth,
+          technologyFocus: structureSnapshot.technologyFocus,
+          analysisScope: structureSnapshot.analysisScope,
+          includeEnvironment: structureSnapshot.includeEnvironment
+        },
+        result: {
+          structureData: structureSnapshot.structureData,
+          timestamp: structureSnapshot.timestamp
+        },
+        todoTasksCreated: [],
+        todoTasksModified: [],
+        executionTime: structureSnapshot.timestamp,
+        success: true
+      }],
+      currentStatus: 'completed',
+      todoMdSnapshot: '', // No specific TODO.md impact for structure analysis
+      tags: ['project-structure', 'ecosystem-analysis', 'architecture']
+    };
+
+    await this.createIntent(
+      intent.humanRequest,
+      intent.parsedGoals,
+      intent.priority
+    );
+  }
 }

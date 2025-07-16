@@ -13,10 +13,15 @@ jest.unstable_mockModule('child_process', () => ({
 const mockReadFileSync = jest.fn();
 const mockExistsSync = jest.fn();
 const mockStatSync = jest.fn();
+const mockWriteFileSync = jest.fn();
+const mockMkdirSync = jest.fn();
+
 jest.unstable_mockModule('fs', () => ({
   readFileSync: mockReadFileSync,
+  writeFileSync: mockWriteFileSync,
   existsSync: mockExistsSync,
-  statSync: mockStatSync
+  statSync: mockStatSync,
+  mkdirSync: mockMkdirSync
 }));
 
 describe('Smart Git Push with Release Readiness', () => {
