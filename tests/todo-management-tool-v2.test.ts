@@ -585,13 +585,50 @@ We will implement an API gateway with the following requirements:
     });
 
     it('should handle invalid task ID in updates', async () => {
-      await expect(manageTodoV2({
+      const result = await manageTodoV2({
         operation: 'update_task',
         projectPath: testProjectPath,
         taskId: 'invalid-task-id',
         updates: { status: 'completed' },
         reason: 'Test'
-      })).rejects.toThrow();
+      });
+      
+      expect(result.content[0].text).toContain('No task found with ID starting with');
+      expect(result.content[0].text).toContain('invalid-task-id');
+    });
+
+    it('should handle partial task ID in updates', async () => {
+      // First create a task
+      const createResult = await manageTodoV2({
+        operation: 'create_task',
+        projectPath: testProjectPath,
+        title: 'Test partial ID task'
+      });
+
+      // Get the task to find its ID
+      const tasksResult = await manageTodoV2({
+        operation: 'get_tasks',
+        projectPath: testProjectPath,
+        showFullIds: true
+      });
+
+      // Extract the full task ID - when showFullIds is true, the format is different
+      const fullId = tasksResult.content[0].text.match(/\(ID: ([0-9a-f-]+)\)/)?.[1];
+      expect(fullId).toBeDefined();
+
+      // Use partial ID (first 8 characters) to update the task
+      const partialId = fullId!.substring(0, 8);
+      const updateResult = await manageTodoV2({
+        operation: 'update_task',
+        projectPath: testProjectPath,
+        taskId: partialId,
+        updates: { status: 'completed' },
+        reason: 'Testing partial ID functionality'
+      });
+
+      expect(updateResult.content[0].text).toContain('Task updated successfully');
+      expect(updateResult.content[0].text).toContain(`**Task ID**: ${fullId}`);
+      expect(updateResult.content[0].text).toContain(`**Original Input**: ${partialId}`);
     });
   });
 

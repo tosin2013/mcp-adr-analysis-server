@@ -25,6 +25,7 @@ The Model Context Protocol enables seamless integration between AI assistants an
 📊 **Workflow Automation** - Todo generation, deployment tracking, and rule validation
 🧪 **TDD Integration** - Two-phase Test-Driven Development with ADR linking and validation
 🔍 **Mock Detection** - Sophisticated analysis to distinguish mock from production code
+🚀 **Deployment Readiness** - Zero-tolerance test validation with deployment history tracking and hard blocking
 
 
 
@@ -293,6 +294,50 @@ const rules = await generateRules({
   adrDirectory: "docs/adrs",
   projectPath: "/path/to/project",
   outputFormat: "json"          // Machine-readable format
+});
+```
+
+### Deployment Readiness & Safety
+```typescript
+// Comprehensive deployment validation with zero tolerance
+const deploymentCheck = await deploymentReadiness({
+  operation: "full_audit",
+  projectPath: "/path/to/project",
+  targetEnvironment: "production",
+  
+  // Test validation (zero tolerance by default)
+  maxTestFailures: 0,              // Hard block on any test failures
+  requireTestCoverage: 80,         // Minimum coverage requirement
+  blockOnFailingTests: true,       // Prevent deployment with failing tests
+  
+  // Deployment history validation
+  maxRecentFailures: 2,            // Max recent deployment failures
+  deploymentSuccessThreshold: 80,  // Required success rate
+  rollbackFrequencyThreshold: 20,  // Max rollback frequency
+  
+  // Integration options
+  integrateTodoTasks: true,        // Auto-create blocking tasks
+  updateHealthScoring: true,       // Update project metrics
+  strictMode: true                 // Enable all safety checks
+});
+
+// Enhanced git push with deployment readiness
+const pushResult = await smartGitPush({
+  message: "Deploy feature X",
+  branch: "main",
+  
+  // Deployment readiness integration
+  checkDeploymentReadiness: true,     // Validate before push
+  enforceDeploymentReadiness: true,   // Hard block on issues
+  targetEnvironment: "production",    // Environment-specific checks
+  strictDeploymentMode: true          // Maximum safety
+});
+
+// Emergency override for critical fixes
+const override = await deploymentReadiness({
+  operation: "emergency_override",
+  businessJustification: "Critical security patch - CVE-2024-XXXX",
+  approvalRequired: true
 });
 ```
 

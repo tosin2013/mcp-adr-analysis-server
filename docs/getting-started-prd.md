@@ -518,9 +518,46 @@ human_override
 - Provides clear command schemas for complex PRD implementation
 - Includes confidence scoring and detailed execution notes
 
+### Deployment Readiness for PRD Projects
+
+Validate your PRD implementation is ready for production:
+
+**Tool Call:**
+```
+deployment_readiness
+```
+
+**Parameters:**
+```json
+{
+  "operation": "full_audit",
+  "targetEnvironment": "production",
+  "maxTestFailures": 0,
+  "requireTestCoverage": 80,
+  "blockOnFailingTests": true,
+  "deploymentSuccessThreshold": 80,
+  "integrateTodoTasks": true,
+  "requireAdrCompliance": true,
+  "strictMode": true
+}
+```
+
+**PRD-specific validation:**
+- Validates all PRD requirements have passing tests
+- Ensures test coverage meets requirements
+- Checks deployment history for stability
+- Validates ADR compliance with PRD goals
+- Creates blocking tasks for any gaps
+
+**Expected Output:**
+- Deployment readiness score with PRD alignment
+- Test validation covering all PRD requirements
+- Critical blockers linked to specific PRD sections
+- Clear resolution steps for each issue
+
 ### Smart Git Operations for PRD Projects
 
-Ensure release readiness before pushing PRD implementations:
+Deploy with confidence using deployment-aware git push:
 
 **Tool Call:**
 ```
@@ -530,12 +567,21 @@ smart_git_push
 **Parameters:**
 ```json
 {
-  "branchName": "feature/prd-implementation",
-  "commitMessage": "Implement core PRD requirements with ADR compliance",
-  "skipHealthCheck": false,
-  "includeContentSecurity": true
+  "message": "Implement core PRD requirements with ADR compliance",
+  "branch": "main",
+  "checkDeploymentReadiness": true,
+  "enforceDeploymentReadiness": true,
+  "targetEnvironment": "production",
+  "strictDeploymentMode": true
 }
 ```
+
+**What this does:**
+- Runs deployment readiness checks before push
+- Validates PRD implementation completeness
+- Blocks push if critical PRD requirements are missing
+- Ensures all tests are passing
+- Provides detailed failure reports with PRD traceability
 
 ### Environment Analysis
 

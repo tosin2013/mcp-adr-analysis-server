@@ -1620,6 +1620,126 @@ export class McpAdrAnalysisServer {
             }
           },
           {
+            name: 'deployment_readiness',
+            description: 'Comprehensive deployment readiness validation with test failure tracking, deployment history analysis, and hard blocking for unsafe deployments. Integrates with smart_git_push for deployment gating.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                operation: {
+                  type: 'string',
+                  enum: ['check_readiness', 'validate_production', 'test_validation', 'deployment_history', 'full_audit', 'emergency_override'],
+                  description: 'Type of deployment readiness check to perform'
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project directory (defaults to current working directory)'
+                },
+                targetEnvironment: {
+                  type: 'string',
+                  enum: ['staging', 'production', 'integration'],
+                  default: 'production',
+                  description: 'Target deployment environment'
+                },
+                strictMode: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Enable strict validation (recommended for production)'
+                },
+                allowMockCode: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Allow mock code in deployment (NOT RECOMMENDED)'
+                },
+                productionCodeThreshold: {
+                  type: 'number',
+                  default: 85,
+                  description: 'Minimum production code quality score (0-100)'
+                },
+                mockCodeMaxAllowed: {
+                  type: 'number',
+                  default: 0,
+                  description: 'Maximum mock code indicators allowed'
+                },
+                maxTestFailures: {
+                  type: 'number',
+                  default: 0,
+                  description: 'Maximum test failures allowed (0 = zero tolerance)'
+                },
+                requireTestCoverage: {
+                  type: 'number',
+                  default: 80,
+                  description: 'Minimum test coverage percentage required'
+                },
+                blockOnFailingTests: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Block deployment if tests are failing'
+                },
+                testSuiteRequired: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  default: [],
+                  description: 'Required test suites that must pass'
+                },
+                maxRecentFailures: {
+                  type: 'number',
+                  default: 2,
+                  description: 'Maximum recent deployment failures allowed'
+                },
+                deploymentSuccessThreshold: {
+                  type: 'number',
+                  default: 80,
+                  description: 'Minimum deployment success rate required (%)'
+                },
+                blockOnRecentFailures: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Block if recent deployments failed'
+                },
+                rollbackFrequencyThreshold: {
+                  type: 'number',
+                  default: 20,
+                  description: 'Maximum rollback frequency allowed (%)'
+                },
+                requireAdrCompliance: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Require ADR compliance validation'
+                },
+                integrateTodoTasks: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Auto-create blocking tasks for issues'
+                },
+                updateHealthScoring: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Update project health scores'
+                },
+                triggerSmartGitPush: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Trigger smart git push validation'
+                },
+                emergencyBypass: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Emergency bypass for critical fixes'
+                },
+                businessJustification: {
+                  type: 'string',
+                  description: 'Business justification for overrides (required for emergency_override)'
+                },
+                approvalRequired: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Require approval for overrides'
+                }
+              },
+              required: ['operation']
+            }
+          },
+          {
             name: 'troubleshoot_guided_workflow',
             description: 'Structured failure analysis and test plan generation - provide JSON failure info to get specific test commands',
             inputSchema: {
@@ -1947,6 +2067,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'smart_git_push':
             response = await this.smartGitPush(args);
+            break;
+          case 'deployment_readiness':
+            response = await this.deploymentReadiness(args);
             break;
           case 'troubleshoot_guided_workflow':
             response = await this.troubleshootGuidedWorkflow(args);
@@ -5021,6 +5144,18 @@ Please provide:
       throw new McpAdrError(
         `Smart git push failed: ${error instanceof Error ? error.message : String(error)}`,
         'SMART_GIT_PUSH_ERROR'
+      );
+    }
+  }
+
+  private async deploymentReadiness(args: any): Promise<any> {
+    try {
+      const { deploymentReadiness } = await import('./tools/deployment-readiness-tool.js');
+      return await deploymentReadiness(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `Deployment readiness check failed: ${error instanceof Error ? error.message : String(error)}`,
+        'DEPLOYMENT_READINESS_ERROR'
       );
     }
   }

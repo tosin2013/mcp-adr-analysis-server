@@ -36,6 +36,14 @@ interface SmartGitPushArgs {
   dryRun?: boolean;
   projectPath?: string;
   forceUnsafe?: boolean;
+  humanOverrides?: HumanOverride[];
+  requestHumanConfirmation?: boolean;
+  
+  // Deployment Readiness Integration
+  checkDeploymentReadiness?: boolean;
+  targetEnvironment?: 'staging' | 'production' | 'integration';
+  enforceDeploymentReadiness?: boolean;
+  strictDeploymentMode?: boolean;
 }
 
 interface TestResults {
@@ -72,6 +80,23 @@ interface IrrelevantFile {
   recommendation: string;
 }
 
+interface HumanOverride {
+  path: string;
+  purpose: string;
+  userConfirmed: boolean;
+  timestamp: string;
+  overrideReason: 'security-exception' | 'business-requirement' | 'deployment-necessity' | 'temporary-debug' | 'other';
+  additionalContext?: string;
+}
+
+interface FileConfirmationRequest {
+  path: string;
+  detectedIssue: SecurityIssue | IrrelevantFile;
+  suggestedPurpose: string;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  alternatives: string[];
+}
+
 interface DeployHistory {
   successful: number;
   failed: number;
@@ -102,7 +127,13 @@ async function smartGitPushV2(args: SmartGitPushArgs): Promise<any> {
     skipSecurity = false,
     dryRun = false,
     projectPath = process.cwd(),
-    forceUnsafe = false
+    forceUnsafe = false,
+    humanOverrides = [],
+    requestHumanConfirmation = false,
+    checkDeploymentReadiness = false,
+    targetEnvironment = 'production',
+    enforceDeploymentReadiness = false,
+    strictDeploymentMode = true
   } = args;
 
   try {
@@ -128,8 +159,67 @@ async function smartGitPushV2(args: SmartGitPushArgs): Promise<any> {
     // Step 3: Check for irrelevant files
     const irrelevantFiles = await checkIrrelevantFiles(stagedFiles);
 
-    // Step 4: Check blocking conditions
-    const hasCriticalSecurity = securityIssues.some(issue => issue.severity === 'critical');
+    // Step 4: Apply human overrides to security issues and irrelevant files
+    const { 
+      filteredSecurityIssues, 
+      filteredIrrelevantFiles, 
+      confirmationRequests 
+    } = await applyHumanOverrides(securityIssues, irrelevantFiles, humanOverrides, requestHumanConfirmation);
+
+    // Step 5: Check for confirmation requests
+    if (confirmationRequests.length > 0 && requestHumanConfirmation) {
+      return {
+        content: [{
+          type: 'text',
+          text: generateConfirmationRequestResponse(confirmationRequests, stagedFiles)
+        }]
+      };
+    }
+
+    // Step 5.5: Deployment Readiness Check (NEW)
+    if (checkDeploymentReadiness || enforceDeploymentReadiness) {
+      const { deploymentReadiness } = await import('./deployment-readiness-tool.js');
+      
+      const readinessCheck = await deploymentReadiness({
+        operation: 'full_audit',
+        projectPath,
+        targetEnvironment,
+        strictMode: strictDeploymentMode,
+        
+        // Test Gates - Zero tolerance for failures
+        maxTestFailures: 0,
+        requireTestCoverage: 80,
+        blockOnFailingTests: true,
+        
+        // Deployment History Gates
+        maxRecentFailures: 2,
+        deploymentSuccessThreshold: 80,
+        blockOnRecentFailures: true,
+        rollbackFrequencyThreshold: 20,
+        
+        // Integration with existing systems
+        integrateTodoTasks: true,
+        updateHealthScoring: true
+      });
+
+      // Hard block if deployment is not ready and enforcement is enabled
+      if (!readinessCheck.isDeploymentReady && (enforceDeploymentReadiness || strictDeploymentMode)) {
+        return {
+          content: [{
+            type: 'text',
+            text: generateDeploymentReadinessBlockResponse(readinessCheck, stagedFiles, targetEnvironment)
+          }]
+        };
+      }
+      
+      // Soft warning if just checking but not enforcing
+      if (!readinessCheck.isDeploymentReady && checkDeploymentReadiness && !enforceDeploymentReadiness) {
+        // Continue with push but include warning in success response
+      }
+    }
+
+    // Step 6: Check blocking conditions (after overrides)
+    const hasCriticalSecurity = filteredSecurityIssues.some(issue => issue.severity === 'critical');
     const hasFailedTests = testResults && !testResults.success;
     const shouldBlock = (hasCriticalSecurity || hasFailedTests) && !forceUnsafe;
 
@@ -137,7 +227,7 @@ async function smartGitPushV2(args: SmartGitPushArgs): Promise<any> {
       return {
         content: [{
           type: 'text',
-          text: generateBlockedResponse(securityIssues, irrelevantFiles, testResults)
+          text: generateBlockedResponse(filteredSecurityIssues, filteredIrrelevantFiles, testResults, humanOverrides)
         }]
       };
     }
@@ -158,11 +248,12 @@ async function smartGitPushV2(args: SmartGitPushArgs): Promise<any> {
           type: 'text',
           text: generateSuccessResponse(
             stagedFiles,
-            securityIssues,
-            irrelevantFiles,
+            filteredSecurityIssues,
+            filteredIrrelevantFiles,
             testResults,
             pushResult,
-            branch
+            branch,
+            humanOverrides
           )
         }]
       };
@@ -173,8 +264,8 @@ async function smartGitPushV2(args: SmartGitPushArgs): Promise<any> {
           type: 'text',
           text: generateDryRunResponse(
             stagedFiles,
-            securityIssues,
-            irrelevantFiles,
+            filteredSecurityIssues,
+            filteredIrrelevantFiles,
             testResults,
             branch
           )
@@ -544,6 +635,171 @@ function getIrrelevantFileRecommendation(reason: string): string {
   }
 }
 
+// Human Override Functions
+
+/**
+ * Apply human overrides to security issues and irrelevant files
+ */
+async function applyHumanOverrides(
+  securityIssues: SecurityIssue[],
+  irrelevantFiles: IrrelevantFile[],
+  humanOverrides: HumanOverride[],
+  requestConfirmation: boolean
+): Promise<{
+  filteredSecurityIssues: SecurityIssue[];
+  filteredIrrelevantFiles: IrrelevantFile[];
+  confirmationRequests: FileConfirmationRequest[];
+}> {
+  const confirmationRequests: FileConfirmationRequest[] = [];
+  
+  // Filter security issues based on human overrides
+  const filteredSecurityIssues = securityIssues.filter(issue => {
+    const override = humanOverrides.find(o => o.path === issue.file && o.userConfirmed);
+    if (override) {
+      return false; // Remove from blocking issues
+    }
+    
+    // If requesting confirmation and no override exists, create confirmation request
+    if (requestConfirmation && !humanOverrides.find(o => o.path === issue.file)) {
+      confirmationRequests.push({
+        path: issue.file,
+        detectedIssue: issue,
+        suggestedPurpose: analyzeFilePurpose(issue.file),
+        riskLevel: issue.severity as any,
+        alternatives: generateAlternatives(issue)
+      });
+    }
+    
+    return true; // Keep issue if no override
+  });
+  
+  // Filter irrelevant files based on human overrides
+  const filteredIrrelevantFiles = irrelevantFiles.filter(file => {
+    const override = humanOverrides.find(o => o.path === file.path && o.userConfirmed);
+    if (override) {
+      return false; // Remove from irrelevant files
+    }
+    
+    // If requesting confirmation and no override exists, create confirmation request
+    if (requestConfirmation && !humanOverrides.find(o => o.path === file.path)) {
+      confirmationRequests.push({
+        path: file.path,
+        detectedIssue: file,
+        suggestedPurpose: analyzeFilePurpose(file.path),
+        riskLevel: 'medium',
+        alternatives: generateAlternatives(file)
+      });
+    }
+    
+    return true; // Keep file if no override
+  });
+  
+  return {
+    filteredSecurityIssues,
+    filteredIrrelevantFiles,
+    confirmationRequests
+  };
+}
+
+/**
+ * Analyze file purpose using LLM-style heuristics
+ */
+function analyzeFilePurpose(filePath: string): string {
+  const fileName = filePath.toLowerCase();
+  
+  // Configuration files
+  if (fileName.includes('config') || fileName.endsWith('.config.js') || fileName.endsWith('.config.ts')) {
+    return 'Configuration file - may contain environment-specific settings';
+  }
+  
+  // Build/deployment files
+  if (fileName.includes('build') || fileName.includes('dist') || fileName.includes('deploy')) {
+    return 'Build or deployment artifact - usually not committed to source control';
+  }
+  
+  // Development/debug files
+  if (fileName.includes('debug') || fileName.includes('test') || fileName.includes('temp')) {
+    return 'Development or debugging file - may be temporary';
+  }
+  
+  // IDE/editor files
+  if (fileName.includes('.vscode') || fileName.includes('.idea') || fileName.includes('.settings')) {
+    return 'IDE/editor configuration - user-specific preferences';
+  }
+  
+  // Log files
+  if (fileName.includes('log') || fileName.endsWith('.log')) {
+    return 'Log file - runtime data that changes frequently';
+  }
+  
+  // Security-related
+  if (fileName.includes('key') || fileName.includes('secret') || fileName.includes('credential')) {
+    return 'Security-sensitive file - may contain credentials or keys';
+  }
+  
+  // Cache/temporary
+  if (fileName.includes('cache') || fileName.includes('node_modules') || fileName.includes('.cache')) {
+    return 'Cache or temporary data - generated content';
+  }
+  
+  return 'Unknown purpose - manual review recommended';
+}
+
+/**
+ * Generate alternatives for problematic files
+ */
+function generateAlternatives(issue: SecurityIssue | IrrelevantFile): string[] {
+  const alternatives: string[] = [];
+  
+  if ('severity' in issue) {
+    // Security issue alternatives
+    switch (issue.type) {
+      case 'api-key':
+        alternatives.push('Move to environment variables (.env file)');
+        alternatives.push('Use secure credential management service');
+        alternatives.push('Store in CI/CD pipeline secrets');
+        break;
+      case 'private-key':
+        alternatives.push('Use key management service (AWS KMS, Azure Key Vault)');
+        alternatives.push('Store locally and reference by path');
+        alternatives.push('Use certificate-based authentication');
+        break;
+      case 'token':
+        alternatives.push('Generate token at runtime');
+        alternatives.push('Use OAuth flow instead of static tokens');
+        alternatives.push('Store in secure credential store');
+        break;
+      default:
+        alternatives.push('Use environment variables');
+        alternatives.push('External configuration management');
+    }
+  } else {
+    // Irrelevant file alternatives
+    switch (issue.reason) {
+      case 'build-artifact':
+        alternatives.push('Add to .gitignore and rebuild on deployment');
+        alternatives.push('Use CI/CD pipeline to generate artifacts');
+        alternatives.push('Store in artifact repository (npm, Docker registry)');
+        break;
+      case 'temp-file':
+        alternatives.push('Delete file after use');
+        alternatives.push('Add to .gitignore');
+        alternatives.push('Use system temp directory');
+        break;
+      case 'ide-config':
+        alternatives.push('Add to .gitignore');
+        alternatives.push('Create shared .vscode/settings.json for team settings');
+        alternatives.push('Document setup instructions in README');
+        break;
+      default:
+        alternatives.push('Add to .gitignore');
+        alternatives.push('Review if file is necessary');
+    }
+  }
+  
+  return alternatives;
+}
+
 // Response generators
 
 function createNoChangesResponse(metricsText: string): string {
@@ -552,16 +808,85 @@ function createNoChangesResponse(metricsText: string): string {
     'No staged files found. Use git add to stage files before pushing.\n\n' +
     '## Deployment Metrics\n' +
     metricsText + '\n\n' +
-    '## Available Commands\n' +
-    '- git add . - Stage all changes\n' +
-    '- git add <file> - Stage specific file\n' +
-    '- git status - Check current status';
+    '## ⚠️ IMPORTANT: Selective File Staging\n' +
+    '**DO NOT USE:** `git add .` or `git add -A` (stages everything including unintended files)\n\n' +
+    '**RECOMMENDED APPROACH:**\n' +
+    '1. Review changes: `git status` and `git diff`\n' +
+    '2. Stage specific files: `git add <specific-file>`\n' +
+    '3. Verify staged files: `git diff --cached`\n' +
+    '4. Only then commit and push\n\n' +
+    '## Safe Commands\n' +
+    '- `git status` - Check current status\n' +
+    '- `git diff` - See unstaged changes\n' +
+    '- `git add <specific-file>` - Stage specific file only\n' +
+    '- `git diff --cached` - Review staged changes\n\n' +
+    '## 🚀 Deployment Readiness Checklist\n' +
+    '- [ ] All tests passing locally\n' +
+    '- [ ] Code reviewed and approved\n' +
+    '- [ ] No sensitive data in changes\n' +
+    '- [ ] Documentation updated if needed\n' +
+    '- [ ] Deployment strategy confirmed';
+}
+
+/**
+ * Generate confirmation request response for human override
+ */
+function generateConfirmationRequestResponse(
+  confirmationRequests: FileConfirmationRequest[],
+  stagedFiles: GitFile[]
+): string {
+  let response = '# Smart Git Push - Human Confirmation Required 🤔\n\n' +
+    '## Files Requiring Manual Review\n\n' +
+    `The LLM has detected ${confirmationRequests.length} files that need your confirmation before proceeding.\n\n`;
+
+  confirmationRequests.forEach((request, index) => {
+    const isSecurityIssue = 'severity' in request.detectedIssue;
+    const riskEmoji = request.riskLevel === 'critical' ? '🔴' : 
+                     request.riskLevel === 'high' ? '🟠' : 
+                     request.riskLevel === 'medium' ? '🟡' : '🟢';
+    
+    response += `### ${index + 1}. ${jsonSafeFilePath(request.path)} ${riskEmoji}\n\n` +
+      `**Detected Issue**: ${isSecurityIssue ? 'Security Risk' : 'Irrelevant File'}\n` +
+      `**Risk Level**: ${request.riskLevel.toUpperCase()}\n` +
+      `**LLM Analysis**: ${request.suggestedPurpose}\n\n` +
+      `**Recommended Alternatives**:\n${request.alternatives.map(alt => `- ${alt}`).join('\n')}\n\n` +
+      `**To Override**: Confirm this file's purpose and business justification.\n\n`;
+  });
+
+  response += '## Override Instructions\n\n' +
+    'To proceed with these files, rerun the command with human overrides:\n\n' +
+    '```json\n' +
+    '{\n' +
+    '  "operation": "smart_git_push",\n' +
+    '  "humanOverrides": [\n' +
+    confirmationRequests.map(req => 
+      '    {\n' +
+      `      "path": "${req.path}",\n` +
+      `      "purpose": "YOUR_BUSINESS_JUSTIFICATION_HERE",\n` +
+      '      "userConfirmed": true,\n' +
+      `      "timestamp": "${new Date().toISOString()}",\n` +
+      '      "overrideReason": "business-requirement", // or security-exception, deployment-necessity, etc.\n' +
+      '      "additionalContext": "EXPLAIN_WHY_THIS_IS_NECESSARY"\n' +
+      '    }'
+    ).join(',\n') + '\n' +
+    '  ]\n' +
+    '}\n' +
+    '```\n\n' +
+    '## ⚠️ Important Reminders\n' +
+    '- **Only override if you understand the business need**\n' +
+    '- **Document the purpose clearly**\n' +
+    '- **Consider the security implications**\n' +
+    '- **Review alternatives before overriding**\n\n' +
+    `**Total staged files**: ${stagedFiles.length} | **Files needing confirmation**: ${confirmationRequests.length}`;
+
+  return response;
 }
 
 function generateBlockedResponse(
   securityIssues: SecurityIssue[],
   _irrelevantFiles: IrrelevantFile[],
-  testResults: any
+  testResults: any,
+  humanOverrides?: HumanOverride[]
 ): string {
   let response = '# Smart Git Push - Blocked 🚫\n\n## Push Blocked Due to Critical Issues\n\n';
 
@@ -584,11 +909,34 @@ function generateBlockedResponse(
       '-------\n\n';
   }
 
+  // Show human override status if provided
+  if (humanOverrides && humanOverrides.length > 0) {
+    response += '## Human Overrides Applied\n';
+    humanOverrides.forEach(override => {
+      response += `- **${jsonSafeFilePath(override.path)}**: ${override.purpose}\n` +
+        `  Reason: ${override.overrideReason} | Confirmed: ${override.userConfirmed ? '✅' : '❌'}\n`;
+    });
+    response += '\n';
+  }
+
   response += '## Required Actions\n' +
     '1. Fix all critical security issues\n' +
     '2. Ensure all tests pass\n' +
-    '3. Review and fix any warnings\n\n' +
-    'Use --forceUnsafe to override (NOT RECOMMENDED)';
+    '3. Review and fix any warnings\n' +
+    '4. OR use human overrides with proper justification\n\n' +
+    '## ⚠️ IMPORTANT: File Staging Best Practices\n' +
+    '**NEVER USE:** `git add .` or `git add -A` when fixing issues\n' +
+    '**RECOMMENDED:**\n' +
+    '1. Fix specific issues in specific files\n' +
+    '2. Stage only the fixed files: `git add <fixed-file>`\n' +
+    '3. Verify changes: `git diff --cached`\n' +
+    '4. Re-run smart git push\n\n' +
+    '## Human Override Option\n' +
+    'If these issues are expected and have business justification:\n' +
+    '1. Use `requestHumanConfirmation: true` to get guided override instructions\n' +
+    '2. Provide detailed justification for each file\n' +
+    '3. Consider security implications carefully\n\n' +
+    '🚫 Use --forceUnsafe to override (NOT RECOMMENDED)';
 
   return response;
 }
@@ -599,7 +947,8 @@ function generateSuccessResponse(
   irrelevantFiles: IrrelevantFile[],
   testResults: any,
   pushResult: any,
-  branch?: string
+  branch?: string,
+  humanOverrides?: HumanOverride[]
 ): string {
   let response = '# Smart Git Push - Success ✅\n\n' +
     '## Push Summary\n' +
@@ -630,14 +979,41 @@ function generateSuccessResponse(
       ).join('\n');
   }
 
+  // Show human overrides if any were applied
+  if (humanOverrides && humanOverrides.length > 0) {
+    response += '\n\n## ✅ Human Overrides Applied\n' +
+      'The following files were explicitly approved by human override:\n' +
+      humanOverrides.filter(o => o.userConfirmed).map(override => 
+        `- **${jsonSafeFilePath(override.path)}**: ${override.purpose}\n` +
+        `  Justification: ${override.additionalContext || 'No additional context'}\n` +
+        `  Override Reason: ${override.overrideReason}\n` +
+        `  Timestamp: ${new Date(override.timestamp).toLocaleString()}`
+      ).join('\n\n') + '\n\n' +
+      '📝 **Note**: These overrides have been logged for audit purposes.';
+  }
+
   response += '\n\n## Git Output\n' +
     '-------\n' +
     jsonSafeUserInput(pushResult.output) + '\n' +
     '-------\n\n' +
-    '## Next Steps\n' +
-    '- Monitor CI/CD pipeline\n' +
-    '- Check deployment status\n' +
-    '- Review any warnings above';
+    '## 🚀 Post-Push Deployment Checklist\n' +
+    '### Immediate Actions (Next 5 minutes)\n' +
+    '- [ ] Monitor CI/CD pipeline status\n' +
+    '- [ ] Check automated test results\n' +
+    '- [ ] Verify build completion\n' +
+    '- [ ] Review any deployment warnings\n\n' +
+    '### Deployment Completion (Next 15 minutes)\n' +
+    '- [ ] Confirm deployment to staging/production\n' +
+    '- [ ] Verify application health checks\n' +
+    '- [ ] Test key functionality post-deployment\n' +
+    '- [ ] Monitor error rates and performance metrics\n' +
+    '- [ ] Update TODO list with deployment status\n\n' +
+    '### Documentation & Communication\n' +
+    '- [ ] Update deployment notes\n' +
+    '- [ ] Notify team of successful deployment\n' +
+    '- [ ] Close related tickets/issues\n' +
+    '- [ ] Schedule post-deployment review if needed\n\n' +
+    '💡 **Tip**: Use the TODO management tool to track deployment completion tasks!';
 
   return response;
 }
@@ -679,13 +1055,29 @@ function generateDryRunResponse(
       ).join('\n');
   }
 
-  response += '\n\n## Command to Execute\n' +
+  response += '\n\n## ⚠️ IMPORTANT: Pre-Push Staging Review\n' +
+    '**AVOID:** `git add .` or `git add -A` before this tool\n' +
+    '**RECOMMENDED:**\n' +
+    '1. Review each staged file individually\n' +
+    '2. Verify changes: `git diff --cached`\n' +
+    '3. Ensure only intended files are staged\n\n' +
+    '## Command to Execute\n' +
     '-------\n' +
     '# Run without dry run to actually push\n' +
     'git push' + (branch ? ' origin ' + branch : '') + '\n' +
     '-------\n\n' +
     '**Note:** This was a dry run. No files were pushed.' +
-    (wouldBlock ? '\n⚠️ **Warning**: This push would be BLOCKED due to critical issues.' : '');
+    (wouldBlock ? '\n⚠️ **Warning**: This push would be BLOCKED due to critical issues.' : '') + '\n\n' +
+    '## 🚀 Deployment Readiness Assessment\n' +
+    (wouldBlock ? 
+      '❌ **NOT READY** - Fix issues above before deployment' : 
+      '✅ **READY** - This push appears safe for deployment\n\n' +
+      '### Post-Push Checklist\n' +
+      '- [ ] Monitor CI/CD pipeline\n' +
+      '- [ ] Verify deployment health\n' +
+      '- [ ] Update TODO tasks\n' +
+      '- [ ] Document deployment notes'
+    );
 
   return response;
 }
@@ -694,6 +1086,109 @@ function getDeploymentMetricsUpdate(): string {
   return '- Deploy success rate updated\n' +
     '- Test results recorded\n' +
     '- Metrics available in .mcp-adr-cache/deploy-history.json';
+}
+
+/**
+ * Generate deployment readiness block response
+ */
+function generateDeploymentReadinessBlockResponse(
+  readinessResult: any,
+  stagedFiles: GitFile[],
+  targetEnvironment: string
+): string {
+  return `🚨 **DEPLOYMENT BLOCKED - Critical Readiness Issues**
+
+## 🎯 Deployment Readiness Assessment
+- **Target Environment**: ${targetEnvironment}
+- **Deployment Ready**: ❌ **NO**
+- **Readiness Score**: ${readinessResult.overallScore || 0}%
+- **Confidence Level**: ${readinessResult.confidence || 0}%
+
+## 🧪 Test Validation Issues
+${readinessResult.testFailureBlockers?.length > 0 ? `
+**Test Failures**: ${readinessResult.testValidationResult?.failureCount || 0} failures detected
+**Test Coverage**: ${readinessResult.testValidationResult?.coveragePercentage || 0}% (Required: 80%)
+
+### Critical Test Failures:
+${readinessResult.testValidationResult?.criticalTestFailures?.map((f: any) => 
+  `- ❌ ${f.testSuite}: ${f.testName}`
+).join('\n') || 'No critical test failures'}
+` : '✅ All tests passing'}
+
+## 📊 Deployment History Issues
+${readinessResult.deploymentHistoryBlockers?.length > 0 ? `
+**Success Rate**: ${readinessResult.deploymentHistoryAnalysis?.successRate || 0}% (Required: 80%)
+**Rollback Rate**: ${readinessResult.deploymentHistoryAnalysis?.rollbackRate || 0}% (Threshold: 20%)
+
+### Recent Failure Patterns:
+${readinessResult.deploymentHistoryAnalysis?.failurePatterns?.map((p: any) => 
+  `- **${p.pattern}**: ${p.frequency} occurrences`
+).join('\n') || 'No failure patterns detected'}
+` : '✅ Deployment history stable'}
+
+## 🚨 Critical Blockers (Must Fix Before Push)
+${readinessResult.criticalBlockers?.map((blocker: any) => `
+### ${blocker.category.toUpperCase()}: ${blocker.title}
+- **Impact**: ${blocker.impact}
+- **Resolution Steps**: ${blocker.resolutionSteps?.join(' → ') || 'See deployment readiness tool for details'}
+- **Estimated Time**: ${blocker.estimatedResolutionTime || 'Unknown'}
+`).join('\n') || 'No critical blockers found'}
+
+## 📁 Staged Files (${stagedFiles.length} files ready to push)
+${stagedFiles.slice(0, 10).map(file => `- ${file.status}: ${file.path}`).join('\n')}
+${stagedFiles.length > 10 ? `\n... and ${stagedFiles.length - 10} more files` : ''}
+
+## 🛠️ Required Actions Before Git Push
+
+### 1. Fix Test Issues
+\`\`\`bash
+# Run tests and identify failures
+npm test
+
+# Check detailed test coverage
+npm run test:coverage
+
+# Fix failing tests one by one
+\`\`\`
+
+### 2. Address Deployment History
+\`\`\`bash
+# Review recent deployment failures
+# Fix underlying infrastructure issues
+# Improve deployment reliability
+\`\`\`
+
+### 3. Re-validate Deployment Readiness
+\`\`\`bash
+# Run comprehensive deployment readiness check
+deployment_readiness --operation full_audit --target-environment ${targetEnvironment}
+\`\`\`
+
+### 4. Retry Git Push When Ready
+\`\`\`bash
+# Only retry when all blockers are resolved
+smart_git_push --enforce-deployment-readiness --target-environment ${targetEnvironment}
+\`\`\`
+
+## ⚠️ Emergency Override (Critical Fixes Only)
+If this is a critical security fix or emergency:
+\`\`\`bash
+# Emergency bypass (requires business justification)
+deployment_readiness --operation emergency_override --business-justification "Critical security patch"
+
+# Then retry push with force override
+smart_git_push --force-unsafe
+\`\`\`
+
+## 📋 Deployment Checklist Integration
+${readinessResult.todoTasksCreated?.length > 0 ? `
+**Auto-Generated Tasks**: ${readinessResult.todoTasksCreated.length} tasks created
+Use \`manage_todo_v2 --operation get_tasks\` to view blocking tasks.
+` : 'No automatic tasks created'}
+
+**❌ GIT PUSH BLOCKED UNTIL ALL CRITICAL ISSUES ARE RESOLVED**
+
+This blocking is enforced to prevent failed deployments and protect ${targetEnvironment} environment stability.`;
 }
 
 /**

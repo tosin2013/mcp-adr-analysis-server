@@ -88,7 +88,8 @@ const GetTasksSchema = z.object({
   }).optional().describe('Filter criteria'),
   sortBy: z.enum(['priority', 'dueDate', 'createdAt', 'updatedAt']).default('priority'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
-  limit: z.number().optional().describe('Maximum number of tasks to return')
+  limit: z.number().optional().describe('Maximum number of tasks to return'),
+  showFullIds: z.boolean().optional().default(false).describe('Show full UUIDs instead of short IDs')
 });
 
 const GetAnalyticsSchema = z.object({
@@ -128,6 +129,22 @@ const ImportFromMarkdownSchema = z.object({
   backupExisting: z.boolean().default(true).describe('Create backup before import')
 });
 
+const FindTaskSchema = z.object({
+  operation: z.literal('find_task'),
+  projectPath: z.string().describe('Project root path'),
+  query: z.string().describe('Search query: partial ID, title, or description'),
+  searchType: z.enum(['id', 'title', 'description', 'all']).default('all').describe('What to search in')
+});
+
+const ResumeTodoListSchema = z.object({
+  operation: z.literal('resume_todo_list'),
+  projectPath: z.string().describe('Project root path'),
+  analyzeRecent: z.boolean().default(true).describe('Analyze recent changes and git commits'),
+  includeContext: z.boolean().default(true).describe('Include project context and ADR status'),
+  showNextActions: z.boolean().default(true).describe('Suggest next actionable steps'),
+  checkDeploymentReadiness: z.boolean().default(true).describe('Check if any tasks are deployment-ready')
+});
+
 // Main operation schema
 const TodoManagementV2Schema = z.union([
   CreateTaskSchema,
@@ -138,7 +155,9 @@ const TodoManagementV2Schema = z.union([
   ImportAdrTasksSchema,
   SyncWithKnowledgeGraphSchema,
   SyncToMarkdownSchema,
-  ImportFromMarkdownSchema
+  ImportFromMarkdownSchema,
+  FindTaskSchema,
+  ResumeTodoListSchema
 ]);
 
 type TodoManagementV2Args = z.infer<typeof TodoManagementV2Schema>;
@@ -178,6 +197,38 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
       }
 
       case 'update_task': {
+        // Resolve partial ID to full ID if needed
+        let taskId = validatedArgs.taskId;
+        
+        // If taskId looks like a partial ID (less than full UUID length), try to find the full ID
+        if (taskId.length < 36) {
+          const data = await todoManager.loadTodoData();
+          const tasks = Object.values(data.tasks);
+          const matchingTasks = tasks.filter(task => task.id.startsWith(taskId.toLowerCase()));
+          
+          if (matchingTasks.length === 0) {
+            return {
+              content: [{
+                type: 'text',
+                text: `❌ No task found with ID starting with "${taskId}"\n\n**Suggestions:**\n1. Use the \`find_task\` operation to search for tasks\n2. Use \`get_tasks\` with \`showFullIds: true\` to see all full IDs\n3. Check that the task ID is correct`
+              }]
+            };
+          } else if (matchingTasks.length > 1) {
+            const taskList = matchingTasks.map(task => 
+              `- **${task.title}** (ID: \`${task.id}\`)`
+            ).join('\n');
+            
+            return {
+              content: [{
+                type: 'text',
+                text: `❌ Multiple tasks found with ID starting with "${taskId}"\n\n**Matching tasks:**\n${taskList}\n\n**Please use a more specific ID or the full UUID.**`
+              }]
+            };
+          }
+          
+          taskId = matchingTasks[0]!.id;
+        }
+        
         // Filter out undefined values
         const cleanUpdates: any = {};
         if (validatedArgs.updates.title !== undefined) cleanUpdates.title = validatedArgs.updates.title;
@@ -191,7 +242,7 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
         if (validatedArgs.updates.tags !== undefined) cleanUpdates.tags = validatedArgs.updates.tags;
         
         await todoManager.updateTask({
-          taskId: validatedArgs.taskId,
+          taskId: taskId,
           updates: cleanUpdates,
           reason: validatedArgs.reason,
           triggeredBy: 'tool'
@@ -200,7 +251,7 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
         return {
           content: [{
             type: 'text',
-            text: `✅ Task updated successfully!\n\n**Task ID**: ${validatedArgs.taskId}\n**Updates**: ${Object.keys(validatedArgs.updates).join(', ')}\n**Reason**: ${validatedArgs.reason}\n\n*Changes synced to JSON backend and TODO.md.*`
+            text: `✅ Task updated successfully!\n\n**Task ID**: ${taskId}\n**Original Input**: ${validatedArgs.taskId}\n**Updates**: ${Object.keys(validatedArgs.updates).filter(k => validatedArgs.updates[k as keyof typeof validatedArgs.updates] !== undefined).join(', ')}\n**Reason**: ${validatedArgs.reason}\n\n*Changes synced to JSON backend and TODO.md.*`
           }]
         };
       }
@@ -312,8 +363,9 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
         const taskList = tasks.map(task => {
           const dueDateStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date';
           const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+          const taskId = (validatedArgs.showFullIds ?? false) ? task.id : task.id.substring(0, 8);
           
-          return `**${task.title}** (${task.id.substring(0, 8)})\n` +
+          return `**${task.title}** (ID: ${taskId})\n` +
                  `  Status: ${task.status} | Priority: ${task.priority}\n` +
                  `  ${task.assignee ? `Assignee: ${task.assignee} | ` : ''}Due: ${dueDateStr} ${isOverdue ? '🔴 OVERDUE' : ''}\n` +
                  `  ${task.tags.length > 0 ? `Tags: ${task.tags.join(', ')} | ` : ''}Progress: ${task.progressPercentage}%\n` +
@@ -520,6 +572,214 @@ ${importResults.join('\n')}
           content: [{
             type: 'text',
             text: `✅ Markdown import completed!\n\n**Strategy**: ${validatedArgs.mergeStrategy}\n**Backup Created**: ${validatedArgs.backupExisting}\n\n*TODO.md has been parsed and imported into the JSON backend.*`
+          }]
+        };
+      }
+
+      case 'find_task': {
+        const data = await todoManager.loadTodoData();
+        const tasks = Object.values(data.tasks);
+        const query = validatedArgs.query.toLowerCase();
+        
+        let matchingTasks = tasks.filter(task => {
+          switch (validatedArgs.searchType) {
+            case 'id':
+              return task.id.toLowerCase().includes(query);
+            case 'title':
+              return task.title.toLowerCase().includes(query);
+            case 'description':
+              return task.description?.toLowerCase().includes(query);
+            case 'all':
+            default:
+              return task.id.toLowerCase().includes(query) ||
+                     task.title.toLowerCase().includes(query) ||
+                     task.description?.toLowerCase().includes(query) ||
+                     task.tags.some(tag => tag.toLowerCase().includes(query));
+          }
+        });
+
+        if (matchingTasks.length === 0) {
+          return {
+            content: [{
+              type: 'text',
+              text: `❌ No tasks found matching "${validatedArgs.query}"\n\n**Search Type**: ${validatedArgs.searchType}\n**Total Tasks**: ${tasks.length}\n\n*Try using a different query or search type.*`
+            }]
+          };
+        }
+
+        const taskList = matchingTasks.map(task => {
+          const dueDateStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date';
+          const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
+          
+          return `**${task.title}**\n` +
+                 `  🆔 **Full ID**: \`${task.id}\`\n` +
+                 `  📋 **Short ID**: \`${task.id.substring(0, 8)}\`\n` +
+                 `  📊 Status: ${task.status} | Priority: ${task.priority}\n` +
+                 `  ${task.assignee ? `👤 Assignee: ${task.assignee} | ` : ''}📅 Due: ${dueDateStr} ${isOverdue ? '🔴 OVERDUE' : ''}\n` +
+                 `  ${task.tags.length > 0 ? `🏷️ Tags: ${task.tags.join(', ')} | ` : ''}📈 Progress: ${task.progressPercentage}%\n` +
+                 `  📝 ${task.description || 'No description'}\n`;
+        }).join('\n');
+
+        return {
+          content: [{
+            type: 'text',
+            text: `# 🔍 Search Results (${matchingTasks.length} found)\n\n**Query**: "${validatedArgs.query}"\n**Search Type**: ${validatedArgs.searchType}\n\n${taskList}\n\n💡 **Tip**: Copy the Full ID to use with update_task operation.`
+          }]
+        };
+      }
+
+      case 'resume_todo_list': {
+        const data = await todoManager.loadTodoData();
+        const tasks = Object.values(data.tasks);
+        const analytics = await todoManager.getAnalytics();
+        
+        // Get recent activity from task change logs
+        const recentActivity = Object.values(data.tasks)
+          .flatMap(task => task.changeLog || [])
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+          .slice(0, 10)
+          .map((entry: any) => `- ${new Date(entry.timestamp).toLocaleDateString()}: ${entry.action} - ${entry.details}`)
+          .join('\n');
+
+        // Analyze current state
+        const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
+        const pendingHighPriority = tasks.filter(t => t.status === 'pending' && ['high', 'critical'].includes(t.priority));
+        const overdueTasks = tasks.filter(t => 
+          t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'completed'
+        );
+        const blockedTasks = tasks.filter(t => t.status === 'blocked');
+
+        // Check deployment readiness
+        let deploymentReadyTasks = [];
+        let deploymentGuidance = '';
+        
+        if (validatedArgs.checkDeploymentReadiness) {
+          deploymentReadyTasks = tasks.filter(t => 
+            t.status === 'completed' && 
+            (t.tags.includes('deployment') || t.category === 'Deployment' || 
+             t.title.toLowerCase().includes('deploy') || t.description?.toLowerCase().includes('deploy'))
+          );
+          
+          if (deploymentReadyTasks.length > 0) {
+            deploymentGuidance = `\n## 🚀 Deployment Status\n**${deploymentReadyTasks.length} deployment-ready tasks found!**\n` +
+              deploymentReadyTasks.map(t => `- ✅ ${t.title}`).join('\n') +
+              `\n\n💡 **Tip**: Consider running deployment validation and using smart git push for these completed tasks.`;
+          }
+        }
+
+        // Generate context summary
+        let contextSummary = '';
+        if (validatedArgs.includeContext) {
+          const fs = await import('fs/promises');
+          const path = await import('path');
+          
+          // Check for recent git commits
+          try {
+            const { execSync } = await import('child_process');
+            const recentCommits = execSync('git log --oneline -5', { 
+              cwd: validatedArgs.projectPath,
+              encoding: 'utf8'
+            }).trim().split('\n').slice(0, 3);
+            
+            contextSummary += `\n## 📝 Recent Git Activity\n${recentCommits.map(commit => `- ${commit}`).join('\n')}\n`;
+          } catch (error) {
+            // Git not available or no commits
+          }
+
+          // Check ADR status
+          try {
+            const adrPath = path.join(validatedArgs.projectPath, 'docs/adrs');
+            const adrFiles = await fs.readdir(adrPath).catch(() => []);
+            if (adrFiles.length > 0) {
+              contextSummary += `\n## 📋 ADR Context\n- **${adrFiles.length} ADRs** found in docs/adrs\n- Last TODO/ADR sync: ${(data.metadata as any).lastAdrSync || 'Never'}\n`;
+            }
+          } catch (error) {
+            // ADR directory not found
+          }
+        }
+
+        // Generate next actions
+        let nextActions = '';
+        if (validatedArgs.showNextActions) {
+          const suggestions = [];
+          
+          if (inProgressTasks.length > 0) {
+            suggestions.push(`Continue working on ${inProgressTasks.length} in-progress task(s)`);
+          }
+          
+          if (overdueTasks.length > 0) {
+            suggestions.push(`Address ${overdueTasks.length} overdue task(s) - these need immediate attention`);
+          }
+          
+          if (blockedTasks.length > 0) {
+            suggestions.push(`Unblock ${blockedTasks.length} blocked task(s) - resolve dependencies`);
+          }
+          
+          if (pendingHighPriority.length > 0) {
+            suggestions.push(`Start ${pendingHighPriority.length} high-priority pending task(s)`);
+          }
+
+          if (analytics.metrics.completionPercentage > 80) {
+            suggestions.push('Project is nearing completion - consider deployment preparation');
+          }
+
+          if (deploymentReadyTasks.length > 0) {
+            suggestions.push('Review and deploy completed tasks using smart git push');
+          }
+
+          if (suggestions.length > 0) {
+            nextActions = `\n## 🎯 Recommended Next Actions\n${suggestions.map((s, i) => `${i + 1}. ${s}`).join('\n')}\n`;
+          }
+        }
+
+        const resumeReport = `# 🔄 Resume TODO List - Session Context
+
+## 📊 Current Status Summary
+- **Total Tasks**: ${tasks.length}
+- **Completion Rate**: ${analytics.metrics.completionPercentage.toFixed(1)}%
+- **In Progress**: ${inProgressTasks.length} tasks
+- **Pending High Priority**: ${pendingHighPriority.length} tasks
+- **Overdue**: ${overdueTasks.length} tasks ${overdueTasks.length > 0 ? '🔴' : '✅'}
+- **Blocked**: ${blockedTasks.length} tasks ${blockedTasks.length > 0 ? '⚠️' : '✅'}
+
+## 🔥 Immediate Attention Required
+${overdueTasks.length > 0 ? 
+  overdueTasks.map(t => `- **${t.title}** (Due: ${new Date(t.dueDate!).toLocaleDateString()}) - ${t.priority} priority`).join('\n') : 
+  '✅ No overdue tasks'}
+
+## 🚧 Currently In Progress
+${inProgressTasks.length > 0 ? 
+  inProgressTasks.map(t => `- **${t.title}** (${t.progressPercentage}% complete) - ${t.assignee || 'Unassigned'}`).join('\n') : 
+  '📝 No tasks currently in progress'}
+
+## ⚠️ Blocked Tasks
+${blockedTasks.length > 0 ? 
+  blockedTasks.map(t => `- **${t.title}** - ${t.notes || 'No blocking reason specified'}`).join('\n') : 
+  '✅ No blocked tasks'}
+
+${contextSummary}
+
+## 📈 Recent Activity
+${recentActivity || 'No recent TODO activity'}
+
+${nextActions}
+
+${deploymentGuidance}
+
+## 💡 Session Resume Tips
+1. Use \`get_tasks\` with filters to see specific task categories
+2. Use \`find_task\` to quickly locate tasks by title or partial ID
+3. Update task status as you work: \`update_task\` with progress notes
+4. Check \`get_analytics\` for detailed progress metrics
+5. Run smart git push when tasks are deployment-ready
+
+---
+*Ready to continue where you left off! Use the recommended actions above to prioritize your work.*`;
+
+        return {
+          content: [{
+            type: 'text',
+            text: resumeReport
           }]
         };
       }
