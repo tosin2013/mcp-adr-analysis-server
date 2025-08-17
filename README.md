@@ -40,6 +40,22 @@ npm install -g mcp-adr-analysis-server
 npm install mcp-adr-analysis-server
 ```
 
+### RHEL 9/10 Installation (Recommended for RHEL systems)
+```bash
+# Download and run the RHEL-specific installer
+curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/main/scripts/install-rhel.sh | bash
+
+# Or if you have the repository cloned:
+git clone https://github.com/tosin2013/mcp-adr-analysis-server.git
+cd mcp-adr-analysis-server
+./scripts/install-rhel.sh
+```
+
+**Why RHEL needs special handling:**
+- RHEL 9/10 have specific npm PATH and permission issues
+- Global npm installations often fail due to SELinux policies
+- The script handles npm prefix configuration and PATH setup automatically
+
 ### From Source
 ```bash
 git clone https://github.com/tosin2013/mcp-adr-analysis-server.git
@@ -680,6 +696,52 @@ Follow the workflow guidance to execute the recommended tool sequence for your s
 
 
 ## � Troubleshooting
+
+### 🔴 **RHEL 9/10 Specific Issues**
+
+**Problem**: "Command 'mcp-adr-analysis-server' not found" on RHEL systems
+
+**Root Cause**: RHEL has specific npm global installation and PATH issues due to SELinux policies and default npm configuration.
+
+**Solution**: Use the RHEL-specific installer:
+```bash
+curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/main/scripts/install-rhel.sh | bash
+```
+
+**Manual Fix for RHEL**:
+```bash
+# Fix npm prefix for user directory
+mkdir -p ~/.npm-global
+npm config set prefix ~/.npm-global
+
+# Add to PATH
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+source ~/.bashrc
+
+# Reinstall
+npm install -g mcp-adr-analysis-server
+```
+
+**RHEL MCP Configuration**:
+If the command is still not found, use the npx approach:
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "npx",
+      "args": ["mcp-adr-analysis-server"],
+      "env": {
+        "PROJECT_PATH": "/path/to/your/project",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet",
+        "ADR_DIRECTORY": "docs/adrs",
+        "LOG_LEVEL": "ERROR"
+      }
+    }
+  }
+}
+```
 
 ### ⚠️ **CRITICAL**: Tools Return Prompts Instead of Results
 
