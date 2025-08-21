@@ -1,190 +1,135 @@
 # 📚 MCP ADR Analysis Server Documentation
 
-Welcome to the comprehensive documentation for the MCP ADR Analysis Server. This collection of guides will help you get started with architectural decision analysis regardless of your project's current state.
+Welcome to the comprehensive documentation for the MCP ADR Analysis Server. Our documentation follows the **[Diataxis framework](diataxis-index.md)** to help you find exactly what you need based on your current goal.
 
-## 🎯 Choose Your Starting Point
-
-### 📋 New Project with PRD.md
-**You have:** A Product Requirements Document (PRD.md) for a new project  
-**You want:** Generate ADRs automatically from your requirements  
-**Guide:** [Getting Started with PRD.md](getting-started-prd.md)
-
-**Key Benefits:**
-- Automatic ADR generation from requirements
-- Structured architectural foundation
-- Implementation roadmap creation
-- Research question generation for complex decisions
+**🎯 Not sure where to start?** → **[Use our guided documentation navigator](diataxis-index.md)**
 
 ---
 
-### 🏗️ Existing Project with ADRs
-**You have:** A project with existing Architectural Decision Records  
-**You want:** Analyze, enhance, and maintain your ADR collection  
-**Guide:** [Getting Started with Existing ADRs](getting-started-existing-adrs.md)
+## 🚀 Quick Start Paths
 
-**Key Benefits:**
-- ADR inventory and analysis
-- Gap identification and suggestions
-- Maintenance workflows
-- Compliance validation
+### 🎓 **New to MCP or ADRs?**
+**Start here** → **[Your First MCP Analysis Tutorial](tutorials/01-first-steps.md)**
+- 30-minute hands-on learning experience
+- No prior MCP knowledge required
+- Creates your first architectural decision record
 
----
+### 🛠️ **Need to solve a specific problem?**  
+**Go here** → **[How-To Guides](how-to-guides/)** or **[Troubleshooting](how-to-guides/troubleshooting.md)**
+- Step-by-step solutions for common tasks
+- Problem-focused guidance
+- Ready-to-use examples
 
-### 🆕 Existing Project without ADRs
-**You have:** An existing codebase with no documented architectural decisions  
-**You want:** Discover implicit decisions and start documenting architecture  
-**Guide:** [Getting Started without ADRs](getting-started-no-adrs.md)
+### 📖 **Looking for specific tool information?**
+**Check** → **[Complete API Reference](reference/api-reference.md)**
+- All 37 tools documented with examples
+- Parameter details and usage patterns
+- Quick navigation and search
 
-**Key Benefits:**
-- Implicit decision discovery
-- Technology stack analysis
-- First ADR generation
-- Architecture documentation bootstrap
-
----
-
-## 📖 Complete Documentation
-
-### Core Guides
-- **[Usage Guide](USAGE_GUIDE.md)** - Comprehensive tool reference and workflows
-- **[Getting Started with PRD.md](getting-started-prd.md)** - New projects with requirements
-- **[Getting Started with Existing ADRs](getting-started-existing-adrs.md)** - Projects with ADRs
-- **[Getting Started without ADRs](getting-started-no-adrs.md)** - Projects without ADRs
-
-### Technical Documentation
-- **[NPM Publishing Guide](NPM_PUBLISHING.md)** - Deploy your own MCP server
-- **[Architecture Decisions](adrs/)** - Example ADRs from this project
-- **[Research Templates](research/)** - Research documentation templates
-- **[Deployment Readiness Guide](deployment-readiness-guide.md)** - Zero-tolerance deployment validation
-
-## 🛠️ Quick Reference
-
-### Essential Tools by Use Case
-
-#### For New Projects (PRD.md)
-```
-generate_adrs_from_prd     # Convert PRD to ADRs
-analyze_project_ecosystem  # Validate decisions
-generate_adr_todo         # Create implementation tasks
-```
-
-#### For Existing ADRs
-```
-discover_existing_adrs    # Catalog current ADRs + initialize cache infrastructure
-suggest_adrs             # Find missing decisions
-generate_adr_todo        # Extract action items
-```
-
-#### For Projects without ADRs
-```
-analyze_project_ecosystem # Understand current state
-suggest_adrs             # Discover implicit decisions
-generate_adr_from_decision # Create first ADRs
-```
-
-### Key Resources
-```
-adr://architectural_knowledge_graph  # Complete project analysis
-adr://analysis_report               # Comprehensive reports
-adr://adr_list                     # ADR inventory
-```
-
-## 🚀 Installation & Setup
-
-### Quick Install
-```bash
-# Global installation
-npm install -g mcp-adr-analysis-server
-
-# Verify installation
-mcp-adr-analysis-server --version
-```
-
-### MCP Client Configuration
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "env": {
-        "PROJECT_PATH": "/path/to/your/project",
-        "ADR_DIRECTORY": "docs/adrs",
-        "LOG_LEVEL": "INFO"
-      }
-    }
-  }
-}
-```
-
-## 🎯 Common Workflows
-
-### Weekly ADR Maintenance
-1. `discover_existing_adrs` - Check current state
-2. `suggest_adrs` - Find new decisions needed
-3. `generate_adr_todo` - Update action items
-
-### New Feature Planning
-1. `analyze_project_ecosystem` - Understand current state
-2. `suggest_adrs` - Identify decisions needed
-3. `generate_adr_from_decision` - Document decisions
-
-### Architecture Review
-1. `analyze_project_ecosystem` - Full analysis
-2. `generate_rules` - Extract architectural rules
-3. `validate_rules` - Check compliance
-
-## 🔧 Advanced Features
-
-### Content Security
-- `analyze_content_security` - Detect sensitive information
-- `generate_content_masking` - Protect sensitive data
-- `configure_output_masking` - Set masking policies
-
-### Research Integration
-- `generate_research_questions` - Create research templates
-- `incorporate_research` - Add findings to ADRs
-- `request_action_confirmation` - Validate critical decisions
-
-### Rule Management
-- `generate_rules` - Extract architectural rules
-- `validate_rules` - Check code compliance
-- `create_rule_set` - Generate machine-readable rules
-
-## 📊 Success Metrics
-
-After using the MCP ADR Analysis Server, you should have:
-
-✅ **Documented Architecture**
-- Clear architectural decisions
-- Rationale for each choice
-- Consequences and trade-offs
-
-✅ **Actionable Tasks**
-- Implementation roadmap
-- Prioritized todo list
-- Clear next steps
-
-✅ **Ongoing Process**
-- Regular ADR reviews
-- Decision tracking
-- Architecture evolution
-
-## 🆘 Getting Help
-
-### Troubleshooting
-- Check environment variables (`PROJECT_PATH`, `ADR_DIRECTORY`)
-- Verify MCP client configuration
-- Review log output for errors
-- Clear cache if needed: `manage_cache` with action "clear"
-
-### Support Resources
-- **[GitHub Issues](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** - Bug reports and feature requests
-- **[Main README](../README.md)** - Complete project overview
-- **[Usage Guide](USAGE_GUIDE.md)** - Detailed tool documentation
+### 💡 **Want to understand the concepts?**
+**Read** → **[Understanding MCP](explanation/mcp-concepts.md)**
+- Why MCP matters for architecture work
+- How AI-assisted analysis works
+- Design principles and philosophy
 
 ---
 
-**Ready to get started?** Choose your scenario above and follow the appropriate guide!
+## 📋 Documentation Structure
 
-**Author:** [Tosin Akinosho](https://github.com/tosin2013)  
-**Repository:** [mcp-adr-analysis-server](https://github.com/tosin2013/mcp-adr-analysis-server)
+Our documentation is organized using the [Diataxis framework](https://diataxis.fr/) for maximum usability:
+
+### 🎓 [Tutorials](tutorials/) - *Learn by doing*
+Step-by-step learning experiences that teach concepts through hands-on practice:
+- **[First Steps](tutorials/01-first-steps.md)** - Your introduction to MCP analysis
+- **[Existing Projects](tutorials/02-existing-projects.md)** - Working with established codebases  
+- **[Advanced Analysis](tutorials/03-advanced-analysis.md)** - Security, deployment, performance
+
+### 🛠️ [How-To Guides](how-to-guides/) - *Solve specific problems*
+Task-oriented guides for accomplishing specific goals:
+- **[Troubleshooting](how-to-guides/troubleshooting.md)** - Fix common issues quickly
+- **[Generate ADRs from PRD](how-to-guides/generate-adrs-from-prd.md)** - Convert requirements to decisions
+- **[Work with Existing ADRs](how-to-guides/work-with-existing-adrs.md)** - Enhance current documentation
+- **[Bootstrap Architecture Docs](how-to-guides/bootstrap-architecture-docs.md)** - Start from scratch
+- **[Deploy Your Own Server](how-to-guides/deploy-your-own-server.md)** - Set up custom instances
+
+### 📖 [Reference](reference/) - *Look up specific information*
+Comprehensive API documentation and technical specifications:
+- **[Complete API Reference](reference/api-reference.md)** - All tools, parameters, examples
+- **[Usage Examples](reference/usage-examples.md)** - Practical tool usage patterns
+- **Environment Configuration** - Setup and configuration details
+
+### 💡 [Explanation](explanation/) - *Understand concepts and design*
+Background information and conceptual understanding:
+- **[Understanding MCP](explanation/mcp-concepts.md)** - Core protocol concepts
+- **[Server Architecture](explanation/server-architecture.md)** - How the server works
+- **[AI Workflow Concepts](explanation/ai-workflow-concepts.md)** - AI-assisted architecture
+- **Framework Design Documents** - APE, Reflexion, Knowledge Generation
+
+---
+
+## 🎯 Choose Your Path
+
+### **By Experience Level**
+- **🆕 Complete Beginner**: [First Steps Tutorial](tutorials/01-first-steps.md)
+- **📚 Some Experience**: [API Reference](reference/api-reference.md) + [Advanced Tutorial](tutorials/03-advanced-analysis.md)  
+- **🏆 Expert User**: [How-To Guides](how-to-guides/) for specific tasks
+
+### **By Project Type**
+- **🚀 New Project with Requirements**: [Generate ADRs from PRD](how-to-guides/generate-adrs-from-prd.md)
+- **🏗️ Existing Project with ADRs**: [Work with Existing ADRs](how-to-guides/work-with-existing-adrs.md)
+- **📋 No Existing Documentation**: [Bootstrap Architecture Docs](how-to-guides/bootstrap-architecture-docs.md)
+
+### **By Current Need**
+- **🆘 Having Problems**: [Troubleshooting Guide](how-to-guides/troubleshooting.md)
+- **🔍 Need Tool Info**: [Complete API Reference](reference/api-reference.md)
+- **🎓 Want to Learn**: [Tutorials](tutorials/)
+- **🧠 Understanding Concepts**: [Explanation](explanation/)
+
+---
+
+## 🆘 Need Help?
+
+### Quick Problem Solving
+1. **Error or Issue?** → [Troubleshooting Guide](how-to-guides/troubleshooting.md)
+2. **Tool Not Working?** → [API Reference](reference/api-reference.md) for correct usage
+3. **Concept Unclear?** → [MCP Concepts](explanation/mcp-concepts.md) for understanding
+
+### Community Support
+- **GitHub Issues**: [Report bugs or request features](https://github.com/tosin2013/mcp-adr-analysis-server/issues)
+- **Discussions**: Share experiences and get community help
+- **Documentation Feedback**: Help us improve these guides
+
+---
+
+## 📊 What's New
+
+### Recent Improvements
+✅ **Complete API Reference** - All 37 tools now fully documented  
+✅ **Diataxis Framework** - Restructured for better navigation  
+✅ **Learning Tutorials** - Hands-on learning experiences  
+✅ **Better Problem Solving** - Targeted how-to guides  
+
+### Coming Soon
+- 🎥 Video tutorials for complex workflows
+- 🔧 Interactive tool explorer
+- 📱 Mobile-friendly documentation
+- 🌐 Multi-language support
+
+---
+
+## 📈 Success Metrics
+
+After using this documentation, you should have:
+
+✅ **Clear Understanding** - Know what MCP is and how it helps architecture work  
+✅ **Practical Skills** - Can run analysis and generate ADRs confidently  
+✅ **Problem-Solving Ability** - Can troubleshoot issues and optimize workflows  
+✅ **Reference Knowledge** - Know where to find specific tool information quickly  
+
+---
+
+**Ready to get started?** → **[Choose your path with our documentation navigator](diataxis-index.md)**
+
+---
+
+*This documentation is continuously improved based on user feedback and evolving best practices. [Contribute improvements](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md) or [suggest changes](https://github.com/tosin2013/mcp-adr-analysis-server/issues/new).*

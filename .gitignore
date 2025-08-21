@@ -54,3 +54,10 @@ todo.md
 shrimp-rules.md
 
 CLAUDE.md
+# VitePress cache
+docs/.vitepress/cache/
+docs/.vitepress/dist/
+
+# VitePress cache
+docs/.vitepress/cache/
+docs/.vitepress/dist/

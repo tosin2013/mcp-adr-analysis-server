@@ -8,7 +8,6 @@ The MCP ADR Analysis Server includes several AI-powered tools that leverage Open
 
 ### Core AI Tools
 - **Tool Chain Orchestrator** - Dynamic tool sequencing based on user intent
-- **Human Override System** - Force AI planning when LLMs get confused
 - **Troubleshooting Workflow** - Systematic failure analysis with test plan generation
 - **Smart Project Scoring** - Cross-tool health assessment with AI optimization
 
@@ -63,62 +62,26 @@ The Tool Chain Orchestrator is the central AI-powered planning system that gener
 }
 ```
 
-### Predefined Task Patterns
+### Common Workflow Patterns
 
-When AI is unavailable or for common workflows, the orchestrator includes predefined patterns:
+When LLMs get confused or for systematic workflows, use these proven tool sequences:
 
 #### Complete Project Analysis
-```json
-{
-  "operation": "human_override",
-  "taskPattern": "analyze_project"
-}
-```
 **Tools:** `analyze_project_ecosystem` → `discover_existing_adrs` → `suggest_adrs` → `smart_score`
 
 #### Generate Documentation
-```json
-{
-  "operation": "human_override",
-  "taskPattern": "generate_docs"
-}
-```
 **Tools:** `generate_adr_todo` → `generate_deployment_guidance` → `generate_rules`
 
 #### Security Audit and Fix
-```json
-{
-  "operation": "human_override",
-  "taskPattern": "fix_security"
-}
-```
 **Tools:** `analyze_content_security` → `suggest_adrs` → `generate_rules` → `validate_rules`
 
 #### Deployment Readiness
-```json
-{
-  "operation": "human_override",
-  "taskPattern": "deploy_ready"
-}
-```
 **Tools:** `compare_adr_progress` → `smart_score` → `generate_deployment_guidance` → `smart_git_push`
 
 #### Systematic Troubleshooting
-```json
-{
-  "operation": "human_override",
-  "taskPattern": "troubleshoot_issue"
-}
-```
 **Tools:** `troubleshoot_guided_workflow` → `smart_score` → `compare_adr_progress`
 
 #### Complete TODO Management
-```json
-{
-  "operation": "human_override",
-  "taskPattern": "update_todos"
-}
-```
 **Tools:** `generate_adr_todo` → `manage_todo` → `compare_adr_progress` → `smart_score`
 
 ### Advanced Features
@@ -399,7 +362,7 @@ Combine AI-powered tools for comprehensive workflows:
 2. **Execution**: Follow generated tool sequence
 3. **Validation**: `smart_score` assesses results
 4. **Troubleshooting**: `troubleshoot_guided_workflow` if issues arise
-5. **Override**: `human_override` if confusion occurs
+5. **Restart**: Start fresh session if confusion occurs
 
 ### Context Preservation
 Maintain context across tool executions:

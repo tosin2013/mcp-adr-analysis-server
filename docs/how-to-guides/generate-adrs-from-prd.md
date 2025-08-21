@@ -500,7 +500,7 @@ When LLMs get confused during complex PRD implementation:
 
 **Tool Call:**
 ```
-human_override
+troubleshoot_guided_workflow
 ```
 
 **Parameters:**
