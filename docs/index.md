@@ -178,3 +178,4 @@ The server builds a knowledge graph of your project that improves recommendation
 [View Full Documentation](/README){ .vp-button .vp-button-alt .vp-button-medium }
 
 </div>
+

@@ -432,3 +432,4 @@ This enables a new level of AI-human collaboration where the AI becomes a true a
 - **[Tutorial: Your First MCP Analysis](../tutorials/01-first-steps.md)** - Hands-on introduction to using MCP
 - **[API Reference](../reference/api-reference.md)** - Complete tool documentation
 - **[Architecture Overview](architecture-decisions.md)** - Design decisions behind the server
+

@@ -215,3 +215,4 @@ Found what you needed? Missing something important?
 ---
 
 *Can't find what you need? [Search the complete API reference](reference/api-reference.md) or [file an issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues) to help us improve the documentation.*
+
