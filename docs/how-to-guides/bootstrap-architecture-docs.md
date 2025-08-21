@@ -51,6 +51,9 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
       "command": "mcp-adr-analysis-server",
       "env": {
         "PROJECT_PATH": "/path/to/your/project",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet",
         "ADR_DIRECTORY": "docs/adrs",
         "LOG_LEVEL": "INFO"
       }
@@ -70,7 +73,11 @@ Add to your Cline MCP settings:
       "args": [],
       "env": {
         "PROJECT_PATH": "/path/to/your/project",
-        "ADR_DIRECTORY": "docs/adrs"
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet",
+        "ADR_DIRECTORY": "docs/adrs",
+        "LOG_LEVEL": "INFO"
       }
     }
   }

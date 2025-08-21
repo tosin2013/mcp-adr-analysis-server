@@ -156,3 +156,4 @@ npm install
 **Ready to launch?** → `cd docs && npm run setup && npm run dev`
 
 **Need help?** → Check [WEBSITE_SETUP.md](WEBSITE_SETUP.md) for detailed instructions
+

@@ -84,6 +84,9 @@ Check your MCP client configuration:
       "command": "mcp-adr-analysis-server",
       "env": {
         "PROJECT_PATH": "/absolute/path/to/project",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet",
         "ADR_DIRECTORY": "docs/adrs",
         "LOG_LEVEL": "DEBUG"
       }
@@ -95,6 +98,8 @@ Check your MCP client configuration:
 **Common configuration issues**:
 - ❌ `"PROJECT_PATH": "."` (relative path)
 - ✅ `"PROJECT_PATH": "/Users/you/project"` (absolute path)
+- ❌ Missing `OPENROUTER_API_KEY` (required for AI features)
+- ❌ Missing `EXECUTION_MODE` (should be "full" for AI or "prompt-only" for basic)
 - ❌ Missing `ADR_DIRECTORY`
 - ❌ Wrong command name
 

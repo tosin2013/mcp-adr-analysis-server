@@ -148,3 +148,4 @@ stateDiagram-v2
 ```
 
 These diagrams illustrate the comprehensive workflow and architecture of the MCP ADR Analysis Server, showing how different components interact to provide AI-powered architectural analysis and decision support.
+

@@ -75,15 +75,23 @@ Add this configuration to your MCP client (e.g., Claude Desktop):
       "command": "mcp-adr-analysis-server",
       "env": {
         "PROJECT_PATH": "/path/to/your/project",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet",
         "ADR_DIRECTORY": "docs/adrs",
-        "LOG_LEVEL": "INFO"
+        "LOG_LEVEL": "ERROR"
       }
     }
   }
 }
 ```
 
-**Important**: Replace `/path/to/your/project` with your actual project path.
+**Important Configuration Notes**:
+- Replace `/path/to/your/project` with your actual project path
+- Get your OpenRouter API key from [https://openrouter.ai/keys](https://openrouter.ai/keys)
+- `EXECUTION_MODE: "full"` enables AI-powered analysis (use `"prompt-only"` for basic mode)
+- `AI_MODEL` specifies which AI model to use (optional, defaults to claude-3-sonnet)
+- `LOG_LEVEL: "ERROR"` reduces console output (use "INFO" or "DEBUG" for more details)
 
 ### Test the Connection
 
@@ -93,6 +101,12 @@ analyze_project_ecosystem
 ```
 
 If you see detailed analysis output, you're ready to proceed! 🎉
+
+**Note**: The server works in two modes:
+- **`EXECUTION_MODE: "full"`** - AI-powered analysis with intelligent insights (requires OpenRouter API key)
+- **`EXECUTION_MODE: "prompt-only"`** - Basic analysis with structured prompts for manual AI use
+
+For the full learning experience, we recommend using "full" mode with an OpenRouter API key.
 
 ---
 
@@ -294,6 +308,20 @@ Now that you understand the basics, you can:
 - **[GitHub Issues](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** - Report bugs or request features
 - **[Main Documentation](../README.md)** - Complete project overview
 
+### API Key Issues
+
+**"AI execution not enabled" errors**
+
+* Check that `OPENROUTER_API_KEY` is set in your MCP configuration
+* Verify your API key is valid at [https://openrouter.ai/keys](https://openrouter.ai/keys)
+* Ensure `EXECUTION_MODE` is set to `"full"`
+
+**"Permission denied" or rate limit errors**
+
+* Check your OpenRouter account has sufficient credits
+* Try a different AI model (e.g., "openai/gpt-4o-mini" for lower cost)
+* Reduce analysis scope with `enhancedMode: false`
+
 ---
 
 **Ready for Tutorial 2?** → **[Working with Existing Projects](02-existing-projects.md)**
@@ -301,3 +329,4 @@ Now that you understand the basics, you can:
 ---
 
 *This tutorial is part of the MCP ADR Analysis Server learning path. Each tutorial builds on the previous one while being useful on its own.*
+
