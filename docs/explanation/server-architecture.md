@@ -427,7 +427,6 @@ const adrAnalysis = await mcpClient.call('discover_existing_adrs', {
 
 ### AI-Powered Orchestration and Planning
 - `tool_chain_orchestrator` - Dynamic tool sequencing based on user intent
-- `human_override` - Force AI planning when LLMs get confused
 - `troubleshoot_guided_workflow` - Systematic failure analysis with test plans
 
 ### Project Health and Operations
