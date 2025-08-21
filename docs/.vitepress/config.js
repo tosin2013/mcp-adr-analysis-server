@@ -1,9 +1,14 @@
 import { defineConfig } from 'vitepress'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   title: 'MCP ADR Analysis Server',
   description: 'AI-powered architectural analysis for intelligent development workflows',
   base: '/mcp-adr-analysis-server/',
+  
+  mermaid: {
+    theme: 'default'
+  },
   
   ignoreDeadLinks: [
     // Tutorial placeholders
@@ -126,6 +131,7 @@ export default defineConfig({
           items: [
             { text: 'Understanding MCP', link: '/explanation/mcp-concepts' },
             { text: 'Server Architecture', link: '/explanation/server-architecture' },
+            { text: 'Architecture Flow Diagrams', link: '/explanation/mcp-architecture-flow' },
             { text: 'AI Workflow Concepts', link: '/explanation/ai-workflow-concepts' },
             { text: 'APE Framework Design', link: '/explanation/ape-framework-design' },
             { text: 'Reflexion Framework Design', link: '/explanation/reflexion-framework-design' },
@@ -212,4 +218,4 @@ export default defineConfig({
       lazyLoading: true
     }
   }
-})
+}))
