@@ -483,7 +483,7 @@ When LLMs get confused or stuck, force AI-powered planning:
 
 **Tool Call:**
 ```
-human_override
+troubleshoot_guided_workflow
 ```
 
 **Parameters:**

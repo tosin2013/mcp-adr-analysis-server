@@ -544,7 +544,7 @@ If you're stuck or LLMs seem confused, use the human override system:
 
 **Tool Call:**
 ```
-human_override
+troubleshoot_guided_workflow
 ```
 
 **Parameters:**
@@ -654,7 +654,7 @@ export CACHE_ENABLED="false"
 ```bash
 # Use human override to force planning
 {
-  "operation": "human_override",
+  "operation": "troubleshoot_guided_workflow",
   "taskDescription": "Your task description",
   "forceExecution": true
 }
