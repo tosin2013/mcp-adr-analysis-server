@@ -172,3 +172,4 @@ export default defineConfig({
 ---
 
 **Good luck with your logo creation! This should give you everything needed to create a professional, scalable logo that perfectly represents the MCP ADR Analysis Server project. 🎨✨**
+
