@@ -351,6 +351,37 @@ export class McpAdrAnalysisServer {
                   description: 'Path to project root for environment analysis',
                   default: '.'
                 },
+                environment: {
+                  type: 'string',
+                  enum: ['development', 'staging', 'production', 'testing', 'auto-detect'],
+                  description: 'Target environment context for validation (auto-detect will infer from project structure)',
+                  default: 'auto-detect'
+                },
+                environmentConfig: {
+                  type: 'object',
+                  description: 'Environment-specific configuration and requirements',
+                  properties: {
+                    requiredFiles: {
+                      type: 'array',
+                      items: { type: 'string' },
+                      description: 'Files required for this environment'
+                    },
+                    requiredServices: {
+                      type: 'array',
+                      items: { type: 'string' },
+                      description: 'Services that must be implemented for this environment'
+                    },
+                    securityLevel: {
+                      type: 'string',
+                      enum: ['low', 'medium', 'high', 'critical'],
+                      description: 'Required security level for this environment'
+                    },
+                    performanceRequirements: {
+                      type: 'object',
+                      description: 'Performance requirements for this environment'
+                    }
+                  }
+                },
                 validationType: {
                   type: 'string',
                   enum: ['full', 'todo-only', 'adr-only', 'environment-only'],
@@ -380,6 +411,11 @@ export class McpAdrAnalysisServer {
                 strictMode: {
                   type: 'boolean',
                   description: 'Enable strict validation mode with reality-check mechanisms against overconfident assessments',
+                  default: true
+                },
+                environmentValidation: {
+                  type: 'boolean',
+                  description: 'Enable environment-specific validation rules and checks',
                   default: true
                 }
               }
@@ -3773,12 +3809,15 @@ ${importResult.content[0].text}
       todoPath = 'TODO.md', 
       adrDirectory = this.config.adrDirectory, 
       projectPath = this.config.projectPath,
+      environment = 'auto-detect',
+      environmentConfig = {},
       validationType = 'full',
       includeFileChecks = true,
       includeRuleValidation = true,
       deepCodeAnalysis = true,
       functionalValidation = true,
-      strictMode = true
+      strictMode = true,
+      environmentValidation = true
     } = args;
     
     const { getAdrDirectoryPath } = await import('./utils/config.js');
@@ -3790,7 +3829,22 @@ ${importResult.content[0].text}
       path.resolve(projectPath, adrDirectory) :
       getAdrDirectoryPath(this.config);
 
-    this.logger.info(`Comparing ADR progress: TODO(${absoluteTodoPath}) vs ADRs(${absoluteAdrPath}) vs Environment(${projectPath})`);
+    this.logger.info(`Comparing ADR progress: TODO(${absoluteTodoPath}) vs ADRs(${absoluteAdrPath}) vs Environment(${projectPath}) [env: ${environment}]`);
+
+    // Environment validation and auto-detection
+    let detectedEnvironment = environment;
+    let finalEnvironmentConfig = { ...environmentConfig };
+    
+    if (environmentValidation && (validationType === 'full' || validationType === 'environment-only')) {
+      try {
+        const envResult = await this.detectAndValidateEnvironment(projectPath, environment, environmentConfig);
+        detectedEnvironment = envResult.detectedEnvironment;
+        finalEnvironmentConfig = { ...finalEnvironmentConfig, ...envResult.environmentConfig };
+        this.logger.info(`Environment detection result: ${detectedEnvironment}`);
+      } catch (error) {
+        this.logger.warn(`Environment detection failed: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }
 
     try {
       // Step 1: Read TODO.md file directly
@@ -3838,7 +3892,10 @@ ${importResult.content[0].text}
         includeRuleValidation,
         deepCodeAnalysis,
         functionalValidation,
-        strictMode
+        strictMode,
+        environment: detectedEnvironment,
+        environmentConfig: finalEnvironmentConfig,
+        environmentValidation
       });
 
       return {
@@ -3858,6 +3915,103 @@ ${importResult.content[0].text}
   }
 
   /**
+   * Detect and validate environment context
+   */
+  private async detectAndValidateEnvironment(
+    projectPath: string, 
+    environment: string, 
+    environmentConfig: any
+  ): Promise<{ detectedEnvironment: string; environmentConfig: any }> {
+    const path = await import('path');
+    const fs = await import('fs/promises');
+    
+    let detectedEnvironment = environment;
+    let finalConfig = { ...environmentConfig };
+    
+    if (environment === 'auto-detect') {
+      // Auto-detect environment based on project structure
+      try {
+        // Check for environment indicator files
+        const envFiles = [
+          '.env.development',
+          '.env.staging', 
+          '.env.production',
+          '.env.test',
+          'package.json',
+          'docker-compose.yml',
+          'Dockerfile'
+        ];
+        
+        const existingFiles: string[] = [];
+        for (const file of envFiles) {
+          try {
+            await fs.access(path.join(projectPath, file));
+            existingFiles.push(file);
+          } catch {
+            // File doesn't exist, continue
+          }
+        }
+        
+        // Environment detection logic
+        if (existingFiles.includes('.env.production') || existingFiles.includes('Dockerfile')) {
+          detectedEnvironment = 'production';
+        } else if (existingFiles.includes('.env.staging')) {
+          detectedEnvironment = 'staging';  
+        } else if (existingFiles.includes('.env.test')) {
+          detectedEnvironment = 'testing';
+        } else {
+          detectedEnvironment = 'development';
+        }
+        
+        // Set environment-specific default configurations
+        switch (detectedEnvironment) {
+          case 'production':
+            finalConfig = {
+              securityLevel: 'critical',
+              requiredFiles: ['package.json', 'README.md'],
+              requiredServices: ['monitoring', 'logging'],
+              performanceRequirements: { minUptime: 99.9 },
+              ...finalConfig
+            };
+            break;
+          case 'staging':
+            finalConfig = {
+              securityLevel: 'high',
+              requiredFiles: ['package.json'],
+              requiredServices: ['testing', 'monitoring'],
+              performanceRequirements: { minUptime: 95 },
+              ...finalConfig
+            };
+            break;
+          case 'testing':
+            finalConfig = {
+              securityLevel: 'medium',
+              requiredFiles: ['package.json'],
+              requiredServices: ['testing'],
+              performanceRequirements: {},
+              ...finalConfig
+            };
+            break;
+          default: // development
+            finalConfig = {
+              securityLevel: 'medium',
+              requiredFiles: ['package.json'],
+              requiredServices: [],
+              performanceRequirements: {},
+              ...finalConfig
+            };
+        }
+        
+      } catch (error) {
+        this.logger.warn(`Environment auto-detection failed: ${error instanceof Error ? error.message : String(error)}`);
+        detectedEnvironment = 'development'; // fallback
+      }
+    }
+    
+    return { detectedEnvironment, environmentConfig: finalConfig };
+  }
+
+  /**
    * Perform local ADR progress analysis without relying on AI execution
    */
   private async performLocalAdrProgressAnalysis(params: {
@@ -3873,6 +4027,9 @@ ${importResult.content[0].text}
     deepCodeAnalysis: boolean;
     functionalValidation: boolean;
     strictMode: boolean;
+    environment: string;
+    environmentConfig: any;
+    environmentValidation: boolean;
   }): Promise<string> {
     const {
       todoContent,
@@ -3886,7 +4043,10 @@ ${importResult.content[0].text}
       includeRuleValidation,
       deepCodeAnalysis,
       functionalValidation,
-      strictMode
+      strictMode,
+      environment,
+      environmentConfig,
+      environmentValidation
     } = params;
 
     const currentDate = new Date().toISOString().split('T')[0];
@@ -3899,10 +4059,16 @@ ${importResult.content[0].text}
     const totalTasks = todoTasks.length;
     const completedTasks = todoTasks.filter(task => task.completed).length;
     
-    // Calculate alignment score (simplified)
-    const adrTaskMapping = this.mapTasksToAdrs(todoTasks, discoveredAdrs);
+    // Calculate alignment score (simplified, now environment-aware)
+    const adrTaskMapping = this.mapTasksToAdrs(todoTasks, discoveredAdrs, environment, environmentConfig);
     const alignedTasks = adrTaskMapping.aligned.length;
-    const alignmentScore = totalTasks > 0 ? Math.round((alignedTasks / totalTasks) * 100) : 0;
+    let alignmentScore = totalTasks > 0 ? Math.round((alignedTasks / totalTasks) * 100) : 0;
+    
+    // Environment-aware scoring adjustments
+    if (environmentValidation && environmentConfig) {
+      const envScore = this.calculateEnvironmentScore(projectStructure, environment, environmentConfig);
+      alignmentScore = Math.round((alignmentScore + envScore) / 2); // Blend scores
+    }
     
     // File existence checks
     let fileCheckResults = '';
@@ -3910,6 +4076,14 @@ ${importResult.content[0].text}
       fileCheckResults = this.performFileExistenceChecks(todoTasks, projectStructure);
     }
     
+    // Environment compliance checks
+    let environmentAnalysisResults = '';
+    if (environmentValidation && environmentConfig) {
+      environmentAnalysisResults = this.performEnvironmentComplianceAnalysis(
+        projectStructure, environment, environmentConfig, strictMode
+      );
+    }
+
     // Mock vs Production analysis
     let mockAnalysisResults = '';
     if (deepCodeAnalysis && projectStructure) {
@@ -3923,6 +4097,7 @@ ${importResult.content[0].text}
 **Project Path**: ${projectPath}
 **TODO Path**: ${todoPath}
 **ADR Directory**: ${adrDirectory}
+**Environment**: ${environment}${environmentValidation ? ` (validation enabled)` : ''}
 
 ## Summary
 - **Total ADRs**: ${totalAdrs}
@@ -3930,6 +4105,7 @@ ${importResult.content[0].text}
 - **Completed Tasks**: ${completedTasks}
 - **Alignment Score**: ${alignmentScore}%
 - **Compliance Score**: ${Math.max(alignmentScore - 10, 0)}%
+- **Environment**: ${environment}
 
 ## Configuration
 - **File Checks**: ${includeFileChecks ? 'Enabled' : 'Disabled'}
@@ -3937,6 +4113,13 @@ ${importResult.content[0].text}
 - **Deep Code Analysis**: ${deepCodeAnalysis ? 'Enabled' : 'Disabled'}
 - **Functional Validation**: ${functionalValidation ? 'Enabled' : 'Disabled'}
 - **Strict Mode**: ${strictMode ? 'Enabled - High scrutiny for mock vs production' : 'Disabled'}
+- **Environment Validation**: ${environmentValidation ? 'Enabled' : 'Disabled'}
+
+## Environment Context
+- **Target Environment**: ${environment}
+- **Security Level**: ${environmentConfig.securityLevel || 'Not specified'}
+- **Required Files**: ${environmentConfig.requiredFiles?.length || 0} files
+- **Required Services**: ${environmentConfig.requiredServices?.length || 0} services
 
 ## ADR Discovery Results
 ${totalAdrs > 0 ? 
@@ -3973,6 +4156,8 @@ ${adrTaskMapping.missing.length > 0 ?
 
 ${fileCheckResults || '### File Existence Validation\n- File checks disabled or no project structure available'}
 
+${environmentAnalysisResults || ''}
+
 ${mockAnalysisResults || ''}
 
 ## Recommendations
@@ -3983,10 +4168,14 @@ ${alignmentScore < 70 ?
   '1. **Maintain Current Alignment**: Continue following ADR specifications'}
 ${completedTasks < totalTasks * 0.5 ? 
   '\n3. **Accelerate Implementation**: Focus on completing pending tasks' : ''}
+${environmentValidation && environment === 'production' && alignmentScore < 90 ?
+  '\n4. **⚠️ Production Environment Warning**: Current alignment may not meet production requirements' : ''}
 
 ### Medium Priority Actions
 1. **Review Implementation Quality**: ${strictMode ? 'Strict mode analysis above shows' : 'Consider enabling strict mode for'} detailed quality assessment
 2. **Update Documentation**: Ensure TODO.md reflects current project state
+${environmentValidation ? 
+  `3. **Environment Compliance**: Ensure ${environment} environment requirements are met` : ''}
 
 ### Low Priority Actions
 1. **Optimize Workflow**: Consider tools for automated ADR-TODO synchronization
@@ -4066,9 +4255,14 @@ To re-run this validation with strict mode:
   }
 
   /**
-   * Map TODO tasks to ADRs to identify alignment
+   * Map TODO tasks to ADRs to identify alignment (now environment-aware)
    */
-  private mapTasksToAdrs(tasks: Array<{title: string, completed: boolean}>, adrs: any[]): {
+  private mapTasksToAdrs(
+    tasks: Array<{title: string, completed: boolean}>, 
+    adrs: any[], 
+    environment?: string, 
+    environmentConfig?: any
+  ): {
     aligned: typeof tasks,
     misaligned: typeof tasks,
     missing: string[]
@@ -4084,13 +4278,28 @@ To re-run this validation with strict mode:
       ...(adr.context || '').toLowerCase().split(/\s+/).filter((w: string) => w.length > 4)
     ]);
     
+    // Environment-specific keywords that should be prioritized
+    const envKeywords: string[] = [];
+    if (environment && environmentConfig) {
+      if (environment === 'production') {
+        envKeywords.push('deploy', 'production', 'monitoring', 'security', 'performance');
+      } else if (environment === 'staging') {
+        envKeywords.push('test', 'staging', 'integration', 'validation');
+      } else if (environment === 'development') {
+        envKeywords.push('setup', 'development', 'local', 'debug');
+      }
+    }
+    
     for (const task of tasks) {
       const taskLower = task.title.toLowerCase();
       const hasKeywordMatch = adrKeywords.some(keyword => 
         taskLower.includes(keyword) || keyword.includes(taskLower.split(' ')[0])
       );
       
-      if (hasKeywordMatch) {
+      // Environment-aware alignment scoring
+      const hasEnvKeywordMatch = envKeywords.some(keyword => taskLower.includes(keyword));
+      
+      if (hasKeywordMatch || hasEnvKeywordMatch) {
         aligned.push(task);
       } else {
         misaligned.push(task);
@@ -4110,6 +4319,31 @@ To re-run this validation with strict mode:
           
           if (!hasCorrespondingTask) {
             missing.push(`Implement ${adr.title}`);
+          }
+        }
+      }
+    }
+    
+    // Environment-specific missing tasks
+    if (environment && environmentConfig) {
+      if (environmentConfig.requiredFiles) {
+        for (const file of environmentConfig.requiredFiles) {
+          const hasFileTask = tasks.some(task => 
+            task.title.toLowerCase().includes(file.toLowerCase())
+          );
+          if (!hasFileTask) {
+            missing.push(`Create ${file} for ${environment} environment`);
+          }
+        }
+      }
+      
+      if (environmentConfig.requiredServices) {
+        for (const service of environmentConfig.requiredServices) {
+          const hasServiceTask = tasks.some(task => 
+            task.title.toLowerCase().includes(service.toLowerCase())
+          );
+          if (!hasServiceTask) {
+            missing.push(`Setup ${service} service for ${environment}`);
           }
         }
       }
@@ -4243,6 +4477,149 @@ To re-run this validation with strict mode:
       if (mockIndicators > 0) {
         results += `- **⚠️ Strict Mode Warning**: Found ${mockIndicators} potential mock/stub indicators\n`;
       }
+    }
+    
+    return results;
+  }
+
+  /**
+   * Calculate environment-specific compliance score
+   */
+  private calculateEnvironmentScore(projectStructure: any, environment: string, environmentConfig: any): number {
+    if (!projectStructure || !environmentConfig) return 0;
+    
+    let score = 100; // Start with perfect score
+    
+    // Check required files
+    if (environmentConfig.requiredFiles) {
+      const allFiles = [
+        ...projectStructure.packageFiles || [],
+        ...projectStructure.configFiles || [],
+        ...projectStructure.buildFiles || [],
+        ...projectStructure.dockerFiles || [],
+        ...projectStructure.ciFiles || [],
+        ...projectStructure.scriptFiles || []
+      ];
+      
+      const existingFiles = allFiles.map(f => f.filename);
+      const missingFiles = environmentConfig.requiredFiles.filter(
+        (file: string) => !existingFiles.includes(file)
+      );
+      
+      // Deduct 10 points per missing required file
+      score -= missingFiles.length * 10;
+    }
+    
+    // Environment-specific penalties
+    if (environment === 'production') {
+      // Production requires higher standards
+      if (!projectStructure.dockerFiles?.length) score -= 15;
+      if (!projectStructure.ciFiles?.length) score -= 10;
+    }
+    
+    return Math.max(score, 0);
+  }
+
+  /**
+   * Perform environment compliance analysis
+   */
+  private performEnvironmentComplianceAnalysis(
+    projectStructure: any, 
+    environment: string, 
+    environmentConfig: any, 
+    strictMode: boolean
+  ): string {
+    if (!projectStructure || !environmentConfig) {
+      return '\n### Environment Compliance Analysis\n- Environment analysis disabled or no project structure available\n';
+    }
+    
+    let results = '\n### Environment Compliance Analysis\n';
+    
+    // Required files analysis
+    if (environmentConfig.requiredFiles) {
+      results += `#### Required Files for ${environment} Environment\n`;
+      const allFiles = [
+        ...projectStructure.packageFiles || [],
+        ...projectStructure.configFiles || [],
+        ...projectStructure.buildFiles || [],
+        ...projectStructure.dockerFiles || [],
+        ...projectStructure.ciFiles || [],
+        ...projectStructure.scriptFiles || []
+      ];
+      
+      const existingFiles = allFiles.map(f => f.filename);
+      
+      for (const requiredFile of environmentConfig.requiredFiles) {
+        const exists = existingFiles.includes(requiredFile);
+        results += `- ${exists ? '✅' : '❌'} **${requiredFile}**: ${exists ? 'Found' : 'Missing'}\n`;
+      }
+    }
+    
+    // Security level compliance
+    if (environmentConfig.securityLevel) {
+      results += `\n#### Security Level: ${environmentConfig.securityLevel}\n`;
+      
+      const securityIndicators = this.analyzeSecurityCompliance(projectStructure, environmentConfig.securityLevel);
+      results += securityIndicators;
+    }
+    
+    // Environment-specific recommendations
+    results += `\n#### ${environment} Environment Recommendations\n`;
+    switch (environment) {
+      case 'production':
+        results += '- ⚠️ **Production Critical**: Ensure monitoring, logging, and backup strategies are implemented\n';
+        results += '- 🔒 **Security**: Implement comprehensive security measures\n';
+        results += '- 📊 **Performance**: Monitor and optimize for production workloads\n';
+        if (strictMode) {
+          results += '- 🔍 **Strict Mode**: Enhanced validation enabled for production environment\n';
+        }
+        break;
+      case 'staging':
+        results += '- 🧪 **Testing**: Ensure comprehensive test coverage and validation\n';
+        results += '- 📋 **Validation**: Implement environment parity checks\n';
+        break;
+      case 'development':
+        results += '- 🛠️ **Development**: Focus on developer experience and debugging tools\n';
+        results += '- 🔄 **Iteration**: Ensure fast feedback loops\n';
+        break;
+    }
+    
+    return results;
+  }
+
+  /**
+   * Analyze security compliance based on security level
+   */
+  private analyzeSecurityCompliance(projectStructure: any, securityLevel: string): string {
+    let results = '';
+    
+    const securityFiles = [
+      ...projectStructure.configFiles || [],
+      ...projectStructure.dockerFiles || []
+    ].filter(file => 
+      file.filename.includes('security') || 
+      file.filename.includes('auth') ||
+      file.filename.includes('.env') ||
+      file.filename === 'Dockerfile'
+    );
+    
+    const hasSecurityConfig = securityFiles.length > 0;
+    
+    switch (securityLevel) {
+      case 'critical':
+        results += `- ${hasSecurityConfig ? '✅' : '❌'} **Critical Security**: ${hasSecurityConfig ? 'Security configuration found' : 'No security configuration detected'}\n`;
+        if (!hasSecurityConfig) {
+          results += '  - **Action Required**: Implement comprehensive security measures\n';
+        }
+        break;
+      case 'high':
+        results += `- ${hasSecurityConfig ? '✅' : '⚠️'} **High Security**: ${hasSecurityConfig ? 'Some security configuration found' : 'Limited security configuration'}\n`;
+        break;
+      case 'medium':
+        results += `- ℹ️ **Medium Security**: Basic security measures recommended\n`;
+        break;
+      default:
+        results += `- ℹ️ **Security Level**: ${securityLevel} (consider increasing for production)\n`;
     }
     
     return results;
