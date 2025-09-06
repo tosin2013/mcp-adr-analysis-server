@@ -25,25 +25,25 @@ afterEach(() => {
 jest.unstable_mockModule('../src/utils/knowledge-graph-manager.js', () => ({
   KnowledgeGraphManager: jest.fn().mockImplementation(() => ({
     updateTodoSnapshot: jest.fn(),
-    loadKnowledgeGraph: jest.fn().mockResolvedValue({}),
-    getActiveIntents: jest.fn().mockResolvedValue([]),
-    createIntent: jest.fn().mockResolvedValue('intent-123'),
+    loadKnowledgeGraph: jest.fn(() => Promise.resolve({})),
+    getActiveIntents: jest.fn(() => Promise.resolve([])),
+    createIntent: jest.fn(() => Promise.resolve('intent-123')),
     addToolExecution: jest.fn(),
-    getIntentById: jest.fn().mockResolvedValue({ currentStatus: 'executing' }),
+    getIntentById: jest.fn(() => Promise.resolve({ currentStatus: 'executing' })),
     updateIntentStatus: jest.fn(),
   }))
 }));
 
 jest.unstable_mockModule('../src/utils/project-health-scoring.js', () => ({
   ProjectHealthScoring: jest.fn().mockImplementation(() => ({
-    getProjectHealthScore: jest.fn().mockResolvedValue({}),
-    generateScoreDisplay: jest.fn().mockReturnValue('Mock score display'),
-    updateTodoCompletionScore: jest.fn().mockResolvedValue(undefined),
-    updateDeploymentReadinessScore: jest.fn().mockResolvedValue(undefined),
-    updateTaskCompletionScore: jest.fn().mockResolvedValue(undefined), // Add missing method
-    updateTaskVelocityScore: jest.fn().mockResolvedValue(undefined),
-    calculateProjectHealthScore: jest.fn().mockResolvedValue({}),
-    analyzeHealthTrends: jest.fn().mockResolvedValue([]),
+    getProjectHealthScore: jest.fn(() => Promise.resolve({})),
+    generateScoreDisplay: jest.fn(() => 'Mock score display'),
+    updateTodoCompletionScore: jest.fn(() => Promise.resolve(undefined)),
+    updateDeploymentReadinessScore: jest.fn(() => Promise.resolve(undefined)),
+    updateTaskCompletionScore: jest.fn(() => Promise.resolve(undefined)), // Add missing method
+    updateTaskVelocityScore: jest.fn(() => Promise.resolve(undefined)),
+    calculateProjectHealthScore: jest.fn(() => Promise.resolve({})),
+    analyzeHealthTrends: jest.fn(() => Promise.resolve([])),
   }))
 }));
 
