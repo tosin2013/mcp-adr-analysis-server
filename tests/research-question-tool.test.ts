@@ -6,13 +6,13 @@
 import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
 
 // Mock the dependencies
-const mockCorrelateProblemKnowledge = jest.fn();
-const mockFindRelevantAdrPatterns = jest.fn();
-const mockGenerateContextAwareQuestions = jest.fn();
-const mockCreateResearchTaskTracking = jest.fn();
-const mockGenerateArchitecturalKnowledge = jest.fn();
-const mockExecuteResearchPrompt = jest.fn();
-const mockFormatMCPResponse = jest.fn();
+const mockCorrelateProblemKnowledge = jest.fn() as jest.MockedFunction<any>;
+const mockFindRelevantAdrPatterns = jest.fn() as jest.MockedFunction<any>;
+const mockGenerateContextAwareQuestions = jest.fn() as jest.MockedFunction<any>;
+const mockCreateResearchTaskTracking = jest.fn() as jest.MockedFunction<any>;
+const mockGenerateArchitecturalKnowledge = jest.fn() as jest.MockedFunction<any>;
+const mockExecuteResearchPrompt = jest.fn() as jest.MockedFunction<any>;
+const mockFormatMCPResponse = jest.fn() as jest.MockedFunction<any>;
 
 // Mock research-questions utilities
 jest.unstable_mockModule('../src/utils/research-questions.js', () => ({
@@ -244,7 +244,7 @@ describe('Research Question Tool', () => {
           content: 'Generated research questions content',
         });
 
-        const result = await generateResearchQuestions({
+        await generateResearchQuestions({
           analysisType: 'questions',
           researchContext: sampleResearchContext,
           relevantKnowledge: sampleRelevantKnowledge,
@@ -270,7 +270,7 @@ describe('Research Question Tool', () => {
       });
 
       test('should use intelligent defaults for research context in questions', async () => {
-        const result = await generateResearchQuestions({
+        await generateResearchQuestions({
           analysisType: 'questions',
           relevantKnowledge: sampleRelevantKnowledge,
         });
@@ -549,7 +549,7 @@ describe('Research Question Tool', () => {
           }],
         });
 
-        const result = await generateResearchQuestions({
+        await generateResearchQuestions({
           analysisType: 'questions',
           researchContext: sampleResearchContext,
           relevantKnowledge: sampleRelevantKnowledge,
