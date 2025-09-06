@@ -196,26 +196,14 @@ describe('compare_adr_progress tool - Environment Integration Tests', () => {
     ];
     
     for (const method of environmentMethods) {
-      expect(server[method]).toBeDefined();
-      expect(typeof server[method]).toBe('function');
+      expect((server as any)[method]).toBeDefined();
+      expect(typeof (server as any)[method]).toBe('function');
     }
   });
 
   it('should test that compareAdrProgress accepts all new environment parameters', () => {
     // This test validates the schema changes are properly implemented
-    const environmentParams = {
-      environment: 'production',
-      environmentConfig: {
-        requiredFiles: ['package.json'],
-        securityLevel: 'critical'
-      },
-      environmentValidation: true
-    };
-    
     // Method should exist and accept these parameters without throwing
-    expect(() => {
-      // Just test that the method can be called with these parameters
-      // (actual execution would require file system setup)
-    }).not.toThrow();
+    expect(typeof server['compareAdrProgress']).toBe('function');
   });
 });
