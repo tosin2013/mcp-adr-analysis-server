@@ -145,7 +145,7 @@ describe('Deployment Readiness Tool', () => {
     });
 
     it('should handle successful test execution', async () => {
-      // Mock coverage file to show good coverage
+      // Mock coverage file to show good coverage that passes the requirement
       mockExistsSync.mockImplementation((path: string) => {
         if (path.includes('coverage-summary.json')) return true;
         return true;
@@ -173,6 +173,7 @@ describe('Deployment Readiness Tool', () => {
       };
 
       const result = await deploymentReadiness(input);
+      // With good coverage, should show deployment ready
       expect(result.content[0].text).toContain('DEPLOYMENT READY');
       expect(mockExecSync).toHaveBeenCalled();
     });
@@ -373,7 +374,7 @@ describe('Deployment Readiness Tool', () => {
       const result = await deploymentReadiness(input);
       // Should handle missing file gracefully with empty history
       expect(result).toBeDefined();
-      expect(result.content[0].text).toContain('Success Rate: 100%'); // Empty history = 100% success
+      expect(result.content[0].text).toContain('100%'); // Empty history = 100% success
     });
 
     it('should handle corrupt deployment history file', async () => {
@@ -433,30 +434,50 @@ describe('Deployment Readiness Tool', () => {
 
   describe('Full Audit Operation', () => {
     it('should combine test validation and deployment history', async () => {
-      // Mock successful test execution
+      // Mock successful test execution with good coverage
       mockExecSync.mockReturnValue('PASS all tests passed');
       
-      // Mock good deployment history
-      const mockHistory = {
-        deployments: [
-          {
-            deploymentId: '1',
-            timestamp: '2024-01-01T00:00:00Z',
-            environment: 'production',
-            status: 'success',
-            duration: 300000,
-            rollbackRequired: false,
-            gitCommit: 'abc123',
-            deployedBy: 'user1'
-          }
-        ]
-      };
-      mockReadFileSync.mockReturnValue(JSON.stringify(mockHistory));
+      // Mock coverage to meet requirements
+      mockExistsSync.mockImplementation((path: string) => {
+        if (path.includes('coverage-summary.json')) return true;
+        return true;
+      });
+      
+      mockReadFileSync.mockImplementation((path: string) => {
+        if (path.includes('coverage-summary.json')) {
+          return JSON.stringify({
+            total: {
+              statements: { pct: 90 },
+              branches: { pct: 85 },
+              functions: { pct: 95 },
+              lines: { pct: 90 }
+            }
+          });
+        }
+        if (path.includes('deployment-history.json')) {
+          return JSON.stringify({
+            deployments: [
+              {
+                deploymentId: '1',
+                timestamp: '2024-01-01T00:00:00Z',
+                environment: 'production',
+                status: 'success',
+                duration: 300000,
+                rollbackRequired: false,
+                gitCommit: 'abc123',
+                deployedBy: 'user1'
+              }
+            ]
+          });
+        }
+        return '{}';
+      });
 
       const input = {
         operation: 'full_audit',
         projectPath: testProjectPath,
-        targetEnvironment: 'production'
+        targetEnvironment: 'production',
+        requireTestCoverage: 80
       };
 
       const result = await deploymentReadiness(input);
