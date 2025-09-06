@@ -487,6 +487,27 @@ npm run format        # Format code with Prettier
 npm run typecheck     # Run TypeScript type checking
 ```
 
+### Pre-Commit Hook
+The repository includes an automated pre-commit hook that ensures code quality:
+
+```bash
+# The hook is automatically installed in .git/hooks/pre-commit
+# It runs automatically on every commit and checks:
+
+# ✅ TypeScript compilation
+# ✅ Related tests (or smoke test fallback)  
+# ✅ Code formatting (Prettier)
+# ✅ Only processes staged TypeScript/JavaScript files
+
+# If checks fail, the commit is blocked with clear error messages:
+# • TypeScript errors: Fix compilation issues
+# • Test failures: Address failing tests  
+# • Formatting issues: Run 'npm run format' to auto-fix
+
+# For comprehensive pre-release validation:
+./scripts/pre-commit-checklist.sh
+```
+
 ### Code Quality Standards
 - **TypeScript**: Strict mode with comprehensive type checking
 - **ESLint**: Enforced code quality and security rules
@@ -893,8 +914,10 @@ We welcome contributions! This project follows strict development standards to e
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes with tests
-4. Run the full test suite
-5. Submit a pull request
+4. The pre-commit hook will automatically validate your changes
+5. Run the full test suite: `npm test`
+6. For comprehensive validation: `./scripts/pre-commit-checklist.sh`
+7. Submit a pull request
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
