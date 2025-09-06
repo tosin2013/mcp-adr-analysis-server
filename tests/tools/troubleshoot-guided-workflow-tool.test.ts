@@ -6,7 +6,7 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
 
 // Mock fetch for AI API calls
-const mockFetch = jest.fn();
+const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
 
 describe('Troubleshoot Guided Workflow Tool', () => {
@@ -55,7 +55,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           }
         }]
       })
-    });
+    } as Response);
   });
 
   afterEach(() => {
@@ -471,7 +471,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
             }
           }]
         })
-      });
+      } as Response);
 
       const input = {
         operation: 'generate_test_plan',
@@ -495,7 +495,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         ok: false,
         status: 500,
         json: async () => ({ error: 'Server error' })
-      });
+      } as Response);
 
       const input = {
         operation: 'generate_test_plan',
@@ -522,7 +522,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         json: async () => ({
           choices: []
         })
-      });
+      } as Response);
 
       const input = {
         operation: 'generate_test_plan',
@@ -813,7 +813,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
             }
           }]
         })
-      });
+      } as Response);
 
       const input = {
         operation: 'generate_test_plan',
@@ -864,7 +864,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
             }
           }]
         })
-      });
+      } as Response);
 
       const input = {
         operation: 'generate_test_plan',
