@@ -10,13 +10,13 @@
 import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
 
 // Mock file system operations
-const mockReadFile = jest.fn();
-const mockWriteFile = jest.fn();
-const mockAccess = jest.fn();
-const mockMkdir = jest.fn();
-const mockExistsSync = jest.fn();
-const mockReadFileSync = jest.fn();
-const mockWriteFileSync = jest.fn();
+const mockReadFile = jest.fn() as jest.MockedFunction<(path: string) => Promise<string>>;
+const mockWriteFile = jest.fn() as jest.MockedFunction<(path: string, data: string) => Promise<void>>;
+const mockAccess = jest.fn() as jest.MockedFunction<(path: string) => Promise<void>>;
+const mockMkdir = jest.fn() as jest.MockedFunction<(path: string, options?: any) => Promise<void>>;
+const mockExistsSync = jest.fn() as jest.MockedFunction<(path: string) => boolean>;
+const mockReadFileSync = jest.fn() as jest.MockedFunction<(path: string) => string>;
+const mockWriteFileSync = jest.fn() as jest.MockedFunction<(path: string, data: string) => void>;
 
 jest.unstable_mockModule('fs/promises', () => ({
   readFile: mockReadFile,
@@ -32,8 +32,11 @@ jest.unstable_mockModule('fs', () => ({
 }));
 
 // Mock path utilities
-const mockJoin = jest.fn((...args: string[]) => args.join('/'));
-const mockDirname = jest.fn((p: string) => p.split('/').slice(0, -1).join('/'));
+const mockJoin = jest.fn() as jest.MockedFunction<(...args: string[]) => string>;
+const mockDirname = jest.fn() as jest.MockedFunction<(p: string) => string>;
+
+mockJoin.mockImplementation((...args: string[]) => args.join('/'));
+mockDirname.mockImplementation((p: string) => p.split('/').slice(0, -1).join('/'));
 
 jest.unstable_mockModule('path', () => ({
   join: mockJoin,
@@ -815,7 +818,7 @@ describe('Smart Score Tool', () => {
         { name: 'with-vitest', config: { name: 'test', devDependencies: { vitest: '^0.30.0' } } }
       ];
 
-      for (const { name, config } of configs) {
+      for (const { config } of configs) {
         mockReadFile.mockResolvedValue(JSON.stringify(config));
 
         const input = {
