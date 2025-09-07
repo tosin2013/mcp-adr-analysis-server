@@ -8,24 +8,24 @@
  * - discoverExistingAdrs (with cache initialization and discovery)
  */
 
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, beforeEach, jest } from '@jest/globals';
 
-// Create mock functions that will be used
-const mockAnalyzeImplicitDecisions = jest.fn();
-const mockAnalyzeCodeChanges = jest.fn();
-const mockGenerateArchitecturalKnowledge = jest.fn();
-const mockExecuteWithReflexion = jest.fn();
-const mockRetrieveRelevantMemories = jest.fn();
-const mockCreateToolReflexionConfig = jest.fn();
-const mockExecuteADRSuggestionPrompt = jest.fn();
-const mockExecuteADRGenerationPrompt = jest.fn();
-const mockFormatMCPResponse = jest.fn();
-const mockGenerateAdrFromDecision = jest.fn();
-const mockGenerateNextAdrNumber = jest.fn();
-const mockSuggestAdrFilename = jest.fn();
-const mockDiscoverAdrsInDirectory = jest.fn();
-const mockEnsureDirectory = jest.fn();
-const mockWriteFile = jest.fn();
+// Create mock functions that will be used with proper typing
+const mockAnalyzeImplicitDecisions = jest.fn() as jest.MockedFunction<any>;
+const mockAnalyzeCodeChanges = jest.fn() as jest.MockedFunction<any>;
+const mockGenerateArchitecturalKnowledge = jest.fn() as jest.MockedFunction<any>;
+const mockExecuteWithReflexion = jest.fn() as jest.MockedFunction<any>;
+const mockRetrieveRelevantMemories = jest.fn() as jest.MockedFunction<any>;
+const mockCreateToolReflexionConfig = jest.fn() as jest.MockedFunction<any>;
+const mockExecuteADRSuggestionPrompt = jest.fn() as jest.MockedFunction<any>;
+const mockExecuteADRGenerationPrompt = jest.fn() as jest.MockedFunction<any>;
+const mockFormatMCPResponse = jest.fn() as jest.MockedFunction<any>;
+const mockGenerateAdrFromDecision = jest.fn() as jest.MockedFunction<any>;
+const mockGenerateNextAdrNumber = jest.fn() as jest.MockedFunction<any>;
+const mockSuggestAdrFilename = jest.fn() as jest.MockedFunction<any>;
+const mockDiscoverAdrsInDirectory = jest.fn() as jest.MockedFunction<any>;
+const mockEnsureDirectory = jest.fn() as jest.MockedFunction<any>;
+const mockWriteFile = jest.fn() as jest.MockedFunction<any>;
 
 // Mock the dynamic imports
 jest.mock('fs/promises', () => ({
@@ -51,7 +51,6 @@ describe('ADR Suggestion Tool', () => {
 
   beforeAll(async () => {
     // Set up dynamic import mocks
-    const originalImport = (global as any).__importStar;
     (global as any).__importStar = jest.fn();
 
     // Import the actual module after setting up environment
@@ -104,7 +103,7 @@ describe('ADR Suggestion Tool', () => {
       isAIGenerated: true,
     });
     
-    mockFormatMCPResponse.mockImplementation(obj => obj);
+    mockFormatMCPResponse.mockImplementation((obj: any) => obj);
     
     mockGenerateAdrFromDecision.mockResolvedValue({
       generationPrompt: 'Mock generation prompt',
@@ -578,8 +577,8 @@ describe('ADR Suggestion Tool', () => {
     });
 
     it('should handle PROJECT_PATH environment variable edge cases', async () => {
-      const originalPath = process.env.PROJECT_PATH;
-      process.env.PROJECT_PATH = undefined;
+      const originalPath = process.env['PROJECT_PATH'];
+      process.env['PROJECT_PATH'] = undefined;
       
       try {
         await discoverExistingAdrs({
@@ -588,13 +587,13 @@ describe('ADR Suggestion Tool', () => {
       } catch (error) {
         expect(error).toBeDefined();
       } finally {
-        process.env.PROJECT_PATH = originalPath;
+        process.env['PROJECT_PATH'] = originalPath;
       }
     });
 
     it('should handle PROJECT_PATH restoration when originally undefined', async () => {
-      const originalPath = process.env.PROJECT_PATH;
-      delete process.env.PROJECT_PATH;
+      const originalPath = process.env['PROJECT_PATH'];
+      delete process.env['PROJECT_PATH'];
       
       try {
         await discoverExistingAdrs({
@@ -604,7 +603,7 @@ describe('ADR Suggestion Tool', () => {
         expect(error).toBeDefined();
       } finally {
         if (originalPath !== undefined) {
-          process.env.PROJECT_PATH = originalPath;
+          process.env['PROJECT_PATH'] = originalPath;
         }
       }
     });
