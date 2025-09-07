@@ -127,7 +127,7 @@ describe('Domain Knowledge Templates', () => {
         'API Gateway pattern for unified entry point'
       );
       expect(designPatterns?.items).toContain(
-        'Circuit breaker pattern for fault tolerance'
+        'Service registry and discovery patterns'
       );
     });
 
