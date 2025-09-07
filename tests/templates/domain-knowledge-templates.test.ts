@@ -24,9 +24,7 @@ import {
 } from '../../src/templates/domain-knowledge-templates.js';
 
 import { 
-  DomainTemplate, 
-  ArchitecturalDomain, 
-  KnowledgeCategory 
+  ArchitecturalDomain
 } from '../../src/types/knowledge-generation.js';
 
 describe('Domain Knowledge Templates', () => {
@@ -110,13 +108,13 @@ describe('Domain Knowledge Templates', () => {
       );
       
       expect(bestPractices).toBeDefined();
-      expect(bestPractices!.items).toContain(
+      expect(bestPractices?.items).toContain(
         'Component-based architecture with clear separation of concerns'
       );
-      expect(bestPractices!.items).toContain(
+      expect(bestPractices?.items).toContain(
         'State management patterns (Redux, Zustand, Context API)'
       );
-      expect(bestPractices!.priority).toBe(9);
+      expect(bestPractices?.priority).toBe(9);
     });
 
     test('microservices template contains expected design patterns', () => {
@@ -125,10 +123,10 @@ describe('Domain Knowledge Templates', () => {
       );
       
       expect(designPatterns).toBeDefined();
-      expect(designPatterns!.items).toContain(
+      expect(designPatterns?.items).toContain(
         'API Gateway pattern for unified entry point'
       );
-      expect(designPatterns!.items).toContain(
+      expect(designPatterns?.items).toContain(
         'Circuit breaker pattern for fault tolerance'
       );
     });
@@ -226,17 +224,17 @@ describe('Domain Knowledge Templates', () => {
       const templates = getDomainTemplates(domains);
       
       expect(templates).toHaveLength(2);
-      expect(templates[0].domain).toBe('web-applications');
-      expect(templates[1].domain).toBe('microservices');
+      expect(templates[0]?.domain).toBe('web-applications');
+      expect(templates[1]?.domain).toBe('microservices');
     });
 
     test('filters out invalid domains', () => {
-      const domains = [
+      const domains: (ArchitecturalDomain | string)[] = [
         'web-applications', 
-        'invalid-domain' as ArchitecturalDomain, 
+        'invalid-domain', 
         'microservices'
       ];
-      const templates = getDomainTemplates(domains);
+      const templates = getDomainTemplates(domains as ArchitecturalDomain[]);
       
       expect(templates).toHaveLength(2);
       expect(templates.map(t => t.domain)).not.toContain('invalid-domain');
@@ -248,7 +246,7 @@ describe('Domain Knowledge Templates', () => {
     });
 
     test('returns empty array for all invalid domains', () => {
-      const invalidDomains = ['invalid1', 'invalid2'] as ArchitecturalDomain[];
+      const invalidDomains = ['invalid1', 'invalid2'] as unknown as ArchitecturalDomain[];
       const templates = getDomainTemplates(invalidDomains);
       expect(templates).toHaveLength(0);
     });
@@ -304,10 +302,10 @@ describe('Domain Knowledge Templates', () => {
     test('returns correct metadata for valid domain', () => {
       const metadata = getDomainTemplateMetadata('web-applications');
       expect(metadata).toBeDefined();
-      expect(metadata!.version).toBe('1.0.0');
-      expect(metadata!.author).toBe('MCP ADR Analysis Server');
-      expect(metadata!.description).toContain('web application');
-      expect(metadata!.tags).toContain('web');
+      expect(metadata?.version).toBe('1.0.0');
+      expect(metadata?.author).toBe('MCP ADR Analysis Server');
+      expect(metadata?.description).toContain('web application');
+      expect(metadata?.tags).toContain('web');
     });
 
     test('returns undefined for invalid domain', () => {
@@ -327,12 +325,12 @@ describe('Domain Knowledge Templates', () => {
       validDomains.forEach(domain => {
         const metadata = getDomainTemplateMetadata(domain);
         expect(metadata).toBeDefined();
-        expect(metadata!.version).toBeDefined();
-        expect(metadata!.author).toBeDefined();
-        expect(metadata!.lastUpdated).toBeDefined();
-        expect(metadata!.description).toBeDefined();
-        expect(metadata!.tags).toBeInstanceOf(Array);
-        expect(metadata!.tags.length).toBeGreaterThan(0);
+        expect(metadata?.version).toBeDefined();
+        expect(metadata?.author).toBeDefined();
+        expect(metadata?.lastUpdated).toBeDefined();
+        expect(metadata?.description).toBeDefined();
+        expect(metadata?.tags).toBeInstanceOf(Array);
+        expect(metadata?.tags.length).toBeGreaterThan(0);
       });
     });
 
