@@ -33,7 +33,7 @@
     "test:package": "./scripts/test-npm-package.sh"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.13.3",
+    "@modelcontextprotocol/sdk": "1.17.5",
     "fast-glob": "^3.3.2",
     "openai": "^5.8.2",
     "tslib": "^2.8.1",
