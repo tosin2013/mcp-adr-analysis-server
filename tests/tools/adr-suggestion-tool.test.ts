@@ -307,7 +307,7 @@ describe('ADR Suggestion Tool', () => {
       
       test('accepts custom project path', async () => {
         const result = await discoverExistingAdrs({
-          projectPath: '/Users/tosinakinosho/workspaces/mcp-adr-analysis-server'
+          projectPath: '/tmp/test-workspace'
         });
 
         expect(result).toBeDefined();
@@ -317,7 +317,7 @@ describe('ADR Suggestion Tool', () => {
         const result = await discoverExistingAdrs({
           adrDirectory: 'docs/decisions',
           includeContent: true,
-          projectPath: '/Users/tosinakinosho/workspaces/mcp-adr-analysis-server'
+          projectPath: '/tmp/test-workspace'
         });
 
         expect(result).toBeDefined();
