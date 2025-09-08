@@ -4,8 +4,8 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "lib": ["ES2022", "DOM"],
-    "types": ["node", "jest"],
-    "outDir": "./dist",
+    "types": ["node"],
+    "outDir": "./dist/src",
     "strict": true,
     "noImplicitAny": true,
     "strictNullChecks": true,
@@ -37,8 +37,7 @@
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
   "include": [
-    "src/**/*",
-    "tests/**/*"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
