@@ -1,719 +1,415 @@
 /**
- * Unit tests for adr-suggestion-tool.ts
- * Target: Achieve 80% coverage from current 20.28%
+ * Unit Tests for adr-suggestion-tool.ts
+ * Target Coverage: ~20% → 80%
  * 
- * Tests cover all three main functions:
- * - suggestAdrs (with all analysis types and feature flags)
- * - generateAdrFromDecision (with different templates and scenarios)  
- * - discoverExistingAdrs (with cache initialization and discovery)
+ * Following methodological pragmatism principles:
+ * - Systematic Verification: Structured test cases with clear assertions
+ * - Explicit Fallibilism: Testing both success and failure scenarios
+ * - Pragmatic Success Criteria: Focus on reliable, maintainable test coverage
  */
 
-import { describe, it, expect, beforeAll, beforeEach, jest } from '@jest/globals';
+import { jest } from '@jest/globals';
+import { McpAdrError } from '../../src/types/index.js';
 
-// Create mock functions that will be used with proper typing
-const mockAnalyzeImplicitDecisions = jest.fn() as jest.MockedFunction<any>;
-const mockAnalyzeCodeChanges = jest.fn() as jest.MockedFunction<any>;
-const mockGenerateArchitecturalKnowledge = jest.fn() as jest.MockedFunction<any>;
-const mockExecuteWithReflexion = jest.fn() as jest.MockedFunction<any>;
-const mockRetrieveRelevantMemories = jest.fn() as jest.MockedFunction<any>;
-const mockCreateToolReflexionConfig = jest.fn() as jest.MockedFunction<any>;
-const mockExecuteADRSuggestionPrompt = jest.fn() as jest.MockedFunction<any>;
-const mockExecuteADRGenerationPrompt = jest.fn() as jest.MockedFunction<any>;
-const mockFormatMCPResponse = jest.fn() as jest.MockedFunction<any>;
-const mockGenerateAdrFromDecision = jest.fn() as jest.MockedFunction<any>;
-const mockGenerateNextAdrNumber = jest.fn() as jest.MockedFunction<any>;
-const mockSuggestAdrFilename = jest.fn() as jest.MockedFunction<any>;
-const mockDiscoverAdrsInDirectory = jest.fn() as jest.MockedFunction<any>;
-const mockEnsureDirectory = jest.fn() as jest.MockedFunction<any>;
-const mockWriteFile = jest.fn() as jest.MockedFunction<any>;
-
-// Mock the dynamic imports
-jest.mock('fs/promises', () => ({
-  readFile: jest.fn(),
-  writeFile: jest.fn(),
-  access: jest.fn(),
-  mkdir: jest.fn(),
-}));
-
-jest.mock('fs', () => ({
-  existsSync: jest.fn(),
-  readFileSync: jest.fn(),
-  writeFileSync: jest.fn(),
-}));
+import {
+  suggestAdrs,
+  generateAdrFromDecision,
+  discoverExistingAdrs
+} from '../../src/tools/adr-suggestion-tool.js';
 
 describe('ADR Suggestion Tool', () => {
-  let suggestAdrs: any;
-  let generateAdrFromDecision: any;
-  let discoverExistingAdrs: any;
+  // Use actual project directory for portable tests
+  const projectPath = process.cwd();
   
-  const testProjectPath = '/tmp/test-project';
-  const testAdrs = ['ADR-001: Use React for frontend', 'ADR-002: Use PostgreSQL for database'];
-
-  beforeAll(async () => {
-    // Set up dynamic import mocks
-    (global as any).__importStar = jest.fn();
-
-    // Import the actual module after setting up environment
-    const module = await import('../../src/tools/adr-suggestion-tool.js');
-    suggestAdrs = module.suggestAdrs;
-    generateAdrFromDecision = module.generateAdrFromDecision;
-    discoverExistingAdrs = module.discoverExistingAdrs;
-  });
-
   beforeEach(() => {
-    // Reset all mocks before each test
     jest.clearAllMocks();
-    jest.resetModules();
-    
-    // Set up default mock implementations
-    mockAnalyzeImplicitDecisions.mockResolvedValue({
-      analysisPrompt: 'Mock analysis prompt for implicit decisions',
-      instructions: 'Mock instructions for implicit analysis',
-    });
-    
-    mockAnalyzeCodeChanges.mockResolvedValue({
-      analysisPrompt: 'Mock analysis prompt for code changes',
-      instructions: 'Mock instructions for code changes',
-    });
-    
-    mockGenerateArchitecturalKnowledge.mockResolvedValue({
-      prompt: 'Mock knowledge generation prompt',
-    });
-    
-    mockExecuteWithReflexion.mockResolvedValue({
-      prompt: 'Enhanced prompt with reflexion',
-    });
-    
-    mockRetrieveRelevantMemories.mockResolvedValue({
-      prompt: 'Memory-enhanced prompt',
-    });
-    
-    mockCreateToolReflexionConfig.mockReturnValue({
-      reflectionDepth: 'basic',
-      evaluationCriteria: ['task-success'],
-    });
-    
-    mockExecuteADRSuggestionPrompt.mockResolvedValue({
-      content: 'AI-generated suggestion content',
-      isAIGenerated: true,
-    });
-    
-    mockExecuteADRGenerationPrompt.mockResolvedValue({
-      content: 'AI-generated ADR content',
-      isAIGenerated: true,
-    });
-    
-    mockFormatMCPResponse.mockImplementation((obj: any) => obj);
-    
-    mockGenerateAdrFromDecision.mockResolvedValue({
-      generationPrompt: 'Mock generation prompt',
-      instructions: 'Mock generation instructions',
-    });
-    
-    mockGenerateNextAdrNumber.mockReturnValue('003');
-    mockSuggestAdrFilename.mockReturnValue('003-new-decision.md');
-    
-    mockDiscoverAdrsInDirectory.mockResolvedValue({
-      directory: 'docs/adrs',
-      totalAdrs: 2,
-      adrs: [
-        {
-          title: 'Use React for frontend',
-          filename: '001-use-react.md',
-          status: 'accepted',
-          date: '2023-01-01',
-          path: 'docs/adrs/001-use-react.md',
-          metadata: { number: '001' }
-        },
-        {
-          title: 'Use PostgreSQL for database',
-          filename: '002-use-postgresql.md',
-          status: 'accepted',
-          date: '2023-01-02',
-          path: 'docs/adrs/002-use-postgresql.md',
-          metadata: { number: '002' }
-        }
-      ],
-      summary: {
-        byStatus: { accepted: 2 },
-        byCategory: { backend: 1, frontend: 1 }
-      },
-      recommendations: ['Consider documenting API design decisions']
-    });
-    
-    mockEnsureDirectory.mockResolvedValue({
-      prompt: 'mkdir -p docs/adrs'
-    });
-    
-    mockWriteFile.mockResolvedValue({
-      prompt: 'echo "content" > file.md'
-    });
+    // No need to mock process.cwd() - use real working directory
   });
 
-  describe('Basic function accessibility', () => {
-    it('should have all three main functions available', () => {
-      expect(typeof suggestAdrs).toBe('function');
-      expect(typeof generateAdrFromDecision).toBe('function');  
-      expect(typeof discoverExistingAdrs).toBe('function');
-    });
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
-  describe('suggestAdrs function - basic tests', () => {
-    it('should handle minimal input without throwing immediately', async () => {
-      // This test just ensures the function can be called
-      // More detailed behavior testing will require mocking dynamic imports
-      try {
+  // ============================================================================
+  // suggestAdrs Function Tests
+  // ============================================================================
+  
+  describe('suggestAdrs function', () => {
+
+    describe('basic functionality', () => {
+      
+      test('handles implicit_decisions analysis type', async () => {
         const result = await suggestAdrs({
           analysisType: 'implicit_decisions',
-          projectPath: testProjectPath,
-          enhancedMode: false,
+          enhancedMode: false
+        });
+
+        expect(result).toBeDefined();
+        expect(result.content).toBeDefined();
+        expect(Array.isArray(result.content)).toBe(true);
+        expect(result.content[0].type).toBe('text');
+        expect(result.content[0].text).toContain('ADR Suggestions');
+      });
+
+      test('handles code_changes analysis type with required parameters', async () => {
+        const result = await suggestAdrs({
+          analysisType: 'code_changes',
+          beforeCode: 'old code',
+          afterCode: 'new code',
+          changeDescription: 'test change'
+        });
+
+        expect(result).toBeDefined();
+        expect(result.content[0].text).toContain('Code Change Analysis');
+      });
+
+      test('handles comprehensive analysis type', async () => {
+        const result = await suggestAdrs({
+          analysisType: 'comprehensive'
+        });
+
+        expect(result).toBeDefined();
+        expect(result.content[0].text).toContain('Comprehensive Analysis');
+      });
+
+    });
+
+    describe('parameter validation', () => {
+      
+      test('throws error when code_changes missing required parameters', async () => {
+        await expect(suggestAdrs({
+          analysisType: 'code_changes'
+        })).rejects.toThrow(McpAdrError);
+      });
+
+      test('throws error for unknown analysis type', async () => {
+        await expect(suggestAdrs({
+          analysisType: 'unknown' as any
+        })).rejects.toThrow(McpAdrError);
+      });
+
+    });
+
+    describe('enhancement modes', () => {
+      
+      test('works with enhanced mode disabled', async () => {
+        const result = await suggestAdrs({
+          analysisType: 'implicit_decisions',
+          enhancedMode: false
+        });
+
+        expect(result.content[0].text).toContain('Enhanced Mode**: ❌ Disabled');
+      });
+
+      test('works with enhanced mode enabled', async () => {
+        const result = await suggestAdrs({
+          analysisType: 'implicit_decisions',
+          enhancedMode: true,
+          knowledgeEnhancement: false,
+          learningEnabled: false
+        });
+
+        expect(result.content[0].text).toContain('Enhancement Status');
+      });
+
+    });
+
+    describe('optional parameters', () => {
+      
+      test('accepts all optional parameters', async () => {
+        const result = await suggestAdrs({
+          projectPath: projectPath,
+          analysisType: 'implicit_decisions',
+          existingAdrs: ['ADR 1', 'ADR 2'],
+          enhancedMode: true,
           learningEnabled: false,
           knowledgeEnhancement: false
         });
-        // If we get here, the function didn't throw immediately
+
         expect(result).toBeDefined();
-      } catch (error) {
-        // Expect an error related to dynamic imports, not input validation
-        expect(error).toBeDefined();
-        expect((error as Error).message).not.toContain('Invalid input');
-      }
-    });
+      });
 
-    it('should reject unknown analysis types', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'unknown_type' as any,
-        });
-        // Should not reach here
-        expect(true).toBe(false);
-      } catch (error) {
-        expect(error).toBeDefined();
-        expect((error as Error).message).toContain('Unknown analysis type');
-      }
-    });
-
-    it('should reject code_changes without required parameters', async () => {
-      try {
-        await suggestAdrs({
+      test('works with commit messages for code changes', async () => {
+        const result = await suggestAdrs({
           analysisType: 'code_changes',
-          // Missing beforeCode, afterCode, changeDescription
-        });
-        // Should not reach here
-        expect(true).toBe(false);
-      } catch (error) {
-        expect(error).toBeDefined();
-        expect((error as Error).message).toContain('Code change analysis requires');
-      }
-    });
-
-    it('should handle default parameters correctly', async () => {
-      // Test that defaults are applied correctly by inspecting the call
-      try {
-        await suggestAdrs({
-          analysisType: 'implicit_decisions',
-        });
-      } catch (error) {
-        // We expect this to fail due to missing mocks, but we can still test param handling
-        expect(error).toBeDefined();
-      }
-    });
-  });
-
-  describe('generateAdrFromDecision function - basic tests', () => {
-    const validDecisionData = {
-      title: 'Use GraphQL for API',
-      context: 'Need a flexible API solution',
-      decision: 'Implement GraphQL instead of REST',
-      consequences: 'Better data fetching, steeper learning curve',
-    };
-
-    it('should reject incomplete decision data', async () => {
-      const incompleteData = {
-        title: 'Test Decision',
-        // Missing context, decision, consequences
-      };
-
-      try {
-        await generateAdrFromDecision({
-          decisionData: incompleteData as any,
-        });
-        // Should not reach here
-        expect(true).toBe(false);
-      } catch (error) {
-        expect(error).toBeDefined();
-        expect((error as Error).message).toContain('Decision data must include');
-      }
-    });
-
-    it('should handle valid decision data without throwing immediately', async () => {
-      try {
-        const result = await generateAdrFromDecision({
-          decisionData: validDecisionData,
-        });
-        // If we get here, input validation passed
-        expect(result).toBeDefined();
-      } catch (error) {
-        // Expect an error related to dynamic imports, not input validation
-        expect(error).toBeDefined();
-        expect((error as Error).message).not.toContain('Decision data must include');
-      }
-    });
-  });
-
-  describe('discoverExistingAdrs function - basic tests', () => {
-    it('should handle basic discovery call without throwing immediately', async () => {
-      try {
-        const result = await discoverExistingAdrs({});
-        // If we get here, the function started execution
-        expect(result).toBeDefined();
-      } catch (error) {
-        // Expect an error related to dynamic imports or missing dependencies
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle custom parameters', async () => {
-      try {
-        const result = await discoverExistingAdrs({
-          adrDirectory: 'custom/adrs',
-          includeContent: true,
-          projectPath: '/custom/path',
-        });
-        expect(result).toBeDefined();
-      } catch (error) {
-        // We expect this to fail due to missing mocks, but parameters should be accepted
-        expect(error).toBeDefined();
-      }
-    });
-  });
-
-  describe('Error handling scenarios', () => {
-    it('should handle process.cwd() calls safely', () => {
-      expect(() => process.cwd()).not.toThrow();
-    });
-
-    it('should handle missing optional parameters', async () => {
-      // Test various combinations of missing optional parameters
-      const testCases = [
-        { analysisType: 'implicit_decisions' },
-        { analysisType: 'implicit_decisions', projectPath: testProjectPath },
-        { analysisType: 'comprehensive', existingAdrs: testAdrs },
-      ];
-
-      for (const testCase of testCases) {
-        try {
-          await suggestAdrs(testCase);
-        } catch (error) {
-          // Should not fail due to missing optional parameters
-          expect((error as Error).message).not.toContain('required');
-        }
-      }
-    });
-  });
-
-  describe('Feature flag combinations', () => {
-    it('should handle all feature flags disabled', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'implicit_decisions',
-          enhancedMode: false,
-          learningEnabled: false,
-          knowledgeEnhancement: false,
-        });
-      } catch (error) {
-        // We expect dynamic import errors, not parameter validation errors
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle mixed feature flag states', async () => {
-      const flagCombinations = [
-        { enhancedMode: true, learningEnabled: false, knowledgeEnhancement: false },
-        { enhancedMode: true, learningEnabled: true, knowledgeEnhancement: false },
-        { enhancedMode: true, learningEnabled: false, knowledgeEnhancement: true },
-        { enhancedMode: false, learningEnabled: true, knowledgeEnhancement: true },
-      ];
-
-      for (const flags of flagCombinations) {
-        try {
-          await suggestAdrs({
-            analysisType: 'comprehensive',
-            ...flags,
-          });
-        } catch (error) {
-          // Should accept all flag combinations
-          expect(error).toBeDefined();
-        }
-      }
-    });
-  });
-
-  describe('Analysis type coverage', () => {
-    it('should handle implicit_decisions analysis type', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'implicit_decisions',
-          projectPath: testProjectPath,
-          existingAdrs: testAdrs,
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle code_changes analysis type with valid params', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'code_changes',
-          beforeCode: 'const old = "code";',
-          afterCode: 'const new = "code";',
-          changeDescription: 'Updated variable name',
-          commitMessages: ['feat: update names'],
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle comprehensive analysis type', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'comprehensive',
-          projectPath: testProjectPath,
-          existingAdrs: testAdrs,
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-  });
-
-  describe('Template format handling', () => {
-    const validDecisionData = {
-      title: 'Use GraphQL for API',
-      context: 'Need a flexible API solution',
-      decision: 'Implement GraphQL instead of REST',
-      consequences: 'Better data fetching, steeper learning curve',
-    };
-
-    it('should accept nygard template format', async () => {
-      try {
-        await generateAdrFromDecision({
-          decisionData: validDecisionData,
-          templateFormat: 'nygard',
-        });
-      } catch (error) {
-        // Should not fail due to template format
-        expect((error as Error).message).not.toContain('template');
-      }
-    });
-
-    it('should accept madr template format', async () => {
-      try {
-        await generateAdrFromDecision({
-          decisionData: validDecisionData,
-          templateFormat: 'madr',
-        });
-      } catch (error) {
-        // Should not fail due to template format
-        expect((error as Error).message).not.toContain('template');
-      }
-    });
-
-    it('should accept custom template format', async () => {
-      try {
-        await generateAdrFromDecision({
-          decisionData: validDecisionData,
-          templateFormat: 'custom',
-        });
-      } catch (error) {
-        // Should not fail due to template format
-        expect((error as Error).message).not.toContain('template');
-      }
-    });
-  });
-
-  describe('Input edge cases', () => {
-    it('should handle empty arrays for existingAdrs', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'implicit_decisions',
-          existingAdrs: [],
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle undefined conversation context', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'implicit_decisions',
-          conversationContext: undefined,
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle empty string inputs where required', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'code_changes',
-          beforeCode: '',
-          afterCode: '',
-          changeDescription: '',
-        });
-        // Should fail validation
-        expect(true).toBe(false);
-      } catch (error) {
-        expect((error as Error).message).toContain('requires');
-      }
-    });
-  });
-
-  describe('Coverage improvement tests', () => {
-    it('should test implicit decisions with learning enabled but knowledge disabled', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'implicit_decisions',
-          enhancedMode: true,
-          learningEnabled: true,
-          knowledgeEnhancement: false,
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should test code changes with all enhancements disabled', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'code_changes',
-          beforeCode: 'const old = "code";',
-          afterCode: 'const new = "code";',
-          changeDescription: 'Updated variable name',
-          enhancedMode: false,
-          learningEnabled: false,
-          knowledgeEnhancement: false,
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should test comprehensive analysis with knowledge only', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'comprehensive',
-          enhancedMode: true,
-          learningEnabled: false,
-          knowledgeEnhancement: true,
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should test implicit decisions with enhanced mode disabled', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'implicit_decisions',
-          enhancedMode: false,
-          learningEnabled: false,
-          knowledgeEnhancement: false,
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should test code changes with enhanced mode disabled', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'code_changes',
-          beforeCode: 'test',
-          afterCode: 'test2',
+          beforeCode: 'old code',
+          afterCode: 'new code',
           changeDescription: 'test change',
-          enhancedMode: false,
+          commitMessages: ['commit 1', 'commit 2']
         });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
+
+        expect(result).toBeDefined();
+      });
+
     });
 
-    it('should test generateAdrFromDecision with empty optional arrays', async () => {
-      const decisionData = {
-        title: 'Test Decision',
-        context: 'Test context',
-        decision: 'Test decision',
-        consequences: 'Test consequences',
-        alternatives: [],
-        evidence: [],
-      };
-
-      try {
-        await generateAdrFromDecision({ decisionData });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should test generateAdrFromDecision with undefined optional fields', async () => {
-      const decisionData = {
-        title: 'Test Decision',
-        context: 'Test context',
-        decision: 'Test decision',
-        consequences: 'Test consequences',
-        alternatives: undefined,
-        evidence: undefined,
-      };
-
-      try {
-        await generateAdrFromDecision({ decisionData });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should handle PROJECT_PATH environment variable edge cases', async () => {
-      const originalPath = process.env['PROJECT_PATH'];
-      process.env['PROJECT_PATH'] = undefined;
-      
-      try {
-        await discoverExistingAdrs({
-          projectPath: '/test/path',
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      } finally {
-        process.env['PROJECT_PATH'] = originalPath;
-      }
-    });
-
-    it('should handle PROJECT_PATH restoration when originally undefined', async () => {
-      const originalPath = process.env['PROJECT_PATH'];
-      delete process.env['PROJECT_PATH'];
-      
-      try {
-        await discoverExistingAdrs({
-          projectPath: '/test/path',
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      } finally {
-        if (originalPath !== undefined) {
-          process.env['PROJECT_PATH'] = originalPath;
-        }
-      }
-    });
-
-    it('should test code changes with commit messages', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'code_changes',
-          beforeCode: 'const a = 1;',
-          afterCode: 'const a = 2;',
-          changeDescription: 'Changed value',
-          commitMessages: ['feat: update value', 'docs: add comments'],
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should test code changes without commit messages', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'code_changes',
-          beforeCode: 'const a = 1;',
-          afterCode: 'const a = 2;',
-          changeDescription: 'Changed value',
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should test comprehensive with empty existingAdrs array', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'comprehensive',
-          existingAdrs: [],
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should test comprehensive with null existingAdrs', async () => {
-      try {
-        await suggestAdrs({
-          analysisType: 'comprehensive',
-          existingAdrs: undefined,
-        });
-      } catch (error) {
-        expect(error).toBeDefined();
-      }
-    });
-
-    it('should test different project paths', async () => {
-      const testPaths = [
-        '/tmp',
-        '/home/user/project',
-        '.',
-        './',
-        '../',
-      ];
-
-      for (const path of testPaths) {
-        try {
-          await suggestAdrs({
-            analysisType: 'implicit_decisions',
-            projectPath: path,
-          });
-        } catch (error) {
-          expect(error).toBeDefined();
-        }
-      }
-    });
-
-    it('should test discoverExistingAdrs with various combinations', async () => {
-      const testCases = [
-        { adrDirectory: '.', includeContent: false },
-        { adrDirectory: 'docs', includeContent: true },
-        { adrDirectory: '/absolute/path', includeContent: false },
-        { projectPath: '.' },
-        { projectPath: '/tmp', adrDirectory: 'adrs' },
-      ];
-
-      for (const testCase of testCases) {
-        try {
-          await discoverExistingAdrs(testCase);
-        } catch (error) {
-          expect(error).toBeDefined();
-        }
-      }
-    });
-
-    it('should test analysis with various conversation contexts', async () => {
-      const contexts = [
-        { sessionId: 'test' },
-        { userId: 'user123' },
-        { sessionId: 'test', userId: 'user123', additional: 'data' },
-        {},
-      ];
-
-      for (const context of contexts) {
-        try {
-          await suggestAdrs({
-            analysisType: 'implicit_decisions',
-            conversationContext: context,
-          });
-        } catch (error) {
-          expect(error).toBeDefined();
-        }
-      }
-    });
   });
+
+  // ============================================================================
+  // generateAdrFromDecision Function Tests
+  // ============================================================================
+  
+  describe('generateAdrFromDecision function', () => {
+
+    describe('parameter validation', () => {
+      
+      test('validates required decision data fields', async () => {
+        await expect(generateAdrFromDecision({
+          decisionData: {
+            title: '',
+            context: 'Test context',
+            decision: 'Test decision',
+            consequences: 'Test consequences'
+          }
+        })).rejects.toThrow(McpAdrError);
+      });
+
+      test('validates all required fields are present', async () => {
+        await expect(generateAdrFromDecision({
+          decisionData: {
+            title: 'Test',
+            context: '',
+            decision: 'Test decision',
+            consequences: 'Test consequences'
+          }
+        })).rejects.toThrow(McpAdrError);
+      });
+
+    });
+
+    describe('successful generation', () => {
+      
+      test('generates ADR with valid decision data', async () => {
+        const decisionData = {
+          title: 'Test Decision',
+          context: 'Test context',
+          decision: 'Test decision',
+          consequences: 'Test consequences'
+        };
+
+        const result = await generateAdrFromDecision({
+          decisionData
+        });
+
+        expect(result).toBeDefined();
+        expect(result.content[0].text).toContain('ADR Generation: Test Decision');
+      });
+
+      test('uses default template format when not specified', async () => {
+        const decisionData = {
+          title: 'Test Decision',
+          context: 'Test context',
+          decision: 'Test decision',
+          consequences: 'Test consequences'
+        };
+
+        const result = await generateAdrFromDecision({
+          decisionData
+        });
+
+        expect(result.content[0].text).toContain('NYGARD');
+      });
+
+      test('uses custom template format', async () => {
+        const decisionData = {
+          title: 'Test Decision',
+          context: 'Test context',
+          decision: 'Test decision',
+          consequences: 'Test consequences'
+        };
+
+        const result = await generateAdrFromDecision({
+          decisionData,
+          templateFormat: 'madr'
+        });
+
+        expect(result.content[0].text).toContain('MADR');
+      });
+
+    });
+
+    describe('optional parameters', () => {
+      
+      test('accepts optional decision data fields', async () => {
+        const decisionData = {
+          title: 'Complete Decision',
+          context: 'Full context',
+          decision: 'Full decision',
+          consequences: 'Full consequences',
+          alternatives: ['Alt 1', 'Alt 2'],
+          evidence: ['Evidence 1', 'Evidence 2']
+        };
+
+        const result = await generateAdrFromDecision({
+          decisionData,
+          templateFormat: 'custom',
+          existingAdrs: ['Existing ADR'],
+          adrDirectory: 'custom/dir'
+        });
+
+        expect(result).toBeDefined();
+        expect(result.content[0].text).toContain('custom/dir');
+      });
+
+    });
+
+  });
+
+  // ============================================================================
+  // discoverExistingAdrs Function Tests
+  // ============================================================================
+  
+  describe('discoverExistingAdrs function', () => {
+
+    describe('basic functionality', () => {
+      
+      test('discovers ADRs with default parameters', async () => {
+        const result = await discoverExistingAdrs({});
+
+        expect(result).toBeDefined();
+        expect(result.content[0].text).toContain('Complete ADR Discovery & Cache Infrastructure Initialized');
+        expect(result.content[0].text).toContain('Cache Infrastructure Status');
+      });
+
+      test('uses custom ADR directory', async () => {
+        const result = await discoverExistingAdrs({
+          adrDirectory: 'custom/adrs'
+        });
+
+        expect(result).toBeDefined();
+        expect(result.content[0].text).toContain('custom/adrs');
+      });
+
+      test('includes content when requested', async () => {
+        const result = await discoverExistingAdrs({
+          includeContent: true
+        });
+
+        expect(result).toBeDefined();
+        expect(result.content[0].text).toContain('Include Content**: Yes');
+      });
+
+    });
+
+    describe('cache infrastructure', () => {
+      
+      test('initializes cache infrastructure', async () => {
+        const result = await discoverExistingAdrs({});
+
+        expect(result.content[0].text).toContain('todo-data.json');
+        expect(result.content[0].text).toContain('project-health-scores.json');
+        expect(result.content[0].text).toContain('knowledge-graph-snapshots.json');
+        expect(result.content[0].text).toContain('todo-sync-state.json');
+      });
+
+    });
+
+    describe('optional parameters', () => {
+      
+      test('accepts custom project path', async () => {
+        const result = await discoverExistingAdrs({
+          projectPath: projectPath
+        });
+
+        expect(result).toBeDefined();
+      });
+
+      test('works with all parameters', async () => {
+        const result = await discoverExistingAdrs({
+          adrDirectory: 'docs/decisions',
+          includeContent: true,
+          projectPath: projectPath
+        });
+
+        expect(result).toBeDefined();
+        expect(result.content[0].text).toContain('docs/decisions');
+      });
+
+    });
+
+  });
+
+  // ============================================================================
+  // Error Handling and Edge Cases
+  // ============================================================================
+  
+  describe('Error Handling and Edge Cases', () => {
+
+    describe('McpAdrError handling', () => {
+      
+      test('suggestAdrs wraps errors in McpAdrError', async () => {
+        await expect(suggestAdrs({
+          analysisType: 'invalid' as any
+        })).rejects.toThrow(McpAdrError);
+      });
+
+      test('generateAdrFromDecision wraps errors in McpAdrError', async () => {
+        await expect(generateAdrFromDecision({
+          decisionData: {} as any
+        })).rejects.toThrow(McpAdrError);
+      });
+
+    });
+
+    describe('default parameter handling', () => {
+      
+      test('suggestAdrs uses default parameters', async () => {
+        const result = await suggestAdrs({});
+
+        expect(result).toBeDefined();
+        expect(result.content[0].text).toContain('Comprehensive Analysis');
+      });
+
+      test('generateAdrFromDecision uses default parameters', async () => {
+        const decisionData = {
+          title: 'Test Decision',
+          context: 'Test context',
+          decision: 'Test decision',
+          consequences: 'Test consequences'
+        };
+
+        const result = await generateAdrFromDecision({
+          decisionData
+        });
+
+        expect(result.content[0].text).toContain('docs/adrs');
+        expect(result.content[0].text).toContain('NYGARD');
+      });
+
+    });
+
+  });
+
+  // ============================================================================
+  // Integration Tests
+  // ============================================================================
+  
+  describe('Integration Tests', () => {
+
+    test('full workflow simulation', async () => {
+      // Step 1: Discover existing ADRs
+      const discoveryResult = await discoverExistingAdrs({});
+      expect(discoveryResult).toBeDefined();
+
+      // Step 2: Suggest new ADRs
+      const suggestionResult = await suggestAdrs({
+        analysisType: 'comprehensive',
+        existingAdrs: ['Existing ADR 1']
+      });
+      expect(suggestionResult).toBeDefined();
+
+      // Step 3: Generate ADR from decision
+      const generationResult = await generateAdrFromDecision({
+        decisionData: {
+          title: 'Integration Test Decision',
+          context: 'Integration test context',
+          decision: 'Integration test decision',
+          consequences: 'Integration test consequences'
+        }
+      });
+      expect(generationResult).toBeDefined();
+    });
+
+  });
+
 });
