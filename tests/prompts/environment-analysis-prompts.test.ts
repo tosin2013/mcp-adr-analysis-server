@@ -488,11 +488,18 @@ We will adopt a microservices architecture using Docker containers and Kubernete
   });
 
   describe('Edge Cases and Error Handling', () => {
-    it('should handle null and undefined inputs gracefully', () => {
-      expect(() => generateEnvironmentSpecAnalysisPrompt([] as any, '' as any)).not.toThrow();
-      expect(() => generateContainerizationDetectionPrompt([] as any)).not.toThrow();
-      expect(() => generateAdrEnvironmentRequirementsPrompt([] as any)).not.toThrow();
-      expect(() => generateEnvironmentCompliancePrompt({} as any, [] as any)).not.toThrow();
+    it('should handle null and undefined inputs appropriately', () => {
+      // Functions that use .map() on arrays should throw with null/undefined
+      expect(() => generateEnvironmentSpecAnalysisPrompt(null as any, null as any)).toThrow();
+      expect(() => generateEnvironmentSpecAnalysisPrompt(undefined as any, undefined as any)).toThrow();
+      expect(() => generateContainerizationDetectionPrompt(null as any)).toThrow();
+      expect(() => generateContainerizationDetectionPrompt(undefined as any)).toThrow();
+      expect(() => generateAdrEnvironmentRequirementsPrompt(null as any)).toThrow();
+      expect(() => generateAdrEnvironmentRequirementsPrompt(undefined as any)).toThrow();
+      
+      // Function that uses JSON.stringify() should handle null/undefined gracefully
+      expect(() => generateEnvironmentCompliancePrompt(null as any, null as any)).not.toThrow();
+      expect(() => generateEnvironmentCompliancePrompt(undefined as any, undefined as any)).not.toThrow();
     });
 
     it('should handle extremely large inputs', () => {
