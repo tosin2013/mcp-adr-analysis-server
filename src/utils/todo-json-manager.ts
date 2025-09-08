@@ -6,6 +6,7 @@
  */
 
 import * as fs from 'fs/promises';
+import * as fsSync from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import { 
@@ -30,6 +31,13 @@ export class TodoJsonManager {
   constructor(projectPath?: string) {
     const config = loadConfig();
     const basePath = projectPath || config.projectPath;
+    
+    // Validate that the project directory exists
+    try {
+      fsSync.accessSync(basePath);
+    } catch {
+      throw new Error(`Project directory does not exist: ${basePath}`);
+    }
     
     this.cacheDir = path.join(basePath, '.mcp-adr-cache');
     this.todoJsonPath = path.join(this.cacheDir, 'todo-data.json');
