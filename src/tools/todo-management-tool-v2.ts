@@ -581,7 +581,7 @@ ${importResults.join('\n')}
         const tasks = Object.values(data.tasks);
         const query = validatedArgs.query.toLowerCase();
         
-        let matchingTasks = tasks.filter(task => {
+        const matchingTasks = tasks.filter(task => {
           switch (validatedArgs.searchType) {
             case 'id':
               return task.id.toLowerCase().includes(query);
@@ -790,7 +790,7 @@ ${deploymentGuidance}
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new McpAdrError(`Invalid input: ${error.errors.map(e => e.message).join(', ')}`, 'INVALID_INPUT');
+      throw new McpAdrError(`Invalid input: ${error.issues.map(e => e.message).join(', ')}`, 'INVALID_INPUT');
     }
 
     throw new McpAdrError(

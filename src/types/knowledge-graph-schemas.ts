@@ -2,8 +2,8 @@ import { z } from 'zod';
 
 export const ToolExecutionSnapshotSchema = z.object({
   toolName: z.string(),
-  parameters: z.record(z.any()),
-  result: z.record(z.any()),
+  parameters: z.record(z.string(), z.any()),
+  result: z.record(z.string(), z.any()),
   todoTasksCreated: z.array(z.string()),
   todoTasksModified: z.array(z.string()),
   executionTime: z.string(),
@@ -12,7 +12,7 @@ export const ToolExecutionSnapshotSchema = z.object({
   scoreImpact: z.object({
     beforeScore: z.number().optional(),
     afterScore: z.number().optional(),
-    componentImpacts: z.record(z.number()).optional(),
+    componentImpacts: z.record(z.string(), z.number()).optional(),
     scoreConfidence: z.number().optional()
   }).optional()
 });
@@ -33,7 +33,7 @@ export const IntentSnapshotSchema = z.object({
     currentScore: z.number().optional(),
     targetScore: z.number().optional(),
     scoreProgress: z.number().optional(),
-    componentScores: z.record(z.number()).optional(),
+    componentScores: z.record(z.string(), z.number()).optional(),
     lastScoreUpdate: z.string().optional()
   }).optional()
 });

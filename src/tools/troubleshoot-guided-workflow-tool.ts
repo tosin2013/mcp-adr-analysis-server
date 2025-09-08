@@ -574,7 +574,7 @@ export async function troubleshootGuidedWorkflow(args: TroubleshootArgs): Promis
     
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new McpAdrError(`Invalid input: ${error.errors.map(e => e.message).join(', ')}`, 'INVALID_INPUT');
+      throw new McpAdrError(`Invalid input: ${error.issues.map(e => e.message).join(', ')}`, 'INVALID_INPUT');
     }
     
     throw new McpAdrError(

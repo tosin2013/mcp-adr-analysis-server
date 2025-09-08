@@ -13,7 +13,7 @@ import { KnowledgeGraphManager } from '../utils/knowledge-graph-manager.js';
 // Tool chain step schema
 const ToolChainStepSchema = z.object({
   toolName: z.string().describe('MCP tool name to execute'),
-  parameters: z.record(z.any()).describe('Parameters to pass to the tool'),
+  parameters: z.record(z.string(), z.any()).describe('Parameters to pass to the tool'),
   description: z.string().describe('What this step accomplishes'),
   dependsOn: z.array(z.string()).optional().describe('Previous step IDs this depends on'),
   stepId: z.string().describe('Unique identifier for this step'),
@@ -659,7 +659,7 @@ export async function toolChainOrchestrator(args: ToolChainOrchestratorArgs): Pr
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new McpAdrError(`Invalid input: ${error.errors.map(e => e.message).join(', ')}`, 'INVALID_INPUT');
+      throw new McpAdrError(`Invalid input: ${error.issues.map(e => e.message).join(', ')}`, 'INVALID_INPUT');
     }
 
     throw new McpAdrError(

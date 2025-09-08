@@ -71,7 +71,7 @@ export const TodoSectionSchema = z.object({
   order: z.number(),
   collapsed: z.boolean().default(false),
   tasks: z.array(z.string()), // Task IDs
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional()
 });
 
 export const TodoJsonDataSchema = z.object({
@@ -88,7 +88,7 @@ export const TodoJsonDataSchema = z.object({
   }),
   
   // Task storage
-  tasks: z.record(TodoTaskSchema), // taskId -> Task
+  tasks: z.record(z.string(), TodoTaskSchema), // taskId -> Task
   sections: z.array(TodoSectionSchema),
   
   // Scoring integration
@@ -120,10 +120,10 @@ export const TodoJsonDataSchema = z.object({
     id: z.string(),
     name: z.string(),
     trigger: z.enum(['task_completed', 'all_dependencies_met', 'score_threshold', 'time_based']),
-    conditions: z.record(z.any()),
+    conditions: z.record(z.string(), z.any()),
     actions: z.array(z.object({
       type: z.enum(['complete_task', 'create_task', 'update_status', 'notify', 'update_score']),
-      parameters: z.record(z.any())
+      parameters: z.record(z.string(), z.any())
     }))
   })).default([])
 });

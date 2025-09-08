@@ -42,6 +42,10 @@ jobs:
           # Manual dependency installation
           npm install
 
+          # Run autofix before build
+          echo "Running lint autofix..."
+          npm run lint:fix || echo "Autofix completed with warnings"
+
           # Manual build
           npm run build
         fi

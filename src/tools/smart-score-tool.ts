@@ -560,7 +560,7 @@ ${suggestions.map(s => `${s}`).join('\n')}
         const optimalWeights = await calculateOptimalWeights(validatedArgs.projectPath, validatedArgs.analysisMode);
         
         // Apply custom weight overrides if provided
-        let finalWeights = { ...optimalWeights };
+        const finalWeights = { ...optimalWeights };
         if (validatedArgs.customWeights) {
           Object.entries(validatedArgs.customWeights).forEach(([key, value]) => {
             if (value !== undefined) {
@@ -764,7 +764,7 @@ ${intentTrends.scoreHistory.map(entry =>
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new McpAdrError(`Invalid input: ${error.errors.map(e => e.message).join(', ')}`, 'INVALID_INPUT');
+      throw new McpAdrError(`Invalid input: ${error.issues.map(e => e.message).join(', ')}`, 'INVALID_INPUT');
     }
 
     throw new McpAdrError(
