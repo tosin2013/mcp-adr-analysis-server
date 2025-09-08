@@ -8,16 +8,29 @@ updates:
       time: "09:00"
       timezone: "UTC"
     # Security updates get priority
-    open-pull-requests-limit: 10
-    # Group related updates together to reduce PR noise
+    open-pull-requests-limit: 15
+    # Separate MCP SDK updates for enhanced testing
     groups:
+      # Critical MCP SDK updates - handled separately with enhanced testing
+      mcp-sdk-updates:
+        patterns:
+          - "@modelcontextprotocol/sdk"
+        update-types:
+          - "major"
+          - "minor"
+          - "patch"
+      # Other production dependencies
       production-dependencies:
         patterns:
-          - "@modelcontextprotocol/*"
           - "@types/*"
+          - "openai"
+          - "zod"
+          - "fast-glob"
+          - "tslib"
         update-types:
           - "minor"
           - "patch"
+      # Development dependencies
       development-dependencies:
         patterns:
           - "jest*"
@@ -26,9 +39,15 @@ updates:
           - "typescript"
           - "eslint*"
           - "prettier*"
+          - "tsx"
         update-types:
           - "minor"
           - "patch"
+    # Enhanced commit messages for better tracking
+    commit-message:
+      prefix: "deps"
+      prefix-development: "deps-dev"
+      include: "scope"
     # Always allow security updates regardless of schedule
     allow:
       - dependency-type: "all"
@@ -36,11 +55,6 @@ updates:
     labels:
       - "dependencies"
       - "security"
-    # Add helpful commit messages
-    commit-message:
-      prefix: "chore"
-      prefix-development: "chore"
-      include: "scope"
     # Add reviewers for critical dependencies
     reviewers:
       - "tosin2013"
@@ -50,15 +64,15 @@ updates:
 
   # Also check GitHub Actions for security updates
   - package-ecosystem: "github-actions"
-    directory: "/.github/workflows"
+    directory: "/"
     schedule:
       interval: "weekly"
       day: "monday"
       time: "09:00"
       timezone: "UTC"
-    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: "scope"
     labels:
       - "github-actions"
       - "security"
-    commit-message:
-      prefix: "ci"
