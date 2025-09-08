@@ -273,7 +273,7 @@ describe('Content Masking Tool', () => {
       
       test('configures patterns for project path', async () => {
         const result = await configureCustomPatterns({
-          projectPath: '/Users/tosinakinosho/workspaces/mcp-adr-analysis-server'
+          projectPath: process.cwd()
         });
 
         expect(result).toBeDefined();
@@ -288,7 +288,7 @@ describe('Content Masking Tool', () => {
         ];
 
         const result = await configureCustomPatterns({
-          projectPath: '/Users/tosinakinosho/workspaces/mcp-adr-analysis-server',
+          projectPath: process.cwd(),
           existingPatterns
         });
 
@@ -302,7 +302,7 @@ describe('Content Masking Tool', () => {
       
       test('analyzes project structure correctly', async () => {
         const result = await configureCustomPatterns({
-          projectPath: '/Users/tosinakinosho/workspaces/mcp-adr-analysis-server'
+          projectPath: process.cwd()
         });
 
         expect(result).toBeDefined();
