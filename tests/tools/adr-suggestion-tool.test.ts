@@ -117,7 +117,7 @@ describe('ADR Suggestion Tool', () => {
       
       test('accepts all optional parameters', async () => {
         const result = await suggestAdrs({
-          projectPath: '/custom/path',
+          projectPath: '/tmp/test-workspace',
           analysisType: 'implicit_decisions',
           existingAdrs: ['ADR 1', 'ADR 2'],
           enhancedMode: true,
