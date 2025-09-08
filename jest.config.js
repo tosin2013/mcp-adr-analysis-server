@@ -14,9 +14,20 @@ export default {
     '^.+\\.ts$': ['ts-jest', {
       useESM: true,
       tsconfig: {
-        module: 'ESNext'
+        module: 'ESNext',
+        target: 'ES2022',
+        moduleResolution: 'node'
       }
     }]
+  },
+  globals: {
+    'ts-jest': {
+      useESM: true,
+      tsconfig: {
+        module: 'ESNext',
+        target: 'ES2022'
+      }
+    }
   },
   // Jest 30.x compatibility: disable worker threads to allow dynamic imports
   workerThreads: false,

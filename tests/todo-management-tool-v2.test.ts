@@ -7,6 +7,7 @@ import { existsSync, mkdirSync, rmSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
 import { manageTodoV2 } from '../src/tools/todo-management-tool-v2.js';
+import { getCurrentDir } from './utils/test-helpers.js';
 
 // Mock the knowledge graph manager
 jest.unstable_mockModule('../src/utils/knowledge-graph-manager.js', () => ({
@@ -486,7 +487,7 @@ We will implement an API gateway with the following requirements:
 
     it('should complete full JSON-first workflow: ADR import → JSON creation → Markdown sync', async () => {
       // Use sample project instead of creating temporary test structure
-      const currentDir = new URL('.', import.meta.url).pathname;
+      const currentDir = getCurrentDir();
       const sampleProjectPath = join(currentDir, '..', 'sample-project');
       
       // Clean up any existing cache to ensure fresh test
@@ -730,7 +731,7 @@ We will implement an API gateway with the following requirements:
   describe('Scoring Integration Tests', () => {
     it('should validate scoring system integration in todo-data.json', async () => {
       // Use sample project for realistic ADR content
-      const currentDir = new URL('.', import.meta.url).pathname;
+      const currentDir = getCurrentDir();
       const sampleProjectPath = join(currentDir, '..', 'sample-project');
       const cachePath = join(sampleProjectPath, '.mcp-adr-cache');
       const todoDataPath = join(cachePath, 'todo-data.json');
@@ -800,7 +801,7 @@ We will implement an API gateway with the following requirements:
 
     it('should validate project health scoring integration', async () => {
       // Use sample project for realistic scoring test
-      const currentDir = new URL('.', import.meta.url).pathname;
+      const currentDir = getCurrentDir();
       const sampleProjectPath = join(currentDir, '..', 'sample-project');
       const cachePath = join(sampleProjectPath, '.mcp-adr-cache');
       
@@ -837,7 +838,7 @@ We will implement an API gateway with the following requirements:
 
   describe('Complete Scoring Ecosystem Validation', () => {
     it.skip('should create project-health-scores.json through direct scoring operations', async () => {
-      const currentDir = new URL('.', import.meta.url).pathname;
+      const currentDir = getCurrentDir();
       const sampleProjectPath = join(currentDir, '..', 'sample-project');
       const cachePath = join(sampleProjectPath, '.mcp-adr-cache');
       const projectHealthPath = join(cachePath, 'project-health-scores.json');
@@ -887,7 +888,7 @@ We will implement an API gateway with the following requirements:
     });
 
     it.skip('should create knowledge-graph-snapshots.json through KG operations', async () => {
-      const currentDir = new URL('.', import.meta.url).pathname;
+      const currentDir = getCurrentDir();
       const sampleProjectPath = join(currentDir, '..', 'sample-project');
       const cachePath = join(sampleProjectPath, '.mcp-adr-cache');
       const kgSnapshotPath = join(cachePath, 'knowledge-graph-snapshots.json');
@@ -932,7 +933,7 @@ We will implement an API gateway with the following requirements:
     });
 
     it('should validate complete cache ecosystem after all operations', async () => {
-      const currentDir = new URL('.', import.meta.url).pathname;
+      const currentDir = getCurrentDir();
       const sampleProjectPath = join(currentDir, '..', 'sample-project');
       const cachePath = join(sampleProjectPath, '.mcp-adr-cache');
       
@@ -992,7 +993,7 @@ We will implement an API gateway with the following requirements:
   describe('Real-World Cache Validation Tests', () => {
     it.skip('should write ALL cache files to sample-project/.mcp-adr-cache for complete validation', async () => {
       // Use sample project for realistic testing
-      const currentDir = new URL('.', import.meta.url).pathname;
+      const currentDir = getCurrentDir();
       const sampleProjectPath = join(currentDir, '..', 'sample-project');
       const cachePath = join(sampleProjectPath, '.mcp-adr-cache');
       const todoDataPath = join(cachePath, 'todo-data.json');
