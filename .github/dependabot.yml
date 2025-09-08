@@ -1,0 +1,64 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "09:00"
+      timezone: "UTC"
+    # Security updates get priority
+    open-pull-requests-limit: 10
+    # Group related updates together to reduce PR noise
+    groups:
+      production-dependencies:
+        patterns:
+          - "@modelcontextprotocol/*"
+          - "@types/*"
+        update-types:
+          - "minor"
+          - "patch"
+      development-dependencies:
+        patterns:
+          - "jest*"
+          - "ts-jest"
+          - "@types/jest"
+          - "typescript"
+          - "eslint*"
+          - "prettier*"
+        update-types:
+          - "minor"
+          - "patch"
+    # Always allow security updates regardless of schedule
+    allow:
+      - dependency-type: "all"
+    # Add labels to make PRs easy to identify
+    labels:
+      - "dependencies"
+      - "security"
+    # Add helpful commit messages
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    # Add reviewers for critical dependencies
+    reviewers:
+      - "tosin2013"
+    # Custom PR titles to highlight security updates
+    pull-request-branch-name:
+      separator: "/"
+
+  # Also check GitHub Actions for security updates
+  - package-ecosystem: "github-actions"
+    directory: "/.github/workflows"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "UTC"
+    open-pull-requests-limit: 5
+    labels:
+      - "github-actions"
+      - "security"
+    commit-message:
+      prefix: "ci"
