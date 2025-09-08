@@ -9,6 +9,8 @@
  */
 
 import { jest } from '@jest/globals';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { McpAdrError } from '../../src/types/index.js';
 
 import {
@@ -18,6 +20,11 @@ import {
 } from '../../src/tools/adr-suggestion-tool.js';
 
 describe('ADR Suggestion Tool', () => {
+  // Dynamic project root resolution for portable tests
+  const __filename = fileURLToPath(import.meta.url);
+  const __dirname = path.dirname(__filename);
+  const projectRoot = path.resolve(__dirname, '../../..');
+  const testWorkspace = path.join(projectRoot, 'test-workspace');
   
   beforeEach(() => {
     jest.clearAllMocks();
@@ -117,7 +124,7 @@ describe('ADR Suggestion Tool', () => {
       
       test('accepts all optional parameters', async () => {
         const result = await suggestAdrs({
-          projectPath: '/tmp/test-workspace',
+          projectPath: testWorkspace,
           analysisType: 'implicit_decisions',
           existingAdrs: ['ADR 1', 'ADR 2'],
           enhancedMode: true,
@@ -307,7 +314,7 @@ describe('ADR Suggestion Tool', () => {
       
       test('accepts custom project path', async () => {
         const result = await discoverExistingAdrs({
-          projectPath: '/tmp/test-workspace'
+          projectPath: testWorkspace
         });
 
         expect(result).toBeDefined();
@@ -317,7 +324,7 @@ describe('ADR Suggestion Tool', () => {
         const result = await discoverExistingAdrs({
           adrDirectory: 'docs/decisions',
           includeContent: true,
-          projectPath: '/tmp/test-workspace'
+          projectPath: testWorkspace
         });
 
         expect(result).toBeDefined();
