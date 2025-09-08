@@ -2,14 +2,14 @@
   "name": "mcp-adr-analysis-server",
   "version": "2.0.7",
   "description": "MCP server for analyzing Architectural Decision Records and project architecture",
-  "main": "dist/index.js",
+  "main": "dist/src/index.js",
   "type": "module",
   "engines": {
     "node": ">=20.0.0",
     "npm": ">=9.0.0"
   },
   "scripts": {
-    "build": "tsc && chmod +x dist/index.js",
+    "build": "tsc && chmod +x dist/src/index.js",
     "dev": "tsx src/index.ts",
     "test": "echo 'Tests temporarily disabled due to security advisory - Jest dependencies contain malware'",
     "test:watch": "echo 'Tests temporarily disabled due to security advisory - Jest dependencies contain malware'",
@@ -24,8 +24,8 @@
     "clean": "rm -rf dist coverage .mcp-adr-cache",
     "prepare": "test -d src && npm run build || echo 'Skipping build - no src directory (likely packaging)'",
     "prepublishOnly": "npm run build && npm run lint",
-    "start": "node dist/index.js",
-    "health": "node dist/index.js --test",
+    "start": "node dist/src/index.js",
+    "health": "node dist/src/index.js --test",
     "format": "prettier --write src/**/*.ts tests/**/*.ts",
     "format:check": "prettier --check src/**/*.ts tests/**/*.ts",
     "typecheck": "tsc --noEmit",
@@ -61,7 +61,7 @@
     "url": "git+https://github.com/tosin2013/mcp-adr-analysis-server.git"
   },
   "bin": {
-    "mcp-adr-analysis-server": "./dist/index.js"
+    "mcp-adr-analysis-server": "./dist/src/index.js"
   },
   "files": [
     "dist/",
