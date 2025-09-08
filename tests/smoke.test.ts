@@ -1,6 +1,9 @@
 // Smoke test for pre-commit hook
 // This test should always pass and provides a quick validation that the test environment works
 
+import { existsSync } from 'fs';
+import { join } from 'path';
+
 describe('Smoke Test', () => {
   it('should always pass - validates test environment', () => {
     expect(true).toBe(true);
@@ -17,12 +20,13 @@ describe('Smoke Test', () => {
   });
 
   it('should validate basic module imports work', () => {
-    // Test that we can import from Node.js built-ins (ES module style)
-    import('path').then(path => {
-      expect(typeof path.join).toBe('function');
-    });
-    // Simpler test that works in current context
+    // Test that basic Node.js globals and APIs are available
     expect(typeof process).toBe('object');
+    expect(typeof global).toBe('object');
+    
+    // Test that basic Node.js modules are accessible via static imports
+    expect(typeof existsSync).toBe('function');
+    expect(typeof join).toBe('function');
   });
 
   it('should validate TypeScript compilation environment', () => {
