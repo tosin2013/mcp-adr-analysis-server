@@ -36,13 +36,13 @@ function getPackageVersion(): string {
     // Handle both Jest environment and normal execution
     let currentDir: string;
     
-    if (typeof import.meta !== 'undefined' && import.meta.url) {
-      // Normal ESM execution
-      const __filename = fileURLToPath(import.meta.url);
-      currentDir = dirname(__filename);
+    // Check if we're in a test environment first (Jest sets NODE_ENV to 'test')
+    if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'test') {
+      // In test environment, use process.cwd() to avoid import.meta issues
+      currentDir = process.cwd();
     } else {
-      // Jest or other environments without import.meta support
-      // Use process.cwd() as fallback
+      // In production/development, use process.cwd() as fallback
+      // We'll avoid import.meta entirely to prevent Jest parsing issues
       currentDir = process.cwd();
     }
     

@@ -47,7 +47,7 @@ build: install
 # Run tests without coverage (for CI)
 test: check-deps
 	@echo "Running tests..."
-	npm test
+	NODE_ENV=test npm test
 	@echo "Tests completed successfully"
 
 # Run tests with coverage
