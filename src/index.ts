@@ -20,8 +20,8 @@ import {
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { readFileSync } from 'fs';
-import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { join } from 'path';
+import { getCurrentDirCompat } from './utils/directory-compat.js';
 import { McpAdrError } from './types/index.js';
 import { CONVERSATION_CONTEXT_SCHEMA } from './types/conversation-context.js';
 import { maskMcpResponse, createMaskingConfig } from './utils/output-masking.js';
@@ -34,17 +34,7 @@ import { KnowledgeGraphManager } from './utils/knowledge-graph-manager.js';
 function getPackageVersion(): string {
   try {
     // Handle both Jest environment and normal execution
-    let currentDir: string;
-    
-    if (typeof import.meta !== 'undefined' && import.meta.url) {
-      // Normal ESM execution
-      const __filename = fileURLToPath(import.meta.url);
-      currentDir = dirname(__filename);
-    } else {
-      // Jest or other environments without import.meta support
-      // Use process.cwd() as fallback
-      currentDir = process.cwd();
-    }
+    const currentDir = getCurrentDirCompat();
     
     // Try multiple possible locations for package.json
     const possiblePaths = [
