@@ -21,8 +21,8 @@ describe('ADR Suggestion Tool', () => {
   
   beforeEach(() => {
     jest.clearAllMocks();
-    // Use the actual workspace directory for tests
-    jest.spyOn(process, 'cwd').mockReturnValue('/Users/tosinakinosho/workspaces/mcp-adr-analysis-server');
+    // Use a safe test directory path that works in CI environments
+    jest.spyOn(process, 'cwd').mockReturnValue('/tmp/test-workspace');
   });
 
   afterEach(() => {
