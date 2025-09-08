@@ -30,14 +30,20 @@
 - Removed 76 of 85 critical vulnerabilities by eliminating Jest dependencies
 - System can now build and run core functionality without most malware packages
 
-#### Phase 2: Complete Remediation (TODO)
-- Monitor for clean versions of `debug` package
-- Consider alternative MCP SDK versions when available
-- Implement dependency scanning in CI/CD
+#### Phase 2: Automated Security Monitoring ✅
+- **Dependabot configured** for automated security monitoring and updates
+- Daily checks for npm package security updates
+- Automatic PR creation when clean versions of `@modelcontextprotocol/sdk` are available
+- Comprehensive dependency security management implemented
 
-#### Phase 3: Test Restoration (TODO)
+#### Phase 3: Complete Remediation (IN PROGRESS)
+- Monitor for clean versions of `debug` package (automated via Dependabot)
+- Consider alternative MCP SDK versions when available (automated detection)
+- Dependency scanning active in CI/CD
+
+#### Phase 4: Test Restoration (TODO)
 - Wait for security all-clear from npm security team
-- Restore Jest 30.x dependencies with known-clean versions
+- Restore Jest 30.x dependencies with known-clean versions (Dependabot will auto-propose)
 - Re-enable full test suite
 
 ### Environment Verification
@@ -57,8 +63,21 @@ npm list debug
 ### Recovery Plan
 
 1. **Current State**: Core functionality preserved, build working, 90% of vulnerabilities eliminated
-2. **Next Steps**: Monitor for clean versions of remaining vulnerable packages
-3. **Test Restoration**: Restore Jest 30.x compatibility once environment is clean
+2. **Automated Monitoring**: Dependabot now monitoring for clean versions of remaining vulnerable packages
+3. **Test Restoration**: Dependabot will automatically propose Jest 30.x restoration once environment is clean
+
+### Dependabot Configuration
+
+**Automatic Security Monitoring**: 
+- Daily checks for security updates to `@modelcontextprotocol/sdk` and all dependencies
+- Immediate PR creation when clean versions become available
+- Comprehensive dependency security management
+- See `docs/DEPENDABOT.md` for full configuration details
+
+**Expected Resolution**: Dependabot will automatically detect and propose updates when:
+- Clean versions of `@modelcontextprotocol/sdk` without vulnerable `debug` dependency are released
+- Security patches for any remaining vulnerabilities become available
+- Jest testing dependencies can be safely restored
 
 ### Jest 30.x Compatibility Preservation
 
