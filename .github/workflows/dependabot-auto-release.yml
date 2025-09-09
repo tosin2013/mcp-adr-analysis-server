@@ -1,0 +1,86 @@
+name: Dependabot Auto Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  auto-release:
+    if: github.event.pull_request.merged == true && github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+      
+      - name: Bump version for dependency update
+        run: |
+          echo "Dependabot PR merged: ${{ github.event.pull_request.title }}"
+          
+          # Determine version bump type based on PR title
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          
+          if [[ "$PR_TITLE" == *"major"* ]] || [[ "$PR_TITLE" == *"breaking"* ]]; then
+            VERSION_TYPE="major"
+          elif [[ "$PR_TITLE" == *"minor"* ]] || [[ "$PR_TITLE" == *"feature"* ]]; then
+            VERSION_TYPE="minor"  
+          else
+            VERSION_TYPE="patch"
+          fi
+          
+          echo "Version bump type: $VERSION_TYPE"
+          
+          # Bump version
+          npm version $VERSION_TYPE --no-git-tag-version
+          
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "New version: $NEW_VERSION"
+      
+      - name: Commit version bump
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ env.NEW_VERSION }} after dependabot update
+          
+          - Automated version bump following dependency updates
+          - PR: ${{ github.event.pull_request.title }}
+          - Updated by: ${{ github.actor }}"
+      
+      - name: Push version bump
+        run: |
+          git push origin main
+      
+      - name: Create and push tag
+        run: |
+          TAG_NAME="v${{ env.NEW_VERSION }}"
+          echo "Creating tag: $TAG_NAME"
+          
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME - Dependabot auto-release
+          
+          Automated release following dependency updates:
+          - ${{ github.event.pull_request.title }}
+          - Merged PR: #${{ github.event.pull_request.number }}"
+          
+          git push origin "$TAG_NAME"
+          
+          echo "✅ Tag $TAG_NAME created and pushed"
+          echo "🚀 This will trigger AI release notes generation and NPM publishing"
