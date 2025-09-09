@@ -55,10 +55,10 @@ function getPackageVersion(): string {
       }
     }
     
-    return '2.0.2'; // fallback version
+    return '2.0.15'; // fallback version
   } catch (error) {
     console.error('Error reading package.json:', error);
-    return '2.0.2'; // fallback version
+    return '2.0.15'; // fallback version
   }
 }
 
