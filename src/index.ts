@@ -56,8 +56,8 @@ function getPackageVersion(): string {
     }
     
     // Strategy 2: Use process.env.npm_package_version if available (during npm scripts)
-    if (process.env.npm_package_version) {
-      return process.env.npm_package_version;
+    if (process.env['npm_package_version']) {
+      return process.env['npm_package_version'];
     }
     
     // Final fallback: Use generic version instead of hardcoded specific version
