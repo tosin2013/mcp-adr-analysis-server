@@ -18,6 +18,26 @@ const mockExistsSync = jest.fn() as jest.MockedFunction<(path: string) => boolea
 const mockReadFileSync = jest.fn() as jest.MockedFunction<(path: string) => string>;
 const mockWriteFileSync = jest.fn() as jest.MockedFunction<(path: string, data: string) => void>;
 
+// Mock ProjectHealthScoring class
+const mockGetProjectHealthScore = jest.fn() as jest.MockedFunction<() => Promise<any>>;
+const MockProjectHealthScoring = jest.fn().mockImplementation(() => ({
+  getProjectHealthScore: mockGetProjectHealthScore
+}));
+
+// Mock manageTodoV2 function
+const mockManageTodoV2 = jest.fn() as jest.MockedFunction<(args: any) => Promise<any>>;
+
+// Mock smartGitPush function
+const mockSmartGitPush = jest.fn() as jest.MockedFunction<(args: any) => Promise<any>>;
+
+// Mock KnowledgeGraphManager class
+const mockGetProjectScoreTrends = jest.fn() as jest.MockedFunction<() => Promise<any>>;
+const mockGetIntentScoreTrends = jest.fn() as jest.MockedFunction<(intentId: string) => Promise<any>>;
+const MockKnowledgeGraphManager = jest.fn().mockImplementation(() => ({
+  getProjectScoreTrends: mockGetProjectScoreTrends,
+  getIntentScoreTrends: mockGetIntentScoreTrends
+}));
+
 jest.unstable_mockModule('fs/promises', () => ({
   readFile: mockReadFile,
   writeFile: mockWriteFile,
@@ -41,6 +61,23 @@ mockDirname.mockImplementation((p: string) => p.split('/').slice(0, -1).join('/'
 jest.unstable_mockModule('path', () => ({
   join: mockJoin,
   dirname: mockDirname,
+}));
+
+// Mock internal dependencies
+jest.unstable_mockModule('../../src/utils/project-health-scoring.js', () => ({
+  ProjectHealthScoring: MockProjectHealthScoring
+}));
+
+jest.unstable_mockModule('../../src/tools/todo-management-tool-v2.js', () => ({
+  manageTodoV2: mockManageTodoV2
+}));
+
+jest.unstable_mockModule('../../src/tools/smart-git-push-tool.js', () => ({
+  smartGitPush: mockSmartGitPush
+}));
+
+jest.unstable_mockModule('../../src/utils/knowledge-graph-manager.js', () => ({
+  KnowledgeGraphManager: MockKnowledgeGraphManager
 }));
 
 describe('Smart Score Tool', () => {
@@ -74,7 +111,82 @@ describe('Smart Score Tool', () => {
           devDependencies: { jest: '^29.0.0' }
         });
       }
+      if (path.includes('project-health-scores.json')) {
+        return JSON.stringify({
+          overall: 75,
+          taskCompletion: 80,
+          deploymentReadiness: 70,
+          architectureCompliance: 65,
+          securityPosture: 85,
+          codeQuality: 60,
+          lastUpdated: new Date().toISOString()
+        });
+      }
       return '{}';
+    });
+    
+    // Mock ProjectHealthScoring default response
+    mockGetProjectHealthScore.mockResolvedValue({
+      overall: 75,
+      confidence: 85,
+      taskCompletion: 80,
+      deploymentReadiness: 70,
+      architectureCompliance: 65,
+      securityPosture: 85,
+      codeQuality: 60,
+      lastUpdated: new Date().toISOString(),
+      influencingTools: ['manage_todo', 'smart_git_push'],
+      breakdown: {
+        taskCompletion: { completed: 8, total: 10, criticalTasksRemaining: 1 },
+        deploymentReadiness: { criticalBlockers: 2, warningBlockers: 3 },
+        architectureCompliance: { complianceScore: 65 },
+        securityPosture: { vulnerabilityCount: 1, contentMaskingEffectiveness: 90 },
+        codeQuality: { ruleViolations: 5, patternAdherence: 75 }
+      }
+    });
+    
+    // Mock manageTodoV2 default response
+    mockManageTodoV2.mockResolvedValue({
+      content: [{
+        type: 'text',
+        text: '8/10 tasks completed (80%)\n2 critical/high priority tasks remaining'
+      }]
+    });
+    
+    // Mock smartGitPush default response
+    mockSmartGitPush.mockResolvedValue({
+      status: 'success',
+      readiness: 'ready'
+    });
+    
+    // Mock KnowledgeGraphManager responses
+    mockGetProjectScoreTrends.mockResolvedValue({
+      currentScore: 75,
+      scoreHistory: [
+        { timestamp: new Date().toISOString(), score: 70, triggerEvent: 'manual_update' },
+        { timestamp: new Date().toISOString(), score: 75, triggerEvent: 'todo_completion' }
+      ],
+      averageImprovement: 2.5,
+      topImpactingIntents: [
+        { scoreImprovement: 5, humanRequest: 'Complete critical security tasks for deployment readiness' }
+      ]
+    });
+    
+    mockGetIntentScoreTrends.mockResolvedValue({
+      initialScore: 65,
+      currentScore: 75,
+      progress: 10,
+      componentTrends: {
+        taskCompletion: 80,
+        deploymentReadiness: 70,
+        architectureCompliance: 65,
+        securityPosture: 85,
+        codeQuality: 60
+      },
+      scoreHistory: [
+        { timestamp: new Date().toISOString(), score: 65, triggerEvent: 'intent_start' },
+        { timestamp: new Date().toISOString(), score: 75, triggerEvent: 'task_completion' }
+      ]
     });
   });
 
@@ -1287,6 +1399,496 @@ describe('Smart Score Tool', () => {
           expect(error).toBeDefined();
         }
       }
+    });
+  });
+
+  describe('Successful Operation Execution Coverage', () => {
+    it('should successfully execute recalculate_scores operation', async () => {
+      const validInput = {
+        operation: 'recalculate_scores',
+        projectPath: testProjectPath,
+        components: ['task_completion', 'deployment_readiness'],
+        forceUpdate: false,
+        updateSources: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Scores Recalculated Successfully');
+      expect(result.content[0].text).toContain('Overall');
+      expect(result.content[0].text).toContain('Task Completion');
+      expect(mockGetProjectHealthScore).toHaveBeenCalled();
+      expect(mockManageTodoV2).toHaveBeenCalled();
+    });
+
+    it('should successfully execute sync_scores operation', async () => {
+      const validInput = {
+        operation: 'sync_scores',
+        projectPath: testProjectPath,
+        todoPath: 'TODO.md',
+        triggerTools: ['manage_todo', 'smart_git_push'],
+        rebalanceWeights: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Cross-Tool Score Synchronization Complete');
+      expect(result.content[0].text).toContain('Overall Project Health');
+      expect(result.content[0].text).toContain('Weight Optimization Analysis');
+      expect(mockGetProjectHealthScore).toHaveBeenCalled();
+      expect(mockManageTodoV2).toHaveBeenCalled();
+    });
+
+    it('should successfully execute diagnose_scores operation', async () => {
+      const validInput = {
+        operation: 'diagnose_scores',
+        projectPath: testProjectPath,
+        includeHistory: true,
+        checkDataFreshness: true,
+        suggestImprovements: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Project Health Score Diagnostics');
+      expect(result.content[0].text).toContain('Overall Assessment');
+      expect(result.content[0].text).toContain('Component Analysis');
+      expect(result.content[0].text).toContain('Recommended Actions');
+      expect(mockGetProjectHealthScore).toHaveBeenCalled();
+    });
+
+    it('should successfully execute optimize_weights operation with preview', async () => {
+      const validInput = {
+        operation: 'optimize_weights',
+        projectPath: testProjectPath,
+        analysisMode: 'current_state',
+        customWeights: {
+          taskCompletion: 0.3,
+          deploymentReadiness: 0.3,
+          architectureCompliance: 0.2,
+          securityPosture: 0.1,
+          codeQuality: 0.1
+        },
+        previewOnly: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Weight Optimization Preview');
+      expect(result.content[0].text).toContain('Current vs Optimal Weights');
+      expect(mockReadFile).toHaveBeenCalled();
+    });
+
+    it('should successfully execute optimize_weights operation with application', async () => {
+      const validInput = {
+        operation: 'optimize_weights',
+        projectPath: testProjectPath,
+        analysisMode: 'project_type',
+        previewOnly: false
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Scoring Weights Preview');
+      expect(result.content[0].text).toContain('New Weight Configuration Would Be Applied');
+      expect(MockProjectHealthScoring).toHaveBeenCalled();
+    });
+
+    it('should successfully execute reset_scores operation', async () => {
+      const validInput = {
+        operation: 'reset_scores',
+        projectPath: testProjectPath,
+        component: 'all',
+        preserveHistory: true,
+        recalculateAfterReset: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Scores Reset Successfully');
+      expect(result.content[0].text).toContain('Fresh Baseline Scores');
+      expect(result.content[0].text).toContain('Recalculation: ✅ Fresh data collected');
+      expect(mockGetProjectHealthScore).toHaveBeenCalled();
+    });
+
+    it('should successfully execute get_score_trends operation', async () => {
+      const validInput = {
+        operation: 'get_score_trends',
+        projectPath: testProjectPath
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Project Score Trends');
+      expect(result.content[0].text).toContain('Current Score');
+      expect(result.content[0].text).toContain('Score History');
+      expect(result.content[0].text).toContain('Top Impacting Intents');
+      expect(mockGetProjectScoreTrends).toHaveBeenCalled();
+    });
+
+    it('should successfully execute get_intent_scores operation', async () => {
+      const validInput = {
+        operation: 'get_intent_scores',
+        projectPath: testProjectPath,
+        intentId: 'test-intent-123'
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content).toBeDefined();
+      expect(result.content[0].type).toBe('text');
+      expect(result.content[0].text).toContain('Intent Score Analysis');
+      expect(result.content[0].text).toContain('Intent Progress');
+      expect(result.content[0].text).toContain('Component Scores');
+      expect(mockGetIntentScoreTrends).toHaveBeenCalledWith('test-intent-123');
+    });
+  });
+
+  describe('Advanced Scenario Coverage', () => {
+    it('should handle recalculate_scores without source updates', async () => {
+      const validInput = {
+        operation: 'recalculate_scores',
+        projectPath: testProjectPath,
+        components: ['all'],
+        updateSources: false
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Scores Recalculated Successfully');
+      expect(mockManageTodoV2).not.toHaveBeenCalled();
+    });
+
+    it('should handle sync_scores without trigger tools', async () => {
+      const validInput = {
+        operation: 'sync_scores',
+        projectPath: testProjectPath,
+        rebalanceWeights: false
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Cross-Tool Score Synchronization Complete');
+      expect(result.content[0].text).not.toContain('Weight Optimization Analysis');
+    });
+
+    it('should handle diagnose_scores with low confidence scores', async () => {
+      mockGetProjectHealthScore.mockResolvedValueOnce({
+        overall: 45,
+        confidence: 60,
+        taskCompletion: 40,
+        deploymentReadiness: 50,
+        architectureCompliance: 45,
+        securityPosture: 30,
+        codeQuality: 35,
+        lastUpdated: new Date(Date.now() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours ago
+        influencingTools: [],
+        breakdown: {
+          taskCompletion: { completed: 4, total: 10, criticalTasksRemaining: 3 },
+          deploymentReadiness: { criticalBlockers: 5, warningBlockers: 2 },
+          architectureCompliance: { complianceScore: 45 },
+          securityPosture: { vulnerabilityCount: 8, contentMaskingEffectiveness: 60 },
+          codeQuality: { ruleViolations: 12, patternAdherence: 40 }
+        }
+      });
+
+      const validInput = {
+        operation: 'diagnose_scores',
+        projectPath: testProjectPath,
+        suggestImprovements: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('🔴 Needs Improvement');
+      expect(result.content[0].text).toContain('Stale');
+      expect(result.content[0].text).toContain('🔴 Address critical/blocked tasks');
+      expect(result.content[0].text).toContain('🚀 Resolve deployment blockers');
+      expect(result.content[0].text).toContain('🔒 Fix security vulnerabilities');
+      expect(result.content[0].text).toContain('🔄 Run score synchronization');
+    });
+
+    it('should handle diagnose_scores with excellent scores', async () => {
+      mockGetProjectHealthScore.mockResolvedValueOnce({
+        overall: 95,
+        confidence: 95,
+        taskCompletion: 98,
+        deploymentReadiness: 92,
+        architectureCompliance: 90,
+        securityPosture: 96,
+        codeQuality: 88,
+        lastUpdated: new Date().toISOString(),
+        influencingTools: ['manage_todo', 'smart_git_push', 'security_scan'],
+        breakdown: {
+          taskCompletion: { completed: 49, total: 50, criticalTasksRemaining: 0 },
+          deploymentReadiness: { criticalBlockers: 0, warningBlockers: 1 },
+          architectureCompliance: { complianceScore: 90 },
+          securityPosture: { vulnerabilityCount: 0, contentMaskingEffectiveness: 98 },
+          codeQuality: { ruleViolations: 1, patternAdherence: 95 }
+        }
+      });
+
+      const validInput = {
+        operation: 'diagnose_scores',
+        projectPath: testProjectPath,
+        suggestImprovements: false
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('🟢 Excellent');
+      expect(result.content[0].text).toContain('Fresh');
+      expect(result.content[0].text).toContain('All components meeting target thresholds! 🎉');
+      expect(result.content[0].text).not.toContain('Recommended Actions');
+    });
+
+    it('should handle reset_scores without history preservation', async () => {
+      const validInput = {
+        operation: 'reset_scores',
+        projectPath: testProjectPath,
+        component: 'task_completion',
+        preserveHistory: false,
+        recalculateAfterReset: false
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Reset Component: task_completion');
+      expect(result.content[0].text).not.toContain('Backup Created');
+      expect(result.content[0].text).toContain('Recalculation: ⏸️ Skipped');
+    });
+
+    it('should handle backup creation failure during reset', async () => {
+      mockReadFile.mockRejectedValueOnce(new Error('Read failed'));
+
+      const validInput = {
+        operation: 'reset_scores',
+        projectPath: testProjectPath,
+        preserveHistory: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Scores Reset Successfully');
+      expect(result.content[0].text).not.toContain('Backup Created');
+    });
+  });
+
+  describe('Weight Calculation Edge Cases', () => {
+    it('should handle desktop app project type', async () => {
+      mockReadFile.mockResolvedValue(JSON.stringify({
+        name: 'desktop-app',
+        dependencies: { electron: '^20.0.0' },
+        scripts: { test: 'jest' },
+        devDependencies: { jest: '^29.0.0' }
+      }));
+
+      const validInput = {
+        operation: 'optimize_weights',
+        projectPath: testProjectPath,
+        previewOnly: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Weight Optimization Preview');
+    });
+
+    it('should handle weight normalization when sum != 1.0', async () => {
+      const validInput = {
+        operation: 'optimize_weights',
+        projectPath: testProjectPath,
+        customWeights: {
+          taskCompletion: 0.5,
+          deploymentReadiness: 0.5,
+          architectureCompliance: 0.5,
+          securityPosture: 0.5,
+          codeQuality: 0.5
+        },
+        previewOnly: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Weight Optimization Preview');
+    });
+
+    it('should handle project with testing but no CI', async () => {
+      mockReadFile.mockResolvedValue(JSON.stringify({
+        name: 'test-only-project',
+        scripts: { test: 'vitest' },
+        devDependencies: { vitest: '^0.30.0' }
+      }));
+      
+      mockAccess.mockRejectedValue(new Error('No CI files'));
+
+      const validInput = {
+        operation: 'optimize_weights',
+        projectPath: testProjectPath,
+        analysisMode: 'historical_data',
+        previewOnly: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Weight Optimization Preview');
+    });
+
+    it('should handle project with CI but no testing', async () => {
+      mockReadFile.mockResolvedValue(JSON.stringify({
+        name: 'ci-only-project',
+        dependencies: { express: '^4.0.0' }
+      }));
+      
+      mockAccess.mockImplementation(async (path: string) => {
+        if (path.includes('.github/workflows')) {
+          return Promise.resolve();
+        }
+        throw new Error('File not found');
+      });
+
+      const validInput = {
+        operation: 'optimize_weights',
+        projectPath: testProjectPath,
+        previewOnly: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Weight Optimization Preview');
+    });
+  });
+
+  describe('Tool Integration Coverage', () => {
+    it('should handle manage_todo tool errors gracefully', async () => {
+      mockManageTodoV2.mockRejectedValueOnce(new Error('Tool unavailable'));
+
+      const validInput = {
+        operation: 'recalculate_scores',
+        projectPath: testProjectPath,
+        updateSources: true
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Scores Recalculated Successfully');
+      expect(result.content[0].text).toContain('manage_todo');
+    });
+
+    it('should handle smart_git_push tool errors gracefully', async () => {
+      mockSmartGitPush.mockRejectedValueOnce(new Error('Git error'));
+
+      const validInput = {
+        operation: 'sync_scores',
+        projectPath: testProjectPath,
+        triggerTools: ['smart_git_push']
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Cross-Tool Score Synchronization Complete');
+      expect(result.content[0].text).toContain('smart_git_push');
+    });
+
+    it('should handle TODO analysis parsing edge cases', async () => {
+      mockManageTodoV2.mockResolvedValueOnce({
+        content: [{
+          type: 'text',
+          text: 'No completion data available'
+        }]
+      });
+
+      const validInput = {
+        operation: 'sync_scores',
+        projectPath: testProjectPath
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Cross-Tool Score Synchronization Complete');
+    });
+
+    it('should handle empty score trends', async () => {
+      mockGetProjectScoreTrends.mockResolvedValueOnce({
+        currentScore: 0,
+        scoreHistory: [],
+        averageImprovement: 0,
+        topImpactingIntents: []
+      });
+
+      const validInput = {
+        operation: 'get_score_trends',
+        projectPath: testProjectPath
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Project Score Trends');
+      expect(result.content[0].text).toContain('Current Score: 0%');
+    });
+
+    it('should handle empty intent score trends', async () => {
+      mockGetIntentScoreTrends.mockResolvedValueOnce({
+        initialScore: 0,
+        currentScore: 0,
+        progress: 0,
+        componentTrends: {
+          taskCompletion: 0,
+          deploymentReadiness: 0,
+          architectureCompliance: 0,
+          securityPosture: 0,
+          codeQuality: 0
+        },
+        scoreHistory: []
+      });
+
+      const validInput = {
+        operation: 'get_intent_scores',
+        projectPath: testProjectPath,
+        intentId: 'empty-intent'
+      };
+
+      const result = await smartScore(validInput);
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Intent Score Analysis');
+      expect(result.content[0].text).toContain('**Progress**: 0.0%');
     });
   });
 });
