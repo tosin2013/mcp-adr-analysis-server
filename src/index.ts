@@ -36,7 +36,7 @@ function getPackageVersion(): string {
     // Handle both Jest environment and normal execution
     const currentDir = getCurrentDirCompat();
     
-    // Try multiple possible locations for package.json
+    // Strategy 1: Try multiple possible locations for package.json
     const possiblePaths = [
       join(currentDir, 'package.json'),
       join(currentDir, '..', 'package.json'),
@@ -55,10 +55,17 @@ function getPackageVersion(): string {
       }
     }
     
-    return '2.0.2'; // fallback version
+    // Strategy 2: Use process.env.npm_package_version if available (during npm scripts)
+    if (process.env['npm_package_version']) {
+      return process.env['npm_package_version'];
+    }
+    
+    // Final fallback: Use generic version instead of hardcoded specific version
+    // This prevents the need to update this code when version changes
+    return 'unknown'; // Generic fallback - no longer tied to specific version
   } catch (error) {
     console.error('Error reading package.json:', error);
-    return '2.0.2'; // fallback version
+    return 'unknown'; // Generic fallback - no longer tied to specific version
   }
 }
 
