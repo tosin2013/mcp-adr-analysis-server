@@ -104,42 +104,64 @@ export class AIReleaseNotesGenerator {
    * Get commits since the specified tag/reference
    */
   private getCommitsSinceTag(tag: string): CommitInfo[] {
-    const gitLog = execSync(
-      `git log ${tag}..HEAD --pretty=format:"%H|%s|%an|%ad" --date=short --name-only`,
-      { encoding: 'utf8' }
-    );
+    try {
+      const gitLog = execSync(
+        `git log ${tag}..HEAD --pretty=format:"%H|%s|%an|%ad" --date=short`,
+        { encoding: 'utf8' }
+      );
 
-    const commits: CommitInfo[] = [];
-    const entries = gitLog.split('\n\n').filter(entry => entry.trim());
+      if (!gitLog.trim()) {
+        console.log(`No commits found since ${tag}`);
+        return [];
+      }
 
-    for (const entry of entries) {
-      const lines = entry.split('\n');
-      const [hash, message, author, date] = lines[0].split('|');
-      const files = lines.slice(1).filter(line => line.trim());
+      const commits: CommitInfo[] = [];
+      const lines = gitLog.split('\n').filter(line => line.trim());
 
-      commits.push({
-        hash: hash.substring(0, 7),
-        message,
-        author,
-        date,
-        files
-      });
+      for (const line of lines) {
+        const [hash, message, author, date] = line.split('|');
+        if (hash && message && author && date) {
+          commits.push({
+            hash: hash.substring(0, 7),
+            message: message.trim(),
+            author: author.trim(),
+            date: date.trim(),
+            files: [] // Simplified for now
+          });
+        }
+      }
+
+      console.log(`Found ${commits.length} commits since ${tag}`);
+      return commits;
+    } catch (error) {
+      console.error(`Error getting commits since ${tag}:`, error);
+      return [];
     }
-
-    return commits;
   }
 
   /**
    * Generate next version number based on change analysis
    */
   private getNextVersion(currentTag: string): string {
+    // For manual releases, use package.json version as the target
+    const packageVersion = this.getVersionFromPackageJson();
+    
     if (!currentTag.match(/^v?\d+\.\d+\.\d+/)) {
       // If no valid tag exists, get version from package.json
-      return this.getVersionFromPackageJson();
+      return packageVersion;
     }
 
-    const version = currentTag.replace(/^v/, '');
-    const [major, minor, patch] = version.split('.').map(Number);
+    // Check if package.json has been manually updated to a specific version
+    const currentVersion = currentTag.replace(/^v/, '');
+    const targetVersion = packageVersion.replace(/^v/, '');
+    
+    if (targetVersion !== currentVersion) {
+      console.log(`Using package.json version ${packageVersion} instead of auto-generated version`);
+      return packageVersion;
+    }
+
+    // Auto-generate version based on commits
+    const [major, minor, patch] = currentVersion.split('.').map(Number);
     
     // Check if there are breaking changes, features, or just fixes
     const commits = this.getCommitsSinceTag(currentTag);
@@ -178,15 +200,19 @@ export class AIReleaseNotesGenerator {
    */
   private categorizeCommit(commit: CommitInfo, analysis: ReleaseAnalysis): void {
     const message = commit.message.toLowerCase();
+    const originalMessage = commit.message;
 
     if (message.includes('breaking change') || message.startsWith('feat!:')) {
-      analysis.breakingChanges.push(commit.message);
+      analysis.breakingChanges.push(originalMessage);
     } else if (message.startsWith('feat:') || message.includes('feature')) {
-      analysis.features.push(commit.message);
+      analysis.features.push(originalMessage);
     } else if (message.startsWith('fix:') || message.includes('bug')) {
-      analysis.bugFixes.push(commit.message);
+      analysis.bugFixes.push(originalMessage);
     } else if (message.includes('security') || message.includes('vulnerability')) {
-      analysis.securityUpdates.push(commit.message);
+      analysis.securityUpdates.push(originalMessage);
+    } else if (message.startsWith('chore:') || message.startsWith('docs:') || message.startsWith('style:') || message.startsWith('refactor:')) {
+      // Include maintenance commits as features for completeness
+      analysis.features.push(originalMessage);
     }
   }
 
@@ -197,7 +223,7 @@ export class AIReleaseNotesGenerator {
     const template = this.getTemplate();
     
     let markdown = template
-      .replace('{{VERSION}}', analysis.version)
+      .replace(/{{VERSION}}/g, analysis.version)
       .replace('{{DATE}}', new Date().toISOString().split('T')[0])
       .replace('{{FEATURES}}', this.formatSection(analysis.features, '✨'))
       .replace('{{BUG_FIXES}}', this.formatSection(analysis.bugFixes, '🐛'))
@@ -296,9 +322,21 @@ npm install @modelcontextprotocol/mcp-adr-analysis-server@{{VERSION}}
       existingChangelog = '# Changelog\n\nAll notable changes to this project will be documented in this file.\n\n';
     }
 
+    // Check if this version already exists to avoid duplicates
+    const versionMatch = releaseNotes.match(/# Release (v[\d.]+)/);
+    if (versionMatch && existingChangelog.includes(versionMatch[1])) {
+      console.log(`📝 Version ${versionMatch[1]} already exists in CHANGELOG.md, skipping update`);
+      return;
+    }
+
     // Insert new release notes after the header
     const lines = existingChangelog.split('\n');
-    const headerEndIndex = lines.findIndex(line => line.startsWith('## ')) || 2;
+    let headerEndIndex = lines.findIndex(line => line.startsWith('# Release '));
+    
+    // If no existing release section found, insert after main header
+    if (headerEndIndex === -1) {
+      headerEndIndex = Math.max(4, lines.findIndex(line => line.trim() === '') + 1);
+    }
     
     lines.splice(headerEndIndex, 0, releaseNotes, '');
     
