@@ -4,42 +4,82 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { existsSync, rmSync, unlinkSync } from 'fs';
-import { readFile } from 'fs/promises';
+import { existsSync, rmSync, unlinkSync, mkdirSync } from 'fs';
+import { readFile, writeFile } from 'fs/promises';
 import { join } from 'path';
-import { getCurrentDir } from '../utils/test-helpers.js';
-
-// Get the directory of this test file
-const __dirname = getCurrentDir();
+import { tmpdir } from 'os';
 
 describe('Cache Infrastructure Integration Tests', () => {
-  // Use the real sample-project for integration testing
-  const sampleProjectPath = join(__dirname, '..', '..', 'sample-project');
-  const cachePath = join(sampleProjectPath, '.mcp-adr-cache');
-  const todoDataPath = join(cachePath, 'todo-data.json');
-  const projectHealthPath = join(cachePath, 'project-health-scores.json');
-  const knowledgeGraphPath = join(cachePath, 'knowledge-graph-snapshots.json');
-  const todoSyncStatePath = join(cachePath, 'todo-sync-state.json');
-  const todoMarkdownPath = join(sampleProjectPath, 'TODO.md');
+  // Create a temporary test project for integration testing
+  let sampleProjectPath: string;
+  let cachePath: string;
+  let todoDataPath: string;
+  let projectHealthPath: string;
+  let knowledgeGraphPath: string;
+  let todoSyncStatePath: string;
+  let todoMarkdownPath: string;
 
-  beforeEach(() => {
-    // Clean up any existing cache and TODO.md before each test
-    if (existsSync(cachePath)) {
-      rmSync(cachePath, { recursive: true, force: true });
-    }
-    if (existsSync(todoMarkdownPath)) {
-      unlinkSync(todoMarkdownPath);
-    }
+  beforeEach(async () => {
+    // Create temporary test directory
+    sampleProjectPath = join(tmpdir(), `test-cache-integration-${Date.now()}`);
+    cachePath = join(sampleProjectPath, '.mcp-adr-cache');
+    todoDataPath = join(cachePath, 'todo-data.json');
+    projectHealthPath = join(cachePath, 'project-health-scores.json');
+    knowledgeGraphPath = join(cachePath, 'knowledge-graph-snapshots.json');
+    todoSyncStatePath = join(cachePath, 'todo-sync-state.json');
+    todoMarkdownPath = join(sampleProjectPath, 'TODO.md');
+
+    // Create project structure
+    mkdirSync(sampleProjectPath, { recursive: true });
+    
+    // Create ADR directory and sample ADR files
+    const adrDir = join(sampleProjectPath, 'docs', 'adrs');
+    mkdirSync(adrDir, { recursive: true });
+
+    // Create sample ADR files
+    const adr1Content = `# ADR-001: Database Architecture
+
+## Status
+Accepted
+
+## Decision
+- Use PostgreSQL as primary database
+- Implement connection pooling
+- Setup read replicas for scaling
+
+## Consequences
+- Improved performance
+- Better scalability
+- Increased complexity`;
+
+    const adr2Content = `# ADR-002: API Authentication
+
+## Status
+Accepted
+
+## Decision
+- Implement JWT-based authentication
+- Use OAuth 2.0 for external integrations
+- Setup role-based access control
+
+## Consequences
+- Enhanced security
+- Better user experience
+- Simplified integration`;
+
+    await writeFile(join(adrDir, '001-database-architecture.md'), adr1Content);
+    await writeFile(join(adrDir, '002-api-authentication.md'), adr2Content);
   });
 
   afterEach(() => {
-    // Optional: Clean up after tests (comment out to inspect files manually)
-    // if (existsSync(cachePath)) {
-    //   rmSync(cachePath, { recursive: true, force: true });
-    // }
-    // if (existsSync(todoMarkdownPath)) {
-    //   unlinkSync(todoMarkdownPath);
-    // }
+    // Clean up temporary test directory
+    if (existsSync(sampleProjectPath)) {
+      rmSync(sampleProjectPath, { recursive: true, force: true });
+    }
+    
+    // Clean up environment variables
+    delete process.env['PROJECT_PATH'];
+    delete process.env['ADR_DIRECTORY'];
   });
 
   describe('discover_existing_adrs cache initialization', () => {
@@ -156,10 +196,6 @@ describe('Cache Infrastructure Integration Tests', () => {
       expect(todoContent).toContain('Project Health'); // Current implementation behavior
       
       console.log('✅ generate_adr_todo successfully uses JSON-first approach');
-
-      // Clean up environment
-      delete process.env['PROJECT_PATH'];
-      delete process.env['ADR_DIRECTORY'];
     }, 30000);
   });
 
@@ -250,9 +286,6 @@ describe('Cache Infrastructure Integration Tests', () => {
       expect(existsSync(todoMarkdownPath)).toBe(true);
 
       console.log('🎉 Complete workflow integration successful!');
-
-      // Clean up
-      delete process.env['PROJECT_PATH'];
     }, 30000);
   });
 
