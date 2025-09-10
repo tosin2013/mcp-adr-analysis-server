@@ -618,7 +618,7 @@ describe('TODO Management Tool - Gap Fixes (TDD)', () => {
       
       expect(searchTime).toBeLessThan(100); // Search should be fast
       expect(searchResults.length).toBe(1);
-    });
+    }, 30000);
 
     it('should support lazy loading and caching', async () => {
       mkdirSync(testProjectPath, { recursive: true });

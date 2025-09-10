@@ -280,16 +280,18 @@ export async function manageTodoV2(args: any): Promise<any> {
         // Validate task ID format first
         let taskId = validatedArgs.taskId;
         
-        // Check for valid UUID format or partial UUID (at least 8 characters)
-        const uuidPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-        const partialUuidPattern = /^[0-9a-f]{8,}$/i;
-        
-        if (!uuidPattern.test(taskId) && !partialUuidPattern.test(taskId)) {
+        // Check for valid task ID format - accept any non-empty string
+        if (!taskId || taskId.trim().length === 0) {
           throw TodoManagerError.invalidTaskId(taskId);
         }
         
-        // If taskId looks like a partial ID (less than full UUID length), try to find the full ID
-        if (taskId.length < 36) {
+        // Support for UUID format or simple string IDs for backwards compatibility
+        const uuidPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+        const partialUuidPattern = /^[0-9a-f]{8,}$/i;
+        const isUuidLike = uuidPattern.test(taskId) || partialUuidPattern.test(taskId);
+        
+        // If taskId looks like a partial UUID ID, try to find the full ID
+        if (isUuidLike && taskId.length < 36) {
           const data = await todoManager.loadTodoData();
           const tasks = Object.values(data.tasks);
           const matchingTasks = tasks.filter(task => task.id.startsWith(taskId.toLowerCase()));

@@ -65,7 +65,16 @@ export const TodoTaskSchema = z.object({
     action: z.enum(['created', 'updated', 'completed', 'blocked', 'cancelled', 'moved']),
     details: z.string(),
     modifiedBy: z.string()
-  })).default([])
+  })).default([]),
+  
+  // Comments and collaboration
+  comments: z.array(z.object({
+    id: z.string(),
+    author: z.string(),
+    text: z.string(),
+    mentions: z.array(z.string()).default([]),
+    createdAt: z.string()
+  })).optional().default([])
 });
 
 export const TodoSectionSchema = z.object({
@@ -88,7 +97,13 @@ export const TodoJsonDataSchema = z.object({
     lastSyncToMarkdown: z.string().optional(),
     autoSyncEnabled: z.boolean().default(true),
     lastGitPush: z.string().optional(),
-    lastPushFiles: z.array(z.string()).optional()
+    lastPushFiles: z.array(z.string()).optional(),
+    syncMonitoring: z.object({
+      enabled: z.boolean(),
+      autoResolve: z.boolean(),
+      conflictStrategy: z.enum(['newest', 'json', 'markdown']),
+      lastCheck: z.string()
+    }).optional()
   }),
   
   // Task storage
@@ -130,6 +145,38 @@ export const TodoJsonDataSchema = z.object({
       parameters: z.record(z.any())
     }))
   })).default([]),
+  
+  // Templates for task creation
+  templates: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    template: z.object({
+      title: z.string(),
+      description: z.string().optional(),
+      priority: z.string().optional(),
+      category: z.string().optional(),
+      estimatedHours: z.number().optional(),
+      tags: z.array(z.string()).optional()
+    }),
+    createdAt: z.string(),
+    usageCount: z.number()
+  })).optional().default([]),
+  
+  // Recurring tasks
+  recurringTasks: z.array(z.object({
+    id: z.string(),
+    title: z.string(),
+    description: z.string(),
+    priority: z.string(),
+    frequency: z.enum(['daily', 'weekly', 'monthly']),
+    startDate: z.string(),
+    endDate: z.string().optional(),
+    createdAt: z.string(),
+    lastGenerated: z.string().nullable(),
+    nextDue: z.string(),
+    isActive: z.boolean()
+  })).optional().default([]),
   
   // Operation history for undo functionality
   operationHistory: z.array(z.object({

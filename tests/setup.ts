@@ -5,6 +5,9 @@
 
 import { jest } from '@jest/globals';
 
+// Set test environment to disable AI execution (force prompt-only mode)
+process.env.EXECUTION_MODE = 'prompt-only';
+
 // Extend Jest timeout for integration tests and advanced prompting tests
 jest.setTimeout(15000);
 
@@ -22,14 +25,20 @@ beforeAll(() => {
   };
 });
 
-afterAll(() => {
+afterAll(async () => {
   global.console = originalConsole;
+  
+  // Final cleanup for any remaining async operations
+  await new Promise(resolve => setTimeout(resolve, 100));
 });
 
 // Clean up after each test
-afterEach(() => {
+afterEach(async () => {
   jest.clearAllMocks();
   jest.restoreAllMocks();
+  
+  // Wait for any pending async operations to complete
+  await new Promise(resolve => setImmediate(resolve));
 });
 
 // Global test utilities
