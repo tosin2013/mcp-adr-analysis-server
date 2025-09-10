@@ -126,7 +126,7 @@ describe('manage_todo_json Tool Integration', () => {
       await expect((server as any).manageTodoJson({
         operation: 'invalid_operation',
         projectPath: testProjectPath
-      })).rejects.toThrow(/JSON TODO management failed/);
+      })).rejects.toThrow(/Invalid input/);
     });
 
     it('should handle missing required fields', async () => {
@@ -134,14 +134,14 @@ describe('manage_todo_json Tool Integration', () => {
         operation: 'create_task',
         projectPath: testProjectPath
         // Missing required 'title' field
-      })).rejects.toThrow(/JSON TODO management failed/);
+      })).rejects.toThrow(/Invalid input/);
     });
 
     it('should handle invalid project path', async () => {
       await expect((server as any).manageTodoJson({
         operation: 'get_tasks',
         projectPath: '/nonexistent/path'
-      })).rejects.toThrow(/JSON TODO management failed/);
+      })).rejects.toThrow(/TODO management failed/);
     });
 
     it('should handle malformed task updates', async () => {
@@ -159,7 +159,7 @@ describe('manage_todo_json Tool Integration', () => {
         taskId: 'nonexistent-id',
         updates: { status: 'invalid_status' },
         reason: 'Test update'
-      })).rejects.toThrow(/JSON TODO management failed/);
+      })).rejects.toThrow(/Invalid input/);
     });
 
     it('should handle filesystem errors gracefully', async () => {
@@ -173,7 +173,7 @@ describe('manage_todo_json Tool Integration', () => {
           operation: 'create_task',
           projectPath: readOnlyDir,
           title: 'Test task'
-        })).rejects.toThrow(/JSON TODO management failed/);
+        })).rejects.toThrow(/TODO management failed/);
       } catch (error) {
         // If it doesn't fail due to permissions, that's also acceptable
         // as the error handling wrapper is still tested
@@ -198,7 +198,7 @@ describe('manage_todo_json Tool Integration', () => {
         projectPath: testProjectPath,
         title: 'Test task',
         priority: 'invalid_priority'
-      })).rejects.toThrow(/JSON TODO management failed/);
+      })).rejects.toThrow(/Invalid input/);
     });
 
     it('should validate status enum values in updates', async () => {
@@ -218,7 +218,7 @@ describe('manage_todo_json Tool Integration', () => {
         taskId: taskId,
         updates: { status: 'invalid_status' },
         reason: 'Test update'
-      })).rejects.toThrow(/JSON TODO management failed/);
+      })).rejects.toThrow(/Invalid input/);
     });
 
     it('should handle malformed date formats', async () => {
@@ -273,7 +273,7 @@ describe('manage_todo_json Tool Integration', () => {
       await expect((server as any).manageTodoJson({
         operation: 'completely_invalid_operation_that_will_fail',
         projectPath: testProjectPath
-      })).rejects.toThrow(/JSON TODO management failed/);
+      })).rejects.toThrow(/Invalid input/);
     });
 
     it('should preserve all arguments when delegating', async () => {
@@ -418,12 +418,12 @@ describe('manage_todo_json Tool Integration', () => {
       await expect((server as any).manageTodoJson({
         operation: '',
         projectPath: testProjectPath
-      })).rejects.toThrow(/JSON TODO management failed/);
+      })).rejects.toThrow(/Invalid input/);
     });
 
     it('should handle null/undefined arguments', async () => {
-      await expect((server as any).manageTodoJson(null)).rejects.toThrow(/JSON TODO management failed/);
-      await expect((server as any).manageTodoJson(undefined)).rejects.toThrow(/JSON TODO management failed/);
+      await expect((server as any).manageTodoJson(null)).rejects.toThrow(/TODO management failed/);
+      await expect((server as any).manageTodoJson(undefined)).rejects.toThrow(/TODO management failed/);
     });
 
     it('should handle extremely long task titles', async () => {
