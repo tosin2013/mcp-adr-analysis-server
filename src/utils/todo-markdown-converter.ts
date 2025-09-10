@@ -190,7 +190,8 @@ export async function parseMarkdownToJson(markdown: string): Promise<TodoJsonDat
       linkedIntents: [],
       pendingUpdates: []
     },
-    automationRules: []
+    automationRules: [],
+    operationHistory: []
   };
   
   let currentSection: TodoSection | null = null;
@@ -292,6 +293,8 @@ function parseTaskLine(line: string, _allLines: string[], _lineIndex: number): T
     updatedAt: now,
     completedAt: isCompleted ? now : undefined,
     dueDate,
+    archived: false,
+    archivedAt: undefined,
     parentTaskId: undefined,
     subtasks: [],
     dependencies: [],

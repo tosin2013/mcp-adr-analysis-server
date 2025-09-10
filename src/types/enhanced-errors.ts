@@ -32,12 +32,12 @@ export class TodoManagerError extends Error {
     super(message);
     this.name = 'TodoManagerError';
     this.code = code;
-    this.field = options.field;
+    if (options.field !== undefined) this.field = options.field;
     this.value = options.value;
-    this.validValues = options.validValues;
+    if (options.validValues !== undefined) this.validValues = options.validValues;
     this.suggestions = options.suggestions || [];
-    this.taskId = options.taskId;
-    this.suggestion = options.suggestion;
+    if (options.taskId !== undefined) this.taskId = options.taskId;
+    if (options.suggestion !== undefined) this.suggestion = options.suggestion;
   }
 
   static projectPathNotFound(path: string): TodoManagerError {

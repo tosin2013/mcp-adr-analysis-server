@@ -147,6 +147,8 @@ export class TodoJsonManager {
       updatedAt: now,
       completedAt: taskData.completedAt || (taskData.status === 'completed' ? now : undefined),
       dueDate: taskData.dueDate,
+      archived: taskData.archived || false,
+      archivedAt: taskData.archivedAt,
       parentTaskId: taskData.parentTaskId,
       subtasks: taskData.subtasks || [],
       dependencies: taskData.dependencies || [],
