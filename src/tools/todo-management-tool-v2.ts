@@ -1207,7 +1207,17 @@ ${deploymentGuidance}
     }
 
   } catch (error) {
-    // Re-throw TodoManagerError as-is to preserve enhanced error information
+    // Handle specific TodoManagerError types with user-friendly responses
+    if (error instanceof TodoManagerError && error.code === 'TASK_NOT_FOUND') {
+      return {
+        content: [{
+          type: 'text',
+          text: `❌ No task found with ID: ${error.taskId || 'unknown'}\n\n**Suggestions:**\n${error.suggestions?.map(s => `• ${s.action || s}`).join('\n') || '• Use get_tasks to list all available tasks\n• Check if the task was recently deleted\n• Verify the task ID format'}\n\n*Please check the task ID and try again.*`
+        }]
+      };
+    }
+    
+    // Re-throw other TodoManagerError as-is to preserve enhanced error information
     if (error instanceof TodoManagerError) {
       throw error;
     }
