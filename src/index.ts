@@ -2191,6 +2191,56 @@ export class McpAdrAnalysisServer {
               },
               required: ['operation', 'projectPath']
             }
+          },
+          {
+            name: 'interactive_adr_planning',
+            description: 'Interactive guided ADR planning and creation tool - walks users through structured decision-making process with research integration, option evaluation, and automatic ADR generation',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                operation: {
+                  type: 'string',
+                  enum: [
+                    'start_session',
+                    'continue_session',
+                    'provide_input',
+                    'request_research',
+                    'evaluate_options',
+                    'make_decision',
+                    'assess_impact',
+                    'plan_implementation',
+                    'generate_adr',
+                    'update_todos',
+                    'get_guidance',
+                    'save_session',
+                    'complete_session'
+                  ],
+                  description: 'Interactive planning operation to perform'
+                },
+                sessionId: {
+                  type: 'string',
+                  description: 'Planning session ID (required for all operations except start_session)'
+                },
+                input: {
+                  description: 'User input for the current phase (varies by phase)'
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project root path'
+                },
+                autoResearch: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Automatically trigger research when needed'
+                },
+                generateTodos: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Automatically generate TODO items from decisions'
+                }
+              },
+              required: ['operation', 'projectPath']
+            }
           }
         ]
       };
@@ -2314,6 +2364,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'mcp_planning':
             response = await this.mcpPlanning(args);
+            break;
+          case 'interactive_adr_planning':
+            response = await this.interactiveAdrPlanning(args);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -5771,6 +5824,18 @@ Please provide:
       throw new McpAdrError(
         `MCP planning failed: ${error instanceof Error ? error.message : String(error)}`,
         'MCP_PLANNING_ERROR'
+      );
+    }
+  }
+
+  private async interactiveAdrPlanning(args: any): Promise<any> {
+    try {
+      const { interactiveAdrPlanning } = await import('./tools/interactive-adr-planning-tool.js');
+      return await interactiveAdrPlanning(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `Interactive ADR planning failed: ${error instanceof Error ? error.message : String(error)}`,
+        'INTERACTIVE_ADR_PLANNING_ERROR'
       );
     }
   }

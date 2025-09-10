@@ -55,6 +55,16 @@ jobs:
           npm version "${VERSION_NO_V}" --no-git-tag-version --allow-same-version
           echo "Updated package.json to version ${VERSION_NO_V}"
       
+      - name: Commit version update
+        run: |
+          VERSION_NO_V="${{ steps.version.outputs.VERSION }}"
+          VERSION_NO_V="${VERSION_NO_V#v}"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json package-lock.json
+          git diff --staged --quiet || git commit -m "chore: update version to ${VERSION_NO_V} [skip ci]"
+          git push origin HEAD:main || echo "Version update commit failed (may already be up to date)"
+      
       - name: Generate AI Release Notes
         run: npx tsx scripts/ai-release-notes.ts
         env:

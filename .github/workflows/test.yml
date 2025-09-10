@@ -67,10 +67,27 @@ jobs:
 
         # Check that the built server contains expected MCP tools
         echo "Checking for MCP tool implementations..."
+        
+        # Check core tools
         if grep -q "analyze_project" dist/src/index.js; then
           echo "✅ analyze_project tool found"
         else
           echo "❌ analyze_project tool not found"
+          exit 1
+        fi
+        
+        # Check new planning tools
+        if grep -q "mcp_planning" dist/src/index.js; then
+          echo "✅ mcp_planning tool found"
+        else
+          echo "❌ mcp_planning tool not found"
+          exit 1
+        fi
+        
+        if grep -q "interactive_adr_planning" dist/src/index.js; then
+          echo "✅ interactive_adr_planning tool found"
+        else
+          echo "❌ interactive_adr_planning tool not found"
           exit 1
         fi
 
