@@ -304,6 +304,10 @@ export async function manageTodoV2(args: any): Promise<any> {
           completionCriteria: validatedArgs.completionCriteria
         });
 
+        // Force flush to ensure data is persisted before returning
+        // This is necessary because each operation creates a new TodoJsonManager instance
+        await todoManager.flushBatch();
+
         return {
           content: [{
             type: 'text',
