@@ -1989,6 +1989,208 @@ export class McpAdrAnalysisServer {
               },
               required: ['operation', 'projectPath']
             }
+          },
+          {
+            name: 'mcp_planning',
+            description: 'Enhanced project planning and workflow management tool - phase-based project management, team resource allocation, progress tracking, risk analysis, and executive reporting',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                operation: {
+                  type: 'string',
+                  enum: ['create_project', 'manage_phases', 'track_progress', 'manage_resources', 'risk_analysis', 'generate_reports'],
+                  description: 'Project planning operation to perform'
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project root path'
+                },
+                projectName: {
+                  type: 'string',
+                  description: 'Project name (for create_project operation)'
+                },
+                description: {
+                  type: 'string',
+                  description: 'Project description (for create_project operation)'
+                },
+                phases: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string' },
+                      duration: { type: 'string' },
+                      dependencies: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        default: []
+                      },
+                      milestones: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        default: []
+                      }
+                    },
+                    required: ['name', 'duration']
+                  },
+                  description: 'Initial project phases (for create_project operation)'
+                },
+                team: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      name: { type: 'string' },
+                      role: { type: 'string' },
+                      skills: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        default: []
+                      },
+                      capacity: { type: 'string' }
+                    },
+                    required: ['name', 'role', 'capacity']
+                  },
+                  default: [],
+                  description: 'Team structure (for create_project operation)'
+                },
+                importFromAdrs: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Import phases from existing ADRs (for create_project operation)'
+                },
+                importFromTodos: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Import tasks from TODO system (for create_project operation)'
+                },
+                action: {
+                  type: 'string',
+                  enum: ['list', 'create', 'update', 'delete', 'transition', 'add', 'remove', 'allocate', 'optimize'],
+                  description: 'Management action (for manage_phases/manage_resources operations)'
+                },
+                phaseId: {
+                  type: 'string',
+                  description: 'Phase ID for phase operations'
+                },
+                phaseData: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    description: { type: 'string' },
+                    estimatedDuration: { type: 'string' },
+                    dependencies: {
+                      type: 'array',
+                      items: { type: 'string' }
+                    },
+                    milestones: {
+                      type: 'array',
+                      items: { type: 'string' }
+                    },
+                    linkedAdrs: {
+                      type: 'array',
+                      items: { type: 'string' }
+                    }
+                  },
+                  description: 'Phase data for create/update operations'
+                },
+                targetStatus: {
+                  type: 'string',
+                  enum: ['planning', 'active', 'completed', 'blocked', 'cancelled'],
+                  description: 'Target status for phase transition'
+                },
+                reportType: {
+                  type: 'string',
+                  enum: ['summary', 'detailed', 'gantt', 'milestones', 'risks', 'executive', 'status', 'health', 'team_performance', 'milestone_tracking'],
+                  default: 'summary',
+                  description: 'Type of progress report or generated report'
+                },
+                timeframe: {
+                  type: 'string',
+                  enum: ['current', 'weekly', 'monthly', 'quarterly', 'week', 'month', 'quarter', 'project'],
+                  default: 'current',
+                  description: 'Time frame for reports and tracking'
+                },
+                includeVisuals: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Include visual progress indicators'
+                },
+                updateTaskProgress: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Sync progress from TODO system'
+                },
+                memberId: {
+                  type: 'string',
+                  description: 'Team member ID for resource operations'
+                },
+                memberData: {
+                  type: 'object',
+                  properties: {
+                    name: { type: 'string' },
+                    role: { type: 'string' },
+                    skills: {
+                      type: 'array',
+                      items: { type: 'string' }
+                    },
+                    capacity: { type: 'string' }
+                  },
+                  description: 'Team member data for resource operations'
+                },
+                allocationData: {
+                  type: 'object',
+                  properties: {
+                    phaseId: { type: 'string' },
+                    allocation: {
+                      type: 'number',
+                      minimum: 0,
+                      maximum: 100
+                    }
+                  },
+                  required: ['phaseId', 'allocation'],
+                  description: 'Resource allocation data'
+                },
+                analysisType: {
+                  type: 'string',
+                  enum: ['automated', 'manual', 'comprehensive'],
+                  default: 'comprehensive',
+                  description: 'Type of risk analysis'
+                },
+                includeAdrRisks: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Analyze risks from ADR complexity'
+                },
+                includeDependencyRisks: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Analyze dependency chain risks'
+                },
+                includeResourceRisks: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Analyze resource allocation risks'
+                },
+                generateMitigation: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Generate mitigation strategies'
+                },
+                format: {
+                  type: 'string',
+                  enum: ['markdown', 'json', 'html'],
+                  default: 'markdown',
+                  description: 'Report output format'
+                },
+                includeCharts: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Include progress charts and graphs'
+                }
+              },
+              required: ['operation', 'projectPath']
+            }
           }
         ]
       };
@@ -2109,6 +2311,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'smart_score':
             response = await this.smartScore(args);
+            break;
+          case 'mcp_planning':
+            response = await this.mcpPlanning(args);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -5554,6 +5759,18 @@ Please provide:
       throw new McpAdrError(
         `Smart score analysis failed: ${error instanceof Error ? error.message : String(error)}`,
         'SMART_SCORE_ERROR'
+      );
+    }
+  }
+
+  private async mcpPlanning(args: any): Promise<any> {
+    try {
+      const { mcpPlanning } = await import('./tools/mcp-planning-tool.js');
+      return await mcpPlanning(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `MCP planning failed: ${error instanceof Error ? error.message : String(error)}`,
+        'MCP_PLANNING_ERROR'
       );
     }
   }
