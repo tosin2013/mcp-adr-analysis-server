@@ -14,7 +14,7 @@
 
 ## 📦 Dependencies
 - **Total Dependencies**: 5
-- **Outdated Dependencies**: 3
+- **Outdated Dependencies**: 4
 - **Security Updates Available**: ![Security](https://img.shields.io/badge/security%20updates-0-brightgreen)
 - **Auto-merge Success Rate**: 95%
 
