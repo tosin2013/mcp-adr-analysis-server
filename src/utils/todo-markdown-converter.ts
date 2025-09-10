@@ -191,6 +191,8 @@ export async function parseMarkdownToJson(markdown: string): Promise<TodoJsonDat
       pendingUpdates: []
     },
     automationRules: [],
+    templates: [],
+    recurringTasks: [],
     operationHistory: []
   };
   
@@ -316,7 +318,8 @@ function parseTaskLine(line: string, _allLines: string[], _lineIndex: number): T
       action: 'created',
       details: `Task imported from markdown: ${title}`,
       modifiedBy: 'tool'
-    }]
+    }],
+    comments: []
   };
 }
 
