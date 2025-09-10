@@ -5750,6 +5750,11 @@ Please provide:
       };
       return await manageTodoV2(argsWithPath);
     } catch (error) {
+      // If it's already a McpAdrError with good details, re-throw it as-is
+      if (error instanceof Error && error.name === 'McpAdrError') {
+        throw error;
+      }
+      
       throw new McpAdrError(
         `JSON TODO management failed: ${error instanceof Error ? error.message : String(error)}`,
         'TODO_JSON_MANAGEMENT_ERROR'
