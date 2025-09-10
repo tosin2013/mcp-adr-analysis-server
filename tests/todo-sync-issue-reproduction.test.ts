@@ -287,7 +287,7 @@ We need to integrate Keycloak with OpenShift for authentication.
       includeScoring: true
     });
 
-    expect(analyticsResult.content[0].text).toContain('Completed: 1');
+    expect(analyticsResult.content[0].text).toContain('**Completed**: 1');
     console.log('✅ JSON backend works correctly - issue is only in markdown sync');
   });
 
