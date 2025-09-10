@@ -96,6 +96,8 @@ export class TodoJsonManager {
           pendingUpdates: []
         },
         automationRules: [],
+        templates: [],
+        recurringTasks: [],
         operationHistory: []
       };
       
