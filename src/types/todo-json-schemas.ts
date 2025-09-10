@@ -52,6 +52,7 @@ export const TodoTaskSchema = z.object({
   // Metadata
   tags: z.array(z.string()).default([]),
   notes: z.string().optional(),
+  checklist: z.array(z.string()).optional(),
   lastModifiedBy: z.enum(['human', 'tool', 'adr_generator', 'knowledge_graph']).default('tool'),
   
   // Automation
@@ -64,7 +65,12 @@ export const TodoTaskSchema = z.object({
     timestamp: z.string(),
     action: z.enum(['created', 'updated', 'completed', 'blocked', 'cancelled', 'moved']),
     details: z.string(),
-    modifiedBy: z.string()
+    modifiedBy: z.string(),
+    updatedBy: z.string().optional(),
+    changes: z.record(z.object({
+      from: z.any(),
+      to: z.any()
+    })).optional()
   })).default([]),
   
   // Comments and collaboration
@@ -152,12 +158,13 @@ export const TodoJsonDataSchema = z.object({
     name: z.string(),
     description: z.string(),
     template: z.object({
-      title: z.string(),
+      title: z.string().optional(),
       description: z.string().optional(),
       priority: z.string().optional(),
       category: z.string().optional(),
       estimatedHours: z.number().optional(),
-      tags: z.array(z.string()).optional()
+      tags: z.array(z.string()).optional(),
+      checklist: z.array(z.string()).optional()
     }),
     createdAt: z.string(),
     usageCount: z.number()
@@ -198,8 +205,9 @@ export type TodoJsonData = z.infer<typeof TodoJsonDataSchema>;
 export interface TaskUpdateOperation {
   taskId: string;
   updates: Partial<TodoTask>;
-  reason: string;
-  triggeredBy: 'human' | 'tool' | 'automation';
+  reason?: string;
+  triggeredBy?: 'human' | 'tool' | 'automation';
+  updatedBy?: string;
 }
 
 export interface TaskMovementOperation {
