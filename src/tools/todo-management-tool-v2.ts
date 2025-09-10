@@ -21,9 +21,9 @@
 
 import { z } from 'zod';
 import { McpAdrError } from '../types/index.js';
+import { TodoManagerError } from '../types/enhanced-errors.js';
 import { TodoJsonManager } from '../utils/todo-json-manager.js';
 import { KnowledgeGraphManager } from '../utils/knowledge-graph-manager.js';
-// Remove unused import
 
 // Task operations schema
 const CreateTaskSchema = z.object({
@@ -71,7 +71,8 @@ const BulkUpdateSchema = z.object({
     assignee: z.string().optional(),
     notes: z.string().optional()
   })).describe('Bulk status updates'),
-  reason: z.string().optional().describe('Reason for bulk update - defaults to "Bulk status update"')
+  reason: z.string().optional().describe('Reason for bulk update - defaults to "Bulk status update"'),
+  dryRun: z.boolean().optional().default(false).describe('Preview changes without applying them')
 });
 
 const GetTasksSchema = z.object({
@@ -84,7 +85,8 @@ const GetTasksSchema = z.object({
     category: z.string().optional(),
     hasDeadline: z.boolean().optional(),
     overdue: z.boolean().optional(),
-    tags: z.array(z.string()).optional()
+    tags: z.array(z.string()).optional(),
+    archived: z.boolean().optional()
   }).optional().describe('Filter criteria'),
   sortBy: z.enum(['priority', 'dueDate', 'createdAt', 'updatedAt']).default('priority'),
   sortOrder: z.enum(['asc', 'desc']).default('desc'),
@@ -133,7 +135,8 @@ const FindTaskSchema = z.object({
   operation: z.literal('find_task'),
   projectPath: z.string().describe('Project root path'),
   query: z.string().describe('Search query: partial ID, title, or description'),
-  searchType: z.enum(['id', 'title', 'description', 'all']).default('all').describe('What to search in')
+  searchType: z.enum(['id', 'title', 'description', 'all', 'fuzzy', 'regex', 'multi_field']).default('all').describe('Search type'),
+  searchFields: z.array(z.enum(['title', 'description', 'tags', 'category', 'assignee'])).optional().describe('Fields to search in (for multi_field search)')
 });
 
 const ResumeTodoListSchema = z.object({
@@ -143,6 +146,37 @@ const ResumeTodoListSchema = z.object({
   includeContext: z.boolean().default(true).describe('Include project context and ADR status'),
   showNextActions: z.boolean().default(true).describe('Suggest next actionable steps'),
   checkDeploymentReadiness: z.boolean().default(true).describe('Check if any tasks are deployment-ready')
+});
+
+const DeleteTaskSchema = z.object({
+  operation: z.literal('delete_task'),
+  projectPath: z.string().describe('Project root path'),
+  taskId: z.string().describe('Task ID to delete'),
+  force: z.boolean().default(false).describe('Force delete even if task has dependencies')
+});
+
+const ArchiveTaskSchema = z.object({
+  operation: z.literal('archive_task'),
+  projectPath: z.string().describe('Project root path'),
+  taskId: z.string().describe('Task ID to archive')
+});
+
+const UndoLastSchema = z.object({
+  operation: z.literal('undo_last'),
+  projectPath: z.string().describe('Project root path')
+});
+
+const GetUndoHistorySchema = z.object({
+  operation: z.literal('get_undo_history'),
+  projectPath: z.string().describe('Project root path'),
+  limit: z.number().optional().default(10).describe('Number of operations to show')
+});
+
+const BulkDeleteSchema = z.object({
+  operation: z.literal('bulk_delete'),
+  projectPath: z.string().describe('Project root path'),
+  taskIds: z.array(z.string()).describe('Array of task IDs to delete'),
+  confirm: z.boolean().describe('Confirmation required for bulk delete')
 });
 
 // Main operation schema
@@ -157,7 +191,12 @@ const TodoManagementV2Schema = z.union([
   SyncToMarkdownSchema,
   ImportFromMarkdownSchema,
   FindTaskSchema,
-  ResumeTodoListSchema
+  ResumeTodoListSchema,
+  DeleteTaskSchema,
+  ArchiveTaskSchema,
+  UndoLastSchema,
+  GetUndoHistorySchema,
+  BulkDeleteSchema
 ]);
 
 type TodoManagementV2Args = z.infer<typeof TodoManagementV2Schema>;
@@ -165,14 +204,56 @@ type TodoManagementV2Args = z.infer<typeof TodoManagementV2Schema>;
 /**
  * Main TODO management function with JSON backend
  */
-export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
+export async function manageTodoV2(args: any): Promise<any> {
   try {
+    // Pre-validate priority values with enhanced error messages
+    if ('priority' in args && args.priority && 
+        !['low', 'medium', 'high', 'critical'].includes(args.priority)) {
+      const priority = args.priority;
+      const suggestion = priority === 'urgent' ? 'critical' : 
+                        priority === 'normal' ? 'medium' :
+                        priority === 'important' ? 'high' : undefined;
+      throw TodoManagerError.invalidPriority(priority, suggestion);
+    }
+    
+    if ('updates' in args && args.updates && 'priority' in args.updates && 
+        args.updates.priority && 
+        !['low', 'medium', 'high', 'critical'].includes(args.updates.priority)) {
+      const priority = args.updates.priority;
+      const suggestion = priority === 'urgent' ? 'critical' : 
+                        priority === 'normal' ? 'medium' :
+                        priority === 'important' ? 'high' : undefined;
+      throw TodoManagerError.invalidPriority(priority, suggestion);
+    }
+    
     const validatedArgs = TodoManagementV2Schema.parse(args);
     const todoManager = new TodoJsonManager(validatedArgs.projectPath);
     const kgManager = new KnowledgeGraphManager();
 
     switch (validatedArgs.operation) {
       case 'create_task': {
+        // Validate due date format if provided
+        if (validatedArgs.dueDate) {
+          const date = new Date(validatedArgs.dueDate);
+          if (isNaN(date.getTime())) {
+            throw new TodoManagerError(
+              `Invalid date format: '${validatedArgs.dueDate}'`,
+              'INVALID_DATE_FORMAT',
+              {
+                field: 'dueDate',
+                value: validatedArgs.dueDate,
+                suggestions: [
+                  {
+                    action: 'Use ISO date format',
+                    description: 'Provide dates in YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS.sssZ format',
+                    example: '2024-01-15T10:00:00.000Z'
+                  }
+                ]
+              }
+            );
+          }
+        }
+        
         const taskId = await todoManager.createTask({
           title: validatedArgs.title,
           description: validatedArgs.description,
@@ -197,8 +278,16 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
       }
 
       case 'update_task': {
-        // Resolve partial ID to full ID if needed
+        // Validate task ID format first
         let taskId = validatedArgs.taskId;
+        
+        // Check for valid UUID format or partial UUID (at least 8 characters)
+        const uuidPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+        const partialUuidPattern = /^[0-9a-f]{8,}$/i;
+        
+        if (!uuidPattern.test(taskId) && !partialUuidPattern.test(taskId)) {
+          throw TodoManagerError.invalidTaskId(taskId);
+        }
         
         // If taskId looks like a partial ID (less than full UUID length), try to find the full ID
         if (taskId.length < 36) {
@@ -207,12 +296,7 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
           const matchingTasks = tasks.filter(task => task.id.startsWith(taskId.toLowerCase()));
           
           if (matchingTasks.length === 0) {
-            return {
-              content: [{
-                type: 'text',
-                text: `❌ No task found with ID starting with "${taskId}"\n\n**Suggestions:**\n1. Use the \`find_task\` operation to search for tasks\n2. Use \`get_tasks\` with \`showFullIds: true\` to see all full IDs\n3. Check that the task ID is correct`
-              }]
-            };
+            throw TodoManagerError.taskNotFound(taskId);
           } else if (matchingTasks.length > 1) {
             const taskList = matchingTasks.map(task => 
               `- **${task.title}** (ID: \`${task.id}\`)`
@@ -227,6 +311,12 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
           }
           
           taskId = matchingTasks[0]!.id;
+        } else {
+          // For full UUID, verify it exists
+          const data = await todoManager.loadTodoData();
+          if (!data.tasks[taskId]) {
+            throw TodoManagerError.taskNotFound(taskId);
+          }
         }
         
         // Filter out undefined values
@@ -257,9 +347,16 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
       }
 
       case 'bulk_update': {
+        const data = await todoManager.loadTodoData();
         let updateCount = 0;
+        const previewChanges: string[] = [];
         
         for (const update of validatedArgs.updates) {
+          const task = data.tasks[update.taskId];
+          if (!task) {
+            continue; // Skip non-existent tasks
+          }
+
           // Filter out undefined values
           const cleanUpdates: any = {};
           if (update.status !== undefined) cleanUpdates.status = update.status;
@@ -267,21 +364,40 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
           if (update.assignee !== undefined) cleanUpdates.assignee = update.assignee;
           if (update.notes !== undefined) cleanUpdates.notes = update.notes;
           
-          await todoManager.updateTask({
-            taskId: update.taskId,
-            updates: cleanUpdates,
-            reason: validatedArgs.reason || 'Bulk status update',
-            triggeredBy: 'tool'
-          });
-          updateCount++;
+          if (validatedArgs.dryRun) {
+            // Dry run: show what would be changed
+            const changes = Object.entries(cleanUpdates).map(([key, value]) => 
+              `${key}: ${(task as any)[key]} → ${value}`
+            ).join(', ');
+            previewChanges.push(`- **${task.title}** (${update.taskId}): ${changes}`);
+            updateCount++;
+          } else {
+            // Actually update the task
+            await todoManager.updateTask({
+              taskId: update.taskId,
+              updates: cleanUpdates,
+              reason: validatedArgs.reason || 'Bulk status update',
+              triggeredBy: 'tool'
+            });
+            updateCount++;
+          }
         }
 
-        return {
-          content: [{
-            type: 'text',
-            text: `✅ Bulk update completed!\n\n**Tasks Updated**: ${updateCount}\n**Reason**: ${validatedArgs.reason || 'Bulk status update'}\n\n*All changes synced to JSON backend and TODO.md.*`
-          }]
-        };
+        if (validatedArgs.dryRun) {
+          return {
+            content: [{
+              type: 'text',
+              text: `🔍 **Bulk Update Preview (dry run)**\n\n**would update ${updateCount} tasks:**\n\n${previewChanges.join('\n')}\n\n*To apply these changes, run the command again with dryRun: false*`
+            }]
+          };
+        } else {
+          return {
+            content: [{
+              type: 'text',
+              text: `✅ Bulk update completed!\n\n**Tasks Updated**: ${updateCount}\n**Reason**: ${validatedArgs.reason || 'Bulk status update'}\n\n*All changes synced to JSON backend and TODO.md.*`
+            }]
+          };
+        }
       }
 
       case 'get_tasks': {
@@ -291,6 +407,13 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
         // Apply filters
         if (validatedArgs.filters) {
           const filters = validatedArgs.filters;
+          
+          // By default, exclude archived tasks unless specifically requested
+          if (filters.archived === undefined) {
+            tasks = tasks.filter(t => !t.archived);
+          } else {
+            tasks = tasks.filter(t => Boolean(t.archived) === filters.archived);
+          }
           
           if (filters.status) {
             tasks = tasks.filter(t => t.status === filters.status);
@@ -320,6 +443,9 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
           if (filters.tags && filters.tags.length > 0) {
             tasks = tasks.filter(t => filters.tags!.some(tag => t.tags.includes(tag)));
           }
+        } else {
+          // Default: exclude archived tasks
+          tasks = tasks.filter(t => !t.archived);
         }
 
         // Sort tasks
@@ -647,6 +773,75 @@ Tasks with the same title retained their completion status and progress.
               return task.title.toLowerCase().includes(query);
             case 'description':
               return task.description?.toLowerCase().includes(query);
+            case 'fuzzy': {
+              // Fuzzy search using edit distance for typos
+              const fuzzyMatch = (text: string, searchTerm: string): boolean => {
+                const editDistance = (a: string, b: string): number => {
+                  const dp = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(0));
+                  
+                  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
+                  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+                  
+                  for (let i = 1; i <= a.length; i++) {
+                    for (let j = 1; j <= b.length; j++) {
+                      if (a[i - 1] === b[j - 1]) {
+                        dp[i][j] = dp[i - 1][j - 1];
+                      } else {
+                        dp[i][j] = Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]) + 1;
+                      }
+                    }
+                  }
+                  return dp[a.length][b.length];
+                };
+                
+                const words = text.toLowerCase().split(/\s+/);
+                const searchWords = searchTerm.toLowerCase().split(/\s+/);
+                
+                return searchWords.every(searchWord => 
+                  words.some(word => {
+                    const distance = editDistance(word, searchWord);
+                    const tolerance = Math.max(1, Math.floor(searchWord.length * 0.3)); // Allow 30% error
+                    return distance <= tolerance;
+                  })
+                );
+              };
+              
+              return fuzzyMatch(task.title, validatedArgs.query) ||
+                     fuzzyMatch(task.description || '', validatedArgs.query) ||
+                     task.tags.some(tag => fuzzyMatch(tag, validatedArgs.query));
+            }
+            case 'regex': {
+              try {
+                const regex = new RegExp(validatedArgs.query, 'i');
+                return regex.test(task.title) ||
+                       regex.test(task.description || '') ||
+                       task.tags.some(tag => regex.test(tag));
+              } catch {
+                // Invalid regex, fall back to literal search
+                return task.title.toLowerCase().includes(query) ||
+                       (task.description?.toLowerCase().includes(query) || false) ||
+                       task.tags.some(tag => tag.toLowerCase().includes(query));
+              }
+            }
+            case 'multi_field': {
+              const fields = validatedArgs.searchFields || ['title', 'description', 'tags'];
+              return fields.some(field => {
+                switch (field) {
+                  case 'title':
+                    return task.title.toLowerCase().includes(query);
+                  case 'description':
+                    return task.description?.toLowerCase().includes(query);
+                  case 'assignee':
+                    return task.assignee?.toLowerCase().includes(query);
+                  case 'category':
+                    return task.category?.toLowerCase().includes(query);
+                  case 'tags':
+                    return task.tags.some(tag => tag.toLowerCase().includes(query));
+                  default:
+                    return false;
+                }
+              });
+            }
             case 'all':
             default:
               return task.id.toLowerCase().includes(query) ||
@@ -657,10 +852,18 @@ Tasks with the same title retained their completion status and progress.
         });
 
         if (matchingTasks.length === 0) {
+          // Provide search suggestions
+          const suggestions = [
+            "Try a shorter search term",
+            "Use fuzzy search for typos: searchType: 'fuzzy'",
+            "Search all fields with searchType: 'all'",
+            "Use regex patterns with searchType: 'regex'"
+          ];
+          
           return {
             content: [{
               type: 'text',
-              text: `❌ No tasks found matching "${validatedArgs.query}"\n\n**Search Type**: ${validatedArgs.searchType}\n**Total Tasks**: ${tasks.length}\n\n*Try using a different query or search type.*`
+              text: `❌ No tasks found matching "${validatedArgs.query}"\n\n**Search Type**: ${validatedArgs.searchType}\n**Total Tasks**: ${tasks.length}\n\n**suggestions:**\n${suggestions.map(s => `• ${s}`).join('\n')}\n\n*Try using a different query or search type.*`
             }]
           };
         }
@@ -842,11 +1045,173 @@ ${deploymentGuidance}
         };
       }
 
+      case 'delete_task': {
+        const taskId = validatedArgs.taskId;
+        const data = await todoManager.loadTodoData();
+        
+        if (!data.tasks[taskId]) {
+          throw new McpAdrError(`Task ${taskId} not found`, 'TASK_NOT_FOUND');
+        }
+
+        // Check for dependencies unless force is true
+        if (!validatedArgs.force) {
+          const dependentTasks = Object.values(data.tasks).filter(t => 
+            t.dependencies.includes(taskId) && t.status !== 'completed' && t.status !== 'cancelled'
+          );
+          
+          if (dependentTasks.length > 0) {
+            throw new McpAdrError(
+              `Cannot delete task ${taskId} because it has active dependencies: ${dependentTasks.map(t => t.title).join(', ')}`, 
+              'TASK_HAS_DEPENDENCIES'
+            );
+          }
+        }
+
+        // Delete the task
+        delete data.tasks[taskId];
+        
+        // Update sections
+        data.sections.forEach(section => {
+          section.tasks = section.tasks.filter(id => id !== taskId);
+        });
+
+        // If force delete, clean up dependencies in other tasks
+        if (validatedArgs.force) {
+          Object.values(data.tasks).forEach(task => {
+            task.dependencies = task.dependencies.filter(depId => depId !== taskId);
+          });
+        }
+
+        data.metadata.lastUpdated = new Date().toISOString();
+        await todoManager.saveTodoData(data);
+
+        const forceMessage = validatedArgs.force ? ' (with dependency cleanup)' : '';
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ Task deleted successfully${forceMessage}!\n\n**Task ID**: ${taskId}\n\n*Changes synced to JSON backend and TODO.md.*`
+          }]
+        };
+      }
+
+      case 'archive_task': {
+        const taskId = validatedArgs.taskId;
+        const data = await todoManager.loadTodoData();
+        
+        if (!data.tasks[taskId]) {
+          throw new McpAdrError(`Task ${taskId} not found`, 'TASK_NOT_FOUND');
+        }
+
+        // Archive the task
+        data.tasks[taskId].archived = true;
+        data.tasks[taskId].archivedAt = new Date().toISOString();
+        data.tasks[taskId].updatedAt = new Date().toISOString();
+        
+        data.metadata.lastUpdated = new Date().toISOString();
+        await todoManager.saveTodoData(data);
+
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ Task archived successfully!\n\n**Task ID**: ${taskId}\n**Archived At**: ${data.tasks[taskId].archivedAt}\n\n*Task moved to archive and synced to JSON backend.*`
+          }]
+        };
+      }
+
+      case 'undo_last': {
+        const result = await todoManager.undoLastOperation();
+        
+        if (!result.success) {
+          return {
+            content: [{
+              type: 'text',
+              text: `❌ Cannot undo operation: ${result.error}`
+            }]
+          };
+        }
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `✅ Undid operation: ${result.operation.operation}!\n\n**Operation**: ${result.operation.operation}\n**Description**: ${result.operation.description}\n**Time**: ${new Date(result.operation.timestamp).toLocaleString()}\n**Affected Tasks**: ${result.operation.affectedTaskIds.length > 0 ? result.operation.affectedTaskIds.join(', ') : 'None'}\n\n*The affected tasks have been restored to their previous state.*`
+          }]
+        };
+      }
+
+      case 'get_undo_history': {
+        const history = await todoManager.getOperationHistory(validatedArgs.limit);
+        
+        if (history.length === 0) {
+          return {
+            content: [{
+              type: 'text',
+              text: `📋 **Operation History**: No operations recorded yet.\n\n*Start creating and modifying tasks to build up your operation history.*`
+            }]
+          };
+        }
+        
+        const historyList = history.map((op, index) => {
+          const timeAgo = new Date(Date.now() - new Date(op.timestamp).getTime()).toISOString().substr(11, 8);
+          return `${index + 1}. **${op.operation}** - ${op.description}\n   ⏱️ ${new Date(op.timestamp).toLocaleString()}\n   🎯 Affected: ${op.affectedTaskIds.length} task(s)`;
+        }).join('\n\n');
+        
+        return {
+          content: [{
+            type: 'text',
+            text: `📋 **undo history - Operation History** (Last ${history.length} operations)\n\n${historyList}\n\n💡 **Tip**: Use \`undo_last\` to undo the most recent operation.`
+          }]
+        };
+      }
+
+      case 'bulk_delete': {
+        if (!validatedArgs.confirm) {
+          throw new McpAdrError('Bulk delete requires confirmation. Set confirm: true to proceed.', 'CONFIRMATION_REQUIRED');
+        }
+
+        const data = await todoManager.loadTodoData();
+        let deletedCount = 0;
+        const notFoundTasks: string[] = [];
+
+        for (const taskId of validatedArgs.taskIds) {
+          if (data.tasks[taskId]) {
+            delete data.tasks[taskId];
+            // Remove from sections
+            data.sections.forEach(section => {
+              section.tasks = section.tasks.filter(id => id !== taskId);
+            });
+            deletedCount++;
+          } else {
+            notFoundTasks.push(taskId);
+          }
+        }
+
+        data.metadata.lastUpdated = new Date().toISOString();
+        await todoManager.saveTodoData(data);
+
+        let resultMessage = `✅ ${deletedCount} tasks deleted successfully!\n\n**Tasks Deleted**: ${deletedCount}`;
+        if (notFoundTasks.length > 0) {
+          resultMessage += `\n**Not Found**: ${notFoundTasks.length} tasks were not found`;
+        }
+        resultMessage += `\n\n*Changes synced to JSON backend and TODO.md.*`;
+
+        return {
+          content: [{
+            type: 'text',
+            text: resultMessage
+          }]
+        };
+      }
+
       default:
         throw new McpAdrError(`Unknown operation: ${(validatedArgs as any).operation}`, 'INVALID_INPUT');
     }
 
   } catch (error) {
+    // Re-throw TodoManagerError as-is to preserve enhanced error information
+    if (error instanceof TodoManagerError) {
+      throw error;
+    }
+    
     if (error instanceof z.ZodError) {
       // Create more specific error messages
       const errorDetails = error.errors.map(err => {
