@@ -220,7 +220,7 @@ export class TodoJsonManager {
   /**
    * Update task with automatic changelog and scoring sync
    */
-  async updateTask(operation: TaskUpdateOperation): Promise<void> {
+  async updateTask(operation: TaskUpdateOperation | any): Promise<void> {
     const data = await this.loadTodoData();
     const task = data.tasks[operation.taskId];
     
@@ -236,26 +236,45 @@ export class TodoJsonManager {
     
     // Check for circular dependencies if updating dependencies
     if (operation.updates.dependencies) {
-      console.log('Checking circular dependencies for:', operation.taskId, 'with deps:', operation.updates.dependencies);
-      
-      const checkCircularDependency = (taskId: string, deps: string[], visited: Set<string> = new Set()): boolean => {
-        console.log('Checking task:', taskId, 'deps:', deps, 'visited:', Array.from(visited));
-        if (visited.has(taskId)) {
-          console.log('Circular dependency found at:', taskId);
-          return true;
-        }
-        visited.add(taskId);
+      const checkCircularDependency = (taskId: string, newDeps: string[]): boolean => {
+        // Create a graph of all dependencies including the proposed change
+        const allDeps = new Map<string, string[]>();
         
-        for (const depId of deps) {
-          const depTask = data.tasks[depId];
-          if (depTask) {
-            console.log('Found dep task:', depId, 'with deps:', depTask.dependencies || []);
-            if (checkCircularDependency(depId, depTask.dependencies || [], new Set(visited))) {
+        // Add existing dependencies for all tasks
+        for (const [id, task] of Object.entries(data.tasks)) {
+          allDeps.set(id, task.dependencies || []);
+        }
+        
+        // Add the proposed new dependencies
+        allDeps.set(taskId, newDeps);
+        
+        // Check if any of the new dependencies eventually lead back to the original task
+        const visited = new Set<string>();
+        const path = new Set<string>();
+        
+        const hasCycle = (currentTaskId: string): boolean => {
+          if (path.has(currentTaskId)) {
+            return true; // Found a cycle
+          }
+          if (visited.has(currentTaskId)) {
+            return false; // Already explored this path
+          }
+          
+          visited.add(currentTaskId);
+          path.add(currentTaskId);
+          
+          const deps = allDeps.get(currentTaskId) || [];
+          for (const dep of deps) {
+            if (hasCycle(dep)) {
               return true;
             }
           }
-        }
-        return false;
+          
+          path.delete(currentTaskId);
+          return false;
+        };
+        
+        return hasCycle(taskId);
       };
       
       if (checkCircularDependency(operation.taskId, operation.updates.dependencies)) {
@@ -268,13 +287,28 @@ export class TodoJsonManager {
     task.updatedAt = now;
     task.version += 1;
     
-    // Add changelog entry
-    task.changeLog.push({
+    // Add changelog entry with detailed changes
+    const changes: any = {};
+    const oldTask = snapshotBefore[operation.taskId];
+    if (oldTask) {
+      for (const [key, newValue] of Object.entries(operation.updates)) {
+        const oldValue = (oldTask as any)[key];
+        if (oldValue !== newValue && newValue !== undefined) {
+          changes[key] = { from: oldValue, to: newValue };
+        }
+      }
+    }
+    
+    const changeLogEntry = {
       timestamp: now,
-      action: 'updated',
+      action: 'updated' as const,
       details: operation.reason,
-      modifiedBy: operation.triggeredBy
-    });
+      modifiedBy: operation.updatedBy || operation.triggeredBy || 'tool',
+      updatedBy: operation.updatedBy || operation.triggeredBy || 'tool', // For compatibility
+      changes
+    };
+    
+    task.changeLog.push(changeLogEntry);
     
     // Handle status changes
     if (operation.updates.status && operation.updates.status !== oldStatus) {

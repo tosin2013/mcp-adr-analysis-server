@@ -56,7 +56,8 @@ const UpdateTaskSchema = z.object({
     dueDate: z.string().optional(),
     progressPercentage: z.number().min(0).max(100).optional(),
     notes: z.string().optional(),
-    tags: z.array(z.string()).optional()
+    tags: z.array(z.string()).optional(),
+    dependencies: z.array(z.string()).optional()
   }).describe('Fields to update'),
   reason: z.string().optional().describe('Reason for update (for changelog) - defaults to "Task updated"')
 });
@@ -329,6 +330,7 @@ export async function manageTodoV2(args: any): Promise<any> {
         if (validatedArgs.updates.progressPercentage !== undefined) cleanUpdates.progressPercentage = validatedArgs.updates.progressPercentage;
         if (validatedArgs.updates.notes !== undefined) cleanUpdates.notes = validatedArgs.updates.notes;
         if (validatedArgs.updates.tags !== undefined) cleanUpdates.tags = validatedArgs.updates.tags;
+        if (validatedArgs.updates.dependencies !== undefined) cleanUpdates.dependencies = validatedArgs.updates.dependencies;
         
         await todoManager.updateTask({
           taskId: taskId,
