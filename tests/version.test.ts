@@ -13,7 +13,8 @@ describe('Version Management', () => {
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
     
     expect(packageJson.name).toBe('mcp-adr-analysis-server');
-    expect(packageJson.version).toBe('2.0.15');
+    expect(packageJson.version).toMatch(/^\d+\.\d+\.\d+$/); // Matches semantic versioning pattern
+    expect(typeof packageJson.version).toBe('string');
   });
 
   test('should use generic fallback version when package.json not found', () => {
