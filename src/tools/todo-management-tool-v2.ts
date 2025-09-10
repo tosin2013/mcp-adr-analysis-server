@@ -444,6 +444,29 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
           };
         }
         
+        // Smart completion preservation: Load existing data before any operations
+        // This must happen BEFORE any data wiping for preserveExisting: false
+        const existingData = await todoManager.loadTodoData();
+        const existingTasksByTitle = new Map<string, any>();
+        
+        // Create a lookup map of existing tasks by title for smart matching
+        Object.values(existingData.tasks).forEach(task => {
+          const normalizedTitle = task.title.toLowerCase().trim();
+          existingTasksByTitle.set(normalizedTitle, task);
+        });
+        
+        // If preserveExisting is false, we need to clear existing data first
+        // but we've already captured the completion states above
+        if (!preserveExisting) {
+          // Clear existing tasks but preserve the sections structure
+          const freshData = await todoManager.loadTodoData();
+          freshData.tasks = {};
+          freshData.sections.forEach(section => {
+            section.tasks = [];
+          });
+          await todoManager.saveTodoData(freshData, false); // Don't sync to markdown yet
+        }
+        
         // Extract tasks from each ADR
         const extractedTasks = await extractTasksFromAdrs(
           discoveryResult.adrs,
@@ -452,19 +475,23 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
           autoLinkDependencies
         );
         
-        // Import tasks into JSON backend
+        // Import tasks into JSON backend with smart completion preservation
         let importedCount = 0;
         let skippedCount = 0;
+        let preservedCompletions = 0;
         const importResults = [];
         
         for (const task of extractedTasks) {
           try {
-            // Check if task already exists (by title and ADR reference)
-            const existingData = await todoManager.loadTodoData();
-            const existingTask = Object.values(existingData.tasks).find(
-              t => t.title === task.title && 
-                   t.linkedAdrs.some(adr => task.linkedAdrs.includes(adr))
-            );
+            // Check if task already exists (by title and ADR reference) - only relevant when preserveExisting is true
+            let existingTask = null;
+            if (preserveExisting) {
+              const currentData = await todoManager.loadTodoData();
+              existingTask = Object.values(currentData.tasks).find(
+                t => t.title === task.title && 
+                     t.linkedAdrs.some(adr => task.linkedAdrs.includes(adr))
+              );
+            }
             
             if (existingTask && preserveExisting) {
               skippedCount++;
@@ -472,21 +499,45 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
               continue;
             }
             
-            // Create the task
+            // Smart completion preservation: match by title even if preserveExisting is false
+            const normalizedTitle = task.title.toLowerCase().trim();
+            const previousTask = existingTasksByTitle.get(normalizedTitle);
+            let taskToCreate = { ...task };
+            
+            if (previousTask && (previousTask.status === 'completed' || previousTask.progressPercentage > 0)) {
+              // Preserve completion status and progress from previous task
+              taskToCreate = {
+                ...task,
+                status: previousTask.status,
+                progressPercentage: previousTask.progressPercentage,
+                completedAt: previousTask.completedAt,
+                notes: previousTask.notes,
+                assignee: previousTask.assignee || task.assignee,
+              };
+              preservedCompletions++;
+              importResults.push(`🔄 Imported with preserved completion: "${task.title}" (${previousTask.status}, ${previousTask.progressPercentage}%)`);
+            } else {
+              importResults.push(`✅ Imported: "${task.title}" (${task.priority} priority)`);
+            }
+            
+            // Create the task with preserved completion if applicable
             await todoManager.createTask({
-              title: task.title,
-              description: task.description,
-              priority: task.priority,
-              category: task.category,
-              tags: task.tags,
-              dependencies: task.dependencies,
-              linkedAdrs: task.linkedAdrs,
-              assignee: task.assignee,
+              title: taskToCreate.title,
+              description: taskToCreate.description,
+              status: taskToCreate.status,
+              priority: taskToCreate.priority,
+              category: taskToCreate.category,
+              tags: taskToCreate.tags,
+              dependencies: taskToCreate.dependencies,
+              linkedAdrs: taskToCreate.linkedAdrs,
+              assignee: taskToCreate.assignee,
+              progressPercentage: taskToCreate.progressPercentage,
+              notes: taskToCreate.notes,
+              completedAt: taskToCreate.completedAt,
               ...(intentId && { intentId })
             });
             
             importedCount++;
-            importResults.push(`✅ Imported: "${task.title}" (${task.priority} priority)`);
             
           } catch (error) {
             importResults.push(`❌ Failed: "${task.title}" - ${error instanceof Error ? error.message : String(error)}`);
@@ -503,6 +554,7 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
 - **Tasks Extracted**: ${extractedTasks.length}
 - **Tasks Imported**: ${importedCount}
 - **Tasks Skipped**: ${skippedCount}
+- **Completions Preserved**: ${preservedCompletions}
 - **Preserve Existing**: ${preserveExisting}
 - **Auto-Link Dependencies**: ${autoLinkDependencies}
 
@@ -513,6 +565,12 @@ ${Object.entries(discoveryResult.summary.byStatus)
 
 ## Import Results
 ${importResults.join('\n')}
+
+${preservedCompletions > 0 ? `
+## 🎯 Smart Completion Preservation
+✅ **${preservedCompletions} task completions preserved** during import!
+Tasks with the same title retained their completion status and progress.
+` : ''}
 
 ## Next Steps
 1. **View Tasks**: Use \`get_tasks\` operation to see imported tasks

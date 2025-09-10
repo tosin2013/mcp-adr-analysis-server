@@ -144,7 +144,7 @@ export class TodoJsonManager {
       assignee: taskData.assignee,
       createdAt: now,
       updatedAt: now,
-      completedAt: undefined,
+      completedAt: taskData.completedAt || (taskData.status === 'completed' ? now : undefined),
       dueDate: taskData.dueDate,
       parentTaskId: taskData.parentTaskId,
       subtasks: taskData.subtasks || [],
@@ -158,7 +158,7 @@ export class TodoJsonManager {
       scoreCategory: taskData.scoreCategory || 'task_completion',
       estimatedHours: taskData.estimatedHours,
       actualHours: taskData.actualHours,
-      progressPercentage: taskData.progressPercentage || 0,
+      progressPercentage: taskData.progressPercentage || (taskData.status === 'completed' ? 100 : 0),
       tags: taskData.tags || [],
       notes: taskData.notes,
       lastModifiedBy: taskData.lastModifiedBy || 'tool',
@@ -168,7 +168,9 @@ export class TodoJsonManager {
       changeLog: [{
         timestamp: now,
         action: 'created',
-        details: `Task created: ${taskData.title}`,
+        details: taskData.status === 'completed' ? 
+          `Task created with preserved completion: ${taskData.title}` : 
+          `Task created: ${taskData.title}`,
         modifiedBy: taskData.lastModifiedBy || 'tool'
       }]
     };
