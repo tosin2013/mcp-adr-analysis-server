@@ -26,11 +26,11 @@ import { ProjectHealthScoring } from './project-health-scoring.js';
 export class TodoError extends Error {
   code: string;
   suggestions: string[];
-  taskId?: string;
-  field?: string;
+  taskId?: string | undefined;
+  field?: string | undefined;
   value?: any;
-  validValues?: any[];
-  suggestion?: string;
+  validValues?: any[] | undefined;
+  suggestion?: string | undefined;
 
   constructor(message: string, code: string, options: {
     suggestions?: string[];
@@ -58,14 +58,14 @@ export class TodoJsonManager {
   private cacheDir: string;
   private kgManager: KnowledgeGraphManager;
   private healthScoring: ProjectHealthScoring;
-  private transactionSnapshot?: TodoJsonData;
+  private transactionSnapshot?: TodoJsonData | undefined;
   private isInTransaction: boolean = false;
   private undoHistorySize: number = 10;
   
   // Batching for performance
   private batchPending: boolean = false;
-  private batchTimeout?: NodeJS.Timeout;
-  private currentData?: TodoJsonData;
+  private batchTimeout?: NodeJS.Timeout | undefined;
+  private currentData?: TodoJsonData | undefined;
 
   constructor(projectPath?: string, options: { undoHistorySize?: number } = {}) {
     const config = loadConfig();
@@ -1247,7 +1247,7 @@ export class TodoJsonManager {
     action: string;
     details: string;
     modifiedBy: string;
-    updatedBy?: string;
+    updatedBy?: string | undefined;
     changes?: any;
   }>> {
     const data = await this.loadTodoData();
@@ -1257,7 +1257,7 @@ export class TodoJsonManager {
       throw new Error(`Task ${taskId} not found`);
     }
     
-    return task.changeLog || [];
+    return task.changeLog ?? [];
   }
 
   /**
@@ -1640,23 +1640,23 @@ export class TodoJsonManager {
    */
   private levenshteinDistance(s1: string, s2: string): number {
     const matrix = Array(s2.length + 1).fill(null).map(() => 
-      Array(s1.length + 1).fill(null)
+      Array(s1.length + 1).fill(0)
     );
 
-    for (let i = 0; i <= s1.length; i++) matrix[0][i] = i;
-    for (let j = 0; j <= s2.length; j++) matrix[j][0] = j;
+    for (let i = 0; i <= s1.length; i++) matrix[0]![i] = i;
+    for (let j = 0; j <= s2.length; j++) matrix[j]![0] = j;
 
     for (let j = 1; j <= s2.length; j++) {
       for (let i = 1; i <= s1.length; i++) {
         const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
-        matrix[j][i] = Math.min(
-          matrix[j][i - 1] + 1,     // insertion
-          matrix[j - 1][i] + 1,     // deletion
-          matrix[j - 1][i - 1] + cost // substitution
+        matrix[j]![i] = Math.min(
+          matrix[j]![i - 1]! + 1,     // insertion
+          matrix[j - 1]![i]! + 1,     // deletion
+          matrix[j - 1]![i - 1]! + cost // substitution
         );
       }
     }
 
-    return matrix[s2.length][s1.length];
+    return matrix[s2.length]![s1.length]!;
   }
 }

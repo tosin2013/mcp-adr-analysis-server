@@ -64,6 +64,9 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
 
     // Extract task ID from response
     taskId = extractTaskIdFromResponse(createResult.content[0].text);
+    
+    // Wait for batch to flush to ensure task is persisted
+    await new Promise(resolve => setTimeout(resolve, 150));
   });
 
   afterEach(() => {
