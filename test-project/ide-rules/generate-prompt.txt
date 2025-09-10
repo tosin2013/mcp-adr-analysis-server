@@ -1,0 +1,37 @@
+Generate IDE-specific rules for the following project:
+
+PROJECT INFORMATION:
+- IDE: cursor
+- Technology Stack: Node.js
+- Framework: React
+- Primary Language: JavaScript
+- Project Size:        0 source files
+- Team Size: small
+- Experience Level: mixed
+- Analysis Depth: comprehensive
+
+CONFIGURATION OPTIONS:
+- Include Workflows: false
+- Include Snippets: false
+- Include Shortcuts: false
+- Security Focus: false
+- Performance Focus: false
+
+PROJECT STRUCTURE:
+\n- Node.js project detected
+
+Please generate comprehensive IDE rules based on the template below, customized for this specific project. Include:
+1. Project-specific code completion rules
+2. AI assistant configuration tailored to the tech stack
+3. Linting and formatting rules for the detected languages
+4. Workflow automations based on the configuration options
+5. Integration points with development tools
+6. Custom commands and shortcuts
+
+TEMPLATE TO CUSTOMIZE:
+404: Not Found
+
+Additional context from universal workflows:
+404: Not Found
+
+Generate the complete IDE rules file with all placeholders filled with project-specific values.

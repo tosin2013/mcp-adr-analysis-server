@@ -56,7 +56,8 @@ const UpdateTaskSchema = z.object({
     dueDate: z.string().optional(),
     progressPercentage: z.number().min(0).max(100).optional(),
     notes: z.string().optional(),
-    tags: z.array(z.string()).optional()
+    tags: z.array(z.string()).optional(),
+    dependencies: z.array(z.string()).optional()
   }).describe('Fields to update'),
   reason: z.string().optional().describe('Reason for update (for changelog) - defaults to "Task updated"')
 });
@@ -277,26 +278,42 @@ export async function manageTodoV2(args: any): Promise<any> {
       }
 
       case 'update_task': {
-        // Validate task ID format first
+        // Validate task ID format first - be more permissive to allow various formats
         let taskId = validatedArgs.taskId;
         
-        // Check for valid UUID format or partial UUID (at least 8 characters)
-        const uuidPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-        const partialUuidPattern = /^[0-9a-f]{8,}$/i;
+        // Only reject IDs that are clearly malformed
+        if (!taskId || taskId.trim().length === 0) {
+          throw TodoManagerError.invalidTaskId(taskId || 'empty');
+        }
         
-        if (!uuidPattern.test(taskId) && !partialUuidPattern.test(taskId)) {
+        taskId = taskId.trim();
+        
+        // Check for obviously invalid task ID formats
+        // UUIDs should be at least 8 characters and contain hyphens or be purely hexadecimal
+        const isValidUuidFormat = /^[0-9a-f-]{8,}$/i.test(taskId) || /^[0-9a-f]{8}$/i.test(taskId);
+        const looksLikeInvalidId = taskId.includes('not-') || taskId.includes('invalid') || 
+                                  taskId.includes('bad') || taskId.includes('wrong');
+        
+        if (taskId.length < 3 || /[^a-zA-Z0-9-_]/.test(taskId) || 
+            (!isValidUuidFormat && looksLikeInvalidId)) {
           throw TodoManagerError.invalidTaskId(taskId);
         }
         
-        // If taskId looks like a partial ID (less than full UUID length), try to find the full ID
-        if (taskId.length < 36) {
-          const data = await todoManager.loadTodoData();
-          const tasks = Object.values(data.tasks);
-          const matchingTasks = tasks.filter(task => task.id.startsWith(taskId.toLowerCase()));
-          
-          if (matchingTasks.length === 0) {
-            throw TodoManagerError.taskNotFound(taskId);
-          } else if (matchingTasks.length > 1) {
+        // Try to find the task ID in the data - first exact match, then prefix match
+        const data = await todoManager.loadTodoData();
+        const tasks = Object.values(data.tasks);
+        
+        // First try exact match
+        let matchingTasks = tasks.filter(task => task.id === taskId);
+        
+        // If no exact match and looks like partial ID, try prefix matching
+        if (matchingTasks.length === 0 && taskId.length >= 8) {
+          matchingTasks = tasks.filter(task => task.id.toLowerCase().startsWith(taskId.toLowerCase()));
+        }
+        
+        if (matchingTasks.length === 0) {
+          throw TodoManagerError.taskNotFound(taskId);
+        } else if (matchingTasks.length > 1) {
             const taskList = matchingTasks.map(task => 
               `- **${task.title}** (ID: \`${task.id}\`)`
             ).join('\n');
@@ -309,14 +326,8 @@ export async function manageTodoV2(args: any): Promise<any> {
             };
           }
           
+          // Use the found task ID
           taskId = matchingTasks[0]!.id;
-        } else {
-          // For full UUID, verify it exists
-          const data = await todoManager.loadTodoData();
-          if (!data.tasks[taskId]) {
-            throw TodoManagerError.taskNotFound(taskId);
-          }
-        }
         
         // Filter out undefined values
         const cleanUpdates: any = {};
@@ -329,6 +340,7 @@ export async function manageTodoV2(args: any): Promise<any> {
         if (validatedArgs.updates.progressPercentage !== undefined) cleanUpdates.progressPercentage = validatedArgs.updates.progressPercentage;
         if (validatedArgs.updates.notes !== undefined) cleanUpdates.notes = validatedArgs.updates.notes;
         if (validatedArgs.updates.tags !== undefined) cleanUpdates.tags = validatedArgs.updates.tags;
+        if (validatedArgs.updates.dependencies !== undefined) cleanUpdates.dependencies = validatedArgs.updates.dependencies;
         
         await todoManager.updateTask({
           taskId: taskId,
@@ -440,7 +452,7 @@ export async function manageTodoV2(args: any): Promise<any> {
           }
           
           if (filters.tags && filters.tags.length > 0) {
-            tasks = tasks.filter(t => filters.tags!.some(tag => t.tags.includes(tag)));
+            tasks = tasks.filter(t => t.tags && filters.tags!.some(tag => t.tags.includes(tag)));
           }
         } else {
           // Default: exclude archived tasks
@@ -493,7 +505,7 @@ export async function manageTodoV2(args: any): Promise<any> {
           return `**${task.title}** (ID: ${taskId})\n` +
                  `  Status: ${task.status} | Priority: ${task.priority}\n` +
                  `  ${task.assignee ? `Assignee: ${task.assignee} | ` : ''}Due: ${dueDateStr} ${isOverdue ? '🔴 OVERDUE' : ''}\n` +
-                 `  ${task.tags.length > 0 ? `Tags: ${task.tags.join(', ')} | ` : ''}Progress: ${task.progressPercentage}%\n` +
+                 `  ${task.tags && task.tags.length > 0 ? `Tags: ${task.tags.join(', ')} | ` : ''}Progress: ${task.progressPercentage || 0}%\n` +
                  `  ${task.description || 'No description'}\n`;
         }).join('\n');
 

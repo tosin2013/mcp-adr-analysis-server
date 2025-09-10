@@ -101,6 +101,23 @@ describe('Todo Management Tool V2', () => {
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
           changeLog: []
+        },
+        'task-2': {
+          id: 'task-2',
+          title: 'Test Task 2',
+          description: 'Second test task',
+          status: 'pending',
+          priority: 'medium',
+          assignee: 'jane',
+          dueDate: '2024-12-31',
+          category: 'Testing',
+          tags: ['test'],
+          dependencies: [],
+          linkedAdrs: [],
+          progressPercentage: 0,
+          createdAt: '2024-01-01T00:00:00Z',
+          updatedAt: '2024-01-01T00:00:00Z',
+          changeLog: []
         }
       },
       sections: [],

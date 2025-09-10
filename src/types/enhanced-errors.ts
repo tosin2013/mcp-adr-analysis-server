@@ -13,7 +13,7 @@ export class TodoManagerError extends Error {
   public readonly field?: string;
   public readonly value?: any;
   public readonly validValues?: any[];
-  public readonly suggestions: ErrorSuggestion[];
+  public readonly suggestions: ErrorSuggestion[] | string[];
   public readonly taskId?: string;
   public readonly suggestion?: string;
 
@@ -24,7 +24,7 @@ export class TodoManagerError extends Error {
       field?: string;
       value?: any;
       validValues?: any[];
-      suggestions?: ErrorSuggestion[];
+      suggestions?: ErrorSuggestion[] | string[];
       taskId?: string;
       suggestion?: string;
     } = {}
@@ -35,7 +35,10 @@ export class TodoManagerError extends Error {
     if (options.field !== undefined) this.field = options.field;
     this.value = options.value;
     if (options.validValues !== undefined) this.validValues = options.validValues;
+    
+    // Handle both string array and object array for suggestions
     this.suggestions = options.suggestions || [];
+    
     if (options.taskId !== undefined) this.taskId = options.taskId;
     if (options.suggestion !== undefined) this.suggestion = options.suggestion;
   }
@@ -71,18 +74,9 @@ export class TodoManagerError extends Error {
       {
         taskId,
         suggestions: [
-          {
-            action: 'The task may have been deleted',
-            description: 'Check if the task was recently removed'
-          },
-          {
-            action: 'Use get_tasks to list all tasks',
-            description: 'Verify the task ID exists in the current list'
-          },
-          {
-            action: 'Search for the task using find_task',
-            description: 'The task might have a different ID than expected'
-          }
+          'task may have been deleted',
+          'Use get_tasks to list all tasks',
+          'search for the task using find_task'
         ]
       }
     );
@@ -95,18 +89,9 @@ export class TodoManagerError extends Error {
       {
         value: taskId,
         suggestions: [
-          {
-            action: 'Use find_task to search for tasks',
-            description: 'Search by title or description instead'
-          },
-          {
-            action: 'Use get_tasks with showFullIds: true',
-            description: 'Get the complete UUID for the task'
-          },
-          {
-            action: 'Check the task ID format',
-            description: 'Task IDs should be UUIDs or partial UUIDs (8+ characters)'
-          }
+          'Use find_task to search for tasks',
+          'Use get_tasks with showFullIds: true', 
+          'Check the task ID format'
         ]
       }
     );
