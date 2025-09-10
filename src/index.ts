@@ -2222,6 +2222,7 @@ export class McpAdrAnalysisServer {
                   description: 'Planning session ID (required for all operations except start_session)'
                 },
                 input: {
+                  type: 'string',
                   description: 'User input for the current phase (varies by phase)'
                 },
                 projectPath: {
