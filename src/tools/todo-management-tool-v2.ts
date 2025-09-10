@@ -58,7 +58,7 @@ const UpdateTaskSchema = z.object({
     notes: z.string().optional(),
     tags: z.array(z.string()).optional()
   }).describe('Fields to update'),
-  reason: z.string().describe('Reason for update (for changelog)')
+  reason: z.string().optional().describe('Reason for update (for changelog) - defaults to "Task updated"')
 });
 
 const BulkUpdateSchema = z.object({
@@ -71,7 +71,7 @@ const BulkUpdateSchema = z.object({
     assignee: z.string().optional(),
     notes: z.string().optional()
   })).describe('Bulk status updates'),
-  reason: z.string().describe('Reason for bulk update')
+  reason: z.string().optional().describe('Reason for bulk update - defaults to "Bulk status update"')
 });
 
 const GetTasksSchema = z.object({
@@ -244,14 +244,14 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
         await todoManager.updateTask({
           taskId: taskId,
           updates: cleanUpdates,
-          reason: validatedArgs.reason,
+          reason: validatedArgs.reason || 'Task updated',
           triggeredBy: 'tool'
         });
 
         return {
           content: [{
             type: 'text',
-            text: `✅ Task updated successfully!\n\n**Task ID**: ${taskId}\n**Original Input**: ${validatedArgs.taskId}\n**Updates**: ${Object.keys(validatedArgs.updates).filter(k => validatedArgs.updates[k as keyof typeof validatedArgs.updates] !== undefined).join(', ')}\n**Reason**: ${validatedArgs.reason}\n\n*Changes synced to JSON backend and TODO.md.*`
+            text: `✅ Task updated successfully!\n\n**Task ID**: ${taskId}\n**Original Input**: ${validatedArgs.taskId}\n**Updates**: ${Object.keys(validatedArgs.updates).filter(k => validatedArgs.updates[k as keyof typeof validatedArgs.updates] !== undefined).join(', ')}\n**Reason**: ${validatedArgs.reason || 'Task updated'}\n\n*Changes synced to JSON backend and TODO.md.*`
           }]
         };
       }
@@ -270,7 +270,7 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
           await todoManager.updateTask({
             taskId: update.taskId,
             updates: cleanUpdates,
-            reason: validatedArgs.reason,
+            reason: validatedArgs.reason || 'Bulk status update',
             triggeredBy: 'tool'
           });
           updateCount++;
@@ -279,7 +279,7 @@ export async function manageTodoV2(args: TodoManagementV2Args): Promise<any> {
         return {
           content: [{
             type: 'text',
-            text: `✅ Bulk update completed!\n\n**Tasks Updated**: ${updateCount}\n**Reason**: ${validatedArgs.reason}\n\n*All changes synced to JSON backend and TODO.md.*`
+            text: `✅ Bulk update completed!\n\n**Tasks Updated**: ${updateCount}\n**Reason**: ${validatedArgs.reason || 'Bulk status update'}\n\n*All changes synced to JSON backend and TODO.md.*`
           }]
         };
       }
@@ -848,7 +848,17 @@ ${deploymentGuidance}
 
   } catch (error) {
     if (error instanceof z.ZodError) {
-      throw new McpAdrError(`Invalid input: ${error.errors.map(e => e.message).join(', ')}`, 'INVALID_INPUT');
+      // Create more specific error messages
+      const errorDetails = error.errors.map(err => {
+        const path = err.path.length > 0 ? err.path.join('.') : 'input';
+        const message = err.message;
+        return `${path}: ${message}`;
+      }).join(', ');
+      
+      throw new McpAdrError(
+        `Invalid input: ${errorDetails || 'Validation failed'}`, 
+        'INVALID_INPUT'
+      );
     }
 
     throw new McpAdrError(
