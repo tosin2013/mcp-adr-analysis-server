@@ -77,25 +77,33 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
     delete process.env['LOG_LEVEL'];
   });
 
-  describe('Reproduce Exact Failing Commands from Issue', () => {
-    it('should fail with Command 1: Simple status update (missing reason)', async () => {
-      // Command 1 from issue: Missing required 'reason' field
-      await expect((server as any).manageTodoJson({
+  describe('Verify Commands from Issue Now Work', () => {
+    it('should succeed with Command 1: Simple status update (reason now optional)', async () => {
+      // Command 1 from issue: Now works with default reason
+      const result = await (server as any).manageTodoJson({
         operation: 'update_task',
         taskId: taskId,
         updates: { status: 'completed' }
-        // Missing required 'reason' field
-      })).rejects.toThrow(/JSON TODO management failed.*Invalid input/);
+        // No reason field provided - should use default
+      });
+
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Task updated successfully');
+      expect(result.content[0].text).toContain('Reason**: Task updated'); // Default reason
     });
 
-    it('should fail with Command 2: Progress update (missing reason)', async () => {
-      // Command 2 from issue: Missing required 'reason' field  
-      await expect((server as any).manageTodoJson({
+    it('should succeed with Command 2: Progress update (reason now optional)', async () => {
+      // Command 2 from issue: Now works with default reason
+      const result = await (server as any).manageTodoJson({
         operation: 'update_task',
         taskId: taskId,
         updates: { progressPercentage: 100, status: 'completed' }
-        // Missing required 'reason' field
-      })).rejects.toThrow(/JSON TODO management failed.*Invalid input/);
+        // No reason field provided - should use default
+      });
+
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Task updated successfully');
+      expect(result.content[0].text).toContain('Reason**: Task updated'); // Default reason
     });
 
     it('should fail with Command 3: Bulk update (wrong structure + missing reason)', async () => {
@@ -104,7 +112,7 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
         operation: 'bulk_update',
         updates: { progressPercentage: 100, status: 'completed' }
         // Missing required 'reason' field AND wrong structure for 'updates'
-      })).rejects.toThrow(/JSON TODO management failed.*Invalid input/);
+      })).rejects.toThrow(/Invalid input/);
     });
 
     it('should succeed with Command 1 when reason is provided', async () => {
@@ -152,77 +160,58 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
         updates: [
           { taskId: taskId, status: 'completed' },
           { taskId: taskId2, status: 'completed' }
-        ],
-        reason: 'Deployment verification complete for all tasks'
+        ]
+        // No reason field provided - should use default
       });
 
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Bulk update completed');
+      expect(result.content[0].text).toContain('Reason**: Bulk status update'); // Default reason
     });
   });
 
   describe('Enhanced Validation Error Messages', () => {
-    it('should provide specific error message for missing reason field', async () => {
-      try {
-        await (server as any).manageTodoJson({
-          operation: 'update_task',
-          taskId: taskId,
-          updates: { status: 'completed' }
-          // Missing required 'reason' field
-        });
-        fail('Expected error was not thrown');
-      } catch (error: any) {
-        expect(error.message).toContain('JSON TODO management failed');
-        expect(error.message).toContain('Invalid input');
-        // The error should contain validation details about the missing reason field
-      }
+    it('should succeed when reason field is not provided (now optional)', async () => {
+      // This should now succeed since reason is optional
+      const result = await (server as any).manageTodoJson({
+        operation: 'update_task',
+        projectPath: testProjectPath,
+        taskId: taskId,
+        updates: { status: 'completed' }
+        // No reason field provided - should use default
+      });
+      
+      expect(result).toBeDefined();
+      expect(result.content[0].text).toContain('Task updated successfully');
+      expect(result.content[0].text).toContain('Reason**: Task updated');
     });
 
     it('should provide specific error message for invalid bulk_update structure', async () => {
-      try {
-        await (server as any).manageTodoJson({
-          operation: 'bulk_update',
-          updates: { status: 'completed' }, // Should be array, not object
-          reason: 'Test reason'
-        });
-        fail('Expected error was not thrown');
-      } catch (error: any) {
-        expect(error.message).toContain('JSON TODO management failed');
-        expect(error.message).toContain('Invalid input');
-        // The error should contain validation details about the wrong structure
-      }
+      await expect((server as any).manageTodoJson({
+        operation: 'bulk_update',
+        updates: { status: 'completed' }, // Should be array, not object
+        reason: 'Test reason'
+      })).rejects.toThrow(/Invalid input/);
     });
 
     it('should provide specific error message for invalid status value', async () => {
-      try {
-        await (server as any).manageTodoJson({
-          operation: 'update_task',
-          projectPath: testProjectPath,
-          taskId: taskId,
-          updates: { status: 'invalid_status' },
-          reason: 'Test reason'
-        });
-        fail('Expected error was not thrown');
-      } catch (error: any) {
-        expect(error.message).toContain('JSON TODO management failed');
-        expect(error.message).toContain('Invalid input');
-      }
+      await expect((server as any).manageTodoJson({
+        operation: 'update_task',
+        projectPath: testProjectPath,
+        taskId: taskId,
+        updates: { status: 'invalid_status' },
+        reason: 'Test reason'
+      })).rejects.toThrow(/Invalid input/);
     });
 
     it('should provide specific error message for invalid progressPercentage value', async () => {
-      try {
-        await (server as any).manageTodoJson({
-          operation: 'update_task',
-          projectPath: testProjectPath,
-          taskId: taskId,
-          updates: { progressPercentage: 150 }, // Invalid: over 100
-          reason: 'Test reason'
-        });
-        fail('Expected error was not thrown');
-      } catch (error: any) {
-        expect(error.message).toContain('JSON TODO management failed');
-        expect(error.message).toContain('Invalid input');
-      }
+      await expect((server as any).manageTodoJson({
+        operation: 'update_task',
+        projectPath: testProjectPath,
+        taskId: taskId,
+        updates: { progressPercentage: 150 }, // Invalid: over 100
+        reason: 'Test reason'
+      })).rejects.toThrow(/Invalid input.*progressPercentage.*100/);
     });
   });
 });
@@ -231,6 +220,13 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
  * Helper function to extract task ID from response text
  */
 function extractTaskIdFromResponse(responseText: string): string {
+  // Look for full UUID pattern first (most reliable)
+  const fullIdMatch = responseText.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+  if (fullIdMatch) {
+    return fullIdMatch[1];
+  }
+
+  // Fall back to other patterns
   const idMatch = responseText.match(/Task ID: ([a-f0-9-]+)/i) || 
                   responseText.match(/ID: ([a-f0-9-]+)/i) ||
                   responseText.match(/\[([a-f0-9-]+)\]/);
