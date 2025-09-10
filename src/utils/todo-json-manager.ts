@@ -205,13 +205,14 @@ export class TodoJsonManager {
     await this.saveTodoData(data);
     await this.updateScoring(data);
     
-    // Record operation in history
+    // Record operation in history - pass current data to avoid loading stale data
     await this.recordOperation(
       'create_task',
       `Created task: ${taskData.title}`,
       [taskId],
       {}, // No task before creation
-      { [taskId]: task }
+      { [taskId]: task },
+      data
     );
     
     return taskId;
@@ -302,7 +303,7 @@ export class TodoJsonManager {
     const changeLogEntry = {
       timestamp: now,
       action: 'updated' as const,
-      details: operation.reason,
+      details: operation.reason || 'Task updated',
       modifiedBy: operation.updatedBy || operation.triggeredBy || 'tool',
       updatedBy: operation.updatedBy || operation.triggeredBy || 'tool', // For compatibility
       changes
@@ -332,13 +333,14 @@ export class TodoJsonManager {
     await this.saveTodoData(data);
     await this.updateScoring(data);
     
-    // Record operation in history
+    // Record operation in history - pass current data to avoid loading stale data
     await this.recordOperation(
       'update_task',
-      operation.reason,
+      operation.reason || 'Task updated',
       [operation.taskId],
       snapshotBefore,
-      { [operation.taskId]: { ...task } }
+      { [operation.taskId]: { ...task } },
+      data
     );
   }
 
@@ -571,9 +573,11 @@ export class TodoJsonManager {
     description: string, 
     affectedTaskIds: string[], 
     snapshotBefore?: Record<string, any>,
-    snapshotAfter?: Record<string, any>
+    snapshotAfter?: Record<string, any>,
+    data?: TodoJsonData
   ): Promise<void> {
-    const data = await this.loadTodoData();
+    // Use provided data or load fresh data
+    const todoData = data || await this.loadTodoData();
     
     const historyEntry = {
       id: crypto.randomUUID(),
@@ -586,10 +590,13 @@ export class TodoJsonManager {
     };
     
     // Add to history and keep only last 50 operations
-    data.operationHistory.push(historyEntry);
-    data.operationHistory = data.operationHistory.slice(-50);
+    todoData.operationHistory.push(historyEntry);
+    todoData.operationHistory = todoData.operationHistory.slice(-50);
     
-    await this.saveTodoData(data, false); // Don't sync to markdown for history updates
+    // Only save if we loaded fresh data (don't overwrite caller's data)
+    if (!data) {
+      await this.saveTodoData(todoData, false); // Don't sync to markdown for history updates
+    }
   }
 
   /**
