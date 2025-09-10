@@ -83,6 +83,9 @@ Accepted
     expect(initialImport.content[0].text).toContain('ADR Task Import Completed');
     console.log('✅ Initial import completed');
 
+    // Wait for batch to flush to ensure tasks are persisted
+    await new Promise(resolve => setTimeout(resolve, 150));
+
     // Step 2: Get tasks and complete some
     const tasksResult = await manageTodoV2({
       operation: 'get_tasks',
@@ -117,7 +120,13 @@ Accepted
         },
         reason: 'Testing completion preservation'
       });
+      
+      // Wait for each task update to be persisted individually
+      await new Promise(resolve => setTimeout(resolve, 150));
     }
+
+    // Additional wait to ensure all task updates are fully persisted
+    await new Promise(resolve => setTimeout(resolve, 200));
 
     console.log('✅ Completed 2 tasks');
 
@@ -143,6 +152,9 @@ Accepted
     });
 
     expect(regenerateResult.content[0].text).toContain('ADR Task Import Completed');
+    
+    // Wait for batch to flush to ensure regeneration is persisted
+    await new Promise(resolve => setTimeout(resolve, 150));
     
     // Check if the fix worked - should show preserved completions
     const hasPreservedCompletions = regenerateResult.content[0].text.includes('Completions Preserved');
@@ -221,6 +233,9 @@ Accepted
       autoLinkDependencies: true
     });
 
+    // Wait for batch to flush to ensure tasks are persisted
+    await new Promise(resolve => setTimeout(resolve, 150));
+
     // Get a task and complete it
     const tasksResult = await manageTodoV2({
       operation: 'get_tasks',
@@ -244,6 +259,9 @@ Accepted
       },
       reason: 'Testing preservation display'
     });
+
+    // Wait for batch to flush to ensure task update is persisted
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     // Regenerate and check the result message
     const result = await manageTodoV2({
