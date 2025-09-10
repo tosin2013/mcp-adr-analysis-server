@@ -24,6 +24,42 @@ import { McpAdrError } from '../types/index.js';
 import { TodoManagerError } from '../types/enhanced-errors.js';
 import { TodoJsonManager } from '../utils/todo-json-manager.js';
 import { KnowledgeGraphManager } from '../utils/knowledge-graph-manager.js';
+import { TodoJsonData } from '../types/todo-json-schemas.js';
+
+/**
+ * Helper function to load todo data with retry mechanism to handle batching delays
+ */
+async function loadTodoDataWithRetry(todoManager: TodoJsonManager, maxRetries: number = 3): Promise<TodoJsonData> {
+  let data = await todoManager.loadTodoData();
+  let retryCount = 0;
+  
+  // If data is empty, retry to handle batching delays
+  while (Object.keys(data.tasks).length === 0 && retryCount < maxRetries) {
+    await new Promise(resolve => setTimeout(resolve, 50 * (retryCount + 1)));
+    data = await todoManager.loadTodoData();
+    retryCount++;
+  }
+  
+  return data;
+}
+
+/**
+ * Helper function to load todo data and check for a specific task with retry
+ */
+async function loadTodoDataAndCheckTask(todoManager: TodoJsonManager, taskId: string, maxRetries: number = 3): Promise<TodoJsonData> {
+  let data = await todoManager.loadTodoData();
+  let retryCount = 0;
+  
+  // If task not found, retry to handle batching delays
+  while (!data.tasks[taskId] && retryCount < maxRetries) {
+    // Wait longer than the batching timeout (100ms) with increasing delay
+    await new Promise(resolve => setTimeout(resolve, 50 * (retryCount + 1)));
+    data = await todoManager.loadTodoData();
+    retryCount++;
+  }
+  
+  return data;
+}
 
 // Task operations schema
 const CreateTaskSchema = z.object({
@@ -292,7 +328,7 @@ export async function manageTodoV2(args: any): Promise<any> {
         
         // If taskId looks like a partial UUID ID, try to find the full ID
         if (isUuidLike && taskId.length < 36) {
-          const data = await todoManager.loadTodoData();
+          const data = await loadTodoDataWithRetry(todoManager);
           const tasks = Object.values(data.tasks);
           const matchingTasks = tasks.filter(task => task.id.startsWith(taskId.toLowerCase()));
           
@@ -314,7 +350,7 @@ export async function manageTodoV2(args: any): Promise<any> {
           taskId = matchingTasks[0]!.id;
         } else {
           // For full UUID, verify it exists
-          const data = await todoManager.loadTodoData();
+          const data = await loadTodoDataWithRetry(todoManager);
           if (!data.tasks[taskId]) {
             throw TodoManagerError.taskNotFound(taskId);
           }
@@ -1048,7 +1084,9 @@ ${deploymentGuidance}
 
       case 'delete_task': {
         const taskId = validatedArgs.taskId;
-        const data = await todoManager.loadTodoData();
+        
+        // Load data with retry to handle batching delays
+        const data = await loadTodoDataAndCheckTask(todoManager, taskId);
         
         if (!data.tasks[taskId]) {
           throw new McpAdrError(`Task ${taskId} not found`, 'TASK_NOT_FOUND');

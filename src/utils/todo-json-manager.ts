@@ -310,6 +310,10 @@ export class TodoJsonManager {
         { [taskId]: task },
         false // Don't save immediately for batching
       );
+      
+      // Force flush to ensure data is persisted before returning
+      // This is necessary because each operation creates a new TodoJsonManager instance
+      await this.flushBatch();
     }
     
     return taskId;
