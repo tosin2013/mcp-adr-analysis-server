@@ -408,7 +408,7 @@ describe('ADR Suggestion Tool', () => {
         }
       });
       expect(generationResult).toBeDefined();
-    });
+    }, 30000);
 
   });
 

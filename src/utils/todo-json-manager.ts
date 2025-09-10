@@ -175,7 +175,8 @@ export class TodoJsonManager {
           `Task created with preserved completion: ${taskData.title}` : 
           `Task created: ${taskData.title}`,
         modifiedBy: taskData.lastModifiedBy || 'tool'
-      }]
+      }],
+      comments: []
     };
     
     // Add to tasks
@@ -599,6 +600,436 @@ export class TodoJsonManager {
         error: error instanceof Error ? error.message : 'Unknown error during undo' 
       };
     }
+  }
+
+  /**
+   * Detect conflicts between JSON and Markdown versions
+   */
+  async detectConflicts(): Promise<Array<{
+    type: 'title_mismatch' | 'status_mismatch' | 'description_mismatch';
+    taskId: string;
+    jsonValue: any;
+    markdownValue: any;
+  }>> {
+    try {
+      const markdownContent = await fs.readFile(this.todoMdPath, 'utf-8');
+      const { parseMarkdownToJson } = await import('./todo-markdown-converter.js');
+      const markdownData = await parseMarkdownToJson(markdownContent);
+      const jsonData = await this.loadTodoData();
+      
+      const conflicts = [];
+      
+      for (const [taskId, jsonTask] of Object.entries(jsonData.tasks)) {
+        const markdownTask = markdownData.tasks[taskId];
+        if (markdownTask) {
+          if (jsonTask.title !== markdownTask.title) {
+            conflicts.push({
+              type: 'title_mismatch' as const,
+              taskId,
+              jsonValue: jsonTask.title,
+              markdownValue: markdownTask.title
+            });
+          }
+          if (jsonTask.status !== markdownTask.status) {
+            conflicts.push({
+              type: 'status_mismatch' as const,
+              taskId,
+              jsonValue: jsonTask.status,
+              markdownValue: markdownTask.status
+            });
+          }
+          if (jsonTask.description !== markdownTask.description) {
+            conflicts.push({
+              type: 'description_mismatch' as const,
+              taskId,
+              jsonValue: jsonTask.description,
+              markdownValue: markdownTask.description
+            });
+          }
+        }
+      }
+      
+      return conflicts;
+    } catch (error) {
+      return [];
+    }
+  }
+
+  /**
+   * Resolve conflicts between JSON and Markdown
+   */
+  async resolveConflicts(options: {
+    strategy: 'merge' | 'json' | 'markdown';
+    preferSource?: 'json' | 'markdown';
+  }): Promise<{ resolved: number }> {
+    const conflicts = await this.detectConflicts();
+    const data = await this.loadTodoData();
+    let resolved = 0;
+    
+    try {
+      const markdownContent = await fs.readFile(this.todoMdPath, 'utf-8');
+      const { parseMarkdownToJson } = await import('./todo-markdown-converter.js');
+      const markdownData = await parseMarkdownToJson(markdownContent);
+      
+      for (const conflict of conflicts) {
+        const jsonTask = data.tasks[conflict.taskId];
+        const markdownTask = markdownData.tasks[conflict.taskId];
+        
+        if (jsonTask && markdownTask) {
+          const fieldName = conflict.type.replace('_mismatch', '') as keyof TodoTask;
+          if (options.strategy === 'markdown' || options.preferSource === 'markdown') {
+            (jsonTask as any)[fieldName] = conflict.markdownValue;
+          } else if (options.strategy === 'json' || options.preferSource === 'json') {
+            // Keep JSON value (no change needed)
+          } else if (options.strategy === 'merge') {
+            // For merge, prefer the specified source
+            if (options.preferSource === 'markdown') {
+              (jsonTask as any)[fieldName] = conflict.markdownValue;
+            }
+          }
+          resolved++;
+        }
+      }
+      
+      await this.saveTodoData(data);
+    } catch (error) {
+      // Ignore markdown parsing errors
+    }
+    
+    return { resolved };
+  }
+
+  /**
+   * Enable sync monitoring between JSON and Markdown
+   */
+  async enableSyncMonitoring(options: {
+    autoResolve?: boolean;
+    conflictStrategy?: 'newest' | 'json' | 'markdown';
+  }): Promise<void> {
+    const data = await this.loadTodoData();
+    
+    // Add sync monitoring configuration to metadata
+    data.metadata.syncMonitoring = {
+      enabled: true,
+      autoResolve: options.autoResolve || false,
+      conflictStrategy: options.conflictStrategy || 'newest',
+      lastCheck: new Date().toISOString()
+    };
+    
+    await this.saveTodoData(data, false);
+  }
+
+  /**
+   * Create task template
+   */
+  async createTemplate(template: {
+    name: string;
+    description: string;
+    template: {
+      title: string;
+      description?: string;
+      priority?: string;
+      category?: string;
+      estimatedHours?: number;
+      tags?: string[];
+    };
+  }): Promise<string> {
+    const data = await this.loadTodoData();
+    const templateId = crypto.randomUUID();
+    
+    // Initialize templates array if it doesn't exist
+    if (!data.templates) {
+      data.templates = [];
+    }
+    
+    data.templates.push({
+      id: templateId,
+      name: template.name,
+      description: template.description,
+      template: template.template,
+      createdAt: new Date().toISOString(),
+      usageCount: 0
+    });
+    
+    await this.saveTodoData(data, false);
+    return templateId;
+  }
+
+  /**
+   * Create recurring task
+   */
+  async createRecurringTask(taskData: {
+    title: string;
+    description?: string;
+    priority?: string;
+    frequency: 'daily' | 'weekly' | 'monthly';
+    startDate?: string;
+    endDate?: string;
+  }): Promise<string> {
+    const data = await this.loadTodoData();
+    const recurringId = crypto.randomUUID();
+    
+    // Initialize recurring tasks array if it doesn't exist
+    if (!data.recurringTasks) {
+      data.recurringTasks = [];
+    }
+    
+    data.recurringTasks.push({
+      id: recurringId,
+      title: taskData.title,
+      description: taskData.description || '',
+      priority: taskData.priority || 'medium',
+      frequency: taskData.frequency,
+      startDate: taskData.startDate || new Date().toISOString(),
+      endDate: taskData.endDate,
+      createdAt: new Date().toISOString(),
+      lastGenerated: null,
+      nextDue: this.calculateNextDue(taskData.frequency, taskData.startDate),
+      isActive: true
+    });
+    
+    await this.saveTodoData(data, false);
+    return recurringId;
+  }
+
+  /**
+   * Calculate next due date for recurring task
+   */
+  private calculateNextDue(frequency: string, startDate?: string): string {
+    const base = startDate ? new Date(startDate) : new Date();
+    
+    switch (frequency) {
+      case 'daily':
+        base.setDate(base.getDate() + 1);
+        break;
+      case 'weekly':
+        base.setDate(base.getDate() + 7);
+        break;
+      case 'monthly':
+        base.setMonth(base.getMonth() + 1);
+        break;
+    }
+    
+    return base.toISOString();
+  }
+
+  /**
+   * Get single task by ID
+   */
+  async getTask(taskId: string, _options?: { useCache?: boolean }): Promise<TodoTask | null> {
+    const data = await this.loadTodoData();
+    return data.tasks[taskId] || null;
+  }
+
+  /**
+   * Get tasks with pagination and filtering
+   */
+  async getTasks(options?: {
+    pagination?: { page: number; pageSize: number };
+    status?: string;
+    priority?: string;
+  }): Promise<{
+    tasks: TodoTask[];
+    total: number;
+    page?: number;
+    pageSize?: number;
+  }> {
+    const data = await this.loadTodoData();
+    let tasks = Object.values(data.tasks);
+    
+    // Apply filters
+    if (options?.status) {
+      tasks = tasks.filter(t => t.status === options.status);
+    }
+    if (options?.priority) {
+      tasks = tasks.filter(t => t.priority === options.priority);
+    }
+    
+    const total = tasks.length;
+    
+    // Apply pagination
+    if (options?.pagination) {
+      const { page, pageSize } = options.pagination;
+      const startIndex = (page - 1) * pageSize;
+      tasks = tasks.slice(startIndex, startIndex + pageSize);
+    }
+    
+    return {
+      tasks,
+      total,
+      ...(options?.pagination && {
+        page: options.pagination.page,
+        pageSize: options.pagination.pageSize
+      })
+    };
+  }
+
+  /**
+   * Add comment to task
+   */
+  async addComment(comment: {
+    taskId: string;
+    author: string;
+    text: string;
+    mentions?: string[];
+  }): Promise<string> {
+    const data = await this.loadTodoData();
+    const task = data.tasks[comment.taskId];
+    
+    if (!task) {
+      throw new Error(`Task ${comment.taskId} not found`);
+    }
+    
+    const commentId = crypto.randomUUID();
+    
+    // Initialize comments array if it doesn't exist
+    if (!task.comments) {
+      task.comments = [];
+    }
+    
+    task.comments.push({
+      id: commentId,
+      author: comment.author,
+      text: comment.text,
+      mentions: comment.mentions || [],
+      createdAt: new Date().toISOString()
+    });
+    
+    task.updatedAt = new Date().toISOString();
+    
+    await this.saveTodoData(data);
+    return commentId;
+  }
+
+  /**
+   * Get task comments
+   */
+  async getTaskComments(taskId: string): Promise<Array<{
+    id: string;
+    author: string;
+    text: string;
+    mentions: string[];
+    createdAt: string;
+  }>> {
+    const data = await this.loadTodoData();
+    const task = data.tasks[taskId];
+    
+    if (!task) {
+      throw new Error(`Task ${taskId} not found`);
+    }
+    
+    return task.comments || [];
+  }
+
+  /**
+   * Get task history (changelog)
+   */
+  async getTaskHistory(taskId: string): Promise<Array<{
+    timestamp: string;
+    action: string;
+    details: string;
+    modifiedBy: string;
+  }>> {
+    const data = await this.loadTodoData();
+    const task = data.tasks[taskId];
+    
+    if (!task) {
+      throw new Error(`Task ${taskId} not found`);
+    }
+    
+    return task.changeLog || [];
+  }
+
+  /**
+   * Create task from template
+   */
+  async createTaskFromTemplate(options: {
+    templateId: string;
+    overrides?: Partial<TodoTask>;
+  }): Promise<string> {
+    const data = await this.loadTodoData();
+    
+    // Find the template
+    const template = data.templates?.find(t => t.id === options.templateId);
+    if (!template) {
+      throw new Error(`Template ${options.templateId} not found`);
+    }
+    
+    // Create task from template
+    const taskData = {
+      title: template.template.title,
+      description: template.template.description,
+      priority: template.template.priority as any,
+      category: template.template.category,
+      estimatedHours: template.template.estimatedHours,
+      tags: template.template.tags || [],
+      ...options.overrides
+    };
+    
+    // Increment template usage count
+    template.usageCount += 1;
+    await this.saveTodoData(data, false);
+    
+    // Create the task
+    return await this.createTask(taskData);
+  }
+
+  /**
+   * Process recurring tasks and generate new ones if due
+   */
+  async processRecurringTasks(): Promise<Array<{
+    id: string;
+    title: string;
+    recurringTaskId: string;
+  }>> {
+    const data = await this.loadTodoData();
+    const now = new Date();
+    const createdTasks = [];
+    
+    if (!data.recurringTasks) {
+      return [];
+    }
+    
+    for (const recurringTask of data.recurringTasks) {
+      if (!recurringTask.isActive) {
+        continue;
+      }
+      
+      const nextDue = new Date(recurringTask.nextDue);
+      
+      // Check if it's time to create a new task
+      if (now >= nextDue) {
+        // Check if we're within the end date range
+        if (recurringTask.endDate && now > new Date(recurringTask.endDate)) {
+          recurringTask.isActive = false;
+          continue;
+        }
+        
+        // Create new task
+        const taskId = await this.createTask({
+          title: recurringTask.title,
+          description: recurringTask.description,
+          priority: recurringTask.priority as any,
+          tags: ['recurring']
+        });
+        
+        createdTasks.push({
+          id: taskId,
+          title: recurringTask.title,
+          recurringTaskId: recurringTask.id
+        });
+        
+        // Update recurring task
+        recurringTask.lastGenerated = now.toISOString();
+        recurringTask.nextDue = this.calculateNextDue(recurringTask.frequency, now.toISOString());
+      }
+    }
+    
+    if (createdTasks.length > 0) {
+      await this.saveTodoData(data, false);
+    }
+    
+    return createdTasks;
   }
 
   private async ensureCacheDirectory(): Promise<void> {
