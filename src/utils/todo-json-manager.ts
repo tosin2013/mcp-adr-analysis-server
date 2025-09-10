@@ -95,7 +95,8 @@ export class TodoJsonManager {
           linkedIntents: [],
           pendingUpdates: []
         },
-        automationRules: []
+        automationRules: [],
+        operationHistory: []
       };
       
       await this.saveTodoData(defaultData);
@@ -192,6 +193,15 @@ export class TodoJsonManager {
     await this.saveTodoData(data);
     await this.updateScoring(data);
     
+    // Record operation in history
+    await this.recordOperation(
+      'create_task',
+      `Created task: ${taskData.title}`,
+      [taskId],
+      {}, // No task before creation
+      { [taskId]: task }
+    );
+    
     return taskId;
   }
 
@@ -208,6 +218,38 @@ export class TodoJsonManager {
     
     const now = new Date().toISOString();
     const oldStatus = task.status;
+    
+    // Record snapshot before changes for undo
+    const snapshotBefore = { [operation.taskId]: { ...task } };
+    
+    // Check for circular dependencies if updating dependencies
+    if (operation.updates.dependencies) {
+      console.log('Checking circular dependencies for:', operation.taskId, 'with deps:', operation.updates.dependencies);
+      
+      const checkCircularDependency = (taskId: string, deps: string[], visited: Set<string> = new Set()): boolean => {
+        console.log('Checking task:', taskId, 'deps:', deps, 'visited:', Array.from(visited));
+        if (visited.has(taskId)) {
+          console.log('Circular dependency found at:', taskId);
+          return true;
+        }
+        visited.add(taskId);
+        
+        for (const depId of deps) {
+          const depTask = data.tasks[depId];
+          if (depTask) {
+            console.log('Found dep task:', depId, 'with deps:', depTask.dependencies || []);
+            if (checkCircularDependency(depId, depTask.dependencies || [], new Set(visited))) {
+              return true;
+            }
+          }
+        }
+        return false;
+      };
+      
+      if (checkCircularDependency(operation.taskId, operation.updates.dependencies)) {
+        throw new Error('Circular dependency detected: This update would create a dependency loop');
+      }
+    }
     
     // Apply updates
     Object.assign(task, operation.updates);
@@ -243,6 +285,15 @@ export class TodoJsonManager {
     
     await this.saveTodoData(data);
     await this.updateScoring(data);
+    
+    // Record operation in history
+    await this.recordOperation(
+      'update_task',
+      operation.reason,
+      [operation.taskId],
+      snapshotBefore,
+      { [operation.taskId]: { ...task } }
+    );
   }
 
   /**
@@ -464,6 +515,88 @@ export class TodoJsonManager {
       trends: data.scoringSync.scoreHistory,
       recommendations
     };
+  }
+
+  /**
+   * Record an operation in history for undo functionality
+   */
+  async recordOperation(
+    operation: string, 
+    description: string, 
+    affectedTaskIds: string[], 
+    snapshotBefore?: Record<string, any>,
+    snapshotAfter?: Record<string, any>
+  ): Promise<void> {
+    const data = await this.loadTodoData();
+    
+    const historyEntry = {
+      id: crypto.randomUUID(),
+      timestamp: new Date().toISOString(),
+      operation: operation as any,
+      description,
+      snapshotBefore,
+      snapshotAfter,
+      affectedTaskIds
+    };
+    
+    // Add to history and keep only last 50 operations
+    data.operationHistory.push(historyEntry);
+    data.operationHistory = data.operationHistory.slice(-50);
+    
+    await this.saveTodoData(data, false); // Don't sync to markdown for history updates
+  }
+
+  /**
+   * Get operation history
+   */
+  async getOperationHistory(limit: number = 10): Promise<any[]> {
+    const data = await this.loadTodoData();
+    return data.operationHistory
+      .slice(-limit)
+      .reverse(); // Most recent first
+  }
+
+  /**
+   * Undo the last operation
+   */
+  async undoLastOperation(): Promise<{ success: boolean; operation?: any; error?: string }> {
+    const data = await this.loadTodoData();
+    const lastOperation = data.operationHistory[data.operationHistory.length - 1];
+    
+    if (!lastOperation) {
+      return { success: false, error: 'No operations to undo' };
+    }
+    
+    try {
+      // Restore the snapshot before the operation
+      if (lastOperation.snapshotBefore) {
+        for (const taskId of lastOperation.affectedTaskIds) {
+          if (lastOperation.snapshotBefore[taskId]) {
+            // Restore task to previous state
+            data.tasks[taskId] = lastOperation.snapshotBefore[taskId];
+          } else if (data.tasks[taskId]) {
+            // Task was created, so delete it
+            delete data.tasks[taskId];
+            // Remove from sections
+            data.sections.forEach(section => {
+              section.tasks = section.tasks.filter(id => id !== taskId);
+            });
+          }
+        }
+      }
+      
+      // Remove the last operation from history
+      data.operationHistory.pop();
+      
+      await this.saveTodoData(data);
+      
+      return { success: true, operation: lastOperation };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Unknown error during undo' 
+      };
+    }
   }
 
   private async ensureCacheDirectory(): Promise<void> {

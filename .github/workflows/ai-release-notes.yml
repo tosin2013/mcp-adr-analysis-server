@@ -8,6 +8,25 @@ on:
         description: 'Version to generate release notes for'
         required: false
         default: 'latest'
+      ai_model:
+        description: 'AI model to use (gpt-4o, gpt-4o-mini, gpt-4-turbo)'
+        required: false
+        default: 'gpt-4o-mini'
+        type: choice
+        options:
+          - gpt-4o
+          - gpt-4o-mini
+          - gpt-4-turbo
+      release_style:
+        description: 'Release notes style'
+        required: false
+        default: 'comprehensive'
+        type: choice
+        options:
+          - comprehensive
+          - concise
+          - technical
+          - user-focused
 
 jobs:
   generate-notes:
@@ -16,13 +35,14 @@ jobs:
       version: ${{ steps.version.outputs.VERSION }}
     permissions:
       contents: write
-      pull-requests: write
+      pull-requests: read
       actions: write
-      issues: write
+      issues: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -31,7 +51,10 @@ jobs:
           cache: 'npm'
       
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci
+          # Install OpenAI SDK if not in dependencies
+          npm install openai@latest --save-dev || true
       
       - name: Determine version
         id: version
@@ -41,7 +64,11 @@ jobs:
           elif [ "${{ github.event.inputs.version }}" != "" ] && [ "${{ github.event.inputs.version }}" != "latest" ]; then
             VERSION="${{ github.event.inputs.version }}"
           else
-            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "v2.1.0")
+            # Get the latest tag or determine from package.json
+            VERSION=$(git describe --tags --abbrev=0 2>/dev/null || npm pkg get version | tr -d '"')
+            if [[ ! "$VERSION" =~ ^v ]]; then
+              VERSION="v${VERSION}"
+            fi
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "Using version: ${VERSION}"
@@ -55,34 +82,115 @@ jobs:
           npm version "${VERSION_NO_V}" --no-git-tag-version --allow-same-version
           echo "Updated package.json to version ${VERSION_NO_V}"
       
-      - name: Commit version update
+      - name: Validate generated release notes
+        run: |
+          if [ ! -f "CHANGELOG.md" ]; then
+            echo "Error: CHANGELOG.md was not generated"
+            exit 1
+          fi
+          
+          # Check if release notes contain the version
+          if ! grep -q "${{ steps.version.outputs.VERSION }}" CHANGELOG.md; then
+            echo "Error: Version ${{ steps.version.outputs.VERSION }} not found in CHANGELOG.md"
+            exit 1
+          fi
+          
+          echo "✅ Release notes validated successfully"
+      
+      - name: Commit version and changelog updates
         run: |
           VERSION_NO_V="${{ steps.version.outputs.VERSION }}"
           VERSION_NO_V="${VERSION_NO_V#v}"
+          
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add package.json package-lock.json
-          git diff --staged --quiet || git commit -m "chore: update version to ${VERSION_NO_V} [skip ci]"
-          git push origin HEAD:main || echo "Version update commit failed (may already be up to date)"
+          
+          # Stage changes
+          git add package.json package-lock.json CHANGELOG.md
+          
+          # Check if there are changes to commit
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: update version to ${VERSION_NO_V} and generate release notes [skip ci]
+
+            - Updated package.json version to ${VERSION_NO_V}
+            - Generated comprehensive release notes using AI enhancement
+            - Updated CHANGELOG.md with detailed changes
+            
+            Co-authored-by: github-actions[bot] <github-actions[bot]@users.noreply.github.com>"
+            
+            # Push changes
+            git push origin HEAD:main || echo "Push failed (may be protected branch)"
+          fi
+      
+      - name: Generate commit analysis report
+        id: analysis
+        run: |
+          # Generate detailed commit analysis for AI context
+          echo "## Commit Analysis Report" > commit-analysis.md
+          echo "" >> commit-analysis.md
+          
+          # Get previous tag for comparison
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "HEAD~20")
+          echo "Analyzing commits from $PREV_TAG to HEAD" >> commit-analysis.md
+          echo "" >> commit-analysis.md
+          
+          # Commit statistics
+          echo "### Statistics" >> commit-analysis.md
+          echo "- Total commits: $(git rev-list --count $PREV_TAG..HEAD)" >> commit-analysis.md
+          echo "- Contributors: $(git shortlog -sn $PREV_TAG..HEAD | wc -l)" >> commit-analysis.md
+          echo "- Files changed: $(git diff --name-only $PREV_TAG..HEAD | wc -l)" >> commit-analysis.md
+          echo "" >> commit-analysis.md
+          
+          # Save for AI context
+          echo "PREV_TAG=${PREV_TAG}" >> $GITHUB_OUTPUT
+      
+      - name: Fetch PR and Issue context
+        if: github.event_name == 'push' || github.event.inputs.version != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch recent merged PRs for better context
+          echo "### Recently Merged PRs" >> pr-context.md
+          gh pr list --state merged --limit 20 --json number,title,labels,body --jq '.[] | "- PR #\(.number): \(.title)\n  Labels: \(.labels | map(.name) | join(", "))\n"' >> pr-context.md || echo "No recent PRs" >> pr-context.md
       
       - name: Generate AI Release Notes
         run: npx tsx scripts/ai-release-notes.ts
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          RELEASE_NOTES_MODEL: gpt-4
-          RELEASE_STYLE: comprehensive
+          RELEASE_NOTES_MODEL: ${{ github.event.inputs.ai_model || 'gpt-4o-mini' }}
+          RELEASE_STYLE: ${{ github.event.inputs.release_style || 'comprehensive' }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          PREV_TAG: ${{ steps.analysis.outputs.PREV_TAG }}
       
-      - name: Create Release
+      - name: Extract release body
+        id: release_body
+        run: |
+          # Extract just the current version's release notes from CHANGELOG.md
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          
+          # Use awk to extract content between version headers
+          awk "/^# Release ${VERSION//./\\.}/{flag=1; next} /^# Release/{flag=0} flag" CHANGELOG.md > release-body.md
+          
+          # If extraction failed, use the whole CHANGELOG
+          if [ ! -s release-body.md ]; then
+            cp CHANGELOG.md release-body.md
+          fi
+          
+          echo "Release notes extracted to release-body.md"
+      
+      - name: Create or Update Release
         uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
           name: Release ${{ steps.version.outputs.VERSION }}
-          body_path: ./CHANGELOG.md
+          body_path: ./release-body.md
           draft: false
-          prerelease: false
-          generate_release_notes: true
+          prerelease: ${{ contains(steps.version.outputs.VERSION, '-') }}
+          generate_release_notes: false  # We're using our own AI-generated notes
       
   publish:
     needs: generate-notes

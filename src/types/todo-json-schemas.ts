@@ -22,6 +22,10 @@ export const TodoTaskSchema = z.object({
   completedAt: z.string().optional(),
   dueDate: z.string().optional(),
   
+  // Archive support
+  archived: z.boolean().default(false),
+  archivedAt: z.string().optional(),
+  
   // Relationships
   parentTaskId: z.string().optional(),
   subtasks: z.array(z.string()).default([]),
@@ -125,6 +129,17 @@ export const TodoJsonDataSchema = z.object({
       type: z.enum(['complete_task', 'create_task', 'update_status', 'notify', 'update_score']),
       parameters: z.record(z.any())
     }))
+  })).default([]),
+  
+  // Operation history for undo functionality
+  operationHistory: z.array(z.object({
+    id: z.string(),
+    timestamp: z.string(),
+    operation: z.enum(['create_task', 'update_task', 'delete_task', 'archive_task', 'bulk_update', 'bulk_delete']),
+    description: z.string(),
+    snapshotBefore: z.record(z.any()).optional(), // Task state before operation
+    snapshotAfter: z.record(z.any()).optional(),  // Task state after operation
+    affectedTaskIds: z.array(z.string()).default([])
   })).default([])
 });
 
