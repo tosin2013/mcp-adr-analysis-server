@@ -263,11 +263,23 @@ function parseTaskLine(line: string, _allLines: string[], _lineIndex: number): T
   // Extract priority from emoji
   const priority = extractPriorityFromEmoji(content);
   
-  // Extract title (remove emojis and metadata)
-  const title = content
-    .replace(/^[^\s]+ [^\s]+ \*\*(.+?)\*\*.*/, '$1')
-    .replace(/^[^\s]+ [^\s]+ (.+?) \(.*/, '$1')
-    .replace(/^[^\s]+ [^\s]+ (.+)$/, '$1');
+  // Extract title - handle different formats
+  let title = content;
+  
+  // Case 1: **Bold title** format
+  const boldTitleMatch = content.match(/\*\*(.+?)\*\*/);
+  if (boldTitleMatch) {
+    title = boldTitleMatch[1] || '';
+  } else {
+    // Case 2: Emoji + title format
+    const emojiMatch = content.match(/^[^\s]+ [^\s]+ (.+?)(?:\s+\(.*|\s+@.*|\s+📅.*|$)/);
+    if (emojiMatch) {
+      title = emojiMatch[1] || '';
+    } else {
+      // Case 3: Simple title
+      title = content.split(' ')[0] || content;
+    }
+  }
   
   // Extract assignee
   const assigneeMatch = content.match(/@(\w+)/);

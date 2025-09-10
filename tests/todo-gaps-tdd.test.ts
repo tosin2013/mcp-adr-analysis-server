@@ -339,7 +339,7 @@ describe('TODO Management Tool - Gap Fixes (TDD)', () => {
       
       await todoManager.createTask({
         title: 'Configure External Secrets Operator',
-        description: 'Install ESO for secret management in dev environment',
+        description: 'Install ESO operator for secret management in dev environment',
         tags: ['eso', 'secrets', 'development'],
         priority: 'medium',
         dueDate: '2024-01-15'
