@@ -191,7 +191,10 @@ export async function parseMarkdownToJson(markdown: string): Promise<TodoJsonDat
       pendingUpdates: []
     },
     automationRules: [],
-    operationHistory: []
+    operationHistory: [],
+    templates: {},
+    recurringTasks: {},
+    comments: {}
   };
   
   let currentSection: TodoSection | null = null;

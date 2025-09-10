@@ -14,7 +14,13 @@ import {
   TodoJsonDataSchema,
   TaskUpdateOperation,
   TodoScoreMetrics,
-  TodoKnowledgeGraphLink
+  TodoKnowledgeGraphLink,
+  TaskTemplate,
+  TaskComment,
+  RecurringTask,
+  PaginationOptions,
+  TaskSearchOptions,
+  TasksResult
 } from '../types/todo-json-schemas.js';
 import { loadConfig } from './config.js';
 import { KnowledgeGraphManager } from './knowledge-graph-manager.js';
@@ -96,7 +102,10 @@ export class TodoJsonManager {
           pendingUpdates: []
         },
         automationRules: [],
-        operationHistory: []
+        operationHistory: [],
+        templates: {},
+        recurringTasks: {},
+        comments: {}
       };
       
       await this.saveTodoData(defaultData);
@@ -164,6 +173,7 @@ export class TodoJsonManager {
       progressPercentage: taskData.progressPercentage || (taskData.status === 'completed' ? 100 : 0),
       tags: taskData.tags || [],
       notes: taskData.notes,
+      checklist: taskData.checklist,
       lastModifiedBy: taskData.lastModifiedBy || 'tool',
       autoComplete: taskData.autoComplete || false,
       completionCriteria: taskData.completionCriteria,
@@ -599,6 +609,355 @@ export class TodoJsonManager {
         error: error instanceof Error ? error.message : 'Unknown error during undo' 
       };
     }
+  }
+
+  /**
+   * Template Management Methods
+   */
+  async createTemplate(templateData: {
+    name: string;
+    description: string;
+    template: {
+      priority?: 'low' | 'medium' | 'high' | 'critical';
+      tags?: string[];
+      category?: string;
+      checklist?: string[];
+      estimatedHours?: number;
+    };
+  }): Promise<string> {
+    const data = await this.loadTodoData();
+    const templateId = crypto.randomUUID();
+    
+    const template: TaskTemplate = {
+      id: templateId,
+      name: templateData.name,
+      description: templateData.description,
+      template: templateData.template,
+      createdAt: new Date().toISOString(),
+      usageCount: 0
+    };
+
+    data.templates[templateId] = template;
+    await this.saveTodoData(data);
+    
+    return templateId;
+  }
+
+  async createTaskFromTemplate(options: {
+    templateId: string;
+    overrides?: Partial<TodoTask>;
+  }): Promise<string> {
+    const data = await this.loadTodoData();
+    const template = data.templates[options.templateId];
+    
+    if (!template) {
+      throw new Error(`Template ${options.templateId} not found`);
+    }
+
+    // Create task with template data
+    const taskData = {
+      title: `Task from ${template.name}`,
+      priority: template.template.priority || 'medium',
+      category: template.template.category,
+      tags: template.template.tags || [],
+      estimatedHours: template.template.estimatedHours,
+      checklist: template.template.checklist,
+      ...options.overrides
+    };
+
+    // Update template usage
+    template.lastUsed = new Date().toISOString();
+    template.usageCount++;
+    data.templates[options.templateId] = template;
+
+    const taskId = await this.createTask(taskData);
+
+    return taskId;
+  }
+
+  /**
+   * Recurring Task Management
+   */
+  async createRecurringTask(recurringData: {
+    title: string;
+    description?: string;
+    priority: 'low' | 'medium' | 'high' | 'critical';
+    recurrence: {
+      pattern: 'daily' | 'weekly' | 'monthly' | 'custom';
+      interval?: number;
+      dayOfWeek?: string;
+      dayOfMonth?: number;
+      time?: string;
+    };
+    autoCreate?: boolean;
+  }): Promise<string> {
+    const data = await this.loadTodoData();
+    const recurringId = crypto.randomUUID();
+    
+    const recurringTask: RecurringTask = {
+      id: recurringId,
+      title: recurringData.title,
+      description: recurringData.description,
+      priority: recurringData.priority,
+      recurrence: recurringData.recurrence,
+      autoCreate: recurringData.autoCreate || true,
+      isActive: true,
+      createdAt: new Date().toISOString()
+    };
+
+    data.recurringTasks[recurringId] = recurringTask;
+    await this.saveTodoData(data);
+    
+    return recurringId;
+  }
+
+  async processRecurringTasks(): Promise<TodoTask[]> {
+    const data = await this.loadTodoData();
+    const createdTasks: TodoTask[] = [];
+    
+    const now = new Date();
+    
+    for (const [recurringId, recurringTask] of Object.entries(data.recurringTasks)) {
+      if (!recurringTask.isActive || !recurringTask.autoCreate) continue;
+      
+      // Simple implementation - create task if none created yet
+      if (!recurringTask.lastCreated) {
+        const taskId = await this.createTask({
+          title: recurringTask.title,
+          description: recurringTask.description,
+          priority: recurringTask.priority,
+          tags: ['recurring'],
+          dueDate: now.toISOString()
+        });
+        
+        recurringTask.lastCreated = now.toISOString();
+        recurringTask.nextDue = this.calculateNextDue(recurringTask.recurrence, now);
+        data.recurringTasks[recurringId] = recurringTask;
+        
+        // Get the created task
+        const updatedData = await this.loadTodoData();
+        const createdTask = updatedData.tasks[taskId];
+        if (createdTask) {
+          createdTasks.push(createdTask);
+        }
+      }
+    }
+    
+    if (createdTasks.length > 0) {
+      await this.saveTodoData(data);
+    }
+    
+    return createdTasks;
+  }
+
+  private calculateNextDue(recurrence: RecurringTask['recurrence'], from: Date): string {
+    const next = new Date(from);
+    
+    switch (recurrence.pattern) {
+      case 'daily':
+        next.setDate(next.getDate() + (recurrence.interval || 1));
+        break;
+      case 'weekly':
+        next.setDate(next.getDate() + 7 * (recurrence.interval || 1));
+        break;
+      case 'monthly':
+        next.setMonth(next.getMonth() + (recurrence.interval || 1));
+        break;
+    }
+    
+    return next.toISOString();
+  }
+
+  /**
+   * Enhanced Task Retrieval Methods
+   */
+  async getTask(taskId: string, _options?: { useCache?: boolean }): Promise<TodoTask | null> {
+    const data = await this.loadTodoData();
+    return data.tasks[taskId] || null;
+  }
+
+  async getTasks(options?: {
+    pagination?: PaginationOptions;
+    search?: TaskSearchOptions;
+  }): Promise<TasksResult> {
+    const data = await this.loadTodoData();
+    let tasks = Object.values(data.tasks);
+    
+    // Apply search filters
+    if (options?.search) {
+      tasks = this.filterTasks(tasks, options.search);
+    }
+    
+    const totalTasks = tasks.length;
+    
+    // Apply pagination
+    if (options?.pagination) {
+      const { page, pageSize } = options.pagination;
+      const startIndex = (page - 1) * pageSize;
+      const endIndex = startIndex + pageSize;
+      tasks = tasks.slice(startIndex, endIndex);
+      
+      return {
+        tasks,
+        totalTasks,
+        totalPages: Math.ceil(totalTasks / pageSize),
+        currentPage: page,
+        pageSize
+      };
+    }
+    
+    return {
+      tasks,
+      totalTasks,
+      totalPages: 1,
+      currentPage: 1,
+      pageSize: totalTasks
+    };
+  }
+
+  async searchTasks(options: TaskSearchOptions): Promise<TodoTask[]> {
+    const data = await this.loadTodoData();
+    const tasks = Object.values(data.tasks);
+    return this.filterTasks(tasks, options);
+  }
+
+  private filterTasks(tasks: TodoTask[], search: TaskSearchOptions): TodoTask[] {
+    return tasks.filter(task => {
+      // Status filter
+      if (search.status && !search.status.includes(task.status)) {
+        return false;
+      }
+      
+      // Priority filter
+      if (search.priority && !search.priority.includes(task.priority)) {
+        return false;
+      }
+      
+      // Category filter
+      if (search.category && task.category !== search.category) {
+        return false;
+      }
+      
+      // Assignee filter
+      if (search.assignee && task.assignee !== search.assignee) {
+        return false;
+      }
+      
+      // Tags filter
+      if (search.tags && !search.tags.some(tag => task.tags.includes(tag))) {
+        return false;
+      }
+      
+      // Text search
+      if (search.query) {
+        const query = search.query.toLowerCase();
+        const searchText = `${task.title} ${task.description || ''}`.toLowerCase();
+        
+        switch (search.searchType) {
+          case 'exact':
+            if (!searchText.includes(query)) return false;
+            break;
+          case 'fuzzy':
+          case 'contains':
+          default:
+            if (!searchText.includes(query)) return false;
+            break;
+        }
+      }
+      
+      // Date range filter
+      if (search.dateRange) {
+        const { start, end, field } = search.dateRange;
+        const fieldValue = task[field];
+        if (!fieldValue) return false;
+        
+        const fieldDate = new Date(fieldValue);
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        
+        if (fieldDate < startDate || fieldDate > endDate) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
+  }
+
+  /**
+   * Comment System Methods
+   */
+  async addComment(commentData: {
+    taskId: string;
+    author: string;
+    text: string;
+    replyTo?: string;
+    mentions?: string[];
+  }): Promise<TaskComment> {
+    const data = await this.loadTodoData();
+    
+    // Verify task exists
+    if (!data.tasks[commentData.taskId]) {
+      throw new Error(`Task ${commentData.taskId} not found`);
+    }
+    
+    const comment: TaskComment = {
+      id: crypto.randomUUID(),
+      taskId: commentData.taskId,
+      author: commentData.author,
+      text: commentData.text,
+      createdAt: new Date().toISOString(),
+      replyTo: commentData.replyTo,
+      mentions: commentData.mentions || [],
+      edited: false
+    };
+    
+    if (!data.comments[commentData.taskId]) {
+      data.comments[commentData.taskId] = [];
+    }
+    
+    data.comments[commentData.taskId]!.push(comment);
+    await this.saveTodoData(data);
+    
+    return comment;
+  }
+
+  async getTaskComments(taskId: string): Promise<TaskComment[]> {
+    const data = await this.loadTodoData();
+    return data.comments[taskId] || [];
+  }
+
+  /**
+   * Task History/Audit Trail
+   */
+  async getTaskHistory(taskId: string): Promise<any[]> {
+    const data = await this.loadTodoData();
+    const task = data.tasks[taskId];
+    
+    if (!task) {
+      throw new Error(`Task ${taskId} not found`);
+    }
+    
+    return task.changeLog || [];
+  }
+
+  /**
+   * Conflict Resolution and Sync Methods
+   */
+  async detectConflicts(): Promise<any[]> {
+    // Simple implementation for now - returns empty conflicts
+    // This would normally compare JSON and Markdown timestamps and content
+    return [];
+  }
+
+  async enableSyncMonitoring(_options: {
+    autoResolve?: boolean;
+    conflictStrategy?: string;
+  }): Promise<void> {
+    // Simple implementation - just store the options
+    const data = await this.loadTodoData();
+    // In a real implementation, this would set up file watchers
+    await this.saveTodoData(data);
   }
 
   private async ensureCacheDirectory(): Promise<void> {

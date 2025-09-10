@@ -52,6 +52,7 @@ export const TodoTaskSchema = z.object({
   // Metadata
   tags: z.array(z.string()).default([]),
   notes: z.string().optional(),
+  checklist: z.array(z.string()).optional(),
   lastModifiedBy: z.enum(['human', 'tool', 'adr_generator', 'knowledge_graph']).default('tool'),
   
   // Automation
@@ -77,6 +78,62 @@ export const TodoSectionSchema = z.object({
   tasks: z.array(z.string()), // Task IDs
   metadata: z.record(z.any()).optional()
 });
+
+// Task Template Schema
+export const TaskTemplateSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string(),
+  template: z.object({
+    priority: z.enum(['low', 'medium', 'high', 'critical']).optional(),
+    tags: z.array(z.string()).optional(),
+    category: z.string().optional(),
+    checklist: z.array(z.string()).optional(),
+    estimatedHours: z.number().optional()
+  }),
+  createdAt: z.string(),
+  lastUsed: z.string().optional(),
+  usageCount: z.number().default(0)
+});
+
+export type TaskTemplate = z.infer<typeof TaskTemplateSchema>;
+
+// Task Comment Schema
+export const TaskCommentSchema = z.object({
+  id: z.string(),
+  taskId: z.string(),
+  author: z.string(),
+  text: z.string(),
+  createdAt: z.string(),
+  replyTo: z.string().optional(),
+  mentions: z.array(z.string()).optional(),
+  edited: z.boolean().default(false),
+  editedAt: z.string().optional()
+});
+
+export type TaskComment = z.infer<typeof TaskCommentSchema>;
+
+// Recurring Task Schema
+export const RecurringTaskSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  description: z.string().optional(),
+  priority: z.enum(['low', 'medium', 'high', 'critical']),
+  recurrence: z.object({
+    pattern: z.enum(['daily', 'weekly', 'monthly', 'custom']),
+    interval: z.number().optional(),
+    dayOfWeek: z.string().optional(),
+    dayOfMonth: z.number().optional(),
+    time: z.string().optional()
+  }),
+  autoCreate: z.boolean().default(true),
+  lastCreated: z.string().optional(),
+  nextDue: z.string().optional(),
+  isActive: z.boolean().default(true),
+  createdAt: z.string()
+});
+
+export type RecurringTask = z.infer<typeof RecurringTaskSchema>;
 
 export const TodoJsonDataSchema = z.object({
   version: z.string().default('1.0.0'),
@@ -140,7 +197,12 @@ export const TodoJsonDataSchema = z.object({
     snapshotBefore: z.record(z.any()).optional(), // Task state before operation
     snapshotAfter: z.record(z.any()).optional(),  // Task state after operation
     affectedTaskIds: z.array(z.string()).default([])
-  })).default([])
+  })).default([]),
+
+  // New features storage
+  templates: z.record(TaskTemplateSchema).default({}), // templateId -> Template
+  recurringTasks: z.record(RecurringTaskSchema).default({}), // recurringId -> RecurringTask
+  comments: z.record(z.array(TaskCommentSchema)).default({}) // taskId -> Comment[]
 });
 
 export type TodoTask = z.infer<typeof TodoTaskSchema>;
@@ -196,4 +258,33 @@ export interface TodoKnowledgeGraphLink {
   linkType: 'generated_from' | 'contributes_to' | 'blocks' | 'depends_on';
   confidence: number;
   lastUpdated: string;
+}
+
+// Pagination and Search Options
+export interface PaginationOptions {
+  page: number;
+  pageSize: number;
+}
+
+export interface TaskSearchOptions {
+  query?: string;
+  searchType?: 'fuzzy' | 'exact' | 'contains';
+  status?: Array<'pending' | 'in_progress' | 'completed' | 'blocked' | 'cancelled'>;
+  priority?: Array<'low' | 'medium' | 'high' | 'critical'>;
+  category?: string;
+  tags?: string[];
+  assignee?: string;
+  dateRange?: {
+    start: string;
+    end: string;
+    field: 'createdAt' | 'updatedAt' | 'dueDate' | 'completedAt';
+  };
+}
+
+export interface TasksResult {
+  tasks: TodoTask[];
+  totalTasks: number;
+  totalPages: number;
+  currentPage: number;
+  pageSize: number;
 }
