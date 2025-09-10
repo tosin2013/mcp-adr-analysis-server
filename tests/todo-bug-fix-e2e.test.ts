@@ -105,6 +105,9 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
     const esoTaskId = extractTaskIdFromResponse(esoResult.content[0].text);
     const keycloakTaskId = extractTaskIdFromResponse(keycloakResult.content[0].text);
 
+    // Wait for batch to flush to ensure all tasks are persisted
+    await new Promise(resolve => setTimeout(resolve, 150));
+
     console.log(`Created tasks: ArgoCD(${argoCdTaskId}), ESO(${esoTaskId}), Keycloak(${keycloakTaskId})`);
 
     // Step 2: Test the EXACT failing commands from the issue (should now work)
@@ -195,6 +198,9 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
     });
     const taskId = extractTaskIdFromResponse(createResult.content[0].text);
 
+    // Wait for batch to flush to ensure task is persisted
+    await new Promise(resolve => setTimeout(resolve, 150));
+
     // Test that validation errors are thrown for invalid inputs
     await expect((server as any).manageTodoJson({
       operation: 'update_task',
@@ -228,6 +234,9 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
       title: 'Compatibility Test Task'
     });
     const taskId = extractTaskIdFromResponse(createResult.content[0].text);
+
+    // Wait for batch to flush to ensure task is persisted
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     // Test that providing explicit reason still works
     const updateResult = await (server as any).manageTodoJson({
