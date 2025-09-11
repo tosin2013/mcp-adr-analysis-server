@@ -34,7 +34,7 @@ describe('DataConsistencyChecker', () => {
       autoComplete: false,
       version: 1,
       changeLog: [],
-      comments: []
+      comments: [],
     };
 
     validData = {
@@ -43,10 +43,10 @@ describe('DataConsistencyChecker', () => {
         lastUpdated: '2024-01-01T00:00:00.000Z',
         totalTasks: 1,
         completedTasks: 0,
-        autoSyncEnabled: true
+        autoSyncEnabled: true,
       },
       tasks: {
-        'task-1': validTask
+        'task-1': validTask,
       },
       sections: [
         {
@@ -54,32 +54,32 @@ describe('DataConsistencyChecker', () => {
           title: 'Pending Tasks',
           order: 1,
           collapsed: false,
-          tasks: ['task-1']
+          tasks: ['task-1'],
         },
         {
           id: 'completed',
           title: 'Completed',
           order: 2,
           collapsed: false,
-          tasks: []
-        }
+          tasks: [],
+        },
       ],
       scoringSync: {
         lastScoreUpdate: '2024-01-01T00:00:00.000Z',
         taskCompletionScore: 0,
         priorityWeightedScore: 0,
         criticalTasksRemaining: 0,
-        scoreHistory: []
+        scoreHistory: [],
       },
       knowledgeGraphSync: {
         lastSync: '2024-01-01T00:00:00.000Z',
         linkedIntents: [],
-        pendingUpdates: []
+        pendingUpdates: [],
       },
       automationRules: [],
       templates: [],
       recurringTasks: [],
-      operationHistory: []
+      operationHistory: [],
     };
   });
 
@@ -114,8 +114,10 @@ describe('DataConsistencyChecker', () => {
       validData.tasks['orphaned-task'] = {
         ...validTask,
         id: 'orphaned-task',
-        title: 'Orphaned Task'
+        title: 'Orphaned Task',
       };
+      // Update metadata to match the new task count
+      validData.metadata.totalTasks = 2;
 
       const result = await DataConsistencyChecker.checkConsistency(validData);
 
@@ -138,7 +140,7 @@ describe('DataConsistencyChecker', () => {
       validData.sections[0]!.tasks.push('non-existent-task');
 
       const result = await DataConsistencyChecker.checkConsistency(validData, {
-        autoFix: true
+        autoFix: true,
       });
 
       expect(result.fixedIssues).toHaveLength(1);
@@ -151,11 +153,14 @@ describe('DataConsistencyChecker', () => {
         ...validTask,
         id: 'orphaned-task',
         title: 'Orphaned Task',
-        status: 'completed'
+        status: 'completed',
       };
+      // Update metadata to match the new task count and completed count
+      validData.metadata.totalTasks = 2;
+      validData.metadata.completedTasks = 1;
 
       const result = await DataConsistencyChecker.checkConsistency(validData, {
-        autoFix: true
+        autoFix: true,
       });
 
       expect(result.fixedIssues).toHaveLength(1);
@@ -190,7 +195,7 @@ describe('DataConsistencyChecker', () => {
       validData.metadata.completedTasks = 3;
 
       const result = await DataConsistencyChecker.checkConsistency(validData, {
-        autoFix: true
+        autoFix: true,
       });
 
       expect(result.fixedIssues).toHaveLength(2);
@@ -216,7 +221,7 @@ describe('DataConsistencyChecker', () => {
         ...validTask,
         id: 'task-2',
         title: 'Task 2',
-        dependencies: ['task-1']
+        dependencies: ['task-1'],
       };
       validData.tasks['task-1']!.dependencies = ['task-2'];
 
@@ -232,13 +237,13 @@ describe('DataConsistencyChecker', () => {
         ...validTask,
         id: 'task-2',
         title: 'Task 2',
-        dependencies: ['task-3']
+        dependencies: ['task-3'],
       };
       validData.tasks['task-3'] = {
         ...validTask,
         id: 'task-3',
         title: 'Task 3',
-        dependencies: ['task-1']
+        dependencies: ['task-1'],
       };
       validData.tasks['task-1']!.dependencies = ['task-2'];
 
@@ -346,7 +351,7 @@ describe('DataConsistencyChecker', () => {
         largeTasks[taskId] = {
           ...validTask,
           id: taskId,
-          title: `Task ${i}`
+          title: `Task ${i}`,
         };
         sectionTasks.push(taskId);
       }
@@ -356,15 +361,15 @@ describe('DataConsistencyChecker', () => {
         tasks: largeTasks,
         metadata: {
           ...validData.metadata,
-          totalTasks: taskCount
+          totalTasks: taskCount,
         },
         sections: [
           {
             ...validData.sections[0]!,
-            tasks: sectionTasks
+            tasks: sectionTasks,
           },
-          ...validData.sections.slice(1)
-        ]
+          ...validData.sections.slice(1),
+        ],
       };
 
       const startTime = Date.now();
@@ -386,7 +391,7 @@ describe('DataConsistencyChecker', () => {
         largeTasks[taskId] = {
           ...validTask,
           id: taskId,
-          title: `Task ${i}`
+          title: `Task ${i}`,
         };
         sectionTasks.push(taskId);
       }
@@ -396,15 +401,15 @@ describe('DataConsistencyChecker', () => {
         tasks: largeTasks,
         metadata: {
           ...validData.metadata,
-          totalTasks: taskCount
+          totalTasks: taskCount,
         },
         sections: [
           {
             ...validData.sections[0]!,
-            tasks: sectionTasks
+            tasks: sectionTasks,
           },
-          ...validData.sections.slice(1)
-        ]
+          ...validData.sections.slice(1),
+        ],
       };
 
       const startTime = Date.now();
@@ -420,7 +425,7 @@ describe('DataConsistencyChecker', () => {
     it('should handle malformed data gracefully', async () => {
       const malformedData = {
         ...validData,
-        tasks: null as any
+        tasks: null as any,
       };
 
       const result = await DataConsistencyChecker.checkConsistency(malformedData);
@@ -430,7 +435,7 @@ describe('DataConsistencyChecker', () => {
     it('should handle quick check with malformed data', async () => {
       const malformedData = {
         ...validData,
-        sections: null as any
+        sections: null as any,
       };
 
       const isValid = await DataConsistencyChecker.quickCheck(malformedData);
