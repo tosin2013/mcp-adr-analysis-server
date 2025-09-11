@@ -294,6 +294,82 @@ describe('DataConsistencyChecker', () => {
       expect(result.errors).toHaveLength(1);
       expect(result.errors[0]!.type).toBe('INVALID_DATE');
     });
+
+    it('should detect edge case invalid dates', async () => {
+      // Test various edge cases that should be caught
+      const testCases = [
+        { dueDate: '2024-13-01', description: 'invalid month' },
+        { dueDate: '2024-02-30', description: 'invalid day for February' },
+        { dueDate: '2024-12-32', description: 'invalid day' },
+        { dueDate: '2024-01-01T25:00:00.000Z', description: 'invalid hour' },
+        { dueDate: '2024-01-01T12:60:00.000Z', description: 'invalid minute' },
+        { dueDate: '2024-01-01T12:30:60.000Z', description: 'invalid second' },
+        { dueDate: 'not-a-date-at-all', description: 'completely invalid format' },
+        { dueDate: '2024/12/31', description: 'wrong date separator' },
+        { dueDate: '31-12-2024', description: 'wrong date order' },
+      ];
+
+      for (const testCase of testCases) {
+        validData.tasks['task-1']!.dueDate = testCase.dueDate;
+
+        const result = await DataConsistencyChecker.checkConsistency(validData);
+
+        expect(result.isValid).toBe(false);
+        expect(result.errors.some(e => e.type === 'INVALID_DATE')).toBe(true);
+
+        const dateError = result.errors.find(e => e.type === 'INVALID_DATE');
+        expect(
+          dateError?.message.includes('invalid') || dateError?.message.includes(testCase.dueDate)
+        ).toBe(true);
+        expect(dateError?.suggestedFix).toBeDefined();
+      }
+    });
+
+    it('should handle timezone differences consistently', async () => {
+      // Test various timezone formats
+      const validTimezoneFormats = [
+        '2024-12-31T23:59:59.999Z',
+        '2024-12-31T23:59:59+00:00',
+        '2024-12-31T18:59:59-05:00',
+        '2024-12-31T23:59:59.999+00:00',
+      ];
+
+      for (const dateFormat of validTimezoneFormats) {
+        validData.tasks['task-1']!.dueDate = dateFormat;
+
+        const result = await DataConsistencyChecker.checkConsistency(validData);
+
+        expect(result.isValid).toBe(true);
+        expect(result.errors.filter(e => e.type === 'INVALID_DATE')).toHaveLength(0);
+      }
+    });
+
+    it('should provide clear error messages for date parsing failures', async () => {
+      validData.tasks['task-1']!.dueDate = 'invalid-date-format';
+
+      const result = await DataConsistencyChecker.checkConsistency(validData);
+
+      expect(result.isValid).toBe(false);
+      const dateError = result.errors.find(e => e.type === 'INVALID_DATE');
+      expect(dateError).toBeDefined();
+      expect(dateError?.message).toContain('invalid dueDate');
+      expect(dateError?.suggestedFix).toContain('ISO date format');
+      expect(dateError?.severity).toBe('medium');
+    });
+
+    it('should detect timezone inconsistencies within a task', async () => {
+      validData.tasks['task-1']!.createdAt = '2024-01-01T00:00:00.000Z'; // UTC
+      validData.tasks['task-1']!.updatedAt = '2024-01-01T05:00:00+05:00'; // +05:00 timezone
+      validData.tasks['task-1']!.dueDate = '2024-12-31T18:00:00-06:00'; // -06:00 timezone
+
+      const result = await DataConsistencyChecker.checkConsistency(validData);
+
+      expect(result.isValid).toBe(true); // This is a warning, not an error
+      const timezoneWarning = result.warnings.find(w => w.type === 'TIMEZONE_INCONSISTENCY');
+      expect(timezoneWarning).toBeDefined();
+      expect(timezoneWarning?.message).toContain('inconsistent timezone formats');
+      expect(timezoneWarning?.recommendation).toContain('consistent timezone format');
+    });
   });
 
   describe('Orphaned References', () => {
@@ -439,6 +515,22 @@ describe('DataConsistencyChecker', () => {
       };
 
       const isValid = await DataConsistencyChecker.quickCheck(malformedData);
+      expect(isValid).toBe(false);
+    });
+
+    it('should detect invalid dates in quick check', async () => {
+      const dataWithInvalidDate = {
+        ...validData,
+        tasks: {
+          ...validData.tasks,
+          'task-1': {
+            ...validData.tasks['task-1']!,
+            dueDate: 'invalid-date',
+          },
+        },
+      };
+
+      const isValid = await DataConsistencyChecker.quickCheck(dataWithInvalidDate);
       expect(isValid).toBe(false);
     });
   });
