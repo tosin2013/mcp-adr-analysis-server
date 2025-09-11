@@ -6,6 +6,8 @@
  */
 
 import { TodoTask, TodoJsonData } from '../types/todo-json-schemas.js';
+import { PerformanceOptimizerError, DiagnosticContext } from '../types/enhanced-errors.js';
+import { createComponentLogger } from './enhanced-logging.js';
 
 export interface DateContext {
   currentDate: Date;
@@ -72,6 +74,7 @@ export class PerformanceOptimizer {
   private static maxCacheSize = 50;
   private static operationQueue: Array<() => Promise<any>> = [];
   private static processingQueue = false;
+  private static logger = createComponentLogger('PerformanceOptimizer');
   private static queueManagement: QueueManagementOptions = {
     maxQueueSize: 1000,
     backpressureEnabled: true,
@@ -106,10 +109,27 @@ export class PerformanceOptimizer {
     return new Promise<T>((resolve, reject) => {
       // Immediate queue overflow check - reject immediately if at capacity
       if (this.operationQueue.length >= this.queueManagement.maxQueueSize) {
-        const error = new Error(
-          `Queue overflow: Maximum queue size (${this.queueManagement.maxQueueSize}) exceeded. ` +
-            'Consider reducing operation frequency or increasing queue size.'
+        const diagnostics: DiagnosticContext = {
+          component: 'PerformanceOptimizer',
+          operation: 'enqueue_operation',
+          timestamp: new Date(),
+          context: {
+            queueSize: this.operationQueue.length,
+            maxQueueSize: this.queueManagement.maxQueueSize,
+            backpressureEnabled: this.queueManagement.backpressureEnabled,
+          },
+          performanceMetrics: {
+            queueSize: this.operationQueue.length,
+            memoryUsage: this.getMemoryUsage(),
+          },
+        };
+
+        const error = PerformanceOptimizerError.queueOverflow(
+          this.operationQueue.length,
+          this.queueManagement.maxQueueSize,
+          diagnostics
         );
+        this.logger.logEnhancedError(error);
         reject(error);
         return;
       }
@@ -129,10 +149,27 @@ export class PerformanceOptimizer {
           .then(() => {
             // Re-check queue size after waiting - reject if still at capacity
             if (this.operationQueue.length >= this.queueManagement.maxQueueSize) {
-              const error = new Error(
-                `Queue overflow: Maximum queue size (${this.queueManagement.maxQueueSize}) exceeded after backpressure wait. ` +
-                  'Consider reducing operation frequency or increasing queue size.'
+              const diagnostics: DiagnosticContext = {
+                component: 'PerformanceOptimizer',
+                operation: 'enqueue_operation_after_backpressure',
+                timestamp: new Date(),
+                context: {
+                  queueSize: this.operationQueue.length,
+                  maxQueueSize: this.queueManagement.maxQueueSize,
+                  backpressureWaitTime: 100,
+                },
+                performanceMetrics: {
+                  queueSize: this.operationQueue.length,
+                  memoryUsage: this.getMemoryUsage(),
+                },
+              };
+
+              const error = PerformanceOptimizerError.queueOverflow(
+                this.operationQueue.length,
+                this.queueManagement.maxQueueSize,
+                diagnostics
               );
+              this.logger.logEnhancedError(error);
               reject(error);
               return;
             }
@@ -158,10 +195,26 @@ export class PerformanceOptimizer {
   ): void {
     // Final check before adding to queue
     if (this.operationQueue.length >= this.queueManagement.maxQueueSize) {
-      const error = new Error(
-        `Queue overflow: Maximum queue size (${this.queueManagement.maxQueueSize}) exceeded at add time. ` +
-          'Consider reducing operation frequency or increasing queue size.'
+      const diagnostics: DiagnosticContext = {
+        component: 'PerformanceOptimizer',
+        operation: 'add_operation_to_queue',
+        timestamp: new Date(),
+        context: {
+          queueSize: this.operationQueue.length,
+          maxQueueSize: this.queueManagement.maxQueueSize,
+        },
+        performanceMetrics: {
+          queueSize: this.operationQueue.length,
+          memoryUsage: this.getMemoryUsage(),
+        },
+      };
+
+      const error = PerformanceOptimizerError.queueOverflow(
+        this.operationQueue.length,
+        this.queueManagement.maxQueueSize,
+        diagnostics
       );
+      this.logger.logEnhancedError(error);
       reject(error);
       return;
     }
@@ -1125,6 +1178,16 @@ export class PerformanceOptimizer {
     }
 
     return results;
+  }
+
+  /**
+   * Get current memory usage in MB
+   */
+  private static getMemoryUsage(): number {
+    if (typeof process !== 'undefined' && process.memoryUsage) {
+      return Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+    }
+    return 0;
   }
 
   /**

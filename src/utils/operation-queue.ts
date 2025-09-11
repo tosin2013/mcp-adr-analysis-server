@@ -5,6 +5,9 @@
  * and ensure data consistency during rapid successive operations.
  */
 
+import { OperationQueueError, DiagnosticContext } from '../types/enhanced-errors.js';
+import { createComponentLogger, ComponentLogger } from './enhanced-logging.js';
+
 export interface QueuedOperation {
   id: string;
   operation: () => Promise<any>;
@@ -32,6 +35,7 @@ export class OperationQueue {
   private shutdownRequested: boolean = false;
   private semaphore: number = 0; // Current active operation count for semaphore-based control
   private resourceCleanupCallbacks: Set<() => void> = new Set(); // Track cleanup callbacks
+  private logger: ComponentLogger;
 
   constructor(
     options: {
@@ -45,6 +49,13 @@ export class OperationQueue {
     this.maxQueueSize = options.maxQueueSize || 1000; // Increased default
     this.shutdownRequested = false;
     this.semaphore = 0;
+    this.logger = createComponentLogger('OperationQueue');
+
+    this.logger.info('Operation queue initialized', {
+      maxConcurrency: this.maxConcurrency,
+      operationTimeout: this.operationTimeout,
+      maxQueueSize: this.maxQueueSize,
+    });
   }
 
   /**
@@ -74,17 +85,41 @@ export class OperationQueue {
     priority: number = 0,
     timeout?: number
   ): Promise<T> {
+    const operationId = this.generateOperationId();
+    const diagnostics: DiagnosticContext = {
+      component: 'OperationQueue',
+      operation: 'enqueue',
+      timestamp: new Date(),
+      context: {
+        operationId,
+        priority,
+        timeout,
+        queueSize: this.queue.length,
+        activeOperations: this.activeOperations.size,
+      },
+      performanceMetrics: {
+        queueSize: this.queue.length,
+        activeOperations: this.activeOperations.size,
+      },
+    };
+
     if (this.shutdownRequested) {
-      throw new Error('Operation queue is shutting down');
+      const error = OperationQueueError.shutdownInProgress(diagnostics);
+      this.logger.logEnhancedError(error);
+      throw error;
     }
 
     // Check if queue is full, but allow some buffer for high-priority operations
     const effectiveMaxSize = this.maxQueueSize + (priority > 5 ? 50 : 0);
     if (this.queue.length >= effectiveMaxSize) {
-      throw new Error(`Operation queue is full (${this.maxQueueSize} operations)`);
+      const error = OperationQueueError.queueOverflow(
+        this.queue.length,
+        this.maxQueueSize,
+        diagnostics
+      );
+      this.logger.logEnhancedError(error);
+      throw error;
     }
-
-    const operationId = `op_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     return new Promise<T>((resolve, reject) => {
       let isResolved = false;
@@ -124,7 +159,21 @@ export class OperationQueue {
             this.semaphore = Math.max(0, this.semaphore - 1);
           }
           this.cleanupOperation(operationId, null, cleanupCallback);
-          reject(new Error(`Operation ${operationId} timed out after ${queuedOp.timeout}ms`));
+          // Create enhanced timeout error
+          const timeoutError = OperationQueueError.operationTimeout(
+            operationId,
+            queuedOp.timeout || this.operationTimeout,
+            {
+              ...diagnostics,
+              context: {
+                ...diagnostics.context,
+                actualTimeout: queuedOp.timeout,
+                queuePosition: this.queue.findIndex(op => op.id === operationId),
+              },
+            }
+          );
+          this.logger.logEnhancedError(timeoutError);
+          reject(timeoutError);
         }
       }, queuedOp.timeout);
 
@@ -133,7 +182,12 @@ export class OperationQueue {
         if (!isResolved) {
           isResolved = true;
           this.cleanupOperation(operationId, timeoutId, null);
-          reject(new Error('Operation cancelled due to shutdown'));
+          const shutdownError = OperationQueueError.shutdownInProgress({
+            ...diagnostics,
+            operation: 'shutdown_cancellation',
+          });
+          this.logger.logEnhancedError(shutdownError);
+          reject(shutdownError);
         }
       };
       this.resourceCleanupCallbacks.add(cleanupCallback);
@@ -167,10 +221,33 @@ export class OperationQueue {
           this.semaphore++;
           this.activeOperations.set(operation.id, operation);
 
+          const startTime = Date.now();
+          const logOperationId = this.logger.logOperationStart('execute_operation', {
+            operationId: operation.id,
+            priority: operation.priority,
+            queuePosition: 0,
+          });
+
           try {
             const result = await operation.operation();
+            const duration = Date.now() - startTime;
+            this.logger.logOperationComplete(logOperationId, 'execute_operation', duration, {
+              operationId: operation.id,
+              success: true,
+            });
             operation.resolve(result);
           } catch (error) {
+            const duration = Date.now() - startTime;
+            this.logger.logOperationFailure(
+              logOperationId,
+              'execute_operation',
+              error as Error,
+              duration,
+              {
+                operationId: operation.id,
+                priority: operation.priority,
+              }
+            );
             operation.reject(error as Error);
           } finally {
             // Release semaphore and cleanup
@@ -228,15 +305,51 @@ export class OperationQueue {
    * Execute operation asynchronously with proper resource management
    */
   private async executeOperationAsync(operation: QueuedOperation): Promise<void> {
+    const startTime = Date.now();
+    const logOperationId = this.logger.logOperationStart('execute_operation_async', {
+      operationId: operation.id,
+      priority: operation.priority,
+      concurrentOperations: this.activeOperations.size,
+    });
+
     try {
       const result = await operation.operation();
+      const duration = Date.now() - startTime;
+      this.logger.logOperationComplete(logOperationId, 'execute_operation_async', duration, {
+        operationId: operation.id,
+        success: true,
+        concurrentOperations: this.activeOperations.size,
+      });
       operation.resolve(result);
     } catch (error) {
+      const duration = Date.now() - startTime;
+      this.logger.logOperationFailure(
+        logOperationId,
+        'execute_operation_async',
+        error as Error,
+        duration,
+        {
+          operationId: operation.id,
+          priority: operation.priority,
+          concurrentOperations: this.activeOperations.size,
+        }
+      );
       operation.reject(error as Error);
     } finally {
       // Release semaphore and cleanup - ensure semaphore never goes negative
+      const previousSemaphore = this.semaphore;
       this.semaphore = Math.max(0, this.semaphore - 1);
       this.activeOperations.delete(operation.id);
+
+      // Log semaphore state for debugging
+      if (previousSemaphore !== this.semaphore + 1) {
+        this.logger.warn('Semaphore inconsistency detected', {
+          operationId: operation.id,
+          previousSemaphore,
+          currentSemaphore: this.semaphore,
+          activeOperations: this.activeOperations.size,
+        });
+      }
 
       // Continue processing if there are more operations and capacity
       if (
@@ -321,7 +434,14 @@ export class OperationQueue {
     while (this.queue.length > 0) {
       const operation = this.queue.shift();
       if (operation) {
-        operation.reject(new Error('Operation cancelled'));
+        const cancelError = OperationQueueError.shutdownInProgress({
+          component: 'OperationQueue',
+          operation: 'clear_queue',
+          timestamp: new Date(),
+          context: { operationId: operation.id },
+        });
+        this.logger.logEnhancedError(cancelError);
+        operation.reject(cancelError);
       }
     }
     this.queue = [];
@@ -410,5 +530,68 @@ export class OperationQueue {
    */
   setConcurrency(maxConcurrency: number): void {
     this.maxConcurrency = Math.max(1, maxConcurrency);
+    this.logger.info('Concurrency level updated', {
+      newMaxConcurrency: this.maxConcurrency,
+      currentActiveOperations: this.activeOperations.size,
+      queueSize: this.queue.length,
+    });
+  }
+
+  /**
+   * Generate unique operation ID
+   */
+  private generateOperationId(): string {
+    return `op_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+  }
+
+  /**
+   * Get queue statistics for monitoring
+   */
+  getStatistics(): {
+    queueSize: number;
+    activeOperations: number;
+    maxConcurrency: number;
+    semaphoreCount: number;
+    processing: boolean;
+    shutdownRequested: boolean;
+  } {
+    return {
+      queueSize: this.queue.length,
+      activeOperations: this.activeOperations.size,
+      maxConcurrency: this.maxConcurrency,
+      semaphoreCount: this.semaphore,
+      processing: this.processing,
+      shutdownRequested: this.shutdownRequested,
+    };
+  }
+
+  /**
+   * Validate queue state for debugging
+   */
+  validateState(): { isValid: boolean; issues: string[] } {
+    const issues: string[] = [];
+
+    if (this.semaphore < 0) {
+      issues.push(`Negative semaphore count: ${this.semaphore}`);
+    }
+
+    if (this.semaphore > this.maxConcurrency) {
+      issues.push(`Semaphore exceeds max concurrency: ${this.semaphore} > ${this.maxConcurrency}`);
+    }
+
+    if (this.activeOperations.size !== this.semaphore) {
+      issues.push(
+        `Active operations mismatch: ${this.activeOperations.size} active vs ${this.semaphore} semaphore`
+      );
+    }
+
+    if (this.queue.length > this.maxQueueSize) {
+      issues.push(`Queue size exceeds limit: ${this.queue.length} > ${this.maxQueueSize}`);
+    }
+
+    return {
+      isValid: issues.length === 0,
+      issues,
+    };
   }
 }

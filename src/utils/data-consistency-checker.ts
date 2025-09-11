@@ -6,7 +6,8 @@
  */
 
 import { TodoJsonData, TodoTask } from '../types/todo-json-schemas.js';
-// import { TodoError } from './todo-json-manager.js';
+import { DataConsistencyError, DiagnosticContext } from '../types/enhanced-errors.js';
+import { createComponentLogger } from './enhanced-logging.js';
 
 export interface ConsistencyCheckResult {
   isValid: boolean;
@@ -31,6 +32,7 @@ export interface ConsistencyWarning {
 }
 
 export class DataConsistencyChecker {
+  private static logger = createComponentLogger('DataConsistencyChecker');
   /**
    * Perform comprehensive consistency check on todo data
    *
@@ -102,114 +104,184 @@ export class DataConsistencyChecker {
     result: ConsistencyCheckResult,
     options: { autoFix?: boolean }
   ): Promise<void> {
-    // Add null/undefined checking to prevent crashes
-    if (!data.tasks || typeof data.tasks !== 'object') {
-      result.errors.push({
-        type: 'INVALID_TASKS_OBJECT',
-        message: 'Tasks object is null, undefined, or not an object',
-        severity: 'critical',
-        affectedItems: ['tasks'],
-        suggestedFix: 'Initialize tasks as an empty object',
-      });
-      return;
-    }
+    const startTime = Date.now();
+    const operationId = this.logger.logOperationStart('check_task_section_consistency', {
+      tasksCount: data.tasks ? Object.keys(data.tasks).length : 0,
+      sectionsCount: data.sections ? data.sections.length : 0,
+      autoFix: options.autoFix,
+    });
 
-    if (!data.sections || !Array.isArray(data.sections)) {
-      result.errors.push({
-        type: 'INVALID_SECTIONS_ARRAY',
-        message: 'Sections is null, undefined, or not an array',
-        severity: 'critical',
-        affectedItems: ['sections'],
-        suggestedFix: 'Initialize sections as an empty array',
-      });
-      return;
-    }
+    let tasksInSections: Set<string>;
+    let tasksInObject: Set<string>;
 
-    const tasksInSections = new Set<string>();
-    const tasksInObject = new Set(Object.keys(data.tasks));
+    try {
+      // Add null/undefined checking to prevent crashes
+      if (!data.tasks || typeof data.tasks !== 'object') {
+        const diagnostics: DiagnosticContext = {
+          component: 'DataConsistencyChecker',
+          operation: 'check_task_section_consistency',
+          timestamp: new Date(),
+          context: {
+            dataType: typeof data.tasks,
+            isNull: data.tasks === null,
+            isUndefined: data.tasks === undefined,
+          },
+        };
 
-    // Collect all task IDs from sections
-    for (const section of data.sections) {
-      // Add null/undefined checking for section.tasks to prevent crashes
-      if (!section || !Array.isArray(section.tasks)) {
-        // Auto-fix: initialize empty tasks array
-        if (options.autoFix && section) {
-          section.tasks = [];
-          result.fixedIssues.push(`Initialized empty tasks array for section ${section.id}`);
-          // Continue processing this section now that it's fixed
-        } else {
-          // Only report error if not auto-fixing
-          result.errors.push({
-            type: 'INVALID_SECTION_TASKS',
-            message: `Section ${section?.id || 'unknown'} has invalid tasks array (null, undefined, or not an array)`,
-            severity: 'critical',
-            affectedItems: [section?.id || 'unknown'],
-            suggestedFix: 'Initialize section tasks as an empty array',
-          });
-          continue;
-        }
+        const error = DataConsistencyError.validationFailure(
+          'INVALID_TASKS_OBJECT',
+          ['tasks'],
+          diagnostics
+        );
+        this.logger.logEnhancedError(error);
+
+        result.errors.push({
+          type: 'INVALID_TASKS_OBJECT',
+          message: 'Tasks object is null, undefined, or not an object',
+          severity: 'critical',
+          affectedItems: ['tasks'],
+          suggestedFix: 'Initialize tasks as an empty object',
+        });
+        return;
       }
 
-      // Create a copy of tasks array to avoid modification during iteration
-      const sectionTasks = [...section.tasks];
+      if (!data.sections || !Array.isArray(data.sections)) {
+        const diagnostics: DiagnosticContext = {
+          component: 'DataConsistencyChecker',
+          operation: 'check_task_section_consistency',
+          timestamp: new Date(),
+          context: {
+            dataType: typeof data.sections,
+            isNull: data.sections === null,
+            isUndefined: data.sections === undefined,
+            isArray: Array.isArray(data.sections),
+          },
+        };
 
-      for (const taskId of sectionTasks) {
-        if (tasksInSections.has(taskId)) {
-          result.errors.push({
-            type: 'DUPLICATE_TASK_IN_SECTIONS',
-            message: `Task ${taskId} appears in multiple sections`,
-            severity: 'high',
-            affectedItems: [taskId],
-            suggestedFix: 'Remove duplicate references',
-          });
-        }
-        tasksInSections.add(taskId);
+        const error = DataConsistencyError.validationFailure(
+          'INVALID_SECTIONS_ARRAY',
+          ['sections'],
+          diagnostics
+        );
+        this.logger.logEnhancedError(error);
 
-        // Check if task exists in tasks object
-        if (!tasksInObject.has(taskId)) {
-          // Auto-fix: remove from section atomically
-          if (options.autoFix) {
-            section.tasks = section.tasks.filter(id => id !== taskId);
-            result.fixedIssues.push(
-              `Removed orphaned task reference ${taskId} from section ${section.id}`
-            );
+        result.errors.push({
+          type: 'INVALID_SECTIONS_ARRAY',
+          message: 'Sections is null, undefined, or not an array',
+          severity: 'critical',
+          affectedItems: ['sections'],
+          suggestedFix: 'Initialize sections as an empty array',
+        });
+        return;
+      }
+
+      tasksInSections = new Set<string>();
+      tasksInObject = new Set(Object.keys(data.tasks));
+
+      // Collect all task IDs from sections
+      for (const section of data.sections) {
+        // Add null/undefined checking for section.tasks to prevent crashes
+        if (!section || !Array.isArray(section.tasks)) {
+          // Auto-fix: initialize empty tasks array
+          if (options.autoFix && section) {
+            section.tasks = [];
+            result.fixedIssues.push(`Initialized empty tasks array for section ${section.id}`);
+            // Continue processing this section now that it's fixed
           } else {
             // Only report error if not auto-fixing
             result.errors.push({
-              type: 'MISSING_TASK_OBJECT',
-              message: `Task ${taskId} referenced in section ${section.id} but not found in tasks object`,
+              type: 'INVALID_SECTION_TASKS',
+              message: `Section ${section?.id || 'unknown'} has invalid tasks array (null, undefined, or not an array)`,
               severity: 'critical',
-              affectedItems: [taskId],
-              suggestedFix: 'Remove reference from section or restore task object',
+              affectedItems: [section?.id || 'unknown'],
+              suggestedFix: 'Initialize section tasks as an empty array',
             });
+            continue;
           }
         }
-      }
-    }
 
-    // Check for tasks not in any section
-    for (const taskId of tasksInObject) {
-      if (!tasksInSections.has(taskId)) {
-        const task = data.tasks[taskId];
-        // Add comprehensive null/undefined checking for task object
-        if (task && typeof task === 'object' && !task.archived) {
-          result.warnings.push({
-            type: 'TASK_NOT_IN_SECTION',
-            message: `Task ${taskId} exists but is not in any section`,
-            affectedItems: [taskId],
-            recommendation: 'Add task to appropriate section based on status',
-          });
+        // Create a copy of tasks array to avoid modification during iteration
+        const sectionTasks = [...section.tasks];
 
-          // Auto-fix: add to appropriate section atomically
-          if (options.autoFix) {
-            const targetSection = data.sections.find(s => s.id === task.status) || data.sections[0];
-            if (targetSection && Array.isArray(targetSection.tasks)) {
-              targetSection.tasks.push(taskId);
-              result.fixedIssues.push(`Added task ${taskId} to section ${targetSection.id}`);
+        for (const taskId of sectionTasks) {
+          if (tasksInSections.has(taskId)) {
+            result.errors.push({
+              type: 'DUPLICATE_TASK_IN_SECTIONS',
+              message: `Task ${taskId} appears in multiple sections`,
+              severity: 'high',
+              affectedItems: [taskId],
+              suggestedFix: 'Remove duplicate references',
+            });
+          }
+          tasksInSections.add(taskId);
+
+          // Check if task exists in tasks object
+          if (!tasksInObject.has(taskId)) {
+            // Auto-fix: remove from section atomically
+            if (options.autoFix) {
+              section.tasks = section.tasks.filter(id => id !== taskId);
+              result.fixedIssues.push(
+                `Removed orphaned task reference ${taskId} from section ${section.id}`
+              );
+            } else {
+              // Only report error if not auto-fixing
+              result.errors.push({
+                type: 'MISSING_TASK_OBJECT',
+                message: `Task ${taskId} referenced in section ${section.id} but not found in tasks object`,
+                severity: 'critical',
+                affectedItems: [taskId],
+                suggestedFix: 'Remove reference from section or restore task object',
+              });
             }
           }
         }
       }
+
+      // Check for tasks not in any section
+      for (const taskId of tasksInObject) {
+        if (!tasksInSections.has(taskId)) {
+          const task = data.tasks[taskId];
+          // Add comprehensive null/undefined checking for task object
+          if (task && typeof task === 'object' && !task.archived) {
+            result.warnings.push({
+              type: 'TASK_NOT_IN_SECTION',
+              message: `Task ${taskId} exists but is not in any section`,
+              affectedItems: [taskId],
+              recommendation: 'Add task to appropriate section based on status',
+            });
+
+            // Auto-fix: add to appropriate section atomically
+            if (options.autoFix) {
+              const targetSection =
+                data.sections.find(s => s.id === task.status) || data.sections[0];
+              if (targetSection && Array.isArray(targetSection.tasks)) {
+                targetSection.tasks.push(taskId);
+                result.fixedIssues.push(`Added task ${taskId} to section ${targetSection.id}`);
+              }
+            }
+          }
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      this.logger.logOperationComplete(operationId, 'check_task_section_consistency', duration, {
+        tasksInSections: tasksInSections.size,
+        tasksInObject: tasksInObject.size,
+        errorsFound: result.errors.length,
+        fixesApplied: result.fixedIssues.length,
+      });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      this.logger.logOperationFailure(
+        operationId,
+        'check_task_section_consistency',
+        error as Error,
+        duration,
+        {
+          autoFix: options.autoFix,
+        }
+      );
+      throw error;
     }
   }
 
