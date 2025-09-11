@@ -549,71 +549,161 @@ describe('PerformanceOptimizer', () => {
 
   describe('Performance', () => {
     it('should handle large datasets efficiently', async () => {
-      // Create a large dataset
-      const largeTaskCount = 1000;
-      const largeTasks: Record<string, TodoTask> = {};
+      const { testConfig, createPerformanceTest } = await import('./test-config.js');
+      const benchmarks = testConfig.getEnvironmentAwareBenchmarks();
 
-      for (let i = 0; i < largeTaskCount; i++) {
-        const taskId = `large-task-${i}`;
-        largeTasks[taskId] = {
-          ...testTasks[0]!,
-          id: taskId,
-          title: `Large Task ${i}`,
-          status: i % 3 === 0 ? 'completed' : i % 3 === 1 ? 'in_progress' : 'pending',
-          priority:
-            i % 4 === 0 ? 'critical' : i % 4 === 1 ? 'high' : i % 4 === 2 ? 'medium' : 'low',
-        };
-      }
+      await createPerformanceTest(
+        'Large dataset query performance',
+        async monitor => {
+          monitor.start(4, 'Testing large dataset performance');
 
-      const largeData = {
-        ...testData,
-        tasks: largeTasks,
-        metadata: { ...testData.metadata, totalTasks: largeTaskCount },
-      };
+          // Create a large dataset
+          const largeTaskCount = 1000;
+          const largeTasks: Record<string, TodoTask> = {};
 
-      const startTime = Date.now();
-      const result = await PerformanceOptimizer.getOptimizedTasks(
-        largeData,
-        { status: 'completed' },
-        { field: 'priority', order: 'desc' },
-        { page: 1, pageSize: 50 }
-      );
-      const endTime = Date.now();
+          monitor.step('Creating large dataset');
+          for (let i = 0; i < largeTaskCount; i++) {
+            const taskId = `large-task-${i}`;
+            largeTasks[taskId] = {
+              ...testTasks[0]!,
+              id: taskId,
+              title: `Large Task ${i}`,
+              status: i % 3 === 0 ? 'completed' : i % 3 === 1 ? 'in_progress' : 'pending',
+              priority:
+                i % 4 === 0 ? 'critical' : i % 4 === 1 ? 'high' : i % 4 === 2 ? 'medium' : 'low',
+            };
+          }
 
-      expect(result.items).toHaveLength(50);
-      expect(result.totalItems).toBeGreaterThan(300); // About 1/3 should be completed
-      expect(endTime - startTime).toBeLessThan(500); // Should complete within 500ms
+          const largeData = {
+            ...testData,
+            tasks: largeTasks,
+            metadata: { ...testData.metadata, totalTasks: largeTaskCount },
+          };
+
+          monitor.step('Executing complex query');
+          const startTime = Date.now();
+          const result = await PerformanceOptimizer.getOptimizedTasks(
+            largeData,
+            { status: 'completed' },
+            { field: 'priority', order: 'desc' },
+            { page: 1, pageSize: 50 }
+          );
+          const endTime = Date.now();
+          const queryTime = endTime - startTime;
+
+          monitor.step('Validating results');
+          expect(result.items).toHaveLength(50);
+          expect(result.totalItems).toBeGreaterThan(300); // About 1/3 should be completed
+
+          monitor.step('Checking performance expectations');
+          // Use environment-aware expectations
+          const expectedMaxTime = benchmarks.queryPerformance.complex;
+          expect(queryTime).toBeLessThan(expectedMaxTime);
+
+          return { queryTime, resultCount: result.items.length };
+        },
+        {
+          expectedDuration: benchmarks.queryPerformance.complex,
+          maxMemoryMB: benchmarks.memoryLimits.baseline + 1000 * benchmarks.memoryLimits.perTask,
+          steps: 4,
+          verbose: true,
+        }
+      )();
     });
 
     it('should perform analytics efficiently on large datasets', async () => {
-      // Create a large dataset
-      const largeTaskCount = 5000;
-      const largeTasks: Record<string, TodoTask> = {};
+      const { testConfig, createPerformanceTest } = await import('./test-config.js');
+      const benchmarks = testConfig.getEnvironmentAwareBenchmarks();
 
-      for (let i = 0; i < largeTaskCount; i++) {
-        const taskId = `large-task-${i}`;
-        largeTasks[taskId] = {
-          ...testTasks[0]!,
-          id: taskId,
-          title: `Large Task ${i}`,
-          status: i % 2 === 0 ? 'completed' : 'pending',
-          priority: i % 4 === 0 ? 'critical' : 'medium',
-        };
-      }
+      await createPerformanceTest(
+        'Large dataset analytics performance',
+        async monitor => {
+          monitor.start(4, 'Testing analytics performance on large dataset');
 
-      const largeData = {
-        ...testData,
-        tasks: largeTasks,
-        metadata: { ...testData.metadata, totalTasks: largeTaskCount },
-      };
+          // Create a large dataset
+          const largeTaskCount = 5000;
+          const largeTasks: Record<string, TodoTask> = {};
 
-      const startTime = Date.now();
-      const analytics = await PerformanceOptimizer.calculateOptimizedAnalytics(largeData);
-      const endTime = Date.now();
+          monitor.step('Creating large analytics dataset');
+          for (let i = 0; i < largeTaskCount; i++) {
+            const taskId = `large-task-${i}`;
+            largeTasks[taskId] = {
+              ...testTasks[0]!,
+              id: taskId,
+              title: `Large Task ${i}`,
+              status: i % 2 === 0 ? 'completed' : 'pending',
+              priority: i % 4 === 0 ? 'critical' : 'medium',
+            };
+          }
 
-      expect(analytics.totalTasks).toBe(largeTaskCount);
-      expect(analytics.completedTasks).toBe(largeTaskCount / 2);
-      expect(endTime - startTime).toBeLessThan(200); // Should complete within 200ms
+          const largeData = {
+            ...testData,
+            tasks: largeTasks,
+            metadata: { ...testData.metadata, totalTasks: largeTaskCount },
+          };
+
+          monitor.step('Computing analytics');
+          const startTime = Date.now();
+          const analytics = await PerformanceOptimizer.calculateOptimizedAnalytics(largeData);
+          const endTime = Date.now();
+          const analyticsTime = endTime - startTime;
+
+          monitor.step('Validating analytics results');
+          expect(analytics.totalTasks).toBe(largeTaskCount);
+          expect(analytics.completedTasks).toBe(largeTaskCount / 2);
+
+          monitor.step('Checking analytics performance');
+          // Use environment-aware expectations - analytics should be faster than complex queries
+          const expectedMaxTime = Math.round(benchmarks.queryPerformance.complex * 0.6);
+          expect(analyticsTime).toBeLessThan(expectedMaxTime);
+
+          return { analyticsTime, taskCount: largeTaskCount };
+        },
+        {
+          expectedDuration: Math.round(benchmarks.queryPerformance.complex * 0.6),
+          maxMemoryMB: benchmarks.memoryLimits.baseline + 5000 * benchmarks.memoryLimits.perTask,
+          steps: 4,
+          verbose: true,
+        }
+      )();
+    });
+
+    it('should meet environment-specific performance benchmarks', async () => {
+      const { testConfig } = await import('./test-config.js');
+      const benchmarks = testConfig.getEnvironmentAwareBenchmarks();
+      const envInfo = testConfig.getEnvironmentInfo();
+
+      console.log(
+        `\n📊 Performance benchmarks adjusted for: ${benchmarks.adjustedFor.join(', ') || 'baseline environment'}`
+      );
+      console.log(`🖥️  Environment: ${envInfo.platform}, Node ${envInfo.nodeVersion}`);
+      console.log(
+        `⚙️  Flags: CI=${envInfo.isCI}, Coverage=${envInfo.isCoverage}, Debug=${envInfo.isDebug}`
+      );
+
+      // Test simple query performance
+      const simpleStartTime = Date.now();
+      await PerformanceOptimizer.getOptimizedTasks(testData, { status: 'completed' });
+      const simpleQueryTime = Date.now() - simpleStartTime;
+
+      expect(simpleQueryTime).toBeLessThan(benchmarks.queryPerformance.simple);
+
+      // Test pagination performance
+      const paginationStartTime = Date.now();
+      await PerformanceOptimizer.getOptimizedTasks(testData, {}, undefined, {
+        page: 1,
+        pageSize: 2,
+      });
+      const paginationTime = Date.now() - paginationStartTime;
+
+      expect(paginationTime).toBeLessThan(benchmarks.queryPerformance.pagination);
+
+      console.log(
+        `✅ Simple query: ${simpleQueryTime}ms (limit: ${benchmarks.queryPerformance.simple}ms)`
+      );
+      console.log(
+        `✅ Pagination: ${paginationTime}ms (limit: ${benchmarks.queryPerformance.pagination}ms)`
+      );
     });
   });
 
