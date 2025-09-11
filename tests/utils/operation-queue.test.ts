@@ -1,26 +1,45 @@
 /**
- * Tests for OperationQueue
+ * Tests for OperationQueue with Enhanced Test Infrastructure
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { OperationQueue } from '../../src/utils/operation-queue.js';
+import {
+  unitTest,
+  integrationTest,
+  performanceTest,
+  createBenchmark,
+  waitForAsyncOperations,
+  expectNoResourceLeaks,
+  testInfrastructure,
+} from '../utils/test-helpers.js';
 
 describe('OperationQueue', () => {
   let queue: OperationQueue;
 
   beforeEach(() => {
     queue = new OperationQueue();
+    testInfrastructure.recordMemoryUsage();
   });
 
   afterEach(async () => {
-    await queue.drain();
-    queue.clear();
+    try {
+      await queue.drain();
+      queue.clear();
+      await waitForAsyncOperations();
+    } catch (error) {
+      console.warn('Error during queue cleanup:', error);
+    }
   });
 
   describe('Basic Operations', () => {
-    it('should execute operations sequentially by default', async () => {
+    unitTest('should execute operations sequentially by default', async () => {
       const results: number[] = [];
-      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+      const delay = (ms: number) =>
+        new Promise(resolve => {
+          const timer = setTimeout(resolve, ms);
+          testInfrastructure.trackTimer(timer);
+        });
 
       const operations = [
         () => delay(50).then(() => results.push(1)),
@@ -36,6 +55,9 @@ describe('OperationQueue', () => {
 
       // Should execute in order despite different delays
       expect(results).toEqual([1, 2, 3]);
+
+      // Verify no resource leaks
+      expectNoResourceLeaks();
     });
 
     it('should guarantee execution order for operations with same priority', async () => {
@@ -210,22 +232,28 @@ describe('OperationQueue', () => {
   });
 
   describe('Performance', () => {
-    it('should handle rapid successive operations efficiently', async () => {
-      const startTime = Date.now();
+    performanceTest('should handle rapid successive operations efficiently', async () => {
+      const benchmark = createBenchmark();
       const operationCount = 100;
+
+      benchmark.start();
 
       const promises = Array.from({ length: operationCount }, (_, i) =>
         queue.enqueue(() => Promise.resolve(i))
       );
 
       const results = await Promise.all(promises);
-      const endTime = Date.now();
+
+      benchmark.end();
 
       expect(results).toHaveLength(operationCount);
       expect(results).toEqual(Array.from({ length: operationCount }, (_, i) => i));
 
-      // Should complete reasonably quickly (less than 1 second for 100 operations)
-      expect(endTime - startTime).toBeLessThan(1000);
+      // Performance expectations
+      benchmark.expectDurationLessThan(1000);
+      benchmark.expectMemoryDeltaLessThan(10); // Less than 10MB memory increase
+
+      console.log(`Performance benchmark: ${benchmark.getReport()}`);
     });
 
     it('should maintain order under load', async () => {
