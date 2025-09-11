@@ -439,6 +439,80 @@ export class TodoJsonManager {
   }
 
   /**
+   * Create multiple tasks in batch for improved performance
+   *
+   * @example
+   * ```typescript
+   * const taskData = [
+   *   { title: 'Task 1', priority: 'high' },
+   *   { title: 'Task 2', priority: 'medium' },
+   *   { title: 'Task 3', priority: 'low' }
+   * ];
+   * const taskIds = await todoManager.createTasksBatch(taskData);
+   * console.log(`Created ${taskIds.length} tasks`);
+   * ```
+   */
+  async createTasksBatch(
+    tasksData: Array<Partial<TodoTask> & { title: string }>,
+    options?: {
+      batchSize?: number;
+      maxConcurrency?: number;
+      progressCallback?: (processed: number, total: number) => void;
+    }
+  ): Promise<string[]> {
+    if (tasksData.length === 0) {
+      return [];
+    }
+
+    // For small batches, use regular sequential processing
+    if (tasksData.length <= 10) {
+      const taskIds: string[] = [];
+      for (const taskData of tasksData) {
+        const taskId = await this.createTask(taskData);
+        taskIds.push(taskId);
+      }
+      return taskIds;
+    }
+
+    // For large batches, use optimized processing
+    const batchSize = options?.batchSize || 25; // Smaller batches for better memory management
+    const taskIds: string[] = [];
+    let processedCount = 0;
+
+    // Process in smaller sequential batches to avoid overwhelming the system
+    for (let i = 0; i < tasksData.length; i += batchSize) {
+      const batch = tasksData.slice(i, Math.min(i + batchSize, tasksData.length));
+
+      // Process batch sequentially to ensure data consistency
+      const batchIds: string[] = [];
+      for (const taskData of batch) {
+        try {
+          const taskId = await this.createTask(taskData);
+          batchIds.push(taskId);
+          processedCount++;
+
+          // Report progress if callback provided
+          if (options?.progressCallback) {
+            options.progressCallback(processedCount, tasksData.length);
+          }
+        } catch (error) {
+          console.error(`Failed to create task "${taskData.title}":`, error);
+          throw error;
+        }
+      }
+
+      taskIds.push(...batchIds);
+
+      // Small delay between batches to prevent overwhelming the system
+      if (i + batchSize < tasksData.length) {
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+    }
+
+    return taskIds;
+  }
+
+  /**
    * Batched save to improve performance for bulk operations
    */
   private async batchSave(data: TodoJsonData): Promise<void> {
