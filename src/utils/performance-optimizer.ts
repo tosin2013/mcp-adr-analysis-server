@@ -7,6 +7,11 @@
 
 import { TodoTask, TodoJsonData } from '../types/todo-json-schemas.js';
 
+export interface DateContext {
+  currentDate: Date;
+  timezone?: string;
+}
+
 export interface FilterOptions {
   status?: string;
   priority?: string;
@@ -17,6 +22,7 @@ export interface FilterOptions {
   tags?: string[];
   archived?: boolean;
   search?: string;
+  dateContext?: DateContext;
 }
 
 export interface SortOptions {
@@ -57,19 +63,28 @@ export class PerformanceOptimizer {
     data: TodoJsonData,
     filters?: FilterOptions,
     sort?: SortOptions,
-    pagination?: PaginationOptions
+    pagination?: PaginationOptions,
+    dateContext?: DateContext
   ): Promise<PaginatedResult<TodoTask>> {
     const startTime = Date.now();
 
+    // Merge date context into filters if provided
+    const effectiveFilters = filters
+      ? {
+          ...filters,
+          dateContext: dateContext || filters.dateContext || { currentDate: new Date() },
+        }
+      : undefined;
+
     // Generate cache key
-    const cacheKey = this.generateCacheKey(filters, sort);
+    const cacheKey = this.generateCacheKey(effectiveFilters, sort);
 
     // Try to get from cache first
     let tasks = this.getFromCache(cacheKey, data.metadata.lastUpdated);
 
     if (!tasks) {
       // Cache miss - perform filtering
-      tasks = await this.filterTasks(Object.values(data.tasks), filters);
+      tasks = await this.filterTasks(Object.values(data.tasks), effectiveFilters);
 
       // Cache the filtered results
       this.setCache(cacheKey, tasks, data.metadata.lastUpdated);
@@ -138,7 +153,8 @@ export class PerformanceOptimizer {
 
       // Overdue filter
       if (filters.overdue !== undefined && filters.overdue) {
-        if (!task.dueDate || new Date(task.dueDate) > new Date()) {
+        const currentDate = filters.dateContext?.currentDate || new Date();
+        if (!task.dueDate || new Date(task.dueDate) > currentDate) {
           return false;
         }
       }
