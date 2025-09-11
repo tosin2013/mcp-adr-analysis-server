@@ -159,7 +159,7 @@ describe('manage_todo_json Tool Integration', () => {
         taskId: 'nonexistent-id',
         updates: { status: 'invalid_status' },
         reason: 'Test update'
-      })).rejects.toThrow(/Invalid input/);
+      })).rejects.toThrow(/Invalid status/);
     });
 
     it('should handle filesystem errors gracefully', async () => {
@@ -198,7 +198,7 @@ describe('manage_todo_json Tool Integration', () => {
         projectPath: testProjectPath,
         title: 'Test task',
         priority: 'invalid_priority'
-      })).rejects.toThrow(/Invalid input/);
+      })).rejects.toThrow(/Invalid priority/);
     });
 
     it('should validate status enum values in updates', async () => {
@@ -218,21 +218,17 @@ describe('manage_todo_json Tool Integration', () => {
         taskId: taskId,
         updates: { status: 'invalid_status' },
         reason: 'Test update'
-      })).rejects.toThrow(/Invalid input/);
+      })).rejects.toThrow(/Invalid status/);
     });
 
     it('should handle malformed date formats', async () => {
-      // Current behavior: malformed dates are accepted without validation
-      // This could be considered a bug that should be fixed in future iterations
-      const result = await (server as any).manageTodoJson({
+      // Updated behavior: malformed dates are now properly validated and rejected
+      await expect((server as any).manageTodoJson({
         operation: 'create_task',
         projectPath: testProjectPath,
         title: 'Test task',
         dueDate: 'invalid-date-format'
-      });
-
-      expect(result).toBeDefined();
-      expect(result.content[0].text).toContain('Task created successfully');
+      })).rejects.toThrow(/Invalid date format/);
     });
 
     it('should accept valid ISO date format', async () => {
@@ -240,7 +236,7 @@ describe('manage_todo_json Tool Integration', () => {
         operation: 'create_task',
         projectPath: testProjectPath,
         title: 'Test task',
-        dueDate: '2024-12-31T23:59:59Z'
+        dueDate: '2025-12-31T23:59:59Z'
       });
 
       expect(result).toBeDefined();
@@ -429,14 +425,12 @@ describe('manage_todo_json Tool Integration', () => {
     it('should handle extremely long task titles', async () => {
       const longTitle = 'A'.repeat(1000);
       
-      const result = await (server as any).manageTodoJson({
+      // Updated behavior: extremely long titles are now properly validated and rejected
+      await expect((server as any).manageTodoJson({
         operation: 'create_task',
         projectPath: testProjectPath,
         title: longTitle
-      });
-
-      expect(result).toBeDefined();
-      expect(result.content[0].text).toContain('Task created successfully');
+      })).rejects.toThrow(/Task title is too long/);
     });
 
     it('should handle special characters in task data', async () => {
