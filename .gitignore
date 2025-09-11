@@ -61,3 +61,6 @@ docs/.vitepress/dist/
 # VitePress cache
 docs/.vitepress/cache/
 docs/.vitepress/dist/
+
+
+.kiro

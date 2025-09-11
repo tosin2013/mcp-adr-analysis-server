@@ -25,17 +25,39 @@ describe('OperationQueue', () => {
       const operations = [
         () => delay(50).then(() => results.push(1)),
         () => delay(30).then(() => results.push(2)),
-        () => delay(20).then(() => results.push(3))
+        () => delay(20).then(() => results.push(3)),
       ];
 
-      // Enqueue all operations
-      const promises = operations.map((op, index) => queue.enqueue(op, index));
-      
+      // Enqueue all operations with same priority to test sequential execution
+      const promises = operations.map(op => queue.enqueue(op));
+
       // Wait for all to complete
       await Promise.all(promises);
 
       // Should execute in order despite different delays
       expect(results).toEqual([1, 2, 3]);
+    });
+
+    it('should guarantee execution order for operations with same priority', async () => {
+      const results: string[] = [];
+      const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+      // All operations have same priority (default 0) but different delays
+      const operations = [
+        () => delay(100).then(() => results.push('first')),
+        () => delay(50).then(() => results.push('second')),
+        () => delay(25).then(() => results.push('third')),
+        () => delay(10).then(() => results.push('fourth')),
+      ];
+
+      // Enqueue all operations with same priority
+      const promises = operations.map(op => queue.enqueue(op, 0)); // Explicit same priority
+
+      // Wait for all to complete
+      await Promise.all(promises);
+
+      // Should execute in FIFO order for same priority, regardless of execution time
+      expect(results).toEqual(['first', 'second', 'third', 'fourth']);
     });
 
     it('should handle operation priorities correctly', async () => {
@@ -46,7 +68,7 @@ describe('OperationQueue', () => {
       const promises = [
         queue.enqueue(() => delay(10).then(() => results.push('low')), 1),
         queue.enqueue(() => delay(10).then(() => results.push('high')), 10),
-        queue.enqueue(() => delay(10).then(() => results.push('medium')), 5)
+        queue.enqueue(() => delay(10).then(() => results.push('medium')), 5),
       ];
 
       await Promise.all(promises);
@@ -67,10 +89,8 @@ describe('OperationQueue', () => {
 
     it('should handle operation errors correctly', async () => {
       const error = new Error('Test error');
-      
-      await expect(
-        queue.enqueue(() => Promise.reject(error))
-      ).rejects.toThrow('Test error');
+
+      await expect(queue.enqueue(() => Promise.reject(error))).rejects.toThrow('Test error');
     });
   });
 
@@ -83,14 +103,14 @@ describe('OperationQueue', () => {
       const createOperation = (id: number) => async () => {
         activeOperations.add(id);
         maxConcurrent.value = Math.max(maxConcurrent.value, activeOperations.size);
-        
+
         await new Promise(resolve => setTimeout(resolve, 50));
-        
+
         activeOperations.delete(id);
         return id;
       };
 
-      const promises = Array.from({ length: 5 }, (_, i) => 
+      const promises = Array.from({ length: 5 }, (_, i) =>
         concurrentQueue.enqueue(createOperation(i))
       );
 
@@ -108,9 +128,9 @@ describe('OperationQueue', () => {
       const promise2 = smallQueue.enqueue(() => new Promise(resolve => setTimeout(resolve, 100)));
 
       // This should throw due to queue overflow
-      await expect(
-        smallQueue.enqueue(() => Promise.resolve())
-      ).rejects.toThrow('Operation queue is full');
+      await expect(smallQueue.enqueue(() => Promise.resolve())).rejects.toThrow(
+        'Operation queue is full'
+      );
 
       await Promise.all([promise1, promise2]);
     });
@@ -153,14 +173,22 @@ describe('OperationQueue', () => {
     });
 
     it('should clear queue correctly', async () => {
-      // Add some operations
-      queue.enqueue(() => new Promise(resolve => setTimeout(resolve, 100)));
-      queue.enqueue(() => new Promise(resolve => setTimeout(resolve, 100)));
+      // Add some operations and catch their rejections
+      const promise1 = queue
+        .enqueue(() => new Promise(resolve => setTimeout(resolve, 100)))
+        .catch(() => 'cancelled');
+      const promise2 = queue
+        .enqueue(() => new Promise(resolve => setTimeout(resolve, 100)))
+        .catch(() => 'cancelled');
 
       queue.clear();
 
       const status = queue.getStatus();
       expect(status.queueLength).toBe(0);
+
+      // Wait for promises to be rejected
+      const results = await Promise.all([promise1, promise2]);
+      expect(results).toEqual(['cancelled', 'cancelled']);
     });
 
     it('should drain queue correctly', async () => {
@@ -174,7 +202,7 @@ describe('OperationQueue', () => {
       await queue.drain();
 
       expect(results).toEqual([1, 2, 3]);
-      
+
       const status = queue.getStatus();
       expect(status.queueLength).toBe(0);
       expect(status.activeOperations).toBe(0);
@@ -185,7 +213,7 @@ describe('OperationQueue', () => {
     it('should handle rapid successive operations efficiently', async () => {
       const startTime = Date.now();
       const operationCount = 100;
-      
+
       const promises = Array.from({ length: operationCount }, (_, i) =>
         queue.enqueue(() => Promise.resolve(i))
       );
@@ -195,7 +223,7 @@ describe('OperationQueue', () => {
 
       expect(results).toHaveLength(operationCount);
       expect(results).toEqual(Array.from({ length: operationCount }, (_, i) => i));
-      
+
       // Should complete reasonably quickly (less than 1 second for 100 operations)
       expect(endTime - startTime).toBeLessThan(1000);
     });
@@ -204,17 +232,22 @@ describe('OperationQueue', () => {
       const results: number[] = [];
       const operationCount = 50;
 
-      const promises = Array.from({ length: operationCount }, (_, i) =>
-        queue.enqueue(() => {
-          results.push(i);
-          return Promise.resolve(i);
-        }, i) // Use index as priority to test ordering
+      const promises = Array.from(
+        { length: operationCount },
+        (_, i) =>
+          queue.enqueue(() => {
+            results.push(i);
+            return Promise.resolve(i);
+          }, i) // Use index as priority to test ordering
       );
 
       await Promise.all(promises);
 
       // Results should be in descending order due to priority (higher index = higher priority)
-      const expectedOrder = Array.from({ length: operationCount }, (_, i) => operationCount - 1 - i);
+      const expectedOrder = Array.from(
+        { length: operationCount },
+        (_, i) => operationCount - 1 - i
+      );
       expect(results).toEqual(expectedOrder);
     });
   });
@@ -226,12 +259,10 @@ describe('OperationQueue', () => {
       const operations = [
         () => Promise.resolve().then(() => results.push('success1')),
         () => Promise.reject(new Error('failure')),
-        () => Promise.resolve().then(() => results.push('success2'))
+        () => Promise.resolve().then(() => results.push('success2')),
       ];
 
-      const promises = operations.map(op => 
-        queue.enqueue(op).catch(() => 'error')
-      );
+      const promises = operations.map(op => queue.enqueue(op).catch(() => 'error'));
 
       const operationResults = await Promise.all(promises);
 
@@ -241,7 +272,7 @@ describe('OperationQueue', () => {
 
     it('should handle multiple concurrent failures', async () => {
       const concurrentQueue = new OperationQueue({ maxConcurrency: 3 });
-      
+
       const operations = Array.from({ length: 5 }, (_, i) => {
         if (i % 2 === 0) {
           return () => Promise.resolve(`success${i}`);
@@ -250,9 +281,7 @@ describe('OperationQueue', () => {
         }
       });
 
-      const promises = operations.map(op => 
-        concurrentQueue.enqueue(op).catch(err => err.message)
-      );
+      const promises = operations.map(op => concurrentQueue.enqueue(op).catch(err => err.message));
 
       const results = await Promise.all(promises);
 

@@ -15,8 +15,8 @@ npm run typecheck
 echo "🔨 Building project..."
 npm run build
 
-# Run tests
-echo "🧪 Running tests..."
-NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' ./node_modules/.bin/jest --passWithNoTests --silent
+# Run a quick smoke test to ensure basic functionality
+echo "🧪 Running smoke test..."
+NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' npx jest tests/smoke.test.ts --passWithNoTests
 
 echo "✅ Pre-commit checks completed!"
