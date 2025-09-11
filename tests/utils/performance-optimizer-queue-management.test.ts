@@ -340,6 +340,71 @@ describe('PerformanceOptimizer Queue Management', () => {
     });
   });
 
+  describe('Batch Processing Operations', () => {
+    it('should process batch operations efficiently', async () => {
+      const items = Array.from({ length: 100 }, (_, i) => ({ id: i, value: `item-${i}` }));
+
+      const startTime = Date.now();
+      const results = await PerformanceOptimizer.batchProcessOperations(
+        items,
+        async batch => {
+          // Simulate processing each item in the batch
+          return batch.map(item => ({ ...item, processed: true }));
+        },
+        {
+          batchSize: 10,
+          maxConcurrency: 3,
+        }
+      );
+      const endTime = Date.now();
+
+      expect(results).toHaveLength(100);
+      expect(results.every(r => r.processed)).toBe(true);
+      expect(endTime - startTime).toBeLessThan(1000); // Should be fast
+    });
+
+    it('should optimize write operations with batching', async () => {
+      const operations = Array.from({ length: 50 }, (_, i) => () => Promise.resolve(`result-${i}`));
+
+      const startTime = Date.now();
+      const results = await PerformanceOptimizer.optimizeWriteOperations(operations, {
+        batchSize: 10,
+        maxConcurrency: 2,
+      });
+      const endTime = Date.now();
+
+      expect(results).toHaveLength(50);
+      expect(results).toEqual(Array.from({ length: 50 }, (_, i) => `result-${i}`));
+      expect(endTime - startTime).toBeLessThan(1000);
+    });
+
+    it('should handle bulk data operations with memory management', async () => {
+      const data = Array.from({ length: 200 }, (_, i) => ({ id: i, data: `data-${i}` }));
+
+      let progressCallbacks = 0;
+      const results = await PerformanceOptimizer.optimizeBulkDataOperation(
+        data,
+        async item => {
+          // Simulate some processing
+          await new Promise(resolve => setTimeout(resolve, 1));
+          return { ...item, processed: true };
+        },
+        {
+          batchSize: 20,
+          maxConcurrency: 2,
+          memoryThreshold: 50, // Low threshold for testing
+          progressCallback: () => {
+            progressCallbacks++;
+          },
+        }
+      );
+
+      expect(results).toHaveLength(200);
+      expect(results.every(r => r.processed)).toBe(true);
+      expect(progressCallbacks).toBeGreaterThan(0);
+    });
+  });
+
   describe('Queue Cleanup', () => {
     it('should wait for queue completion', async () => {
       // Start some operations
