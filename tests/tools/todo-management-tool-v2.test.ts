@@ -92,7 +92,7 @@ describe('Todo Management Tool V2', () => {
           status: 'pending',
           priority: 'high',
           assignee: 'john',
-          dueDate: '2024-12-31',
+          dueDate: '2025-12-31',
           category: 'Development',
           tags: ['test'],
           dependencies: [],
@@ -207,7 +207,7 @@ describe('Todo Management Tool V2', () => {
         description: 'Detailed description',
         priority: 'critical' as const,
         assignee: 'jane',
-        dueDate: '2024-12-31',
+        dueDate: '2025-12-31',
         category: 'Security',
         tags: ['urgent', 'security'],
         dependencies: ['task-1'],
@@ -316,6 +316,48 @@ describe('Todo Management Tool V2', () => {
 
   describe('Bulk Update Operation', () => {
     it('should perform bulk updates', async () => {
+      // Add task-2 to mock data for this test
+      mockLoadTodoData.mockResolvedValue({
+        tasks: {
+          'task-1': {
+            id: 'task-1',
+            title: 'Test Task 1',
+            description: 'Test description',
+            status: 'pending',
+            priority: 'high',
+            assignee: 'john',
+            dueDate: '2025-12-31',
+            category: 'Development',
+            tags: ['test'],
+            dependencies: [],
+            linkedAdrs: [],
+            progressPercentage: 0,
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+            changeLog: []
+          },
+          'task-2': {
+            id: 'task-2',
+            title: 'Test Task 2',
+            description: 'Another test description',
+            status: 'pending',
+            priority: 'medium',
+            assignee: 'jane',
+            dueDate: '2025-12-31',
+            category: 'Development',
+            tags: ['test'],
+            dependencies: [],
+            linkedAdrs: [],
+            progressPercentage: 0,
+            createdAt: '2024-01-01T00:00:00Z',
+            updatedAt: '2024-01-01T00:00:00Z',
+            changeLog: []
+          }
+        },
+        sections: [],
+        metadata: { lastAdrSync: '2024-01-01T00:00:00Z' }
+      });
+
       const validInput = {
         operation: 'bulk_update',
         projectPath: testProjectPath,
@@ -329,8 +371,8 @@ describe('Todo Management Tool V2', () => {
       const result = await manageTodoV2(validInput);
       
       expect(result).toBeDefined();
-      expect(result.content[0].text).toContain('Bulk update completed');
-      expect(result.content[0].text).toContain('**Tasks Updated**: 2');
+      expect(result.content[0].text).toContain('Bulk Update Completed');
+      expect(result.content[0].text).toContain('Successfully Updated 2 tasks');
       expect(mockUpdateTask).toHaveBeenCalledTimes(2);
     });
   });

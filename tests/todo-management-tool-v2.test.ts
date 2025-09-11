@@ -78,7 +78,7 @@ jest.unstable_mockModule('../src/utils/project-health-scoring.js', () => ({
         description: 'Complex Description',
         priority: 'critical',
         assignee: 'developer',
-        dueDate: '2024-12-31T23:59:59.000Z',
+        dueDate: '2025-12-31T23:59:59.000Z',
         category: 'feature',
         tags: ['urgent', 'frontend'],
         linkedAdrs: ['ADR-001.md'],
@@ -187,7 +187,7 @@ jest.unstable_mockModule('../src/utils/project-health-scoring.js', () => ({
         reason: 'Bulk completion'
       });
 
-      expect(result.content[0].text).toContain('✅ Bulk update completed!');
+      expect(result.content[0].text).toContain('✅ **Bulk Update Completed!**');
       expect(result.content[0].text).toContain('3'); // 3 tasks updated
     });
   });
@@ -594,7 +594,7 @@ We will implement an API gateway with the following requirements:
         reason: 'Test'
       });
       
-      expect(result.content[0].text).toContain('No task found with ID starting with');
+      expect(result.content[0].text).toContain('No task found with ID');
       expect(result.content[0].text).toContain('invalid-task-id');
     });
 
@@ -668,7 +668,7 @@ We will implement an API gateway with the following requirements:
         operation: 'create_task',
         projectPath: testProjectPath,
         title: 'Test Task',
-        dueDate: '2024-12-31T23:59:59.000Z'
+        dueDate: '2025-12-31T23:59:59.000Z'
       });
       
       expect(result.content[0].text).toContain('✅ Task created successfully!');

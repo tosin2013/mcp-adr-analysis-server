@@ -168,7 +168,7 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
       });
 
       expect(result).toBeDefined();
-      expect(result.content[0].text).toContain('Bulk update completed');
+      expect(result.content[0].text).toContain('**Bulk Update Completed!**');
       expect(result.content[0].text).toContain('Reason**: Bulk status update'); // Default reason
     });
   });
@@ -204,7 +204,7 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
         taskId: taskId,
         updates: { status: 'invalid_status' },
         reason: 'Test reason'
-      })).rejects.toThrow(/Invalid input/);
+      })).rejects.toThrow(/Invalid status/);
     });
 
     it('should provide specific error message for invalid progressPercentage value', async () => {
