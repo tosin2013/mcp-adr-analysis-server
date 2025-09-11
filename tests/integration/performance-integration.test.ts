@@ -162,74 +162,120 @@ describe('Performance Integration Tests', () => {
 
   describe('Large Dataset Performance', () => {
     it('should handle large datasets efficiently', async () => {
-      const largeTaskCount = 500;
+      const { testConfig, createPerformanceTest } = await import('../utils/test-config.js');
+      const benchmarks = testConfig.getEnvironmentAwareBenchmarks();
 
-      // Create a large number of tasks
-      console.log(`Creating ${largeTaskCount} tasks...`);
-      const startTime = Date.now();
+      await createPerformanceTest(
+        'Large dataset integration test',
+        async monitor => {
+          const largeTaskCount = 500;
+          monitor.start(6, `Creating and testing ${largeTaskCount} tasks`);
 
-      const createPromises: Promise<string>[] = [];
-      for (let i = 0; i < largeTaskCount; i++) {
-        createPromises.push(
-          manager.createTask({
-            title: `Large Dataset Task ${i}`,
-            description: `Task ${i} in large dataset`,
-            priority:
-              i % 4 === 0 ? 'critical' : i % 4 === 1 ? 'high' : i % 4 === 2 ? 'medium' : 'low',
-            status: i % 3 === 0 ? 'completed' : i % 3 === 1 ? 'in_progress' : 'pending',
-            category: `category-${i % 5}`,
-            assignee: `user-${i % 10}`,
-            tags: [`tag-${i % 3}`, `tag-${i % 7}`],
-          })
-        );
-      }
+          // Create a large number of tasks
+          monitor.step(`Creating ${largeTaskCount} tasks`);
+          const startTime = Date.now();
 
-      await Promise.all(createPromises);
-      await manager.waitForOperations();
+          const createPromises: Promise<string>[] = [];
+          for (let i = 0; i < largeTaskCount; i++) {
+            createPromises.push(
+              manager.createTask({
+                title: `Large Dataset Task ${i}`,
+                description: `Task ${i} in large dataset`,
+                priority:
+                  i % 4 === 0 ? 'critical' : i % 4 === 1 ? 'high' : i % 4 === 2 ? 'medium' : 'low',
+                status: i % 3 === 0 ? 'completed' : i % 3 === 1 ? 'in_progress' : 'pending',
+                category: `category-${i % 5}`,
+                assignee: `user-${i % 10}`,
+                tags: [`tag-${i % 3}`, `tag-${i % 7}`],
+              })
+            );
+          }
 
-      const createTime = Date.now() - startTime;
-      console.log(`Created ${largeTaskCount} tasks in ${createTime}ms`);
+          await Promise.all(createPromises);
+          await manager.waitForOperations();
 
-      // Test pagination performance
-      const paginationStart = Date.now();
-      const paginatedResult = await manager.getTasks({
-        pagination: { page: 1, pageSize: 50 },
-        sortBy: 'priority',
-        sortOrder: 'desc',
-      });
-      const paginationTime = Date.now() - paginationStart;
+          const createTime = Date.now() - startTime;
+          const tasksPerSecond = Math.round((largeTaskCount / createTime) * 1000);
 
-      expect(paginatedResult.tasks).toHaveLength(50);
-      expect(paginatedResult.totalTasks).toBe(largeTaskCount);
-      expect(paginationTime).toBeLessThan(1000); // Should be fast
+          monitor.step('Testing pagination performance');
+          const paginationStart = Date.now();
+          const paginatedResult = await manager.getTasks({
+            pagination: { page: 1, pageSize: 50 },
+            sortBy: 'priority',
+            sortOrder: 'desc',
+          });
+          const paginationTime = Date.now() - paginationStart;
 
-      // Test filtering performance
-      const filterStart = Date.now();
-      const filteredResult = await manager.getTasks({
-        status: 'completed',
-        priority: 'critical',
-      });
-      const filterTime = Date.now() - filterStart;
+          expect(paginatedResult.tasks).toHaveLength(50);
+          expect(paginatedResult.totalTasks).toBe(largeTaskCount);
+          expect(paginationTime).toBeLessThan(benchmarks.queryPerformance.pagination);
 
-      expect(filteredResult.tasks.length).toBeGreaterThan(0);
-      expect(
-        filteredResult.tasks.every(t => t.status === 'completed' && t.priority === 'critical')
-      ).toBe(true);
-      expect(filterTime).toBeLessThan(500); // Should be fast
+          monitor.step('Testing filtering performance');
+          const filterStart = Date.now();
+          const filteredResult = await manager.getTasks({
+            status: 'completed',
+            priority: 'critical',
+          });
+          const filterTime = Date.now() - filterStart;
 
-      // Test analytics performance
-      const analyticsStart = Date.now();
-      const analytics = await manager.getAnalytics();
-      const analyticsTime = Date.now() - analyticsStart;
+          expect(filteredResult.tasks.length).toBeGreaterThan(0);
+          expect(
+            filteredResult.tasks.every(t => t.status === 'completed' && t.priority === 'critical')
+          ).toBe(true);
+          expect(filterTime).toBeLessThan(benchmarks.queryPerformance.complex);
 
-      expect(analytics.metrics.totalTasks).toBe(largeTaskCount);
-      expect(analyticsTime).toBeLessThan(1000); // Should be reasonably fast
+          monitor.step('Testing analytics performance');
+          const analyticsStart = Date.now();
+          const analytics = await manager.getAnalytics();
+          const analyticsTime = Date.now() - analyticsStart;
 
-      console.log(`Performance metrics:
-        - Creation: ${createTime}ms for ${largeTaskCount} tasks
-        - Pagination: ${paginationTime}ms
-        - Filtering: ${filterTime}ms  
-        - Analytics: ${analyticsTime}ms`);
+          expect(analytics.metrics.totalTasks).toBe(largeTaskCount);
+          expect(analyticsTime).toBeLessThan(benchmarks.queryPerformance.complex);
+
+          monitor.step('Validating task creation performance');
+          // Check task creation rate against benchmarks
+          const expectedMinRate =
+            largeTaskCount > 1000
+              ? benchmarks.taskCreation.large
+              : largeTaskCount > 100
+                ? benchmarks.taskCreation.medium
+                : benchmarks.taskCreation.small;
+
+          expect(tasksPerSecond).toBeGreaterThanOrEqual(expectedMinRate);
+
+          monitor.step('Performance validation complete');
+          const performanceReport = {
+            creation: { time: createTime, rate: tasksPerSecond, expected: expectedMinRate },
+            pagination: { time: paginationTime, limit: benchmarks.queryPerformance.pagination },
+            filtering: { time: filterTime, limit: benchmarks.queryPerformance.complex },
+            analytics: { time: analyticsTime, limit: benchmarks.queryPerformance.complex },
+          };
+
+          console.log(
+            `\n📊 Performance Report (adjusted for: ${benchmarks.adjustedFor.join(', ') || 'baseline'}):`
+          );
+          console.log(
+            `   📝 Creation: ${tasksPerSecond} tasks/sec (min: ${expectedMinRate}) - ${createTime}ms total`
+          );
+          console.log(
+            `   📄 Pagination: ${paginationTime}ms (limit: ${benchmarks.queryPerformance.pagination}ms)`
+          );
+          console.log(
+            `   🔍 Filtering: ${filterTime}ms (limit: ${benchmarks.queryPerformance.complex}ms)`
+          );
+          console.log(
+            `   📈 Analytics: ${analyticsTime}ms (limit: ${benchmarks.queryPerformance.complex}ms)`
+          );
+
+          return performanceReport;
+        },
+        {
+          expectedDuration: benchmarks.queryPerformance.complex * 3, // Allow time for all operations
+          maxMemoryMB: benchmarks.memoryLimits.baseline + 500 * benchmarks.memoryLimits.perTask,
+          steps: 6,
+          verbose: true,
+        }
+      )();
     });
 
     it('should use caching effectively for repeated queries', async () => {

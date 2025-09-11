@@ -99,6 +99,9 @@ describe('PerformanceOptimizer Queue Management', () => {
 
   describe('Backpressure Handling', () => {
     it('should handle large datasets with queue management', async () => {
+      const { testConfig } = await import('./test-config.js');
+      const benchmarks = testConfig.getEnvironmentAwareBenchmarks();
+
       const startTime = Date.now();
 
       const result = await PerformanceOptimizer.getOptimizedTasks(
@@ -109,16 +112,22 @@ describe('PerformanceOptimizer Queue Management', () => {
       );
 
       const endTime = Date.now();
+      const queryTime = endTime - startTime;
 
       expect(result.items).toHaveLength(50);
       expect(result.totalItems).toBeGreaterThan(400); // About 1/3 should be completed
-      expect(endTime - startTime).toBeLessThan(2000); // Should complete within 2 seconds
+
+      // Use environment-aware expectations
+      const expectedMaxTime = benchmarks.queryPerformance.complex;
+      expect(queryTime).toBeLessThan(expectedMaxTime);
 
       // Check queue stats
       const queueStats = PerformanceOptimizer.getQueueStats();
       expect(queueStats).toHaveProperty('queueLength');
       expect(queueStats).toHaveProperty('processing');
       expect(queueStats).toHaveProperty('backpressureActive');
+
+      console.log(`✅ Queue management test: ${queryTime}ms (limit: ${expectedMaxTime}ms)`);
     });
 
     it('should apply backpressure when queue threshold is reached', async () => {
@@ -342,25 +351,49 @@ describe('PerformanceOptimizer Queue Management', () => {
 
   describe('Batch Processing Operations', () => {
     it('should process batch operations efficiently', async () => {
-      const items = Array.from({ length: 100 }, (_, i) => ({ id: i, value: `item-${i}` }));
+      const { testConfig, createPerformanceTest } = await import('./test-config.js');
+      const benchmarks = testConfig.getEnvironmentAwareBenchmarks();
 
-      const startTime = Date.now();
-      const results = await PerformanceOptimizer.batchProcessOperations(
-        items,
-        async batch => {
-          // Simulate processing each item in the batch
-          return batch.map(item => ({ ...item, processed: true }));
+      await createPerformanceTest(
+        'Batch processing operations',
+        async monitor => {
+          const items = Array.from({ length: 100 }, (_, i) => ({ id: i, value: `item-${i}` }));
+          monitor.start(3, 'Testing batch processing performance');
+
+          monitor.step('Starting batch processing');
+          const startTime = Date.now();
+          const results = await PerformanceOptimizer.batchProcessOperations(
+            items,
+            async batch => {
+              // Simulate processing each item in the batch
+              return batch.map(item => ({ ...item, processed: true }));
+            },
+            {
+              batchSize: 10,
+              maxConcurrency: 3,
+            }
+          );
+          const endTime = Date.now();
+          const batchTime = endTime - startTime;
+
+          monitor.step('Validating batch results');
+          expect(results).toHaveLength(100);
+          expect(results.every(r => r.processed)).toBe(true);
+
+          monitor.step('Checking batch performance');
+          // Batch operations should be faster than complex queries
+          const expectedMaxTime = Math.round(benchmarks.queryPerformance.simple * 2);
+          expect(batchTime).toBeLessThan(expectedMaxTime);
+
+          return { batchTime, itemCount: items.length };
         },
         {
-          batchSize: 10,
-          maxConcurrency: 3,
+          expectedDuration: Math.round(benchmarks.queryPerformance.simple * 2),
+          maxMemoryMB: benchmarks.memoryLimits.baseline,
+          steps: 3,
+          verbose: true,
         }
-      );
-      const endTime = Date.now();
-
-      expect(results).toHaveLength(100);
-      expect(results.every(r => r.processed)).toBe(true);
-      expect(endTime - startTime).toBeLessThan(1000); // Should be fast
+      )();
     });
 
     it('should optimize write operations with batching', async () => {
