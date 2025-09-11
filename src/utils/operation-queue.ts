@@ -84,7 +84,7 @@ export class OperationQueue {
       throw new Error(`Operation queue is full (${this.maxQueueSize} operations)`);
     }
 
-    const operationId = `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const operationId = `op_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     return new Promise<T>((resolve, reject) => {
       let isResolved = false;
@@ -117,7 +117,12 @@ export class OperationQueue {
       timeoutId = setTimeout(() => {
         if (!isResolved) {
           isResolved = true;
+          // Remove from queue if still pending
           this.removeFromQueue(operationId);
+          // Release semaphore if operation was active
+          if (this.activeOperations.has(operationId)) {
+            this.semaphore = Math.max(0, this.semaphore - 1);
+          }
           this.cleanupOperation(operationId, null, cleanupCallback);
           reject(new Error(`Operation ${operationId} timed out after ${queuedOp.timeout}ms`));
         }
@@ -174,29 +179,34 @@ export class OperationQueue {
           }
         }
       } else {
-        // For concurrent processing, start operations up to concurrency limit
-        const startedOperations: Promise<void>[] = [];
+        // For concurrent processing, use proper semaphore-based control
+        const runningOperations = new Set<Promise<void>>();
 
-        while (
-          this.queue.length > 0 &&
-          this.semaphore < this.maxConcurrency &&
-          !this.shutdownRequested
-        ) {
-          const operation = this.queue.shift();
-          if (!operation) continue;
+        while ((this.queue.length > 0 || runningOperations.size > 0) && !this.shutdownRequested) {
+          // Start new operations up to concurrency limit
+          while (
+            this.queue.length > 0 &&
+            this.semaphore < this.maxConcurrency &&
+            !this.shutdownRequested
+          ) {
+            const operation = this.queue.shift();
+            if (!operation) continue;
 
-          // Acquire semaphore
-          this.semaphore++;
-          this.activeOperations.set(operation.id, operation);
+            // Acquire semaphore immediately
+            this.semaphore++;
+            this.activeOperations.set(operation.id, operation);
 
-          // Create and track the operation promise
-          const operationPromise = this.executeOperationAsync(operation);
-          startedOperations.push(operationPromise);
-        }
+            // Create and track the operation promise with proper cleanup
+            const operationPromise = this.executeOperationAsync(operation).finally(() => {
+              runningOperations.delete(operationPromise);
+            });
+            runningOperations.add(operationPromise);
+          }
 
-        // Wait for at least one operation to complete before checking for more work
-        if (startedOperations.length > 0) {
-          await Promise.race(startedOperations);
+          // Wait for at least one operation to complete if we have any running
+          if (runningOperations.size > 0) {
+            await Promise.race(Array.from(runningOperations));
+          }
         }
       }
     } finally {
@@ -224,9 +234,19 @@ export class OperationQueue {
     } catch (error) {
       operation.reject(error as Error);
     } finally {
-      // Release semaphore and cleanup
-      this.semaphore--;
+      // Release semaphore and cleanup - ensure semaphore never goes negative
+      this.semaphore = Math.max(0, this.semaphore - 1);
       this.activeOperations.delete(operation.id);
+
+      // Continue processing if there are more operations and capacity
+      if (
+        this.queue.length > 0 &&
+        this.semaphore < this.maxConcurrency &&
+        !this.shutdownRequested &&
+        !this.processing
+      ) {
+        setImmediate(() => this.processQueue());
+      }
     }
   }
 
@@ -243,10 +263,17 @@ export class OperationQueue {
   }
 
   /**
-   * Remove operation from queue
+   * Remove operation from queue and clean up resources
    */
   private removeFromQueue(operationId: string): void {
+    // Remove from pending queue
     this.queue = this.queue.filter(op => op.id !== operationId);
+
+    // If operation was active, release semaphore
+    if (this.activeOperations.has(operationId)) {
+      this.semaphore = Math.max(0, this.semaphore - 1);
+    }
+
     this.activeOperations.delete(operationId);
   }
 
@@ -361,6 +388,17 @@ export class OperationQueue {
       await this.drain(timeoutMs);
     } catch (error) {
       // Force cleanup if drain times out
+      console.warn(`Shutdown timeout after ${timeoutMs}ms, forcing cleanup`);
+
+      // Cancel any remaining active operations
+      for (const [, operation] of this.activeOperations) {
+        try {
+          operation.reject(new Error('Operation cancelled due to forced shutdown'));
+        } catch (e) {
+          // Ignore errors during forced cleanup
+        }
+      }
+
       this.activeOperations.clear();
       this.semaphore = 0;
       throw error;
