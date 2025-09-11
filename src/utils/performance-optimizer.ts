@@ -947,6 +947,187 @@ export class PerformanceOptimizer {
   }
 
   /**
+   * Batch process operations for improved performance
+   */
+  static async batchProcessOperations<T, R>(
+    items: T[],
+    operation: (batch: T[]) => Promise<R[]>,
+    options?: {
+      batchSize?: number;
+      maxConcurrency?: number;
+      progressCallback?: (processed: number, total: number) => void;
+    }
+  ): Promise<R[]> {
+    const batchSize = options?.batchSize || this.queueManagement.batchProcessing.batchSize;
+    const maxConcurrency =
+      options?.maxConcurrency || this.queueManagement.batchProcessing.maxConcurrentBatches;
+    const progressCallback = options?.progressCallback;
+
+    const results: R[] = [];
+    let processedCount = 0;
+
+    // Process items in batches with concurrency control
+    for (let i = 0; i < items.length; i += batchSize * maxConcurrency) {
+      const concurrentBatches: Promise<R[]>[] = [];
+
+      // Create concurrent batches
+      for (let j = 0; j < maxConcurrency && i + j * batchSize < items.length; j++) {
+        const startIndex = i + j * batchSize;
+        const endIndex = Math.min(startIndex + batchSize, items.length);
+        const batch = items.slice(startIndex, endIndex);
+
+        if (batch.length > 0) {
+          concurrentBatches.push(operation(batch));
+        }
+      }
+
+      // Process batches concurrently
+      const batchResults = await Promise.all(concurrentBatches);
+
+      // Flatten and collect results
+      for (const batchResult of batchResults) {
+        results.push(...batchResult);
+        processedCount += batchResult.length;
+
+        // Report progress if callback provided
+        if (progressCallback) {
+          progressCallback(processedCount, items.length);
+        }
+      }
+
+      // Yield control between batch groups to prevent blocking
+      if (i + batchSize * maxConcurrency < items.length) {
+        await new Promise(resolve => setTimeout(resolve, 1));
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Optimize write operations with batching and queue management
+   */
+  static async optimizeWriteOperations<T>(
+    operations: Array<() => Promise<T>>,
+    options?: {
+      batchSize?: number;
+      maxConcurrency?: number;
+      backpressureThreshold?: number;
+    }
+  ): Promise<T[]> {
+    const batchSize = options?.batchSize || this.queueManagement.batchProcessing.batchSize;
+    const maxConcurrency =
+      options?.maxConcurrency || this.queueManagement.batchProcessing.maxConcurrentBatches;
+    const backpressureThreshold =
+      options?.backpressureThreshold || this.queueManagement.batchProcessing.backpressureThreshold;
+
+    // If operations count exceeds backpressure threshold, use queue management
+    if (operations.length > backpressureThreshold) {
+      return this.enqueueOperation(async () => {
+        return this.batchProcessOperations(
+          operations,
+          async batch => {
+            const batchResults = await Promise.all(batch.map(op => op()));
+            return batchResults;
+          },
+          { batchSize, maxConcurrency }
+        );
+      });
+    }
+
+    // For smaller operation sets, process directly with batching
+    return this.batchProcessOperations(
+      operations,
+      async batch => {
+        const batchResults = await Promise.all(batch.map(op => op()));
+        return batchResults;
+      },
+      { batchSize, maxConcurrency }
+    );
+  }
+
+  /**
+   * Optimize bulk data operations with memory management
+   */
+  static async optimizeBulkDataOperation<T, R>(
+    data: T[],
+    processor: (item: T) => Promise<R>,
+    options?: {
+      batchSize?: number;
+      maxConcurrency?: number;
+      memoryThreshold?: number; // MB
+      progressCallback?: (processed: number, total: number) => void;
+    }
+  ): Promise<R[]> {
+    const batchSize =
+      options?.batchSize || Math.min(this.queueManagement.batchProcessing.batchSize, 50);
+    const maxConcurrency =
+      options?.maxConcurrency ||
+      Math.min(this.queueManagement.batchProcessing.maxConcurrentBatches, 2);
+    const memoryThreshold = options?.memoryThreshold || 100; // 100MB default
+    const progressCallback = options?.progressCallback;
+
+    const results: R[] = [];
+    let processedCount = 0;
+
+    // Process data in memory-aware batches
+    for (let i = 0; i < data.length; i += batchSize * maxConcurrency) {
+      // Check memory usage before processing next batch group
+      const memoryUsage = process.memoryUsage().heapUsed / 1024 / 1024;
+      if (memoryUsage > memoryThreshold) {
+        // Force garbage collection if available
+        if (global.gc) {
+          global.gc();
+        }
+
+        // Wait a bit for memory to be freed
+        await new Promise(resolve => setTimeout(resolve, 10));
+      }
+
+      const concurrentBatches: Promise<R[]>[] = [];
+
+      // Create concurrent batches
+      for (let j = 0; j < maxConcurrency && i + j * batchSize < data.length; j++) {
+        const startIndex = i + j * batchSize;
+        const endIndex = Math.min(startIndex + batchSize, data.length);
+        const batch = data.slice(startIndex, endIndex);
+
+        if (batch.length > 0) {
+          concurrentBatches.push(Promise.all(batch.map(item => processor(item))));
+        }
+      }
+
+      // Process batches concurrently
+      const batchResults = await Promise.all(concurrentBatches);
+
+      // Flatten and collect results
+      for (const batchResult of batchResults) {
+        results.push(...batchResult);
+        processedCount += batchResult.length;
+
+        // Report progress if callback provided
+        if (progressCallback) {
+          progressCallback(processedCount, data.length);
+        }
+      }
+
+      // Yield control and check for backpressure
+      if (i + batchSize * maxConcurrency < data.length) {
+        await new Promise(resolve => setTimeout(resolve, 1));
+
+        // Apply backpressure if queue is getting full
+        if (
+          this.operationQueue.length > this.queueManagement.batchProcessing.backpressureThreshold
+        ) {
+          await this.waitForQueueDrain();
+        }
+      }
+    }
+
+    return results;
+  }
+
+  /**
    * Optimize analytics calculation for large datasets
    */
   static async calculateOptimizedAnalytics(data: TodoJsonData): Promise<{

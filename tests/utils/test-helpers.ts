@@ -307,4 +307,9 @@ export function verifyCleanup(): void {
   expect(status.intervals).toBeLessThan(10);
 }
 
+// Directory helper for tests
+export function getCurrentDir(): string {
+  return process.cwd();
+}
+
 export { testInfrastructure };
