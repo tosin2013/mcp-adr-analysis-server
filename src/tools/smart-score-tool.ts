@@ -570,7 +570,16 @@ ${Object.entries(weightOptimization.optimal)
       case 'diagnose_scores': {
         const { ProjectHealthScoring } = await import('../utils/project-health-scoring.js');
         const healthScoring = new ProjectHealthScoring(validatedArgs.projectPath);
-        const currentScores = await healthScoring.getProjectHealthScore();
+
+        let currentScores;
+        try {
+          currentScores = await healthScoring.getProjectHealthScore();
+        } catch (error) {
+          throw new McpAdrError(
+            `Failed to get project health scores for diagnosis: ${error instanceof Error ? error.message : String(error)}`,
+            'SMART_SCORE_ERROR'
+          );
+        }
 
         // Check data freshness
         const now = new Date();
