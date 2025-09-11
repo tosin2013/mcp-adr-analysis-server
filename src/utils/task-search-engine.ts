@@ -3,28 +3,28 @@ import { TodoTask } from '../types/todo-json-schemas.js';
 /**
  * Enhanced search engine for TODO tasks with fuzzy matching, multi-field search,
  * and regex pattern support.
- * 
+ *
  * Provides comprehensive search capabilities including:
  * - Exact substring matching across multiple fields
  * - Fuzzy search with configurable tolerance for typos
  * - Regex pattern matching with safety validation
  * - Multi-field search with relevance scoring
  * - Search suggestions when no results are found
- * 
+ *
  * @example
  * ```typescript
  * const searchEngine = new TaskSearchEngine(0.3); // 30% fuzzy threshold
- * 
+ *
  * // Simple title search
  * const titleResults = searchEngine.searchByTitle("authentication", tasks);
- * 
+ *
  * // Fuzzy search for typos
  * const fuzzyResults = searchEngine.fuzzySearch("autentication", tasks);
- * 
+ *
  * // Multi-field search with scoring
  * const multiResults = searchEngine.multiFieldSearch(
- *   "security", 
- *   ["title", "description", "tags"], 
+ *   "security",
+ *   ["title", "description", "tags"],
  *   tasks
  * );
  * ```
@@ -38,12 +38,12 @@ export class TaskSearchEngine {
 
   /**
    * Search tasks by ID with partial matching support
-   * 
+   *
    * @param query - ID search query (supports partial UUIDs)
    * @param tasks - Array of tasks to search through
-   * 
+   *
    * @returns Array of tasks with IDs containing the query string
-   * 
+   *
    * @example
    * ```typescript
    * const results = searchEngine.searchById("abc123", tasks);
@@ -52,19 +52,17 @@ export class TaskSearchEngine {
    */
   searchById(query: string, tasks: TodoTask[]): TodoTask[] {
     const normalizedQuery = query.toLowerCase();
-    return tasks.filter(task => 
-      task.id.toLowerCase().includes(normalizedQuery)
-    );
+    return tasks.filter(task => task.id.toLowerCase().includes(normalizedQuery));
   }
 
   /**
    * Search tasks by title with exact substring matching
-   * 
+   *
    * @param query - Title search query (case-insensitive)
    * @param tasks - Array of tasks to search through
-   * 
+   *
    * @returns Array of tasks with titles containing the query string
-   * 
+   *
    * @example
    * ```typescript
    * const results = searchEngine.searchByTitle("authentication", tasks);
@@ -73,9 +71,7 @@ export class TaskSearchEngine {
    */
   searchByTitle(query: string, tasks: TodoTask[]): TodoTask[] {
     const normalizedQuery = query.toLowerCase();
-    return tasks.filter(task => 
-      task.title.toLowerCase().includes(normalizedQuery)
-    );
+    return tasks.filter(task => task.title.toLowerCase().includes(normalizedQuery));
   }
 
   /**
@@ -83,23 +79,21 @@ export class TaskSearchEngine {
    */
   searchByDescription(query: string, tasks: TodoTask[]): TodoTask[] {
     const normalizedQuery = query.toLowerCase();
-    return tasks.filter(task => 
-      task.description?.toLowerCase().includes(normalizedQuery) || false
-    );
+    return tasks.filter(task => task.description?.toLowerCase().includes(normalizedQuery) || false);
   }
 
   /**
    * Fuzzy search using edit distance algorithm for typo tolerance
-   * 
+   *
    * Finds tasks even when the search query contains typos or slight variations.
    * Uses Levenshtein distance to measure string similarity.
-   * 
+   *
    * @param query - Search query that may contain typos
    * @param tasks - Array of tasks to search through
    * @param threshold - Optional similarity threshold (0-1, default uses instance threshold)
-   * 
+   *
    * @returns Array of tasks that match within the similarity threshold
-   * 
+   *
    * @example
    * ```typescript
    * const results = searchEngine.fuzzySearch("autentication", tasks, 0.2);
@@ -108,11 +102,13 @@ export class TaskSearchEngine {
    */
   fuzzySearch(query: string, tasks: TodoTask[], threshold?: number): TodoTask[] {
     const searchThreshold = threshold || this.fuzzyThreshold;
-    
+
     return tasks.filter(task => {
-      return this.fuzzyMatch(task.title, query, searchThreshold) ||
-             this.fuzzyMatch(task.description || '', query, searchThreshold) ||
-             task.tags.some(tag => this.fuzzyMatch(tag, query, searchThreshold));
+      return (
+        this.fuzzyMatch(task.title, query, searchThreshold) ||
+        this.fuzzyMatch(task.description || '', query, searchThreshold) ||
+        task.tags.some(tag => this.fuzzyMatch(tag, query, searchThreshold))
+      );
     });
   }
 
@@ -123,11 +119,13 @@ export class TaskSearchEngine {
     try {
       const regex = new RegExp(pattern, 'i');
       return tasks.filter(task => {
-        return regex.test(task.title) ||
-               regex.test(task.description || '') ||
-               task.tags.some(tag => regex.test(tag)) ||
-               regex.test(task.category || '') ||
-               regex.test(task.assignee || '');
+        return (
+          regex.test(task.title) ||
+          regex.test(task.description || '') ||
+          task.tags.some(tag => regex.test(tag)) ||
+          regex.test(task.category || '') ||
+          regex.test(task.assignee || '')
+        );
       });
     } catch (error) {
       // Invalid regex, fall back to literal search
@@ -138,17 +136,17 @@ export class TaskSearchEngine {
 
   /**
    * Multi-field search with configurable field weights
-   * 
+   *
    * Searches across multiple task fields and calculates relevance scores
    * based on field importance and match quality.
-   * 
+   *
    * @param query - Search query to match against multiple fields
    * @param fields - Array of field names to search in
    * @param tasks - Array of tasks to search through
    * @param fieldWeights - Optional weights for different fields (higher = more important)
-   * 
+   *
    * @returns Array of SearchResult objects with tasks and relevance scores, sorted by relevance
-   * 
+   *
    * @example
    * ```typescript
    * const results = searchEngine.multiFieldSearch(
@@ -157,15 +155,15 @@ export class TaskSearchEngine {
    *   tasks,
    *   { title: 1.0, description: 0.8, tags: 0.9 }
    * );
-   * 
+   *
    * results.forEach(result => {
    *   console.log(`${result.task.title} (score: ${result.relevanceScore})`);
    * });
    * ```
    */
   multiFieldSearch(
-    query: string, 
-    fields: string[], 
+    query: string,
+    fields: string[],
     tasks: TodoTask[],
     fieldWeights?: Record<string, number>
   ): SearchResult[] {
@@ -175,7 +173,7 @@ export class TaskSearchEngine {
       description: 0.8,
       tags: 0.9,
       category: 0.7,
-      assignee: 0.6
+      assignee: 0.6,
     };
 
     const results: SearchResult[] = [];
@@ -228,7 +226,7 @@ export class TaskSearchEngine {
         results.push({
           task,
           relevanceScore: totalScore / matchCount,
-          matchedFields: fields.filter(field => this.fieldMatches(task, field, normalizedQuery))
+          matchedFields: fields.filter(field => this.fieldMatches(task, field, normalizedQuery)),
         });
       }
     }
@@ -239,17 +237,17 @@ export class TaskSearchEngine {
 
   /**
    * Comprehensive search that combines multiple search strategies
-   * 
+   *
    * Automatically tries different search approaches in order of precision:
    * 1. Exact multi-field matching (highest relevance)
    * 2. Fuzzy search for typo tolerance (medium relevance)
    * 3. Partial ID matching (lowest relevance)
-   * 
+   *
    * @param query - Search query to find tasks
    * @param tasks - Array of tasks to search through
-   * 
+   *
    * @returns Array of SearchResult objects sorted by relevance score
-   * 
+   *
    * @example
    * ```typescript
    * const results = searchEngine.comprehensiveSearch("auth bug", tasks);
@@ -266,8 +264,8 @@ export class TaskSearchEngine {
 
     // Try exact matches first (highest priority)
     const exactMatches = this.multiFieldSearch(
-      normalizedQuery, 
-      ['title', 'description', 'tags', 'category', 'assignee'], 
+      normalizedQuery,
+      ['title', 'description', 'tags', 'category', 'assignee'],
       tasks
     );
 
@@ -281,7 +279,7 @@ export class TaskSearchEngine {
       return fuzzyMatches.map(task => ({
         task,
         relevanceScore: 0.7, // Lower score for fuzzy matches
-        matchedFields: ['fuzzy']
+        matchedFields: ['fuzzy'],
       }));
     }
 
@@ -290,21 +288,21 @@ export class TaskSearchEngine {
     return idMatches.map(task => ({
       task,
       relevanceScore: 0.5, // Lowest score for ID matches
-      matchedFields: ['id']
+      matchedFields: ['id'],
     }));
   }
 
   /**
    * Generate search suggestions when no results are found
-   * 
+   *
    * Provides helpful suggestions to improve search results, including
    * alternative search strategies and similar terms found in existing tasks.
-   * 
+   *
    * @param query - The search query that returned no results
    * @param tasks - Array of all available tasks for finding similar terms
-   * 
+   *
    * @returns Array of suggestion strings to help the user
-   * 
+   *
    * @example
    * ```typescript
    * const suggestions = searchEngine.generateSearchSuggestions("xyz123", tasks);
@@ -316,7 +314,7 @@ export class TaskSearchEngine {
 
     // Suggest shorter query
     if (query.length > 10) {
-      suggestions.push("Try a shorter search term");
+      suggestions.push('Try a shorter search term');
     }
 
     // Suggest fuzzy search for potential typos
@@ -343,7 +341,7 @@ export class TaskSearchEngine {
   private calculateRelevanceScore(text: string, query: string): number {
     const normalizedText = text.toLowerCase();
     const normalizedQuery = query.toLowerCase();
-    
+
     if (!normalizedText.includes(normalizedQuery)) {
       return 0;
     }
@@ -354,12 +352,12 @@ export class TaskSearchEngine {
 
     // Higher score for exact matches at the beginning
     let score = queryLength / textLength;
-    
+
     // Boost score if match is at the beginning
     if (index === 0) {
       score *= 1.5;
     }
-    
+
     // Boost score for exact word matches
     const wordBoundaryRegex = new RegExp(`\\b${normalizedQuery}\\b`);
     if (wordBoundaryRegex.test(normalizedText)) {
@@ -395,14 +393,14 @@ export class TaskSearchEngine {
   private fuzzyMatch(text: string, searchTerm: string, threshold: number): boolean {
     const words = text.toLowerCase().split(/\s+/);
     const searchWords = searchTerm.toLowerCase().split(/\s+/);
-    
-    return searchWords.every(searchWord => 
+
+    return searchWords.every(searchWord =>
       words.some(word => {
         // Skip very short words for fuzzy matching to avoid false positives
         if (searchWord.length < 4) {
           return word.includes(searchWord);
         }
-        
+
         const distance = this.editDistance(word, searchWord);
         const tolerance = Math.max(1, Math.floor(searchWord.length * threshold));
         return distance <= tolerance;
@@ -414,32 +412,35 @@ export class TaskSearchEngine {
    * Calculate edit distance between two strings using dynamic programming
    */
   private editDistance(a: string, b: string): number {
-    const dp: number[][] = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(0));
-    
+    const dp: number[][] = Array(a.length + 1)
+      .fill(null)
+      .map(() => Array(b.length + 1).fill(0));
+
     // Initialize base cases
     for (let i = 0; i <= a.length; i++) {
-      dp[i][0] = i;
+      dp[i]![0] = i;
     }
     for (let j = 0; j <= b.length; j++) {
-      dp[0][j] = j;
+      dp[0]![j] = j;
     }
-    
+
     // Fill the dynamic programming table
     for (let i = 1; i <= a.length; i++) {
       for (let j = 1; j <= b.length; j++) {
         if (a[i - 1] === b[j - 1]) {
-          dp[i][j] = dp[i - 1][j - 1];
+          dp[i]![j] = dp[i - 1]![j - 1]!;
         } else {
-          dp[i][j] = Math.min(
-            dp[i - 1][j],     // deletion
-            dp[i][j - 1],     // insertion
-            dp[i - 1][j - 1]  // substitution
-          ) + 1;
+          dp[i]![j] =
+            Math.min(
+              dp[i - 1]![j]!, // deletion
+              dp[i]![j - 1]!, // insertion
+              dp[i - 1]![j - 1]! // substitution
+            ) + 1;
         }
       }
     }
-    
-    return dp[a.length][b.length];
+
+    return dp[a.length]![b.length]!;
   }
 
   /**
@@ -447,7 +448,7 @@ export class TaskSearchEngine {
    */
   private findSimilarTerms(query: string, tasks: TodoTask[]): string[] {
     const allTerms = new Set<string>();
-    
+
     // Collect all terms from tasks
     for (const task of tasks) {
       const words = [
@@ -455,16 +456,16 @@ export class TaskSearchEngine {
         ...(task.description?.split(/\s+/) || []),
         ...task.tags,
         task.category || '',
-        task.assignee || ''
+        task.assignee || '',
       ].filter(word => word.length > 2);
-      
+
       words.forEach(word => allTerms.add(word.toLowerCase()));
     }
 
     // Find terms with small edit distance
-    const similarTerms: Array<{term: string, distance: number}> = [];
+    const similarTerms: Array<{ term: string; distance: number }> = [];
     const queryLower = query.toLowerCase();
-    
+
     for (const term of allTerms) {
       const distance = this.editDistance(queryLower, term);
       // Only suggest terms that are reasonably close and not too different in length
