@@ -235,8 +235,12 @@ export class TodoJsonManager {
       t => t.status === 'completed'
     ).length;
 
-    // Save JSON
-    await fs.writeFile(this.todoJsonPath, JSON.stringify(data, null, 2));
+    // Save JSON with atomic write (write to temp file first, then rename)
+    const tempPath = `${this.todoJsonPath}.tmp.${Date.now()}.${Math.random().toString(36).substring(2)}`;
+    const jsonContent = JSON.stringify(data, null, 2);
+
+    await fs.writeFile(tempPath, jsonContent);
+    await fs.rename(tempPath, this.todoJsonPath);
 
     // Auto-sync to markdown if enabled
     if (syncToMarkdown && data.metadata.autoSyncEnabled) {
@@ -244,7 +248,12 @@ export class TodoJsonManager {
       const useSimple = process.env['NODE_ENV'] === 'test' || Object.keys(data.tasks).length < 10;
       await this.convertToMarkdown(data, useSimple);
       data.metadata.lastSyncToMarkdown = new Date().toISOString();
-      await fs.writeFile(this.todoJsonPath, JSON.stringify(data, null, 2));
+
+      // Write the updated metadata atomically
+      const updatedTempPath = `${this.todoJsonPath}.tmp.${Date.now()}.${Math.random().toString(36).substring(2)}`;
+      const updatedJsonContent = JSON.stringify(data, null, 2);
+      await fs.writeFile(updatedTempPath, updatedJsonContent);
+      await fs.rename(updatedTempPath, this.todoJsonPath);
     }
   }
 
@@ -548,6 +557,17 @@ export class TodoJsonManager {
     // Increase priority for rapid operations to process them quickly
     const adjustedPriority = isRapidOperation ? priority + 10 : priority;
 
+    // Data modification operations should be serialized to prevent lost updates
+    const isWriteOperation = ['create_task', 'update_task', 'delete_task', 'archive_task'].includes(
+      operationType
+    );
+
+    // Temporarily force sequential processing for write operations to ensure data consistency
+    const originalConcurrency = this.operationQueue.getStatus().maxConcurrency;
+    if (isWriteOperation && originalConcurrency > 1) {
+      this.operationQueue.setConcurrency(1);
+    }
+
     try {
       const result = await this.operationQueue.enqueue(async () => {
         // Perform consistency check if enough time has passed or if rapid operations detected
@@ -567,6 +587,11 @@ export class TodoJsonManager {
         console.error(`Operation ${operationType} failed:`, error);
       }
       throw error;
+    } finally {
+      // Restore original concurrency after write operation
+      if (isWriteOperation && originalConcurrency > 1) {
+        this.operationQueue.setConcurrency(originalConcurrency);
+      }
     }
   }
 

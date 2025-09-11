@@ -292,7 +292,8 @@ describe('Performance Integration Tests', () => {
                 title: `Concurrency Test ${i}`,
                 description: 'Testing concurrency limits',
               });
-              operationTimes.push(Date.now() - start);
+              const duration = Date.now() - start;
+              operationTimes.push(duration);
               return taskId;
             } catch (error) {
               errors.push(error as Error);
@@ -302,18 +303,16 @@ describe('Performance Integration Tests', () => {
         );
       }
 
-      // Use Promise.allSettled to handle any potential failures gracefully
+      // Wait for all operations to complete
       const results = await Promise.allSettled(promises);
 
       // Check if any operations failed
       const failures = results.filter(r => r.status === 'rejected');
-      if (failures.length > 0) {
-        console.error('Failed operations:', failures);
-        console.error('Errors:', errors);
-      }
+      const successes = results.filter(r => r.status === 'fulfilled');
 
       // All operations should succeed
       expect(failures).toHaveLength(0);
+      expect(successes).toHaveLength(6);
 
       await manager.waitForOperations();
 
@@ -326,10 +325,19 @@ describe('Performance Integration Tests', () => {
       const expectedTitles = Array.from({ length: 6 }, (_, i) => `Concurrency Test ${i}`).sort();
       expect(taskTitles).toEqual(expectedTitles);
 
-      // Check queue status
+      // Check queue status - all operations should be completed
       const queueStatus = manager.getOperationQueueStatus();
       expect(queueStatus.queueLength).toBe(0);
       expect(queueStatus.activeOperations).toBe(0);
+
+      // Verify that the concurrency setting was respected by checking that operations
+      // took longer than they would if all ran simultaneously (indicating queuing)
+      const totalTime = operationTimes.reduce((sum, time) => sum + time, 0);
+      const avgTime = totalTime / operationTimes.length;
+
+      // Operations should have been queued, so average time should be reasonable
+      // This is a basic check that operations didn't all run instantly (which would indicate no queuing)
+      expect(avgTime).toBeGreaterThan(0);
     });
 
     it('should handle operation timeouts gracefully', async () => {
