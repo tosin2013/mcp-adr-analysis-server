@@ -1,7 +1,7 @@
 /**
  * Unit tests for smart-score-tool.ts
  * Target: Achieve 80% coverage for comprehensive scoring coordination
- * 
+ *
  * Note: This file uses dynamic imports extensively, which limits test coverage
  * of the main operation logic. The tests focus on validation, error handling,
  * and utility functions that can be properly tested.
@@ -11,7 +11,9 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@j
 
 // Mock file system operations
 const mockReadFile = jest.fn() as jest.MockedFunction<(path: string) => Promise<string>>;
-const mockWriteFile = jest.fn() as jest.MockedFunction<(path: string, data: string) => Promise<void>>;
+const mockWriteFile = jest.fn() as jest.MockedFunction<
+  (path: string, data: string) => Promise<void>
+>;
 const mockAccess = jest.fn() as jest.MockedFunction<(path: string) => Promise<void>>;
 const mockMkdir = jest.fn() as jest.MockedFunction<(path: string, options?: any) => Promise<void>>;
 const mockExistsSync = jest.fn() as jest.MockedFunction<(path: string) => boolean>;
@@ -21,7 +23,7 @@ const mockWriteFileSync = jest.fn() as jest.MockedFunction<(path: string, data: 
 // Mock ProjectHealthScoring class
 const mockGetProjectHealthScore = jest.fn() as jest.MockedFunction<() => Promise<any>>;
 const MockProjectHealthScoring = jest.fn().mockImplementation(() => ({
-  getProjectHealthScore: mockGetProjectHealthScore
+  getProjectHealthScore: mockGetProjectHealthScore,
 }));
 
 // Mock manageTodoV2 function
@@ -32,11 +34,19 @@ const mockSmartGitPush = jest.fn() as jest.MockedFunction<(args: any) => Promise
 
 // Mock KnowledgeGraphManager class
 const mockGetProjectScoreTrends = jest.fn() as jest.MockedFunction<() => Promise<any>>;
-const mockGetIntentScoreTrends = jest.fn() as jest.MockedFunction<(intentId: string) => Promise<any>>;
-const MockKnowledgeGraphManager = jest.fn().mockImplementation(() => ({
-  getProjectScoreTrends: mockGetProjectScoreTrends,
-  getIntentScoreTrends: mockGetIntentScoreTrends
-}));
+const mockGetIntentScoreTrends = jest.fn() as jest.MockedFunction<
+  (intentId: string) => Promise<any>
+>;
+const MockKnowledgeGraphManager = jest.fn().mockImplementation(() => {
+  const instance = {
+    getProjectScoreTrends: mockGetProjectScoreTrends,
+    getIntentScoreTrends: mockGetIntentScoreTrends,
+    ensureCacheDirectory: jest.fn().mockResolvedValue(undefined),
+    loadKnowledgeGraph: jest.fn().mockResolvedValue({}),
+    saveKnowledgeGraph: jest.fn().mockResolvedValue(undefined),
+  };
+  return instance;
+});
 
 jest.unstable_mockModule('fs/promises', () => ({
   readFile: mockReadFile,
@@ -65,41 +75,53 @@ jest.unstable_mockModule('path', () => ({
 
 // Mock internal dependencies
 jest.unstable_mockModule('../../src/utils/project-health-scoring.js', () => ({
-  ProjectHealthScoring: MockProjectHealthScoring
+  ProjectHealthScoring: MockProjectHealthScoring,
 }));
 
 jest.unstable_mockModule('../../src/tools/todo-management-tool-v2.js', () => ({
-  manageTodoV2: mockManageTodoV2
+  manageTodoV2: mockManageTodoV2,
 }));
 
 jest.unstable_mockModule('../../src/tools/smart-git-push-tool.js', () => ({
-  smartGitPush: mockSmartGitPush
+  smartGitPush: mockSmartGitPush,
+}));
+
+jest.unstable_mockModule('../../src/utils/config.js', () => ({
+  loadConfig: jest.fn().mockReturnValue({
+    projectPath: '/tmp/test-project',
+    adrDirectory: 'docs/adrs',
+    logLevel: 'INFO',
+    cacheEnabled: true,
+    cacheDirectory: '.mcp-adr-cache',
+    maxCacheSize: 104857600,
+    analysisTimeout: 30000,
+  }),
 }));
 
 jest.unstable_mockModule('../../src/utils/knowledge-graph-manager.js', () => ({
-  KnowledgeGraphManager: MockKnowledgeGraphManager
+  KnowledgeGraphManager: MockKnowledgeGraphManager,
 }));
 
 describe('Smart Score Tool', () => {
   const testProjectPath = '/tmp/test-project';
   let smartScore: any;
-  
+
   beforeAll(async () => {
     // Import after all mocks are set up
     const module = await import('../../src/tools/smart-score-tool.js');
     smartScore = module.smartScore;
   });
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Default mock implementations
     mockExistsSync.mockReturnValue(true);
     mockAccess.mockResolvedValue(undefined);
     mockMkdir.mockResolvedValue(undefined);
     mockWriteFile.mockResolvedValue(undefined);
     mockWriteFileSync.mockReturnValue(undefined);
-    
+
     // Default package.json mock
     mockReadFile.mockImplementation(async (path: string) => {
       if (path.includes('package.json')) {
@@ -108,7 +130,7 @@ describe('Smart Score Tool', () => {
           type: 'module',
           scripts: { test: 'jest' },
           dependencies: { express: '^4.0.0' },
-          devDependencies: { jest: '^29.0.0' }
+          devDependencies: { jest: '^29.0.0' },
         });
       }
       if (path.includes('project-health-scores.json')) {
@@ -119,12 +141,12 @@ describe('Smart Score Tool', () => {
           architectureCompliance: 65,
           securityPosture: 85,
           codeQuality: 60,
-          lastUpdated: new Date().toISOString()
+          lastUpdated: new Date().toISOString(),
         });
       }
       return '{}';
     });
-    
+
     // Mock ProjectHealthScoring default response
     mockGetProjectHealthScore.mockResolvedValue({
       overall: 75,
@@ -141,37 +163,42 @@ describe('Smart Score Tool', () => {
         deploymentReadiness: { criticalBlockers: 2, warningBlockers: 3 },
         architectureCompliance: { complianceScore: 65 },
         securityPosture: { vulnerabilityCount: 1, contentMaskingEffectiveness: 90 },
-        codeQuality: { ruleViolations: 5, patternAdherence: 75 }
-      }
+        codeQuality: { ruleViolations: 5, patternAdherence: 75 },
+      },
     });
-    
+
     // Mock manageTodoV2 default response
     mockManageTodoV2.mockResolvedValue({
-      content: [{
-        type: 'text',
-        text: '8/10 tasks completed (80%)\n2 critical/high priority tasks remaining'
-      }]
+      content: [
+        {
+          type: 'text',
+          text: '8/10 tasks completed (80%)\n2 critical/high priority tasks remaining',
+        },
+      ],
     });
-    
+
     // Mock smartGitPush default response
     mockSmartGitPush.mockResolvedValue({
       status: 'success',
-      readiness: 'ready'
+      readiness: 'ready',
     });
-    
+
     // Mock KnowledgeGraphManager responses
     mockGetProjectScoreTrends.mockResolvedValue({
       currentScore: 75,
       scoreHistory: [
         { timestamp: new Date().toISOString(), score: 70, triggerEvent: 'manual_update' },
-        { timestamp: new Date().toISOString(), score: 75, triggerEvent: 'todo_completion' }
+        { timestamp: new Date().toISOString(), score: 75, triggerEvent: 'todo_completion' },
       ],
       averageImprovement: 2.5,
       topImpactingIntents: [
-        { scoreImprovement: 5, humanRequest: 'Complete critical security tasks for deployment readiness' }
-      ]
+        {
+          scoreImprovement: 5,
+          humanRequest: 'Complete critical security tasks for deployment readiness',
+        },
+      ],
     });
-    
+
     mockGetIntentScoreTrends.mockResolvedValue({
       initialScore: 65,
       currentScore: 75,
@@ -181,12 +208,12 @@ describe('Smart Score Tool', () => {
         deploymentReadiness: 70,
         architectureCompliance: 65,
         securityPosture: 85,
-        codeQuality: 60
+        codeQuality: 60,
       },
       scoreHistory: [
         { timestamp: new Date().toISOString(), score: 65, triggerEvent: 'intent_start' },
-        { timestamp: new Date().toISOString(), score: 75, triggerEvent: 'task_completion' }
-      ]
+        { timestamp: new Date().toISOString(), score: 75, triggerEvent: 'task_completion' },
+      ],
     });
   });
 
@@ -198,7 +225,7 @@ describe('Smart Score Tool', () => {
     it('should reject invalid operation', async () => {
       const invalidInput = {
         operation: 'invalid_operation',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       await expect(smartScore(invalidInput)).rejects.toThrow();
@@ -206,7 +233,7 @@ describe('Smart Score Tool', () => {
 
     it('should reject missing required fields', async () => {
       const invalidInput = {
-        operation: 'recalculate_scores'
+        operation: 'recalculate_scores',
         // Missing required projectPath
       };
 
@@ -219,7 +246,7 @@ describe('Smart Score Tool', () => {
         projectPath: testProjectPath,
         components: ['task_completion'],
         forceUpdate: false,
-        updateSources: false // Don't trigger external tools to avoid complex mocking
+        updateSources: false, // Don't trigger external tools to avoid complex mocking
       };
 
       // This test might fail due to missing ProjectHealthScoring but that's expected
@@ -236,7 +263,7 @@ describe('Smart Score Tool', () => {
         operation: 'sync_scores',
         projectPath: testProjectPath,
         todoPath: 'TODO.md',
-        rebalanceWeights: false
+        rebalanceWeights: false,
       };
 
       try {
@@ -252,7 +279,7 @@ describe('Smart Score Tool', () => {
         projectPath: testProjectPath,
         includeHistory: true,
         checkDataFreshness: true,
-        suggestImprovements: true
+        suggestImprovements: true,
       };
 
       try {
@@ -267,7 +294,7 @@ describe('Smart Score Tool', () => {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'current_state',
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -283,7 +310,7 @@ describe('Smart Score Tool', () => {
         projectPath: testProjectPath,
         component: 'all',
         preserveHistory: true,
-        recalculateAfterReset: false
+        recalculateAfterReset: false,
       };
 
       try {
@@ -296,7 +323,7 @@ describe('Smart Score Tool', () => {
     it('should validate get_score_trends input', async () => {
       const validInput = {
         operation: 'get_score_trends',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       try {
@@ -310,7 +337,7 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'get_intent_scores',
         projectPath: testProjectPath,
-        intentId: 'test-intent-123'
+        intentId: 'test-intent-123',
       };
 
       try {
@@ -323,7 +350,7 @@ describe('Smart Score Tool', () => {
     it('should reject get_intent_scores without intentId', async () => {
       const invalidInput = {
         operation: 'get_intent_scores',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
         // Missing intentId
       };
 
@@ -333,7 +360,7 @@ describe('Smart Score Tool', () => {
     it('should use default values for optional parameters', async () => {
       const minimalInput = {
         operation: 'recalculate_scores',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       try {
@@ -347,18 +374,20 @@ describe('Smart Score Tool', () => {
 
   describe('calculateOptimalWeights Function Integration', () => {
     it('should detect backend API project type', async () => {
-      mockReadFile.mockResolvedValue(JSON.stringify({
-        name: 'api-project',
-        dependencies: { express: '^4.0.0' },
-        scripts: { test: 'jest' },
-        devDependencies: { jest: '^29.0.0' }
-      }));
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({
+          name: 'api-project',
+          dependencies: { express: '^4.0.0' },
+          scripts: { test: 'jest' },
+          devDependencies: { jest: '^29.0.0' },
+        })
+      );
 
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'current_state',
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -373,18 +402,20 @@ describe('Smart Score Tool', () => {
     });
 
     it('should detect frontend project type', async () => {
-      mockReadFile.mockResolvedValue(JSON.stringify({
-        name: 'frontend-project',
-        dependencies: { react: '^18.0.0' },
-        scripts: { test: 'jest' },
-        devDependencies: { jest: '^29.0.0' }
-      }));
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({
+          name: 'frontend-project',
+          dependencies: { react: '^18.0.0' },
+          scripts: { test: 'jest' },
+          devDependencies: { jest: '^29.0.0' },
+        })
+      );
 
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'current_state',
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -395,19 +426,21 @@ describe('Smart Score Tool', () => {
     });
 
     it('should detect library project type', async () => {
-      mockReadFile.mockResolvedValue(JSON.stringify({
-        name: 'lib-project',
-        type: 'module',
-        main: 'dist/index.js',
-        scripts: { test: 'jest' },
-        devDependencies: { jest: '^29.0.0' }
-      }));
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({
+          name: 'lib-project',
+          type: 'module',
+          main: 'dist/index.js',
+          scripts: { test: 'jest' },
+          devDependencies: { jest: '^29.0.0' },
+        })
+      );
 
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'current_state',
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -418,17 +451,19 @@ describe('Smart Score Tool', () => {
     });
 
     it('should detect testing setup', async () => {
-      mockReadFile.mockResolvedValue(JSON.stringify({
-        name: 'test-project',
-        scripts: { test: 'jest' },
-        devDependencies: { jest: '^29.0.0' }
-      }));
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({
+          name: 'test-project',
+          scripts: { test: 'jest' },
+          devDependencies: { jest: '^29.0.0' },
+        })
+      );
 
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'current_state',
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -439,11 +474,13 @@ describe('Smart Score Tool', () => {
     });
 
     it('should detect CI/CD setup', async () => {
-      mockReadFile.mockResolvedValue(JSON.stringify({
-        name: 'ci-project',
-        scripts: { test: 'jest' },
-        devDependencies: { jest: '^29.0.0' }
-      }));
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({
+          name: 'ci-project',
+          scripts: { test: 'jest' },
+          devDependencies: { jest: '^29.0.0' },
+        })
+      );
 
       // Mock CI file existence
       mockAccess.mockImplementation(async (path: string) => {
@@ -457,7 +494,7 @@ describe('Smart Score Tool', () => {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'current_state',
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -475,7 +512,7 @@ describe('Smart Score Tool', () => {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'current_state',
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -496,9 +533,9 @@ describe('Smart Score Tool', () => {
           deploymentReadiness: 0.3,
           architectureCompliance: 0.1,
           securityPosture: 0.1,
-          codeQuality: 0.0
+          codeQuality: 0.0,
         },
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -510,18 +547,20 @@ describe('Smart Score Tool', () => {
     });
 
     it('should handle CI file access errors gracefully', async () => {
-      mockReadFile.mockResolvedValue(JSON.stringify({
-        name: 'test-project',
-        scripts: { test: 'jest' }
-      }));
-      
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({
+          name: 'test-project',
+          scripts: { test: 'jest' },
+        })
+      );
+
       mockAccess.mockRejectedValue(new Error('Permission denied'));
 
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'current_state',
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -536,7 +575,7 @@ describe('Smart Score Tool', () => {
     it('should handle invalid operation names', async () => {
       const invalidInput = {
         operation: 'non_existent_operation',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       } as any;
 
       await expect(smartScore(invalidInput)).rejects.toThrow();
@@ -544,7 +583,7 @@ describe('Smart Score Tool', () => {
 
     it('should handle missing required fields', async () => {
       const invalidInput = {
-        operation: 'recalculate_scores'
+        operation: 'recalculate_scores',
         // Missing projectPath
       };
 
@@ -555,7 +594,7 @@ describe('Smart Score Tool', () => {
       const invalidInput = {
         operation: 'recalculate_scores',
         projectPath: testProjectPath,
-        components: ['invalid_component_name']
+        components: ['invalid_component_name'],
       } as any;
 
       await expect(smartScore(invalidInput)).rejects.toThrow();
@@ -565,7 +604,7 @@ describe('Smart Score Tool', () => {
       const invalidInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
-        analysisMode: 'invalid_mode'
+        analysisMode: 'invalid_mode',
       } as any;
 
       await expect(smartScore(invalidInput)).rejects.toThrow();
@@ -574,7 +613,7 @@ describe('Smart Score Tool', () => {
     it('should handle missing intentId for get_intent_scores', async () => {
       const invalidInput = {
         operation: 'get_intent_scores',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
         // Missing intentId
       };
 
@@ -587,7 +626,7 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -604,7 +643,7 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'recalculate_scores',
         projectPath: testProjectPath,
-        updateSources: true
+        updateSources: true,
       };
 
       try {
@@ -619,7 +658,7 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'recalculate_scores',
         projectPath: testProjectPath,
-        updateSources: true
+        updateSources: true,
       };
 
       try {
@@ -634,7 +673,7 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'sync_scores',
         projectPath: testProjectPath,
-        triggerTools: ['smart_git_push']
+        triggerTools: ['smart_git_push'],
       };
 
       try {
@@ -650,7 +689,7 @@ describe('Smart Score Tool', () => {
     it('should handle empty project directory', async () => {
       const validInput = {
         operation: 'diagnose_scores',
-        projectPath: '/empty/project'
+        projectPath: '/empty/project',
       };
 
       try {
@@ -666,7 +705,7 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -687,7 +726,7 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -704,7 +743,7 @@ describe('Smart Score Tool', () => {
         operation: 'reset_scores',
         projectPath: testProjectPath,
         preserveHistory: true,
-        recalculateAfterReset: false
+        recalculateAfterReset: false,
       };
 
       try {
@@ -722,7 +761,7 @@ describe('Smart Score Tool', () => {
         operation: 'reset_scores',
         projectPath: testProjectPath,
         preserveHistory: true,
-        recalculateAfterReset: false
+        recalculateAfterReset: false,
       };
 
       try {
@@ -737,18 +776,18 @@ describe('Smart Score Tool', () => {
     it('should cover all operation types', async () => {
       const operations = [
         'recalculate_scores',
-        'sync_scores', 
+        'sync_scores',
         'diagnose_scores',
         'optimize_weights',
         'reset_scores',
         'get_score_trends',
-        'get_intent_scores'
+        'get_intent_scores',
       ];
 
       for (const operation of operations) {
         const input: any = {
           operation,
-          projectPath: testProjectPath
+          projectPath: testProjectPath,
         };
 
         if (operation === 'get_intent_scores') {
@@ -771,19 +810,21 @@ describe('Smart Score Tool', () => {
         { deps: { vue: '^3.0.0' }, type: 'frontend' },
         { deps: { angular: '^15.0.0' }, type: 'frontend' },
         { deps: { electron: '^20.0.0' }, type: 'desktop' },
-        { deps: { fastify: '^4.0.0' }, type: 'backend' }
+        { deps: { fastify: '^4.0.0' }, type: 'backend' },
       ];
 
       for (const project of projectTypes) {
-        mockReadFile.mockResolvedValue(JSON.stringify({
-          name: 'test-project',
-          dependencies: project.deps
-        }));
+        mockReadFile.mockResolvedValue(
+          JSON.stringify({
+            name: 'test-project',
+            dependencies: project.deps,
+          })
+        );
 
         const input = {
           operation: 'optimize_weights',
           projectPath: testProjectPath,
-          previewOnly: true
+          previewOnly: true,
         };
 
         try {
@@ -799,16 +840,16 @@ describe('Smart Score Tool', () => {
     it('should cover tool types in triggerSourceToolUpdates', async () => {
       const tools = [
         'compare_adr_progress',
-        'analyze_content_security', 
+        'analyze_content_security',
         'validate_rules',
-        'unknown_tool'
+        'unknown_tool',
       ];
 
       for (const tool of tools) {
         const input = {
           operation: 'sync_scores',
           projectPath: testProjectPath,
-          triggerTools: [tool as any]
+          triggerTools: [tool as any],
         };
 
         try {
@@ -826,7 +867,7 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -840,7 +881,7 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -855,7 +896,7 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'reset_scores',
         projectPath: testProjectPath,
-        preserveHistory: true
+        preserveHistory: true,
       };
 
       try {
@@ -871,7 +912,13 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'recalculate_scores',
         projectPath: testProjectPath,
-        components: ['task_completion', 'deployment_readiness', 'architecture_compliance', 'security_posture', 'code_quality']
+        components: [
+          'task_completion',
+          'deployment_readiness',
+          'architecture_compliance',
+          'security_posture',
+          'code_quality',
+        ],
       };
 
       try {
@@ -883,13 +930,13 @@ describe('Smart Score Tool', () => {
 
     it('should validate weight optimization modes', async () => {
       const modes = ['current_state', 'historical_data', 'project_type'];
-      
+
       for (const mode of modes) {
         const input = {
           operation: 'optimize_weights',
           projectPath: testProjectPath,
           analysisMode: mode,
-          previewOnly: true
+          previewOnly: true,
         };
 
         try {
@@ -901,14 +948,21 @@ describe('Smart Score Tool', () => {
     });
 
     it('should validate reset component options', async () => {
-      const components = ['task_completion', 'deployment_readiness', 'architecture_compliance', 'security_posture', 'code_quality', 'all'];
-      
+      const components = [
+        'task_completion',
+        'deployment_readiness',
+        'architecture_compliance',
+        'security_posture',
+        'code_quality',
+        'all',
+      ];
+
       for (const component of components) {
         const input = {
           operation: 'reset_scores',
           projectPath: testProjectPath,
           component: component as any,
-          recalculateAfterReset: false
+          recalculateAfterReset: false,
         };
 
         try {
@@ -927,7 +981,7 @@ describe('Smart Score Tool', () => {
         { name: 'with-main', config: { name: 'test', main: 'index.mjs' } },
         { name: 'with-type', config: { name: 'test', type: 'commonjs' } },
         { name: 'with-mocha', config: { name: 'test', devDependencies: { mocha: '^10.0.0' } } },
-        { name: 'with-vitest', config: { name: 'test', devDependencies: { vitest: '^0.30.0' } } }
+        { name: 'with-vitest', config: { name: 'test', devDependencies: { vitest: '^0.30.0' } } },
       ];
 
       for (const { config } of configs) {
@@ -937,7 +991,7 @@ describe('Smart Score Tool', () => {
           operation: 'optimize_weights',
           projectPath: testProjectPath,
           analysisMode: 'current_state',
-          previewOnly: true
+          previewOnly: true,
         };
 
         try {
@@ -952,7 +1006,7 @@ describe('Smart Score Tool', () => {
 
     it('should handle different CI configurations', async () => {
       const ciPaths = ['.gitlab-ci.yml', 'azure-pipelines.yml', '.circleci'];
-      
+
       for (const ciPath of ciPaths) {
         mockAccess.mockImplementation(async (path: string) => {
           if (path.includes(ciPath)) {
@@ -965,7 +1019,7 @@ describe('Smart Score Tool', () => {
           operation: 'optimize_weights',
           projectPath: testProjectPath,
           analysisMode: 'current_state',
-          previewOnly: true
+          previewOnly: true,
         };
 
         try {
@@ -987,9 +1041,9 @@ describe('Smart Score Tool', () => {
           deploymentReadiness: 0.6,
           architectureCompliance: 0.4,
           securityPosture: 0.2,
-          codeQuality: 0.1
+          codeQuality: 0.1,
         },
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -1004,7 +1058,7 @@ describe('Smart Score Tool', () => {
       const input = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
-        previewOnly: false
+        previewOnly: false,
       };
 
       try {
@@ -1028,7 +1082,7 @@ describe('Smart Score Tool', () => {
       const input = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -1044,7 +1098,7 @@ describe('Smart Score Tool', () => {
       const input = {
         operation: 'reset_scores',
         projectPath: testProjectPath,
-        preserveHistory: true
+        preserveHistory: true,
       };
 
       try {
@@ -1060,7 +1114,7 @@ describe('Smart Score Tool', () => {
       const input = {
         operation: 'reset_scores',
         projectPath: testProjectPath,
-        preserveHistory: true
+        preserveHistory: true,
       };
 
       try {
@@ -1078,7 +1132,7 @@ describe('Smart Score Tool', () => {
         ['deployment_readiness', 'security_posture'],
         ['architecture_compliance', 'code_quality'],
         ['all'],
-        []
+        [],
       ];
 
       for (const components of componentSets) {
@@ -1086,7 +1140,7 @@ describe('Smart Score Tool', () => {
           operation: 'recalculate_scores',
           projectPath: testProjectPath,
           components: components.length > 0 ? components : undefined,
-          updateSources: false
+          updateSources: false,
         };
 
         try {
@@ -1104,7 +1158,7 @@ describe('Smart Score Tool', () => {
         ['manage_todo'],
         ['smart_git_push'],
         ['compare_adr_progress', 'analyze_content_security'],
-        ['validate_rules']
+        ['validate_rules'],
       ];
 
       for (const triggerTools of toolSets) {
@@ -1112,7 +1166,7 @@ describe('Smart Score Tool', () => {
           operation: 'sync_scores',
           projectPath: testProjectPath,
           triggerTools: triggerTools as any,
-          rebalanceWeights: Math.random() > 0.5
+          rebalanceWeights: Math.random() > 0.5,
         };
 
         try {
@@ -1128,14 +1182,14 @@ describe('Smart Score Tool', () => {
         { includeHistory: true, checkDataFreshness: true, suggestImprovements: true },
         { includeHistory: false, checkDataFreshness: false, suggestImprovements: false },
         { includeHistory: true, checkDataFreshness: false, suggestImprovements: true },
-        { includeHistory: false, checkDataFreshness: true, suggestImprovements: false }
+        { includeHistory: false, checkDataFreshness: true, suggestImprovements: false },
       ];
 
       for (const options of optionSets) {
         const input = {
           operation: 'diagnose_scores',
           projectPath: testProjectPath,
-          ...options
+          ...options,
         };
 
         try {
@@ -1154,7 +1208,7 @@ describe('Smart Score Tool', () => {
           operation: 'optimize_weights',
           projectPath: testProjectPath,
           analysisMode: analysisMode as any,
-          previewOnly: Math.random() > 0.5
+          previewOnly: Math.random() > 0.5,
         };
 
         try {
@@ -1166,15 +1220,22 @@ describe('Smart Score Tool', () => {
     });
 
     it('should test reset_scores with all components and options', async () => {
-      const components = ['task_completion', 'deployment_readiness', 'architecture_compliance', 'security_posture', 'code_quality', 'all'];
-      
+      const components = [
+        'task_completion',
+        'deployment_readiness',
+        'architecture_compliance',
+        'security_posture',
+        'code_quality',
+        'all',
+      ];
+
       for (const component of components) {
         const input = {
           operation: 'reset_scores',
           projectPath: testProjectPath,
           component: component as any,
           preserveHistory: Math.random() > 0.5,
-          recalculateAfterReset: Math.random() > 0.5
+          recalculateAfterReset: Math.random() > 0.5,
         };
 
         try {
@@ -1191,7 +1252,7 @@ describe('Smart Score Tool', () => {
       const input = {
         operation: 'get_intent_scores',
         projectPath: testProjectPath,
-        intentId: ''
+        intentId: '',
       };
 
       try {
@@ -1206,13 +1267,13 @@ describe('Smart Score Tool', () => {
         '/tmp/project with spaces',
         '/tmp/project-with-dashes',
         '/tmp/project_with_underscores',
-        '/tmp/project.with.dots'
+        '/tmp/project.with.dots',
       ];
 
       for (const path of specialPaths) {
         const input = {
           operation: 'diagnose_scores',
-          projectPath: path
+          projectPath: path,
         };
 
         try {
@@ -1225,11 +1286,11 @@ describe('Smart Score Tool', () => {
 
     it('should handle very long project paths', async () => {
       const longPath = '/very/' + 'long/'.repeat(50) + 'project/path';
-      
+
       const input = {
         operation: 'recalculate_scores',
         projectPath: longPath,
-        updateSources: false
+        updateSources: false,
       };
 
       try {
@@ -1250,9 +1311,9 @@ describe('Smart Score Tool', () => {
           deploymentReadiness: 0.0,
           architectureCompliance: 0.0,
           securityPosture: 0.0,
-          codeQuality: 0.0
+          codeQuality: 0.0,
         },
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -1271,9 +1332,9 @@ describe('Smart Score Tool', () => {
           deploymentReadiness: 0.0,
           architectureCompliance: 0.0,
           securityPosture: 0.0,
-          codeQuality: 1.0
+          codeQuality: 1.0,
         },
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -1292,9 +1353,9 @@ describe('Smart Score Tool', () => {
           deploymentReadiness: 0.2,
           architectureCompliance: 0.2,
           securityPosture: 0.2,
-          codeQuality: 0.2
+          codeQuality: 0.2,
         },
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -1313,7 +1374,7 @@ describe('Smart Score Tool', () => {
             name: 'monorepo-project',
             workspaces: ['packages/*'],
             dependencies: { lerna: '^6.0.0' },
-            devDependencies: { jest: '^29.0.0' }
+            devDependencies: { jest: '^29.0.0' },
           });
         }
         return '{}';
@@ -1323,7 +1384,7 @@ describe('Smart Score Tool', () => {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'project_type',
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -1342,13 +1403,13 @@ describe('Smart Score Tool', () => {
             types: 'dist/index.d.ts',
             scripts: {
               build: 'tsc',
-              test: 'jest'
+              test: 'jest',
             },
             devDependencies: {
               typescript: '^5.0.0',
               '@types/node': '^20.0.0',
-              jest: '^29.0.0'
-            }
+              jest: '^29.0.0',
+            },
           });
         }
         return '{}';
@@ -1358,7 +1419,7 @@ describe('Smart Score Tool', () => {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'current_state',
-        previewOnly: true
+        previewOnly: true,
       };
 
       try {
@@ -1385,10 +1446,10 @@ describe('Smart Score Tool', () => {
             deploymentReadiness: 0.25,
             architectureCompliance: 0.25,
             securityPosture: 0.125,
-            codeQuality: 0.125
+            codeQuality: 0.125,
           },
-          previewOnly: false
-        }
+          previewOnly: false,
+        },
       ];
 
       for (const input of edgeCases) {
@@ -1409,11 +1470,11 @@ describe('Smart Score Tool', () => {
         projectPath: testProjectPath,
         components: ['task_completion', 'deployment_readiness'],
         forceUpdate: false,
-        updateSources: true
+        updateSources: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -1430,11 +1491,11 @@ describe('Smart Score Tool', () => {
         projectPath: testProjectPath,
         todoPath: 'TODO.md',
         triggerTools: ['manage_todo', 'smart_git_push'],
-        rebalanceWeights: true
+        rebalanceWeights: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -1451,11 +1512,11 @@ describe('Smart Score Tool', () => {
         projectPath: testProjectPath,
         includeHistory: true,
         checkDataFreshness: true,
-        suggestImprovements: true
+        suggestImprovements: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -1476,13 +1537,13 @@ describe('Smart Score Tool', () => {
           deploymentReadiness: 0.3,
           architectureCompliance: 0.2,
           securityPosture: 0.1,
-          codeQuality: 0.1
+          codeQuality: 0.1,
         },
-        previewOnly: true
+        previewOnly: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -1496,11 +1557,11 @@ describe('Smart Score Tool', () => {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'project_type',
-        previewOnly: false
+        previewOnly: false,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -1515,11 +1576,11 @@ describe('Smart Score Tool', () => {
         projectPath: testProjectPath,
         component: 'all',
         preserveHistory: true,
-        recalculateAfterReset: true
+        recalculateAfterReset: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -1532,11 +1593,11 @@ describe('Smart Score Tool', () => {
     it('should successfully execute get_score_trends operation', async () => {
       const validInput = {
         operation: 'get_score_trends',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -1551,11 +1612,11 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'get_intent_scores',
         projectPath: testProjectPath,
-        intentId: 'test-intent-123'
+        intentId: 'test-intent-123',
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
@@ -1572,11 +1633,11 @@ describe('Smart Score Tool', () => {
         operation: 'recalculate_scores',
         projectPath: testProjectPath,
         components: ['all'],
-        updateSources: false
+        updateSources: false,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Scores Recalculated Successfully');
       expect(mockManageTodoV2).not.toHaveBeenCalled();
@@ -1586,11 +1647,11 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'sync_scores',
         projectPath: testProjectPath,
-        rebalanceWeights: false
+        rebalanceWeights: false,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Cross-Tool Score Synchronization Complete');
       expect(result.content[0].text).not.toContain('Weight Optimization Analysis');
@@ -1612,18 +1673,18 @@ describe('Smart Score Tool', () => {
           deploymentReadiness: { criticalBlockers: 5, warningBlockers: 2 },
           architectureCompliance: { complianceScore: 45 },
           securityPosture: { vulnerabilityCount: 8, contentMaskingEffectiveness: 60 },
-          codeQuality: { ruleViolations: 12, patternAdherence: 40 }
-        }
+          codeQuality: { ruleViolations: 12, patternAdherence: 40 },
+        },
       });
 
       const validInput = {
         operation: 'diagnose_scores',
         projectPath: testProjectPath,
-        suggestImprovements: true
+        suggestImprovements: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('🔴 Needs Improvement');
       expect(result.content[0].text).toContain('Stale');
@@ -1649,18 +1710,18 @@ describe('Smart Score Tool', () => {
           deploymentReadiness: { criticalBlockers: 0, warningBlockers: 1 },
           architectureCompliance: { complianceScore: 90 },
           securityPosture: { vulnerabilityCount: 0, contentMaskingEffectiveness: 98 },
-          codeQuality: { ruleViolations: 1, patternAdherence: 95 }
-        }
+          codeQuality: { ruleViolations: 1, patternAdherence: 95 },
+        },
       });
 
       const validInput = {
         operation: 'diagnose_scores',
         projectPath: testProjectPath,
-        suggestImprovements: false
+        suggestImprovements: false,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('🟢 Excellent');
       expect(result.content[0].text).toContain('Fresh');
@@ -1674,11 +1735,11 @@ describe('Smart Score Tool', () => {
         projectPath: testProjectPath,
         component: 'task_completion',
         preserveHistory: false,
-        recalculateAfterReset: false
+        recalculateAfterReset: false,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Reset Component: task_completion');
       expect(result.content[0].text).not.toContain('Backup Created');
@@ -1691,11 +1752,11 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'reset_scores',
         projectPath: testProjectPath,
-        preserveHistory: true
+        preserveHistory: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Scores Reset Successfully');
       expect(result.content[0].text).not.toContain('Backup Created');
@@ -1704,21 +1765,23 @@ describe('Smart Score Tool', () => {
 
   describe('Weight Calculation Edge Cases', () => {
     it('should handle desktop app project type', async () => {
-      mockReadFile.mockResolvedValue(JSON.stringify({
-        name: 'desktop-app',
-        dependencies: { electron: '^20.0.0' },
-        scripts: { test: 'jest' },
-        devDependencies: { jest: '^29.0.0' }
-      }));
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({
+          name: 'desktop-app',
+          dependencies: { electron: '^20.0.0' },
+          scripts: { test: 'jest' },
+          devDependencies: { jest: '^29.0.0' },
+        })
+      );
 
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
-        previewOnly: true
+        previewOnly: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Weight Optimization Preview');
     });
@@ -1732,45 +1795,49 @@ describe('Smart Score Tool', () => {
           deploymentReadiness: 0.5,
           architectureCompliance: 0.5,
           securityPosture: 0.5,
-          codeQuality: 0.5
+          codeQuality: 0.5,
         },
-        previewOnly: true
+        previewOnly: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Weight Optimization Preview');
     });
 
     it('should handle project with testing but no CI', async () => {
-      mockReadFile.mockResolvedValue(JSON.stringify({
-        name: 'test-only-project',
-        scripts: { test: 'vitest' },
-        devDependencies: { vitest: '^0.30.0' }
-      }));
-      
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({
+          name: 'test-only-project',
+          scripts: { test: 'vitest' },
+          devDependencies: { vitest: '^0.30.0' },
+        })
+      );
+
       mockAccess.mockRejectedValue(new Error('No CI files'));
 
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
         analysisMode: 'historical_data',
-        previewOnly: true
+        previewOnly: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Weight Optimization Preview');
     });
 
     it('should handle project with CI but no testing', async () => {
-      mockReadFile.mockResolvedValue(JSON.stringify({
-        name: 'ci-only-project',
-        dependencies: { express: '^4.0.0' }
-      }));
-      
+      mockReadFile.mockResolvedValue(
+        JSON.stringify({
+          name: 'ci-only-project',
+          dependencies: { express: '^4.0.0' },
+        })
+      );
+
       mockAccess.mockImplementation(async (path: string) => {
         if (path.includes('.github/workflows')) {
           return Promise.resolve();
@@ -1781,11 +1848,11 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'optimize_weights',
         projectPath: testProjectPath,
-        previewOnly: true
+        previewOnly: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Weight Optimization Preview');
     });
@@ -1798,11 +1865,11 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'recalculate_scores',
         projectPath: testProjectPath,
-        updateSources: true
+        updateSources: true,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Scores Recalculated Successfully');
       expect(result.content[0].text).toContain('manage_todo');
@@ -1814,11 +1881,11 @@ describe('Smart Score Tool', () => {
       const validInput = {
         operation: 'sync_scores',
         projectPath: testProjectPath,
-        triggerTools: ['smart_git_push']
+        triggerTools: ['smart_git_push'],
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Cross-Tool Score Synchronization Complete');
       expect(result.content[0].text).toContain('smart_git_push');
@@ -1826,19 +1893,21 @@ describe('Smart Score Tool', () => {
 
     it('should handle TODO analysis parsing edge cases', async () => {
       mockManageTodoV2.mockResolvedValueOnce({
-        content: [{
-          type: 'text',
-          text: 'No completion data available'
-        }]
+        content: [
+          {
+            type: 'text',
+            text: 'No completion data available',
+          },
+        ],
       });
 
       const validInput = {
         operation: 'sync_scores',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Cross-Tool Score Synchronization Complete');
     });
@@ -1848,16 +1917,16 @@ describe('Smart Score Tool', () => {
         currentScore: 0,
         scoreHistory: [],
         averageImprovement: 0,
-        topImpactingIntents: []
+        topImpactingIntents: [],
       });
 
       const validInput = {
         operation: 'get_score_trends',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Project Score Trends');
       expect(result.content[0].text).toContain('Current Score: 0%');
@@ -1873,19 +1942,19 @@ describe('Smart Score Tool', () => {
           deploymentReadiness: 0,
           architectureCompliance: 0,
           securityPosture: 0,
-          codeQuality: 0
+          codeQuality: 0,
         },
-        scoreHistory: []
+        scoreHistory: [],
       });
 
       const validInput = {
         operation: 'get_intent_scores',
         projectPath: testProjectPath,
-        intentId: 'empty-intent'
+        intentId: 'empty-intent',
       };
 
       const result = await smartScore(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Intent Score Analysis');
       expect(result.content[0].text).toContain('**Progress**: 0.0%');
