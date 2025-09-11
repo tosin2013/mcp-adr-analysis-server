@@ -801,7 +801,15 @@ ${Object.entries(finalWeights)
 
         // Reset scores by creating fresh instance
         const resetScoring = new ProjectHealthScoring(validatedArgs.projectPath);
-        const resetScores = await resetScoring.getProjectHealthScore();
+        let resetScores;
+        try {
+          resetScores = await resetScoring.getProjectHealthScore();
+        } catch (error) {
+          throw new McpAdrError(
+            `Failed to reset project health scores: ${error instanceof Error ? error.message : String(error)}`,
+            'SMART_SCORE_ERROR'
+          );
+        }
 
         // Recalculate if requested
         if (validatedArgs.recalculateAfterReset) {
