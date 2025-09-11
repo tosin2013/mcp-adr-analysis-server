@@ -1,6 +1,6 @@
 /**
  * Operation Queue for TodoJsonManager
- * 
+ *
  * Provides concurrency control and operation queuing to prevent race conditions
  * and ensure data consistency during rapid successive operations.
  */
@@ -11,6 +11,8 @@ export interface QueuedOperation {
   priority: number; // Higher numbers = higher priority
   timestamp: number;
   timeout?: number;
+  resolve: (value: any) => void;
+  reject: (error: Error) => void;
 }
 
 export interface OperationResult {
@@ -27,32 +29,36 @@ export class OperationQueue {
   private activeOperations: Set<string> = new Set();
   private operationTimeout: number = 30000; // 30 seconds default timeout
   private maxQueueSize: number = 100;
+  private shutdownRequested: boolean = false;
 
-  constructor(options: {
-    maxConcurrency?: number;
-    operationTimeout?: number;
-    maxQueueSize?: number;
-  } = {}) {
+  constructor(
+    options: {
+      maxConcurrency?: number;
+      operationTimeout?: number;
+      maxQueueSize?: number;
+    } = {}
+  ) {
     this.maxConcurrency = options.maxConcurrency || 1;
     this.operationTimeout = options.operationTimeout || 30000;
     this.maxQueueSize = options.maxQueueSize || 100;
+    this.shutdownRequested = false;
   }
 
   /**
    * Add operation to queue with priority
-   * 
+   *
    * @param operation - Async function to execute
    * @param priority - Operation priority (higher numbers execute first)
    * @param timeout - Optional timeout override for this operation
-   * 
+   *
    * @returns Promise resolving to the operation result
-   * 
+   *
    * @throws Error when queue is full or operation times out
-   * 
+   *
    * @example
    * ```typescript
    * const queue = new OperationQueue({ maxConcurrency: 1 });
-   * 
+   *
    * const result = await queue.enqueue(
    *   async () => await someAsyncOperation(),
    *   5, // High priority
@@ -65,44 +71,50 @@ export class OperationQueue {
     priority: number = 0,
     timeout?: number
   ): Promise<T> {
+    if (this.shutdownRequested) {
+      throw new Error('Operation queue is shutting down');
+    }
+
     if (this.queue.length >= this.maxQueueSize) {
       throw new Error(`Operation queue is full (${this.maxQueueSize} operations)`);
     }
 
     const operationId = `op_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    return new Promise((resolve, reject) => {
+
+    return new Promise<T>((resolve, reject) => {
       let isResolved = false;
-      
+      let timeoutId: NodeJS.Timeout | null = null;
+
       const queuedOp: QueuedOperation = {
         id: operationId,
-        operation: async () => {
-          try {
-            const startTime = Date.now();
-            const result = await operation();
-            const executionTime = Date.now() - startTime;
-            
-            return {
-              success: true,
-              result,
-              executionTime
-            } as OperationResult;
-          } catch (error) {
-            const executionTime = Date.now() - Date.now();
-            return {
-              success: false,
-              error: error as Error,
-              executionTime
-            } as OperationResult;
-          }
-        },
+        operation,
         priority,
         timestamp: Date.now(),
-        timeout: timeout || this.operationTimeout
+        timeout: timeout || this.operationTimeout,
+        resolve: (result: T) => {
+          if (!isResolved) {
+            isResolved = true;
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+              timeoutId = null;
+            }
+            resolve(result);
+          }
+        },
+        reject: (error: Error) => {
+          if (!isResolved) {
+            isResolved = true;
+            if (timeoutId) {
+              clearTimeout(timeoutId);
+              timeoutId = null;
+            }
+            reject(error);
+          }
+        },
       };
 
       // Set up timeout for this specific operation
-      const timeoutId = setTimeout(() => {
+      timeoutId = setTimeout(() => {
         if (!isResolved) {
           isResolved = true;
           this.removeFromQueue(operationId);
@@ -110,22 +122,9 @@ export class OperationQueue {
         }
       }, queuedOp.timeout);
 
-      // Store resolve/reject for later use
-      (queuedOp as any).resolve = (result: OperationResult) => {
-        if (!isResolved) {
-          isResolved = true;
-          clearTimeout(timeoutId);
-          if (result.success) {
-            resolve(result.result);
-          } else {
-            reject(result.error);
-          }
-        }
-      };
-
       this.queue.push(queuedOp);
       this.sortQueue();
-      
+
       // Start processing if not already running
       if (!this.processing) {
         setImmediate(() => this.processQueue());
@@ -137,60 +136,70 @@ export class OperationQueue {
    * Process operations in the queue
    */
   private async processQueue(): Promise<void> {
-    if (this.processing) return;
-    
+    if (this.processing || this.shutdownRequested) return;
+
     this.processing = true;
 
     try {
-      while (this.queue.length > 0 && this.activeOperations.size < this.maxConcurrency) {
-        const operation = this.queue.shift();
-        if (!operation) continue;
+      // For sequential processing (maxConcurrency = 1), process one at a time
+      if (this.maxConcurrency === 1) {
+        while (this.queue.length > 0 && !this.shutdownRequested) {
+          const operation = this.queue.shift();
+          if (!operation) continue;
 
-        this.activeOperations.add(operation.id);
+          this.activeOperations.add(operation.id);
 
-        // Execute operation
-        const executeOperation = async () => {
           try {
             const result = await operation.operation();
-            
-            // Resolve the promise
-            if ((operation as any).resolve) {
-              (operation as any).resolve(result);
-            }
+            operation.resolve(result);
           } catch (error) {
-            // Reject the promise
-            if ((operation as any).resolve) {
-              (operation as any).resolve({
-                success: false,
-                error: error as Error,
-                executionTime: 0
-              });
-            }
+            operation.reject(error as Error);
           } finally {
             this.activeOperations.delete(operation.id);
-            
-            // Continue processing if there are more operations and we're not at max concurrency
-            if (this.queue.length > 0 && this.activeOperations.size < this.maxConcurrency) {
-              setImmediate(() => this.processQueue());
-            } else if (this.activeOperations.size === 0) {
-              this.processing = false;
-            }
           }
-        };
+        }
+      } else {
+        // For concurrent processing, start operations up to the concurrency limit
+        while (
+          this.queue.length > 0 &&
+          this.activeOperations.size < this.maxConcurrency &&
+          !this.shutdownRequested
+        ) {
+          const operation = this.queue.shift();
+          if (!operation) continue;
 
-        // For sequential processing (maxConcurrency = 1), await each operation
-        if (this.maxConcurrency === 1) {
-          await executeOperation();
-        } else {
-          // For concurrent processing, don't await
-          executeOperation();
+          this.activeOperations.add(operation.id);
+
+          // Execute operation concurrently
+          const executeOperation = async (): Promise<void> => {
+            try {
+              const result = await operation.operation();
+              operation.resolve(result);
+            } catch (error) {
+              operation.reject(error as Error);
+            } finally {
+              this.activeOperations.delete(operation.id);
+
+              // Continue processing if there are more operations and we're not at max concurrency
+              if (
+                this.queue.length > 0 &&
+                this.activeOperations.size < this.maxConcurrency &&
+                !this.shutdownRequested
+              ) {
+                setImmediate(() => this.processQueue());
+              }
+            }
+          };
+
+          // Start the operation without awaiting
+          executeOperation().catch(() => {
+            // Error already handled in executeOperation
+          });
         }
       }
     } finally {
-      // Only set processing to false if no active operations and queue is empty
-      if (this.activeOperations.size === 0 && this.queue.length === 0) {
-        this.processing = false;
-      }
+      // Set processing to false when we're done starting operations
+      this.processing = false;
     }
   }
 
@@ -224,7 +233,7 @@ export class OperationQueue {
     return {
       queueLength: this.queue.length,
       activeOperations: this.activeOperations.size,
-      processing: this.processing
+      processing: this.processing,
     };
   }
 
@@ -232,6 +241,13 @@ export class OperationQueue {
    * Clear all pending operations
    */
   clear(): void {
+    // Reject all pending operations
+    while (this.queue.length > 0) {
+      const operation = this.queue.shift();
+      if (operation) {
+        operation.reject(new Error('Operation cancelled'));
+      }
+    }
     this.queue = [];
   }
 
@@ -239,9 +255,9 @@ export class OperationQueue {
    * Wait for all operations to complete
    */
   async drain(): Promise<void> {
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       const checkEmpty = () => {
-        if (this.queue.length === 0 && this.activeOperations.size === 0) {
+        if (this.queue.length === 0 && this.activeOperations.size === 0 && !this.processing) {
           resolve();
         } else {
           setTimeout(checkEmpty, 10);
@@ -249,6 +265,24 @@ export class OperationQueue {
       };
       checkEmpty();
     });
+  }
+
+  /**
+   * Gracefully shutdown the queue
+   */
+  async shutdown(): Promise<void> {
+    this.shutdownRequested = true;
+
+    // Cancel all pending operations
+    while (this.queue.length > 0) {
+      const operation = this.queue.shift();
+      if (operation) {
+        operation.reject(new Error('Operation cancelled due to shutdown'));
+      }
+    }
+
+    // Wait for active operations to complete
+    await this.drain();
   }
 
   /**
