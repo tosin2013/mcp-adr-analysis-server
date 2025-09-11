@@ -143,7 +143,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
       // No reason field - this was causing "Invalid input" before
     });
 
-    expect(command3Result.content[0].text).toContain('Bulk update completed');
+    expect(command3Result.content[0].text).toContain('Bulk Update Completed');
     expect(command3Result.content[0].text).toContain('Reason**: Bulk status update');
 
     // Step 3: Verify the project completion percentage reflects reality (92% as mentioned in issue)
@@ -208,7 +208,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
       taskId: taskId,
       updates: { status: 'invalid_status' },
       reason: 'Test reason'
-    })).rejects.toThrow(/Invalid input/i);
+    })).rejects.toThrow(/Invalid status/i);
 
     await expect((server as any).manageTodoJson({
       operation: 'update_task',
@@ -216,7 +216,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
       taskId: taskId,
       updates: { progressPercentage: 150 },
       reason: 'Test reason'
-    })).rejects.toThrow(/Invalid input/i);
+    })).rejects.toThrow(/Number must be less than or equal to 100/i);
 
     await expect((server as any).manageTodoJson({
       operation: 'bulk_update',

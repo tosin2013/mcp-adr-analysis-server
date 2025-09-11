@@ -24,6 +24,9 @@ import { McpAdrError } from '../types/index.js';
 import { TodoManagerError } from '../types/enhanced-errors.js';
 import { TodoJsonManager } from '../utils/todo-json-manager.js';
 import { KnowledgeGraphManager } from '../utils/knowledge-graph-manager.js';
+import { TaskIdResolver } from '../utils/task-id-resolver.js';
+import { TaskSearchEngine, SearchResult } from '../utils/task-search-engine.js';
+import { TodoValidator } from '../utils/todo-validation.js';
 
 // Task operations schema
 const CreateTaskSchema = z.object({
@@ -135,8 +138,11 @@ const FindTaskSchema = z.object({
   operation: z.literal('find_task'),
   projectPath: z.string().describe('Project root path'),
   query: z.string().describe('Search query: partial ID, title, or description'),
-  searchType: z.enum(['id', 'title', 'description', 'all', 'fuzzy', 'regex', 'multi_field']).default('all').describe('Search type'),
-  searchFields: z.array(z.enum(['title', 'description', 'tags', 'category', 'assignee'])).optional().describe('Fields to search in (for multi_field search)')
+  searchType: z.enum(['id', 'title', 'description', 'all', 'fuzzy', 'regex', 'multi_field', 'comprehensive']).default('all').describe('Search type'),
+  searchFields: z.array(z.enum(['title', 'description', 'tags', 'category', 'assignee'])).optional().describe('Fields to search in (for multi_field search)'),
+  fuzzyThreshold: z.number().min(0).max(1).default(0.3).describe('Fuzzy search tolerance (0-1, lower = stricter)'),
+  fieldWeights: z.record(z.number()).optional().describe('Field importance weights for multi-field search'),
+  showRelevanceScore: z.boolean().default(false).describe('Show relevance scores in results')
 });
 
 const ResumeTodoListSchema = z.object({
@@ -152,7 +158,8 @@ const DeleteTaskSchema = z.object({
   operation: z.literal('delete_task'),
   projectPath: z.string().describe('Project root path'),
   taskId: z.string().describe('Task ID to delete'),
-  force: z.boolean().default(false).describe('Force delete even if task has dependencies')
+  force: z.boolean().default(false).describe('Force delete even if task has dependencies'),
+  handleDependencies: z.enum(['block', 'reassign', 'delete_cascade']).default('block').describe('How to handle dependency conflicts')
 });
 
 const ArchiveTaskSchema = z.object({
@@ -176,7 +183,9 @@ const BulkDeleteSchema = z.object({
   operation: z.literal('bulk_delete'),
   projectPath: z.string().describe('Project root path'),
   taskIds: z.array(z.string()).describe('Array of task IDs to delete'),
-  confirm: z.boolean().describe('Confirmation required for bulk delete')
+  confirm: z.boolean().describe('Confirmation required for bulk delete'),
+  force: z.boolean().default(false).describe('Force delete even if tasks have dependencies'),
+  dryRun: z.boolean().default(false).describe('Preview what would be deleted without actually deleting')
 });
 
 // Main operation schema
@@ -201,28 +210,107 @@ const TodoManagementV2Schema = z.union([
 
 
 /**
+ * Helper function to resolve task IDs using enhanced resolution
+ */
+async function resolveTaskId(
+  inputId: string, 
+  todoManager: TodoJsonManager,
+  context?: { operation?: string }
+): Promise<{ success: boolean; taskId?: string; error?: string; suggestions?: string[] }> {
+  const resolver = new TaskIdResolver();
+  const data = await todoManager.loadTodoData();
+  
+  const resolution = resolver.resolveTaskId(inputId, data.tasks);
+  
+  if (resolution.success && resolution.resolvedId) {
+    return {
+      success: true,
+      taskId: resolution.resolvedId
+    };
+  }
+  
+  // Enhanced error message with context
+  const operation = context?.operation || 'operation';
+  const errorMessage = `❌ Cannot ${operation}: ${resolution.error}`;
+  
+  return {
+    success: false,
+    error: errorMessage,
+    suggestions: resolution.suggestions
+  };
+}
+
+/**
  * Main TODO management function with JSON backend
+ * 
+ * Comprehensive TODO management tool that handles all task operations
+ * with JSON-first storage, automatic markdown synchronization, and
+ * integrated project health scoring.
+ * 
+ * @param args - Operation arguments (validated against TodoManagementV2Schema)
+ * @param args.operation - The operation to perform (create_task, update_task, etc.)
+ * @param args.projectPath - Project root path for TODO data
+ * 
+ * @returns Promise resolving to operation result with formatted content
+ * 
+ * @throws {TodoManagerError} When validation fails or operation encounters errors
+ * @throws {McpAdrError} When project infrastructure is not initialized
+ * 
+ * Supported Operations:
+ * - `create_task`: Create a new task with automatic ID generation
+ * - `update_task`: Update existing task fields with changelog tracking
+ * - `bulk_update`: Update multiple tasks in a single operation
+ * - `get_tasks`: Retrieve tasks with filtering and sorting options
+ * - `find_task`: Search tasks using various search strategies
+ * - `delete_task`: Delete tasks with dependency conflict handling
+ * - `archive_task`: Archive completed tasks for reference
+ * - `bulk_delete`: Delete multiple tasks with confirmation
+ * - `undo_last`: Undo the most recent operation
+ * - `get_undo_history`: View operation history for undo operations
+ * - `get_analytics`: Get task completion and performance analytics
+ * 
+ * @example
+ * ```typescript
+ * // Create a new task
+ * const result = await manageTodoV2({
+ *   operation: 'create_task',
+ *   projectPath: '/path/to/project',
+ *   title: 'Implement user authentication',
+ *   priority: 'high',
+ *   category: 'backend'
+ * });
+ * 
+ * // Update task status
+ * const updateResult = await manageTodoV2({
+ *   operation: 'update_task',
+ *   projectPath: '/path/to/project',
+ *   taskId: 'abc123...',
+ *   updates: { status: 'completed' }
+ * });
+ * ```
  */
 export async function manageTodoV2(args: any): Promise<any> {
   try {
-    // Pre-validate priority values with enhanced error messages
-    if ('priority' in args && args.priority && 
-        !['low', 'medium', 'high', 'critical'].includes(args.priority)) {
-      const priority = args.priority;
-      const suggestion = priority === 'urgent' ? 'critical' : 
-                        priority === 'normal' ? 'medium' :
-                        priority === 'important' ? 'high' : undefined;
-      throw TodoManagerError.invalidPriority(priority, suggestion);
+    // Enhanced pre-validation using TodoValidator
+    if ('priority' in args && args.priority) {
+      const priorityResult = TodoValidator.validatePriority(args.priority);
+      if (!priorityResult.isValid && priorityResult.error) {
+        throw priorityResult.error;
+      }
     }
     
-    if ('updates' in args && args.updates && 'priority' in args.updates && 
-        args.updates.priority && 
-        !['low', 'medium', 'high', 'critical'].includes(args.updates.priority)) {
-      const priority = args.updates.priority;
-      const suggestion = priority === 'urgent' ? 'critical' : 
-                        priority === 'normal' ? 'medium' :
-                        priority === 'important' ? 'high' : undefined;
-      throw TodoManagerError.invalidPriority(priority, suggestion);
+    if ('updates' in args && args.updates && 'priority' in args.updates && args.updates.priority) {
+      const priorityResult = TodoValidator.validatePriority(args.updates.priority);
+      if (!priorityResult.isValid && priorityResult.error) {
+        throw priorityResult.error;
+      }
+    }
+
+    if ('updates' in args && args.updates && 'status' in args.updates && args.updates.status) {
+      const statusResult = TodoValidator.validateStatus(args.updates.status);
+      if (!statusResult.isValid && statusResult.error) {
+        throw statusResult.error;
+      }
     }
     
     const validatedArgs = TodoManagementV2Schema.parse(args);
@@ -231,26 +319,10 @@ export async function manageTodoV2(args: any): Promise<any> {
 
     switch (validatedArgs.operation) {
       case 'create_task': {
-        // Validate due date format if provided
-        if (validatedArgs.dueDate) {
-          const date = new Date(validatedArgs.dueDate);
-          if (isNaN(date.getTime())) {
-            throw new TodoManagerError(
-              `Invalid date format: '${validatedArgs.dueDate}'`,
-              'INVALID_DATE_FORMAT',
-              {
-                field: 'dueDate',
-                value: validatedArgs.dueDate,
-                suggestions: [
-                  {
-                    action: 'Use ISO date format',
-                    description: 'Provide dates in YYYY-MM-DD or YYYY-MM-DDTHH:MM:SS.sssZ format',
-                    example: '2024-01-15T10:00:00.000Z'
-                  }
-                ]
-              }
-            );
-          }
+        // Comprehensive validation for task creation
+        const validationResult = TodoValidator.validateCreateTask(validatedArgs);
+        if (!validationResult.isValid && validationResult.error) {
+          throw validationResult.error;
         }
         
         const taskId = await todoManager.createTask({
@@ -277,47 +349,32 @@ export async function manageTodoV2(args: any): Promise<any> {
       }
 
       case 'update_task': {
-        // Validate task ID format first
-        let taskId = validatedArgs.taskId;
+        // Use enhanced task ID resolution
+        const idResolution = await resolveTaskId(
+          validatedArgs.taskId, 
+          todoManager, 
+          { operation: 'update task' }
+        );
         
-        // Check for valid task ID format - accept any non-empty string
-        if (!taskId || taskId.trim().length === 0) {
-          throw TodoManagerError.invalidTaskId(taskId);
+        if (!idResolution.success) {
+          const suggestionText = idResolution.suggestions 
+            ? `\n\n**Suggestions:**\n${idResolution.suggestions.map(s => `• ${s}`).join('\n')}`
+            : '';
+          
+          return {
+            content: [{
+              type: 'text',
+              text: `${idResolution.error}${suggestionText}\n\n*Please check the task ID and try again.*`
+            }]
+          };
         }
         
-        // Support for UUID format or simple string IDs for backwards compatibility
-        const uuidPattern = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-        const partialUuidPattern = /^[0-9a-f]{8,}$/i;
-        const isUuidLike = uuidPattern.test(taskId) || partialUuidPattern.test(taskId);
+        const taskId = idResolution.taskId!;
         
-        // If taskId looks like a partial UUID ID, try to find the full ID
-        if (isUuidLike && taskId.length < 36) {
-          const data = await todoManager.loadTodoData();
-          const tasks = Object.values(data.tasks);
-          const matchingTasks = tasks.filter(task => task.id.startsWith(taskId.toLowerCase()));
-          
-          if (matchingTasks.length === 0) {
-            throw TodoManagerError.taskNotFound(taskId);
-          } else if (matchingTasks.length > 1) {
-            const taskList = matchingTasks.map(task => 
-              `- **${task.title}** (ID: \`${task.id}\`)`
-            ).join('\n');
-            
-            return {
-              content: [{
-                type: 'text',
-                text: `❌ Multiple tasks found with ID starting with "${taskId}"\n\n**Matching tasks:**\n${taskList}\n\n**Please use a more specific ID or the full UUID.**`
-              }]
-            };
-          }
-          
-          taskId = matchingTasks[0]!.id;
-        } else {
-          // For full UUID, verify it exists
-          const data = await todoManager.loadTodoData();
-          if (!data.tasks[taskId]) {
-            throw TodoManagerError.taskNotFound(taskId);
-          }
+        // Validate update fields
+        const updateValidationResult = TodoValidator.validateUpdateTask(validatedArgs.updates);
+        if (!updateValidationResult.isValid && updateValidationResult.error) {
+          throw updateValidationResult.error;
         }
         
         // Filter out undefined values
@@ -350,52 +407,146 @@ export async function manageTodoV2(args: any): Promise<any> {
       case 'bulk_update': {
         const data = await todoManager.loadTodoData();
         let updateCount = 0;
+        let processedCount = 0;
         const previewChanges: string[] = [];
+        const skippedTasks: Array<{ taskId: string; reason: string }> = [];
+        const successfulUpdates: string[] = [];
+        
+        // Validate that we have updates to process
+        if (!validatedArgs.updates || validatedArgs.updates.length === 0) {
+          return {
+            content: [{
+              type: 'text',
+              text: `❌ **Bulk Update Failed**\n\nNo updates provided. Please specify an array of task updates.\n\n**Example:**\n\`\`\`json\n{\n  "operation": "bulk_update",\n  "projectPath": "${validatedArgs.projectPath}",\n  "updates": [\n    { "taskId": "abc123", "status": "completed" },\n    { "taskId": "def456", "priority": "high" }\n  ]\n}\n\`\`\``
+            }]
+          };
+        }
         
         for (const update of validatedArgs.updates) {
-          const task = data.tasks[update.taskId];
+          processedCount++;
+          
+          // Use enhanced task ID resolution
+          const idResolution = await resolveTaskId(
+            update.taskId, 
+            todoManager, 
+            { operation: 'bulk update task' }
+          );
+          
+          if (!idResolution.success) {
+            skippedTasks.push({ 
+              taskId: update.taskId, 
+              reason: idResolution.error || 'Task not found' 
+            });
+            continue;
+          }
+          
+          const resolvedTaskId = idResolution.taskId!;
+          const task = data.tasks[resolvedTaskId];
           if (!task) {
-            continue; // Skip non-existent tasks
+            skippedTasks.push({ 
+              taskId: update.taskId, 
+              reason: `Task ${resolvedTaskId} not found in data` 
+            });
+            continue;
           }
 
-          // Filter out undefined values
+          // Filter out undefined values and validate updates
           const cleanUpdates: any = {};
           if (update.status !== undefined) cleanUpdates.status = update.status;
           if (update.priority !== undefined) cleanUpdates.priority = update.priority;
           if (update.assignee !== undefined) cleanUpdates.assignee = update.assignee;
           if (update.notes !== undefined) cleanUpdates.notes = update.notes;
           
+          // Skip if no actual updates provided
+          if (Object.keys(cleanUpdates).length === 0) {
+            skippedTasks.push({ 
+              taskId: update.taskId, 
+              reason: 'No valid updates provided' 
+            });
+            continue;
+          }
+          
           if (validatedArgs.dryRun) {
-            // Dry run: show what would be changed
-            const changes = Object.entries(cleanUpdates).map(([key, value]) => 
-              `${key}: ${(task as any)[key]} → ${value}`
-            ).join(', ');
-            previewChanges.push(`- **${task.title}** (${update.taskId}): ${changes}`);
+            // Dry run: show what would be changed with enhanced formatting
+            const changes = Object.entries(cleanUpdates).map(([key, value]) => {
+              const currentValue = (task as any)[key];
+              const changeIndicator = currentValue !== value ? '→' : '(no change)';
+              return `${key}: ${currentValue} ${changeIndicator} ${value}`;
+            }).join(', ');
+            
+            const shortId = resolvedTaskId.substring(0, 8);
+            previewChanges.push(`- **${task.title}** (${shortId}): ${changes}`);
             updateCount++;
           } else {
-            // Actually update the task
-            await todoManager.updateTask({
-              taskId: update.taskId,
-              updates: cleanUpdates,
-              reason: validatedArgs.reason || 'Bulk status update',
-              triggeredBy: 'tool'
-            });
-            updateCount++;
+            try {
+              // Actually update the task
+              await todoManager.updateTask({
+                taskId: resolvedTaskId,
+                updates: cleanUpdates,
+                reason: validatedArgs.reason || 'Bulk status update',
+                triggeredBy: 'tool'
+              });
+              successfulUpdates.push(`${task.title} (${resolvedTaskId.substring(0, 8)})`);
+              updateCount++;
+            } catch (error) {
+              skippedTasks.push({ 
+                taskId: update.taskId, 
+                reason: `Update failed: ${error instanceof Error ? error.message : 'Unknown error'}` 
+              });
+            }
           }
         }
 
         if (validatedArgs.dryRun) {
+          let message = `🔍 **Bulk Update Preview (Dry Run)**\n\n`;
+          
+          if (updateCount > 0) {
+            message += `**Would update ${updateCount} task${updateCount === 1 ? '' : 's'}:**\n\n${previewChanges.join('\n')}\n\n`;
+          }
+          
+          if (skippedTasks.length > 0) {
+            message += `**Skipped ${skippedTasks.length} task${skippedTasks.length === 1 ? '' : 's'}:**\n`;
+            skippedTasks.forEach(skip => {
+              message += `- ${skip.taskId}: ${skip.reason}\n`;
+            });
+            message += '\n';
+          }
+          
+          message += `**Summary:** ${processedCount} task${processedCount === 1 ? '' : 's'} processed, ${updateCount} would be updated, ${skippedTasks.length} skipped\n\n`;
+          message += `*To apply these changes, run the command again with \`dryRun: false\`*`;
+          
           return {
             content: [{
               type: 'text',
-              text: `🔍 **Bulk Update Preview (dry run)**\n\n**would update ${updateCount} tasks:**\n\n${previewChanges.join('\n')}\n\n*To apply these changes, run the command again with dryRun: false*`
+              text: message
             }]
           };
         } else {
+          let message = `✅ **Bulk Update Completed!**\n\n`;
+          
+          if (updateCount > 0) {
+            message += `**Successfully Updated ${updateCount} task${updateCount === 1 ? '' : 's'}:**\n`;
+            successfulUpdates.forEach(task => {
+              message += `- ${task}\n`;
+            });
+            message += `\n**Reason**: ${validatedArgs.reason || 'Bulk status update'}\n\n`;
+          }
+          
+          if (skippedTasks.length > 0) {
+            message += `**Skipped ${skippedTasks.length} task${skippedTasks.length === 1 ? '' : 's'}:**\n`;
+            skippedTasks.forEach(skip => {
+              message += `- ${skip.taskId}: ${skip.reason}\n`;
+            });
+            message += '\n';
+          }
+          
+          message += `**Summary:** ${processedCount} task${processedCount === 1 ? '' : 's'} processed, ${updateCount} updated, ${skippedTasks.length} skipped\n\n`;
+          message += `*All changes synced to JSON backend and TODO.md.*`;
+          
           return {
             content: [{
               type: 'text',
-              text: `✅ Bulk update completed!\n\n**Tasks Updated**: ${updateCount}\n**Reason**: ${validatedArgs.reason || 'Bulk status update'}\n\n*All changes synced to JSON backend and TODO.md.*`
+              text: message
             }]
           };
         }
@@ -764,128 +915,127 @@ Tasks with the same title retained their completion status and progress.
       case 'find_task': {
         const data = await todoManager.loadTodoData();
         const tasks = Object.values(data.tasks);
-        const query = validatedArgs.query.toLowerCase();
         
-        let matchingTasks = tasks.filter(task => {
-          switch (validatedArgs.searchType) {
-            case 'id':
-              return task.id.toLowerCase().includes(query);
-            case 'title':
-              return task.title.toLowerCase().includes(query);
-            case 'description':
-              return task.description?.toLowerCase().includes(query);
-            case 'fuzzy': {
-              // Fuzzy search using edit distance for typos
-              const fuzzyMatch = (text: string, searchTerm: string): boolean => {
-                const editDistance = (a: string, b: string): number => {
-                  const dp = Array(a.length + 1).fill(null).map(() => Array(b.length + 1).fill(0));
-                  
-                  for (let i = 0; i <= a.length; i++) dp[i]![0] = i;
-                  for (let j = 0; j <= b.length; j++) dp[0]![j] = j;
-                  
-                  for (let i = 1; i <= a.length; i++) {
-                    for (let j = 1; j <= b.length; j++) {
-                      if (a[i - 1] === b[j - 1]) {
-                        dp[i]![j] = dp[i - 1]![j - 1]!;
-                      } else {
-                        dp[i]![j] = Math.min(dp[i - 1]![j]!, dp[i]![j - 1]!, dp[i - 1]![j - 1]!) + 1;
-                      }
-                    }
-                  }
-                  return dp[a.length]![b.length]!;
-                };
-                
-                const words = text.toLowerCase().split(/\s+/);
-                const searchWords = searchTerm.toLowerCase().split(/\s+/);
-                
-                return searchWords.every(searchWord => 
-                  words.some(word => {
-                    const distance = editDistance(word, searchWord);
-                    const tolerance = Math.max(1, Math.floor(searchWord.length * 0.3)); // Allow 30% error
-                    return distance <= tolerance;
-                  })
-                );
-              };
-              
-              return fuzzyMatch(task.title, validatedArgs.query) ||
-                     fuzzyMatch(task.description || '', validatedArgs.query) ||
-                     task.tags.some(tag => fuzzyMatch(tag, validatedArgs.query));
-            }
-            case 'regex': {
-              try {
-                const regex = new RegExp(validatedArgs.query, 'i');
-                return regex.test(task.title) ||
-                       regex.test(task.description || '') ||
-                       task.tags.some(tag => regex.test(tag));
-              } catch {
-                // Invalid regex, fall back to literal search
-                return task.title.toLowerCase().includes(query) ||
-                       (task.description?.toLowerCase().includes(query) || false) ||
-                       task.tags.some(tag => tag.toLowerCase().includes(query));
-              }
-            }
-            case 'multi_field': {
-              const fields = validatedArgs.searchFields || ['title', 'description', 'tags'];
-              return fields.some(field => {
-                switch (field) {
-                  case 'title':
-                    return task.title.toLowerCase().includes(query);
-                  case 'description':
-                    return task.description?.toLowerCase().includes(query);
-                  case 'assignee':
-                    return task.assignee?.toLowerCase().includes(query);
-                  case 'category':
-                    return task.category?.toLowerCase().includes(query);
-                  case 'tags':
-                    return task.tags.some(tag => tag.toLowerCase().includes(query));
-                  default:
-                    return false;
-                }
-              });
-            }
-            case 'all':
-            default:
-              return task.id.toLowerCase().includes(query) ||
-                     task.title.toLowerCase().includes(query) ||
-                     task.description?.toLowerCase().includes(query) ||
-                     task.tags.some(tag => tag.toLowerCase().includes(query));
-          }
-        });
+        // Initialize search engine with custom fuzzy threshold
+        const searchEngine = new TaskSearchEngine(validatedArgs.fuzzyThreshold);
+        
+        let searchResults: SearchResult[] = [];
+        
+        // Execute search based on search type
+        switch (validatedArgs.searchType) {
+          case 'id':
+            const idMatches = searchEngine.searchById(validatedArgs.query, tasks);
+            searchResults = idMatches.map(task => ({
+              task,
+              relevanceScore: 1.0,
+              matchedFields: ['id']
+            }));
+            break;
+            
+          case 'title':
+            const titleMatches = searchEngine.searchByTitle(validatedArgs.query, tasks);
+            searchResults = titleMatches.map(task => ({
+              task,
+              relevanceScore: 1.0,
+              matchedFields: ['title']
+            }));
+            break;
+            
+          case 'description':
+            const descMatches = searchEngine.searchByDescription(validatedArgs.query, tasks);
+            searchResults = descMatches.map(task => ({
+              task,
+              relevanceScore: 1.0,
+              matchedFields: ['description']
+            }));
+            break;
+            
+          case 'fuzzy':
+            const fuzzyMatches = searchEngine.fuzzySearch(validatedArgs.query, tasks, validatedArgs.fuzzyThreshold);
+            searchResults = fuzzyMatches.map(task => ({
+              task,
+              relevanceScore: 0.8,
+              matchedFields: ['fuzzy']
+            }));
+            break;
+            
+          case 'regex':
+            const regexMatches = searchEngine.regexSearch(validatedArgs.query, tasks);
+            searchResults = regexMatches.map(task => ({
+              task,
+              relevanceScore: 0.9,
+              matchedFields: ['regex']
+            }));
+            break;
+            
+          case 'multi_field':
+            const fields = validatedArgs.searchFields || ['title', 'description', 'tags'];
+            searchResults = searchEngine.multiFieldSearch(
+              validatedArgs.query,
+              fields,
+              tasks,
+              validatedArgs.fieldWeights
+            );
+            break;
+            
+          case 'comprehensive':
+            searchResults = searchEngine.comprehensiveSearch(validatedArgs.query, tasks);
+            break;
+            
+          case 'all':
+          default:
+            // Default to comprehensive search for best results
+            searchResults = searchEngine.comprehensiveSearch(validatedArgs.query, tasks);
+            break;
+        }
 
-        if (matchingTasks.length === 0) {
-          // Provide search suggestions
-          const suggestions = [
-            "Try a shorter search term",
-            "Use fuzzy search for typos: searchType: 'fuzzy'",
-            "Search all fields with searchType: 'all'",
-            "Use regex patterns with searchType: 'regex'"
-          ];
+        if (searchResults.length === 0) {
+          // Generate intelligent search suggestions
+          const suggestions = searchEngine.generateSearchSuggestions(validatedArgs.query, tasks);
           
           return {
             content: [{
               type: 'text',
-              text: `❌ No tasks found matching "${validatedArgs.query}"\n\n**Search Type**: ${validatedArgs.searchType}\n**Total Tasks**: ${tasks.length}\n\n**suggestions:**\n${suggestions.map(s => `• ${s}`).join('\n')}\n\n*Try using a different query or search type.*`
+              text: `❌ No tasks found matching "${validatedArgs.query}"\n\n**Search Type**: ${validatedArgs.searchType}\n**Total Tasks**: ${tasks.length}\n\n**Suggestions:**\n${suggestions.map(s => `• ${s}`).join('\n')}\n\n*Try using a different query or search type.*`
             }]
           };
         }
 
-        const taskList = matchingTasks.map(task => {
+        // Sort results by relevance score (highest first)
+        searchResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+        // Format results with enhanced information
+        const taskList = searchResults.map((result, index) => {
+          const task = result.task;
           const dueDateStr = task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date';
           const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed';
           
-          return `**${task.title}**\n` +
-                 `  🆔 **Full ID**: \`${task.id}\`\n` +
-                 `  📋 **Short ID**: \`${task.id.substring(0, 8)}\`\n` +
-                 `  📊 Status: ${task.status} | Priority: ${task.priority}\n` +
-                 `  ${task.assignee ? `👤 Assignee: ${task.assignee} | ` : ''}📅 Due: ${dueDateStr} ${isOverdue ? '🔴 OVERDUE' : ''}\n` +
-                 `  ${task.tags.length > 0 ? `🏷️ Tags: ${task.tags.join(', ')} | ` : ''}📈 Progress: ${task.progressPercentage}%\n` +
-                 `  📝 ${task.description || 'No description'}\n`;
+          let taskInfo = `**${index + 1}. ${task.title}**\n` +
+                        `  🆔 **Full ID**: \`${task.id}\`\n` +
+                        `  📋 **Short ID**: \`${task.id.substring(0, 8)}\`\n` +
+                        `  📊 Status: ${task.status} | Priority: ${task.priority}\n` +
+                        `  ${task.assignee ? `👤 Assignee: ${task.assignee} | ` : ''}📅 Due: ${dueDateStr} ${isOverdue ? '🔴 OVERDUE' : ''}\n` +
+                        `  ${task.tags.length > 0 ? `🏷️ Tags: ${task.tags.join(', ')} | ` : ''}📈 Progress: ${task.progressPercentage}%\n`;
+          
+          // Add relevance score if requested
+          if (validatedArgs.showRelevanceScore) {
+            taskInfo += `  🎯 **Relevance**: ${(result.relevanceScore * 100).toFixed(1)}% | Matched: ${result.matchedFields.join(', ')}\n`;
+          }
+          
+          taskInfo += `  📝 ${task.description || 'No description'}\n`;
+          
+          return taskInfo;
         }).join('\n');
+
+        // Create summary with search statistics
+        const searchSummary = validatedArgs.showRelevanceScore 
+          ? `\n**Search Statistics:**\n• Average Relevance: ${(searchResults.reduce((sum, r) => sum + r.relevanceScore, 0) / searchResults.length * 100).toFixed(1)}%\n• Best Match: ${(searchResults[0]?.relevanceScore * 100).toFixed(1)}%`
+          : '';
 
         return {
           content: [{
             type: 'text',
-            text: `# 🔍 Search Results (${matchingTasks.length} found)\n\n**Query**: "${validatedArgs.query}"\n**Search Type**: ${validatedArgs.searchType}\n\n${taskList}\n\n💡 **Tip**: Copy the Full ID to use with update_task operation.`
+            text: `# 🔍 Enhanced Search Results (${searchResults.length} found)\n\n**Query**: "${validatedArgs.query}"\n**Search Type**: ${validatedArgs.searchType}${validatedArgs.fuzzyThreshold !== 0.3 ? ` | Fuzzy Threshold: ${validatedArgs.fuzzyThreshold}` : ''}\n${searchSummary}\n\n${taskList}\n\n💡 **Tip**: Copy the Full ID to use with update_task operation. Use \`showRelevanceScore: true\` to see match quality.`
           }]
         };
       }
@@ -1047,24 +1197,93 @@ ${deploymentGuidance}
       }
 
       case 'delete_task': {
-        const taskId = validatedArgs.taskId;
-        const data = await todoManager.loadTodoData();
+        // Use enhanced task ID resolution
+        const idResolution = await resolveTaskId(
+          validatedArgs.taskId, 
+          todoManager, 
+          { operation: 'delete task' }
+        );
         
-        if (!data.tasks[taskId]) {
-          throw new McpAdrError(`Task ${taskId} not found`, 'TASK_NOT_FOUND');
-        }
-
-        // Check for dependencies unless force is true
-        if (!validatedArgs.force) {
-          const dependentTasks = Object.values(data.tasks).filter(t => 
-            t.dependencies.includes(taskId) && t.status !== 'completed' && t.status !== 'cancelled'
-          );
+        if (!idResolution.success) {
+          const suggestionText = idResolution.suggestions 
+            ? `\n\n**Suggestions:**\n${idResolution.suggestions.map(s => `• ${s}`).join('\n')}`
+            : '';
           
-          if (dependentTasks.length > 0) {
-            throw new McpAdrError(
-              `Cannot delete task ${taskId} because it has active dependencies: ${dependentTasks.map(t => t.title).join(', ')}`, 
-              'TASK_HAS_DEPENDENCIES'
-            );
+          return {
+            content: [{
+              type: 'text',
+              text: `${idResolution.error}${suggestionText}\n\n*Please check the task ID and try again.*`
+            }]
+          };
+        }
+        
+        const taskId = idResolution.taskId!;
+        const data = await todoManager.loadTodoData();
+
+        // Check for dependencies and handle according to strategy
+        const dependentTasks = Object.values(data.tasks).filter(t => 
+          t.dependencies.includes(taskId) && t.status !== 'completed' && t.status !== 'cancelled'
+        );
+        
+        if (dependentTasks.length > 0 && !validatedArgs.force) {
+          const handleDependencies = validatedArgs.handleDependencies || 'block';
+          
+          switch (handleDependencies) {
+            case 'block':
+              const dependentTaskList = dependentTasks.map(t => t.title).join(', ');
+              throw new McpAdrError(
+                `Cannot delete task ${taskId} because it has active dependencies: ${dependentTaskList}`, 
+                'TASK_HAS_DEPENDENCIES'
+              );
+              
+            case 'reassign':
+              // For reassign, we need to remove the dependency but keep the tasks
+              dependentTasks.forEach(task => {
+                task.dependencies = task.dependencies.filter(depId => depId !== taskId);
+                task.updatedAt = new Date().toISOString();
+                task.changeLog.push({
+                  timestamp: new Date().toISOString(),
+                  action: 'dependency_removed',
+                  details: `Dependency on deleted task ${taskId} was removed`,
+                  modifiedBy: 'system'
+                });
+              });
+              break;
+              
+            case 'delete_cascade':
+              // Delete all dependent tasks recursively
+              const tasksToDelete = new Set([taskId]);
+              const findDependentTasks = (targetTaskId: string) => {
+                Object.values(data.tasks).forEach(task => {
+                  if (task.dependencies.includes(targetTaskId) && !tasksToDelete.has(task.id)) {
+                    tasksToDelete.add(task.id);
+                    findDependentTasks(task.id); // Recursive check
+                  }
+                });
+              };
+              
+              dependentTasks.forEach(task => {
+                tasksToDelete.add(task.id);
+                findDependentTasks(task.id);
+              });
+              
+              // Delete all tasks in the cascade
+              tasksToDelete.forEach(id => {
+                delete data.tasks[id];
+                data.sections.forEach(section => {
+                  section.tasks = section.tasks.filter(taskId => taskId !== id);
+                });
+              });
+              
+              data.metadata.lastUpdated = new Date().toISOString();
+              await todoManager.saveTodoData(data);
+              
+              return {
+                content: [{
+                  type: 'text',
+                  text: `✅ Task and ${tasksToDelete.size - 1} dependent tasks deleted successfully!\n\n**Deleted Tasks**: ${tasksToDelete.size}\n**Strategy**: Cascade delete\n\n*All changes synced to JSON backend and TODO.md.*`
+                }]
+              };
           }
         }
 
@@ -1076,7 +1295,7 @@ ${deploymentGuidance}
           section.tasks = section.tasks.filter(id => id !== taskId);
         });
 
-        // If force delete, clean up dependencies in other tasks
+        // If force delete, clean up dependencies in other tasks (legacy behavior)
         if (validatedArgs.force) {
           Object.values(data.tasks).forEach(task => {
             task.dependencies = task.dependencies.filter(depId => depId !== taskId);
@@ -1086,27 +1305,55 @@ ${deploymentGuidance}
         data.metadata.lastUpdated = new Date().toISOString();
         await todoManager.saveTodoData(data);
 
-        const forceMessage = validatedArgs.force ? ' (with dependency cleanup)' : '';
+        let strategyMessage = '';
+        if (validatedArgs.force) {
+          strategyMessage = ' (with dependency cleanup)';
+        } else if (dependentTasks.length > 0) {
+          const strategy = validatedArgs.handleDependencies || 'block';
+          strategyMessage = ` (${strategy} strategy used for ${dependentTasks.length} dependencies)`;
+        }
+        
         return {
           content: [{
             type: 'text',
-            text: `✅ Task deleted successfully${forceMessage}!\n\n**Task ID**: ${taskId}\n\n*Changes synced to JSON backend and TODO.md.*`
+            text: `✅ Task deleted successfully${strategyMessage}!\n\n**Task ID**: ${taskId}\n\n*Changes synced to JSON backend and TODO.md.*`
           }]
         };
       }
 
       case 'archive_task': {
-        const taskId = validatedArgs.taskId;
-        const data = await todoManager.loadTodoData();
+        // Use enhanced task ID resolution
+        const idResolution = await resolveTaskId(
+          validatedArgs.taskId, 
+          todoManager, 
+          { operation: 'archive task' }
+        );
         
-        if (!data.tasks[taskId]) {
-          throw new McpAdrError(`Task ${taskId} not found`, 'TASK_NOT_FOUND');
+        if (!idResolution.success) {
+          const suggestionText = idResolution.suggestions 
+            ? `\n\n**Suggestions:**\n${idResolution.suggestions.map(s => `• ${s}`).join('\n')}`
+            : '';
+          
+          return {
+            content: [{
+              type: 'text',
+              text: `${idResolution.error}${suggestionText}\n\n*Please check the task ID and try again.*`
+            }]
+          };
         }
+        
+        const taskId = idResolution.taskId!;
+        const data = await todoManager.loadTodoData();
 
         // Archive the task
         data.tasks[taskId].archived = true;
         data.tasks[taskId].archivedAt = new Date().toISOString();
         data.tasks[taskId].updatedAt = new Date().toISOString();
+        
+        // Remove from sections (archived tasks don't appear in regular sections)
+        data.sections.forEach(section => {
+          section.tasks = section.tasks.filter(id => id !== taskId);
+        });
         
         data.metadata.lastUpdated = new Date().toISOString();
         await todoManager.saveTodoData(data);
@@ -1131,16 +1378,18 @@ ${deploymentGuidance}
           };
         }
         
+        const opDetails = result.operationDetails || { operation: result.operation, description: 'Unknown operation', timestamp: new Date().toISOString(), affectedTaskIds: [] };
+        
         return {
           content: [{
             type: 'text',
-            text: `✅ Undid operation: ${result.operation.operation}!\n\n**Operation**: ${result.operation.operation}\n**Description**: ${result.operation.description}\n**Time**: ${new Date(result.operation.timestamp).toLocaleString()}\n**Affected Tasks**: ${result.operation.affectedTaskIds.length > 0 ? result.operation.affectedTaskIds.join(', ') : 'None'}\n\n*The affected tasks have been restored to their previous state.*`
+            text: `✅ Undid operation: ${result.operation}!\n\n**Operation**: ${result.operation}\n**Description**: ${opDetails.description}\n**Time**: ${new Date(opDetails.timestamp).toLocaleString()}\n**Affected Tasks**: ${opDetails.affectedTaskIds.length > 0 ? opDetails.affectedTaskIds.join(', ') : 'None'}\n\n*The affected tasks have been restored to their previous state.*`
           }]
         };
       }
 
       case 'get_undo_history': {
-        const history = await todoManager.getOperationHistory(validatedArgs.limit);
+        const history = await todoManager.getUndoHistory(validatedArgs.limit);
         
         if (history.length === 0) {
           return {
@@ -1164,35 +1413,289 @@ ${deploymentGuidance}
       }
 
       case 'bulk_delete': {
+        // Handle dry-run mode first
+        if (validatedArgs.dryRun) {
+          const data = await todoManager.loadTodoData();
+          const previewTasks: Array<{ 
+            id: string; 
+            title: string; 
+            hasDependents: boolean; 
+            dependents: string[];
+            status: string;
+            priority: string;
+          }> = [];
+          const notFoundTasks: string[] = [];
+          
+          for (const inputTaskId of validatedArgs.taskIds) {
+            const idResolution = await resolveTaskId(
+              inputTaskId, 
+              todoManager, 
+              { operation: 'bulk delete dry-run' }
+            );
+            
+            if (idResolution.success && idResolution.taskId) {
+              const task = data.tasks[idResolution.taskId];
+              if (task) {
+                // Check for dependent tasks
+                const dependentTasks = Object.values(data.tasks)
+                  .filter(t => t.dependencies.includes(idResolution.taskId!) && !validatedArgs.taskIds.includes(t.id))
+                  .map(t => `${t.title} (${t.id.substring(0, 8)})`);
+                
+                previewTasks.push({
+                  id: idResolution.taskId,
+                  title: task.title,
+                  hasDependents: dependentTasks.length > 0,
+                  dependents: dependentTasks,
+                  status: task.status,
+                  priority: task.priority
+                });
+              } else {
+                notFoundTasks.push(inputTaskId);
+              }
+            } else {
+              notFoundTasks.push(inputTaskId);
+            }
+          }
+          
+          let dryRunMessage = `🔍 **Bulk Delete Preview (Dry Run)**\n\n`;
+          
+          if (previewTasks.length > 0) {
+            dryRunMessage += `**Would delete ${previewTasks.length} task${previewTasks.length === 1 ? '' : 's'}:**\n`;
+            previewTasks.forEach(task => {
+              const shortId = task.id.substring(0, 8);
+              dryRunMessage += `- **${task.title}** (${shortId}) - ${task.status}, ${task.priority} priority`;
+              if (task.hasDependents) {
+                dryRunMessage += `\n  ⚠️ **DEPENDENCY IMPACT**: ${task.dependents.length} dependent task${task.dependents.length === 1 ? '' : 's'}: ${task.dependents.join(', ')}`;
+              }
+              dryRunMessage += '\n';
+            });
+            dryRunMessage += '\n';
+          }
+          
+          if (notFoundTasks.length > 0) {
+            dryRunMessage += `**Would skip ${notFoundTasks.length} task${notFoundTasks.length === 1 ? '' : 's'} (not found):**\n`;
+            notFoundTasks.forEach(taskId => {
+              dryRunMessage += `- ${taskId}\n`;
+            });
+            dryRunMessage += '\n';
+          }
+          
+          const hasConflicts = previewTasks.some(t => t.hasDependents);
+          if (hasConflicts && !validatedArgs.force) {
+            dryRunMessage += `🚨 **DEPENDENCY CONFLICTS DETECTED**\n`;
+            dryRunMessage += `Some tasks have dependents that would be affected. Use \`force: true\` to override.\n\n`;
+          }
+          
+          dryRunMessage += `**Impact Analysis:**\n`;
+          dryRunMessage += `- ${previewTasks.length} task${previewTasks.length === 1 ? '' : 's'} would be deleted\n`;
+          dryRunMessage += `- ${previewTasks.filter(t => t.hasDependents).length} task${previewTasks.filter(t => t.hasDependents).length === 1 ? '' : 's'} with dependency conflicts\n`;
+          dryRunMessage += `- ${notFoundTasks.length} task${notFoundTasks.length === 1 ? '' : 's'} not found\n\n`;
+          
+          dryRunMessage += `**To execute this deletion:**\n`;
+          dryRunMessage += `- Remove \`dryRun: true\` and add \`confirm: true\`\n`;
+          if (hasConflicts) {
+            dryRunMessage += `- Add \`force: true\` to ignore dependency conflicts\n`;
+          }
+          
+          return {
+            content: [{
+              type: 'text',
+              text: dryRunMessage
+            }]
+          };
+        }
+        
         if (!validatedArgs.confirm) {
-          throw new McpAdrError('Bulk delete requires confirmation. Set confirm: true to proceed.', 'CONFIRMATION_REQUIRED');
+          // Provide preview of what would be deleted
+          const data = await todoManager.loadTodoData();
+          const previewTasks: Array<{ id: string; title: string; hasDependents: boolean; dependents: string[] }> = [];
+          const notFoundTasks: string[] = [];
+          
+          for (const inputTaskId of validatedArgs.taskIds) {
+            const idResolution = await resolveTaskId(
+              inputTaskId, 
+              todoManager, 
+              { operation: 'bulk delete preview' }
+            );
+            
+            if (idResolution.success && idResolution.taskId) {
+              const task = data.tasks[idResolution.taskId];
+              if (task) {
+                // Check for dependent tasks
+                const dependentTasks = Object.values(data.tasks)
+                  .filter(t => t.dependencies.includes(idResolution.taskId!) && !validatedArgs.taskIds.includes(t.id))
+                  .map(t => `${t.title} (${t.id.substring(0, 8)})`);
+                
+                previewTasks.push({
+                  id: idResolution.taskId,
+                  title: task.title,
+                  hasDependents: dependentTasks.length > 0,
+                  dependents: dependentTasks
+                });
+              } else {
+                notFoundTasks.push(inputTaskId);
+              }
+            } else {
+              notFoundTasks.push(inputTaskId);
+            }
+          }
+          
+          let previewMessage = `⚠️ **Bulk Delete Confirmation Required**\n\n`;
+          
+          if (previewTasks.length > 0) {
+            previewMessage += `**${previewTasks.length} task${previewTasks.length === 1 ? '' : 's'} will be deleted:**\n`;
+            previewTasks.forEach(task => {
+              const shortId = task.id.substring(0, 8);
+              previewMessage += `- **${task.title}** (${shortId})`;
+              if (task.hasDependents) {
+                previewMessage += ` ⚠️ **HAS DEPENDENTS**: ${task.dependents.join(', ')}`;
+              }
+              previewMessage += '\n';
+            });
+            previewMessage += '\n';
+          }
+          
+          if (notFoundTasks.length > 0) {
+            previewMessage += `**${notFoundTasks.length} task${notFoundTasks.length === 1 ? '' : 's'} not found:**\n`;
+            notFoundTasks.forEach(taskId => {
+              previewMessage += `- ${taskId}\n`;
+            });
+            previewMessage += '\n';
+          }
+          
+          const hasConflicts = previewTasks.some(t => t.hasDependents);
+          if (hasConflicts) {
+            previewMessage += `🚨 **WARNING**: Some tasks have dependent tasks that will be affected!\n\n`;
+          }
+          
+          previewMessage += `**To proceed with deletion, run the command again with \`confirm: true\`**\n`;
+          previewMessage += `**To force delete (ignoring dependencies), add \`force: true\`**`;
+          
+          return {
+            content: [{
+              type: 'text',
+              text: previewMessage
+            }]
+          };
         }
 
+        // Proceed with actual deletion
         const data = await todoManager.loadTodoData();
         let deletedCount = 0;
+        let processedCount = 0;
         const notFoundTasks: string[] = [];
+        const resolvedTaskIds: string[] = [];
+        const deletedTasks: Array<{ id: string; title: string }> = [];
+        const dependencyConflicts: Array<{ taskId: string; dependents: string[] }> = [];
 
-        for (const taskId of validatedArgs.taskIds) {
-          if (data.tasks[taskId]) {
-            delete data.tasks[taskId];
-            // Remove from sections
-            data.sections.forEach(section => {
-              section.tasks = section.tasks.filter(id => id !== taskId);
-            });
-            deletedCount++;
+        // First, resolve all task IDs and check for conflicts
+        for (const inputTaskId of validatedArgs.taskIds) {
+          processedCount++;
+          
+          const idResolution = await resolveTaskId(
+            inputTaskId, 
+            todoManager, 
+            { operation: 'bulk delete task' }
+          );
+          
+          if (idResolution.success && idResolution.taskId) {
+            const task = data.tasks[idResolution.taskId];
+            if (task) {
+              // Check for dependency conflicts unless force is enabled
+              if (!validatedArgs.force) {
+                const dependentTasks = Object.values(data.tasks)
+                  .filter(t => t.dependencies.includes(idResolution.taskId!) && !validatedArgs.taskIds.includes(t.id))
+                  .map(t => `${t.title} (${t.id.substring(0, 8)})`);
+                
+                if (dependentTasks.length > 0) {
+                  dependencyConflicts.push({
+                    taskId: inputTaskId,
+                    dependents: dependentTasks
+                  });
+                  continue;
+                }
+              }
+              
+              resolvedTaskIds.push(idResolution.taskId);
+              deletedTasks.push({
+                id: idResolution.taskId,
+                title: task.title
+              });
+            } else {
+              notFoundTasks.push(inputTaskId);
+            }
           } else {
-            notFoundTasks.push(taskId);
+            notFoundTasks.push(inputTaskId);
           }
         }
 
-        data.metadata.lastUpdated = new Date().toISOString();
-        await todoManager.saveTodoData(data);
-
-        let resultMessage = `✅ ${deletedCount} tasks deleted successfully!\n\n**Tasks Deleted**: ${deletedCount}`;
-        if (notFoundTasks.length > 0) {
-          resultMessage += `\n**Not Found**: ${notFoundTasks.length} tasks were not found`;
+        // If there are dependency conflicts and force is not enabled, return error
+        if (dependencyConflicts.length > 0 && !validatedArgs.force) {
+          let conflictMessage = `❌ **Bulk Delete Blocked - Dependency Conflicts**\n\n`;
+          conflictMessage += `**${dependencyConflicts.length} task${dependencyConflicts.length === 1 ? '' : 's'} cannot be deleted due to dependencies:**\n`;
+          
+          dependencyConflicts.forEach(conflict => {
+            conflictMessage += `- **${conflict.taskId}** has dependents: ${conflict.dependents.join(', ')}\n`;
+          });
+          
+          conflictMessage += `\n**Options:**\n`;
+          conflictMessage += `- Add \`force: true\` to delete anyway (may break dependencies)\n`;
+          conflictMessage += `- Delete dependent tasks first\n`;
+          conflictMessage += `- Remove these tasks from the bulk delete operation`;
+          
+          return {
+            content: [{
+              type: 'text',
+              text: conflictMessage
+            }]
+          };
         }
-        resultMessage += `\n\n*Changes synced to JSON backend and TODO.md.*`;
+
+        // Perform the actual deletions using TodoJsonManager's delete method
+        for (const taskId of resolvedTaskIds) {
+          try {
+            const result = await todoManager.deleteTask(taskId);
+            if (result.success) {
+              deletedCount++;
+            }
+          } catch (error) {
+            // If individual delete fails, continue with others but track the failure
+            // Track failed deletion for reporting
+            if (process.env['NODE_ENV'] === 'development') {
+              console.error(`Failed to delete task ${taskId}:`, error);
+            }
+          }
+        }
+
+        // Build result message
+        let resultMessage = `✅ **Bulk Delete Completed!**\n\n`;
+        
+        if (deletedCount > 0) {
+          resultMessage += `**Successfully Deleted ${deletedCount} task${deletedCount === 1 ? '' : 's'}:**\n`;
+          deletedTasks.slice(0, deletedCount).forEach(task => {
+            resultMessage += `- ${task.title} (${task.id.substring(0, 8)})\n`;
+          });
+          resultMessage += '\n';
+        }
+        
+        if (dependencyConflicts.length > 0 && validatedArgs.force) {
+          resultMessage += `**⚠️ Forced deletion with dependency conflicts:**\n`;
+          dependencyConflicts.forEach(conflict => {
+            resultMessage += `- ${conflict.taskId} (had dependents: ${conflict.dependents.join(', ')})\n`;
+          });
+          resultMessage += '\n';
+        }
+        
+        if (notFoundTasks.length > 0) {
+          resultMessage += `**Not Found (${notFoundTasks.length} task${notFoundTasks.length === 1 ? '' : 's'}):**\n`;
+          notFoundTasks.forEach(taskId => {
+            resultMessage += `- ${taskId}\n`;
+          });
+          resultMessage += '\n';
+        }
+        
+        resultMessage += `**Summary:** ${processedCount} task${processedCount === 1 ? '' : 's'} processed, ${deletedCount} deleted, ${notFoundTasks.length + dependencyConflicts.length} skipped\n\n`;
+        resultMessage += `*Changes synced to JSON backend and TODO.md.*`;
 
         return {
           content: [{
