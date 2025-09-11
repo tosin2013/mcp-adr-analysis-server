@@ -39,7 +39,7 @@ describe('PerformanceOptimizer', () => {
         autoComplete: false,
         version: 1,
         changeLog: [],
-        comments: []
+        comments: [],
       },
       {
         id: 'task-2',
@@ -67,7 +67,7 @@ describe('PerformanceOptimizer', () => {
         autoComplete: false,
         version: 1,
         changeLog: [],
-        comments: []
+        comments: [],
       },
       {
         id: 'task-3',
@@ -95,7 +95,7 @@ describe('PerformanceOptimizer', () => {
         autoComplete: false,
         version: 1,
         changeLog: [],
-        comments: []
+        comments: [],
       },
       {
         id: 'task-4',
@@ -124,8 +124,8 @@ describe('PerformanceOptimizer', () => {
         autoComplete: false,
         version: 1,
         changeLog: [],
-        comments: []
-      }
+        comments: [],
+      },
     ];
 
     testData = {
@@ -134,7 +134,7 @@ describe('PerformanceOptimizer', () => {
         lastUpdated: '2024-01-01T00:00:00.000Z',
         totalTasks: testTasks.length,
         completedTasks: testTasks.filter(t => t.status === 'completed').length,
-        autoSyncEnabled: true
+        autoSyncEnabled: true,
       },
       tasks: Object.fromEntries(testTasks.map(task => [task.id, task])),
       sections: [
@@ -143,39 +143,39 @@ describe('PerformanceOptimizer', () => {
           title: 'Pending Tasks',
           order: 1,
           collapsed: false,
-          tasks: testTasks.filter(t => t.status === 'pending').map(t => t.id)
+          tasks: testTasks.filter(t => t.status === 'pending').map(t => t.id),
         },
         {
           id: 'in_progress',
           title: 'In Progress',
           order: 2,
           collapsed: false,
-          tasks: testTasks.filter(t => t.status === 'in_progress').map(t => t.id)
+          tasks: testTasks.filter(t => t.status === 'in_progress').map(t => t.id),
         },
         {
           id: 'completed',
           title: 'Completed',
           order: 3,
           collapsed: false,
-          tasks: testTasks.filter(t => t.status === 'completed').map(t => t.id)
-        }
+          tasks: testTasks.filter(t => t.status === 'completed').map(t => t.id),
+        },
       ],
       scoringSync: {
         lastScoreUpdate: '2024-01-01T00:00:00.000Z',
         taskCompletionScore: 50,
         priorityWeightedScore: 60,
         criticalTasksRemaining: 1,
-        scoreHistory: []
+        scoreHistory: [],
       },
       knowledgeGraphSync: {
         lastSync: '2024-01-01T00:00:00.000Z',
         linkedIntents: [],
-        pendingUpdates: []
+        pendingUpdates: [],
       },
       automationRules: [],
       templates: [],
       recurringTasks: [],
-      operationHistory: []
+      operationHistory: [],
     };
   });
 
@@ -186,7 +186,7 @@ describe('PerformanceOptimizer', () => {
   describe('Filtering', () => {
     it('should filter by status correctly', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
-        status: 'completed'
+        status: 'completed',
       });
 
       expect(result.items).toHaveLength(2);
@@ -195,7 +195,7 @@ describe('PerformanceOptimizer', () => {
 
     it('should filter by priority correctly', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
-        priority: 'high'
+        priority: 'high',
       });
 
       expect(result.items).toHaveLength(1);
@@ -204,7 +204,7 @@ describe('PerformanceOptimizer', () => {
 
     it('should filter by assignee correctly', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
-        assignee: 'alice'
+        assignee: 'alice',
       });
 
       expect(result.items).toHaveLength(2);
@@ -213,7 +213,7 @@ describe('PerformanceOptimizer', () => {
 
     it('should filter by category correctly', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
-        category: 'development'
+        category: 'development',
       });
 
       expect(result.items).toHaveLength(1);
@@ -222,7 +222,7 @@ describe('PerformanceOptimizer', () => {
 
     it('should filter by hasDeadline correctly', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
-        hasDeadline: true
+        hasDeadline: true,
       });
 
       expect(result.items).toHaveLength(2);
@@ -230,8 +230,62 @@ describe('PerformanceOptimizer', () => {
     });
 
     it('should filter by overdue correctly', async () => {
+      // Use a specific date context to make the test deterministic
+      // Set current date to 2024-01-10, so task-3 (due 2023-12-31) is overdue
+      // but task-1 (due 2024-01-15) is not overdue yet
+      const dateContext = { currentDate: new Date('2024-01-10T00:00:00.000Z') };
+
+      const result = await PerformanceOptimizer.getOptimizedTasks(
+        testData,
+        {
+          overdue: true,
+        },
+        undefined,
+        undefined,
+        dateContext
+      );
+
+      expect(result.items).toHaveLength(1);
+      expect(result.items[0]!.id).toBe('task-3');
+    });
+
+    it('should filter by overdue correctly with different date contexts', async () => {
+      // Test with date context where both tasks are overdue
+      const futureDateContext = { currentDate: new Date('2024-01-20T00:00:00.000Z') };
+
+      const futureResult = await PerformanceOptimizer.getOptimizedTasks(
+        testData,
+        {
+          overdue: true,
+        },
+        undefined,
+        undefined,
+        futureDateContext
+      );
+
+      expect(futureResult.items).toHaveLength(2);
+      expect(futureResult.items.map(t => t.id).sort()).toEqual(['task-1', 'task-3']);
+
+      // Test with date context where no tasks are overdue
+      const pastDateContext = { currentDate: new Date('2023-12-01T00:00:00.000Z') };
+
+      const pastResult = await PerformanceOptimizer.getOptimizedTasks(
+        testData,
+        {
+          overdue: true,
+        },
+        undefined,
+        undefined,
+        pastDateContext
+      );
+
+      expect(pastResult.items).toHaveLength(0);
+    });
+
+    it('should use dateContext from filters when provided', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
-        overdue: true
+        overdue: true,
+        dateContext: { currentDate: new Date('2024-01-10T00:00:00.000Z') },
       });
 
       expect(result.items).toHaveLength(1);
@@ -240,7 +294,7 @@ describe('PerformanceOptimizer', () => {
 
     it('should filter by tags correctly', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
-        tags: ['urgent']
+        tags: ['urgent'],
       });
 
       expect(result.items).toHaveLength(1);
@@ -249,7 +303,7 @@ describe('PerformanceOptimizer', () => {
 
     it('should filter by archived status correctly', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
-        archived: false
+        archived: false,
       });
 
       expect(result.items).toHaveLength(3);
@@ -258,7 +312,7 @@ describe('PerformanceOptimizer', () => {
 
     it('should filter by search term correctly', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
-        search: 'critical'
+        search: 'critical',
       });
 
       expect(result.items).toHaveLength(1);
@@ -268,7 +322,7 @@ describe('PerformanceOptimizer', () => {
     it('should combine multiple filters correctly', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
         status: 'completed',
-        archived: false
+        archived: false,
       });
 
       expect(result.items).toHaveLength(1);
@@ -312,7 +366,7 @@ describe('PerformanceOptimizer', () => {
       // Tasks with due dates should come first, sorted by date
       const tasksWithDates = result.items.filter(task => task.dueDate);
       expect(tasksWithDates).toHaveLength(2);
-      
+
       const dates = tasksWithDates.map(task => new Date(task.dueDate!).getTime());
       expect(dates[0]).toBeLessThan(dates[1]!);
     });
@@ -345,12 +399,10 @@ describe('PerformanceOptimizer', () => {
 
   describe('Pagination', () => {
     it('should paginate results correctly', async () => {
-      const result = await PerformanceOptimizer.getOptimizedTasks(
-        testData,
-        {},
-        undefined,
-        { page: 1, pageSize: 2 }
-      );
+      const result = await PerformanceOptimizer.getOptimizedTasks(testData, {}, undefined, {
+        page: 1,
+        pageSize: 2,
+      });
 
       expect(result.items).toHaveLength(2);
       expect(result.totalItems).toBe(4);
@@ -362,12 +414,10 @@ describe('PerformanceOptimizer', () => {
     });
 
     it('should handle second page correctly', async () => {
-      const result = await PerformanceOptimizer.getOptimizedTasks(
-        testData,
-        {},
-        undefined,
-        { page: 2, pageSize: 2 }
-      );
+      const result = await PerformanceOptimizer.getOptimizedTasks(testData, {}, undefined, {
+        page: 2,
+        pageSize: 2,
+      });
 
       expect(result.items).toHaveLength(2);
       expect(result.currentPage).toBe(2);
@@ -376,12 +426,10 @@ describe('PerformanceOptimizer', () => {
     });
 
     it('should handle empty page correctly', async () => {
-      const result = await PerformanceOptimizer.getOptimizedTasks(
-        testData,
-        {},
-        undefined,
-        { page: 10, pageSize: 2 }
-      );
+      const result = await PerformanceOptimizer.getOptimizedTasks(testData, {}, undefined, {
+        page: 10,
+        pageSize: 2,
+      });
 
       expect(result.items).toHaveLength(0);
       expect(result.currentPage).toBe(10);
@@ -402,17 +450,17 @@ describe('PerformanceOptimizer', () => {
   describe('Caching', () => {
     it('should cache filtered results', async () => {
       const filters = { status: 'completed' as const };
-      
+
       // First call
       const startTime1 = Date.now();
       const result1 = await PerformanceOptimizer.getOptimizedTasks(testData, filters);
       const endTime1 = Date.now();
-      
+
       // Second call (should use cache)
       const startTime2 = Date.now();
       const result2 = await PerformanceOptimizer.getOptimizedTasks(testData, filters);
       const endTime2 = Date.now();
-      
+
       expect(result1.items).toEqual(result2.items);
       // Second call should be faster (cached)
       expect(endTime2 - startTime2).toBeLessThanOrEqual(endTime1 - startTime1);
@@ -420,22 +468,22 @@ describe('PerformanceOptimizer', () => {
 
     it('should invalidate cache when data changes', async () => {
       const filters = { status: 'completed' as const };
-      
+
       // First call
       const result1 = await PerformanceOptimizer.getOptimizedTasks(testData, filters);
-      
+
       // Modify data
       testData.metadata.lastUpdated = new Date().toISOString();
-      
+
       // Second call (should not use stale cache)
       const result2 = await PerformanceOptimizer.getOptimizedTasks(testData, filters);
-      
+
       expect(result1.items).toEqual(result2.items); // Same data, but fresh calculation
     });
 
     it('should provide cache statistics', () => {
       const stats = PerformanceOptimizer.getCacheStats();
-      
+
       expect(stats).toHaveProperty('size');
       expect(stats).toHaveProperty('maxSize');
       expect(typeof stats.size).toBe('number');
@@ -445,12 +493,12 @@ describe('PerformanceOptimizer', () => {
     it('should clear cache correctly', async () => {
       // Add something to cache
       await PerformanceOptimizer.getOptimizedTasks(testData, { status: 'completed' });
-      
+
       let stats = PerformanceOptimizer.getCacheStats();
       expect(stats.size).toBeGreaterThan(0);
-      
+
       PerformanceOptimizer.clearCache();
-      
+
       stats = PerformanceOptimizer.getCacheStats();
       expect(stats.size).toBe(0);
     });
@@ -464,22 +512,22 @@ describe('PerformanceOptimizer', () => {
       expect(analytics.completedTasks).toBe(2);
       expect(analytics.completionPercentage).toBe(50);
       expect(analytics.criticalTasksRemaining).toBe(1);
-      
+
       expect(analytics.priorityDistribution).toEqual({
         low: 1,
         medium: 1,
         high: 1,
-        critical: 1
+        critical: 1,
       });
-      
+
       expect(analytics.statusDistribution).toEqual({
         pending: 1,
         in_progress: 1,
         completed: 2,
         blocked: 0,
-        cancelled: 0
+        cancelled: 0,
       });
-      
+
       expect(analytics.averageTaskAge).toBeGreaterThan(0);
     });
 
@@ -487,7 +535,7 @@ describe('PerformanceOptimizer', () => {
       const emptyData = {
         ...testData,
         tasks: {},
-        metadata: { ...testData.metadata, totalTasks: 0, completedTasks: 0 }
+        metadata: { ...testData.metadata, totalTasks: 0, completedTasks: 0 },
       };
 
       const analytics = await PerformanceOptimizer.calculateOptimizedAnalytics(emptyData);
@@ -504,7 +552,7 @@ describe('PerformanceOptimizer', () => {
       // Create a large dataset
       const largeTaskCount = 1000;
       const largeTasks: Record<string, TodoTask> = {};
-      
+
       for (let i = 0; i < largeTaskCount; i++) {
         const taskId = `large-task-${i}`;
         largeTasks[taskId] = {
@@ -512,14 +560,15 @@ describe('PerformanceOptimizer', () => {
           id: taskId,
           title: `Large Task ${i}`,
           status: i % 3 === 0 ? 'completed' : i % 3 === 1 ? 'in_progress' : 'pending',
-          priority: i % 4 === 0 ? 'critical' : i % 4 === 1 ? 'high' : i % 4 === 2 ? 'medium' : 'low'
+          priority:
+            i % 4 === 0 ? 'critical' : i % 4 === 1 ? 'high' : i % 4 === 2 ? 'medium' : 'low',
         };
       }
 
       const largeData = {
         ...testData,
         tasks: largeTasks,
-        metadata: { ...testData.metadata, totalTasks: largeTaskCount }
+        metadata: { ...testData.metadata, totalTasks: largeTaskCount },
       };
 
       const startTime = Date.now();
@@ -540,7 +589,7 @@ describe('PerformanceOptimizer', () => {
       // Create a large dataset
       const largeTaskCount = 5000;
       const largeTasks: Record<string, TodoTask> = {};
-      
+
       for (let i = 0; i < largeTaskCount; i++) {
         const taskId = `large-task-${i}`;
         largeTasks[taskId] = {
@@ -548,14 +597,14 @@ describe('PerformanceOptimizer', () => {
           id: taskId,
           title: `Large Task ${i}`,
           status: i % 2 === 0 ? 'completed' : 'pending',
-          priority: i % 4 === 0 ? 'critical' : 'medium'
+          priority: i % 4 === 0 ? 'critical' : 'medium',
         };
       }
 
       const largeData = {
         ...testData,
         tasks: largeTasks,
-        metadata: { ...testData.metadata, totalTasks: largeTaskCount }
+        metadata: { ...testData.metadata, totalTasks: largeTaskCount },
       };
 
       const startTime = Date.now();
@@ -572,7 +621,7 @@ describe('PerformanceOptimizer', () => {
     it('should handle empty task list', async () => {
       const emptyData = {
         ...testData,
-        tasks: {}
+        tasks: {},
       };
 
       const result = await PerformanceOptimizer.getOptimizedTasks(emptyData);
@@ -584,7 +633,7 @@ describe('PerformanceOptimizer', () => {
 
     it('should handle invalid filter values gracefully', async () => {
       const result = await PerformanceOptimizer.getOptimizedTasks(testData, {
-        status: 'invalid-status' as any
+        status: 'invalid-status' as any,
       });
 
       expect(result.items).toHaveLength(0);
@@ -614,12 +663,12 @@ describe('PerformanceOptimizer', () => {
         autoComplete: false,
         version: 1,
         changeLog: [],
-        comments: []
+        comments: [],
       };
 
       const minimalData = {
         ...testData,
-        tasks: { 'minimal-task': minimalTask }
+        tasks: { 'minimal-task': minimalTask },
       };
 
       const result = await PerformanceOptimizer.getOptimizedTasks(minimalData);
