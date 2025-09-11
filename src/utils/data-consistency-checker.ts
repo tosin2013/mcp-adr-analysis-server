@@ -130,7 +130,30 @@ export class DataConsistencyChecker {
 
     // Collect all task IDs from sections
     for (const section of data.sections) {
-      for (const taskId of section.tasks) {
+      // Add null/undefined checking for section.tasks to prevent crashes
+      if (!section || !Array.isArray(section.tasks)) {
+        // Auto-fix: initialize empty tasks array
+        if (options.autoFix && section) {
+          section.tasks = [];
+          result.fixedIssues.push(`Initialized empty tasks array for section ${section.id}`);
+          // Continue processing this section now that it's fixed
+        } else {
+          // Only report error if not auto-fixing
+          result.errors.push({
+            type: 'INVALID_SECTION_TASKS',
+            message: `Section ${section?.id || 'unknown'} has invalid tasks array (null, undefined, or not an array)`,
+            severity: 'critical',
+            affectedItems: [section?.id || 'unknown'],
+            suggestedFix: 'Initialize section tasks as an empty array',
+          });
+          continue;
+        }
+      }
+
+      // Create a copy of tasks array to avoid modification during iteration
+      const sectionTasks = [...section.tasks];
+
+      for (const taskId of sectionTasks) {
         if (tasksInSections.has(taskId)) {
           result.errors.push({
             type: 'DUPLICATE_TASK_IN_SECTIONS',
@@ -144,20 +167,21 @@ export class DataConsistencyChecker {
 
         // Check if task exists in tasks object
         if (!tasksInObject.has(taskId)) {
-          result.errors.push({
-            type: 'MISSING_TASK_OBJECT',
-            message: `Task ${taskId} referenced in section ${section.id} but not found in tasks object`,
-            severity: 'critical',
-            affectedItems: [taskId],
-            suggestedFix: 'Remove reference from section or restore task object',
-          });
-
-          // Auto-fix: remove from section
+          // Auto-fix: remove from section atomically
           if (options.autoFix) {
             section.tasks = section.tasks.filter(id => id !== taskId);
             result.fixedIssues.push(
               `Removed orphaned task reference ${taskId} from section ${section.id}`
             );
+          } else {
+            // Only report error if not auto-fixing
+            result.errors.push({
+              type: 'MISSING_TASK_OBJECT',
+              message: `Task ${taskId} referenced in section ${section.id} but not found in tasks object`,
+              severity: 'critical',
+              affectedItems: [taskId],
+              suggestedFix: 'Remove reference from section or restore task object',
+            });
           }
         }
       }
@@ -167,7 +191,8 @@ export class DataConsistencyChecker {
     for (const taskId of tasksInObject) {
       if (!tasksInSections.has(taskId)) {
         const task = data.tasks[taskId];
-        if (task && !task.archived) {
+        // Add comprehensive null/undefined checking for task object
+        if (task && typeof task === 'object' && !task.archived) {
           result.warnings.push({
             type: 'TASK_NOT_IN_SECTION',
             message: `Task ${taskId} exists but is not in any section`,
@@ -175,10 +200,10 @@ export class DataConsistencyChecker {
             recommendation: 'Add task to appropriate section based on status',
           });
 
-          // Auto-fix: add to appropriate section
+          // Auto-fix: add to appropriate section atomically
           if (options.autoFix) {
             const targetSection = data.sections.find(s => s.id === task.status) || data.sections[0];
-            if (targetSection) {
+            if (targetSection && Array.isArray(targetSection.tasks)) {
               targetSection.tasks.push(taskId);
               result.fixedIssues.push(`Added task ${taskId} to section ${targetSection.id}`);
             }
@@ -221,6 +246,9 @@ export class DataConsistencyChecker {
     const originalTotalTasks = data.metadata.totalTasks;
     const originalCompletedTasks = data.metadata.completedTasks;
 
+    // Perform atomic metadata updates to prevent inconsistent state
+    const metadataUpdates: Array<{ field: string; from: number; to: number }> = [];
+
     if (data.metadata.totalTasks !== actualTotal) {
       // Only add warning if not auto-fixing, to prevent double-counting
       if (!options.autoFix) {
@@ -230,13 +258,12 @@ export class DataConsistencyChecker {
           affectedItems: ['metadata'],
           recommendation: 'Update metadata to reflect actual task count',
         });
-      }
-
-      if (options.autoFix) {
-        data.metadata.totalTasks = actualTotal;
-        result.fixedIssues.push(
-          `Updated metadata totalTasks from ${originalTotalTasks} to ${actualTotal}`
-        );
+      } else {
+        metadataUpdates.push({
+          field: 'totalTasks',
+          from: originalTotalTasks,
+          to: actualTotal,
+        });
       }
     }
 
@@ -249,13 +276,42 @@ export class DataConsistencyChecker {
           affectedItems: ['metadata'],
           recommendation: 'Update metadata to reflect actual completed task count',
         });
+      } else {
+        metadataUpdates.push({
+          field: 'completedTasks',
+          from: originalCompletedTasks,
+          to: actualCompleted,
+        });
       }
+    }
 
-      if (options.autoFix) {
-        data.metadata.completedTasks = actualCompleted;
-        result.fixedIssues.push(
-          `Updated metadata completedTasks from ${originalCompletedTasks} to ${actualCompleted}`
-        );
+    // Apply all metadata updates atomically
+    if (options.autoFix && metadataUpdates.length > 0) {
+      try {
+        // Apply all updates in a single operation to ensure atomicity
+        for (const update of metadataUpdates) {
+          if (update.field === 'totalTasks') {
+            data.metadata.totalTasks = update.to;
+          } else if (update.field === 'completedTasks') {
+            data.metadata.completedTasks = update.to;
+          }
+        }
+
+        // Report fixes only after successful atomic update
+        for (const update of metadataUpdates) {
+          result.fixedIssues.push(
+            `Updated metadata ${update.field} from ${update.from} to ${update.to}`
+          );
+        }
+      } catch (error) {
+        // If atomic update fails, report error and don't claim fixes were made
+        result.errors.push({
+          type: 'METADATA_UPDATE_FAILED',
+          message: `Failed to update metadata atomically: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          severity: 'high',
+          affectedItems: ['metadata'],
+          suggestedFix: 'Check metadata object structure and permissions',
+        });
       }
     }
   }
