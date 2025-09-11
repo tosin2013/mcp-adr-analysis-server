@@ -1,6 +1,6 @@
 /**
  * Performance Optimizer for TodoJsonManager
- * 
+ *
  * Provides caching, efficient filtering, and pagination optimizations
  * for handling large datasets efficiently.
  */
@@ -60,36 +60,36 @@ export class PerformanceOptimizer {
     pagination?: PaginationOptions
   ): Promise<PaginatedResult<TodoTask>> {
     const startTime = Date.now();
-    
+
     // Generate cache key
     const cacheKey = this.generateCacheKey(filters, sort);
-    
+
     // Try to get from cache first
     let tasks = this.getFromCache(cacheKey, data.metadata.lastUpdated);
-    
+
     if (!tasks) {
       // Cache miss - perform filtering
       tasks = await this.filterTasks(Object.values(data.tasks), filters);
-      
+
       // Cache the filtered results
       this.setCache(cacheKey, tasks, data.metadata.lastUpdated);
     }
-    
+
     // Apply sorting (always fresh since it's fast)
     if (sort) {
       tasks = this.sortTasks(tasks, sort);
     }
-    
+
     // Apply pagination
     const result = this.paginateTasks(tasks, pagination);
-    
+
     const executionTime = Date.now() - startTime;
-    
+
     // Log performance for monitoring
     if (executionTime > 100) {
       console.warn(`Slow task query: ${executionTime}ms for ${tasks.length} tasks`);
     }
-    
+
     return result;
   }
 
@@ -159,9 +159,11 @@ export class PerformanceOptimizer {
           task.description || '',
           task.category || '',
           task.assignee || '',
-          ...(task.tags || [])
-        ].join(' ').toLowerCase();
-        
+          ...(task.tags || []),
+        ]
+          .join(' ')
+          .toLowerCase();
+
         if (!searchableText.includes(searchTerm)) {
           return false;
         }
@@ -230,7 +232,7 @@ export class PerformanceOptimizer {
         currentPage: 1,
         pageSize: totalItems,
         hasNextPage: false,
-        hasPreviousPage: false
+        hasPreviousPage: false,
       };
     }
 
@@ -238,7 +240,7 @@ export class PerformanceOptimizer {
     const totalPages = Math.ceil(totalItems / pageSize);
     const startIndex = (page - 1) * pageSize;
     const endIndex = Math.min(startIndex + pageSize, totalItems);
-    
+
     const items = tasks.slice(startIndex, endIndex);
 
     return {
@@ -248,7 +250,7 @@ export class PerformanceOptimizer {
       currentPage: page,
       pageSize,
       hasNextPage: page < totalPages,
-      hasPreviousPage: page > 1
+      hasPreviousPage: page > 1,
     };
   }
 
@@ -266,18 +268,18 @@ export class PerformanceOptimizer {
    */
   private static getFromCache(cacheKey: string, lastUpdated: string): TodoTask[] | null {
     const cached = this.cache.get(cacheKey);
-    
+
     if (!cached) return null;
-    
+
     const dataLastUpdated = new Date(lastUpdated).getTime();
     const cacheAge = Date.now() - cached.lastUpdated;
-    
+
     // Check if cache is still valid
     if (cacheAge > this.cacheTimeout || cached.lastUpdated < dataLastUpdated) {
       this.cache.delete(cacheKey);
       return null;
     }
-    
+
     return cached.tasks;
   }
 
@@ -292,11 +294,11 @@ export class PerformanceOptimizer {
         this.cache.delete(oldestKey);
       }
     }
-    
+
     this.cache.set(cacheKey, {
       tasks: [...tasks], // Create a copy to avoid reference issues
       lastUpdated: new Date(lastUpdated).getTime(),
-      filters: cacheKey
+      filters: cacheKey,
     });
   }
 
@@ -317,7 +319,7 @@ export class PerformanceOptimizer {
   } {
     return {
       size: this.cache.size,
-      maxSize: this.maxCacheSize
+      maxSize: this.maxCacheSize,
     };
   }
 
@@ -335,18 +337,25 @@ export class PerformanceOptimizer {
   }> {
     const tasks = Object.values(data.tasks);
     const now = Date.now();
-    
+
     // Use single pass for multiple calculations
     let completedTasks = 0;
     let totalAge = 0;
     let criticalTasksRemaining = 0;
-    
+
     const priorityDistribution: Record<string, number> = {
-      low: 0, medium: 0, high: 0, critical: 0
+      low: 0,
+      medium: 0,
+      high: 0,
+      critical: 0,
     };
-    
+
     const statusDistribution: Record<string, number> = {
-      pending: 0, in_progress: 0, completed: 0, blocked: 0, cancelled: 0
+      pending: 0,
+      in_progress: 0,
+      completed: 0,
+      blocked: 0,
+      cancelled: 0,
     };
 
     for (const task of tasks) {
@@ -354,22 +363,22 @@ export class PerformanceOptimizer {
       if (task.status === 'completed') {
         completedTasks++;
       }
-      
+
       // Count critical tasks remaining
       if (task.priority === 'critical' && task.status !== 'completed') {
         criticalTasksRemaining++;
       }
-      
+
       // Calculate age
       const taskAge = (now - new Date(task.createdAt).getTime()) / (1000 * 60 * 60 * 24);
       totalAge += taskAge;
-      
+
       // Update distributions
-      if (task.priority && priorityDistribution[task.priority] !== undefined) {
-        priorityDistribution[task.priority]++;
+      if (task.priority) {
+        priorityDistribution[task.priority] = (priorityDistribution[task.priority] || 0) + 1;
       }
-      if (task.status && statusDistribution[task.status] !== undefined) {
-        statusDistribution[task.status]++;
+      if (task.status) {
+        statusDistribution[task.status] = (statusDistribution[task.status] || 0) + 1;
       }
     }
 
@@ -384,7 +393,7 @@ export class PerformanceOptimizer {
       priorityDistribution,
       statusDistribution,
       averageTaskAge,
-      criticalTasksRemaining
+      criticalTasksRemaining,
     };
   }
 }
