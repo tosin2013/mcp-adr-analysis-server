@@ -395,18 +395,38 @@ export class DataConsistencyChecker {
         });
       }
 
-      // Check date validity
+      // Check date validity with robust validation
       if (task.dueDate) {
-        const date = new Date(task.dueDate);
-        if (isNaN(date.getTime())) {
-          result.errors.push({
-            type: 'INVALID_DATE',
-            message: `Task ${taskId} has invalid due date: ${task.dueDate}`,
-            severity: 'medium',
-            affectedItems: [taskId],
-            suggestedFix: 'Use valid ISO date format',
-          });
+        const dateValidationResult = this.validateDateFormat(task.dueDate, taskId);
+        if (!dateValidationResult.isValid) {
+          result.errors.push(dateValidationResult.error!);
         }
+      }
+
+      // Check other date fields for validity
+      if (task.createdAt) {
+        const createdAtValidation = this.validateDateFormat(task.createdAt, taskId, 'createdAt');
+        if (!createdAtValidation.isValid) {
+          result.errors.push(createdAtValidation.error!);
+        }
+      }
+
+      if (task.updatedAt) {
+        const updatedAtValidation = this.validateDateFormat(task.updatedAt, taskId, 'updatedAt');
+        if (!updatedAtValidation.isValid) {
+          result.errors.push(updatedAtValidation.error!);
+        }
+      }
+
+      // Check timezone consistency across all date fields in the task
+      const timezoneConsistencyResult = this.checkTimezoneConsistency(task, taskId);
+      if (!timezoneConsistencyResult.isValid) {
+        result.warnings.push({
+          type: 'TIMEZONE_INCONSISTENCY',
+          message: timezoneConsistencyResult.message!,
+          affectedItems: [taskId],
+          recommendation: 'Use consistent timezone format across all date fields in the task',
+        });
       }
     }
   }
@@ -495,6 +515,317 @@ export class DataConsistencyChecker {
   }
 
   /**
+   * Validate date format with robust edge case handling
+   *
+   * This method provides comprehensive date validation that catches edge cases
+   * that the standard JavaScript Date constructor might miss or handle incorrectly.
+   * It also ensures timezone consistency as required by requirement 4.3.
+   */
+  private static validateDateFormat(
+    dateString: string,
+    taskId: string,
+    fieldName: string = 'dueDate'
+  ): { isValid: boolean; error?: ConsistencyError } {
+    if (!dateString || typeof dateString !== 'string') {
+      return {
+        isValid: false,
+        error: {
+          type: 'INVALID_DATE',
+          message: `Task ${taskId} has empty or non-string ${fieldName}`,
+          severity: 'medium',
+          affectedItems: [taskId],
+          suggestedFix: 'Provide a valid ISO date string (YYYY-MM-DDTHH:mm:ss.sssZ)',
+        },
+      };
+    }
+
+    // First check if it's a valid Date object
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return {
+        isValid: false,
+        error: {
+          type: 'INVALID_DATE',
+          message: `Task ${taskId} has invalid ${fieldName}: ${dateString}`,
+          severity: 'medium',
+          affectedItems: [taskId],
+          suggestedFix:
+            'Use valid ISO date format (YYYY-MM-DDTHH:mm:ss.sssZ or YYYY-MM-DDTHH:mm:ss±HH:mm)',
+        },
+      };
+    }
+
+    // Check for edge cases that JavaScript Date constructor handles incorrectly
+    // by parsing the date string and validating components
+    const isoDateRegex =
+      /^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}):(\d{2})(?:\.(\d{3}))?(?:Z|([+-]\d{2}):?(\d{2})))?$/;
+    const match = dateString.match(isoDateRegex);
+
+    if (match) {
+      const [
+        ,
+        year,
+        month,
+        day,
+        hour = '0',
+        minute = '0',
+        second = '0',
+        millisecond = '0',
+        tzHour,
+        tzMinute,
+      ] = match;
+
+      // Ensure we have the required components
+      if (!year || !month || !day) {
+        return {
+          isValid: false,
+          error: {
+            type: 'INVALID_DATE',
+            message: `Task ${taskId} has ${fieldName} with missing date components: ${dateString}`,
+            severity: 'medium',
+            affectedItems: [taskId],
+            suggestedFix: 'Use complete ISO date format (YYYY-MM-DDTHH:mm:ss.sssZ)',
+          },
+        };
+      }
+
+      // Validate year (reasonable range)
+      const yearNum = parseInt(year, 10);
+      if (yearNum < 1900 || yearNum > 2100) {
+        return {
+          isValid: false,
+          error: {
+            type: 'INVALID_DATE',
+            message: `Task ${taskId} has ${fieldName} with unreasonable year: ${year}`,
+            severity: 'medium',
+            affectedItems: [taskId],
+            suggestedFix: 'Use a year between 1900 and 2100',
+          },
+        };
+      }
+
+      // Validate month (1-12)
+      const monthNum = parseInt(month, 10);
+      if (monthNum < 1 || monthNum > 12) {
+        return {
+          isValid: false,
+          error: {
+            type: 'INVALID_DATE',
+            message: `Task ${taskId} has ${fieldName} with invalid month: ${month}`,
+            severity: 'medium',
+            affectedItems: [taskId],
+            suggestedFix: 'Use month values between 01 and 12',
+          },
+        };
+      }
+
+      // Validate day (1-31, accounting for month)
+      const dayNum = parseInt(day, 10);
+      const daysInMonth = new Date(yearNum, monthNum, 0).getDate();
+      if (dayNum < 1 || dayNum > daysInMonth) {
+        return {
+          isValid: false,
+          error: {
+            type: 'INVALID_DATE',
+            message: `Task ${taskId} has ${fieldName} with invalid day: ${day} for month ${month}`,
+            severity: 'medium',
+            affectedItems: [taskId],
+            suggestedFix: `Use day values between 01 and ${daysInMonth.toString().padStart(2, '0')} for month ${month}`,
+          },
+        };
+      }
+
+      // Validate hour (0-23)
+      const hourNum = parseInt(hour, 10);
+      if (hourNum < 0 || hourNum > 23) {
+        return {
+          isValid: false,
+          error: {
+            type: 'INVALID_DATE',
+            message: `Task ${taskId} has ${fieldName} with invalid hour: ${hour}`,
+            severity: 'medium',
+            affectedItems: [taskId],
+            suggestedFix: 'Use hour values between 00 and 23',
+          },
+        };
+      }
+
+      // Validate minute (0-59)
+      const minuteNum = parseInt(minute, 10);
+      if (minuteNum < 0 || minuteNum > 59) {
+        return {
+          isValid: false,
+          error: {
+            type: 'INVALID_DATE',
+            message: `Task ${taskId} has ${fieldName} with invalid minute: ${minute}`,
+            severity: 'medium',
+            affectedItems: [taskId],
+            suggestedFix: 'Use minute values between 00 and 59',
+          },
+        };
+      }
+
+      // Validate second (0-59)
+      const secondNum = parseInt(second, 10);
+      if (secondNum < 0 || secondNum > 59) {
+        return {
+          isValid: false,
+          error: {
+            type: 'INVALID_DATE',
+            message: `Task ${taskId} has ${fieldName} with invalid second: ${second}`,
+            severity: 'medium',
+            affectedItems: [taskId],
+            suggestedFix: 'Use second values between 00 and 59',
+          },
+        };
+      }
+
+      // Validate timezone offset if present
+      if (tzHour && tzMinute) {
+        const tzHourNum = parseInt(tzHour, 10);
+        const tzMinuteNum = parseInt(tzMinute, 10);
+
+        if (Math.abs(tzHourNum) > 14 || (Math.abs(tzHourNum) === 14 && tzMinuteNum !== 0)) {
+          return {
+            isValid: false,
+            error: {
+              type: 'INVALID_DATE',
+              message: `Task ${taskId} has ${fieldName} with invalid timezone offset: ${tzHour}:${tzMinute}`,
+              severity: 'medium',
+              affectedItems: [taskId],
+              suggestedFix: 'Use timezone offsets between -14:00 and +14:00',
+            },
+          };
+        }
+
+        if (tzMinuteNum < 0 || tzMinuteNum > 59) {
+          return {
+            isValid: false,
+            error: {
+              type: 'INVALID_DATE',
+              message: `Task ${taskId} has ${fieldName} with invalid timezone minute: ${tzMinute}`,
+              severity: 'medium',
+              affectedItems: [taskId],
+              suggestedFix: 'Use timezone minute values between 00 and 59',
+            },
+          };
+        }
+      }
+
+      // Additional validation: check if the parsed date matches the original string
+      // This catches cases where JavaScript Date constructor "corrects" invalid dates
+      const reconstructedDate = new Date(
+        yearNum,
+        monthNum - 1,
+        dayNum,
+        hourNum,
+        minuteNum,
+        secondNum,
+        parseInt(millisecond, 10)
+      );
+      if (
+        reconstructedDate.getFullYear() !== yearNum ||
+        reconstructedDate.getMonth() !== monthNum - 1 ||
+        reconstructedDate.getDate() !== dayNum ||
+        reconstructedDate.getHours() !== hourNum ||
+        reconstructedDate.getMinutes() !== minuteNum ||
+        reconstructedDate.getSeconds() !== secondNum
+      ) {
+        return {
+          isValid: false,
+          error: {
+            type: 'INVALID_DATE',
+            message: `Task ${taskId} has ${fieldName} that was auto-corrected by date parser: ${dateString}`,
+            severity: 'medium',
+            affectedItems: [taskId],
+            suggestedFix:
+              'Use a valid date that exists in the calendar (e.g., February 30th does not exist)',
+          },
+        };
+      }
+    } else {
+      // If it doesn't match ISO format, check for common invalid formats
+      const commonInvalidFormats = [
+        /^\d{4}\/\d{2}\/\d{2}/, // YYYY/MM/DD
+        /^\d{2}-\d{2}-\d{4}/, // DD-MM-YYYY
+        /^\d{2}\/\d{2}\/\d{4}/, // MM/DD/YYYY
+        /^[a-zA-Z]/, // Starts with letters
+      ];
+
+      let suggestedFix = 'Use valid ISO date format (YYYY-MM-DDTHH:mm:ss.sssZ)';
+
+      if (commonInvalidFormats[0]?.test(dateString)) {
+        suggestedFix = 'Replace "/" with "-" and use ISO format: YYYY-MM-DDTHH:mm:ss.sssZ';
+      } else if (
+        commonInvalidFormats[1]?.test(dateString) ||
+        commonInvalidFormats[2]?.test(dateString)
+      ) {
+        suggestedFix = 'Reorder to YYYY-MM-DD format and add time: YYYY-MM-DDTHH:mm:ss.sssZ';
+      } else if (commonInvalidFormats[3]?.test(dateString)) {
+        suggestedFix = 'Use numeric date format instead of text: YYYY-MM-DDTHH:mm:ss.sssZ';
+      }
+
+      return {
+        isValid: false,
+        error: {
+          type: 'INVALID_DATE',
+          message: `Task ${taskId} has ${fieldName} in unrecognized format: ${dateString}`,
+          severity: 'medium',
+          affectedItems: [taskId],
+          suggestedFix,
+        },
+      };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
+   * Check timezone consistency across all date fields in a task
+   *
+   * This ensures that all dates in a task use consistent timezone formatting
+   * to prevent confusion and ensure accurate date comparisons.
+   */
+  private static checkTimezoneConsistency(
+    task: TodoTask,
+    taskId: string
+  ): { isValid: boolean; message?: string } {
+    const dateFields = [
+      { field: 'createdAt', value: task.createdAt },
+      { field: 'updatedAt', value: task.updatedAt },
+      { field: 'dueDate', value: task.dueDate },
+    ].filter(field => field.value);
+
+    if (dateFields.length < 2) {
+      return { isValid: true }; // Not enough dates to compare
+    }
+
+    const timezoneFormats = dateFields.map(field => {
+      const value = field.value!;
+      if (value.endsWith('Z')) {
+        return 'UTC';
+      } else if (value.includes('+') || value.includes('-')) {
+        const match = value.match(/([+-]\d{2}):?(\d{2})$/);
+        return match ? `${match[1]}:${match[2]}` : 'UNKNOWN';
+      } else {
+        return 'LOCAL'; // No timezone specified
+      }
+    });
+
+    const uniqueFormats = new Set(timezoneFormats);
+
+    if (uniqueFormats.size > 1) {
+      const formatList = Array.from(uniqueFormats).join(', ');
+      return {
+        isValid: false,
+        message: `Task ${taskId} has inconsistent timezone formats: ${formatList}`,
+      };
+    }
+
+    return { isValid: true };
+  }
+
+  /**
    * Quick consistency check for performance-critical operations
    */
   static async quickCheck(data: TodoJsonData): Promise<boolean> {
@@ -526,6 +857,24 @@ export class DataConsistencyChecker {
         }
         for (const taskId of section.tasks) {
           if (!taskIds.has(taskId)) {
+            return false;
+          }
+        }
+      }
+
+      // Basic date validation for critical date fields
+      for (const [, task] of Object.entries(data.tasks)) {
+        if (!task || typeof task !== 'object') {
+          return false;
+        }
+
+        // Quick date validation - just check if dates are parseable
+        const dateFields = [task.createdAt, task.updatedAt, task.dueDate].filter(
+          Boolean
+        ) as string[];
+        for (const dateField of dateFields) {
+          const date = new Date(dateField);
+          if (isNaN(date.getTime())) {
             return false;
           }
         }
