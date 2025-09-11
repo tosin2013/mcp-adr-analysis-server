@@ -1,10 +1,22 @@
+#!/bin/bash
+set -e
+
 echo "🔍 Running pre-commit checks..."
 
 # Run lint-staged for formatting
+echo "🎨 Running code formatting..."
 npx lint-staged
 
 # Run typecheck
 echo "🔍 Running TypeScript check..."
 npm run typecheck
+
+# Build the project
+echo "🔨 Building project..."
+npm run build
+
+# Run tests
+echo "🧪 Running tests..."
+NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' ./node_modules/.bin/jest --passWithNoTests --silent
 
 echo "✅ Pre-commit checks completed!"
