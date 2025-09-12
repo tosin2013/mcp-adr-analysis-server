@@ -1,9 +1,11 @@
 /**
  * Enhanced Jest test setup file
  * Configures global test environment with proper resource management and cleanup
+ * Enhanced with jest-extended for better assertions
  */
 
 import { jest } from '@jest/globals';
+import 'jest-extended';
 import { testInfrastructure } from './utils/test-infrastructure.js';
 
 // Set test environment to disable AI execution (force prompt-only mode)

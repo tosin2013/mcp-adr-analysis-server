@@ -3,8 +3,10 @@
  *
  * Provides comprehensive data validation and consistency checks
  * to ensure data integrity after rapid operations.
+ * Enhanced with Joi for robust schema validation.
  */
 
+import Joi from 'joi';
 import { TodoJsonData, TodoTask } from '../types/todo-json-schemas.js';
 import { DataConsistencyError, DiagnosticContext } from '../types/enhanced-errors.js';
 import { createComponentLogger } from './enhanced-logging.js';
@@ -33,11 +35,57 @@ export interface ConsistencyWarning {
 
 export class DataConsistencyChecker {
   private static logger = createComponentLogger('DataConsistencyChecker');
+
+  // Joi schemas for validation
+  private static todoTaskSchema = Joi.object({
+    id: Joi.string().required(),
+    title: Joi.string().min(1).required(),
+    status: Joi.string().valid('todo', 'in-progress', 'completed', 'archived').required(),
+    createdAt: Joi.string().isoDate().required(),
+    updatedAt: Joi.string().isoDate().required(),
+    dueDate: Joi.string().isoDate().optional(),
+    priority: Joi.string().valid('low', 'medium', 'high', 'critical').default('medium'),
+    tags: Joi.array().items(Joi.string()).default([]),
+    dependencies: Joi.array().items(Joi.string()).default([]),
+    subtasks: Joi.array().items(Joi.string()).default([]),
+    parentTaskId: Joi.string().optional(),
+    archived: Joi.boolean().default(false),
+    description: Joi.string().optional(),
+    estimatedHours: Joi.number().min(0).optional(),
+    actualHours: Joi.number().min(0).optional(),
+  });
+
+  private static sectionSchema = Joi.object({
+    id: Joi.string().required(),
+    title: Joi.string().min(1).required(),
+    tasks: Joi.array().items(Joi.string()).required(),
+    type: Joi.string().optional(),
+    order: Joi.number().optional(),
+  });
+
+  private static metadataSchema = Joi.object({
+    totalTasks: Joi.number().min(0).required(),
+    completedTasks: Joi.number().min(0).required(),
+    lastUpdated: Joi.string().isoDate().required(),
+    version: Joi.string().optional(),
+    createdBy: Joi.string().optional(),
+    lastModifiedBy: Joi.string().optional(),
+  });
+
+  private static todoJsonDataSchema = Joi.object({
+    tasks: Joi.object().pattern(Joi.string(), this.todoTaskSchema).required(),
+    sections: Joi.array().items(this.sectionSchema).required(),
+    metadata: this.metadataSchema.required(),
+    scoringSync: Joi.object({
+      lastScoreUpdate: Joi.string().isoDate().required(),
+      scoringVersion: Joi.string().optional(),
+    }).optional(),
+  });
   /**
    * Perform comprehensive consistency check on todo data
    *
    * Validates data integrity across all TODO data structures and
-   * optionally auto-fixes common issues.
+   * optionally auto-fixes common issues. Enhanced with Joi schema validation.
    *
    * @param data - TodoJsonData to validate
    * @param options - Configuration options
@@ -73,27 +121,182 @@ export class DataConsistencyChecker {
       fixedIssues: [],
     };
 
-    // Check task-section consistency
-    await this.checkTaskSectionConsistency(data, result, options);
+    // First, perform schema validation using Joi
+    await this.performSchemaValidation(data, result, options);
 
-    // Check metadata consistency
-    await this.checkMetadataConsistency(data, result, options);
+    // Only proceed with detailed checks if basic schema is valid or auto-fix is enabled
+    if (result.errors.length === 0 || options.autoFix) {
+      // Check task-section consistency
+      await this.checkTaskSectionConsistency(data, result, options);
 
-    // Check dependency consistency
-    await this.checkDependencyConsistency(data, result, options);
+      // Check metadata consistency
+      await this.checkMetadataConsistency(data, result, options);
 
-    // Check data integrity
-    await this.checkDataIntegrity(data, result, options);
+      // Check dependency consistency
+      await this.checkDependencyConsistency(data, result, options);
 
-    // Check for orphaned references
-    await this.checkOrphanedReferences(data, result, options);
+      // Check data integrity
+      await this.checkDataIntegrity(data, result, options);
 
-    // Check scoring sync consistency
-    await this.checkScoringSyncConsistency(data, result, options);
+      // Check for orphaned references
+      await this.checkOrphanedReferences(data, result, options);
+
+      // Check scoring sync consistency
+      await this.checkScoringSyncConsistency(data, result, options);
+    }
 
     result.isValid = result.errors.length === 0;
 
     return result;
+  }
+
+  /**
+   * Perform schema validation using Joi
+   */
+  private static async performSchemaValidation(
+    data: TodoJsonData,
+    result: ConsistencyCheckResult,
+    options: { autoFix?: boolean; strictMode?: boolean }
+  ): Promise<void> {
+    const startTime = Date.now();
+    const operationId = this.logger.logOperationStart('schema_validation', {
+      strictMode: options.strictMode,
+      autoFix: options.autoFix,
+    });
+
+    try {
+      // Validate overall structure
+      const validationOptions: Joi.ValidationOptions = {
+        abortEarly: false, // Collect all errors
+        allowUnknown: !options.strictMode, // Allow extra fields in non-strict mode
+        ...(options.autoFix && { stripUnknown: true }), // Remove unknown fields if auto-fixing
+      };
+
+      const { error: schemaError, value: validatedData } = this.todoJsonDataSchema.validate(
+        data,
+        validationOptions
+      );
+
+      if (schemaError) {
+        for (const detail of schemaError.details) {
+          const fieldPath = detail.path.join('.');
+          result.errors.push({
+            type: 'SCHEMA_VALIDATION_ERROR',
+            message: `Schema validation failed for ${fieldPath}: ${detail.message}`,
+            severity: 'critical',
+            affectedItems: [fieldPath],
+            suggestedFix: this.getSuggestionForJoiError(detail),
+          });
+        }
+      }
+
+      // If auto-fix is enabled and we have valid data, apply fixes
+      if (options.autoFix && validatedData && schemaError) {
+        const fixedFields = this.applySchemaFixes(data, validatedData, result);
+        result.fixedIssues.push(...fixedFields);
+      }
+
+      // Validate individual tasks with enhanced error reporting
+      if (data.tasks && typeof data.tasks === 'object') {
+        for (const [taskId, task] of Object.entries(data.tasks)) {
+          if (task && typeof task === 'object') {
+            const { error: taskError } = this.todoTaskSchema.validate(task, validationOptions);
+            if (taskError) {
+              for (const detail of taskError.details) {
+                result.errors.push({
+                  type: 'TASK_SCHEMA_ERROR',
+                  message: `Task ${taskId} schema validation failed: ${detail.message}`,
+                  severity: 'high',
+                  affectedItems: [taskId],
+                  suggestedFix: this.getSuggestionForJoiError(detail),
+                });
+              }
+            }
+          }
+        }
+      }
+
+      const duration = Date.now() - startTime;
+      this.logger.logOperationComplete(operationId, 'schema_validation', duration, {
+        errorsFound: result.errors.filter(e => e.type.includes('SCHEMA')).length,
+        fixesApplied: result.fixedIssues.length,
+      });
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      this.logger.logOperationFailure(operationId, 'schema_validation', error as Error, duration);
+      throw error;
+    }
+  }
+
+  /**
+   * Get human-readable suggestion for Joi validation errors
+   */
+  private static getSuggestionForJoiError(detail: Joi.ValidationErrorItem): string {
+    switch (detail.type) {
+      case 'any.required':
+        return `Add required field: ${detail.path.join('.')}`;
+      case 'string.empty':
+        return `Provide a non-empty value for: ${detail.path.join('.')}`;
+      case 'string.isoDate':
+        return `Use ISO date format (YYYY-MM-DDTHH:mm:ss.sssZ) for: ${detail.path.join('.')}`;
+      case 'any.only':
+        return `Use one of the allowed values: ${detail.context?.['valids']?.join(', ') || 'see documentation'}`;
+      case 'number.min':
+        return `Use a value >= ${detail.context?.['limit'] || 0} for: ${detail.path.join('.')}`;
+      case 'array.base':
+        return `Provide an array for: ${detail.path.join('.')}`;
+      case 'object.base':
+        return `Provide an object for: ${detail.path.join('.')}`;
+      default:
+        return `Fix validation error: ${detail.message}`;
+    }
+  }
+
+  /**
+   * Apply schema fixes when auto-fix is enabled
+   */
+  private static applySchemaFixes(
+    originalData: TodoJsonData,
+    validatedData: any,
+    result: ConsistencyCheckResult
+  ): string[] {
+    const fixes: string[] = [];
+
+    try {
+      // Apply safe fixes that don't require complex logic
+      if (validatedData.metadata && originalData.metadata) {
+        for (const [key, value] of Object.entries(validatedData.metadata)) {
+          if (originalData.metadata[key as keyof typeof originalData.metadata] !== value) {
+            (originalData.metadata as any)[key] = value;
+            fixes.push(`Fixed metadata.${key} to valid value`);
+          }
+        }
+      }
+
+      // Fix task structure issues
+      if (validatedData.tasks && originalData.tasks) {
+        for (const [taskId, validatedTask] of Object.entries(validatedData.tasks)) {
+          const originalTask = originalData.tasks[taskId];
+          if (originalTask && validatedTask) {
+            for (const [key, value] of Object.entries(validatedTask as object)) {
+              if ((originalTask as any)[key] !== value && value !== undefined) {
+                (originalTask as any)[key] = value;
+                fixes.push(`Fixed task ${taskId}.${key} to valid value`);
+              }
+            }
+          }
+        }
+      }
+    } catch (error) {
+      result.warnings.push({
+        type: 'AUTO_FIX_PARTIAL_FAILURE',
+        message: `Some schema fixes could not be applied: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        affectedItems: ['schema'],
+        recommendation: 'Manual review required for remaining schema issues',
+      });
+    }
+
+    return fixes;
   }
 
   /**
