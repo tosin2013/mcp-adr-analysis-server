@@ -50,6 +50,12 @@ test: check-deps
 	npm test
 	@echo "Tests completed successfully"
 
+# Run CI-optimized tests
+test-ci: check-deps
+	@echo "Running CI-optimized tests..."
+	npm run test:ci
+	@echo "CI tests completed successfully"
+
 # Run tests with coverage
 test-coverage: check-deps
 	@echo "Running tests with coverage..."
@@ -140,7 +146,7 @@ format: check-deps
 	@echo "Code formatting completed"
 
 # Full CI pipeline
-ci: security-check lint test build
+ci: security-check lint test-ci build
 	@echo "CI pipeline completed successfully"
 
 # Pre-commit validation

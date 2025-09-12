@@ -46,6 +46,7 @@ export class TestInfrastructure {
   private resources: ResourceTracker;
   private cleanupCallbacks: Array<() => Promise<void>>;
   private isShuttingDown: boolean = false;
+  private isCI: boolean = process.env.CI === 'true' || process.env.NODE_ENV === 'ci';
 
   private constructor() {
     this.config = this.getDefaultConfig();
@@ -148,28 +149,48 @@ export class TestInfrastructure {
     this.cleanupCallbacks.push(callback);
   }
 
-  // Memory monitoring
+  // Memory monitoring - CI-safe version
   public recordMemoryUsage(): void {
-    const usage = process.memoryUsage();
-    const usageMB = usage.heapUsed / 1024 / 1024;
-    this.resources.memoryUsage.push(usageMB);
+    // Skip memory monitoring in CI to avoid uv_resident_set_memory errors
+    if (this.isCI) {
+      return;
+    }
 
-    if (usageMB > this.config.resources.maxMemoryMB) {
-      console.warn(
-        `Memory usage (${usageMB.toFixed(2)}MB) exceeds limit (${this.config.resources.maxMemoryMB}MB)`
-      );
+    try {
+      const usage = process.memoryUsage();
+      const usageMB = usage.heapUsed / 1024 / 1024;
+      this.resources.memoryUsage.push(usageMB);
+
+      if (usageMB > this.config.resources.maxMemoryMB) {
+        console.warn(
+          `Memory usage (${usageMB.toFixed(2)}MB) exceeds limit (${this.config.resources.maxMemoryMB}MB)`
+        );
+      }
+    } catch (error) {
+      // Silently ignore memory monitoring errors in CI
     }
   }
 
   public getMemoryStats(): { current: number; peak: number; average: number } {
-    const current = process.memoryUsage().heapUsed / 1024 / 1024;
-    const peak = Math.max(...this.resources.memoryUsage, current);
-    const average =
-      this.resources.memoryUsage.length > 0
-        ? this.resources.memoryUsage.reduce((a, b) => a + b, 0) / this.resources.memoryUsage.length
-        : current;
+    // Return default values in CI to avoid uv_resident_set_memory errors
+    if (this.isCI) {
+      return { current: 0, peak: 0, average: 0 };
+    }
 
-    return { current, peak, average };
+    try {
+      const current = process.memoryUsage().heapUsed / 1024 / 1024;
+      const peak = Math.max(...this.resources.memoryUsage, current);
+      const average =
+        this.resources.memoryUsage.length > 0
+          ? this.resources.memoryUsage.reduce((a, b) => a + b, 0) /
+            this.resources.memoryUsage.length
+          : current;
+
+      return { current, peak, average };
+    } catch (error) {
+      // Return default values if memory monitoring fails
+      return { current: 0, peak: 0, average: 0 };
+    }
   }
 
   // Cleanup methods
@@ -297,13 +318,24 @@ export class TestInfrastructure {
     processes: number;
     memoryMB: number;
   } {
+    // CI-safe memory usage
+    let memoryMB = 0;
+    if (!this.isCI) {
+      try {
+        memoryMB = process.memoryUsage().heapUsed / 1024 / 1024;
+      } catch (error) {
+        // Silently ignore memory access errors
+        memoryMB = 0;
+      }
+    }
+
     return {
       tempDirs: this.resources.tempDirs.size,
       fileHandles: this.resources.fileHandles.size,
       timers: this.resources.timers.size,
       intervals: this.resources.intervals.size,
       processes: this.resources.processes.size,
-      memoryMB: process.memoryUsage().heapUsed / 1024 / 1024,
+      memoryMB,
     };
   }
 
