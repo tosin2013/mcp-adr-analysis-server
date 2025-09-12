@@ -7,6 +7,24 @@
 import { jest } from '@jest/globals';
 import 'jest-extended';
 
+// Force mock the problematic ESM modules
+jest.mock('p-queue', () => {
+  const MockPQueue = require('../__mocks__/p-queue.js');
+  return {
+    __esModule: true,
+    default: MockPQueue,
+  };
+});
+
+jest.mock('p-timeout', () => {
+  const MockPTimeout = require('../__mocks__/p-timeout.js');
+  return {
+    __esModule: true,
+    default: MockPTimeout,
+    TimeoutError: MockPTimeout.TimeoutError,
+  };
+});
+
 // Detect CI environment
 const isCI = process.env.CI === 'true' || process.env.NODE_ENV === 'ci';
 

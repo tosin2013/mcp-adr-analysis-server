@@ -25,6 +25,12 @@ export default {
   },
   // Jest 30.x compatibility: disable worker threads to allow dynamic imports
   workerThreads: false,
+  // Force mock usage for problematic ESM modules
+  setupFilesAfterEnv: ['<rootDir>/tests/setup.ci.ts'],
+  clearMocks: true,
+  resetMocks: true,
+  // Jest 30.x compatibility: disable worker threads to allow dynamic imports
+  workerThreads: false,
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
