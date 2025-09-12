@@ -8,6 +8,101 @@ import { jest } from '@jest/globals';
 import 'jest-extended';
 import { testInfrastructure } from './utils/test-infrastructure.js';
 
+// Force mock the problematic ESM modules
+jest.mock('p-queue', () => {
+  class MockPQueue {
+    constructor(options = {}) {
+      this.options = options;
+      this.pending = 0;
+      this.size = 0;
+      this.isPaused = false;
+    }
+
+    async add(fn, options = {}) {
+      this.pending++;
+      this.size++;
+      try {
+        const result = await fn();
+        return result;
+      } finally {
+        this.pending--;
+        this.size--;
+      }
+    }
+
+    async addAll(functions, options = {}) {
+      const results = [];
+      for (const fn of functions) {
+        results.push(await this.add(fn, options));
+      }
+      return results;
+    }
+
+    pause() {
+      this.isPaused = true;
+    }
+    start() {
+      this.isPaused = false;
+    }
+    clear() {
+      this.size = 0;
+    }
+    async onEmpty() {
+      return Promise.resolve();
+    }
+    async onIdle() {
+      return Promise.resolve();
+    }
+  }
+
+  return {
+    __esModule: true,
+    default: MockPQueue,
+  };
+});
+
+jest.mock('p-timeout', () => {
+  class TimeoutError extends Error {
+    constructor(message = 'Promise timed out') {
+      super(message);
+      this.name = 'TimeoutError';
+    }
+  }
+
+  function pTimeout(promise, timeout, fallback) {
+    return new Promise((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        if (typeof fallback === 'function') {
+          resolve(fallback());
+        } else if (fallback !== undefined) {
+          resolve(fallback);
+        } else {
+          reject(new TimeoutError());
+        }
+      }, timeout);
+
+      promise.then(
+        value => {
+          clearTimeout(timeoutId);
+          resolve(value);
+        },
+        error => {
+          clearTimeout(timeoutId);
+          reject(error);
+        }
+      );
+    });
+  }
+
+  pTimeout.TimeoutError = TimeoutError;
+
+  return {
+    __esModule: true,
+    default: pTimeout,
+    TimeoutError: TimeoutError,
+  };
+});
+
 // Set test environment to disable AI execution (force prompt-only mode)
 process.env.EXECUTION_MODE = 'prompt-only';
 
