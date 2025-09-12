@@ -59,12 +59,7 @@ export default {
   globalSetup: undefined,
   globalTeardown: undefined,
   // Enhanced reporting
-  reporters: [
-    'default',
-    ...(process.env.CI
-      ? [['jest-junit', { outputDirectory: 'test-results', outputName: 'junit.xml' }]]
-      : []),
-  ],
+  reporters: ['default'],
   // Test environment options
   testEnvironmentOptions: {
     // Node.js specific options
