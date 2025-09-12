@@ -11,8 +11,8 @@
   "scripts": {
     "build": "tsc && chmod +x dist/src/index.js",
     "dev": "tsx src/index.ts",
-    "test": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules --experimental-loader ts-node/esm' jest --detectOpenHandles",
-    "test:ci": "NODE_ENV=ci NODE_OPTIONS='--experimental-vm-modules --experimental-loader ts-node/esm --max-old-space-size=2048' jest --config=jest.config.ci.js --runInBand --forceExit",
+    "test": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' jest --detectOpenHandles",
+    "test:ci": "NODE_ENV=ci NODE_OPTIONS='--experimental-vm-modules --max-old-space-size=2048' jest --config=jest.config.ci.js --runInBand --forceExit",
     "test:watch": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' jest --watch --detectOpenHandles",
     "test:coverage": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' jest --coverage --detectOpenHandles",
     "test:advanced": "./scripts/test-advanced-prompting.sh",
