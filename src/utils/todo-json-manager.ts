@@ -1063,13 +1063,23 @@ export class TodoJsonManager {
       ].slice(-50), // Keep last 50 entries
     };
 
-    // Update project health scoring
-    await this.healthScoring.updateTaskCompletionScore({
-      completed: metrics.completedTasks,
-      total: metrics.totalTasks,
-      criticalTasksRemaining: metrics.criticalTasksRemaining,
-      priorityWeightedScore: metrics.priorityWeightedScore,
-    });
+    // Update project health scoring with error handling
+    try {
+      if (
+        this.healthScoring &&
+        typeof this.healthScoring.updateTaskCompletionScore === 'function'
+      ) {
+        await this.healthScoring.updateTaskCompletionScore({
+          completed: metrics.completedTasks,
+          total: metrics.totalTasks,
+          criticalTasksRemaining: metrics.criticalTasksRemaining,
+          priorityWeightedScore: metrics.priorityWeightedScore,
+        });
+      }
+    } catch (error) {
+      // Log error but don't fail the operation
+      console.warn('Health scoring update failed:', error);
+    }
   }
 
   /**

@@ -3,6 +3,9 @@ export default {
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    // Mock ESM-only modules to avoid import issues in tests
+    '^p-queue$': '<rootDir>/tests/__mocks__/p-queue.js',
+    '^p-timeout$': '<rootDir>/tests/__mocks__/p-timeout.js',
   },
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/tests'],
