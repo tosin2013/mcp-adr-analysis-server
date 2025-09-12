@@ -36,6 +36,7 @@ function pTimeout(promise, timeout, fallback) {
 
 pTimeout.TimeoutError = TimeoutError;
 
+// CommonJS export for Jest
 module.exports = pTimeout;
 module.exports.default = pTimeout;
 module.exports.TimeoutError = TimeoutError;

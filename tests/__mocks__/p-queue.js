@@ -51,5 +51,6 @@ class MockPQueue {
   }
 }
 
+// CommonJS export for Jest
 module.exports = MockPQueue;
 module.exports.default = MockPQueue;
