@@ -36,7 +36,14 @@ function pTimeout(promise, timeout, fallback) {
 
 pTimeout.TimeoutError = TimeoutError;
 
-// CommonJS export for Jest
+// Both CommonJS and ESM style exports to handle Jest's import resolution
 module.exports = pTimeout;
 module.exports.default = pTimeout;
 module.exports.TimeoutError = TimeoutError;
+
+// Also make it available as a default export when imported as default
+Object.defineProperty(module.exports, 'default', {
+  value: pTimeout,
+  enumerable: true,
+  configurable: true,
+});

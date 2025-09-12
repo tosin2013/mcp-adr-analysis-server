@@ -51,6 +51,13 @@ class MockPQueue {
   }
 }
 
-// CommonJS export for Jest
+// Both CommonJS and ESM style exports to handle Jest's import resolution
 module.exports = MockPQueue;
 module.exports.default = MockPQueue;
+
+// Also make it available as a constructor when imported as default
+Object.defineProperty(module.exports, 'default', {
+  value: MockPQueue,
+  enumerable: true,
+  configurable: true,
+});
