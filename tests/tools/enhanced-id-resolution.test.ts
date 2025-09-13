@@ -17,19 +17,19 @@ describe('Enhanced Task ID Resolution', () => {
     // Create temporary directory for test
     tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'todo-test-'));
     todoManager = new TodoJsonManager(tempDir);
-    
+
     // Enable immediate persistence for tests
     todoManager.enableImmediatePersistence();
-    
+
     // Create a test task
     const createResult = await manageTodoV2({
       operation: 'create_task',
       projectPath: tempDir,
       title: 'Test Task for ID Resolution',
       description: 'A task to test enhanced ID resolution',
-      priority: 'medium'
+      priority: 'medium',
     });
-    
+
     // Extract task ID from the response
     const responseText = createResult.content[0].text;
     const idMatch = responseText.match(/Task ID\*\*: ([a-f0-9-]+)/);
@@ -50,16 +50,16 @@ describe('Enhanced Task ID Resolution', () => {
   describe('update_task with enhanced ID resolution', () => {
     it('should resolve partial task IDs', async () => {
       const partialId = testTaskId.substring(0, 8);
-      
+
       const result = await manageTodoV2({
         operation: 'update_task',
         projectPath: tempDir,
         taskId: partialId,
         updates: {
-          status: 'in_progress'
-        }
+          status: 'in_progress',
+        },
       });
-      
+
       expect(result.content[0].text).toContain('✅ Task updated successfully');
       expect(result.content[0].text).toContain(testTaskId);
       expect(result.content[0].text).toContain(partialId);
@@ -71,10 +71,10 @@ describe('Enhanced Task ID Resolution', () => {
         projectPath: tempDir,
         taskId: 'invalid-id-123',
         updates: {
-          status: 'completed'
-        }
+          status: 'completed',
+        },
       });
-      
+
       expect(result.content[0].text).toContain('❌ Cannot update task');
       expect(result.content[0].text).toContain('Suggestions:');
       expect(result.content[0].text).toContain('Use get_tasks to list all available tasks');
@@ -87,35 +87,37 @@ describe('Enhanced Task ID Resolution', () => {
         projectPath: tempDir,
         title: 'Another Test Task',
         description: 'Another task for testing',
-        priority: 'high'
+        priority: 'high',
       });
-      
+
       // Try to use a very short partial ID that might match multiple tasks
       const result = await manageTodoV2({
         operation: 'update_task',
         projectPath: tempDir,
         taskId: testTaskId.substring(0, 2), // Very short, likely to be ambiguous
         updates: {
-          status: 'completed'
-        }
+          status: 'completed',
+        },
       });
-      
+
       // Should either resolve uniquely or provide helpful error
-      expect(result.content[0].text).toMatch(/(✅ Task updated successfully|❌ Cannot update task)/);
+      expect(result.content[0].text).toMatch(
+        /(✅ Task updated successfully|❌ Cannot update task)/
+      );
     });
   });
 
   describe('delete_task with enhanced ID resolution', () => {
     it('should resolve partial task IDs for deletion', async () => {
       const partialId = testTaskId.substring(0, 8);
-      
+
       const result = await manageTodoV2({
         operation: 'delete_task',
         projectPath: tempDir,
         taskId: partialId,
-        force: true
+        force: true,
       });
-      
+
       expect(result.content[0].text).toContain('✅ Task deleted successfully');
       expect(result.content[0].text).toContain(testTaskId);
     });
@@ -125,9 +127,9 @@ describe('Enhanced Task ID Resolution', () => {
         operation: 'delete_task',
         projectPath: tempDir,
         taskId: 'nonexistent-task',
-        force: true
+        force: true,
       });
-      
+
       expect(result.content[0].text).toContain('❌ Cannot delete task');
       expect(result.content[0].text).toContain('Suggestions:');
     });
@@ -136,13 +138,13 @@ describe('Enhanced Task ID Resolution', () => {
   describe('archive_task with enhanced ID resolution', () => {
     it('should resolve partial task IDs for archiving', async () => {
       const partialId = testTaskId.substring(0, 8);
-      
+
       const result = await manageTodoV2({
         operation: 'archive_task',
         projectPath: tempDir,
-        taskId: partialId
+        taskId: partialId,
       });
-      
+
       expect(result.content[0].text).toContain('✅ Task archived successfully');
       expect(result.content[0].text).toContain(testTaskId);
     });
@@ -151,9 +153,9 @@ describe('Enhanced Task ID Resolution', () => {
       const result = await manageTodoV2({
         operation: 'archive_task',
         projectPath: tempDir,
-        taskId: 'nonexistent-task'
+        taskId: 'nonexistent-task',
       });
-      
+
       expect(result.content[0].text).toContain('❌ Cannot archive task');
       expect(result.content[0].text).toContain('Suggestions:');
     });
@@ -162,38 +164,40 @@ describe('Enhanced Task ID Resolution', () => {
   describe('bulk operations with enhanced ID resolution', () => {
     it('should resolve partial task IDs in bulk_update', async () => {
       const partialId = testTaskId.substring(0, 8);
-      
-      const result = await manageTodoV2({
-        operation: 'bulk_update',
-        projectPath: tempDir,
-        updates: [{
-          taskId: partialId,
-          status: 'completed'
-        }]
-      });
-      
-      expect(result.content[0].text).toContain('✅ **Bulk Update Completed!**');
-      expect(result.content[0].text).toContain('Successfully Updated 1 task');
-    });
 
-    it('should handle mixed valid and invalid IDs in bulk_update', async () => {
-      const partialId = testTaskId.substring(0, 8);
-      
       const result = await manageTodoV2({
         operation: 'bulk_update',
         projectPath: tempDir,
         updates: [
           {
             taskId: partialId,
-            status: 'completed'
+            status: 'completed',
+          },
+        ],
+      });
+
+      expect(result.content[0].text).toContain('✅ **Bulk Update Completed!**');
+      expect(result.content[0].text).toContain('Successfully Updated 1 task');
+    });
+
+    it('should handle mixed valid and invalid IDs in bulk_update', async () => {
+      const partialId = testTaskId.substring(0, 8);
+
+      const result = await manageTodoV2({
+        operation: 'bulk_update',
+        projectPath: tempDir,
+        updates: [
+          {
+            taskId: partialId,
+            status: 'completed',
           },
           {
             taskId: 'invalid-id',
-            status: 'completed'
-          }
-        ]
+            status: 'completed',
+          },
+        ],
       });
-      
+
       expect(result.content[0].text).toContain('✅ **Bulk Update Completed!**');
       expect(result.content[0].text).toContain('Successfully Updated 1 task');
       expect(result.content[0].text).toContain('Skipped 1 task');
@@ -201,14 +205,14 @@ describe('Enhanced Task ID Resolution', () => {
 
     it('should resolve partial task IDs in bulk_delete', async () => {
       const partialId = testTaskId.substring(0, 8);
-      
+
       const result = await manageTodoV2({
         operation: 'bulk_delete',
         projectPath: tempDir,
         taskIds: [partialId],
-        confirm: true
+        confirm: true,
       });
-      
+
       expect(result.content[0].text).toContain('Successfully Deleted 1 task');
     });
   });
