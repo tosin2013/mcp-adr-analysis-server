@@ -11,7 +11,7 @@ describe('TaskIdResolver', () => {
 
   beforeEach(() => {
     resolver = new TaskIdResolver();
-    
+
     // Create mock tasks for testing
     mockTasks = {
       'abcd1234-5678-9012-3456-789012345678': {
@@ -35,7 +35,7 @@ describe('TaskIdResolver', () => {
         tags: [],
         version: 1,
         changeLog: [],
-        comments: []
+        comments: [],
       },
       'efgh5678-9012-3456-7890-123456789012': {
         id: 'efgh5678-9012-3456-7890-123456789012',
@@ -58,7 +58,7 @@ describe('TaskIdResolver', () => {
         tags: [],
         version: 1,
         changeLog: [],
-        comments: []
+        comments: [],
       },
       'abef9999-1111-2222-3333-444444444444': {
         id: 'abef9999-1111-2222-3333-444444444444',
@@ -81,8 +81,8 @@ describe('TaskIdResolver', () => {
         tags: [],
         version: 1,
         changeLog: [],
-        comments: []
-      }
+        comments: [],
+      },
     };
   });
 
@@ -122,7 +122,7 @@ describe('TaskIdResolver', () => {
     it('should resolve exact task ID matches', () => {
       const fullId = 'abcd1234-5678-9012-3456-789012345678';
       const result = resolver.resolveTaskId(fullId, mockTasks);
-      
+
       expect(result.success).toBe(true);
       expect(result.resolvedId).toBe(fullId);
       expect(result.matches).toHaveLength(1);
@@ -131,7 +131,7 @@ describe('TaskIdResolver', () => {
 
     it('should resolve partial UUID matches', () => {
       const result = resolver.resolveTaskId('abcd1234', mockTasks);
-      
+
       expect(result.success).toBe(true);
       expect(result.resolvedId).toBe('abcd1234-5678-9012-3456-789012345678');
       expect(result.matches).toHaveLength(1);
@@ -139,7 +139,7 @@ describe('TaskIdResolver', () => {
 
     it('should handle multiple partial matches', () => {
       const result = resolver.resolveTaskId('ab', mockTasks);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toContain('Multiple tasks found');
       expect(result.matches).toHaveLength(2); // Both abcd1234... and abef9999... match
@@ -148,7 +148,7 @@ describe('TaskIdResolver', () => {
 
     it('should handle no matches found', () => {
       const result = resolver.resolveTaskId('xyz123', mockTasks);
-      
+
       expect(result.success).toBe(false);
       expect(result.error).toContain('No task found');
       expect(result.suggestions).toContain('Use get_tasks to list all available tasks');
@@ -156,7 +156,7 @@ describe('TaskIdResolver', () => {
 
     it('should provide similar ID suggestions', () => {
       const result = resolver.resolveTaskId('abcd12345', mockTasks); // Close but not exact
-      
+
       expect(result.success).toBe(false);
       expect(result.suggestions?.some(s => s.includes('Similar IDs found'))).toBe(true);
     });
@@ -165,7 +165,7 @@ describe('TaskIdResolver', () => {
   describe('suggestSimilarIds', () => {
     it('should suggest similar task IDs', () => {
       const suggestions = resolver.suggestSimilarIds('abcd123', mockTasks);
-      
+
       expect(suggestions.length).toBeGreaterThan(0);
       expect(suggestions[0]).toContain('abcd1234');
       expect(suggestions[0]).toContain('Test Task 1');
@@ -173,13 +173,13 @@ describe('TaskIdResolver', () => {
 
     it('should return empty array for very dissimilar inputs', () => {
       const suggestions = resolver.suggestSimilarIds('xyz999', mockTasks);
-      
+
       expect(suggestions.length).toBe(0);
     });
 
     it('should limit suggestions to reasonable number', () => {
       const suggestions = resolver.suggestSimilarIds('a', mockTasks);
-      
+
       expect(suggestions.length).toBeLessThanOrEqual(5);
     });
   });
@@ -188,22 +188,22 @@ describe('TaskIdResolver', () => {
     it('should use context for better suggestions', () => {
       const context = {
         recentTaskIds: ['abcd1234-5678-9012-3456-789012345678'],
-        preferredStatus: 'pending' as const
+        preferredStatus: 'pending' as const,
       };
-      
+
       const result = resolver.resolveTaskIdWithContext('xy', mockTasks, context);
-      
+
       expect(result.success).toBe(false);
       expect(result.suggestions?.some(s => s.includes('Recent tasks'))).toBe(true);
     });
 
     it('should suggest tasks with preferred status', () => {
       const context = {
-        preferredStatus: 'in_progress' as const
+        preferredStatus: 'in_progress' as const,
       };
-      
+
       const result = resolver.resolveTaskIdWithContext('xyz', mockTasks, context);
-      
+
       expect(result.success).toBe(false);
       expect(result.suggestions?.some(s => s.includes('with status in_progress'))).toBe(true);
     });
@@ -211,7 +211,7 @@ describe('TaskIdResolver', () => {
     it('should fall back to basic resolution when context does not help', () => {
       const basicResult = resolver.resolveTaskId('abcd1234', mockTasks);
       const contextResult = resolver.resolveTaskIdWithContext('abcd1234', mockTasks, {});
-      
+
       expect(contextResult.success).toBe(basicResult.success);
       expect(contextResult.resolvedId).toBe(basicResult.resolvedId);
     });

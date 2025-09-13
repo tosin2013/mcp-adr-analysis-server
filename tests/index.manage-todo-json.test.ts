@@ -1,6 +1,6 @@
 /**
  * Tests for manage_todo_json tool integration in index.ts
- * 
+ *
  * Tests the manageTodoJson method in the main McpAdrAnalysisServer class,
  * focusing on integration, error handling, input validation, and stability.
  */
@@ -31,7 +31,7 @@ jest.unstable_mockModule('../src/utils/knowledge-graph-manager.js', () => ({
     addToolExecution: jest.fn(),
     getIntentById: jest.fn(() => Promise.resolve({ currentStatus: 'executing' })),
     updateIntentStatus: jest.fn(),
-  }))
+  })),
 }));
 
 jest.unstable_mockModule('../src/utils/project-health-scoring.js', () => ({
@@ -44,7 +44,7 @@ jest.unstable_mockModule('../src/utils/project-health-scoring.js', () => ({
     updateTaskVelocityScore: jest.fn(() => Promise.resolve(undefined)),
     calculateProjectHealthScore: jest.fn(() => Promise.resolve({})),
     analyzeHealthTrends: jest.fn(() => Promise.resolve([])),
-  }))
+  })),
 }));
 
 describe('manage_todo_json Tool Integration', () => {
@@ -57,16 +57,16 @@ describe('manage_todo_json Tool Integration', () => {
     // Create temporary test directory
     testProjectPath = join(tmpdir(), `test-manage-todo-json-${Date.now()}`);
     mkdirSync(testProjectPath, { recursive: true });
-    
+
     cacheDir = join(testProjectPath, '.mcp-adr-cache');
     mkdirSync(cacheDir, { recursive: true });
-    
+
     todoJsonPath = join(cacheDir, 'todo-data.json');
-    
+
     // Set environment variables for test
     process.env['PROJECT_PATH'] = testProjectPath;
     process.env['LOG_LEVEL'] = 'ERROR'; // Reduce log noise
-    
+
     // Create server instance
     server = new McpAdrAnalysisServer();
   });
@@ -76,7 +76,7 @@ describe('manage_todo_json Tool Integration', () => {
     if (existsSync(testProjectPath)) {
       rmSync(testProjectPath, { recursive: true, force: true });
     }
-    
+
     // Clean up environment
     delete process.env['PROJECT_PATH'];
     delete process.env['LOG_LEVEL'];
@@ -89,7 +89,7 @@ describe('manage_todo_json Tool Integration', () => {
         projectPath: testProjectPath,
         title: 'Test task',
         description: 'Test description',
-        priority: 'high'
+        priority: 'high',
       });
 
       expect(result).toBeDefined();
@@ -100,7 +100,7 @@ describe('manage_todo_json Tool Integration', () => {
     it('should get tasks with no existing data', async () => {
       const result = await (server as any).manageTodoJson({
         operation: 'get_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       });
 
       expect(result).toBeDefined();
@@ -112,7 +112,7 @@ describe('manage_todo_json Tool Integration', () => {
       const result = await (server as any).manageTodoJson({
         operation: 'get_analytics',
         projectPath: testProjectPath,
-        timeframe: 'week'
+        timeframe: 'week',
       });
 
       expect(result).toBeDefined();
@@ -123,25 +123,31 @@ describe('manage_todo_json Tool Integration', () => {
 
   describe('Error Handling', () => {
     it('should handle invalid operation gracefully', async () => {
-      await expect((server as any).manageTodoJson({
-        operation: 'invalid_operation',
-        projectPath: testProjectPath
-      })).rejects.toThrow(/Invalid input/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'invalid_operation',
+          projectPath: testProjectPath,
+        })
+      ).rejects.toThrow(/Invalid input/);
     });
 
     it('should handle missing required fields', async () => {
-      await expect((server as any).manageTodoJson({
-        operation: 'create_task',
-        projectPath: testProjectPath
-        // Missing required 'title' field
-      })).rejects.toThrow(/Invalid input/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'create_task',
+          projectPath: testProjectPath,
+          // Missing required 'title' field
+        })
+      ).rejects.toThrow(/Invalid input/);
     });
 
     it('should handle invalid project path', async () => {
-      await expect((server as any).manageTodoJson({
-        operation: 'get_tasks',
-        projectPath: '/nonexistent/path'
-      })).rejects.toThrow(/TODO management failed/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'get_tasks',
+          projectPath: '/nonexistent/path',
+        })
+      ).rejects.toThrow(/TODO management failed/);
     });
 
     it('should handle malformed task updates', async () => {
@@ -149,31 +155,35 @@ describe('manage_todo_json Tool Integration', () => {
       await (server as any).manageTodoJson({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Test task'
+        title: 'Test task',
       });
 
       // Try to update with invalid data
-      await expect((server as any).manageTodoJson({
-        operation: 'update_task',
-        projectPath: testProjectPath,
-        taskId: 'nonexistent-id',
-        updates: { status: 'invalid_status' },
-        reason: 'Test update'
-      })).rejects.toThrow(/Invalid status/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'update_task',
+          projectPath: testProjectPath,
+          taskId: 'nonexistent-id',
+          updates: { status: 'invalid_status' },
+          reason: 'Test update',
+        })
+      ).rejects.toThrow(/Invalid status/);
     });
 
     it('should handle filesystem errors gracefully', async () => {
       // Create read-only directory to simulate permission error
       const readOnlyDir = join(testProjectPath, 'readonly');
       mkdirSync(readOnlyDir, { recursive: true });
-      
+
       try {
         // Try to write to a read-only location (this might not fail on all systems)
-        await expect((server as any).manageTodoJson({
-          operation: 'create_task',
-          projectPath: readOnlyDir,
-          title: 'Test task'
-        })).rejects.toThrow(/TODO management failed/);
+        await expect(
+          (server as any).manageTodoJson({
+            operation: 'create_task',
+            projectPath: readOnlyDir,
+            title: 'Test task',
+          })
+        ).rejects.toThrow(/TODO management failed/);
       } catch (error) {
         // If it doesn't fail due to permissions, that's also acceptable
         // as the error handling wrapper is still tested
@@ -184,7 +194,7 @@ describe('manage_todo_json Tool Integration', () => {
   describe('Input Validation', () => {
     it('should handle missing projectPath gracefully', async () => {
       const result = await (server as any).manageTodoJson({
-        operation: 'get_tasks'
+        operation: 'get_tasks',
         // projectPath should be provided by server config
       });
 
@@ -193,12 +203,14 @@ describe('manage_todo_json Tool Integration', () => {
     });
 
     it('should validate priority enum values', async () => {
-      await expect((server as any).manageTodoJson({
-        operation: 'create_task',
-        projectPath: testProjectPath,
-        title: 'Test task',
-        priority: 'invalid_priority'
-      })).rejects.toThrow(/Invalid priority/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'create_task',
+          projectPath: testProjectPath,
+          title: 'Test task',
+          priority: 'invalid_priority',
+        })
+      ).rejects.toThrow(/Invalid priority/);
     });
 
     it('should validate status enum values in updates', async () => {
@@ -206,29 +218,33 @@ describe('manage_todo_json Tool Integration', () => {
       const createResult = await (server as any).manageTodoJson({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Test task'
+        title: 'Test task',
       });
 
       // Extract task ID from the response
       const taskId = extractTaskIdFromResponse(createResult.content[0].text);
 
-      await expect((server as any).manageTodoJson({
-        operation: 'update_task',
-        projectPath: testProjectPath,
-        taskId: taskId,
-        updates: { status: 'invalid_status' },
-        reason: 'Test update'
-      })).rejects.toThrow(/Invalid status/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'update_task',
+          projectPath: testProjectPath,
+          taskId: taskId,
+          updates: { status: 'invalid_status' },
+          reason: 'Test update',
+        })
+      ).rejects.toThrow(/Invalid status/);
     });
 
     it('should handle malformed date formats', async () => {
       // Updated behavior: malformed dates are now properly validated and rejected
-      await expect((server as any).manageTodoJson({
-        operation: 'create_task',
-        projectPath: testProjectPath,
-        title: 'Test task',
-        dueDate: 'invalid-date-format'
-      })).rejects.toThrow(/Invalid date format/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'create_task',
+          projectPath: testProjectPath,
+          title: 'Test task',
+          dueDate: 'invalid-date-format',
+        })
+      ).rejects.toThrow(/Invalid date format/);
     });
 
     it('should accept valid ISO date format', async () => {
@@ -236,7 +252,7 @@ describe('manage_todo_json Tool Integration', () => {
         operation: 'create_task',
         projectPath: testProjectPath,
         title: 'Test task',
-        dueDate: '2025-12-31T23:59:59Z'
+        dueDate: '2025-12-31T23:59:59Z',
       });
 
       expect(result).toBeDefined();
@@ -251,7 +267,7 @@ describe('manage_todo_json Tool Integration', () => {
       // and produces the expected result format from manageTodoV2
       const result = await (server as any).manageTodoJson({
         operation: 'get_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       });
 
       // Verify that the result has the structure we expect from manageTodoV2
@@ -266,10 +282,12 @@ describe('manage_todo_json Tool Integration', () => {
       // This test is difficult to implement with dynamic imports in Jest
       // Instead, we'll verify that the manageTodoJson method properly wraps errors
       // by testing an invalid operation which should trigger error handling
-      await expect((server as any).manageTodoJson({
-        operation: 'completely_invalid_operation_that_will_fail',
-        projectPath: testProjectPath
-      })).rejects.toThrow(/Invalid input/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'completely_invalid_operation_that_will_fail',
+          projectPath: testProjectPath,
+        })
+      ).rejects.toThrow(/Invalid input/);
     });
 
     it('should preserve all arguments when delegating', async () => {
@@ -284,7 +302,7 @@ describe('manage_todo_json Tool Integration', () => {
         dependencies: [],
         linkedAdrs: ['adr-001.md'],
         autoComplete: true,
-        completionCriteria: 'All tests pass'
+        completionCriteria: 'All tests pass',
       };
 
       const result = await (server as any).manageTodoJson(complexArgs);
@@ -302,7 +320,7 @@ describe('manage_todo_json Tool Integration', () => {
           operation: 'create_task',
           projectPath: testProjectPath,
           title: `Concurrent task ${i}`,
-          priority: 'medium'
+          priority: 'medium',
         })
       );
 
@@ -320,14 +338,14 @@ describe('manage_todo_json Tool Integration', () => {
       await (server as any).manageTodoJson({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Base task'
+        title: 'Base task',
       });
 
       // Perform concurrent reads
       const promises = Array.from({ length: 3 }, () =>
         (server as any).manageTodoJson({
           operation: 'get_tasks',
-          projectPath: testProjectPath
+          projectPath: testProjectPath,
         })
       );
 
@@ -347,7 +365,7 @@ describe('manage_todo_json Tool Integration', () => {
         { operation: 'get_tasks', projectPath: testProjectPath },
         { operation: 'create_task', projectPath: testProjectPath, title: 'Task 2' },
         { operation: 'get_analytics', projectPath: testProjectPath },
-        { operation: 'create_task', projectPath: testProjectPath, title: 'Task 3' }
+        { operation: 'create_task', projectPath: testProjectPath, title: 'Task 3' },
       ];
 
       const promises = operations.map(op => (server as any).manageTodoJson(op));
@@ -365,7 +383,7 @@ describe('manage_todo_json Tool Integration', () => {
   describe('Configuration and Parameter Handling', () => {
     it('should use server config projectPath when not provided', async () => {
       const result = await (server as any).manageTodoJson({
-        operation: 'get_tasks'
+        operation: 'get_tasks',
         // projectPath not provided, should use server config
       });
 
@@ -381,7 +399,7 @@ describe('manage_todo_json Tool Integration', () => {
       try {
         const result = await (server as any).manageTodoJson({
           operation: 'get_tasks',
-          projectPath: customPath
+          projectPath: customPath,
         });
 
         expect(result).toBeDefined();
@@ -397,11 +415,11 @@ describe('manage_todo_json Tool Integration', () => {
         projectPath: testProjectPath,
         filters: {
           status: 'pending',
-          priority: 'high'
+          priority: 'high',
         },
         sortBy: 'priority',
         sortOrder: 'desc',
-        limit: 10
+        limit: 10,
       });
 
       expect(result).toBeDefined();
@@ -411,26 +429,32 @@ describe('manage_todo_json Tool Integration', () => {
 
   describe('Edge Cases', () => {
     it('should handle empty operation string', async () => {
-      await expect((server as any).manageTodoJson({
-        operation: '',
-        projectPath: testProjectPath
-      })).rejects.toThrow(/Invalid input/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: '',
+          projectPath: testProjectPath,
+        })
+      ).rejects.toThrow(/Invalid input/);
     });
 
     it('should handle null/undefined arguments', async () => {
       await expect((server as any).manageTodoJson(null)).rejects.toThrow(/TODO management failed/);
-      await expect((server as any).manageTodoJson(undefined)).rejects.toThrow(/TODO management failed/);
+      await expect((server as any).manageTodoJson(undefined)).rejects.toThrow(
+        /TODO management failed/
+      );
     });
 
     it('should handle extremely long task titles', async () => {
       const longTitle = 'A'.repeat(1000);
-      
+
       // Updated behavior: extremely long titles are now properly validated and rejected
-      await expect((server as any).manageTodoJson({
-        operation: 'create_task',
-        projectPath: testProjectPath,
-        title: longTitle
-      })).rejects.toThrow(/Task title is too long/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'create_task',
+          projectPath: testProjectPath,
+          title: longTitle,
+        })
+      ).rejects.toThrow(/Task title is too long/);
     });
 
     it('should handle special characters in task data', async () => {
@@ -439,7 +463,7 @@ describe('manage_todo_json Tool Integration', () => {
         projectPath: testProjectPath,
         title: 'Task with 特殊字符 and émojis 🚀',
         description: 'Description with\nnewlines\tand\ttabs',
-        assignee: 'user@domain.com'
+        assignee: 'user@domain.com',
       });
 
       expect(result).toBeDefined();
@@ -453,7 +477,7 @@ describe('manage_todo_json Tool Integration', () => {
       // Should still work by recreating the data structure
       const result = await (server as any).manageTodoJson({
         operation: 'get_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       });
 
       expect(result).toBeDefined();
@@ -468,7 +492,7 @@ describe('manage_todo_json Tool Integration', () => {
         const result = await (server as any).manageTodoJson({
           operation: 'create_task',
           projectPath: testProjectPath,
-          title: `Rapid task ${i}`
+          title: `Rapid task ${i}`,
         });
         expect(result).toBeDefined();
       }
@@ -476,7 +500,7 @@ describe('manage_todo_json Tool Integration', () => {
       // Verify all tasks were created
       const getResult = await (server as any).manageTodoJson({
         operation: 'get_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       });
 
       expect(getResult.content[0].text).toContain('10 tasks');
@@ -487,16 +511,18 @@ describe('manage_todo_json Tool Integration', () => {
       await (server as any).manageTodoJson({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Base task'
+        title: 'Base task',
       });
 
       // Perform many operations
       const operations = [];
       for (let i = 0; i < 20; i++) {
-        operations.push((server as any).manageTodoJson({
-          operation: 'get_tasks',
-          projectPath: testProjectPath
-        }));
+        operations.push(
+          (server as any).manageTodoJson({
+            operation: 'get_tasks',
+            projectPath: testProjectPath,
+          })
+        );
       }
 
       const results = await Promise.all(operations);
@@ -515,7 +541,7 @@ describe('manage_todo_json Tool Integration', () => {
           projectPath: testProjectPath,
           title: `Bulk task ${i}`,
           description: `Description for task ${i}`.repeat(10), // Make it longer
-          tags: [`tag-${i}`, `category-${i % 5}`]
+          tags: [`tag-${i}`, `category-${i % 5}`],
         });
       }
 
@@ -524,7 +550,7 @@ describe('manage_todo_json Tool Integration', () => {
         operation: 'get_analytics',
         projectPath: testProjectPath,
         includeVelocity: true,
-        includeScoring: true
+        includeScoring: true,
       });
 
       expect(analyticsResult).toBeDefined();
@@ -538,14 +564,15 @@ describe('manage_todo_json Tool Integration', () => {
  * Looks for patterns like "Task ID: abc123" or similar
  */
 function extractTaskIdFromResponse(responseText: string): string {
-  const idMatch = responseText.match(/Task ID: ([a-f0-9-]+)/i) || 
-                  responseText.match(/ID: ([a-f0-9-]+)/i) ||
-                  responseText.match(/\[([a-f0-9-]+)\]/);
-  
+  const idMatch =
+    responseText.match(/Task ID: ([a-f0-9-]+)/i) ||
+    responseText.match(/ID: ([a-f0-9-]+)/i) ||
+    responseText.match(/\[([a-f0-9-]+)\]/);
+
   if (idMatch && idMatch[1]) {
     return idMatch[1];
   }
-  
+
   // If no ID found, try to get a short ID pattern
   const shortIdMatch = responseText.match(/\b([a-f0-9]{6,8})\b/);
   return shortIdMatch ? shortIdMatch[1]! : 'unknown-id';
