@@ -1068,12 +1068,30 @@ export class TodoJsonManager {
     };
 
     // Update project health scoring
-    await this.healthScoring.updateTaskCompletionScore({
-      completed: metrics.completedTasks,
-      total: metrics.totalTasks,
-      criticalTasksRemaining: metrics.criticalTasksRemaining,
-      priorityWeightedScore: metrics.priorityWeightedScore,
-    });
+    if (this.healthScoring && typeof this.healthScoring.updateTaskCompletionScore === 'function') {
+      await this.healthScoring.updateTaskCompletionScore({
+        completed: metrics.completedTasks,
+        total: metrics.totalTasks,
+        criticalTasksRemaining: metrics.criticalTasksRemaining,
+        priorityWeightedScore: metrics.priorityWeightedScore,
+      });
+    } else {
+      console.warn(
+        '⚠️ ProjectHealthScoring not properly initialized or updateTaskCompletionScore method missing'
+      );
+      console.warn('healthScoring exists:', !!this.healthScoring);
+      console.warn('healthScoring type:', typeof this.healthScoring);
+      if (this.healthScoring) {
+        console.warn(
+          'updateTaskCompletionScore type:',
+          typeof this.healthScoring.updateTaskCompletionScore
+        );
+        console.warn(
+          'Available methods:',
+          Object.getOwnPropertyNames(Object.getPrototypeOf(this.healthScoring))
+        );
+      }
+    }
   }
 
   /**
