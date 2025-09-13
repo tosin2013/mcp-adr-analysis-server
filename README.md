@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/tosin2013-mcp-adr-analysis-server-badge.png)](https://mseep.ai/app/tosin2013-mcp-adr-analysis-server)
+
 # MCP ADR Analysis Server
 
 [![GitHub](https://img.shields.io/badge/github-tosin2013/mcp--adr--analysis--server-blue.svg?style=flat&logo=github)](https://github.com/tosin2013/mcp-adr-analysis-server)
