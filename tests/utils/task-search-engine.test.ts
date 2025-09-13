@@ -1,6 +1,6 @@
 /**
  * Task Search Engine Tests
- * 
+ *
  * Tests for the enhanced search functionality including fuzzy search,
  * multi-field search, and regex pattern matching.
  */
@@ -14,7 +14,7 @@ describe('TaskSearchEngine', () => {
 
   beforeEach(() => {
     searchEngine = new TaskSearchEngine(0.3);
-    
+
     sampleTasks = [
       {
         id: 'task-001',
@@ -40,7 +40,7 @@ describe('TaskSearchEngine', () => {
         lastModifiedBy: 'tool',
         version: 1,
         changeLog: [],
-        comments: []
+        comments: [],
       },
       {
         id: 'task-002',
@@ -66,7 +66,7 @@ describe('TaskSearchEngine', () => {
         lastModifiedBy: 'tool',
         version: 1,
         changeLog: [],
-        comments: []
+        comments: [],
       },
       {
         id: 'task-003',
@@ -92,8 +92,8 @@ describe('TaskSearchEngine', () => {
         lastModifiedBy: 'tool',
         version: 1,
         changeLog: [],
-        comments: []
-      }
+        comments: [],
+      },
     ];
   });
 
@@ -122,7 +122,7 @@ describe('TaskSearchEngine', () => {
       expect(results).toHaveLength(2);
       expect(results.map(t => t.title)).toEqual([
         'Implement user authentication',
-        'Design user interface'
+        'Design user interface',
       ]);
     });
 
@@ -182,13 +182,11 @@ describe('TaskSearchEngine', () => {
     });
 
     it('should apply field weights correctly', () => {
-      const results = searchEngine.multiFieldSearch(
-        'user',
-        ['title', 'description'],
-        sampleTasks,
-        { title: 1.0, description: 0.5 }
-      );
-      
+      const results = searchEngine.multiFieldSearch('user', ['title', 'description'], sampleTasks, {
+        title: 1.0,
+        description: 0.5,
+      });
+
       // Results should be sorted by relevance score
       expect(results[0].relevanceScore).toBeGreaterThanOrEqual(results[1].relevanceScore);
     });
@@ -199,7 +197,7 @@ describe('TaskSearchEngine', () => {
         ['title', 'description'],
         sampleTasks
       );
-      
+
       expect(results.length).toBeGreaterThanOrEqual(1);
       const authTask = results.find(r => r.task.title === 'Implement user authentication');
       expect(authTask).toBeDefined();
@@ -266,9 +264,9 @@ describe('TaskSearchEngine', () => {
         description: undefined,
         assignee: undefined,
         category: undefined,
-        tags: []
+        tags: [],
       };
-      
+
       const results = searchEngine.searchByTitle('authentication', [taskWithMissingFields]);
       expect(results).toHaveLength(1);
     });

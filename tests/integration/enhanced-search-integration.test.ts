@@ -1,6 +1,6 @@
 /**
  * Enhanced Search Integration Tests
- * 
+ *
  * Tests the integration between the TaskSearchEngine and the find_task operation
  * to ensure the enhanced search functionality works end-to-end.
  */
@@ -18,13 +18,13 @@ describe('Enhanced Search Integration', () => {
   beforeEach(async () => {
     // Create temporary test directory
     testProjectPath = await fs.mkdtemp(path.join(os.tmpdir(), 'enhanced-search-test-'));
-    
+
     // Initialize cache directory
     const cacheDir = path.join(testProjectPath, '.mcp-adr-cache');
     await fs.mkdir(cacheDir, { recursive: true });
-    
+
     todoManager = new TodoJsonManager(testProjectPath);
-    
+
     // Create some test tasks
     await manageTodoV2({
       operation: 'create_task',
@@ -33,7 +33,7 @@ describe('Enhanced Search Integration', () => {
       description: 'Add secure login and registration functionality with JWT tokens',
       priority: 'high',
       tags: ['auth', 'security', 'backend'],
-      assignee: 'john.doe'
+      assignee: 'john.doe',
     });
 
     await manageTodoV2({
@@ -43,7 +43,7 @@ describe('Enhanced Search Integration', () => {
       description: 'Create tables for user data and authentication records',
       priority: 'medium',
       tags: ['database', 'schema', 'backend'],
-      assignee: 'jane.smith'
+      assignee: 'jane.smith',
     });
 
     await manageTodoV2({
@@ -53,7 +53,7 @@ describe('Enhanced Search Integration', () => {
       description: 'Create wireframes and mockups for the login page',
       priority: 'low',
       tags: ['ui', 'design', 'frontend'],
-      assignee: 'bob.wilson'
+      assignee: 'bob.wilson',
     });
   });
 
@@ -67,7 +67,7 @@ describe('Enhanced Search Integration', () => {
       const result = await manageTodoV2({
         operation: 'find_task',
         projectPath: testProjectPath,
-        query: 'user'
+        query: 'user',
       });
 
       expect(result.content[0].text).toContain('Enhanced Search Results');
@@ -80,7 +80,7 @@ describe('Enhanced Search Integration', () => {
         operation: 'find_task',
         projectPath: testProjectPath,
         query: 'authentification', // typo in authentication
-        searchType: 'fuzzy'
+        searchType: 'fuzzy',
       });
 
       expect(result.content[0].text).toContain('Enhanced Search Results');
@@ -92,7 +92,7 @@ describe('Enhanced Search Integration', () => {
         operation: 'find_task',
         projectPath: testProjectPath,
         query: '^Setup',
-        searchType: 'regex'
+        searchType: 'regex',
       });
 
       expect(result.content[0].text).toContain('Enhanced Search Results');
@@ -105,7 +105,7 @@ describe('Enhanced Search Integration', () => {
         projectPath: testProjectPath,
         query: 'backend',
         searchType: 'multi_field',
-        searchFields: ['tags', 'description']
+        searchFields: ['tags', 'description'],
       });
 
       expect(result.content[0].text).toContain('Enhanced Search Results');
@@ -118,7 +118,7 @@ describe('Enhanced Search Integration', () => {
         operation: 'find_task',
         projectPath: testProjectPath,
         query: 'authentication',
-        showRelevanceScore: true
+        showRelevanceScore: true,
       });
 
       expect(result.content[0].text).toContain('Enhanced Search Results');
@@ -131,7 +131,7 @@ describe('Enhanced Search Integration', () => {
       const result = await manageTodoV2({
         operation: 'find_task',
         projectPath: testProjectPath,
-        query: 'nonexistent-feature'
+        query: 'nonexistent-feature',
       });
 
       expect(result.content[0].text).toContain('No tasks found matching');
@@ -145,7 +145,7 @@ describe('Enhanced Search Integration', () => {
         projectPath: testProjectPath,
         query: 'authentification',
         searchType: 'fuzzy',
-        fuzzyThreshold: 0.1 // Very strict
+        fuzzyThreshold: 0.1, // Very strict
       });
 
       // With strict threshold, should not match the typo
@@ -160,7 +160,7 @@ describe('Enhanced Search Integration', () => {
         searchType: 'multi_field',
         searchFields: ['title', 'description'],
         fieldWeights: { title: 1.0, description: 0.5 },
-        showRelevanceScore: true
+        showRelevanceScore: true,
       });
 
       expect(result.content[0].text).toContain('Enhanced Search Results');
@@ -174,7 +174,7 @@ describe('Enhanced Search Integration', () => {
         projectPath: testProjectPath,
         query: 'database',
         searchType: 'comprehensive',
-        showRelevanceScore: true
+        showRelevanceScore: true,
       });
 
       expect(result.content[0].text).toContain('Enhanced Search Results');
@@ -189,7 +189,7 @@ describe('Enhanced Search Integration', () => {
       const result = await manageTodoV2({
         operation: 'find_task',
         projectPath: testProjectPath,
-        query: ''
+        query: '',
       });
 
       expect(result.content[0].text).toContain('No tasks found matching');
@@ -200,7 +200,7 @@ describe('Enhanced Search Integration', () => {
         operation: 'find_task',
         projectPath: testProjectPath,
         query: '[invalid-regex',
-        searchType: 'regex'
+        searchType: 'regex',
       });
 
       // Should fall back to literal search without crashing
@@ -212,7 +212,7 @@ describe('Enhanced Search Integration', () => {
         operation: 'find_task',
         projectPath: testProjectPath,
         query: 'authentication',
-        searchType: 'title'
+        searchType: 'title',
       });
 
       expect(result.content[0].text).toContain('Enhanced Search Results');

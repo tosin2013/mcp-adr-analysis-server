@@ -24,9 +24,30 @@ import { McpAdrError } from '../types/index.js';
 import { TodoManagerError } from '../types/enhanced-errors.js';
 import { TodoJsonManager } from '../utils/todo-json-manager.js';
 import { KnowledgeGraphManager } from '../utils/knowledge-graph-manager.js';
+import { TodoJsonData } from '../types/todo-json-schemas.js';
 import { TaskIdResolver } from '../utils/task-id-resolver.js';
 import { TaskSearchEngine, SearchResult } from '../utils/task-search-engine.js';
 import { TodoValidator } from '../utils/todo-validation.js';
+
+/**
+ * Helper function to load todo data with retry mechanism to handle batching delays
+ */
+async function loadTodoDataWithRetry(
+  todoManager: TodoJsonManager,
+  maxRetries: number = 3
+): Promise<TodoJsonData> {
+  let data = await todoManager.loadTodoData();
+  let retryCount = 0;
+
+  // If data is empty, retry to handle batching delays
+  while (Object.keys(data.tasks).length === 0 && retryCount < maxRetries) {
+    await new Promise(resolve => setTimeout(resolve, 50 * (retryCount + 1)));
+    data = await todoManager.loadTodoData();
+    retryCount++;
+  }
+
+  return data;
+}
 
 // Task operations schema
 const CreateTaskSchema = z.object({
@@ -61,6 +82,7 @@ const UpdateTaskSchema = z.object({
       progressPercentage: z.number().min(0).max(100).optional(),
       notes: z.string().optional(),
       tags: z.array(z.string()).optional(),
+      dependencies: z.array(z.string()).optional(),
     })
     .describe('Fields to update'),
   reason: z
@@ -259,7 +281,7 @@ async function resolveTaskId(
   context?: { operation?: string }
 ): Promise<{ success: boolean; taskId?: string; error?: string; suggestions?: string[] }> {
   const resolver = new TaskIdResolver();
-  const data = await todoManager.loadTodoData();
+  const data = await loadTodoDataWithRetry(todoManager);
 
   const resolution = resolver.resolveTaskId(inputId, data.tasks);
 
@@ -384,6 +406,10 @@ export async function manageTodoV2(args: any): Promise<any> {
           completionCriteria: validatedArgs.completionCriteria,
         });
 
+        // Force flush to ensure data is persisted before returning
+        // This is necessary because each operation creates a new TodoJsonManager instance
+        await todoManager.flushBatch();
+
         return {
           content: [
             {
@@ -443,7 +469,8 @@ export async function manageTodoV2(args: any): Promise<any> {
           cleanUpdates.notes = validatedArgs.updates.notes;
         if (validatedArgs.updates.tags !== undefined)
           cleanUpdates.tags = validatedArgs.updates.tags;
-
+        if (validatedArgs.updates.dependencies !== undefined)
+          cleanUpdates.dependencies = validatedArgs.updates.dependencies;
         await todoManager.updateTask({
           taskId: taskId,
           updates: cleanUpdates,

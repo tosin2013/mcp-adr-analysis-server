@@ -19,7 +19,7 @@ jest.unstable_mockModule('../src/utils/knowledge-graph-manager.js', () => ({
     addToolExecution: jest.fn(),
     getIntentById: jest.fn(() => Promise.resolve({ currentStatus: 'executing' })),
     updateIntentStatus: jest.fn(),
-  }))
+  })),
 }));
 
 jest.unstable_mockModule('../src/utils/project-health-scoring.js', () => ({
@@ -32,7 +32,7 @@ jest.unstable_mockModule('../src/utils/project-health-scoring.js', () => ({
     updateTaskVelocityScore: jest.fn(() => Promise.resolve(undefined)),
     calculateProjectHealthScore: jest.fn(() => Promise.resolve({})),
     analyzeHealthTrends: jest.fn(() => Promise.resolve([])),
-  }))
+  })),
 }));
 
 describe('TODO Bug Fix: End-to-End Validation', () => {
@@ -43,14 +43,14 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
     // Create temporary test directory
     testProjectPath = join(tmpdir(), `test-todo-e2e-${Date.now()}`);
     mkdirSync(testProjectPath, { recursive: true });
-    
+
     const cacheDir = join(testProjectPath, '.mcp-adr-cache');
     mkdirSync(cacheDir, { recursive: true });
-    
+
     // Set environment variables for test
     process.env['PROJECT_PATH'] = testProjectPath;
     process.env['LOG_LEVEL'] = 'ERROR';
-    
+
     // Create server instance
     server = new McpAdrAnalysisServer();
   });
@@ -60,7 +60,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
     if (existsSync(testProjectPath)) {
       rmSync(testProjectPath, { recursive: true, force: true });
     }
-    
+
     // Clean up environment
     delete process.env['PROJECT_PATH'];
     delete process.env['LOG_LEVEL'];
@@ -69,7 +69,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
   it('should demonstrate the complete fix for the ServiceNow-OpenShift Integration scenario', async () => {
     // Step 1: Create tasks representing the ServiceNow-OpenShift integration project
     console.log('Creating test tasks for ArgoCD, ESO, and Keycloak deployments...');
-    
+
     const argoCdResult = await (server as any).manageTodoJson({
       operation: 'create_task',
       projectPath: testProjectPath,
@@ -77,17 +77,17 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
       description: 'Set up ArgoCD operator and configure GitOps workflow',
       priority: 'high',
       category: 'Deployment',
-      tags: ['argocd', 'gitops', 'deployment']
+      tags: ['argocd', 'gitops', 'deployment'],
     });
 
     const esoResult = await (server as any).manageTodoJson({
-      operation: 'create_task', 
+      operation: 'create_task',
       projectPath: testProjectPath,
       title: 'Deploy External Secrets Operator',
       description: 'Install and configure ESO for secret management',
       priority: 'high',
       category: 'Deployment',
-      tags: ['eso', 'secrets', 'deployment']
+      tags: ['eso', 'secrets', 'deployment'],
     });
 
     const keycloakResult = await (server as any).manageTodoJson({
@@ -97,7 +97,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
       description: 'Set up Keycloak for identity and access management',
       priority: 'medium',
       category: 'Deployment',
-      tags: ['keycloak', 'auth', 'deployment']
+      tags: ['keycloak', 'auth', 'deployment'],
     });
 
     // Extract task IDs
@@ -108,14 +108,16 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
     // Wait for batch to flush to ensure all tasks are persisted
     await new Promise(resolve => setTimeout(resolve, 150));
 
-    console.log(`Created tasks: ArgoCD(${argoCdTaskId}), ESO(${esoTaskId}), Keycloak(${keycloakTaskId})`);
+    console.log(
+      `Created tasks: ArgoCD(${argoCdTaskId}), ESO(${esoTaskId}), Keycloak(${keycloakTaskId})`
+    );
 
     // Step 2: Test the EXACT failing commands from the issue (should now work)
     console.log('Testing Command 1: Simple status update...');
     const command1Result = await (server as any).manageTodoJson({
       operation: 'update_task',
       taskId: argoCdTaskId,
-      updates: { status: 'completed' }
+      updates: { status: 'completed' },
       // No reason field - this was causing "Invalid input" before
     });
 
@@ -124,9 +126,9 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
 
     console.log('Testing Command 2: Progress update...');
     const command2Result = await (server as any).manageTodoJson({
-      operation: 'update_task', 
+      operation: 'update_task',
       taskId: esoTaskId,
-      updates: { progressPercentage: 100, status: 'completed' }
+      updates: { progressPercentage: 100, status: 'completed' },
       // No reason field - this was causing "Invalid input" before
     });
 
@@ -137,9 +139,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
     const command3Result = await (server as any).manageTodoJson({
       operation: 'bulk_update',
       projectPath: testProjectPath,
-      updates: [
-        { taskId: keycloakTaskId, progressPercentage: 100, status: 'completed' }
-      ]
+      updates: [{ taskId: keycloakTaskId, progressPercentage: 100, status: 'completed' }],
       // No reason field - this was causing "Invalid input" before
     });
 
@@ -152,7 +152,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
       operation: 'get_analytics',
       projectPath: testProjectPath,
       includeVelocity: true,
-      includeScoring: true
+      includeScoring: true,
     });
 
     expect(analyticsResult.content[0].text).toContain('Completed**: 3');
@@ -163,9 +163,10 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
     const verificationResult = await (server as any).manageTodoJson({
       operation: 'update_task',
       taskId: argoCdTaskId,
-      updates: { 
-        notes: 'Deployment verified: 8 pods running in openshift-gitops namespace. ArgoCD UI accessible and functional.'
-      }
+      updates: {
+        notes:
+          'Deployment verified: 8 pods running in openshift-gitops namespace. ArgoCD UI accessible and functional.',
+      },
       // Still no reason field - should work with default
     });
 
@@ -177,7 +178,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
       operation: 'get_tasks',
       projectPath: testProjectPath,
       sortBy: 'updatedAt',
-      sortOrder: 'desc'
+      sortOrder: 'desc',
     });
 
     expect(finalTasksResult.content[0].text).toContain('3 tasks');
@@ -194,7 +195,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
     const createResult = await (server as any).manageTodoJson({
       operation: 'create_task',
       projectPath: testProjectPath,
-      title: 'Test Task'
+      title: 'Test Task',
     });
     const taskId = extractTaskIdFromResponse(createResult.content[0].text);
 
@@ -202,28 +203,34 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
     await new Promise(resolve => setTimeout(resolve, 150));
 
     // Test that validation errors are thrown for invalid inputs
-    await expect((server as any).manageTodoJson({
-      operation: 'update_task',
-      projectPath: testProjectPath,
-      taskId: taskId,
-      updates: { status: 'invalid_status' },
-      reason: 'Test reason'
-    })).rejects.toThrow(/Invalid status/i);
+    await expect(
+      (server as any).manageTodoJson({
+        operation: 'update_task',
+        projectPath: testProjectPath,
+        taskId: taskId,
+        updates: { status: 'invalid_status' },
+        reason: 'Test reason',
+      })
+    ).rejects.toThrow(/Invalid status/i);
 
-    await expect((server as any).manageTodoJson({
-      operation: 'update_task',
-      projectPath: testProjectPath,
-      taskId: taskId,
-      updates: { progressPercentage: 150 },
-      reason: 'Test reason'
-    })).rejects.toThrow(/Number must be less than or equal to 100/i);
+    await expect(
+      (server as any).manageTodoJson({
+        operation: 'update_task',
+        projectPath: testProjectPath,
+        taskId: taskId,
+        updates: { progressPercentage: 150 },
+        reason: 'Test reason',
+      })
+    ).rejects.toThrow(/Number must be less than or equal to 100/i);
 
-    await expect((server as any).manageTodoJson({
-      operation: 'bulk_update',
-      projectPath: testProjectPath,
-      updates: { status: 'completed' }, // Should be array
-      reason: 'Test reason'
-    })).rejects.toThrow(/Invalid input/i);
+    await expect(
+      (server as any).manageTodoJson({
+        operation: 'bulk_update',
+        projectPath: testProjectPath,
+        updates: { status: 'completed' }, // Should be array
+        reason: 'Test reason',
+      })
+    ).rejects.toThrow(/Invalid input/i);
   });
 
   it('should demonstrate backward compatibility with explicit reason field', async () => {
@@ -231,7 +238,7 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
     const createResult = await (server as any).manageTodoJson({
       operation: 'create_task',
       projectPath: testProjectPath,
-      title: 'Compatibility Test Task'
+      title: 'Compatibility Test Task',
     });
     const taskId = extractTaskIdFromResponse(createResult.content[0].text);
 
@@ -244,11 +251,13 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
       projectPath: testProjectPath,
       taskId: taskId,
       updates: { status: 'completed' },
-      reason: 'Deployment verification successful - all pods running'
+      reason: 'Deployment verification successful - all pods running',
     });
 
     expect(updateResult.content[0].text).toContain('Task updated successfully');
-    expect(updateResult.content[0].text).toContain('Reason**: Deployment verification successful - all pods running');
+    expect(updateResult.content[0].text).toContain(
+      'Reason**: Deployment verification successful - all pods running'
+    );
   });
 });
 
@@ -257,20 +266,23 @@ describe('TODO Bug Fix: End-to-End Validation', () => {
  */
 function extractTaskIdFromResponse(responseText: string): string {
   // Look for full UUID pattern first (most reliable)
-  const fullIdMatch = responseText.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+  const fullIdMatch = responseText.match(
+    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i
+  );
   if (fullIdMatch) {
     return fullIdMatch[1];
   }
 
   // Fall back to other patterns
-  const idMatch = responseText.match(/Task ID: ([a-f0-9-]+)/i) || 
-                  responseText.match(/ID: ([a-f0-9-]+)/i) ||
-                  responseText.match(/\[([a-f0-9-]+)\]/);
-  
+  const idMatch =
+    responseText.match(/Task ID: ([a-f0-9-]+)/i) ||
+    responseText.match(/ID: ([a-f0-9-]+)/i) ||
+    responseText.match(/\[([a-f0-9-]+)\]/);
+
   if (idMatch && idMatch[1]) {
     return idMatch[1];
   }
-  
+
   // If no ID found, try to get a short ID pattern
   const shortIdMatch = responseText.match(/\b([a-f0-9]{6,8})\b/);
   return shortIdMatch ? shortIdMatch[1]! : 'unknown-id';

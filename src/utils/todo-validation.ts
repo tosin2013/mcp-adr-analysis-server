@@ -11,30 +11,36 @@ export interface ValidationResult {
 
 export class TodoValidator {
   private static readonly VALID_PRIORITIES = ['low', 'medium', 'high', 'critical'];
-  private static readonly VALID_STATUSES = ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'];
-  
+  private static readonly VALID_STATUSES = [
+    'pending',
+    'in_progress',
+    'completed',
+    'blocked',
+    'cancelled',
+  ];
+
   private static readonly PRIORITY_SUGGESTIONS: Record<string, string> = {
-    'urgent': 'critical',
-    'normal': 'medium',
-    'important': 'high',
-    'minor': 'low',
-    'major': 'high',
-    'blocker': 'critical',
-    'trivial': 'low'
+    urgent: 'critical',
+    normal: 'medium',
+    important: 'high',
+    minor: 'low',
+    major: 'high',
+    blocker: 'critical',
+    trivial: 'low',
   };
 
   private static readonly STATUS_SUGGESTIONS: Record<string, string> = {
-    'todo': 'pending',
-    'doing': 'in_progress',
-    'done': 'completed',
-    'complete': 'completed',
-    'finished': 'completed',
-    'started': 'in_progress',
-    'working': 'in_progress',
-    'stuck': 'blocked',
-    'waiting': 'blocked',
-    'canceled': 'cancelled',
-    'cancelled': 'cancelled'
+    todo: 'pending',
+    doing: 'in_progress',
+    done: 'completed',
+    complete: 'completed',
+    finished: 'completed',
+    started: 'in_progress',
+    working: 'in_progress',
+    stuck: 'blocked',
+    waiting: 'blocked',
+    canceled: 'cancelled',
+    cancelled: 'cancelled',
   };
 
   /**
@@ -52,7 +58,7 @@ export class TodoValidator {
     const suggestion = this.PRIORITY_SUGGESTIONS[priority.toLowerCase()];
     return {
       isValid: false,
-      error: TodoManagerError.invalidPriority(priority, suggestion)
+      error: TodoManagerError.invalidPriority(priority, suggestion),
     };
   }
 
@@ -71,7 +77,7 @@ export class TodoValidator {
     const suggestion = this.STATUS_SUGGESTIONS[status.toLowerCase()];
     return {
       isValid: false,
-      error: TodoManagerError.invalidStatus(status, suggestion)
+      error: TodoManagerError.invalidStatus(status, suggestion),
     };
   }
 
@@ -88,7 +94,7 @@ export class TodoValidator {
     if (isNaN(date.getTime())) {
       return {
         isValid: false,
-        error: TodoManagerError.invalidDateFormat(dateString, fieldName)
+        error: TodoManagerError.invalidDateFormat(dateString, fieldName),
       };
     }
 
@@ -96,24 +102,20 @@ export class TodoValidator {
     if (fieldName === 'dueDate' && date < new Date()) {
       return {
         isValid: false,
-        error: new TodoManagerError(
-          `Due date '${dateString}' is in the past`,
-          'DATE_IN_PAST',
-          {
-            field: fieldName,
-            value: dateString,
-            suggestions: [
-              {
-                action: 'Use a future date',
-                description: 'Due dates should be in the future'
-              },
-              {
-                action: 'Use relative dates',
-                description: 'Examples: "tomorrow", "+1 week", "+3 days"'
-              }
-            ]
-          }
-        )
+        error: new TodoManagerError(`Due date '${dateString}' is in the past`, 'DATE_IN_PAST', {
+          field: fieldName,
+          value: dateString,
+          suggestions: [
+            {
+              action: 'Use a future date',
+              description: 'Due dates should be in the future',
+            },
+            {
+              action: 'Use relative dates',
+              description: 'Examples: "tomorrow", "+1 week", "+3 days"',
+            },
+          ],
+        }),
       };
     }
 
@@ -136,11 +138,11 @@ export class TodoValidator {
             suggestions: [
               {
                 action: 'Use a value between 0 and 100',
-                description: 'Progress is measured as a percentage (0-100)'
-              }
-            ]
+                description: 'Progress is measured as a percentage (0-100)',
+              },
+            ],
           }
-        )
+        ),
       };
     }
 
@@ -154,7 +156,7 @@ export class TodoValidator {
     if (!title || title.trim().length === 0) {
       return {
         isValid: false,
-        error: TodoManagerError.requiredFieldMissing('title')
+        error: TodoManagerError.requiredFieldMissing('title'),
       };
     }
 
@@ -170,15 +172,15 @@ export class TodoValidator {
             suggestions: [
               {
                 action: 'Shorten the title',
-                description: 'Use a concise title and put details in the description'
+                description: 'Use a concise title and put details in the description',
               },
               {
                 action: 'Move details to description',
-                description: 'Keep the title brief and use the description field for details'
-              }
-            ]
+                description: 'Keep the title brief and use the description field for details',
+              },
+            ],
           }
-        )
+        ),
       };
     }
 
@@ -192,7 +194,7 @@ export class TodoValidator {
     if (!taskId || taskId.trim().length === 0) {
       return {
         isValid: false,
-        error: TodoManagerError.requiredFieldMissing('taskId')
+        error: TodoManagerError.requiredFieldMissing('taskId'),
       };
     }
 
@@ -203,7 +205,7 @@ export class TodoValidator {
     if (!uuidPattern.test(taskId) && !simpleIdPattern.test(taskId)) {
       return {
         isValid: false,
-        error: TodoManagerError.invalidTaskId(taskId)
+        error: TodoManagerError.invalidTaskId(taskId),
       };
     }
 
@@ -217,7 +219,7 @@ export class TodoValidator {
     if (!Array.isArray(tags)) {
       return {
         isValid: false,
-        error: TodoManagerError.invalidFieldValue('tags', tags, 'array of strings')
+        error: TodoManagerError.invalidFieldValue('tags', tags, 'array of strings'),
       };
     }
 
@@ -225,7 +227,7 @@ export class TodoValidator {
       if (typeof tag !== 'string') {
         return {
           isValid: false,
-          error: TodoManagerError.invalidFieldValue('tags', tag, 'string')
+          error: TodoManagerError.invalidFieldValue('tags', tag, 'string'),
         };
       }
 
@@ -241,15 +243,15 @@ export class TodoValidator {
               suggestions: [
                 {
                   action: 'Shorten the tag',
-                  description: 'Use shorter, more concise tags'
+                  description: 'Use shorter, more concise tags',
                 },
                 {
                   action: 'Use abbreviations',
-                  description: 'Consider using common abbreviations for long terms'
-                }
-              ]
+                  description: 'Consider using common abbreviations for long terms',
+                },
+              ],
             }
-          )
+          ),
         };
       }
     }
@@ -264,7 +266,7 @@ export class TodoValidator {
     if (!Array.isArray(dependencies)) {
       return {
         isValid: false,
-        error: TodoManagerError.invalidFieldValue('dependencies', dependencies, 'array of strings')
+        error: TodoManagerError.invalidFieldValue('dependencies', dependencies, 'array of strings'),
       };
     }
 
@@ -282,15 +284,15 @@ export class TodoValidator {
               suggestions: [
                 {
                   action: 'Check the dependency task ID',
-                  description: 'Ensure the dependency task exists and has a valid ID'
+                  description: 'Ensure the dependency task exists and has a valid ID',
                 },
                 {
                   action: 'Use find_task to locate the correct ID',
-                  description: 'Search for the task to get its correct ID'
-                }
-              ]
+                  description: 'Search for the task to get its correct ID',
+                },
+              ],
             }
-          )
+          ),
         };
       }
     }
@@ -323,16 +325,16 @@ export class TodoValidator {
               {
                 action: 'Use email format',
                 description: 'Example: user@example.com',
-                example: 'user@example.com'
+                example: 'user@example.com',
               },
               {
                 action: 'Use username format',
                 description: 'Example: john_doe or john.doe',
-                example: 'john_doe'
-              }
-            ]
+                example: 'john_doe',
+              },
+            ],
           }
-        )
+        ),
       };
     }
 
