@@ -8,17 +8,17 @@ import { jest } from '@jest/globals';
 // Mock readline interface
 const mockRl = {
   question: jest.fn(),
-  close: jest.fn()
+  close: jest.fn(),
 };
 
 jest.unstable_mockModule('readline', () => ({
-  createInterface: jest.fn().mockReturnValue(mockRl)
+  createInterface: jest.fn().mockReturnValue(mockRl),
 }));
 
 // Mock fs module
 const mockFs = {
   readFileSync: jest.fn(),
-  writeFileSync: jest.fn()
+  writeFileSync: jest.fn(),
 };
 
 jest.unstable_mockModule('fs', () => mockFs);
@@ -31,11 +31,9 @@ jest.unstable_mockModule('fs', () => mockFs);
   return {};
 });
 
-const {
-  handleInteractiveApproval,
-  batchApproval,
-  saveApprovalPreferences
-} = await import('../../src/utils/interactive-approval.js');
+const { handleInteractiveApproval, batchApproval, saveApprovalPreferences } = await import(
+  '../../src/utils/interactive-approval.js'
+);
 
 describe('interactive-approval', () => {
   beforeEach(() => {
@@ -55,7 +53,7 @@ describe('interactive-approval', () => {
         autoApproveInfo: false,
         autoRejectErrors: false,
         dryRun: false,
-        batchMode: false
+        batchMode: false,
       });
 
       expect(result.proceed).toBe(true);
@@ -69,12 +67,18 @@ describe('interactive-approval', () => {
       const items = [
         {
           filePath: 'test.js',
-          issues: [{ type: 'sensitive-content' as const, message: 'Contains API key', severity: 'error' as const }],
+          issues: [
+            {
+              type: 'sensitive-content' as const,
+              message: 'Contains API key',
+              severity: 'error' as const,
+            },
+          ],
           suggestions: [],
           severity: 'error' as const,
           allowedInLocation: false,
-          confidence: 0.9
-        }
+          confidence: 0.9,
+        },
       ];
 
       const result = await handleInteractiveApproval(items, {
@@ -82,7 +86,7 @@ describe('interactive-approval', () => {
         autoApproveInfo: false,
         autoRejectErrors: true,
         dryRun: false,
-        batchMode: false
+        batchMode: false,
       });
 
       expect(result.proceed).toBe(false);
@@ -93,12 +97,18 @@ describe('interactive-approval', () => {
       const items = [
         {
           filePath: 'info.js',
-          issues: [{ type: 'temporary-file' as const, message: 'Temporary file', severity: 'info' as const }],
+          issues: [
+            {
+              type: 'temporary-file' as const,
+              message: 'Temporary file',
+              severity: 'info' as const,
+            },
+          ],
           suggestions: [],
           severity: 'info' as const,
           allowedInLocation: true,
-          confidence: 0.5
-        }
+          confidence: 0.5,
+        },
       ];
 
       const result = await handleInteractiveApproval(items, {
@@ -106,7 +116,7 @@ describe('interactive-approval', () => {
         autoApproveInfo: true,
         autoRejectErrors: false,
         dryRun: false,
-        batchMode: false
+        batchMode: false,
       });
 
       expect(result.proceed).toBe(true);
@@ -117,12 +127,18 @@ describe('interactive-approval', () => {
       const items = [
         {
           filePath: 'warning.js',
-          issues: [{ type: 'location-violation' as const, message: 'Wrong location', severity: 'warning' as const }],
+          issues: [
+            {
+              type: 'location-violation' as const,
+              message: 'Wrong location',
+              severity: 'warning' as const,
+            },
+          ],
           suggestions: [],
           severity: 'warning' as const,
           allowedInLocation: true,
-          confidence: 0.7
-        }
+          confidence: 0.7,
+        },
       ];
 
       const result = await handleInteractiveApproval(items, {
@@ -130,7 +146,7 @@ describe('interactive-approval', () => {
         autoApproveInfo: false,
         autoRejectErrors: false,
         dryRun: false,
-        batchMode: false
+        batchMode: false,
       });
 
       expect(result.proceed).toBe(true);
@@ -143,28 +159,38 @@ describe('interactive-approval', () => {
       const items = [
         {
           filePath: 'file1.js',
-          issues: [{ type: 'sensitive-content' as const, message: 'API key', severity: 'error' as const }],
+          issues: [
+            { type: 'sensitive-content' as const, message: 'API key', severity: 'error' as const },
+          ],
           suggestions: [],
           severity: 'error' as const,
           allowedInLocation: true,
-          confidence: 0.9
+          confidence: 0.9,
         },
         {
           filePath: 'file2.js',
-          issues: [{ type: 'location-violation' as const, message: 'Wrong location', severity: 'error' as const }],
+          issues: [
+            {
+              type: 'location-violation' as const,
+              message: 'Wrong location',
+              severity: 'error' as const,
+            },
+          ],
           suggestions: [],
           severity: 'error' as const,
           allowedInLocation: false,
-          confidence: 0.8
+          confidence: 0.8,
         },
         {
           filePath: 'file3.js',
-          issues: [{ type: 'temporary-file' as const, message: 'Temp file', severity: 'warning' as const }],
+          issues: [
+            { type: 'temporary-file' as const, message: 'Temp file', severity: 'warning' as const },
+          ],
           suggestions: [],
           severity: 'warning' as const,
           allowedInLocation: true,
-          confidence: 0.6
-        }
+          confidence: 0.6,
+        },
       ];
 
       const action = { type: 'reject' as const, filePath: 'file1.js', reason: 'User rejected' };
@@ -183,29 +209,37 @@ describe('interactive-approval', () => {
           filePath: 'file1.js',
           issues: [
             { type: 'sensitive-content' as const, message: 'API key', severity: 'error' as const },
-            { type: 'location-violation' as const, message: 'Wrong location', severity: 'warning' as const }
+            {
+              type: 'location-violation' as const,
+              message: 'Wrong location',
+              severity: 'warning' as const,
+            },
           ],
           suggestions: [],
           severity: 'error' as const,
           allowedInLocation: true,
-          confidence: 0.9
+          confidence: 0.9,
         },
         {
           filePath: 'file2.js',
-          issues: [{ type: 'sensitive-content' as const, message: 'Password', severity: 'error' as const }],
+          issues: [
+            { type: 'sensitive-content' as const, message: 'Password', severity: 'error' as const },
+          ],
           suggestions: [],
           severity: 'error' as const,
           allowedInLocation: true,
-          confidence: 0.8
+          confidence: 0.8,
         },
         {
           filePath: 'file3.js',
-          issues: [{ type: 'temporary-file' as const, message: 'Temp file', severity: 'warning' as const }],
+          issues: [
+            { type: 'temporary-file' as const, message: 'Temp file', severity: 'warning' as const },
+          ],
           suggestions: [],
           severity: 'warning' as const,
           allowedInLocation: true,
-          confidence: 0.6
-        }
+          confidence: 0.6,
+        },
       ];
 
       const action = { type: 'reject' as const, filePath: 'file1.js', reason: 'Sensitive content' };
@@ -221,12 +255,14 @@ describe('interactive-approval', () => {
       const items = [
         {
           filePath: 'file1.js',
-          issues: [{ type: 'sensitive-content' as const, message: 'API key', severity: 'error' as const }],
+          issues: [
+            { type: 'sensitive-content' as const, message: 'API key', severity: 'error' as const },
+          ],
           suggestions: [],
           severity: 'error' as const,
           allowedInLocation: true,
-          confidence: 0.9
-        }
+          confidence: 0.9,
+        },
       ];
 
       const action = { type: 'reject' as const, filePath: 'nonexistent.js', reason: 'Not found' };
@@ -242,28 +278,34 @@ describe('interactive-approval', () => {
       const items = [
         {
           filePath: 'file1.js',
-          issues: [{ type: 'sensitive-content' as const, message: 'API key', severity: 'error' as const }],
+          issues: [
+            { type: 'sensitive-content' as const, message: 'API key', severity: 'error' as const },
+          ],
           suggestions: [],
           severity: 'error' as const,
           allowedInLocation: true,
-          confidence: 0.9
+          confidence: 0.9,
         },
         {
           filePath: 'file2.js',
-          issues: [{ type: 'sensitive-content' as const, message: 'Password', severity: 'error' as const }],
+          issues: [
+            { type: 'sensitive-content' as const, message: 'Password', severity: 'error' as const },
+          ],
           suggestions: [],
           severity: 'error' as const,
           allowedInLocation: true,
-          confidence: 0.8
+          confidence: 0.8,
         },
         {
           filePath: 'file3.js',
-          issues: [{ type: 'sensitive-content' as const, message: 'Token', severity: 'warning' as const }],
+          issues: [
+            { type: 'sensitive-content' as const, message: 'Token', severity: 'warning' as const },
+          ],
           suggestions: [],
           severity: 'warning' as const,
           allowedInLocation: true,
-          confidence: 0.7
-        }
+          confidence: 0.7,
+        },
       ];
 
       const action = { type: 'reject' as const, filePath: 'file1.js', reason: 'Sensitive content' };
@@ -279,27 +321,39 @@ describe('interactive-approval', () => {
       const items = [
         {
           filePath: 'file1.js',
-          issues: [{ type: 'location-violation' as const, message: 'Wrong location', severity: 'warning' as const }],
+          issues: [
+            {
+              type: 'location-violation' as const,
+              message: 'Wrong location',
+              severity: 'warning' as const,
+            },
+          ],
           suggestions: [],
           severity: 'warning' as const,
           allowedInLocation: false,
-          confidence: 0.8
+          confidence: 0.8,
         },
         {
           filePath: 'file2.js',
-          issues: [{ type: 'location-violation' as const, message: 'Wrong location', severity: 'warning' as const }],
+          issues: [
+            {
+              type: 'location-violation' as const,
+              message: 'Wrong location',
+              severity: 'warning' as const,
+            },
+          ],
           suggestions: [],
           severity: 'warning' as const,
           allowedInLocation: false,
-          confidence: 0.7
-        }
+          confidence: 0.7,
+        },
       ];
 
-      const action = { 
-        type: 'move' as const, 
-        filePath: 'file1.js', 
+      const action = {
+        type: 'move' as const,
+        filePath: 'file1.js',
         target: 'scripts/',
-        reason: 'Move to correct location'
+        reason: 'Move to correct location',
       };
       const criteria = { sameIssueType: true };
 
@@ -313,14 +367,19 @@ describe('interactive-approval', () => {
   });
 
   describe('saveApprovalPreferences', () => {
-    it('should save approval preferences to file', () => {
+    it('should save approval preferences to file', async () => {
       const actions = [
         { type: 'approve' as const, filePath: 'src/test.js', reason: 'User approved' },
         { type: 'reject' as const, filePath: 'temp/cache.tmp', reason: 'Temporary file' },
-        { type: 'move' as const, filePath: 'wrong/location.js', target: 'scripts/', reason: 'Wrong location' }
+        {
+          type: 'move' as const,
+          filePath: 'wrong/location.js',
+          target: 'scripts/',
+          reason: 'Wrong location',
+        },
       ];
 
-      saveApprovalPreferences(actions, '.test-approvals.json');
+      await saveApprovalPreferences(actions, '.test-approvals.json');
 
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         '.test-approvals.json',
@@ -336,12 +395,10 @@ describe('interactive-approval', () => {
       );
     });
 
-    it('should use default config path when not specified', () => {
-      const actions = [
-        { type: 'approve' as const, filePath: 'test.js' }
-      ];
+    it('should use default config path when not specified', async () => {
+      const actions = [{ type: 'approve' as const, filePath: 'test.js' }];
 
-      saveApprovalPreferences(actions);
+      await saveApprovalPreferences(actions);
 
       expect(mockFs.writeFileSync).toHaveBeenCalledWith(
         '.smartgit-approvals.json',
@@ -349,43 +406,51 @@ describe('interactive-approval', () => {
       );
     });
 
-    it('should handle file write errors gracefully', () => {
+    it('should handle file write errors gracefully', async () => {
       const consoleSpy = jest.spyOn(console, 'log');
-      
+
       mockFs.writeFileSync.mockImplementation(() => {
         throw new Error('Permission denied');
       });
 
       const actions = [{ type: 'approve' as const, filePath: 'test.js' }];
 
-      expect(() => saveApprovalPreferences(actions)).not.toThrow();
+      await expect(saveApprovalPreferences(actions)).resolves.not.toThrow();
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('Could not save preferences: Permission denied')
       );
     });
 
-    it('should handle non-Error exceptions', () => {
+    it('should handle non-Error exceptions', async () => {
       const consoleSpy = jest.spyOn(console, 'log');
-      
+
       mockFs.writeFileSync.mockImplementation(() => {
         throw 'String error';
       });
 
       const actions = [{ type: 'approve' as const, filePath: 'test.js' }];
 
-      expect(() => saveApprovalPreferences(actions)).not.toThrow();
+      await expect(saveApprovalPreferences(actions)).resolves.not.toThrow();
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('Could not save preferences: String error')
       );
     });
 
-    it('should create preferences with timestamp and mapped actions', () => {
+    it('should create preferences with timestamp and mapped actions', async () => {
       const actions = [
-        { type: 'approve' as const, filePath: 'src/components/Button.js', reason: 'Good component' },
-        { type: 'ignore' as const, filePath: 'node_modules/package/index.js', reason: 'Third party' }
+        {
+          type: 'approve' as const,
+          filePath: 'src/components/Button.js',
+          reason: 'Good component',
+        },
+        {
+          type: 'ignore' as const,
+          filePath: 'node_modules/package/index.js',
+          reason: 'Third party',
+        },
       ];
 
-      saveApprovalPreferences(actions, 'test-config.json');
+      await saveApprovalPreferences(actions, 'test-config.json');
 
       const writeCall = mockFs.writeFileSync.mock.calls[0];
       const savedContent = JSON.parse(writeCall[1] as string);
@@ -399,5 +464,4 @@ describe('interactive-approval', () => {
       expect(savedContent.actions[1].type).toBe('ignore');
     });
   });
-
 });
