@@ -1,6 +1,6 @@
 /**
  * TDD Tests for Missing Operations in todo-management-tool-v2.ts
- * 
+ *
  * Testing gaps in the EXISTING manage_todo tool:
  * 1. No delete_task operation
  * 2. Poor error messages for invalid inputs
@@ -24,7 +24,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
     testProjectPath = join(tmpdir(), `test-manage-todo-gaps-${Date.now()}`);
     mkdirSync(testProjectPath, { recursive: true });
     mkdirSync(join(testProjectPath, '.mcp-adr-cache'), { recursive: true });
-    
+
     process.env['PROJECT_PATH'] = testProjectPath;
     process.env['LOG_LEVEL'] = 'ERROR';
   });
@@ -44,7 +44,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'create_task',
         projectPath: testProjectPath,
         title: 'Task to delete',
-        description: 'This task will be deleted'
+        description: 'This task will be deleted',
       });
 
       expect(createResult.content[0].text).toContain('Task created successfully');
@@ -58,7 +58,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       const deleteResult = await manageTodoV2({
         operation: 'delete_task',
         projectPath: testProjectPath,
-        taskId: taskId
+        taskId: taskId,
       } as any);
 
       expect(deleteResult.content[0].text).toContain('deleted successfully');
@@ -66,7 +66,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       // Verify task is gone
       const getResult = await manageTodoV2({
         operation: 'get_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       });
 
       expect(getResult.content[0].text).not.toContain('Task to delete');
@@ -77,7 +77,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       const baseTaskResult = await manageTodoV2({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Base task'
+        title: 'Base task',
       });
       const baseTaskId = baseTaskResult.content[0].text.match(/Task ID\*\*:\s*(\S+)/)![1];
 
@@ -86,23 +86,25 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'create_task',
         projectPath: testProjectPath,
         title: 'Dependent task',
-        dependencies: [baseTaskId]
+        dependencies: [baseTaskId],
       });
 
       // Test: Try to delete base task - should fail
-      await expect(manageTodoV2({
-        operation: 'delete_task',
-        projectPath: testProjectPath,
-        taskId: baseTaskId,
-        force: false // Don't force delete
-      } as any)).rejects.toThrow('has active dependencies');
+      await expect(
+        manageTodoV2({
+          operation: 'delete_task',
+          projectPath: testProjectPath,
+          taskId: baseTaskId,
+          force: false, // Don't force delete
+        } as any)
+      ).rejects.toThrow('has active dependencies');
     });
 
     it('should support force deletion with dependency handling', async () => {
       const baseTaskResult = await manageTodoV2({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Base task'
+        title: 'Base task',
       });
       const baseTaskId = baseTaskResult.content[0].text.match(/Task ID\*\*:\s*(\S+)/)![1];
 
@@ -110,7 +112,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'create_task',
         projectPath: testProjectPath,
         title: 'Dependent task',
-        dependencies: [baseTaskId]
+        dependencies: [baseTaskId],
       });
 
       // Test: Force delete should work and clean up dependencies
@@ -118,7 +120,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'delete_task',
         projectPath: testProjectPath,
         taskId: baseTaskId,
-        force: true
+        force: true,
       } as any);
 
       expect(deleteResult.content[0].text).toContain('deleted');
@@ -131,7 +133,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       const createResult = await manageTodoV2({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Task to archive'
+        title: 'Task to archive',
       });
       const taskId = createResult.content[0].text.match(/Task ID\*\*:\s*(\S+)/)![1];
 
@@ -139,7 +141,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       const archiveResult = await manageTodoV2({
         operation: 'archive_task',
         projectPath: testProjectPath,
-        taskId: taskId
+        taskId: taskId,
       } as any);
 
       expect(archiveResult.content[0].text).toContain('archived');
@@ -147,7 +149,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       // Archived tasks should not appear in normal task list
       const getResult = await manageTodoV2({
         operation: 'get_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       });
 
       expect(getResult.content[0].text).not.toContain('Task to archive');
@@ -156,7 +158,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       const archivedResult = await manageTodoV2({
         operation: 'get_tasks',
         projectPath: testProjectPath,
-        filters: { archived: true }
+        filters: { archived: true },
       } as any);
 
       expect(archivedResult.content[0].text).toContain('Task to archive');
@@ -169,9 +171,9 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'update_task',
         projectPath: testProjectPath,
         taskId: 'not-a-uuid',
-        updates: { status: 'completed' }
+        updates: { status: 'completed' },
       });
-      
+
       expect(result.content[0].text).toContain('No task found');
       expect(result.content[0].text).toContain('Suggestions');
     });
@@ -182,7 +184,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
           operation: 'update_task',
           projectPath: testProjectPath,
           taskId: '12345678-1234-1234-1234-123456789012',
-          updates: { status: 'completed' }
+          updates: { status: 'completed' },
         });
       } catch (error: any) {
         expect(error.message).toMatch(/not found/);
@@ -198,24 +200,24 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
           operation: 'create_task',
           projectPath: testProjectPath,
           title: 'Test task',
-          priority: 'urgent' // Invalid priority
+          priority: 'urgent', // Invalid priority
         });
         console.log('Unexpected success result:', result);
       } catch (error: any) {
         wasErrorThrown = true;
         console.log('Caught error:', error.constructor.name, error.message);
-        console.log('Error properties:', { 
-          field: error.field, 
+        console.log('Error properties:', {
+          field: error.field,
           validValues: error.validValues,
           suggestion: error.suggestion,
           suggestions: error.suggestions,
-          code: error.code
+          code: error.code,
         });
         expect(error.field).toBe('priority');
         expect(error.validValues).toContain('critical');
         expect(error.suggestion).toMatch(/did you mean.*critical/i);
       }
-      
+
       if (!wasErrorThrown) {
         fail('Expected error to be thrown');
       }
@@ -230,7 +232,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         projectPath: testProjectPath,
         title: 'Deploy ArgoCD to production',
         description: 'Set up GitOps with ArgoCD',
-        tags: ['deployment', 'argocd']
+        tags: ['deployment', 'argocd'],
       });
 
       await manageTodoV2({
@@ -238,7 +240,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         projectPath: testProjectPath,
         title: 'Configure secrets management',
         description: 'Use External Secrets Operator for K8s secrets',
-        tags: ['security', 'eso']
+        tags: ['security', 'eso'],
       });
     });
 
@@ -247,7 +249,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'find_task',
         projectPath: testProjectPath,
         query: 'argcd prodction', // Typos intentional
-        searchType: 'fuzzy'
+        searchType: 'fuzzy',
       } as any);
 
       expect(result.content[0].text).toContain('ArgoCD');
@@ -260,7 +262,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         projectPath: testProjectPath,
         query: 'External Secrets',
         searchType: 'multi_field',
-        searchFields: ['title', 'description', 'tags']
+        searchFields: ['title', 'description', 'tags'],
       } as any);
 
       expect(result.content[0].text).toContain('secrets management');
@@ -271,7 +273,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'find_task',
         projectPath: testProjectPath,
         query: '^Deploy.*production$',
-        searchType: 'regex'
+        searchType: 'regex',
       } as any);
 
       expect(result.content[0].text).toContain('Deploy ArgoCD to production');
@@ -281,7 +283,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       const result = await manageTodoV2({
         operation: 'find_task',
         projectPath: testProjectPath,
-        query: 'nonexistent task'
+        query: 'nonexistent task',
       });
 
       expect(result.content[0].text).toContain('No tasks found');
@@ -295,7 +297,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       const createResult = await manageTodoV2({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Original title'
+        title: 'Original title',
       });
       const taskId = createResult.content[0].text.match(/Task ID\*\*:\s*(\S+)/)![1];
 
@@ -303,13 +305,13 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'update_task',
         projectPath: testProjectPath,
         taskId,
-        updates: { title: 'Modified title' }
+        updates: { title: 'Modified title' },
       });
 
       // Test: Undo the last operation
       const undoResult = await manageTodoV2({
         operation: 'undo_last',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       } as any);
 
       expect(undoResult.content[0].text).toContain('Undid');
@@ -318,7 +320,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       // Verify task was restored
       const getResult = await manageTodoV2({
         operation: 'get_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       });
       expect(getResult.content[0].text).toContain('Original title');
       expect(getResult.content[0].text).not.toContain('Modified title');
@@ -328,7 +330,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       const createResult = await manageTodoV2({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Test task'
+        title: 'Test task',
       });
       const taskId = createResult.content[0].text.match(/Task ID\*\*:\s*(\S+)/)![1];
 
@@ -337,20 +339,20 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'update_task',
         projectPath: testProjectPath,
         taskId,
-        updates: { status: 'in_progress' }
+        updates: { status: 'in_progress' },
       });
 
       await manageTodoV2({
         operation: 'update_task',
         projectPath: testProjectPath,
         taskId,
-        updates: { priority: 'high' }
+        updates: { priority: 'high' },
       });
 
       // Test: Get undo history
       const historyResult = await manageTodoV2({
         operation: 'get_undo_history',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       } as any);
 
       expect(historyResult.content[0].text).toContain('undo history');
@@ -361,19 +363,21 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
   describe('Gap 6: Task validation and constraints', () => {
     it('should validate task data integrity', async () => {
       // Test: Invalid due date format
-      await expect(manageTodoV2({
-        operation: 'create_task',
-        projectPath: testProjectPath,
-        title: 'Test task',
-        dueDate: 'not-a-date'
-      })).rejects.toThrow(/invalid date format/i);
+      await expect(
+        manageTodoV2({
+          operation: 'create_task',
+          projectPath: testProjectPath,
+          title: 'Test task',
+          dueDate: 'not-a-date',
+        })
+      ).rejects.toThrow(/invalid date format/i);
     });
 
     it('should prevent circular dependencies', async () => {
       const task1Result = await manageTodoV2({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Task 1'
+        title: 'Task 1',
       });
       const task1Id = task1Result.content[0].text.match(/Task ID\*\*:\s*(\S+)/)![1];
 
@@ -381,7 +385,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'create_task',
         projectPath: testProjectPath,
         title: 'Task 2',
-        dependencies: [task1Id]
+        dependencies: [task1Id],
       });
       const task2Id = task2Result.content[0].text.match(/Task ID\*\*:\s*(\S+)/)![1];
 
@@ -392,9 +396,9 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
           projectPath: testProjectPath,
           taskId: task1Id,
           updates: { dependencies: [task2Id] },
-          reason: 'Testing circular dependency'
+          reason: 'Testing circular dependency',
         });
-        
+
         // If we get here, circular dependency detection failed
         console.log('Circular dependency was not detected. Result:', result.content[0].text);
         throw new Error('Expected circular dependency error to be thrown');
@@ -412,7 +416,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         const result = await manageTodoV2({
           operation: 'create_task',
           projectPath: testProjectPath,
-          title: `Task ${i}`
+          title: `Task ${i}`,
         });
         const taskId = result.content[0].text.match(/Task ID\*\*:\s*(\S+)/)![1];
         taskIds.push(taskId);
@@ -423,7 +427,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'bulk_delete',
         projectPath: testProjectPath,
         taskIds,
-        confirm: true
+        confirm: true,
       } as any);
 
       expect(deleteResult.content[0].text).toContain('Successfully Deleted 3 tasks');
@@ -433,7 +437,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       const createResult = await manageTodoV2({
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Test task'
+        title: 'Test task',
       });
       const taskId = createResult.content[0].text.match(/Task ID\*\*:\s*(\S+)/)![1];
 
@@ -442,7 +446,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
         operation: 'bulk_update',
         projectPath: testProjectPath,
         updates: [{ taskId, status: 'completed' }],
-        dryRun: true
+        dryRun: true,
       } as any);
 
       expect(dryRunResult.content[0].text).toContain('Would update');
@@ -451,7 +455,7 @@ describe('TODO Management Tool v2 - Missing Operations (TDD)', () => {
       // Verify nothing was actually changed
       const getResult = await manageTodoV2({
         operation: 'get_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       });
       expect(getResult.content[0].text).toContain('pending'); // Should still be pending
     });

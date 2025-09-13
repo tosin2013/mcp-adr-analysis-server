@@ -7,7 +7,9 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@j
 
 // Mock file system operations
 const mockReadFile = jest.fn() as jest.MockedFunction<(path: string) => Promise<string>>;
-const mockWriteFile = jest.fn() as jest.MockedFunction<(path: string, data: string) => Promise<void>>;
+const mockWriteFile = jest.fn() as jest.MockedFunction<
+  (path: string, data: string) => Promise<void>
+>;
 const mockReaddir = jest.fn() as jest.MockedFunction<(path: string) => Promise<string[]>>;
 
 jest.unstable_mockModule('fs/promises', () => ({
@@ -40,38 +42,42 @@ const MockTodoJsonManager = jest.fn().mockImplementation(() => ({
 }));
 
 // Mock KnowledgeGraphManager class
-const mockUpdateTodoSnapshot = jest.fn() as jest.MockedFunction<(intentId: string, status: string) => Promise<void>>;
+const mockUpdateTodoSnapshot = jest.fn() as jest.MockedFunction<
+  (intentId: string, status: string) => Promise<void>
+>;
 const MockKnowledgeGraphManager = jest.fn().mockImplementation(() => ({
   updateTodoSnapshot: mockUpdateTodoSnapshot,
 }));
 
 // Mock ADR discovery
-const mockDiscoverAdrsInDirectory = jest.fn() as jest.MockedFunction<(dir: string, includeContent: boolean, projectPath: string) => Promise<any>>;
+const mockDiscoverAdrsInDirectory = jest.fn() as jest.MockedFunction<
+  (dir: string, includeContent: boolean, projectPath: string) => Promise<any>
+>;
 
 jest.unstable_mockModule('../../src/utils/todo-json-manager.js', () => ({
-  TodoJsonManager: MockTodoJsonManager
+  TodoJsonManager: MockTodoJsonManager,
 }));
 
 jest.unstable_mockModule('../../src/utils/knowledge-graph-manager.js', () => ({
-  KnowledgeGraphManager: MockKnowledgeGraphManager
+  KnowledgeGraphManager: MockKnowledgeGraphManager,
 }));
 
 jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
-  discoverAdrsInDirectory: mockDiscoverAdrsInDirectory
+  discoverAdrsInDirectory: mockDiscoverAdrsInDirectory,
 }));
 
 describe('Todo Management Tool V2', () => {
   const testProjectPath = '/tmp/test-project';
   let manageTodoV2: any;
-  
+
   beforeAll(async () => {
     const module = await import('../../src/tools/todo-management-tool-v2.js');
     manageTodoV2 = module.manageTodoV2;
   });
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Default mock implementations
     mockCreateTask.mockResolvedValue('task-123');
     mockUpdateTask.mockResolvedValue(undefined);
@@ -81,7 +87,7 @@ describe('Todo Management Tool V2', () => {
     mockWriteFile.mockResolvedValue(undefined);
     mockReaddir.mockResolvedValue([]);
     mockExecSync.mockReturnValue('abc123 Initial commit\ndef456 Add feature');
-    
+
     // Default todo data
     mockLoadTodoData.mockResolvedValue({
       tasks: {
@@ -100,13 +106,13 @@ describe('Todo Management Tool V2', () => {
           progressPercentage: 0,
           createdAt: '2024-01-01T00:00:00Z',
           updatedAt: '2024-01-01T00:00:00Z',
-          changeLog: []
-        }
+          changeLog: [],
+        },
       },
       sections: [],
-      metadata: { lastAdrSync: '2024-01-01T00:00:00Z' }
+      metadata: { lastAdrSync: '2024-01-01T00:00:00Z' },
     });
-    
+
     // Default analytics
     mockGetAnalytics.mockResolvedValue({
       metrics: {
@@ -119,15 +125,13 @@ describe('Todo Management Tool V2', () => {
         averageTaskAge: 5.5,
         velocityMetrics: {
           tasksCompletedLastWeek: 3,
-          averageCompletionTime: 24.5
-        }
+          averageCompletionTime: 24.5,
+        },
       },
-      trends: [
-        { timestamp: '2024-01-01T00:00:00Z', score: 70, trigger: 'manual_update' }
-      ],
-      recommendations: ['Focus on critical tasks', 'Review blocked items']
+      trends: [{ timestamp: '2024-01-01T00:00:00Z', score: 70, trigger: 'manual_update' }],
+      recommendations: ['Focus on critical tasks', 'Review blocked items'],
     });
-    
+
     // Default ADR discovery
     mockDiscoverAdrsInDirectory.mockResolvedValue({
       totalAdrs: 2,
@@ -137,11 +141,11 @@ describe('Todo Management Tool V2', () => {
           title: 'Test ADR',
           status: 'accepted',
           content: 'Test content with tasks:\n- Implement feature A\n- Configure system B',
-          metadata: { number: '001' }
-        }
+          metadata: { number: '001' },
+        },
       ],
       summary: { byStatus: { accepted: 1, proposed: 1 } },
-      recommendations: ['Review ADR status']
+      recommendations: ['Review ADR status'],
     });
   });
 
@@ -153,7 +157,7 @@ describe('Todo Management Tool V2', () => {
     it('should reject invalid operation', async () => {
       const invalidInput = {
         operation: 'invalid_operation',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       await expect(manageTodoV2(invalidInput)).rejects.toThrow();
@@ -161,7 +165,7 @@ describe('Todo Management Tool V2', () => {
 
     it('should reject missing required fields', async () => {
       const invalidInput = {
-        operation: 'create_task'
+        operation: 'create_task',
         // Missing projectPath and title
       };
 
@@ -174,11 +178,11 @@ describe('Todo Management Tool V2', () => {
       const validInput = {
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'New Test Task'
+        title: 'New Test Task',
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Task created successfully');
       expect(result.content[0].text).toContain('task-123');
@@ -195,7 +199,7 @@ describe('Todo Management Tool V2', () => {
         intentId: undefined,
         linkedAdrs: [],
         autoComplete: false,
-        completionCriteria: undefined
+        completionCriteria: undefined,
       });
     });
 
@@ -214,19 +218,21 @@ describe('Todo Management Tool V2', () => {
         intentId: 'intent-123',
         linkedAdrs: ['adr-001.md'],
         autoComplete: true,
-        completionCriteria: 'All tests pass'
+        completionCriteria: 'All tests pass',
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Task created successfully');
-      expect(mockCreateTask).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Complex Task',
-        priority: 'critical',
-        assignee: 'jane',
-        tags: ['urgent', 'security']
-      }));
+      expect(mockCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Complex Task',
+          priority: 'critical',
+          assignee: 'jane',
+          tags: ['urgent', 'security'],
+        })
+      );
     });
   });
 
@@ -238,20 +244,20 @@ describe('Todo Management Tool V2', () => {
         taskId: 'task-1',
         updates: {
           status: 'completed' as const,
-          priority: 'low' as const
+          priority: 'low' as const,
         },
-        reason: 'Task completed'
+        reason: 'Task completed',
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Task updated successfully');
       expect(mockUpdateTask).toHaveBeenCalledWith({
         taskId: 'task-1',
         updates: { status: 'completed', priority: 'low' },
         reason: 'Task completed',
-        triggeredBy: 'tool'
+        triggeredBy: 'tool',
       });
     });
 
@@ -261,11 +267,11 @@ describe('Todo Management Tool V2', () => {
         projectPath: testProjectPath,
         taskId: 'task-1',
         updates: { status: 'in_progress' as const },
-        reason: 'Started work'
+        reason: 'Started work',
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Task updated successfully');
     });
@@ -274,7 +280,7 @@ describe('Todo Management Tool V2', () => {
       mockLoadTodoData.mockResolvedValueOnce({
         tasks: {},
         sections: [],
-        metadata: {}
+        metadata: {},
       });
 
       const validInput = {
@@ -282,11 +288,11 @@ describe('Todo Management Tool V2', () => {
         projectPath: testProjectPath,
         taskId: 'nonexistent',
         updates: { status: 'completed' as const },
-        reason: 'Test'
+        reason: 'Test',
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result.content[0].text).toContain('No task found');
     });
 
@@ -294,10 +300,10 @@ describe('Todo Management Tool V2', () => {
       mockLoadTodoData.mockResolvedValueOnce({
         tasks: {
           'task-123': { id: 'task-123', title: 'Task 1' },
-          'task-124': { id: 'task-124', title: 'Task 2' }
+          'task-124': { id: 'task-124', title: 'Task 2' },
         },
         sections: [],
-        metadata: {}
+        metadata: {},
       });
 
       const validInput = {
@@ -305,11 +311,11 @@ describe('Todo Management Tool V2', () => {
         projectPath: testProjectPath,
         taskId: 'task-12',
         updates: { status: 'completed' as const },
-        reason: 'Test'
+        reason: 'Test',
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result.content[0].text).toContain('Multiple tasks found');
     });
   });
@@ -334,7 +340,7 @@ describe('Todo Management Tool V2', () => {
             progressPercentage: 0,
             createdAt: '2024-01-01T00:00:00Z',
             updatedAt: '2024-01-01T00:00:00Z',
-            changeLog: []
+            changeLog: [],
           },
           'task-2': {
             id: 'task-2',
@@ -351,11 +357,11 @@ describe('Todo Management Tool V2', () => {
             progressPercentage: 0,
             createdAt: '2024-01-01T00:00:00Z',
             updatedAt: '2024-01-01T00:00:00Z',
-            changeLog: []
-          }
+            changeLog: [],
+          },
         },
         sections: [],
-        metadata: { lastAdrSync: '2024-01-01T00:00:00Z' }
+        metadata: { lastAdrSync: '2024-01-01T00:00:00Z' },
       });
 
       const validInput = {
@@ -363,13 +369,13 @@ describe('Todo Management Tool V2', () => {
         projectPath: testProjectPath,
         updates: [
           { taskId: 'task-1', status: 'completed' as const },
-          { taskId: 'task-2', priority: 'high' as const }
+          { taskId: 'task-2', priority: 'high' as const },
         ],
-        reason: 'Bulk status update'
+        reason: 'Bulk status update',
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Bulk Update Completed');
       expect(result.content[0].text).toContain('Successfully Updated 2 tasks');
@@ -381,11 +387,11 @@ describe('Todo Management Tool V2', () => {
     it('should get tasks with no filters', async () => {
       const validInput = {
         operation: 'get_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Task List');
       expect(result.content[0].text).toContain('Test Task 1');
@@ -395,11 +401,11 @@ describe('Todo Management Tool V2', () => {
       const validInput = {
         operation: 'get_tasks',
         projectPath: testProjectPath,
-        filters: { status: 'pending' as const }
+        filters: { status: 'pending' as const },
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Task List');
     });
@@ -412,16 +418,16 @@ describe('Todo Management Tool V2', () => {
           priority: 'high' as const,
           assignee: 'john',
           hasDeadline: true,
-          tags: ['test']
+          tags: ['test'],
         },
         sortBy: 'dueDate' as const,
         sortOrder: 'asc' as const,
         limit: 5,
-        showFullIds: true
+        showFullIds: true,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Task List');
     });
@@ -440,21 +446,21 @@ describe('Todo Management Tool V2', () => {
             linkedAdrs: [],
             progressPercentage: 0,
             createdAt: '2024-01-01T00:00:00Z',
-            updatedAt: '2024-01-01T00:00:00Z'
-          }
+            updatedAt: '2024-01-01T00:00:00Z',
+          },
         },
         sections: [],
-        metadata: {}
+        metadata: {},
       });
 
       const validInput = {
         operation: 'get_tasks',
         projectPath: testProjectPath,
-        filters: { overdue: true }
+        filters: { overdue: true },
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('OVERDUE');
     });
@@ -467,11 +473,11 @@ describe('Todo Management Tool V2', () => {
         projectPath: testProjectPath,
         timeframe: 'week' as const,
         includeVelocity: true,
-        includeScoring: true
+        includeScoring: true,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('TODO Analytics');
       expect(result.content[0].text).toContain('**Total Tasks**: 10');
@@ -484,11 +490,11 @@ describe('Todo Management Tool V2', () => {
       const validInput = {
         operation: 'get_analytics',
         projectPath: testProjectPath,
-        includeVelocity: false
+        includeVelocity: false,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('TODO Analytics');
       expect(result.content[0].text).not.toContain('Velocity Metrics');
@@ -502,19 +508,15 @@ describe('Todo Management Tool V2', () => {
         projectPath: testProjectPath,
         adrDirectory: 'docs/adrs',
         preserveExisting: true,
-        autoLinkDependencies: true
+        autoLinkDependencies: true,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('ADR Task Import Completed');
       expect(result.content[0].text).toContain('**ADRs Scanned**: 2');
-      expect(mockDiscoverAdrsInDirectory).toHaveBeenCalledWith(
-        'docs/adrs',
-        true,
-        testProjectPath
-      );
+      expect(mockDiscoverAdrsInDirectory).toHaveBeenCalledWith('docs/adrs', true, testProjectPath);
     });
 
     it('should handle no ADRs found', async () => {
@@ -522,16 +524,16 @@ describe('Todo Management Tool V2', () => {
         totalAdrs: 0,
         adrs: [],
         summary: { byStatus: {} },
-        recommendations: ['Create ADR directory']
+        recommendations: ['Create ADR directory'],
       });
 
       const validInput = {
         operation: 'import_adr_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('No ADRs found');
     });
@@ -546,21 +548,21 @@ describe('Todo Management Tool V2', () => {
             title: 'Test Task',
             status: 'completed',
             progressPercentage: 100,
-            intentId: 'intent-123'
-          }
+            intentId: 'intent-123',
+          },
         },
         sections: [],
-        metadata: {}
+        metadata: {},
       });
 
       const validInput = {
         operation: 'sync_knowledge_graph',
         projectPath: testProjectPath,
-        direction: 'to_kg' as const
+        direction: 'to_kg' as const,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Knowledge graph sync completed');
       expect(mockUpdateTodoSnapshot).toHaveBeenCalledWith(
@@ -572,11 +574,11 @@ describe('Todo Management Tool V2', () => {
     it('should sync to markdown', async () => {
       const validInput = {
         operation: 'sync_to_markdown',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Markdown sync completed');
       expect(mockConvertToMarkdown).toHaveBeenCalled();
@@ -587,11 +589,11 @@ describe('Todo Management Tool V2', () => {
         operation: 'import_from_markdown',
         projectPath: testProjectPath,
         backupExisting: true,
-        mergeStrategy: 'merge' as const
+        mergeStrategy: 'merge' as const,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Markdown import completed');
       expect(result.content[0].text).toContain('**Backup Created**: true');
@@ -606,11 +608,11 @@ describe('Todo Management Tool V2', () => {
         operation: 'find_task',
         projectPath: testProjectPath,
         query: 'Test',
-        searchType: 'title' as const
+        searchType: 'title' as const,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Search Results');
       expect(result.content[0].text).toContain('Test Task 1');
@@ -620,11 +622,11 @@ describe('Todo Management Tool V2', () => {
       const validInput = {
         operation: 'find_task',
         projectPath: testProjectPath,
-        query: 'NonExistent'
+        query: 'NonExistent',
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('No tasks found');
     });
@@ -642,8 +644,8 @@ describe('Todo Management Tool V2', () => {
             progressPercentage: 50,
             assignee: 'john',
             changeLog: [
-              { timestamp: '2024-01-01T00:00:00Z', action: 'created', details: 'Task created' }
-            ]
+              { timestamp: '2024-01-01T00:00:00Z', action: 'created', details: 'Task created' },
+            ],
           },
           'task-2': {
             id: 'task-2',
@@ -651,11 +653,11 @@ describe('Todo Management Tool V2', () => {
             status: 'pending',
             priority: 'critical',
             dueDate: '2020-01-01',
-            progressPercentage: 0
-          }
+            progressPercentage: 0,
+          },
         },
         sections: [],
-        metadata: { lastAdrSync: '2024-01-01T00:00:00Z' }
+        metadata: { lastAdrSync: '2024-01-01T00:00:00Z' },
       });
 
       mockReaddir.mockResolvedValueOnce(['001-test.md', '002-example.md']);
@@ -666,11 +668,11 @@ describe('Todo Management Tool V2', () => {
         analyzeRecent: true,
         includeContext: true,
         showNextActions: true,
-        checkDeploymentReadiness: true
+        checkDeploymentReadiness: true,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Resume TODO List');
       expect(result.content[0].text).toContain('Current Status Summary');
@@ -690,7 +692,7 @@ describe('Todo Management Tool V2', () => {
       const validInput = {
         operation: 'create_task',
         projectPath: testProjectPath,
-        title: 'Test Task'
+        title: 'Test Task',
       };
 
       await expect(manageTodoV2(validInput)).rejects.toThrow('TODO management failed');
@@ -699,7 +701,7 @@ describe('Todo Management Tool V2', () => {
     it('should handle unknown operation', async () => {
       const invalidInput = {
         operation: 'unknown_operation',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       } as any;
 
       await expect(manageTodoV2(invalidInput)).rejects.toThrow();
@@ -726,23 +728,23 @@ Should validate all user inputs for security.
         `,
         decision: 'Must implement secure login system with 2FA.',
         consequences: 'Should validate all user inputs for security.',
-        metadata: { number: '001' }
+        metadata: { number: '001' },
       };
 
       mockDiscoverAdrsInDirectory.mockResolvedValueOnce({
         totalAdrs: 1,
         adrs: [adrWithTasks],
         summary: { byStatus: { accepted: 1 } },
-        recommendations: []
+        recommendations: [],
       });
 
       const validInput = {
         operation: 'import_adr_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('ADR Task Import Completed');
       expect(mockCreateTask).toHaveBeenCalled();
@@ -754,7 +756,7 @@ Should validate all user inputs for security.
         title: 'Critical Security ADR',
         status: 'approved',
         content: 'This is a critical security update that must be implemented urgently.',
-        metadata: { number: '002' }
+        metadata: { number: '002' },
       };
 
       const deprecatedAdr = {
@@ -762,23 +764,23 @@ Should validate all user inputs for security.
         title: 'Deprecated ADR',
         status: 'deprecated',
         content: 'This ADR is no longer relevant.',
-        metadata: { number: '003' }
+        metadata: { number: '003' },
       };
 
       mockDiscoverAdrsInDirectory.mockResolvedValueOnce({
         totalAdrs: 2,
         adrs: [criticalAdr, deprecatedAdr],
         summary: { byStatus: { approved: 1, deprecated: 1 } },
-        recommendations: []
+        recommendations: [],
       });
 
       const validInput = {
         operation: 'import_adr_tasks',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('ADR Task Import Completed');
       expect(mockCreateTask).toHaveBeenCalled();
@@ -798,24 +800,24 @@ Should validate all user inputs for security.
 - Important feature update
 - Nice to have optimization
         `,
-        metadata: { number: '004' }
+        metadata: { number: '004' },
       };
 
       mockDiscoverAdrsInDirectory.mockResolvedValueOnce({
         totalAdrs: 1,
         adrs: [adrWithPatterns],
         summary: { byStatus: { active: 1 } },
-        recommendations: []
+        recommendations: [],
       });
 
       const validInput = {
         operation: 'import_adr_tasks',
         projectPath: testProjectPath,
-        autoLinkDependencies: true
+        autoLinkDependencies: true,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('ADR Task Import Completed');
       expect(mockCreateTask).toHaveBeenCalled();
@@ -827,7 +829,7 @@ Should validate all user inputs for security.
         title: 'Base ADR',
         status: 'accepted',
         content: 'Base implementation',
-        metadata: { number: '001' }
+        metadata: { number: '001' },
       };
 
       const adr2 = {
@@ -835,24 +837,24 @@ Should validate all user inputs for security.
         title: 'Dependent ADR',
         status: 'accepted',
         content: 'This depends on adr-001 implementation',
-        metadata: { number: '002' }
+        metadata: { number: '002' },
       };
 
       mockDiscoverAdrsInDirectory.mockResolvedValueOnce({
         totalAdrs: 2,
         adrs: [adr1, adr2],
         summary: { byStatus: { accepted: 2 } },
-        recommendations: []
+        recommendations: [],
       });
 
       const validInput = {
         operation: 'import_adr_tasks',
         projectPath: testProjectPath,
-        autoLinkDependencies: true
+        autoLinkDependencies: true,
       };
 
       const result = await manageTodoV2(validInput);
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('ADR Task Import Completed');
       expect(mockCreateTask).toHaveBeenCalled();
