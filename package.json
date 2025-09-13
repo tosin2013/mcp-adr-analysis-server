@@ -15,20 +15,23 @@
     "test:watch": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' jest --watch",
     "test:coverage": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' jest --coverage",
     "test:advanced": "./scripts/test-advanced-prompting.sh",
-    "test:unit": "./scripts/test-advanced-prompting.sh unit",
-    "test:integration": "./scripts/test-advanced-prompting.sh integration",
-    "test:performance": "./scripts/test-advanced-prompting.sh performance",
+    "test:unit": "./scripts/test-infrastructure.sh unit",
+    "test:integration": "./scripts/test-infrastructure.sh integration",
+    "test:performance": "./scripts/test-infrastructure.sh performance",
     "test:quality": "./scripts/test-advanced-prompting.sh quality",
+    "test:infrastructure": "./scripts/test-infrastructure.sh infrastructure",
+    "test:validate": "./scripts/test-infrastructure.sh validate",
+    "test:cleanup": "./scripts/test-infrastructure.sh cleanup",
     "lint": "npm run typecheck",
     "lint:fix": "npm run typecheck",
     "clean": "rm -rf dist coverage .mcp-adr-cache",
-    "prepare": "test -d src && npm run build || echo 'Skipping build - no src directory (likely packaging)'",
+    "prepare": "husky",
     "prepublishOnly": "npm run build && npm run lint",
     "start": "node dist/src/index.js",
     "health": "node dist/src/index.js --test",
     "format": "prettier --write src/**/*.ts tests/**/*.ts",
     "format:check": "prettier --check src/**/*.ts tests/**/*.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit --incremental false",
     "prebuild": "npm run clean",
     "test:package": "./scripts/test-npm-package.sh"
   },
@@ -40,11 +43,15 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.1",
+    "@commitlint/config-conventional": "^19.8.1",
     "@jest/globals": "^30.1.2",
     "@types/jest": "^29.5.14",
     "@types/node": "^20.19.13",
+    "husky": "^9.1.7",
     "jest": "^30.1.3",
     "jest-junit": "^16.0.0",
+    "lint-staged": "^16.1.6",
     "prettier": "^3.1.0",
     "ts-jest": "^29.4.1",
     "tsx": "^4.6.0",
@@ -75,5 +82,13 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "lint-staged": {
+    "*.{ts,js}": [
+      "prettier --write"
+    ],
+    "*.{ts,js,json,md}": [
+      "prettier --write"
+    ]
   }
 }

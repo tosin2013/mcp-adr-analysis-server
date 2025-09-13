@@ -18,7 +18,7 @@ jest.unstable_mockModule('../src/utils/knowledge-graph-manager.js', () => ({
     addToolExecution: jest.fn(),
     getIntentById: jest.fn(() => Promise.resolve({ currentStatus: 'executing' })),
     updateIntentStatus: jest.fn(),
-  }))
+  })),
 }));
 
 jest.unstable_mockModule('../src/utils/project-health-scoring.js', () => ({
@@ -31,7 +31,7 @@ jest.unstable_mockModule('../src/utils/project-health-scoring.js', () => ({
     updateTaskVelocityScore: jest.fn(() => Promise.resolve(undefined)),
     calculateProjectHealthScore: jest.fn(() => Promise.resolve({})),
     analyzeHealthTrends: jest.fn(() => Promise.resolve([])),
-  }))
+  })),
 }));
 
 describe('Reproduce TODO Bug: Invalid Input Errors', () => {
@@ -43,14 +43,14 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
     // Create temporary test directory
     testProjectPath = join(tmpdir(), `test-todo-bug-${Date.now()}`);
     mkdirSync(testProjectPath, { recursive: true });
-    
+
     const cacheDir = join(testProjectPath, '.mcp-adr-cache');
     mkdirSync(cacheDir, { recursive: true });
-    
+
     // Set environment variables for test
     process.env['PROJECT_PATH'] = testProjectPath;
     process.env['LOG_LEVEL'] = 'ERROR';
-    
+
     // Create server instance
     server = new McpAdrAnalysisServer();
 
@@ -59,12 +59,12 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
       operation: 'create_task',
       projectPath: testProjectPath,
       title: 'Test Task for Updates',
-      description: 'Test task to demonstrate bug'
+      description: 'Test task to demonstrate bug',
     });
 
     // Extract task ID from response
     taskId = extractTaskIdFromResponse(createResult.content[0].text);
-    
+
     // Wait for batch to flush to ensure task is persisted
     await new Promise(resolve => setTimeout(resolve, 150));
   });
@@ -74,7 +74,7 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
     if (existsSync(testProjectPath)) {
       rmSync(testProjectPath, { recursive: true, force: true });
     }
-    
+
     // Clean up environment
     delete process.env['PROJECT_PATH'];
     delete process.env['LOG_LEVEL'];
@@ -86,7 +86,7 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
       const result = await (server as any).manageTodoJson({
         operation: 'update_task',
         taskId: taskId,
-        updates: { status: 'completed' }
+        updates: { status: 'completed' },
         // No reason field provided - should use default
       });
 
@@ -100,7 +100,7 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
       const result = await (server as any).manageTodoJson({
         operation: 'update_task',
         taskId: taskId,
-        updates: { progressPercentage: 100, status: 'completed' }
+        updates: { progressPercentage: 100, status: 'completed' },
         // No reason field provided - should use default
       });
 
@@ -111,11 +111,13 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
 
     it('should fail with Command 3: Bulk update (wrong structure + missing reason)', async () => {
       // Command 3 from issue: Wrong structure and missing required fields
-      await expect((server as any).manageTodoJson({
-        operation: 'bulk_update',
-        updates: { progressPercentage: 100, status: 'completed' }
-        // Missing required 'reason' field AND wrong structure for 'updates'
-      })).rejects.toThrow(/Invalid input/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'bulk_update',
+          updates: { progressPercentage: 100, status: 'completed' },
+          // Missing required 'reason' field AND wrong structure for 'updates'
+        })
+      ).rejects.toThrow(/Invalid input/);
     });
 
     it('should succeed with Command 1 when reason is provided', async () => {
@@ -125,7 +127,7 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
         projectPath: testProjectPath,
         taskId: taskId,
         updates: { status: 'completed' },
-        reason: 'Deployment verification successful'
+        reason: 'Deployment verification successful',
       });
 
       expect(result).toBeDefined();
@@ -136,10 +138,10 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
       // Fixed version of Command 2
       const result = await (server as any).manageTodoJson({
         operation: 'update_task',
-        projectPath: testProjectPath, 
+        projectPath: testProjectPath,
         taskId: taskId,
         updates: { progressPercentage: 100, status: 'completed' },
-        reason: 'ArgoCD deployment complete - 8 pods running'
+        reason: 'ArgoCD deployment complete - 8 pods running',
       });
 
       expect(result).toBeDefined();
@@ -152,7 +154,7 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
         operation: 'create_task',
         projectPath: testProjectPath,
         title: 'Second Test Task',
-        description: 'Another test task'
+        description: 'Another test task',
       });
       const taskId2 = extractTaskIdFromResponse(createResult2.content[0].text);
 
@@ -162,13 +164,13 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
         projectPath: testProjectPath,
         updates: [
           { taskId: taskId, status: 'completed' },
-          { taskId: taskId2, status: 'completed' }
-        ]
+          { taskId: taskId2, status: 'completed' },
+        ],
         // No reason field provided - should use default
       });
 
       expect(result).toBeDefined();
-      expect(result.content[0].text).toContain('Bulk update completed');
+      expect(result.content[0].text).toContain('**Bulk Update Completed!**');
       expect(result.content[0].text).toContain('Reason**: Bulk status update'); // Default reason
     });
   });
@@ -180,41 +182,47 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
         operation: 'update_task',
         projectPath: testProjectPath,
         taskId: taskId,
-        updates: { status: 'completed' }
+        updates: { status: 'completed' },
         // No reason field provided - should use default
       });
-      
+
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Task updated successfully');
       expect(result.content[0].text).toContain('Reason**: Task updated');
     });
 
     it('should provide specific error message for invalid bulk_update structure', async () => {
-      await expect((server as any).manageTodoJson({
-        operation: 'bulk_update',
-        updates: { status: 'completed' }, // Should be array, not object
-        reason: 'Test reason'
-      })).rejects.toThrow(/Invalid input/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'bulk_update',
+          updates: { status: 'completed' }, // Should be array, not object
+          reason: 'Test reason',
+        })
+      ).rejects.toThrow(/Invalid input/);
     });
 
     it('should provide specific error message for invalid status value', async () => {
-      await expect((server as any).manageTodoJson({
-        operation: 'update_task',
-        projectPath: testProjectPath,
-        taskId: taskId,
-        updates: { status: 'invalid_status' },
-        reason: 'Test reason'
-      })).rejects.toThrow(/Invalid input/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'update_task',
+          projectPath: testProjectPath,
+          taskId: taskId,
+          updates: { status: 'invalid_status' },
+          reason: 'Test reason',
+        })
+      ).rejects.toThrow(/Invalid status/);
     });
 
     it('should provide specific error message for invalid progressPercentage value', async () => {
-      await expect((server as any).manageTodoJson({
-        operation: 'update_task',
-        projectPath: testProjectPath,
-        taskId: taskId,
-        updates: { progressPercentage: 150 }, // Invalid: over 100
-        reason: 'Test reason'
-      })).rejects.toThrow(/Invalid input.*progressPercentage.*100/);
+      await expect(
+        (server as any).manageTodoJson({
+          operation: 'update_task',
+          projectPath: testProjectPath,
+          taskId: taskId,
+          updates: { progressPercentage: 150 }, // Invalid: over 100
+          reason: 'Test reason',
+        })
+      ).rejects.toThrow(/Invalid input.*progressPercentage.*100/);
     });
   });
 });
@@ -224,20 +232,23 @@ describe('Reproduce TODO Bug: Invalid Input Errors', () => {
  */
 function extractTaskIdFromResponse(responseText: string): string {
   // Look for full UUID pattern first (most reliable)
-  const fullIdMatch = responseText.match(/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i);
+  const fullIdMatch = responseText.match(
+    /([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i
+  );
   if (fullIdMatch) {
     return fullIdMatch[1];
   }
 
   // Fall back to other patterns
-  const idMatch = responseText.match(/Task ID: ([a-f0-9-]+)/i) || 
-                  responseText.match(/ID: ([a-f0-9-]+)/i) ||
-                  responseText.match(/\[([a-f0-9-]+)\]/);
-  
+  const idMatch =
+    responseText.match(/Task ID: ([a-f0-9-]+)/i) ||
+    responseText.match(/ID: ([a-f0-9-]+)/i) ||
+    responseText.match(/\[([a-f0-9-]+)\]/);
+
   if (idMatch && idMatch[1]) {
     return idMatch[1];
   }
-  
+
   // If no ID found, try to get a short ID pattern
   const shortIdMatch = responseText.match(/\b([a-f0-9]{6,8})\b/);
   return shortIdMatch ? shortIdMatch[1]! : 'unknown-id';
