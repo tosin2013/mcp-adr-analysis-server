@@ -1,6 +1,6 @@
 /**
  * Interactive approval workflow for smart git push
- * 
+ *
  * Handles user interaction for approving/rejecting files with issues
  */
 
@@ -16,7 +16,12 @@ export interface ApprovalItem {
 }
 
 export interface ApprovalIssue {
-  type: 'sensitive-content' | 'llm-artifact' | 'location-violation' | 'temporary-file' | 'wrong-location';
+  type:
+    | 'sensitive-content'
+    | 'llm-artifact'
+    | 'location-violation'
+    | 'temporary-file'
+    | 'wrong-location';
   message: string;
   severity: 'error' | 'warning' | 'info';
   pattern?: string;
@@ -62,27 +67,27 @@ export async function handleInteractiveApproval(
     moved: [],
     ignored: [],
     actions: [],
-    proceed: false
+    proceed: false,
   };
-  
+
   if (items.length === 0) {
     result.proceed = true;
     return result;
   }
-  
+
   // Handle non-interactive mode
   if (!options.interactiveMode) {
     return handleNonInteractiveApproval(items, options);
   }
-  
+
   // Display summary
   displayApprovalSummary(items);
-  
+
   // Group items by severity for better UX
   const errorItems = items.filter(item => item.severity === 'error');
   const warningItems = items.filter(item => item.severity === 'warning');
   const infoItems = items.filter(item => item.severity === 'info');
-  
+
   // Handle errors first (these are most critical)
   if (errorItems.length > 0) {
     console.log('\n🚨 CRITICAL ISSUES (Must be resolved before proceeding)');
@@ -92,7 +97,7 @@ export async function handleInteractiveApproval(
       applyAction(action, result);
     }
   }
-  
+
   // Handle warnings
   if (warningItems.length > 0) {
     console.log('\n⚠️  WARNING ISSUES (Review recommended)');
@@ -102,7 +107,7 @@ export async function handleInteractiveApproval(
       applyAction(action, result);
     }
   }
-  
+
   // Handle info items (auto-approve if option set)
   if (infoItems.length > 0) {
     if (options.autoApproveInfo) {
@@ -121,10 +126,10 @@ export async function handleInteractiveApproval(
       }
     }
   }
-  
+
   // Final confirmation
   result.proceed = await getFinalConfirmation(result, options);
-  
+
   return result;
 }
 
@@ -141,12 +146,12 @@ function handleNonInteractiveApproval(
     moved: [],
     ignored: [],
     actions: [],
-    proceed: false
+    proceed: false,
   };
-  
+
   for (const item of items) {
     let action: ApprovalAction;
-    
+
     if (item.severity === 'error' && options.autoRejectErrors) {
       action = { type: 'reject', filePath: item.filePath, reason: 'Auto-rejected due to errors' };
     } else if (item.severity === 'info' && options.autoApproveInfo) {
@@ -155,10 +160,14 @@ function handleNonInteractiveApproval(
       // Default behavior based on severity
       switch (item.severity) {
         case 'error':
-          action = { type: 'reject', filePath: item.filePath, reason: 'Automatic rejection due to errors' };
+          action = {
+            type: 'reject',
+            filePath: item.filePath,
+            reason: 'Automatic rejection due to errors',
+          };
           break;
         case 'warning':
-          action = item.allowedInLocation 
+          action = item.allowedInLocation
             ? { type: 'approve', filePath: item.filePath }
             : { type: 'reject', filePath: item.filePath, reason: 'Location violation' };
           break;
@@ -167,14 +176,14 @@ function handleNonInteractiveApproval(
           break;
       }
     }
-    
+
     result.actions.push(action);
     applyAction(action, result);
   }
-  
+
   // In non-interactive mode, proceed if no errors were rejected
   result.proceed = result.rejected.length === 0;
-  
+
   return result;
 }
 
@@ -190,7 +199,7 @@ async function handleItemApproval(
   console.log(`   Severity: ${item.severity.toUpperCase()}`);
   console.log(`   Confidence: ${(item.confidence * 100).toFixed(1)}%`);
   console.log(`   Location Valid: ${item.allowedInLocation ? '✅' : '❌'}`);
-  
+
   // Display issues
   console.log('\n   Issues:');
   for (const issue of item.issues) {
@@ -203,7 +212,7 @@ async function handleItemApproval(
       console.log(`     Context: ${contextLines.join(' | ')}`);
     }
   }
-  
+
   // Display suggestions
   if (item.suggestions.length > 0) {
     console.log('\n   Suggestions:');
@@ -211,18 +220,21 @@ async function handleItemApproval(
       console.log(`   ${i + 1}. ${item.suggestions[i]}`);
     }
   }
-  
+
   // Get user choice
   const choices = buildChoices(item, isError);
   const choice = await getUserChoice(choices, options);
-  
+
   return processChoice(choice, item, options);
 }
 
 /**
  * Build available choices for user
  */
-function buildChoices(item: ApprovalItem, isError: boolean): Array<{ key: string; description: string; available: boolean }> {
+function buildChoices(
+  item: ApprovalItem,
+  isError: boolean
+): Array<{ key: string; description: string; available: boolean }> {
   const choices = [
     { key: 'a', description: 'Approve (include in commit)', available: !isError },
     { key: 'r', description: 'Reject (exclude from commit)', available: true },
@@ -231,9 +243,9 @@ function buildChoices(item: ApprovalItem, isError: boolean): Array<{ key: string
     { key: 'v', description: 'View file content', available: true },
     { key: 'e', description: 'Edit file', available: true },
     { key: 's', description: 'Skip for now', available: false }, // Not implemented yet
-    { key: 'h', description: 'Show help', available: true }
+    { key: 'h', description: 'Show help', available: true },
   ];
-  
+
   return choices;
 }
 
@@ -245,26 +257,26 @@ async function getUserChoice(
   options: ApprovalOptions
 ): Promise<string> {
   const availableChoices = choices.filter(c => c.available);
-  
+
   console.log('\n   Available actions:');
   for (const choice of availableChoices) {
     console.log(`   [${choice.key}] ${choice.description}`);
   }
-  
+
   if (options.batchMode) {
     console.log('   [all] Apply to all similar files');
   }
-  
+
   const rl = createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
-  
-  return new Promise((resolve) => {
+
+  return new Promise(resolve => {
     const askQuestion = () => {
-      rl.question('\n   Your choice: ', (answer) => {
+      rl.question('\n   Your choice: ', answer => {
         const choice = answer.trim().toLowerCase();
-        
+
         if (choice === 'h') {
           displayHelp();
           askQuestion();
@@ -277,7 +289,7 @@ async function getUserChoice(
         }
       });
     };
-    
+
     askQuestion();
   });
 }
@@ -285,29 +297,33 @@ async function getUserChoice(
 /**
  * Process user choice into action
  */
-function processChoice(choice: string, item: ApprovalItem, options: ApprovalOptions): ApprovalAction {
+function processChoice(
+  choice: string,
+  item: ApprovalItem,
+  options: ApprovalOptions
+): ApprovalAction {
   switch (choice) {
     case 'a':
       return { type: 'approve', filePath: item.filePath };
-      
+
     case 'r':
       return { type: 'reject', filePath: item.filePath, reason: 'User rejected' };
-      
+
     case 'i':
       return { type: 'ignore', filePath: item.filePath };
-      
+
     case 'm':
       const targetDir = getMoveTarget(item);
       return { type: 'move', filePath: item.filePath, target: targetDir };
-      
+
     case 'v':
       viewFileContent(item.filePath);
       return processChoice(choice, item, options); // Re-prompt after viewing
-      
+
     case 'e':
       editFile(item.filePath);
       return processChoice(choice, item, options); // Re-prompt after editing
-      
+
     default:
       return { type: 'reject', filePath: item.filePath, reason: 'Invalid choice' };
   }
@@ -318,13 +334,13 @@ function processChoice(choice: string, item: ApprovalItem, options: ApprovalOpti
  */
 function getMoveTarget(item: ApprovalItem): string {
   const moveSuggestions = item.suggestions.filter(s => s.includes('Move') || s.includes('move'));
-  
+
   if (moveSuggestions.length > 0) {
     console.log('\n   Suggested locations:');
     for (let i = 0; i < moveSuggestions.length; i++) {
       console.log(`   ${i + 1}. ${moveSuggestions[i]}`);
     }
-    
+
     // For now, extract first suggested directory
     const firstSuggestion = moveSuggestions[0];
     if (firstSuggestion) {
@@ -332,7 +348,7 @@ function getMoveTarget(item: ApprovalItem): string {
       return dirMatch ? dirMatch[1]! : 'scripts/';
     }
   }
-  
+
   return 'scripts/'; // Default fallback
 }
 
@@ -344,19 +360,19 @@ function viewFileContent(filePath: string): void {
     const fs = require('fs');
     const content = fs.readFileSync(filePath, 'utf8');
     const lines = content.split('\n');
-    
+
     console.log(`\n   Content of ${filePath}:`);
     console.log('   ' + '='.repeat(50));
-    
+
     // Show first 20 lines
     for (let i = 0; i < Math.min(20, lines.length); i++) {
       console.log(`   ${(i + 1).toString().padStart(3)}: ${lines[i]}`);
     }
-    
+
     if (lines.length > 20) {
       console.log(`   ... (${lines.length - 20} more lines)`);
     }
-    
+
     console.log('   ' + '='.repeat(50));
   } catch (error) {
     console.log(`   Error reading file: ${error instanceof Error ? error.message : String(error)}`);
@@ -370,7 +386,7 @@ function editFile(filePath: string): void {
   console.log(`\n   Opening ${filePath} in editor...`);
   console.log('   (This would open your default editor in a real implementation)');
   console.log('   Press Enter to continue after editing...');
-  
+
   // In a real implementation, this would:
   // 1. Open the file in the user's default editor
   // 2. Wait for the editor to close
@@ -385,17 +401,17 @@ function applyAction(action: ApprovalAction, result: ApprovalResult): void {
     case 'approve':
       result.approved.push(action.filePath);
       break;
-      
+
     case 'reject':
       result.rejected.push(action.filePath);
       break;
-      
+
     case 'move':
       if (action.target) {
         result.moved.push({ from: action.filePath, to: action.target });
       }
       break;
-      
+
     case 'ignore':
       result.ignored.push(action.filePath);
       break;
@@ -409,69 +425,72 @@ function displayApprovalSummary(items: ApprovalItem[]): void {
   console.log('\n' + '='.repeat(60));
   console.log('🔍 SMART GIT PUSH - VALIDATION RESULTS');
   console.log('='.repeat(60));
-  
+
   const errorCount = items.filter(item => item.severity === 'error').length;
   const warningCount = items.filter(item => item.severity === 'warning').length;
   const infoCount = items.filter(item => item.severity === 'info').length;
-  
+
   console.log(`📊 Summary: ${items.length} files with issues`);
   console.log(`   🚨 Errors: ${errorCount}`);
   console.log(`   ⚠️  Warnings: ${warningCount}`);
   console.log(`   💡 Info: ${infoCount}`);
-  
+
   if (errorCount > 0) {
     console.log('\n❌ Files with errors must be resolved before proceeding');
   }
-  
+
   console.log('\n📋 Review each file and choose an action:');
 }
 
 /**
  * Get final confirmation
  */
-async function getFinalConfirmation(result: ApprovalResult, options: ApprovalOptions): Promise<boolean> {
+async function getFinalConfirmation(
+  result: ApprovalResult,
+  options: ApprovalOptions
+): Promise<boolean> {
   console.log('\n' + '='.repeat(60));
   console.log('📋 FINAL SUMMARY');
   console.log('='.repeat(60));
-  
+
   console.log(`✅ Approved: ${result.approved.length} files`);
   console.log(`❌ Rejected: ${result.rejected.length} files`);
   console.log(`📁 To Move: ${result.moved.length} files`);
   console.log(`🙈 To Ignore: ${result.ignored.length} files`);
-  
+
   if (result.approved.length > 0) {
     console.log('\n✅ Files to be committed:');
     for (const file of result.approved) {
       console.log(`   - ${file}`);
     }
   }
-  
+
   if (result.rejected.length > 0) {
     console.log('\n❌ Files excluded from commit:');
     for (const file of result.rejected) {
       console.log(`   - ${file}`);
     }
   }
-  
+
   if (result.moved.length > 0) {
     console.log('\n📁 Files to be moved:');
     for (const move of result.moved) {
       console.log(`   - ${move.from} → ${move.to}`);
     }
   }
-  
+
   if (options.dryRun) {
     console.log('\n🔍 DRY RUN - No actual changes will be made');
     return true;
   }
-  
+
   const rl = createInterface({
     input: process.stdin,
-    output: process.stdout
+    output: process.stdout,
   });
-  
-  return new Promise((resolve) => {
-    rl.question('\n🚀 Proceed with git push? (y/N): ', (answer) => {
+
+  return new Promise(resolve => {
+    rl.question('\n🚀 Proceed with git push? (y/N): ', answer => {
       rl.close();
       const proceed = answer.trim().toLowerCase() === 'y' || answer.trim().toLowerCase() === 'yes';
       resolve(proceed);
@@ -517,18 +536,18 @@ export function batchApproval(
 ): ApprovalAction[] {
   const actions: ApprovalAction[] = [];
   const referenceItem = items.find(item => item.filePath === action.filePath);
-  
+
   if (!referenceItem) {
     return [action];
   }
-  
+
   for (const item of items) {
     let matches = true;
-    
+
     if (criteria.sameSeverity && item.severity !== referenceItem.severity) {
       matches = false;
     }
-    
+
     if (criteria.sameIssueType) {
       const itemTypes = item.issues.map(i => i.type);
       const refTypes = referenceItem.issues.map(i => i.type);
@@ -536,41 +555,43 @@ export function batchApproval(
         matches = false;
       }
     }
-    
+
     if (matches) {
       actions.push({
         type: action.type,
         filePath: item.filePath,
         target: action.target,
-        reason: `Batch ${action.type} - similar to ${action.filePath}`
+        reason: `Batch ${action.type} - similar to ${action.filePath}`,
       });
     }
   }
-  
+
   return actions;
 }
 
 /**
  * Save approval preferences for future use
  */
-export function saveApprovalPreferences(
+export async function saveApprovalPreferences(
   actions: ApprovalAction[],
   configPath: string = '.smartgit-approvals.json'
-): void {
+): Promise<void> {
   try {
-    const fs = require('fs');
+    const fs = await import('fs');
     const preferences = {
       timestamp: new Date().toISOString(),
       actions: actions.map(action => ({
         pattern: action.filePath.replace(/[^/]+$/, '*'), // Replace filename with wildcard
         type: action.type,
-        reason: action.reason
-      }))
+        reason: action.reason,
+      })),
     };
-    
+
     fs.writeFileSync(configPath, JSON.stringify(preferences, null, 2));
     console.log(`\n💾 Approval preferences saved to ${configPath}`);
   } catch (error) {
-    console.log(`\n⚠️  Could not save preferences: ${error instanceof Error ? error.message : String(error)}`);
+    console.log(
+      `\n⚠️  Could not save preferences: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }

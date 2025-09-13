@@ -1,6 +1,6 @@
 /**
  * Migration Utility for JSON-First TODO System
- * 
+ *
  * Helps users transition from markdown-based TODO.md files to the new
  * JSON-first system with backup and validation.
  */
@@ -50,7 +50,7 @@ export class TodoMigrationUtility {
       migratedTasks: 0,
       errors: [],
       warnings: [],
-      summary: ''
+      summary: '',
     };
 
     try {
@@ -65,7 +65,9 @@ export class TodoMigrationUtility {
       }
 
       // Check if JSON already exists
-      const jsonExists = await this.fileExists(path.join(this.projectPath, '.mcp-adr-cache', 'todo-data.json'));
+      const jsonExists = await this.fileExists(
+        path.join(this.projectPath, '.mcp-adr-cache', 'todo-data.json')
+      );
       if (jsonExists && !options.dryRun) {
         result.warnings.push('JSON TODO data already exists - this will merge with existing data');
       }
@@ -81,11 +83,11 @@ export class TodoMigrationUtility {
 
       // Read existing TODO.md
       const todoMdContent = await fs.readFile(this.todoMdPath, 'utf-8');
-      
+
       // Parse and validate markdown
       const { parseMarkdownToJson } = await import('./todo-markdown-converter.js');
       const parsedData = await parseMarkdownToJson(todoMdContent);
-      
+
       result.migratedTasks = Object.keys(parsedData.tasks).length;
 
       if (options.dryRun) {
@@ -94,8 +96,15 @@ export class TodoMigrationUtility {
         return result;
       }
 
-      // Save to JSON backend
-      await this.todoManager.saveTodoData(parsedData, false); // Don't sync back to markdown yet
+      // Save to JSON backend with defensive programming
+      if (this.todoManager && typeof this.todoManager.saveTodoData === 'function') {
+        await this.todoManager.saveTodoData(parsedData, false); // Don't sync back to markdown yet
+      } else {
+        console.warn('⚠️ TodoJsonManager.saveTodoData not properly initialized');
+        result.errors.push('TodoJsonManager not available for saving data');
+        result.success = false;
+        return result;
+      }
 
       // Validate migration
       if (options.validateAfterMigration) {
@@ -114,9 +123,10 @@ export class TodoMigrationUtility {
 
       result.success = result.errors.length === 0;
       result.summary = `Successfully migrated ${result.migratedTasks} tasks to JSON format`;
-
     } catch (error) {
-      result.errors.push(`Migration failed: ${error instanceof Error ? error.message : String(error)}`);
+      result.errors.push(
+        `Migration failed: ${error instanceof Error ? error.message : String(error)}`
+      );
       result.summary = 'Migration failed - see errors for details';
     }
 
@@ -144,7 +154,9 @@ export class TodoMigrationUtility {
         if (task.dependencies) {
           for (const depId of task.dependencies) {
             if (!taskIds.includes(depId)) {
-              validation.warnings.push(`Task ${taskId} has dependency ${depId} which doesn't exist`);
+              validation.warnings.push(
+                `Task ${taskId} has dependency ${depId} which doesn't exist`
+              );
             }
           }
         }
@@ -156,10 +168,11 @@ export class TodoMigrationUtility {
       if (orphanedTasks.length > 0) {
         validation.warnings.push(`${orphanedTasks.length} tasks are not assigned to any section`);
       }
-
     } catch (error) {
       validation.valid = false;
-      validation.errors.push(`Validation failed: ${error instanceof Error ? error.message : String(error)}`);
+      validation.errors.push(
+        `Validation failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
 
     return validation;
@@ -177,7 +190,7 @@ export class TodoMigrationUtility {
 
       const todoMdContent = await fs.readFile(this.todoMdPath, 'utf-8');
       const lines = todoMdContent.split('\n');
-      
+
       // Basic analysis
       const taskLines = lines.filter(line => line.match(/^- \[(x| )\]/));
       const completedTasks = taskLines.filter(line => line.includes('[x]')).length;
@@ -200,7 +213,7 @@ export class TodoMigrationUtility {
       // Check for complex formatting that might be lost
       const hasNestedTasks = lines.some(line => line.match(/^  - \[(x| )\]/));
       const hasMetadata = lines.some(line => line.includes('@') || line.includes('📅'));
-      
+
       if (hasNestedTasks) {
         issues.push('Nested tasks detected - these will be converted to subtasks');
       }
@@ -238,7 +251,8 @@ export class TodoMigrationUtility {
       report += '```\n\n';
 
       report += `### Alternative: Start Fresh\n`;
-      report += 'If you prefer to start with a clean JSON system and manually recreate important tasks:\n';
+      report +=
+        'If you prefer to start with a clean JSON system and manually recreate important tasks:\n';
       report += '```\n';
       report += `manage_todo_json --operation=create_task --title="Your first task" --priority=high\n`;
       report += '```\n\n';
@@ -246,7 +260,6 @@ export class TodoMigrationUtility {
       report += `*Run this migration when ready to switch to the new JSON-first TODO system.*`;
 
       return report;
-
     } catch (error) {
       return `# TODO Migration Report\n\n❌ Error analyzing TODO.md: ${error instanceof Error ? error.message : String(error)}`;
     }

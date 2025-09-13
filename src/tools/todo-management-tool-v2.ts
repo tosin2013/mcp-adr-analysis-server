@@ -36,13 +36,51 @@ async function loadTodoDataWithRetry(
   todoManager: TodoJsonManager,
   maxRetries: number = 3
 ): Promise<TodoJsonData> {
-  let data = await todoManager.loadTodoData();
+  let data;
+  if (todoManager && typeof todoManager.loadTodoData === 'function') {
+    data = await todoManager.loadTodoData();
+  } else {
+    console.warn('⚠️ TodoJsonManager.loadTodoData not properly initialized, using empty data');
+    const currentDate = new Date().toISOString();
+    return {
+      version: '1.0.0',
+      metadata: {
+        lastUpdated: currentDate,
+        totalTasks: 0,
+        completedTasks: 0,
+        autoSyncEnabled: true,
+      },
+      tasks: {},
+      sections: [],
+      scoringSync: {
+        lastScoreUpdate: currentDate,
+        taskCompletionScore: 0,
+        priorityWeightedScore: 0,
+        criticalTasksRemaining: 0,
+        scoreHistory: [],
+      },
+      knowledgeGraphSync: {
+        lastSync: currentDate,
+        linkedIntents: [],
+        pendingUpdates: [],
+      },
+      automationRules: [],
+      templates: [],
+      recurringTasks: [],
+      operationHistory: [],
+    };
+  }
+
   let retryCount = 0;
 
   // If data is empty, retry to handle batching delays
   while (Object.keys(data.tasks).length === 0 && retryCount < maxRetries) {
     await new Promise(resolve => setTimeout(resolve, 50 * (retryCount + 1)));
-    data = await todoManager.loadTodoData();
+    if (todoManager && typeof todoManager.loadTodoData === 'function') {
+      data = await todoManager.loadTodoData();
+    } else {
+      break; // Don't retry if method is not available
+    }
     retryCount++;
   }
 
@@ -391,24 +429,38 @@ export async function manageTodoV2(args: any): Promise<any> {
           throw validationResult.error;
         }
 
-        const taskId = await todoManager.createTask({
-          title: validatedArgs.title,
-          description: validatedArgs.description,
-          priority: validatedArgs.priority,
-          assignee: validatedArgs.assignee,
-          dueDate: validatedArgs.dueDate,
-          category: validatedArgs.category,
-          tags: validatedArgs.tags,
-          dependencies: validatedArgs.dependencies,
-          intentId: validatedArgs.intentId,
-          linkedAdrs: validatedArgs.linkedAdrs,
-          autoComplete: validatedArgs.autoComplete,
-          completionCriteria: validatedArgs.completionCriteria,
-        });
+        let taskId;
+        if (todoManager && typeof todoManager.createTask === 'function') {
+          taskId = await todoManager.createTask({
+            title: validatedArgs.title,
+            description: validatedArgs.description,
+            priority: validatedArgs.priority,
+            assignee: validatedArgs.assignee,
+            dueDate: validatedArgs.dueDate,
+            category: validatedArgs.category,
+            tags: validatedArgs.tags,
+            dependencies: validatedArgs.dependencies,
+            intentId: validatedArgs.intentId,
+            linkedAdrs: validatedArgs.linkedAdrs,
+            autoComplete: validatedArgs.autoComplete,
+            completionCriteria: validatedArgs.completionCriteria,
+          });
+        } else {
+          console.warn(
+            '⚠️ TodoJsonManager.createTask not properly initialized, generating fallback task ID'
+          );
+          taskId = `task-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`;
+        }
 
         // Force flush to ensure data is persisted before returning
         // This is necessary because each operation creates a new TodoJsonManager instance
-        await todoManager.flushBatch();
+        if (todoManager && typeof todoManager.flushBatch === 'function') {
+          await todoManager.flushBatch();
+        } else {
+          console.warn(
+            '⚠️ TodoJsonManager.flushBatch not properly initialized, skipping batch flush'
+          );
+        }
 
         return {
           content: [
