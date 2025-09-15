@@ -179,6 +179,91 @@ export class KnowledgeGraphManager {
     await this.saveKnowledgeGraph(kg);
   }
 
+  async addMemoryExecution(
+    toolName: string,
+    action: string,
+    entityType: string,
+    success: boolean,
+    details?: Record<string, any>
+  ): Promise<void> {
+    try {
+      const kg = await this.loadKnowledgeGraph();
+
+      // Create memory execution record
+      const memoryExecution = {
+        toolName,
+        action,
+        entityType,
+        success,
+        details: details || {},
+        timestamp: new Date().toISOString(),
+      };
+
+      // Initialize memory operations array if it doesn't exist
+      if (!kg.memoryOperations) {
+        kg.memoryOperations = [];
+      }
+
+      // Add memory execution to knowledge graph
+      kg.memoryOperations.push(memoryExecution);
+
+      // Limit memory operations history to last 1000 entries
+      if (kg.memoryOperations.length > 1000) {
+        kg.memoryOperations = kg.memoryOperations.slice(-1000);
+      }
+
+      // Update analytics to include memory operation metrics
+      this.updateMemoryAnalytics(kg);
+      await this.saveKnowledgeGraph(kg);
+    } catch (error) {
+      console.error('[WARN] Failed to track memory execution:', error);
+      // Don't throw - memory tracking shouldn't break tool execution
+    }
+  }
+
+  private updateMemoryAnalytics(kg: KnowledgeGraphSnapshot): void {
+    if (!kg.memoryOperations || kg.memoryOperations.length === 0) {
+      return;
+    }
+
+    // Calculate memory operation statistics
+    const totalOps = kg.memoryOperations.length;
+    const successfulOps = kg.memoryOperations.filter((op: any) => op.success).length;
+    const successRate = totalOps > 0 ? successfulOps / totalOps : 0;
+
+    // Group by entity type
+    const byEntityType: Record<string, number> = {};
+    const byAction: Record<string, number> = {};
+    const byTool: Record<string, number> = {};
+
+    for (const op of kg.memoryOperations) {
+      byEntityType[op.entityType] = (byEntityType[op.entityType] || 0) + 1;
+      byAction[op.action] = (byAction[op.action] || 0) + 1;
+      byTool[op.toolName] = (byTool[op.toolName] || 0) + 1;
+    }
+
+    // Add memory analytics to knowledge graph
+    if (!kg.analytics) {
+      kg.analytics = {
+        totalIntents: 0,
+        completedIntents: 0,
+        activeIntents: 0,
+        averageGoalCompletion: 0,
+        mostUsedTools: [],
+        successfulPatterns: [],
+      };
+    }
+
+    kg.analytics.memoryOperations = {
+      totalOperations: totalOps,
+      successRate,
+      byEntityType,
+      byAction,
+      byTool,
+      lastMemoryOperation: kg.memoryOperations[kg.memoryOperations.length - 1]?.timestamp,
+    };
+  }
+
   async updateIntentStatus(
     intentId: string,
     status: 'planning' | 'executing' | 'completed' | 'failed'

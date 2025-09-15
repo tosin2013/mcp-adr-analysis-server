@@ -22,6 +22,11 @@ export const BaseMemoryEntitySchema = z.object({
     'stakeholder_input',
     'knowledge_artifact',
     'decision_context',
+    'troubleshooting_session',
+    'environment_snapshot',
+    'failure_pattern',
+    'security_pattern',
+    'deployment_assessment',
   ]),
   created: z.string().datetime(),
   lastModified: z.string().datetime(),
@@ -48,6 +53,12 @@ export const BaseMemoryEntitySchema = z.object({
         'originated_from',
         'impacts',
         'constrains',
+        'addresses',
+        'occurred_in',
+        'validates',
+        'complies_with',
+        'detects',
+        'mitigates',
       ]),
       strength: z.number().min(0).max(1),
       context: z.string().optional(),
@@ -200,12 +211,217 @@ export const KnowledgeArtifactMemorySchema = BaseMemoryEntitySchema.extend({
   }),
 });
 
+// New Memory Entity Types for Tool Integration
+
+export const TroubleshootingSessionMemorySchema = BaseMemoryEntitySchema.extend({
+  type: z.literal('troubleshooting_session'),
+  sessionData: z.object({
+    failurePattern: z.object({
+      failureType: z.enum([
+        'test_failure',
+        'deployment_failure',
+        'build_failure',
+        'runtime_error',
+        'performance_issue',
+        'security_issue',
+        'other',
+      ]),
+      errorSignature: z.string(),
+      frequency: z.number(),
+      environments: z.array(z.string()),
+    }),
+    failureDetails: z.object({
+      command: z.string().optional(),
+      exitCode: z.number().optional(),
+      errorMessage: z.string(),
+      stackTrace: z.string().optional(),
+      logOutput: z.string().optional(),
+      environment: z.string().optional(),
+      timestamp: z.string().optional(),
+      affectedFiles: z.array(z.string()).optional(),
+    }),
+    analysisSteps: z.array(z.string()),
+    solutionEffectiveness: z.number().min(0).max(1),
+    resolutionTimeMinutes: z.number().optional(),
+    preventionMeasures: z.array(z.string()),
+    relatedADRs: z.array(z.string()),
+    environmentContext: z.record(z.any()),
+    followUpActions: z.array(
+      z.object({
+        action: z.string(),
+        type: z.enum(['adr_suggestion', 'research_generation', 'process_improvement']),
+        priority: z.enum(['low', 'medium', 'high', 'critical']),
+        triggered: z.boolean(),
+        reason: z.string(),
+      })
+    ),
+  }),
+});
+
+export const EnvironmentSnapshotMemorySchema = BaseMemoryEntitySchema.extend({
+  type: z.literal('environment_snapshot'),
+  environmentData: z.object({
+    environmentType: z.enum(['development', 'staging', 'production', 'testing']),
+    configuration: z.record(z.any()),
+    complianceStatus: z.object({
+      adrAlignment: z.number().min(0).max(1),
+      securityPosture: z.number().min(0).max(1),
+      performanceMetrics: z.record(z.number()),
+      lastValidation: z.string().datetime(),
+      complianceIssues: z.array(z.string()).optional(),
+    }),
+    infrastructureSpecs: z.object({
+      containerization: z.record(z.any()),
+      dependencies: z.array(z.string()),
+      resourceLimits: z.record(z.number()),
+      networkConfiguration: z.record(z.any()).optional(),
+      storageConfiguration: z.record(z.any()).optional(),
+    }),
+    changeHistory: z.array(
+      z.object({
+        timestamp: z.string().datetime(),
+        changeType: z.enum(['configuration', 'infrastructure', 'dependencies', 'security']),
+        description: z.string(),
+        impact: z.enum(['low', 'medium', 'high']),
+        author: z.string(),
+      })
+    ),
+  }),
+});
+
+export const FailurePatternMemorySchema = BaseMemoryEntitySchema.extend({
+  type: z.literal('failure_pattern'),
+  patternData: z.object({
+    failureType: z.enum([
+      'test_failure',
+      'deployment_failure',
+      'build_failure',
+      'runtime_error',
+      'performance_issue',
+      'security_issue',
+      'other',
+    ]),
+    pattern: z.string(),
+    frequency: z.number(),
+    environments: z.array(z.string()),
+    commonCauses: z.array(z.string()),
+    solutions: z.array(
+      z.object({
+        solution: z.string(),
+        effectiveness: z.number().min(0).max(1),
+        timesToResolution: z.number(),
+        prerequisites: z.array(z.string()).optional(),
+      })
+    ),
+    preventionMeasures: z.array(z.string()),
+    riskLevel: z.enum(['low', 'medium', 'high', 'critical']),
+    impactAreas: z.array(z.string()),
+    learningPoints: z.array(z.string()).optional(),
+  }),
+});
+
+export const SecurityPatternMemorySchema = BaseMemoryEntitySchema.extend({
+  type: z.literal('security_pattern'),
+  securityData: z.object({
+    contentType: z.enum(['code', 'documentation', 'configuration', 'logs', 'general']),
+    detectedPatterns: z.array(
+      z.object({
+        patternType: z.string(),
+        severity: z.enum(['low', 'medium', 'high', 'critical']),
+        description: z.string(),
+        location: z.string().optional(),
+        recommendation: z.string(),
+      })
+    ),
+    maskingResults: z.object({
+      effectiveness: z.number().min(0).max(1),
+      method: z.string(),
+      preservedUtility: z.number().min(0).max(1),
+      falsePositives: z.number().optional(),
+      falseNegatives: z.number().optional(),
+    }),
+    riskAssessment: z.object({
+      overallRisk: z.enum(['low', 'medium', 'high', 'critical']),
+      specificRisks: z.array(z.string()),
+      mitigationStrategies: z.array(z.string()),
+      complianceImpact: z.string().optional(),
+    }),
+    evolutionTracking: z.object({
+      patternChanges: z.array(
+        z.object({
+          timestamp: z.string().datetime(),
+          change: z.string(),
+          impact: z.string(),
+        })
+      ),
+      effectivenessHistory: z.array(
+        z.object({
+          timestamp: z.string().datetime(),
+          effectiveness: z.number().min(0).max(1),
+          method: z.string(),
+        })
+      ),
+    }),
+  }),
+});
+
+export const DeploymentAssessmentMemorySchema = BaseMemoryEntitySchema.extend({
+  type: z.literal('deployment_assessment'),
+  assessmentData: z.object({
+    environment: z.enum(['development', 'staging', 'production', 'testing']),
+    readinessScore: z.number().min(0).max(1),
+    validationResults: z.object({
+      testResults: z.object({
+        passed: z.number(),
+        failed: z.number(),
+        coverage: z.number().min(0).max(1),
+        criticalFailures: z.array(z.string()),
+      }),
+      securityValidation: z.object({
+        vulnerabilities: z.number(),
+        securityScore: z.number().min(0).max(1),
+        criticalIssues: z.array(z.string()),
+      }),
+      performanceValidation: z.object({
+        performanceScore: z.number().min(0).max(1),
+        bottlenecks: z.array(z.string()),
+        resourceUtilization: z.record(z.number()),
+      }),
+    }),
+    blockingIssues: z.array(
+      z.object({
+        issue: z.string(),
+        severity: z.enum(['low', 'medium', 'high', 'critical']),
+        category: z.enum(['test', 'security', 'performance', 'configuration', 'dependencies']),
+        resolution: z.string().optional(),
+        estimatedEffort: z.string().optional(),
+      })
+    ),
+    deploymentStrategy: z.object({
+      type: z.enum(['blue_green', 'rolling', 'canary', 'recreate']),
+      rollbackPlan: z.string(),
+      monitoringPlan: z.string(),
+      estimatedDowntime: z.string().optional(),
+    }),
+    complianceChecks: z.object({
+      adrCompliance: z.number().min(0).max(1),
+      regulatoryCompliance: z.array(z.string()),
+      auditTrail: z.array(z.string()),
+    }),
+  }),
+});
+
 // Memory Entity Union Type
 export const MemoryEntitySchema = z.discriminatedUnion('type', [
   ArchitecturalDecisionMemorySchema,
   CodeComponentMemorySchema,
   BusinessRequirementMemorySchema,
   KnowledgeArtifactMemorySchema,
+  TroubleshootingSessionMemorySchema,
+  EnvironmentSnapshotMemorySchema,
+  FailurePatternMemorySchema,
+  SecurityPatternMemorySchema,
+  DeploymentAssessmentMemorySchema,
   BaseMemoryEntitySchema.extend({
     type: z.enum([
       'technical_constraint',
@@ -223,6 +439,11 @@ export type ArchitecturalDecisionMemory = z.infer<typeof ArchitecturalDecisionMe
 export type CodeComponentMemory = z.infer<typeof CodeComponentMemorySchema>;
 export type BusinessRequirementMemory = z.infer<typeof BusinessRequirementMemorySchema>;
 export type KnowledgeArtifactMemory = z.infer<typeof KnowledgeArtifactMemorySchema>;
+export type TroubleshootingSessionMemory = z.infer<typeof TroubleshootingSessionMemorySchema>;
+export type EnvironmentSnapshotMemory = z.infer<typeof EnvironmentSnapshotMemorySchema>;
+export type FailurePatternMemory = z.infer<typeof FailurePatternMemorySchema>;
+export type SecurityPatternMemory = z.infer<typeof SecurityPatternMemorySchema>;
+export type DeploymentAssessmentMemory = z.infer<typeof DeploymentAssessmentMemorySchema>;
 
 // Memory Relationship Types
 export interface MemoryRelationship {
@@ -238,7 +459,13 @@ export interface MemoryRelationship {
     | 'relates_to'
     | 'originated_from'
     | 'impacts'
-    | 'constrains';
+    | 'constrains'
+    | 'addresses'
+    | 'occurred_in'
+    | 'validates'
+    | 'complies_with'
+    | 'detects'
+    | 'mitigates';
   strength: number; // 0.0 to 1.0
   context?: string;
   evidence?: string[];
