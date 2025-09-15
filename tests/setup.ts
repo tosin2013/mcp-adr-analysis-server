@@ -44,8 +44,12 @@ beforeAll(async () => {
     ...consoleMocks,
   };
 
-  // Record initial memory usage
-  testInfrastructure.recordMemoryUsage();
+  // Record initial memory usage with defensive programming
+  if (testInfrastructure && typeof testInfrastructure.recordMemoryUsage === 'function') {
+    testInfrastructure.recordMemoryUsage();
+  } else {
+    console.warn('⚠️ TestInfrastructure.recordMemoryUsage not available during setup');
+  }
 });
 
 afterAll(async () => {
@@ -53,15 +57,23 @@ afterAll(async () => {
   global.console = originalConsole;
 
   try {
-    // Quick cleanup without hanging
-    await testInfrastructure.forceCleanup();
+    // Quick cleanup without hanging with defensive programming
+    if (testInfrastructure && typeof testInfrastructure.forceCleanup === 'function') {
+      await testInfrastructure.forceCleanup();
+    } else {
+      console.warn('⚠️ TestInfrastructure.forceCleanup not available during cleanup');
+    }
 
-    // Report memory statistics
-    const memStats = testInfrastructure.getMemoryStats();
-    if (memStats.peak > config.resources.maxMemoryMB * 0.8) {
-      console.warn(
-        `High memory usage detected - Peak: ${memStats.peak.toFixed(2)}MB, Average: ${memStats.average.toFixed(2)}MB`
-      );
+    // Report memory statistics with defensive programming
+    if (testInfrastructure && typeof testInfrastructure.getMemoryStats === 'function') {
+      const memStats = testInfrastructure.getMemoryStats();
+      if (memStats.peak > config.resources.maxMemoryMB * 0.8) {
+        console.warn(
+          `High memory usage detected - Peak: ${memStats.peak.toFixed(2)}MB, Average: ${memStats.average.toFixed(2)}MB`
+        );
+      }
+    } else {
+      console.warn('⚠️ TestInfrastructure.getMemoryStats not available for memory reporting');
     }
   } catch (error) {
     // Ignore cleanup errors in afterAll
@@ -74,16 +86,24 @@ afterEach(async () => {
   jest.clearAllMocks();
   jest.restoreAllMocks();
 
-  // Record memory usage
-  testInfrastructure.recordMemoryUsage();
-
-  // Check for resource leaks
-  const resourceStatus = testInfrastructure.getResourceStatus();
-  if (resourceStatus.tempDirs > 10) {
-    console.warn(`High temp directory count: ${resourceStatus.tempDirs}`);
+  // Record memory usage with defensive programming
+  if (testInfrastructure && typeof testInfrastructure.recordMemoryUsage === 'function') {
+    testInfrastructure.recordMemoryUsage();
+  } else {
+    console.warn('⚠️ TestInfrastructure.recordMemoryUsage not available during test cleanup');
   }
-  if (resourceStatus.fileHandles > 20) {
-    console.warn(`High file handle count: ${resourceStatus.fileHandles}`);
+
+  // Check for resource leaks with defensive programming
+  if (testInfrastructure && typeof testInfrastructure.getResourceStatus === 'function') {
+    const resourceStatus = testInfrastructure.getResourceStatus();
+    if (resourceStatus.tempDirs > 10) {
+      console.warn(`High temp directory count: ${resourceStatus.tempDirs}`);
+    }
+    if (resourceStatus.fileHandles > 20) {
+      console.warn(`High file handle count: ${resourceStatus.fileHandles}`);
+    }
+  } else {
+    console.warn('⚠️ TestInfrastructure.getResourceStatus not properly initialized');
   }
 
   // Wait for any pending async operations to complete

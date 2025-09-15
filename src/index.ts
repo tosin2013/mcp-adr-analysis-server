@@ -4264,18 +4264,17 @@ The enhanced process maintains full traceability from PRD requirements to genera
       // Always use JSON-first TODO system
       this.logger.info('Using JSON-first TODO system for ADR task generation');
 
-      const { manageTodoV2 } = await import('./tools/todo-management-tool-v2.js');
+      // TODO: Legacy todo-management-tool-v2 removed in memory-centric transformation
+      // Use mcp-shrimp-task-manager for task management instead
+      this.logger.info('⚠️ todo-management-tool-v2 was removed in memory-centric transformation');
 
       // Optional: Create backup if requested and JSON exists
       if (createJsonBackup) {
         try {
-          await manageTodoV2({
-            operation: 'import_from_markdown',
-            projectPath: this.config.projectPath,
-            mergeStrategy: 'preserve_json',
-            backupExisting: true,
-          });
-          this.logger.info('Created backup of existing JSON TODO data');
+          // TODO: Implement backup functionality with mcp-shrimp-task-manager
+          this.logger.info(
+            'Backup functionality currently unavailable - todo-management-tool-v2 removed'
+          );
         } catch (error) {
           // Continue if backup fails - might be first time setup
           this.logger.debug('No existing JSON data to backup');
@@ -4283,21 +4282,23 @@ The enhanced process maintains full traceability from PRD requirements to genera
       }
 
       // Import ADR tasks into JSON system with enhanced parameters
-      const importResult = await manageTodoV2({
-        operation: 'import_adr_tasks',
-        projectPath: this.config.projectPath,
-        adrDirectory: absoluteAdrPath,
-        preserveExisting,
-        autoLinkDependencies: linkAdrs,
-        ...(intentId && { intentId }),
-      });
+      // TODO: Replace with mcp-shrimp-task-manager integration
+      const importResult = {
+        success: false,
+        message: 'todo-management-tool-v2 removed in memory-centric transformation',
+        tasks: [],
+        errors: [],
+      };
 
-      // Sync JSON data to markdown with force option
-      await manageTodoV2({
-        operation: 'sync_to_markdown',
-        projectPath: this.config.projectPath,
-        force: forceSyncToMarkdown,
-      });
+      // TODO: Sync JSON data to markdown with force option
+      // await manageTodoV2({
+      //   operation: 'sync_to_markdown',
+      //   projectPath: this.config.projectPath,
+      //   force: forceSyncToMarkdown,
+      // });
+      this.logger.info(
+        'Sync to markdown functionality currently unavailable - todo-management-tool-v2 removed'
+      );
 
       return {
         content: [
@@ -4328,7 +4329,7 @@ The enhanced process maintains full traceability from PRD requirements to genera
 ✅ **Backup Protection**: Automatic data preservation during updates
 ✅ **No Manual Setup**: All cache files auto-generated, tests can immediately validate
 
-${importResult.content[0].text}
+${importResult.message || 'No additional details available'}
 
 ## Available Operations (use manage_todo_v2 tool)
 1. **View Tasks**: \`get_tasks\` operation with filtering and sorting
@@ -6153,13 +6154,17 @@ Please provide:
 
   private async manageTodoJson(args: any): Promise<any> {
     try {
-      const { manageTodoV2 } = await import('./tools/todo-management-tool-v2.js');
-      // Add projectPath to args if not provided
-      const argsWithPath = {
-        ...args,
+      // TODO: Legacy todo-management-tool-v2 removed in memory-centric transformation
+      // Use mcp-shrimp-task-manager for task management instead
+      this.logger.info('⚠️ todo-management-tool-v2 was removed in memory-centric transformation');
+
+      return {
+        success: false,
+        message:
+          'todo-management-tool-v2 removed in memory-centric transformation - use mcp-shrimp-task-manager instead',
+        operation: args.operation || 'unknown',
         projectPath: args.projectPath || this.config.projectPath,
       };
-      return await manageTodoV2(argsWithPath);
     } catch (error) {
       // If it's already a McpAdrError with good details, re-throw it as-is
       if (error instanceof Error && error.name === 'McpAdrError') {

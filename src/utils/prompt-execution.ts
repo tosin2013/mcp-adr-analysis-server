@@ -1,6 +1,6 @@
 /**
  * Prompt Execution Utilities
- * 
+ *
  * This module provides utilities for executing prompts with AI when enabled,
  * or falling back to returning prompts for external execution.
  */
@@ -52,7 +52,7 @@ export async function executePromptWithFallback(
   if (shouldUseAI) {
     try {
       const executor = getAIExecutor();
-      
+
       if (options.responseFormat === 'json') {
         const execOptions: any = {};
         if (options.model !== undefined) execOptions.model = options.model;
@@ -60,19 +60,28 @@ export async function executePromptWithFallback(
         if (options.maxTokens !== undefined) execOptions.maxTokens = options.maxTokens;
         if (options.systemPrompt !== undefined) execOptions.systemPrompt = options.systemPrompt;
 
-        const result = await executor.executeStructuredPrompt(
-          prompt,
-          options.schema,
-          execOptions
-        );
+        // Apply defensive programming for executeStructuredPrompt
+        if (executor && typeof executor.executeStructuredPrompt === 'function') {
+          const result = await executor.executeStructuredPrompt(
+            prompt,
+            options.schema,
+            execOptions
+          );
 
-        return {
-          content: typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2),
-          isAIGenerated: true,
-          aiMetadata: result.raw.metadata,
-          usage: result.raw.usage,
-          model: result.raw.model,
-        };
+          return {
+            content:
+              typeof result.data === 'string' ? result.data : JSON.stringify(result.data, null, 2),
+            isAIGenerated: true,
+            aiMetadata: result.raw.metadata,
+            usage: result.raw.usage,
+            model: result.raw.model,
+          };
+        } else {
+          console.warn(
+            '⚠️ AI Executor executeStructuredPrompt not available, falling back to prompt-only mode'
+          );
+          throw new Error('AI Executor not available');
+        }
       } else {
         const execOptions: any = {};
         if (options.model !== undefined) execOptions.model = options.model;
@@ -80,15 +89,23 @@ export async function executePromptWithFallback(
         if (options.maxTokens !== undefined) execOptions.maxTokens = options.maxTokens;
         if (options.systemPrompt !== undefined) execOptions.systemPrompt = options.systemPrompt;
 
-        const result = await executor.executePrompt(prompt, execOptions);
+        // Apply defensive programming for executePrompt
+        if (executor && typeof executor.executePrompt === 'function') {
+          const result = await executor.executePrompt(prompt, execOptions);
 
-        return {
-          content: result.content,
-          isAIGenerated: true,
-          aiMetadata: result.metadata,
-          usage: result.usage,
-          model: result.model,
-        };
+          return {
+            content: result.content,
+            isAIGenerated: true,
+            aiMetadata: result.metadata,
+            usage: result.usage,
+            model: result.model,
+          };
+        } else {
+          console.warn(
+            '⚠️ AI Executor executePrompt not available, falling back to prompt-only mode'
+          );
+          throw new Error('AI Executor not available');
+        }
       }
     } catch (error) {
       console.error('AI execution failed, falling back to prompt-only mode:', error);
@@ -118,76 +135,81 @@ interface ContextPlaceholder {
  */
 const STANDARD_CONTEXT_PLACEHOLDERS: ContextPlaceholder[] = [
   {
-    placeholder: "{{userGoals}}",
+    placeholder: '{{userGoals}}',
     description: "User's primary objectives from the conversation",
-    example: "microservices migration for better scalability"
+    example: 'microservices migration for better scalability',
   },
   {
-    placeholder: "{{focusAreas}}",
-    description: "Specific areas of concern or interest",
-    example: "security, performance, maintainability"
+    placeholder: '{{focusAreas}}',
+    description: 'Specific areas of concern or interest',
+    example: 'security, performance, maintainability',
   },
   {
-    placeholder: "{{constraints}}",
-    description: "Limitations, compliance requirements, or restrictions",
-    example: "GDPR compliance required, budget under $50k, minimal downtime"
+    placeholder: '{{constraints}}',
+    description: 'Limitations, compliance requirements, or restrictions',
+    example: 'GDPR compliance required, budget under $50k, minimal downtime',
   },
   {
-    placeholder: "{{projectPhase}}",
-    description: "Current project phase or stage",
-    example: "planning, development, migration, production"
+    placeholder: '{{projectPhase}}',
+    description: 'Current project phase or stage',
+    example: 'planning, development, migration, production',
   },
   {
-    placeholder: "{{userRole}}",
+    placeholder: '{{userRole}}',
     description: "User's role or expertise level",
-    example: "senior architect, developer, project manager"
-  }
+    example: 'senior architect, developer, project manager',
+  },
 ];
 
 /**
  * Format a prompt for external execution with enhanced LLM instructions
  */
 function formatPromptForExternal(
-  prompt: string, 
+  prompt: string,
   instructions: string,
   contextPlaceholders: ContextPlaceholder[] = STANDARD_CONTEXT_PLACEHOLDERS
 ): string {
   // Check if prompt contains context placeholders
-  const hasPlaceholders = contextPlaceholders.some(cp => 
-    prompt.includes(cp.placeholder)
-  );
+  const hasPlaceholders = contextPlaceholders.some(cp => prompt.includes(cp.placeholder));
 
   const response = {
-    executionMode: "prompt-only",
+    executionMode: 'prompt-only',
     prompt: prompt,
     instructions: {
-      howToUse: "Execute this prompt within your current conversation context to preserve user goals and discussion history",
-      contextIntegration: hasPlaceholders ? 
-        "This prompt includes placeholders for conversation context. Replace them with relevant information from your discussion with the user before executing." :
-        "This prompt will work better if you provide context about the user's goals and constraints when executing it.",
+      howToUse:
+        'Execute this prompt within your current conversation context to preserve user goals and discussion history',
+      contextIntegration: hasPlaceholders
+        ? 'This prompt includes placeholders for conversation context. Replace them with relevant information from your discussion with the user before executing.'
+        : "This prompt will work better if you provide context about the user's goals and constraints when executing it.",
       expectedOutput: instructions,
       bestPractices: [
         "Maintain the user's stated objectives when executing this prompt",
-        "Include any constraints or preferences mentioned in the conversation", 
+        'Include any constraints or preferences mentioned in the conversation',
         "Consider the project phase and user's role when interpreting results",
-        "Tailor the analysis to address the user's specific concerns"
-      ]
+        "Tailor the analysis to address the user's specific concerns",
+      ],
     },
     ...(hasPlaceholders && {
-      contextPlaceholders: contextPlaceholders.reduce((acc, cp) => ({
-        ...acc,
-        [cp.placeholder]: {
-          description: cp.description,
-          example: cp.example
-        }
-      }), {}),
-      exampleUsage: `Before executing, customize the prompt. For example, replace:\n${contextPlaceholders.slice(0, 2).map(cp => `  ${cp.placeholder} → "${cp.example}"`).join('\n')}`
+      contextPlaceholders: contextPlaceholders.reduce(
+        (acc, cp) => ({
+          ...acc,
+          [cp.placeholder]: {
+            description: cp.description,
+            example: cp.example,
+          },
+        }),
+        {}
+      ),
+      exampleUsage: `Before executing, customize the prompt. For example, replace:\n${contextPlaceholders
+        .slice(0, 2)
+        .map(cp => `  ${cp.placeholder} → "${cp.example}"`)
+        .join('\n')}`,
     }),
     tips: [
-      "The more context you provide, the more tailored and useful the analysis will be",
-      "Consider what the user has already discussed when executing this prompt",
-      "Focus the analysis on areas that matter most to the user's goals"
-    ]
+      'The more context you provide, the more tailored and useful the analysis will be',
+      'Consider what the user has already discussed when executing this prompt',
+      "Focus the analysis on areas that matter most to the user's goals",
+    ],
   };
 
   return JSON.stringify(response, null, 2);
@@ -201,7 +223,9 @@ export async function executeADRSuggestionPrompt(
   instructions: string,
   options: PromptExecutionOptions = {}
 ): Promise<PromptExecutionResult> {
-  const systemPrompt = options.systemPrompt || `
+  const systemPrompt =
+    options.systemPrompt ||
+    `
 You are an expert software architect specializing in Architectural Decision Records (ADRs). 
 Analyze the provided context and generate specific, actionable ADR suggestions.
 Focus on identifying architectural decisions that need to be documented based on the project context.
@@ -224,7 +248,9 @@ export async function executeADRGenerationPrompt(
   instructions: string,
   options: PromptExecutionOptions = {}
 ): Promise<PromptExecutionResult> {
-  const systemPrompt = options.systemPrompt || `
+  const systemPrompt =
+    options.systemPrompt ||
+    `
 You are an expert software architect who creates comprehensive Architectural Decision Records (ADRs).
 Generate well-structured ADRs that follow best practices and include all necessary sections.
 Ensure each ADR is complete, actionable, and provides clear guidance for the development team.
@@ -247,7 +273,9 @@ export async function executeEcosystemAnalysisPrompt(
   instructions: string,
   options: PromptExecutionOptions = {}
 ): Promise<PromptExecutionResult> {
-  const systemPrompt = options.systemPrompt || `
+  const systemPrompt =
+    options.systemPrompt ||
+    `
 You are a senior software architect specializing in technology ecosystem analysis.
 Analyze the provided project context to identify technologies, patterns, and architectural decisions.
 Provide comprehensive insights about the project's technical landscape and recommendations for improvement.
@@ -270,7 +298,9 @@ export async function executeResearchPrompt(
   instructions: string,
   options: PromptExecutionOptions = {}
 ): Promise<PromptExecutionResult> {
-  const systemPrompt = options.systemPrompt || `
+  const systemPrompt =
+    options.systemPrompt ||
+    `
 You are a research specialist who generates comprehensive research questions and methodologies.
 Create detailed research plans that help teams investigate architectural decisions and technologies.
 Focus on practical research approaches that can be executed by development teams.
@@ -324,7 +354,7 @@ export function getAIExecutionStatus(): {
       hasApiKey,
       executionMode: config.executionMode,
       model: config.defaultModel,
-      reason
+      reason,
     };
   } catch (error) {
     return {
@@ -332,7 +362,7 @@ export function getAIExecutionStatus(): {
       hasApiKey: false,
       executionMode: 'unknown',
       model: 'unknown',
-      reason: `Configuration error: ${error instanceof Error ? error.message : String(error)}`
+      reason: `Configuration error: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }
@@ -381,7 +411,9 @@ export function formatMCPResponse(result: PromptExecutionResult): {
     ];
 
     if (result.usage) {
-      metadata.push(`- Tokens Used: ${result.usage.totalTokens} (${result.usage.promptTokens} prompt + ${result.usage.completionTokens} completion)`);
+      metadata.push(
+        `- Tokens Used: ${result.usage.totalTokens} (${result.usage.promptTokens} prompt + ${result.usage.completionTokens} completion)`
+      );
     }
 
     responseText += metadata.join('\n');
