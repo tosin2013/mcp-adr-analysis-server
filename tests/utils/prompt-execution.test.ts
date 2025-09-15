@@ -44,6 +44,13 @@ const { isAIExecutionEnabled, loadAIConfig } = await import('../../src/config/ai
 const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
 
 describe('prompt-execution', () => {
+  // Helper function to setup AI execution mocks
+  const setupAIMocks = () => {
+    (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+    (loadAIConfig as jest.Mock).mockReturnValue(mockAIConfig);
+    (getAIExecutor as jest.Mock).mockReturnValue(mockAIExecutor);
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset console methods
@@ -56,7 +63,7 @@ describe('prompt-execution', () => {
 
   describe('executePromptWithFallback', () => {
     it('should execute with AI when enabled and not forced to prompt-only', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'AI response',
         metadata: {
@@ -73,24 +80,14 @@ describe('prompt-execution', () => {
         responseFormat: 'text',
       });
 
-      // With the new prompt-only execution mode, either AI execution works (if properly configured)
-      // or prompt-only mode is used (if AI is not available). Both are valid outcomes.
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-
-      if (result.isAIGenerated) {
-        expect(result.content).toBe('AI response');
-        expect(result.model).toBe('test-model');
-      } else {
-        // Prompt-only mode returns structured prompt data as JSON string
-        expect(typeof result.content).toBe('string');
-        expect(result.content).toContain('"executionMode": "prompt-only"');
-        expect(result.content).toContain('"prompt": "Test prompt"');
-      }
+      expect(result.isAIGenerated).toBe(true);
+      expect(result.content).toBe('AI response');
+      expect(result.model).toBe('test-model');
+      expect(mockAIExecutor.executePrompt).toHaveBeenCalledWith('Test prompt', {});
     });
 
     it('should execute structured prompt with JSON format', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executeStructuredPrompt.mockResolvedValue({
         data: { key: 'value' },
         raw: {
@@ -114,24 +111,23 @@ describe('prompt-execution', () => {
         schema: { type: 'object' },
       });
 
-      // With the new prompt-only execution mode, either AI execution works (if properly configured)
-      // or prompt-only mode is used (if AI is not available). Both are valid outcomes.
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-
-      if (result.isAIGenerated) {
-        expect(result.content).toBe('{\n  "key": "value"\n}');
-        expect(result.aiMetadata?.cached).toBe(true);
-      } else {
-        // Prompt-only mode returns structured prompt data as JSON string
-        expect(typeof result.content).toBe('string');
-        expect(result.content).toContain('"executionMode": "prompt-only"');
-        expect(result.content).toContain('"prompt": "Test prompt"');
-      }
+      expect(result.isAIGenerated).toBe(true);
+      expect(result.content).toBe('{\n  "key": "value"\n}');
+      expect(result.aiMetadata?.cached).toBe(true);
+      expect(mockAIExecutor.executeStructuredPrompt).toHaveBeenCalledWith(
+        'Test prompt',
+        { type: 'object' },
+        {
+          model: 'custom-model',
+          temperature: 0.5,
+          maxTokens: 1000,
+          systemPrompt: 'Custom system prompt',
+        }
+      );
     });
 
     it('should handle string data from structured prompt', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executeStructuredPrompt.mockResolvedValue({
         data: 'string response',
         raw: {
@@ -150,16 +146,11 @@ describe('prompt-execution', () => {
         responseFormat: 'json',
       });
 
-      // With the new prompt-only execution mode, the content will be structured prompt data as JSON string
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-      expect(typeof result.content).toBe('string');
-      expect(result.content).toContain('"executionMode": "prompt-only"');
-      expect(result.content).toContain('"prompt": "Test prompt"');
+      expect(result.content).toBe('string response');
     });
 
     it('should fallback to prompt-only when AI execution fails', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockRejectedValue(new Error('AI execution failed'));
 
       const result = await executePromptWithFallback('Test prompt', 'Test instructions');
@@ -174,7 +165,7 @@ describe('prompt-execution', () => {
     });
 
     it('should use prompt-only mode when forcePromptOnly is true', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
 
       const result = await executePromptWithFallback('Test prompt', 'Test instructions', {
         forcePromptOnly: true,
@@ -224,7 +215,7 @@ describe('prompt-execution', () => {
 
   describe('executeADRSuggestionPrompt', () => {
     it('should execute ADR suggestion prompt with default system prompt', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'ADR suggestions',
         metadata: {
@@ -239,23 +230,19 @@ describe('prompt-execution', () => {
 
       const result = await executeADRSuggestionPrompt('Test prompt', 'Test instructions');
 
-      // With the new prompt-only execution mode, either AI execution works (if properly configured)
-      // or prompt-only mode is used (if AI is not available). Both are valid outcomes.
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-
-      if (result.isAIGenerated) {
-        expect(result.content).toBe('ADR suggestions');
-      } else {
-        // Prompt-only mode returns structured prompt data as JSON string
-        expect(typeof result.content).toBe('string');
-        expect(result.content).toContain('"executionMode": "prompt-only"');
-        expect(result.content).toContain('"prompt": "Test prompt"');
-      }
+      expect(result.isAIGenerated).toBe(true);
+      expect(result.content).toBe('ADR suggestions');
+      expect(mockAIExecutor.executePrompt).toHaveBeenCalledWith(
+        'Test prompt',
+        expect.objectContaining({
+          systemPrompt: expect.stringContaining('expert software architect'),
+          temperature: 0.1,
+        })
+      );
     });
 
     it('should use custom system prompt when provided', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'Custom response',
         metadata: {
@@ -272,15 +259,18 @@ describe('prompt-execution', () => {
         systemPrompt: 'Custom system prompt',
       });
 
-      // With the new prompt-only execution mode, either AI execution works (if properly configured)
-      // or prompt-only mode is used (if AI is not available). Both are valid outcomes.
-      // The important thing is that the function doesn't crash and returns a valid result.
+      expect(mockAIExecutor.executePrompt).toHaveBeenCalledWith(
+        'Test prompt',
+        expect.objectContaining({
+          systemPrompt: 'Custom system prompt',
+        })
+      );
     });
   });
 
   describe('executeADRGenerationPrompt', () => {
     it('should execute ADR generation prompt with appropriate system prompt', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'Generated ADR',
         metadata: {
@@ -298,25 +288,22 @@ describe('prompt-execution', () => {
         'Create comprehensive ADR'
       );
 
-      // With the new prompt-only execution mode, either AI execution works (if properly configured)
-      // or prompt-only mode is used (if AI is not available). Both are valid outcomes.
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-
-      if (result.isAIGenerated) {
-        expect(result.content).toBe('Generated ADR');
-      } else {
-        // Prompt-only mode returns structured prompt data as JSON string
-        expect(typeof result.content).toBe('string');
-        expect(result.content).toContain('"executionMode": "prompt-only"');
-        expect(result.content).toContain('"prompt": "Generate ADR for microservices"');
-      }
+      expect(result.content).toBe('Generated ADR');
+      expect(mockAIExecutor.executePrompt).toHaveBeenCalledWith(
+        'Generate ADR for microservices',
+        expect.objectContaining({
+          systemPrompt: expect.stringContaining(
+            'creates comprehensive Architectural Decision Records'
+          ),
+          temperature: 0.1,
+        })
+      );
     });
   });
 
   describe('executeEcosystemAnalysisPrompt', () => {
     it('should execute ecosystem analysis prompt', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'Ecosystem analysis',
         metadata: {
@@ -334,25 +321,20 @@ describe('prompt-execution', () => {
         'Provide ecosystem insights'
       );
 
-      // With the new prompt-only execution mode, either AI execution works (if properly configured)
-      // or prompt-only mode is used (if AI is not available). Both are valid outcomes.
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-
-      if (result.isAIGenerated) {
-        expect(result.content).toBe('Ecosystem analysis');
-      } else {
-        // Prompt-only mode returns structured prompt data as JSON string
-        expect(typeof result.content).toBe('string');
-        expect(result.content).toContain('"executionMode": "prompt-only"');
-        expect(result.content).toContain('"prompt": "Analyze tech stack"');
-      }
+      expect(result.content).toBe('Ecosystem analysis');
+      expect(mockAIExecutor.executePrompt).toHaveBeenCalledWith(
+        'Analyze tech stack',
+        expect.objectContaining({
+          systemPrompt: expect.stringContaining('technology ecosystem analysis'),
+          temperature: 0.1,
+        })
+      );
     });
   });
 
   describe('executeResearchPrompt', () => {
     it('should execute research prompt with higher temperature', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'Research questions',
         metadata: {
@@ -370,31 +352,26 @@ describe('prompt-execution', () => {
         'Create research methodology'
       );
 
-      // With the new prompt-only execution mode, either AI execution works (if properly configured)
-      // or prompt-only mode is used (if AI is not available). Both are valid outcomes.
-      expect(result).toBeDefined();
-      expect(result.content).toBeDefined();
-
-      if (result.isAIGenerated) {
-        expect(result.content).toBe('Research questions');
-      } else {
-        // Prompt-only mode returns structured prompt data as JSON string
-        expect(typeof result.content).toBe('string');
-        expect(result.content).toContain('"executionMode": "prompt-only"');
-        expect(result.content).toContain('"prompt": "Generate research questions"');
-      }
+      expect(result.content).toBe('Research questions');
+      expect(mockAIExecutor.executePrompt).toHaveBeenCalledWith(
+        'Generate research questions',
+        expect.objectContaining({
+          systemPrompt: expect.stringContaining('research specialist'),
+          temperature: 0.2, // Higher temperature for creativity
+        })
+      );
     });
   });
 
   describe('isAIExecutionAvailable', () => {
     it('should return true when AI executor is available', () => {
+      (getAIExecutor as jest.Mock).mockReturnValue(mockAIExecutor);
       mockAIExecutor.isAvailable.mockReturnValue(true);
 
       const result = isAIExecutionAvailable();
 
-      // With the new prompt-only execution mode, AI execution may not be available by default
-      // The important thing is that the function doesn't crash and returns a boolean
-      expect(typeof result).toBe('boolean');
+      expect(result).toBe(true);
+      expect(mockAIExecutor.isAvailable).toHaveBeenCalled();
     });
 
     it('should return false when AI executor is not available', () => {
@@ -418,7 +395,7 @@ describe('prompt-execution', () => {
 
   describe('getAIExecutionStatus', () => {
     it('should return complete status when AI is enabled', () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       (loadAIConfig as jest.Mock).mockReturnValue({
         apiKey: 'test-key',
         executionMode: 'full',

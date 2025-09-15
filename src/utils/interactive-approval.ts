@@ -5,6 +5,7 @@
  */
 
 import { createInterface } from 'readline';
+import { writeFileSync } from 'fs';
 
 export interface ApprovalItem {
   filePath: string;
@@ -572,12 +573,11 @@ export function batchApproval(
 /**
  * Save approval preferences for future use
  */
-export async function saveApprovalPreferences(
+export function saveApprovalPreferences(
   actions: ApprovalAction[],
   configPath: string = '.smartgit-approvals.json'
-): Promise<void> {
+): void {
   try {
-    const fs = await import('fs');
     const preferences = {
       timestamp: new Date().toISOString(),
       actions: actions.map(action => ({
@@ -587,7 +587,7 @@ export async function saveApprovalPreferences(
       })),
     };
 
-    fs.writeFileSync(configPath, JSON.stringify(preferences, null, 2));
+    writeFileSync(configPath, JSON.stringify(preferences, null, 2));
     console.log(`\n💾 Approval preferences saved to ${configPath}`);
   } catch (error) {
     console.log(

@@ -18,6 +18,7 @@ import {
   MemoryIntelligence,
   MemoryEvolutionEvent,
   MemoryPersistenceConfig,
+  MemoryEntitySchema,
 } from '../types/memory-entities.js';
 
 import { McpAdrError } from '../types/index.js';
@@ -41,7 +42,7 @@ export class MemoryEntityManager {
 
   constructor(config?: Partial<MemoryPersistenceConfig>) {
     const projectConfig = loadConfig();
-    this.logger = new EnhancedLogger('MemoryEntityManager');
+    this.logger = new EnhancedLogger();
 
     this.memoryDir = path.join(projectConfig.projectPath, '.mcp-adr-memory');
     this.entitiesFile = path.join(this.memoryDir, 'entities.json');
@@ -152,7 +153,7 @@ export class MemoryEntityManager {
         timestamp: now,
         eventType: existing ? 'modified' : 'created',
         agent: 'MemoryEntityManager',
-        changes: existing ? this.calculateChanges(existing, fullEntity) : undefined,
+        changes: existing ? this.calculateChanges(existing, fullEntity) : {},
       });
 
       // Update intelligence
@@ -256,10 +257,10 @@ export class MemoryEntityManager {
         targetId: relationship.targetId,
         type: relationship.type,
         strength: relationship.strength || 0.7,
-        context: relationship.context,
+        context: relationship.context || '',
         evidence: relationship.evidence || [],
         created: relationship.created || now,
-        lastValidated: relationship.lastValidated,
+        lastValidated: relationship.lastValidated || now,
         confidence: relationship.confidence || 0.8,
       };
 
@@ -778,14 +779,18 @@ export class MemoryEntityManager {
   private calculateChanges(oldEntity: MemoryEntity, newEntity: MemoryEntity): Record<string, any> {
     const changes: Record<string, any> = {};
 
-    if (oldEntity.title !== newEntity.title)
-      changes.title = { old: oldEntity.title, new: newEntity.title };
-    if (oldEntity.description !== newEntity.description)
-      changes.description = { old: oldEntity.description, new: newEntity.description };
-    if (oldEntity.confidence !== newEntity.confidence)
-      changes.confidence = { old: oldEntity.confidence, new: newEntity.confidence };
-    if (oldEntity.relevance !== newEntity.relevance)
-      changes.relevance = { old: oldEntity.relevance, new: newEntity.relevance };
+    // Convert to any to avoid index signature access issues
+    const oldAny = oldEntity as any;
+    const newAny = newEntity as any;
+
+    if (oldAny['title'] !== newAny['title'])
+      changes['title'] = { old: oldAny['title'], new: newAny['title'] };
+    if (oldAny['description'] !== newAny['description'])
+      changes['description'] = { old: oldAny['description'], new: newAny['description'] };
+    if (oldEntity['confidence'] !== newEntity['confidence'])
+      changes['confidence'] = { old: oldEntity['confidence'], new: newEntity['confidence'] };
+    if (oldEntity['relevance'] !== newEntity['relevance'])
+      changes['relevance'] = { old: oldEntity['relevance'], new: newEntity['relevance'] };
 
     return changes;
   }

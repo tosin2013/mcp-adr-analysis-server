@@ -10,20 +10,21 @@ import {
   KnowledgeGraphSnapshotSchema,
 } from '../types/knowledge-graph-schemas.js';
 import { loadConfig } from './config.js';
-// ProjectHealthScoring removed as part of memory-centric architecture
+// Using new MemoryHealthScoring instead of deprecated ProjectHealthScoring
+import { MemoryHealthScoring, MemoryHealthScore } from './memory-health-scoring.js';
 
 export class KnowledgeGraphManager {
   private cacheDir: string;
   private snapshotsFile: string;
   private syncStateFile: string;
-  // private healthScoring: ProjectHealthScoring; // Removed
+  private memoryScoring: MemoryHealthScoring;
 
   constructor() {
     const config = loadConfig();
     this.cacheDir = path.join(config.projectPath, '.mcp-adr-cache');
     this.snapshotsFile = path.join(this.cacheDir, 'knowledge-graph-snapshots.json');
     this.syncStateFile = path.join(this.cacheDir, 'todo-sync-state.json');
-    // this.healthScoring = new ProjectHealthScoring(config.projectPath); // Removed
+    this.memoryScoring = new MemoryHealthScoring();
   }
 
   async ensureCacheDirectory(): Promise<void> {
@@ -80,8 +81,10 @@ export class KnowledgeGraphManager {
     const intentId = crypto.randomUUID();
     const timestamp = new Date().toISOString();
 
-    // Get current score as baseline (ProjectHealthScoring removed)
-    const currentScore = { overall: 0.5, components: {}, timestamp: new Date().toISOString() };
+    // Get current score as baseline
+    // Calculate memory-based health score
+    const kgData = await this.loadKnowledgeGraph();
+    const currentScore = await this.calculateMemoryScore(kgData);
 
     const intent: IntentSnapshot = {
       intentId,
@@ -96,39 +99,41 @@ export class KnowledgeGraphManager {
         initialScore: currentScore.overall,
         currentScore: currentScore.overall,
         componentScores: {
-          taskCompletion: currentScore.taskCompletion,
-          deploymentReadiness: currentScore.deploymentReadiness,
-          architectureCompliance: currentScore.architectureCompliance,
-          securityPosture: currentScore.securityPosture,
-          codeQuality: currentScore.codeQuality,
+          taskCompletion: currentScore.memoryQuality,
+          deploymentReadiness: currentScore.retrievalPerformance,
+          architectureCompliance: currentScore.entityCoherence,
+          securityPosture: currentScore.contextUtilization,
+          codeQuality: currentScore.decisionAlignment,
         },
         lastScoreUpdate: timestamp,
       },
     };
 
-    const kg = await this.loadKnowledgeGraph();
-    kg.intents.push(intent);
-    kg.analytics.totalIntents = kg.intents.length;
-    kg.analytics.activeIntents = kg.intents.filter(i => i.currentStatus !== 'completed').length;
+    const kgUpdate = await this.loadKnowledgeGraph();
+    kgUpdate.intents.push(intent);
+    kgUpdate.analytics.totalIntents = kgUpdate.intents.length;
+    kgUpdate.analytics.activeIntents = kgUpdate.intents.filter(
+      i => i.currentStatus !== 'completed'
+    ).length;
 
     // Add score history entry
-    if (!kg.scoreHistory) kg.scoreHistory = [];
-    kg.scoreHistory.push({
+    if (!kgUpdate.scoreHistory) kgUpdate.scoreHistory = [];
+    kgUpdate.scoreHistory.push({
       timestamp,
       intentId,
       overallScore: currentScore.overall,
       componentScores: {
-        taskCompletion: currentScore.taskCompletion,
-        deploymentReadiness: currentScore.deploymentReadiness,
-        architectureCompliance: currentScore.architectureCompliance,
-        securityPosture: currentScore.securityPosture,
-        codeQuality: currentScore.codeQuality,
+        taskCompletion: currentScore.memoryQuality,
+        deploymentReadiness: currentScore.retrievalPerformance,
+        architectureCompliance: currentScore.entityCoherence,
+        securityPosture: currentScore.contextUtilization,
+        codeQuality: currentScore.decisionAlignment,
       },
       triggerEvent: `Intent created: ${humanRequest.substring(0, 100)}...`,
       confidence: currentScore.confidence,
     });
 
-    await this.saveKnowledgeGraph(kg);
+    await this.saveKnowledgeGraph(kgUpdate);
     return intentId;
   }
 
@@ -149,8 +154,9 @@ export class KnowledgeGraphManager {
       throw new Error(`Intent ${intentId} not found`);
     }
 
-    // Capture before score (ProjectHealthScoring removed)
-    const beforeScore = { overall: 0.5, components: {}, timestamp: new Date().toISOString() };
+    // Capture before score
+    // ProjectHealthScoring removed - get current memory score
+    const beforeScore = await this.memoryScoring.calculateMemoryHealth([], {}, {});
 
     const execution: ToolExecutionSnapshot = {
       toolName,
@@ -306,7 +312,7 @@ export class KnowledgeGraphManager {
   private async updateScoreTracking(
     intentId: string,
     toolName: string,
-    beforeScore: ProjectHealthScore,
+    beforeScore: MemoryHealthScore,
     execution: ToolExecutionSnapshot
   ): Promise<void> {
     const kg = await this.loadKnowledgeGraph();
@@ -314,20 +320,19 @@ export class KnowledgeGraphManager {
 
     if (!intent) return;
 
-    // Get current score after tool execution (ProjectHealthScoring removed)
-    const afterScore = { overall: 0.5, components: {}, timestamp: new Date().toISOString() };
+    // Get current score after tool execution
+    const afterScore = await this.calculateMemoryScore(kg);
 
-    // Calculate score impact
+    // Calculate score impact - map memory scores to legacy component names
     const scoreImpact = {
       beforeScore: beforeScore.overall,
       afterScore: afterScore.overall,
       componentImpacts: {
-        taskCompletion: afterScore.taskCompletion - beforeScore.taskCompletion,
-        deploymentReadiness: afterScore.deploymentReadiness - beforeScore.deploymentReadiness,
-        architectureCompliance:
-          afterScore.architectureCompliance - beforeScore.architectureCompliance,
-        securityPosture: afterScore.securityPosture - beforeScore.securityPosture,
-        codeQuality: afterScore.codeQuality - beforeScore.codeQuality,
+        taskCompletion: afterScore.memoryQuality - beforeScore.memoryQuality,
+        deploymentReadiness: afterScore.retrievalPerformance - beforeScore.retrievalPerformance,
+        architectureCompliance: afterScore.entityCoherence - beforeScore.entityCoherence,
+        securityPosture: afterScore.contextUtilization - beforeScore.contextUtilization,
+        codeQuality: afterScore.decisionAlignment - beforeScore.decisionAlignment,
       },
       scoreConfidence: afterScore.confidence,
     };
@@ -335,15 +340,15 @@ export class KnowledgeGraphManager {
     // Update execution with score impact
     execution.scoreImpact = scoreImpact;
 
-    // Update intent score tracking
+    // Update intent score tracking - map memory scores to legacy component names
     if (intent.scoreTracking) {
       intent.scoreTracking.currentScore = afterScore.overall;
       intent.scoreTracking.componentScores = {
-        taskCompletion: afterScore.taskCompletion,
-        deploymentReadiness: afterScore.deploymentReadiness,
-        architectureCompliance: afterScore.architectureCompliance,
-        securityPosture: afterScore.securityPosture,
-        codeQuality: afterScore.codeQuality,
+        taskCompletion: afterScore.memoryQuality,
+        deploymentReadiness: afterScore.retrievalPerformance,
+        architectureCompliance: afterScore.entityCoherence,
+        securityPosture: afterScore.contextUtilization,
+        codeQuality: afterScore.decisionAlignment,
       };
       intent.scoreTracking.lastScoreUpdate = new Date().toISOString();
 
@@ -370,11 +375,11 @@ export class KnowledgeGraphManager {
       intentId,
       overallScore: afterScore.overall,
       componentScores: {
-        taskCompletion: afterScore.taskCompletion,
-        deploymentReadiness: afterScore.deploymentReadiness,
-        architectureCompliance: afterScore.architectureCompliance,
-        securityPosture: afterScore.securityPosture,
-        codeQuality: afterScore.codeQuality,
+        taskCompletion: afterScore.memoryQuality,
+        deploymentReadiness: afterScore.retrievalPerformance,
+        architectureCompliance: afterScore.entityCoherence,
+        securityPosture: afterScore.contextUtilization,
+        codeQuality: afterScore.decisionAlignment,
       },
       triggerEvent: `Tool executed: ${toolName}`,
       confidence: afterScore.confidence,
@@ -441,7 +446,9 @@ export class KnowledgeGraphManager {
     }>;
   }> {
     const kg = await this.loadKnowledgeGraph();
-    const currentScore = { overall: 0.5, components: {}, timestamp: new Date().toISOString() }; // ProjectHealthScoring removed
+    // Calculate memory-based health score
+    const kgData = await this.loadKnowledgeGraph();
+    const currentScore = await this.calculateMemoryScore(kgData);
 
     const scoreHistory = kg.scoreHistory || [];
     const intentImpacts = kg.intents
@@ -527,5 +534,176 @@ export class KnowledgeGraphManager {
     };
 
     await this.createIntent(intent.humanRequest, intent.parsedGoals, intent.priority);
+  }
+
+  /**
+   * Calculate memory-based health score from knowledge graph
+   */
+  private async calculateMemoryScore(kg: KnowledgeGraphSnapshot): Promise<MemoryHealthScore> {
+    // Extract memories from intents and their tool executions
+    const memories = this.extractMemoriesFromKG(kg);
+
+    // Calculate retrieval metrics from tool execution patterns
+    const retrievalMetrics = this.calculateRetrievalMetrics(kg);
+
+    // Build entity graph from intents and relationships
+    const entityGraph = this.buildEntityGraph(kg);
+
+    return this.memoryScoring.calculateMemoryHealth(memories, retrievalMetrics, entityGraph);
+  }
+
+  /**
+   * Extract memory representations from knowledge graph
+   */
+  private extractMemoriesFromKG(kg: KnowledgeGraphSnapshot): any[] {
+    const memories: any[] = [];
+
+    kg.intents.forEach(intent => {
+      // Each intent is a memory
+      memories.push({
+        id: intent.intentId,
+        content: intent.humanRequest,
+        context: {
+          goals: intent.parsedGoals,
+          priority: intent.priority,
+          status: intent.currentStatus,
+        },
+        timestamp: intent.timestamp,
+        metadata: {
+          relevanceScore: this.calculateIntentRelevance(intent),
+          toolExecutions: intent.toolChain.length,
+        },
+        relatedDecisions: (intent as any).adrsCreated || [],
+      });
+
+      // Each tool execution is also a memory
+      intent.toolChain.forEach(tool => {
+        memories.push({
+          id: `${intent.intentId}-${tool.toolName}`,
+          content: `${tool.toolName} execution`,
+          context: {
+            parameters: tool.parameters,
+            result: tool.result,
+            success: tool.success,
+          },
+          timestamp: tool.executionTime,
+          metadata: {
+            relevanceScore: tool.success ? 0.8 : 0.3,
+            parentIntent: intent.intentId,
+          },
+        });
+      });
+    });
+
+    return memories;
+  }
+
+  /**
+   * Calculate retrieval metrics from tool execution patterns
+   */
+  private calculateRetrievalMetrics(kg: KnowledgeGraphSnapshot): any {
+    let totalRetrievals = 0;
+    let successfulRetrievals = 0;
+    let totalTime = 0;
+
+    kg.intents.forEach(intent => {
+      intent.toolChain.forEach(tool => {
+        totalRetrievals++;
+        if (tool.success) successfulRetrievals++;
+        // Estimate retrieval time (would be actual in production)
+        totalTime += tool.executionTime ? 50 : 100;
+      });
+    });
+
+    return {
+      totalRetrievals,
+      successfulRetrievals,
+      averageRetrievalTime: totalRetrievals > 0 ? totalTime / totalRetrievals : 0,
+      precisionScore: 0.8, // Placeholder - would calculate from actual retrievals
+      recallScore: 0.7, // Placeholder - would calculate from actual retrievals
+    };
+  }
+
+  /**
+   * Build entity graph from knowledge graph
+   */
+  private buildEntityGraph(kg: KnowledgeGraphSnapshot): any {
+    const entities: any[] = [];
+    const relationships: any[] = [];
+
+    // Intents as entities
+    kg.intents.forEach(intent => {
+      entities.push({
+        id: intent.intentId,
+        type: 'intent',
+        name: intent.humanRequest.substring(0, 50),
+      });
+
+      // Create relationships between intents and their tools
+      intent.toolChain.forEach(tool => {
+        entities.push({
+          id: `tool-${tool.toolName}`,
+          type: 'tool',
+          name: tool.toolName,
+        });
+
+        relationships.push({
+          sourceId: intent.intentId,
+          targetId: `tool-${tool.toolName}`,
+          type: 'uses',
+          strength: tool.success ? 0.9 : 0.3,
+        });
+      });
+    });
+
+    // Add ADR entities and relationships
+    kg.intents.forEach(intent => {
+      ((intent as any).adrsCreated || []).forEach((adrId: any) => {
+        entities.push({
+          id: `adr-${adrId}`,
+          type: 'decision',
+          name: `ADR ${adrId}`,
+        });
+
+        relationships.push({
+          sourceId: intent.intentId,
+          targetId: `adr-${adrId}`,
+          type: 'created',
+          strength: 0.95,
+        });
+      });
+    });
+
+    return {
+      entities,
+      relationships,
+      decisions: entities.filter(e => e.type === 'decision'),
+    };
+  }
+
+  /**
+   * Calculate relevance score for an intent
+   */
+  private calculateIntentRelevance(intent: IntentSnapshot): number {
+    const now = new Date();
+    const age = now.getTime() - new Date(intent.timestamp).getTime();
+    const ageInDays = age / (24 * 60 * 60 * 1000);
+
+    // Base relevance on status and age
+    let relevance = 0.5;
+
+    if (intent.currentStatus === 'executing') relevance = 0.9;
+    else if (intent.currentStatus === 'planning') relevance = 0.8;
+    else if (intent.currentStatus === 'completed') relevance = 0.6;
+
+    // Decay relevance over time
+    relevance *= Math.max(0.3, 1 - ageInDays / 30);
+
+    // Boost relevance if it has successful tool executions
+    const successRate =
+      intent.toolChain.filter(t => t.success).length / (intent.toolChain.length || 1);
+    relevance = (relevance + successRate) / 2;
+
+    return relevance;
   }
 }

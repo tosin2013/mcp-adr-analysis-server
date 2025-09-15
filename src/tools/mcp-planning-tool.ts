@@ -24,7 +24,7 @@ import { z } from 'zod';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { McpAdrError } from '../types/index.js';
-import { TodoJsonManager } from '../utils/todo-json-manager.js';
+// TodoJsonManager removed - use mcp-shrimp-task-manager for task management
 
 // Project phase schema
 const ProjectPhaseSchema = z.object({
@@ -397,11 +397,12 @@ async function createProject(args: z.infer<typeof CreateProjectSchema>): Promise
   // Import from TODO system if requested
   if (importFromTodos) {
     try {
-      // TODO: Replace with memory-centric task management
+      // TodoJsonManager removed - use mcp-shrimp-task-manager for task management
       console.warn(
-        '⚠️ TodoJsonManager was removed - use mcp-shrimp-task-manager for task management'
+        '⚠️ TodoJsonManager is deprecated and was removed in memory-centric transformation'
       );
-      const todoData = { tasks: {} }; // Placeholder since TodoJsonManager is deprecated
+      // todoManager removed - skip loading todo data
+      const todoData: any = null;
 
       if (todoData && todoData.tasks && Object.values(todoData.tasks).length > 0) {
         // Distribute tasks across phases based on categories or ADR links
@@ -732,11 +733,12 @@ async function trackProgress(args: z.infer<typeof TrackProgressSchema>): Promise
   // Update task progress from TODO system if requested
   if (updateTaskProgress) {
     try {
-      // TODO: Replace with memory-centric task management
+      // TodoJsonManager removed - use mcp-shrimp-task-manager for task management
       console.warn(
-        '⚠️ TodoJsonManager was removed - use mcp-shrimp-task-manager for task management'
+        '⚠️ TodoJsonManager is deprecated and was removed in memory-centric transformation'
       );
-      const todoData = { tasks: {} }; // Placeholder since TodoJsonManager is deprecated
+      // todoManager removed - skip loading todo data
+      const todoData: any = null;
 
       if (todoData && todoData.tasks) {
         const tasksArray = Object.values(todoData.tasks);
