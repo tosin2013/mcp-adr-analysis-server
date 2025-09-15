@@ -151,7 +151,7 @@ describe('OperationQueue', () => {
 
       // This should throw due to queue overflow
       await expect(smallQueue.enqueue(() => Promise.resolve())).rejects.toThrow(
-        'Operation queue is full'
+        'Operation queue overflow'
       );
 
       await Promise.all([promise1, promise2]);
