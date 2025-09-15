@@ -7,7 +7,6 @@
 
 import {
   OperationQueueError,
-  PerformanceOptimizerError,
   DataConsistencyError,
   EnhancedError,
 } from '../../src/types/enhanced-errors.js';
@@ -17,8 +16,6 @@ import {
   ErrorRecoveryManager,
 } from '../../src/utils/enhanced-logging.js';
 import { OperationQueue } from '../../src/utils/operation-queue.js';
-import { PerformanceOptimizer } from '../../src/utils/performance-optimizer.js';
-import { DataConsistencyChecker } from '../../src/utils/data-consistency-checker.js';
 
 describe('Enhanced Error Handling and Logging', () => {
   let logger: EnhancedLogger;
@@ -36,8 +33,6 @@ describe('Enhanced Error Handling and Logging', () => {
 
   afterEach(() => {
     logger.clearLogs();
-    PerformanceOptimizer.clearCache();
-    PerformanceOptimizer.clearQueue();
   });
 
   describe('Enhanced Error Classes', () => {
@@ -62,27 +57,9 @@ describe('Enhanced Error Handling and Logging', () => {
       expect(error.suggestions[0].action).toContain('Reduce operation frequency');
     });
 
-    it('should create PerformanceOptimizerError with suggestions', () => {
-      const diagnostics = {
-        component: 'PerformanceOptimizer',
-        operation: 'cache_operation',
-        timestamp: new Date(),
-        context: { cacheKey: 'test-key' },
-      };
-
-      const error = PerformanceOptimizerError.cacheCorruption('test-key', diagnostics);
-
-      expect(error).toBeInstanceOf(PerformanceOptimizerError);
-      expect(error.code).toBe('CACHE_CORRUPTION');
-      expect(error.severity).toBe('high');
-      expect(error.recoverable).toBe(true);
-      expect(error.suggestions.length).toBeGreaterThan(0);
-      expect(error.suggestions[0].action).toContain('Clear corrupted cache');
-    });
-
     it('should create DataConsistencyError with validation details', () => {
       const diagnostics = {
-        component: 'DataConsistencyChecker',
+        component: 'DataValidation',
         operation: 'validate_data',
         timestamp: new Date(),
         context: { validationType: 'task_validation' },
@@ -292,37 +269,6 @@ describe('Enhanced Error Handling and Logging', () => {
       // Clean up
       await Promise.all([promise1, promise2]);
       await queue.shutdown();
-    });
-
-    it('should handle PerformanceOptimizer queue overflow', async () => {
-      // Set very small queue size to trigger overflow
-      PerformanceOptimizer['queueManagement'].maxQueueSize = 1;
-
-      const operations = Array(5)
-        .fill(0)
-        .map(() => () => new Promise(resolve => setTimeout(resolve, 10)));
-
-      await expect(
-        Promise.all(operations.map(op => PerformanceOptimizer['enqueueOperation'](op)))
-      ).rejects.toThrow(PerformanceOptimizerError);
-
-      // Reset queue size
-      PerformanceOptimizer['queueManagement'].maxQueueSize = 1000;
-    });
-
-    it('should handle DataConsistencyChecker validation errors', async () => {
-      const invalidData = {
-        tasks: null as any, // Invalid tasks object
-        sections: [],
-        metadata: { totalTasks: 0, completedTasks: 0, lastUpdated: new Date().toISOString() },
-      };
-
-      const result = await DataConsistencyChecker.checkConsistency(invalidData);
-
-      expect(result.isValid).toBe(false);
-      expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].type).toBe('INVALID_TASKS_OBJECT');
-      expect(result.errors[0].severity).toBe('critical');
     });
   });
 
