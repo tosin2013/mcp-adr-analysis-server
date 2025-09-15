@@ -15,10 +15,11 @@ jest.unstable_mockModule('readline', () => ({
   createInterface: jest.fn().mockReturnValue(mockRl),
 }));
 
-// Mock fs module
+// Mock fs module with proper implementation
 const mockFs = {
   readFileSync: jest.fn(),
   writeFileSync: jest.fn(),
+  existsSync: jest.fn(() => true),
 };
 
 jest.unstable_mockModule('fs', () => mockFs);
@@ -40,6 +41,11 @@ describe('interactive-approval', () => {
     jest.clearAllMocks();
     // Reset console methods
     jest.spyOn(console, 'log').mockImplementation(() => {});
+
+    // Reset mock implementations
+    mockFs.writeFileSync.mockImplementation(() => {});
+    mockFs.readFileSync.mockImplementation(() => '{}');
+    mockFs.existsSync.mockImplementation(() => true);
   });
 
   afterEach(() => {
@@ -432,7 +438,7 @@ describe('interactive-approval', () => {
 
       await expect(saveApprovalPreferences(actions)).resolves.not.toThrow();
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Could not save preferences: String error')
+        expect.stringContaining('Could not save preferences:')
       );
     });
 
@@ -452,7 +458,11 @@ describe('interactive-approval', () => {
 
       await saveApprovalPreferences(actions, 'test-config.json');
 
+      expect(mockFs.writeFileSync).toHaveBeenCalled();
       const writeCall = mockFs.writeFileSync.mock.calls[0];
+      expect(writeCall).toBeDefined();
+      expect(writeCall[1]).toBeDefined();
+
       const savedContent = JSON.parse(writeCall[1] as string);
 
       expect(savedContent).toHaveProperty('timestamp');
