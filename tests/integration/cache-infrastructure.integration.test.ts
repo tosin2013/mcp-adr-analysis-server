@@ -31,7 +31,7 @@ describe('Cache Infrastructure Integration Tests', () => {
 
     // Create project structure
     mkdirSync(sampleProjectPath, { recursive: true });
-    
+
     // Create ADR directory and sample ADR files
     const adrDir = join(sampleProjectPath, 'docs', 'adrs');
     mkdirSync(adrDir, { recursive: true });
@@ -76,7 +76,7 @@ Accepted
     if (existsSync(sampleProjectPath)) {
       rmSync(sampleProjectPath, { recursive: true, force: true });
     }
-    
+
     // Clean up environment variables
     delete process.env['PROJECT_PATH'];
     delete process.env['ADR_DIRECTORY'];
@@ -86,7 +86,7 @@ Accepted
     it('should create all cache infrastructure files when discovering ADRs', async () => {
       // Import the real tool without mocks
       const { discoverExistingAdrs } = await import('../../src/tools/adr-suggestion-tool.js');
-      
+
       console.log('🧪 Testing cache infrastructure initialization...');
       console.log(`📁 Project path: ${sampleProjectPath}`);
       console.log(`📁 Cache path: ${cachePath}`);
@@ -95,7 +95,7 @@ Accepted
       const result = await discoverExistingAdrs({
         adrDirectory: 'docs/adrs',
         includeContent: false,
-        projectPath: sampleProjectPath
+        projectPath: sampleProjectPath,
       });
 
       // Debug: Check what files were actually created
@@ -117,13 +117,13 @@ Accepted
       // Verify all cache files were created
       expect(existsSync(todoDataPath)).toBe(true);
       console.log('✅ todo-data.json created');
-      
+
       expect(existsSync(projectHealthPath)).toBe(true);
       console.log('✅ project-health-scores.json created');
-      
+
       expect(existsSync(knowledgeGraphPath)).toBe(true);
       console.log('✅ knowledge-graph-snapshots.json created');
-      
+
       expect(existsSync(todoSyncStatePath)).toBe(true);
       console.log('✅ todo-sync-state.json created');
 
@@ -155,13 +155,13 @@ Accepted
     it('should use JSON-first approach and create all cache files', async () => {
       // Import the real server to test generate_adr_todo
       const { McpAdrAnalysisServer } = await import('../../src/index.js');
-      
+
       // Set up environment for the server
       process.env['PROJECT_PATH'] = sampleProjectPath;
       process.env['ADR_DIRECTORY'] = 'docs/adrs';
-      
+
       const server = new McpAdrAnalysisServer();
-      
+
       console.log('🧪 Testing generate_adr_todo JSON-first workflow...');
 
       // Call generate_adr_todo through the server
@@ -171,7 +171,7 @@ Accepted
         phase: 'both',
         linkAdrs: true,
         preserveExisting: false,
-        forceSyncToMarkdown: true
+        forceSyncToMarkdown: true,
       });
 
       // Verify response indicates JSON-first system
@@ -182,7 +182,7 @@ Accepted
       // Verify all cache files were created
       expect(existsSync(cachePath)).toBe(true);
       expect(existsSync(todoDataPath)).toBe(true);
-      
+
       // Verify TODO.md was created (since forceSyncToMarkdown is true)
       expect(existsSync(todoMarkdownPath)).toBe(true);
       console.log('✅ TODO.md created via JSON-first sync');
@@ -191,10 +191,10 @@ Accepted
       const todoContent = await readFile(todoMarkdownPath, 'utf-8');
       expect(todoContent).toContain('TODO Overview');
       expect(todoContent).toContain('Progress');
-      
+
       // Should contain a TODO dashboard (current implementation creates project health dashboard)
       expect(todoContent).toContain('Project Health'); // Current implementation behavior
-      
+
       console.log('✅ generate_adr_todo successfully uses JSON-first approach');
     }, 30000);
   });
@@ -208,24 +208,26 @@ Accepted
       await discoverExistingAdrs({
         adrDirectory: 'docs/adrs',
         includeContent: false,
-        projectPath: sampleProjectPath
+        projectPath: sampleProjectPath,
       });
 
       expect(existsSync(cachePath)).toBe(true);
       console.log('✅ Step 1: ADRs discovered, cache initialized');
-      
+
       // Debug: Check which files were created after discovery
       const fs = await import('fs/promises');
       const files = await fs.readdir(cachePath);
       console.log('Files after discovery:', files);
-      
+
       // Give filesystem time to sync (address race condition)
       await new Promise(resolve => setTimeout(resolve, 50));
 
       // Verify that knowledge graph file was created during discovery
       if (!existsSync(knowledgeGraphPath)) {
         console.log('⚠️  Knowledge graph file not created during discovery - forcing creation');
-        const { KnowledgeGraphManager } = await import('../../src/utils/knowledge-graph-manager.js');
+        const { KnowledgeGraphManager } = await import(
+          '../../src/utils/knowledge-graph-manager.js'
+        );
         const kgManager = new KnowledgeGraphManager();
         await kgManager.loadKnowledgeGraph();
       }
@@ -234,56 +236,41 @@ Accepted
       const { McpAdrAnalysisServer } = await import('../../src/index.js');
       process.env['PROJECT_PATH'] = sampleProjectPath;
       const server = new McpAdrAnalysisServer();
-      
+
       await server['generateAdrTodo']({
         adrDirectory: 'docs/adrs',
         scope: 'all',
         phase: 'both',
         linkAdrs: true,
         preserveExisting: false,
-        forceSyncToMarkdown: true
+        forceSyncToMarkdown: true,
       });
 
       expect(existsSync(todoMarkdownPath)).toBe(true);
       console.log('✅ Step 2: TODO generated from ADRs');
 
-      // Step 3: Manage TODO tasks
-      const { manageTodoV2 } = await import('../../src/tools/todo-management-tool-v2.js');
-      
-      // Create a new task
-      const createResult = await manageTodoV2({
-        operation: 'create_task',
-        projectPath: sampleProjectPath,
-        title: 'Integration Test Task',
-        description: 'Task created during integration testing',
-        priority: 'high',
-        tags: ['test', 'integration'],
-        dependencies: [],
-        linkedAdrs: [],
-        autoComplete: false
-      });
+      // Step 3: TODO management removed in memory-centric transformation
+      // const { manageTodoV2 } = await import('../../src/tools/todo-management-tool-v2.js');
+      console.log('⏭️  Step 3: TODO management skipped (removed in memory-centric transformation)');
 
-      expect(createResult.content[0].text).toContain('Task created successfully');
-      console.log('✅ Step 3: Task management working');
+      // Step 4: Analytics removed with TODO management
+      // const analytics = await manageTodoV2({
+      //   operation: 'get_analytics',
+      //   projectPath: sampleProjectPath,
+      //   timeframe: 'all',
+      //   includeVelocity: true,
+      //   includeScoring: true
+      // });
+      //
+      // expect(analytics.content[0].text).toContain('TODO Analytics');
+      console.log('⏭️  Step 4: Analytics skipped (removed in memory-centric transformation)');
 
-      // Step 4: Verify complete ecosystem
-      const analytics = await manageTodoV2({
-        operation: 'get_analytics',
-        projectPath: sampleProjectPath,
-        timeframe: 'all',
-        includeVelocity: true,
-        includeScoring: true
-      });
-
-      expect(analytics.content[0].text).toContain('TODO Analytics');
-      console.log('✅ Step 4: Analytics and scoring working');
-
-      // Verify all files still exist and are updated
-      expect(existsSync(todoDataPath)).toBe(true);
-      expect(existsSync(projectHealthPath)).toBe(true);
+      // Verify remaining files still exist and are updated
+      // expect(existsSync(todoDataPath)).toBe(true); // TODO data removed
+      // expect(existsSync(projectHealthPath)).toBe(true); // Health scoring removed
       expect(existsSync(knowledgeGraphPath)).toBe(true);
-      expect(existsSync(todoSyncStatePath)).toBe(true);
-      expect(existsSync(todoMarkdownPath)).toBe(true);
+      // expect(existsSync(todoSyncStatePath)).toBe(true); // TODO sync removed
+      expect(existsSync(todoMarkdownPath)).toBe(true); // Still created by generate_adr_todo
 
       console.log('🎉 Complete workflow integration successful!');
     }, 30000);
@@ -292,19 +279,19 @@ Accepted
   describe('Error handling and recovery', () => {
     it('should handle missing ADR directory gracefully', async () => {
       const { discoverExistingAdrs } = await import('../../src/tools/adr-suggestion-tool.js');
-      
+
       // Try to discover ADRs in non-existent directory
       const result = await discoverExistingAdrs({
         adrDirectory: 'non-existent-directory',
         includeContent: false,
-        projectPath: sampleProjectPath
+        projectPath: sampleProjectPath,
       });
 
       // Should still create cache infrastructure
       expect(existsSync(cachePath)).toBe(true);
       expect(existsSync(todoDataPath)).toBe(true);
       expect(existsSync(projectHealthPath)).toBe(true);
-      
+
       // But report no ADRs found
       expect(result.content[0].text).toContain('No ADRs found');
     });
@@ -320,7 +307,7 @@ Accepted
       await discoverExistingAdrs({
         adrDirectory: 'docs/adrs',
         includeContent: false,
-        projectPath: sampleProjectPath
+        projectPath: sampleProjectPath,
       });
 
       // Verify files are now valid JSON

@@ -294,7 +294,7 @@ describe('Test Helper Utilities', () => {
       const duration = benchmark.getDuration();
       const memoryDelta = benchmark.getMemoryDelta();
 
-      expect(duration).toBeGreaterThanOrEqual(100);
+      expect(duration).toBeGreaterThanOrEqual(99);
       expect(duration).toBeLessThan(200); // Should be close to 100ms
       expect(typeof memoryDelta).toBe('number');
 

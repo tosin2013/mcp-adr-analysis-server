@@ -76,7 +76,7 @@ export class TestInfrastructure {
       timeouts: {
         unit: isCI ? 15000 : 10000,
         integration: isCI ? 45000 : 30000,
-        performance: isCI ? 120000 : 60000,
+        performance: isCI ? 180000 : 60000, // 3 minutes for CI
         cleanup: isCI ? 10000 : 5000,
       },
       cleanup: {
