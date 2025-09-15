@@ -18,8 +18,16 @@ import {
 } from '../../src/types/memory-entities.js';
 
 // Mock filesystem operations for integration tests
-jest.mock('fs/promises');
-const mockFs = fs as jest.Mocked<typeof fs>;
+const mockFs = {
+  access: jest.fn(),
+  mkdir: jest.fn(),
+  readFile: jest.fn(),
+  writeFile: jest.fn(),
+  readdir: jest.fn(),
+  stat: jest.fn(),
+};
+
+jest.mock('fs/promises', () => mockFs);
 
 // Mock config with test directory
 jest.mock('../../src/utils/config.js', () => ({
