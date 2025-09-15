@@ -111,6 +111,11 @@ export class MemoryTransformer {
         },
       };
 
+      // Basic validation before schema validation
+      if (!adr.title || adr.title.trim().length === 0) {
+        throw new Error('ADR title is required');
+      }
+
       // Validate the memory entity
       MemoryEntitySchema.parse(memoryEntity);
 
@@ -273,12 +278,12 @@ export class MemoryTransformer {
 
     // Look for structured consequence sections
     const positiveMatch = consequencesText.match(
-      /(?:positive|pros?|benefits?)[:\s]*([^#]*?)(?=(?:negative|cons?|risks?|$))/is
+      /(?:positive|pros?|benefits?)[:\s]*([^]*?)(?=\n(?:negative|cons?|risks?))/is
     );
     const negativeMatch = consequencesText.match(
-      /(?:negative|cons?|drawbacks?)[:\s]*([^#]*?)(?=(?:positive|risks?|$))/is
+      /(?:negative|cons?|drawbacks?)[:\s]*([^]*?)(?=\n(?:positive|risks?))/is
     );
-    const risksMatch = consequencesText.match(/(?:risks?|concerns?)[:\s]*([^#]*?)$/is);
+    const risksMatch = consequencesText.match(/(?:risks?|concerns?)[:\s]*([^]*?)$/is);
 
     // Extract positive consequences
     if (positiveMatch && positiveMatch[1]) {
@@ -304,7 +309,7 @@ export class MemoryTransformer {
 
       lines.forEach(line => {
         if (line.match(/^[-*+]\s/) || line.match(/^\d+\.\s/)) {
-          const item = line.replace(/^[-*+\d.\s]+/, '').trim();
+          const item = line.replace(/^[-*+]\s+|^\d+\.\s+/, '').trim();
           if (item.match(/\b(benefit|advantage|positive|good|improve)/i)) {
             consequences.positive.push(item);
           } else if (item.match(/\b(drawback|disadvantage|negative|bad|risk|concern)/i)) {
@@ -327,7 +332,7 @@ export class MemoryTransformer {
       .split('\n')
       .map(line => line.trim())
       .filter(line => line && (line.match(/^[-*+]\s/) || line.match(/^\d+\.\s/)))
-      .map(line => line.replace(/^[-*+\d.\s]+/, '').trim())
+      .map(line => line.replace(/^[-*+]\s+|^\d+\.\s+/, '').trim())
       .filter(item => item.length > 0);
   }
 
@@ -454,7 +459,7 @@ export class MemoryTransformer {
   }
 
   private inferProjectPhase(adr: DiscoveredAdr): string | undefined {
-    const content = (adr.content || '') + (adr.context || '') + (adr.decision || '');
+    const content = [adr.content || '', adr.context || '', adr.decision || ''].join(' ');
     const contentLower = content.toLowerCase();
 
     if (contentLower.match(/\b(prototype|poc|proof[- ]of[- ]concept)\b/)) return 'prototype';
@@ -469,7 +474,7 @@ export class MemoryTransformer {
   }
 
   private inferBusinessDomain(adr: DiscoveredAdr): string | undefined {
-    const content = (adr.content || '') + (adr.context || '') + (adr.decision || '');
+    const content = [adr.content || '', adr.context || '', adr.decision || ''].join(' ');
     const contentLower = content.toLowerCase();
 
     if (contentLower.match(/\b(e-?commerce|retail|shopping|payment)\b/)) return 'ecommerce';
@@ -485,7 +490,7 @@ export class MemoryTransformer {
   }
 
   private inferTechnicalStack(adr: DiscoveredAdr): string[] {
-    const content = (adr.content || '') + (adr.context || '') + (adr.decision || '');
+    const content = [adr.content || '', adr.context || '', adr.decision || ''].join(' ');
     return this.inferTechnicalStackFromContent(content);
   }
 
@@ -552,13 +557,13 @@ export class MemoryTransformer {
 
   private inferEnvironmentalFactors(adr: DiscoveredAdr): string[] {
     const factors: string[] = [];
-    const content = (adr.content || '') + (adr.context || '') + (adr.decision || '');
+    const content = [adr.content || '', adr.context || '', adr.decision || ''].join(' ');
     const contentLower = content.toLowerCase();
 
     if (contentLower.match(/\b(cloud|saas|paas|iaas)\b/)) factors.push('cloud');
     if (contentLower.match(/\b(on[- ]premise|on[- ]prem|self[- ]hosted)\b/))
       factors.push('on-premise');
-    if (contentLower.match(/\b(microservice|distributed|service[- ]oriented)\b/))
+    if (contentLower.match(/\b(microservices?|distributed|service[- ]oriented)\b/))
       factors.push('microservices');
     if (contentLower.match(/\b(monolith|single[- ]application)\b/)) factors.push('monolithic');
     if (contentLower.match(/\b(mobile|ios|android|responsive)\b/)) factors.push('mobile');
@@ -575,10 +580,10 @@ export class MemoryTransformer {
 
   private inferStakeholders(adr: DiscoveredAdr): string[] {
     const stakeholders: string[] = [];
-    const content = (adr.content || '') + (adr.context || '') + (adr.decision || '');
+    const content = [adr.content || '', adr.context || '', adr.decision || ''].join(' ');
     const contentLower = content.toLowerCase();
 
-    if (contentLower.match(/\b(developer|engineer|dev[- ]team)\b/))
+    if (contentLower.match(/\b(development[- ]?team|developer|engineer|dev[- ]team)\b/))
       stakeholders.push('development-team');
     if (contentLower.match(/\b(architect|architecture[- ]team)\b/))
       stakeholders.push('architecture-team');
@@ -586,7 +591,7 @@ export class MemoryTransformer {
     if (contentLower.match(/\b(security[- ]team|infosec)\b/)) stakeholders.push('security-team');
     if (contentLower.match(/\b(product[- ]manager|pm|product[- ]owner)\b/))
       stakeholders.push('product-management');
-    if (contentLower.match(/\b(user|customer|client|end[- ]?user)\b/))
+    if (contentLower.match(/\b(users?|customers?|clients?|end[- ]?users?)\b/))
       stakeholders.push('end-users');
     if (contentLower.match(/\b(business|stakeholder|management)\b/))
       stakeholders.push('business-stakeholders');
