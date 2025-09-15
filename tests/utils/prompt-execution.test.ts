@@ -9,23 +9,23 @@ import { jest } from '@jest/globals';
 const mockAIExecutor = {
   executePrompt: jest.fn() as jest.MockedFunction<any>,
   executeStructuredPrompt: jest.fn() as jest.MockedFunction<any>,
-  isAvailable: jest.fn() as jest.MockedFunction<any>
+  isAvailable: jest.fn() as jest.MockedFunction<any>,
 };
 
 const mockAIConfig = {
   apiKey: 'test-key',
   executionMode: 'full',
   defaultModel: 'test-model',
-  cacheEnabled: true
+  cacheEnabled: true,
 };
 
 jest.unstable_mockModule('../../src/utils/ai-executor.js', () => ({
-  getAIExecutor: jest.fn().mockReturnValue(mockAIExecutor)
+  getAIExecutor: jest.fn().mockReturnValue(mockAIExecutor),
 }));
 
 jest.unstable_mockModule('../../src/config/ai-config.js', () => ({
   isAIExecutionEnabled: jest.fn(),
-  loadAIConfig: jest.fn().mockReturnValue(mockAIConfig)
+  loadAIConfig: jest.fn().mockReturnValue(mockAIConfig),
 }));
 
 const {
@@ -37,13 +37,20 @@ const {
   isAIExecutionAvailable,
   getAIExecutionStatus,
   getAIExecutionInfo,
-  formatMCPResponse
+  formatMCPResponse,
 } = await import('../../src/utils/prompt-execution.js');
 
 const { isAIExecutionEnabled, loadAIConfig } = await import('../../src/config/ai-config.js');
 const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
 
 describe('prompt-execution', () => {
+  // Helper function to setup AI execution mocks
+  const setupAIMocks = () => {
+    (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+    (loadAIConfig as jest.Mock).mockReturnValue(mockAIConfig);
+    (getAIExecutor as jest.Mock).mockReturnValue(mockAIExecutor);
+  };
+
   beforeEach(() => {
     jest.clearAllMocks();
     // Reset console methods
@@ -56,19 +63,22 @@ describe('prompt-execution', () => {
 
   describe('executePromptWithFallback', () => {
     it('should execute with AI when enabled and not forced to prompt-only', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'AI response',
-        metadata: { executionTime: 100, cached: false, retryCount: 0, timestamp: '2024-01-01T00:00:00Z' },
+        metadata: {
+          executionTime: 100,
+          cached: false,
+          retryCount: 0,
+          timestamp: '2024-01-01T00:00:00Z',
+        },
         usage: { totalTokens: 50, promptTokens: 30, completionTokens: 20 },
-        model: 'test-model'
+        model: 'test-model',
       });
 
-      const result = await executePromptWithFallback(
-        'Test prompt',
-        'Test instructions',
-        { responseFormat: 'text' }
-      );
+      const result = await executePromptWithFallback('Test prompt', 'Test instructions', {
+        responseFormat: 'text',
+      });
 
       expect(result.isAIGenerated).toBe(true);
       expect(result.content).toBe('AI response');
@@ -77,28 +87,29 @@ describe('prompt-execution', () => {
     });
 
     it('should execute structured prompt with JSON format', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executeStructuredPrompt.mockResolvedValue({
         data: { key: 'value' },
         raw: {
-          metadata: { executionTime: 150, cached: true, retryCount: 0, timestamp: '2024-01-01T00:00:00Z' },
+          metadata: {
+            executionTime: 150,
+            cached: true,
+            retryCount: 0,
+            timestamp: '2024-01-01T00:00:00Z',
+          },
           usage: { totalTokens: 75, promptTokens: 45, completionTokens: 30 },
-          model: 'test-model'
-        }
+          model: 'test-model',
+        },
       });
 
-      const result = await executePromptWithFallback(
-        'Test prompt',
-        'Test instructions',
-        { 
-          responseFormat: 'json',
-          model: 'custom-model',
-          temperature: 0.5,
-          maxTokens: 1000,
-          systemPrompt: 'Custom system prompt',
-          schema: { type: 'object' }
-        }
-      );
+      const result = await executePromptWithFallback('Test prompt', 'Test instructions', {
+        responseFormat: 'json',
+        model: 'custom-model',
+        temperature: 0.5,
+        maxTokens: 1000,
+        systemPrompt: 'Custom system prompt',
+        schema: { type: 'object' },
+      });
 
       expect(result.isAIGenerated).toBe(true);
       expect(result.content).toBe('{\n  "key": "value"\n}');
@@ -110,39 +121,39 @@ describe('prompt-execution', () => {
           model: 'custom-model',
           temperature: 0.5,
           maxTokens: 1000,
-          systemPrompt: 'Custom system prompt'
+          systemPrompt: 'Custom system prompt',
         }
       );
     });
 
     it('should handle string data from structured prompt', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executeStructuredPrompt.mockResolvedValue({
         data: 'string response',
         raw: {
-          metadata: { executionTime: 100, cached: false, retryCount: 0, timestamp: '2024-01-01T00:00:00Z' },
+          metadata: {
+            executionTime: 100,
+            cached: false,
+            retryCount: 0,
+            timestamp: '2024-01-01T00:00:00Z',
+          },
           usage: { totalTokens: 50, promptTokens: 30, completionTokens: 20 },
-          model: 'test-model'
-        }
+          model: 'test-model',
+        },
       });
 
-      const result = await executePromptWithFallback(
-        'Test prompt',
-        'Test instructions',
-        { responseFormat: 'json' }
-      );
+      const result = await executePromptWithFallback('Test prompt', 'Test instructions', {
+        responseFormat: 'json',
+      });
 
       expect(result.content).toBe('string response');
     });
 
     it('should fallback to prompt-only when AI execution fails', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockRejectedValue(new Error('AI execution failed'));
 
-      const result = await executePromptWithFallback(
-        'Test prompt',
-        'Test instructions'
-      );
+      const result = await executePromptWithFallback('Test prompt', 'Test instructions');
 
       expect(result.isAIGenerated).toBe(false);
       expect(result.content).toContain('"executionMode": "prompt-only"');
@@ -154,13 +165,11 @@ describe('prompt-execution', () => {
     });
 
     it('should use prompt-only mode when forcePromptOnly is true', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
 
-      const result = await executePromptWithFallback(
-        'Test prompt',
-        'Test instructions',
-        { forcePromptOnly: true }
-      );
+      const result = await executePromptWithFallback('Test prompt', 'Test instructions', {
+        forcePromptOnly: true,
+      });
 
       expect(result.isAIGenerated).toBe(false);
       expect(result.content).toContain('"executionMode": "prompt-only"');
@@ -170,10 +179,7 @@ describe('prompt-execution', () => {
     it('should use prompt-only mode when AI is disabled', async () => {
       (isAIExecutionEnabled as jest.Mock).mockReturnValue(false);
 
-      const result = await executePromptWithFallback(
-        'Test prompt',
-        'Test instructions'
-      );
+      const result = await executePromptWithFallback('Test prompt', 'Test instructions');
 
       expect(result.isAIGenerated).toBe(false);
       expect(result.content).toContain('"executionMode": "prompt-only"');
@@ -209,18 +215,20 @@ describe('prompt-execution', () => {
 
   describe('executeADRSuggestionPrompt', () => {
     it('should execute ADR suggestion prompt with default system prompt', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'ADR suggestions',
-        metadata: { executionTime: 100, cached: false, retryCount: 0, timestamp: '2024-01-01T00:00:00Z' },
+        metadata: {
+          executionTime: 100,
+          cached: false,
+          retryCount: 0,
+          timestamp: '2024-01-01T00:00:00Z',
+        },
         usage: { totalTokens: 50, promptTokens: 30, completionTokens: 20 },
-        model: 'test-model'
+        model: 'test-model',
       });
 
-      const result = await executeADRSuggestionPrompt(
-        'Test prompt',
-        'Test instructions'
-      );
+      const result = await executeADRSuggestionPrompt('Test prompt', 'Test instructions');
 
       expect(result.isAIGenerated).toBe(true);
       expect(result.content).toBe('ADR suggestions');
@@ -228,30 +236,33 @@ describe('prompt-execution', () => {
         'Test prompt',
         expect.objectContaining({
           systemPrompt: expect.stringContaining('expert software architect'),
-          temperature: 0.1
+          temperature: 0.1,
         })
       );
     });
 
     it('should use custom system prompt when provided', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'Custom response',
-        metadata: { executionTime: 100, cached: false, retryCount: 0, timestamp: '2024-01-01T00:00:00Z' },
+        metadata: {
+          executionTime: 100,
+          cached: false,
+          retryCount: 0,
+          timestamp: '2024-01-01T00:00:00Z',
+        },
         usage: { totalTokens: 50, promptTokens: 30, completionTokens: 20 },
-        model: 'test-model'
+        model: 'test-model',
       });
 
-      await executeADRSuggestionPrompt(
-        'Test prompt',
-        'Test instructions',
-        { systemPrompt: 'Custom system prompt' }
-      );
+      await executeADRSuggestionPrompt('Test prompt', 'Test instructions', {
+        systemPrompt: 'Custom system prompt',
+      });
 
       expect(mockAIExecutor.executePrompt).toHaveBeenCalledWith(
         'Test prompt',
         expect.objectContaining({
-          systemPrompt: 'Custom system prompt'
+          systemPrompt: 'Custom system prompt',
         })
       );
     });
@@ -259,12 +270,17 @@ describe('prompt-execution', () => {
 
   describe('executeADRGenerationPrompt', () => {
     it('should execute ADR generation prompt with appropriate system prompt', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'Generated ADR',
-        metadata: { executionTime: 200, cached: false, retryCount: 0, timestamp: '2024-01-01T00:00:00Z' },
+        metadata: {
+          executionTime: 200,
+          cached: false,
+          retryCount: 0,
+          timestamp: '2024-01-01T00:00:00Z',
+        },
         usage: { totalTokens: 100, promptTokens: 60, completionTokens: 40 },
-        model: 'test-model'
+        model: 'test-model',
       });
 
       const result = await executeADRGenerationPrompt(
@@ -276,8 +292,10 @@ describe('prompt-execution', () => {
       expect(mockAIExecutor.executePrompt).toHaveBeenCalledWith(
         'Generate ADR for microservices',
         expect.objectContaining({
-          systemPrompt: expect.stringContaining('creates comprehensive Architectural Decision Records'),
-          temperature: 0.1
+          systemPrompt: expect.stringContaining(
+            'creates comprehensive Architectural Decision Records'
+          ),
+          temperature: 0.1,
         })
       );
     });
@@ -285,12 +303,17 @@ describe('prompt-execution', () => {
 
   describe('executeEcosystemAnalysisPrompt', () => {
     it('should execute ecosystem analysis prompt', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'Ecosystem analysis',
-        metadata: { executionTime: 150, cached: false, retryCount: 0, timestamp: '2024-01-01T00:00:00Z' },
+        metadata: {
+          executionTime: 150,
+          cached: false,
+          retryCount: 0,
+          timestamp: '2024-01-01T00:00:00Z',
+        },
         usage: { totalTokens: 75, promptTokens: 45, completionTokens: 30 },
-        model: 'test-model'
+        model: 'test-model',
       });
 
       const result = await executeEcosystemAnalysisPrompt(
@@ -303,7 +326,7 @@ describe('prompt-execution', () => {
         'Analyze tech stack',
         expect.objectContaining({
           systemPrompt: expect.stringContaining('technology ecosystem analysis'),
-          temperature: 0.1
+          temperature: 0.1,
         })
       );
     });
@@ -311,12 +334,17 @@ describe('prompt-execution', () => {
 
   describe('executeResearchPrompt', () => {
     it('should execute research prompt with higher temperature', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       mockAIExecutor.executePrompt.mockResolvedValue({
         content: 'Research questions',
-        metadata: { executionTime: 120, cached: false, retryCount: 0, timestamp: '2024-01-01T00:00:00Z' },
+        metadata: {
+          executionTime: 120,
+          cached: false,
+          retryCount: 0,
+          timestamp: '2024-01-01T00:00:00Z',
+        },
         usage: { totalTokens: 60, promptTokens: 35, completionTokens: 25 },
-        model: 'test-model'
+        model: 'test-model',
       });
 
       const result = await executeResearchPrompt(
@@ -329,7 +357,7 @@ describe('prompt-execution', () => {
         'Generate research questions',
         expect.objectContaining({
           systemPrompt: expect.stringContaining('research specialist'),
-          temperature: 0.2 // Higher temperature for creativity
+          temperature: 0.2, // Higher temperature for creativity
         })
       );
     });
@@ -337,6 +365,7 @@ describe('prompt-execution', () => {
 
   describe('isAIExecutionAvailable', () => {
     it('should return true when AI executor is available', () => {
+      (getAIExecutor as jest.Mock).mockReturnValue(mockAIExecutor);
       mockAIExecutor.isAvailable.mockReturnValue(true);
 
       const result = isAIExecutionAvailable();
@@ -366,11 +395,11 @@ describe('prompt-execution', () => {
 
   describe('getAIExecutionStatus', () => {
     it('should return complete status when AI is enabled', () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
+      setupAIMocks();
       (loadAIConfig as jest.Mock).mockReturnValue({
         apiKey: 'test-key',
         executionMode: 'full',
-        defaultModel: 'gpt-4'
+        defaultModel: 'gpt-4',
       });
 
       const result = getAIExecutionStatus();
@@ -380,7 +409,7 @@ describe('prompt-execution', () => {
         hasApiKey: true,
         executionMode: 'full',
         model: 'gpt-4',
-        reason: undefined
+        reason: undefined,
       });
     });
 
@@ -389,7 +418,7 @@ describe('prompt-execution', () => {
       (loadAIConfig as jest.Mock).mockReturnValue({
         apiKey: '',
         executionMode: 'full',
-        defaultModel: 'gpt-4'
+        defaultModel: 'gpt-4',
       });
 
       const result = getAIExecutionStatus();
@@ -404,7 +433,7 @@ describe('prompt-execution', () => {
       (loadAIConfig as jest.Mock).mockReturnValue({
         apiKey: 'test-key',
         executionMode: 'prompt-only',
-        defaultModel: 'gpt-4'
+        defaultModel: 'gpt-4',
       });
 
       const result = getAIExecutionStatus();
@@ -426,7 +455,7 @@ describe('prompt-execution', () => {
         hasApiKey: false,
         executionMode: 'unknown',
         model: 'unknown',
-        reason: 'Configuration error: Config load failed'
+        reason: 'Configuration error: Config load failed',
       });
     });
   });
@@ -438,7 +467,7 @@ describe('prompt-execution', () => {
       (loadAIConfig as jest.Mock).mockReturnValue({
         executionMode: 'full',
         defaultModel: 'gpt-4',
-        cacheEnabled: true
+        cacheEnabled: true,
       });
 
       const result = getAIExecutionInfo();
@@ -447,21 +476,21 @@ describe('prompt-execution', () => {
         available: true,
         mode: 'full',
         model: 'gpt-4',
-        cacheEnabled: true
+        cacheEnabled: true,
       });
     });
 
     it('should return limited info when not available', () => {
       mockAIExecutor.isAvailable.mockReturnValue(false);
       (loadAIConfig as jest.Mock).mockReturnValue({
-        executionMode: 'prompt-only'
+        executionMode: 'prompt-only',
       });
 
       const result = getAIExecutionInfo();
 
       expect(result).toEqual({
         available: false,
-        mode: 'prompt-only'
+        mode: 'prompt-only',
       });
     });
   });
@@ -471,9 +500,14 @@ describe('prompt-execution', () => {
       const result = {
         content: 'AI response content',
         isAIGenerated: true,
-        aiMetadata: { executionTime: 150, cached: false, retryCount: 0, timestamp: '2024-01-01T00:00:00Z' },
+        aiMetadata: {
+          executionTime: 150,
+          cached: false,
+          retryCount: 0,
+          timestamp: '2024-01-01T00:00:00Z',
+        },
         usage: { totalTokens: 100, promptTokens: 60, completionTokens: 40 },
-        model: 'gpt-4'
+        model: 'gpt-4',
       };
 
       const formatted = formatMCPResponse(result);
@@ -492,8 +526,13 @@ describe('prompt-execution', () => {
       const result = {
         content: 'AI response content',
         isAIGenerated: true,
-        aiMetadata: { executionTime: 150, cached: true, retryCount: 0, timestamp: '2024-01-01T00:00:00Z' },
-        model: 'gpt-4'
+        aiMetadata: {
+          executionTime: 150,
+          cached: true,
+          retryCount: 0,
+          timestamp: '2024-01-01T00:00:00Z',
+        },
+        model: 'gpt-4',
       };
 
       const formatted = formatMCPResponse(result);
@@ -505,7 +544,7 @@ describe('prompt-execution', () => {
     it('should format prompt-only response without metadata', () => {
       const result = {
         content: 'Prompt-only content',
-        isAIGenerated: false
+        isAIGenerated: false,
       };
 
       const formatted = formatMCPResponse(result);

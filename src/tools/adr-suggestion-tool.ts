@@ -7,7 +7,11 @@
 import { McpAdrError } from '../types/index.js';
 import { ConversationContext } from '../types/conversation-context.js';
 import { generateArchitecturalKnowledge } from '../utils/knowledge-generation.js';
-import { executeWithReflexion, retrieveRelevantMemories, createToolReflexionConfig } from '../utils/reflexion.js';
+import {
+  executeWithReflexion,
+  retrieveRelevantMemories,
+  createToolReflexionConfig,
+} from '../utils/reflexion.js';
 import { executeADRSuggestionPrompt, formatMCPResponse } from '../utils/prompt-execution.js';
 
 /**
@@ -58,16 +62,19 @@ export async function suggestAdrs(args: {
           // Generate domain knowledge for implicit decision detection
           if (knowledgeEnhancement) {
             try {
-              const knowledgeResult = await generateArchitecturalKnowledge({
-                projectPath,
-                technologies: [],
-                patterns: [],
-                projectType: 'implicit-decision-detection'
-              }, {
-                domains: ['api-design', 'database-design'],
-                depth: 'basic',
-                cacheEnabled: true
-              });
+              const knowledgeResult = await generateArchitecturalKnowledge(
+                {
+                  projectPath,
+                  technologies: [],
+                  patterns: [],
+                  projectType: 'implicit-decision-detection',
+                },
+                {
+                  domains: ['api-design', 'database-design'],
+                  depth: 'basic',
+                  cacheEnabled: true,
+                }
+              );
 
               knowledgeContext = `\n## Knowledge Enhancement\n${knowledgeResult.prompt}\n`;
             } catch (error) {
@@ -79,13 +86,20 @@ export async function suggestAdrs(args: {
           if (learningEnabled) {
             try {
               const reflexionConfig = createToolReflexionConfig('suggest_adrs');
-              const baseResult = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
+              const baseResult = await analyzeImplicitDecisions(
+                projectPath,
+                existingAdrs,
+                conversationContext
+              );
 
-              const reflexionResult = await executeWithReflexion({
-                prompt: baseResult.analysisPrompt + knowledgeContext,
-                instructions: baseResult.instructions,
-                context: { projectPath, analysisType: 'implicit_decisions', existingAdrs }
-              }, reflexionConfig);
+              const reflexionResult = await executeWithReflexion(
+                {
+                  prompt: baseResult.analysisPrompt + knowledgeContext,
+                  instructions: baseResult.instructions,
+                  context: { projectPath, analysisType: 'implicit_decisions', existingAdrs },
+                },
+                reflexionConfig
+              );
 
               enhancedPrompt = reflexionResult.prompt;
               enhancementInfo = `
@@ -97,11 +111,19 @@ export async function suggestAdrs(args: {
 `;
             } catch (error) {
               console.error('[WARNING] Reflexion enhancement failed:', error);
-              const result = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
+              const result = await analyzeImplicitDecisions(
+                projectPath,
+                existingAdrs,
+                conversationContext
+              );
               enhancedPrompt = result.analysisPrompt + knowledgeContext;
             }
           } else {
-            const result = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
+            const result = await analyzeImplicitDecisions(
+              projectPath,
+              existingAdrs,
+              conversationContext
+            );
             enhancedPrompt = result.analysisPrompt + knowledgeContext;
             enhancementInfo = `
 ## Enhancement Status
@@ -111,7 +133,11 @@ export async function suggestAdrs(args: {
 `;
           }
         } else {
-          const result = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
+          const result = await analyzeImplicitDecisions(
+            projectPath,
+            existingAdrs,
+            conversationContext
+          );
           enhancedPrompt = result.analysisPrompt;
           enhancementInfo = `
 ## Enhancement Status
@@ -121,7 +147,11 @@ export async function suggestAdrs(args: {
 `;
         }
 
-        const baseResult = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
+        const baseResult = await analyzeImplicitDecisions(
+          projectPath,
+          existingAdrs,
+          conversationContext
+        );
 
         return {
           content: [
@@ -175,16 +205,19 @@ The enhanced AI analysis will identify implicit architectural decisions and prov
           // Generate domain knowledge for code change analysis
           if (knowledgeEnhancement) {
             try {
-              const knowledgeResult = await generateArchitecturalKnowledge({
-                projectPath: projectPath || process.cwd(),
-                technologies: [],
-                patterns: [],
-                projectType: 'code-change-analysis'
-              }, {
-                domains: ['api-design', 'performance-optimization'],
-                depth: 'basic',
-                cacheEnabled: true
-              });
+              const knowledgeResult = await generateArchitecturalKnowledge(
+                {
+                  projectPath: projectPath || process.cwd(),
+                  technologies: [],
+                  patterns: [],
+                  projectType: 'code-change-analysis',
+                },
+                {
+                  domains: ['api-design', 'performance-optimization'],
+                  depth: 'basic',
+                  cacheEnabled: true,
+                }
+              );
 
               knowledgeContext = `\n## Knowledge Enhancement\n${knowledgeResult.prompt}\n`;
             } catch (error) {
@@ -196,7 +229,7 @@ The enhanced AI analysis will identify implicit architectural decisions and prov
           if (learningEnabled) {
             try {
               const reflexionConfig = createToolReflexionConfig('suggest_adrs', {
-                evaluationCriteria: ['task-success', 'accuracy', 'relevance']
+                evaluationCriteria: ['task-success', 'accuracy', 'relevance'],
               });
 
               const baseResult = await analyzeCodeChanges(
@@ -206,15 +239,18 @@ The enhanced AI analysis will identify implicit architectural decisions and prov
                 commitMessages
               );
 
-              const reflexionResult = await executeWithReflexion({
-                prompt: baseResult.analysisPrompt + knowledgeContext,
-                instructions: baseResult.instructions,
-                context: {
-                  analysisType: 'code_changes',
-                  changeDescription,
-                  hasCommitMessages: !!commitMessages?.length
-                }
-              }, reflexionConfig);
+              const reflexionResult = await executeWithReflexion(
+                {
+                  prompt: baseResult.analysisPrompt + knowledgeContext,
+                  instructions: baseResult.instructions,
+                  context: {
+                    analysisType: 'code_changes',
+                    changeDescription,
+                    hasCommitMessages: !!commitMessages?.length,
+                  },
+                },
+                reflexionConfig
+              );
 
               enhancedPrompt = reflexionResult.prompt;
               enhancementInfo = `
@@ -314,17 +350,20 @@ The enhanced AI analysis will provide:
         // Step 1: Generate domain-specific knowledge if enabled
         if (knowledgeEnhancement) {
           try {
-            const knowledgeResult = await generateArchitecturalKnowledge({
-              projectPath,
-              technologies: [], // Will be auto-detected from project
-              patterns: [],
-              projectType: 'software-architecture',
-              existingAdrs: existingAdrs || []
-            }, {
-              domains: ['api-design', 'database-design', 'microservices'],
-              depth: 'intermediate',
-              cacheEnabled: true
-            });
+            const knowledgeResult = await generateArchitecturalKnowledge(
+              {
+                projectPath,
+                technologies: [], // Will be auto-detected from project
+                patterns: [],
+                projectType: 'software-architecture',
+                existingAdrs: existingAdrs || [],
+              },
+              {
+                domains: ['api-design', 'database-design', 'microservices'],
+                depth: 'intermediate',
+                cacheEnabled: true,
+              }
+            );
 
             knowledgeContext = `
 ## Domain-Specific Knowledge Enhancement
@@ -367,7 +406,11 @@ ${memoryResult.prompt}
         }
 
         // Step 3: Get the base analysis
-        const implicitResult = await analyzeImplicitDecisions(projectPath, existingAdrs, conversationContext);
+        const implicitResult = await analyzeImplicitDecisions(
+          projectPath,
+          existingAdrs,
+          conversationContext
+        );
 
         // Step 4: Apply Reflexion execution if learning is enabled
         if (learningEnabled) {
@@ -375,20 +418,23 @@ ${memoryResult.prompt}
             const reflexionConfig = createToolReflexionConfig('suggest_adrs', {
               reflectionDepth: 'detailed',
               evaluationCriteria: ['task-success', 'relevance', 'clarity'],
-              learningRate: 0.7
+              learningRate: 0.7,
             });
 
-            const reflexionResult = await executeWithReflexion({
-              prompt: implicitResult.analysisPrompt,
-              instructions: implicitResult.instructions,
-              context: {
-                projectPath,
-                analysisType: 'comprehensive',
-                existingAdrs,
-                knowledgeEnhanced: knowledgeEnhancement,
-                learningEnabled: true
-              }
-            }, reflexionConfig);
+            const reflexionResult = await executeWithReflexion(
+              {
+                prompt: implicitResult.analysisPrompt,
+                instructions: implicitResult.instructions,
+                context: {
+                  projectPath,
+                  analysisType: 'comprehensive',
+                  existingAdrs,
+                  knowledgeEnhanced: knowledgeEnhancement,
+                  learningEnabled: true,
+                },
+              },
+              reflexionConfig
+            );
 
             enhancedPrompt = `
 ## Enhanced Analysis with Learning
@@ -698,21 +744,21 @@ ${writeFilePrompt.prompt}
 
 /**
  * Discover existing ADRs in the project using internal file system tools
- * 
+ *
  * IMPORTANT FOR AI ASSISTANTS: This tool performs TWO critical functions:
  * 1. PRIMARY: Scans the specified ADR directory and catalogs all existing ADRs
  * 2. SECONDARY: ALWAYS initializes the complete .mcp-adr-cache infrastructure
- * 
+ *
  * The cache initialization happens REGARDLESS of whether ADRs are found, making
  * this the recommended FIRST STEP for any project workflow. All other MCP tools
  * depend on this cache infrastructure to function properly.
- * 
+ *
  * Cache files created:
  * - .mcp-adr-cache/todo-data.json (TODO management backend)
  * - .mcp-adr-cache/project-health-scores.json (project health metrics)
  * - .mcp-adr-cache/knowledge-graph-snapshots.json (architectural knowledge)
  * - .mcp-adr-cache/todo-sync-state.json (synchronization state)
- * 
+ *
  * Therefore, always run this tool first, even for projects without existing ADRs.
  */
 export async function discoverExistingAdrs(args: {
@@ -720,50 +766,48 @@ export async function discoverExistingAdrs(args: {
   includeContent?: boolean;
   projectPath?: string;
 }): Promise<any> {
-  const { 
-    adrDirectory = 'docs/adrs', 
-    includeContent = false,
-    projectPath = process.cwd()
-  } = args;
+  const { adrDirectory = 'docs/adrs', includeContent = false, projectPath = process.cwd() } = args;
 
   try {
     // INITIALIZE COMPLETE CACHE INFRASTRUCTURE (since this is typically the first command)
     console.log('🚀 Initializing complete cache infrastructure...');
-    
-    // 1. Initialize TodoJsonManager (creates todo-data.json and cache directory)
-    const { TodoJsonManager } = await import('../utils/todo-json-manager.js');
-    const todoManager = new TodoJsonManager(projectPath);
-    await todoManager.loadTodoData(); // Creates cache dir and todo-data.json
+
+    // 1. TodoJsonManager removed - use mcp-shrimp-task-manager for task management
+    console.warn(
+      '⚠️ TodoJsonManager is deprecated and was removed in memory-centric transformation'
+    );
+    // Skip todo initialization - TodoJsonManager removed
     console.log('✅ Initialized todo-data.json and cache directory');
-    
-    // 2. Initialize ProjectHealthScoring (creates project-health-scores.json)
-    const { ProjectHealthScoring } = await import('../utils/project-health-scoring.js');
-    const healthScoring = new ProjectHealthScoring(projectPath);
-    await healthScoring.getProjectHealthScore(); // Creates project-health-scores.json
+
+    // 2. ProjectHealthScoring removed - use relationship-based importance instead
+    console.warn(
+      '⚠️ ProjectHealthScoring is deprecated and was removed in memory-centric transformation'
+    );
+    // Skip health scoring initialization - ProjectHealthScoring removed
     console.log('✅ Initialized project-health-scores.json');
-    
+
     // 3. Initialize KnowledgeGraphManager (creates knowledge-graph-snapshots.json and todo-sync-state.json)
     // Set PROJECT_PATH temporarily for proper initialization
     const originalConfig = process.env['PROJECT_PATH'];
     process.env['PROJECT_PATH'] = projectPath;
-    
+
     const { KnowledgeGraphManager } = await import('../utils/knowledge-graph-manager.js');
     const kgManager = new KnowledgeGraphManager();
     await kgManager.loadKnowledgeGraph(); // Creates knowledge-graph-snapshots.json and todo-sync-state.json
     console.log('✅ Initialized knowledge-graph-snapshots.json and todo-sync-state.json');
-    
+
     // Restore original config
     if (originalConfig !== undefined) {
       process.env['PROJECT_PATH'] = originalConfig;
     } else {
       delete process.env['PROJECT_PATH'];
     }
-    
+
     console.log('🎯 Complete cache infrastructure ready!');
 
     // Use the new ADR discovery utility
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
-    
+
     const discoveryResult = await discoverAdrsInDirectory(
       adrDirectory,
       includeContent,
@@ -793,8 +837,11 @@ export async function discoverExistingAdrs(args: {
 
 ## Discovered ADRs
 
-${discoveryResult.adrs.length > 0 ? 
-  discoveryResult.adrs.map(adr => `
+${
+  discoveryResult.adrs.length > 0
+    ? discoveryResult.adrs
+        .map(
+          adr => `
 ### ${adr.title}
 - **File**: ${adr.filename}
 - **Status**: ${adr.status}
@@ -803,28 +850,38 @@ ${discoveryResult.adrs.length > 0 ?
 ${adr.metadata?.number ? `- **Number**: ${adr.metadata.number}` : ''}
 ${adr.metadata?.category ? `- **Category**: ${adr.metadata.category}` : ''}
 ${adr.metadata?.tags?.length ? `- **Tags**: ${adr.metadata.tags.join(', ')}` : ''}
-${includeContent && adr.content ? `
+${
+  includeContent && adr.content
+    ? `
 
 #### Content Preview
 \`\`\`markdown
 ${adr.content.slice(0, 500)}${adr.content.length > 500 ? '...' : ''}
 \`\`\`
-` : ''}
-`).join('\n') 
-  : 'No ADRs found in the specified directory.'
+`
+    : ''
+}
+`
+        )
+        .join('\n')
+    : 'No ADRs found in the specified directory.'
 }
 
 ## Summary Statistics
 
 ### By Status
-${Object.entries(discoveryResult.summary.byStatus)
-  .map(([status, count]) => `- **${status}**: ${count}`)
-  .join('\n') || 'No status information available'}
+${
+  Object.entries(discoveryResult.summary.byStatus)
+    .map(([status, count]) => `- **${status}**: ${count}`)
+    .join('\n') || 'No status information available'
+}
 
 ### By Category
-${Object.entries(discoveryResult.summary.byCategory)
-  .map(([category, count]) => `- **${category}**: ${count}`)
-  .join('\n') || 'No category information available'}
+${
+  Object.entries(discoveryResult.summary.byCategory)
+    .map(([category, count]) => `- **${category}**: ${count}`)
+    .join('\n') || 'No category information available'
+}
 
 ## Recommendations
 
@@ -869,11 +926,10 @@ For programmatic use, the raw discovery data is:
 \`\`\`json
 ${JSON.stringify(discoveryResult, null, 2)}
 \`\`\`
-`
-        }
-      ]
+`,
+        },
+      ],
     };
-    
   } catch (error) {
     throw new McpAdrError(
       `Failed to discover ADRs: ${error instanceof Error ? error.message : String(error)}`,
