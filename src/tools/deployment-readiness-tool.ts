@@ -1,20 +1,20 @@
 /**
  * Deployment Readiness Tool - Version 1.0
- * 
+ *
  * Comprehensive deployment validation with test failure tracking, deployment history analysis,
  * and hard blocking integration with smart git push.
- * 
+ *
  * IMPORTANT FOR AI ASSISTANTS: This tool provides:
  * 1. Test Execution Validation: Zero tolerance for test failures
  * 2. Deployment History Analysis: Pattern detection and success rate tracking
  * 3. Code Quality Gates: Mock vs production code detection
  * 4. Hard Blocking: Prevents unsafe deployments via smart git push integration
- * 
+ *
  * Cache Dependencies:
  * - CREATES/UPDATES: .mcp-adr-cache/deployment-history.json (deployment tracking)
  * - CREATES/UPDATES: .mcp-adr-cache/deployment-readiness-cache.json (analysis cache)
  * - INTEGRATES: smart-git-push-tool for deployment blocking
- * - INTEGRATES: todo-management-tool for automatic task creation
+ * - INTEGRATES: todo-file-watcher for automatic task creation
  */
 
 import { z } from 'zod';
@@ -27,47 +27,70 @@ import { jsonSafeError } from '../utils/json-safe.js';
 
 // Core schemas
 const DeploymentReadinessSchema = z.object({
-  operation: z.enum([
-    'check_readiness',      // Full deployment readiness check
-    'validate_production',  // Production-specific validation
-    'test_validation',      // Test execution and failure analysis
-    'deployment_history',   // Deployment history analysis
-    'full_audit',          // Comprehensive audit (all checks)
-    'emergency_override'    // Emergency bypass with justification
-  ]).describe('Operation to perform'),
-  
+  operation: z
+    .enum([
+      'check_readiness', // Full deployment readiness check
+      'validate_production', // Production-specific validation
+      'test_validation', // Test execution and failure analysis
+      'deployment_history', // Deployment history analysis
+      'full_audit', // Comprehensive audit (all checks)
+      'emergency_override', // Emergency bypass with justification
+    ])
+    .describe('Operation to perform'),
+
   // Core Configuration
   projectPath: z.string().optional().describe('Project root path'),
-  targetEnvironment: z.enum(['staging', 'production', 'integration']).default('production').describe('Target deployment environment'),
+  targetEnvironment: z
+    .enum(['staging', 'production', 'integration'])
+    .default('production')
+    .describe('Target deployment environment'),
   strictMode: z.boolean().default(true).describe('Enable strict validation (recommended)'),
-  
+
   // Code Quality Gates
-  allowMockCode: z.boolean().default(false).describe('Allow mock code in deployment (NOT RECOMMENDED)'),
-  productionCodeThreshold: z.number().default(85).describe('Minimum production code quality score (0-100)'),
+  allowMockCode: z
+    .boolean()
+    .default(false)
+    .describe('Allow mock code in deployment (NOT RECOMMENDED)'),
+  productionCodeThreshold: z
+    .number()
+    .default(85)
+    .describe('Minimum production code quality score (0-100)'),
   mockCodeMaxAllowed: z.number().default(0).describe('Maximum mock code indicators allowed'),
-  
+
   // Test Failure Gates
-  maxTestFailures: z.number().default(0).describe('Maximum test failures allowed (0 = zero tolerance)'),
+  maxTestFailures: z
+    .number()
+    .default(0)
+    .describe('Maximum test failures allowed (0 = zero tolerance)'),
   requireTestCoverage: z.number().default(80).describe('Minimum test coverage percentage required'),
   blockOnFailingTests: z.boolean().default(true).describe('Block deployment if tests are failing'),
-  testSuiteRequired: z.array(z.string()).default([]).describe('Required test suites that must pass'),
-  
+  testSuiteRequired: z
+    .array(z.string())
+    .default([])
+    .describe('Required test suites that must pass'),
+
   // Deployment History Gates
   maxRecentFailures: z.number().default(2).describe('Maximum recent deployment failures allowed'),
-  deploymentSuccessThreshold: z.number().default(80).describe('Minimum deployment success rate required (%)'),
+  deploymentSuccessThreshold: z
+    .number()
+    .default(80)
+    .describe('Minimum deployment success rate required (%)'),
   blockOnRecentFailures: z.boolean().default(true).describe('Block if recent deployments failed'),
-  rollbackFrequencyThreshold: z.number().default(20).describe('Maximum rollback frequency allowed (%)'),
-  
+  rollbackFrequencyThreshold: z
+    .number()
+    .default(20)
+    .describe('Maximum rollback frequency allowed (%)'),
+
   // Integration Rules
   requireAdrCompliance: z.boolean().default(true).describe('Require ADR compliance validation'),
   integrateTodoTasks: z.boolean().default(true).describe('Auto-create blocking tasks for issues'),
   updateHealthScoring: z.boolean().default(true).describe('Update project health scores'),
   triggerSmartGitPush: z.boolean().default(false).describe('Trigger smart git push validation'),
-  
+
   // Human Override System
   emergencyBypass: z.boolean().default(false).describe('Emergency bypass for critical fixes'),
   businessJustification: z.string().optional().describe('Business justification for overrides'),
-  approvalRequired: z.boolean().default(true).describe('Require approval for overrides')
+  approvalRequired: z.boolean().default(true).describe('Require approval for overrides'),
 });
 
 // Result interfaces
@@ -140,7 +163,12 @@ interface EnvironmentStability {
 }
 
 interface DeploymentBlocker {
-  category: 'test_failure' | 'deployment_history' | 'code_quality' | 'adr_compliance' | 'environment';
+  category:
+    | 'test_failure'
+    | 'deployment_history'
+    | 'code_quality'
+    | 'adr_compliance'
+    | 'environment';
   title: string;
   description: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
@@ -171,19 +199,19 @@ interface DeploymentReadinessResult {
   isDeploymentReady: boolean;
   overallScore: number;
   confidence: number;
-  
+
   // Detailed Analysis
   codeQualityAnalysis: CodeQualityAnalysis;
   testValidationResult: TestValidationResult;
   deploymentHistoryAnalysis: DeploymentHistoryAnalysis;
   adrComplianceResult: AdrComplianceResult;
-  
+
   // Blocking Issues
   criticalBlockers: DeploymentBlocker[];
   testFailureBlockers: DeploymentBlocker[];
   deploymentHistoryBlockers: DeploymentBlocker[];
   warnings: string[];
-  
+
   // Actions Taken
   todoTasksCreated: string[];
   healthScoreUpdate: any;
@@ -197,53 +225,59 @@ interface DeploymentReadinessResult {
 export async function deploymentReadiness(args: any): Promise<any> {
   try {
     const validatedArgs = DeploymentReadinessSchema.parse(args);
-    
+
     // Initialize paths and cache
     const projectPath = validatedArgs.projectPath || process.cwd();
     const cacheDir = join(projectPath, '.mcp-adr-cache');
     const deploymentHistoryPath = join(cacheDir, 'deployment-history.json');
     const readinessCachePath = join(cacheDir, 'deployment-readiness-cache.json');
-    
+
     // Ensure cache directory exists
     if (!existsSync(cacheDir)) {
       mkdirSync(cacheDir, { recursive: true });
     }
-    
+
     let result: DeploymentReadinessResult;
-    
+
     switch (validatedArgs.operation) {
       case 'test_validation':
         result = await performTestValidation(validatedArgs, projectPath);
         break;
-        
+
       case 'deployment_history':
         result = await performDeploymentHistoryAnalysis(validatedArgs, deploymentHistoryPath);
         break;
-        
+
       case 'check_readiness':
       case 'validate_production':
       case 'full_audit':
         result = await performFullAudit(validatedArgs, projectPath, deploymentHistoryPath);
         break;
-        
+
       case 'emergency_override':
         result = await performEmergencyOverride(validatedArgs, projectPath);
         break;
-        
+
       default:
         throw new McpAdrError('INVALID_ARGS', `Unknown operation: ${validatedArgs.operation}`);
     }
-    
+
     // Cache result for performance
-    writeFileSync(readinessCachePath, JSON.stringify({
-      timestamp: new Date().toISOString(),
-      operation: validatedArgs.operation,
-      result
-    }, null, 2));
-    
+    writeFileSync(
+      readinessCachePath,
+      JSON.stringify(
+        {
+          timestamp: new Date().toISOString(),
+          operation: validatedArgs.operation,
+          result,
+        },
+        null,
+        2
+      )
+    );
+
     // Generate response based on deployment readiness
     return generateDeploymentReadinessResponse(result, validatedArgs);
-    
   } catch (error) {
     throw new McpAdrError(
       'DEPLOYMENT_READINESS_ERROR',
@@ -259,10 +293,9 @@ async function performTestValidation(
   args: z.infer<typeof DeploymentReadinessSchema>,
   projectPath: string
 ): Promise<DeploymentReadinessResult> {
-  
   const testResult = await executeTestSuite(projectPath, args.testSuiteRequired);
   const testBlockers: DeploymentBlocker[] = [];
-  
+
   // Check for test failures
   if (testResult.failureCount > args.maxTestFailures) {
     testBlockers.push({
@@ -275,13 +308,13 @@ async function performTestValidation(
         'Run npm test to see detailed failures',
         'Fix failing tests one by one',
         'Ensure all tests pass before deployment',
-        'Consider increasing test coverage'
+        'Consider increasing test coverage',
       ],
       estimatedResolutionTime: `${Math.ceil(testResult.failureCount * 0.5)} hours`,
-      blocksDeployment: args.blockOnFailingTests
+      blocksDeployment: args.blockOnFailingTests,
     });
   }
-  
+
   // Check test coverage
   if (testResult.coveragePercentage < args.requireTestCoverage) {
     testBlockers.push({
@@ -293,22 +326,46 @@ async function performTestValidation(
       resolutionSteps: [
         'Add tests for uncovered code',
         'Run npm run test:coverage to see detailed coverage',
-        'Focus on critical business logic first'
+        'Focus on critical business logic first',
       ],
       estimatedResolutionTime: '2-4 hours',
-      blocksDeployment: args.strictMode
+      blocksDeployment: args.strictMode,
     });
   }
-  
+
   // Basic result structure
   return {
     isDeploymentReady: testBlockers.length === 0,
     overallScore: calculateTestScore(testResult, args),
     confidence: 85,
-    codeQualityAnalysis: { qualityScore: 75, productionIndicators: 10, mockIndicators: 2, failingFiles: [], recommendations: [] },
+    codeQualityAnalysis: {
+      qualityScore: 75,
+      productionIndicators: 10,
+      mockIndicators: 2,
+      failingFiles: [],
+      recommendations: [],
+    },
     testValidationResult: testResult,
-    deploymentHistoryAnalysis: { recentDeployments: [], successRate: 100, rollbackRate: 0, averageDeploymentTime: 0, failurePatterns: [], environmentStability: { stabilityScore: 100, riskLevel: 'low', recommendation: 'Proceed with deployment' }, recommendedAction: 'proceed' },
-    adrComplianceResult: { score: 100, compliantAdrs: 0, totalAdrs: 0, missingImplementations: [], recommendations: [] },
+    deploymentHistoryAnalysis: {
+      recentDeployments: [],
+      successRate: 100,
+      rollbackRate: 0,
+      averageDeploymentTime: 0,
+      failurePatterns: [],
+      environmentStability: {
+        stabilityScore: 100,
+        riskLevel: 'low',
+        recommendation: 'Proceed with deployment',
+      },
+      recommendedAction: 'proceed',
+    },
+    adrComplianceResult: {
+      score: 100,
+      compliantAdrs: 0,
+      totalAdrs: 0,
+      missingImplementations: [],
+      recommendations: [],
+    },
     criticalBlockers: testBlockers.filter(b => b.severity === 'critical'),
     testFailureBlockers: testBlockers,
     deploymentHistoryBlockers: [],
@@ -316,7 +373,7 @@ async function performTestValidation(
     todoTasksCreated: [],
     healthScoreUpdate: {},
     gitPushStatus: testBlockers.length === 0 ? 'allowed' : 'blocked',
-    overrideStatus: {}
+    overrideStatus: {},
   };
 }
 
@@ -327,21 +384,20 @@ async function executeTestSuite(
   projectPath: string,
   _requiredSuites: string[]
 ): Promise<TestValidationResult> {
-  
   const startTime = Date.now();
   let testOutput = '';
   let exitCode = 0;
-  
+
   try {
     // Try to run tests with different commands
     const testCommands = ['npm test', 'yarn test', 'npx jest'];
-    
+
     for (const command of testCommands) {
       try {
         testOutput = execSync(command, {
           cwd: projectPath,
           encoding: 'utf8',
-          timeout: 300000 // 5 minute timeout
+          timeout: 300000, // 5 minute timeout
         });
         break;
       } catch (error: any) {
@@ -358,28 +414,28 @@ async function executeTestSuite(
     testOutput = `Test execution failed: ${error}`;
     exitCode = 1;
   }
-  
+
   const executionTime = Date.now() - startTime;
-  
+
   // Parse test results (simplified for now)
   const testSuites = parseTestOutput(testOutput);
   const totalFailures = testSuites.reduce((sum, suite) => sum + suite.failedTests, 0);
-  const overallStatus = exitCode === 0 ? 'passed' : (totalFailures > 0 ? 'failed' : 'partial');
-  
+  const overallStatus = exitCode === 0 ? 'passed' : totalFailures > 0 ? 'failed' : 'partial';
+
   // Check coverage (simplified)
   const coverage = await checkTestCoverage(projectPath);
-  
+
   return {
     testSuitesExecuted: testSuites,
     overallTestStatus: overallStatus,
     failureCount: totalFailures,
     coveragePercentage: coverage,
     requiredSuitesMissing: [],
-    criticalTestFailures: testSuites.flatMap(suite => 
+    criticalTestFailures: testSuites.flatMap(suite =>
       suite.failureDetails.filter(f => f.severity === 'critical')
     ),
     testExecutionTime: executionTime,
-    lastTestRun: new Date().toISOString()
+    lastTestRun: new Date().toISOString(),
   };
 }
 
@@ -390,16 +446,16 @@ function parseTestOutput(output: string): TestSuiteResult[] {
   // Simplified parser - in production, would handle Jest, Mocha, etc.
   const lines = output.split('\n');
   const suites: TestSuiteResult[] = [];
-  
+
   // Look for Jest-style output
   let currentSuite: Partial<TestSuiteResult> = {};
-  
+
   for (const line of lines) {
     if (line.includes('PASS') || line.includes('FAIL')) {
       if (currentSuite.suiteName) {
         suites.push(currentSuite as TestSuiteResult);
       }
-      
+
       currentSuite = {
         suiteName: line.split(' ').pop() || 'unknown',
         status: line.includes('PASS') ? 'passed' : 'failed',
@@ -407,10 +463,10 @@ function parseTestOutput(output: string): TestSuiteResult[] {
         failedTests: 0,
         coverage: 0,
         executionTime: 0,
-        failureDetails: []
+        failureDetails: [],
       };
     }
-    
+
     // Count tests
     if (line.includes('✓') || line.includes('✗')) {
       if (line.includes('✓')) {
@@ -424,25 +480,29 @@ function parseTestOutput(output: string): TestSuiteResult[] {
           errorMessage: line,
           severity: 'medium',
           blocksDeployment: true,
-          relatedFiles: []
+          relatedFiles: [],
         });
       }
     }
   }
-  
+
   if (currentSuite.suiteName) {
     suites.push(currentSuite as TestSuiteResult);
   }
-  
-  return suites.length > 0 ? suites : [{
-    suiteName: 'default',
-    status: output.includes('failing') ? 'failed' : 'passed',
-    passedTests: 0,
-    failedTests: output.includes('failing') ? 1 : 0,
-    coverage: 0,
-    executionTime: 0,
-    failureDetails: []
-  }];
+
+  return suites.length > 0
+    ? suites
+    : [
+        {
+          suiteName: 'default',
+          status: output.includes('failing') ? 'failed' : 'passed',
+          passedTests: 0,
+          failedTests: output.includes('failing') ? 1 : 0,
+          coverage: 0,
+          executionTime: 0,
+          failureDetails: [],
+        },
+      ];
 }
 
 /**
@@ -454,14 +514,14 @@ async function checkTestCoverage(projectPath: string): Promise<number> {
     const coverageFiles = [
       'coverage/lcov-report/index.html',
       'coverage/coverage-summary.json',
-      'coverage/coverage-final.json'
+      'coverage/coverage-final.json',
     ];
-    
+
     for (const file of coverageFiles) {
       const filePath = join(projectPath, file);
       if (existsSync(filePath)) {
         const content = readFileSync(filePath, 'utf8');
-        
+
         // Extract coverage percentage (simplified)
         const match = content.match(/(\d+(?:\.\d+)?)%/);
         if (match && match[1]) {
@@ -472,7 +532,7 @@ async function checkTestCoverage(projectPath: string): Promise<number> {
   } catch (error) {
     // Coverage not available
   }
-  
+
   return 0; // Default to 0 if coverage cannot be determined
 }
 
@@ -483,11 +543,10 @@ async function performDeploymentHistoryAnalysis(
   args: z.infer<typeof DeploymentReadinessSchema>,
   historyPath: string
 ): Promise<DeploymentReadinessResult> {
-  
   const history = loadDeploymentHistory(historyPath);
   const analysis = analyzeDeploymentHistory(history, args.targetEnvironment);
   const historyBlockers: DeploymentBlocker[] = [];
-  
+
   // Check success rate
   if (analysis.successRate < args.deploymentSuccessThreshold) {
     historyBlockers.push({
@@ -500,13 +559,13 @@ async function performDeploymentHistoryAnalysis(
         'Review recent deployment failures',
         'Fix underlying infrastructure issues',
         'Improve deployment process reliability',
-        'Add more comprehensive pre-deployment checks'
+        'Add more comprehensive pre-deployment checks',
       ],
       estimatedResolutionTime: '1-2 days',
-      blocksDeployment: args.blockOnRecentFailures
+      blocksDeployment: args.blockOnRecentFailures,
     });
   }
-  
+
   // Check rollback rate
   if (analysis.rollbackRate > args.rollbackFrequencyThreshold) {
     historyBlockers.push({
@@ -519,21 +578,42 @@ async function performDeploymentHistoryAnalysis(
         'Improve testing before deployment',
         'Add more validation steps',
         'Review rollback causes',
-        'Strengthen deployment pipeline'
+        'Strengthen deployment pipeline',
       ],
       estimatedResolutionTime: '4-8 hours',
-      blocksDeployment: args.strictMode
+      blocksDeployment: args.strictMode,
     });
   }
-  
+
   return {
     isDeploymentReady: historyBlockers.length === 0,
     overallScore: Math.min(analysis.successRate, 100 - analysis.rollbackRate),
     confidence: 80,
-    codeQualityAnalysis: { qualityScore: 75, productionIndicators: 10, mockIndicators: 2, failingFiles: [], recommendations: [] },
-    testValidationResult: { testSuitesExecuted: [], overallTestStatus: 'not_run', failureCount: 0, coveragePercentage: 0, requiredSuitesMissing: [], criticalTestFailures: [], testExecutionTime: 0, lastTestRun: '' },
+    codeQualityAnalysis: {
+      qualityScore: 75,
+      productionIndicators: 10,
+      mockIndicators: 2,
+      failingFiles: [],
+      recommendations: [],
+    },
+    testValidationResult: {
+      testSuitesExecuted: [],
+      overallTestStatus: 'not_run',
+      failureCount: 0,
+      coveragePercentage: 0,
+      requiredSuitesMissing: [],
+      criticalTestFailures: [],
+      testExecutionTime: 0,
+      lastTestRun: '',
+    },
     deploymentHistoryAnalysis: analysis,
-    adrComplianceResult: { score: 100, compliantAdrs: 0, totalAdrs: 0, missingImplementations: [], recommendations: [] },
+    adrComplianceResult: {
+      score: 100,
+      compliantAdrs: 0,
+      totalAdrs: 0,
+      missingImplementations: [],
+      recommendations: [],
+    },
     criticalBlockers: historyBlockers.filter(b => b.severity === 'critical'),
     testFailureBlockers: [],
     deploymentHistoryBlockers: historyBlockers,
@@ -541,7 +621,7 @@ async function performDeploymentHistoryAnalysis(
     todoTasksCreated: [],
     healthScoreUpdate: {},
     gitPushStatus: historyBlockers.length === 0 ? 'allowed' : 'blocked',
-    overrideStatus: {}
+    overrideStatus: {},
   };
 }
 
@@ -552,7 +632,7 @@ function loadDeploymentHistory(historyPath: string): { deployments: DeploymentRe
   if (!existsSync(historyPath)) {
     return { deployments: [] };
   }
-  
+
   try {
     const content = readFileSync(historyPath, 'utf8');
     return JSON.parse(content);
@@ -568,19 +648,22 @@ function analyzeDeploymentHistory(
   history: { deployments: DeploymentRecord[] },
   environment: string
 ): DeploymentHistoryAnalysis {
-  
   const recentDeployments = history.deployments
     .filter(d => d.environment === environment)
     .slice(0, 10);
-  
+
   const successCount = recentDeployments.filter(d => d.status === 'success').length;
   const rollbackCount = recentDeployments.filter(d => d.rollbackRequired).length;
-  
-  const successRate = recentDeployments.length > 0 ? (successCount / recentDeployments.length) * 100 : 100;
-  const rollbackRate = recentDeployments.length > 0 ? (rollbackCount / recentDeployments.length) * 100 : 0;
-  
-  const failurePatterns = analyzeFailurePatterns(recentDeployments.filter(d => d.status === 'failed'));
-  
+
+  const successRate =
+    recentDeployments.length > 0 ? (successCount / recentDeployments.length) * 100 : 100;
+  const rollbackRate =
+    recentDeployments.length > 0 ? (rollbackCount / recentDeployments.length) * 100 : 0;
+
+  const failurePatterns = analyzeFailurePatterns(
+    recentDeployments.filter(d => d.status === 'failed')
+  );
+
   return {
     recentDeployments,
     successRate,
@@ -588,7 +671,7 @@ function analyzeDeploymentHistory(
     averageDeploymentTime: calculateAverageDeploymentTime(recentDeployments),
     failurePatterns,
     environmentStability: assessEnvironmentStability(successRate, rollbackRate),
-    recommendedAction: recommendAction(successRate, rollbackRate, failurePatterns.length)
+    recommendedAction: recommendAction(successRate, rollbackRate, failurePatterns.length),
   };
 }
 
@@ -597,12 +680,12 @@ function analyzeDeploymentHistory(
  */
 function analyzeFailurePatterns(failedDeployments: DeploymentRecord[]): FailurePattern[] {
   const patterns: Map<string, FailurePattern> = new Map();
-  
+
   failedDeployments.forEach(deployment => {
     if (deployment.failureReason) {
       const category = categorizeFailure(deployment.failureReason);
       const existing = patterns.get(category);
-      
+
       if (existing) {
         existing.frequency++;
         existing.lastOccurrence = deployment.timestamp;
@@ -613,12 +696,12 @@ function analyzeFailurePatterns(failedDeployments: DeploymentRecord[]): FailureP
           environments: [deployment.environment],
           lastOccurrence: deployment.timestamp,
           resolution: suggestResolution(category),
-          preventable: isPreventable(category)
+          preventable: isPreventable(category),
         });
       }
     }
   });
-  
+
   return Array.from(patterns.values());
 }
 
@@ -630,20 +713,19 @@ async function performFullAudit(
   projectPath: string,
   historyPath: string
 ): Promise<DeploymentReadinessResult> {
-  
   // Combine all validations
   const testResult = await performTestValidation(args, projectPath);
   const historyResult = await performDeploymentHistoryAnalysis(args, historyPath);
-  
+
   const allBlockers = [
     ...testResult.criticalBlockers,
     ...testResult.testFailureBlockers,
-    ...historyResult.deploymentHistoryBlockers
+    ...historyResult.deploymentHistoryBlockers,
   ];
-  
+
   const overallScore = (testResult.overallScore + historyResult.overallScore) / 2;
   const isReady = allBlockers.length === 0;
-  
+
   return {
     isDeploymentReady: isReady,
     overallScore,
@@ -659,7 +741,7 @@ async function performFullAudit(
     todoTasksCreated: [],
     healthScoreUpdate: {},
     gitPushStatus: isReady ? 'allowed' : 'blocked',
-    overrideStatus: {}
+    overrideStatus: {},
   };
 }
 
@@ -670,32 +752,64 @@ async function performEmergencyOverride(
   args: z.infer<typeof DeploymentReadinessSchema>,
   projectPath: string
 ): Promise<DeploymentReadinessResult> {
-  
   if (!args.businessJustification) {
     throw new McpAdrError('INVALID_ARGS', 'Business justification required for emergency override');
   }
-  
+
   // Log override for audit trail
   const overrideRecord = {
     timestamp: new Date().toISOString(),
     justification: args.businessJustification || 'No justification provided',
     environment: args.targetEnvironment,
-    overriddenBy: process.env['USER'] || 'unknown'
+    overriddenBy: process.env['USER'] || 'unknown',
   };
-  
+
   const overridePath = join(projectPath, '.mcp-adr-cache', 'emergency-overrides.json');
   const overrides = existsSync(overridePath) ? JSON.parse(readFileSync(overridePath, 'utf8')) : [];
   overrides.push(overrideRecord);
   writeFileSync(overridePath, JSON.stringify(overrides, null, 2));
-  
+
   return {
     isDeploymentReady: true,
     overallScore: 100,
     confidence: 50, // Lower confidence for overrides
-    codeQualityAnalysis: { qualityScore: 100, productionIndicators: 0, mockIndicators: 0, failingFiles: [], recommendations: ['Emergency override active - review post-deployment'] },
-    testValidationResult: { testSuitesExecuted: [], overallTestStatus: 'not_run', failureCount: 0, coveragePercentage: 0, requiredSuitesMissing: [], criticalTestFailures: [], testExecutionTime: 0, lastTestRun: '' },
-    deploymentHistoryAnalysis: { recentDeployments: [], successRate: 100, rollbackRate: 0, averageDeploymentTime: 0, failurePatterns: [], environmentStability: { stabilityScore: 50, riskLevel: 'medium', recommendation: 'Monitor closely post-deployment' }, recommendedAction: 'proceed' },
-    adrComplianceResult: { score: 100, compliantAdrs: 0, totalAdrs: 0, missingImplementations: [], recommendations: [] },
+    codeQualityAnalysis: {
+      qualityScore: 100,
+      productionIndicators: 0,
+      mockIndicators: 0,
+      failingFiles: [],
+      recommendations: ['Emergency override active - review post-deployment'],
+    },
+    testValidationResult: {
+      testSuitesExecuted: [],
+      overallTestStatus: 'not_run',
+      failureCount: 0,
+      coveragePercentage: 0,
+      requiredSuitesMissing: [],
+      criticalTestFailures: [],
+      testExecutionTime: 0,
+      lastTestRun: '',
+    },
+    deploymentHistoryAnalysis: {
+      recentDeployments: [],
+      successRate: 100,
+      rollbackRate: 0,
+      averageDeploymentTime: 0,
+      failurePatterns: [],
+      environmentStability: {
+        stabilityScore: 50,
+        riskLevel: 'medium',
+        recommendation: 'Monitor closely post-deployment',
+      },
+      recommendedAction: 'proceed',
+    },
+    adrComplianceResult: {
+      score: 100,
+      compliantAdrs: 0,
+      totalAdrs: 0,
+      missingImplementations: [],
+      recommendations: [],
+    },
     criticalBlockers: [],
     testFailureBlockers: [],
     deploymentHistoryBlockers: [],
@@ -703,15 +817,18 @@ async function performEmergencyOverride(
     todoTasksCreated: [],
     healthScoreUpdate: {},
     gitPushStatus: 'allowed',
-    overrideStatus: overrideRecord
+    overrideStatus: overrideRecord,
   };
 }
 
 /**
  * Helper functions
  */
-function calculateTestScore(testResult: TestValidationResult, _args: z.infer<typeof DeploymentReadinessSchema>): number {
-  const failureScore = Math.max(0, 100 - (testResult.failureCount * 20));
+function calculateTestScore(
+  testResult: TestValidationResult,
+  _args: z.infer<typeof DeploymentReadinessSchema>
+): number {
+  const failureScore = Math.max(0, 100 - testResult.failureCount * 20);
   const coverageScore = testResult.coveragePercentage;
   return Math.min(failureScore, coverageScore);
 }
@@ -722,23 +839,31 @@ function calculateAverageDeploymentTime(deployments: DeploymentRecord[]): number
   return total / deployments.length;
 }
 
-function assessEnvironmentStability(successRate: number, rollbackRate: number): EnvironmentStability {
+function assessEnvironmentStability(
+  successRate: number,
+  rollbackRate: number
+): EnvironmentStability {
   const stabilityScore = Math.max(0, successRate - rollbackRate);
   let riskLevel: 'low' | 'medium' | 'high' | 'critical';
-  
+
   if (stabilityScore >= 90) riskLevel = 'low';
   else if (stabilityScore >= 70) riskLevel = 'medium';
   else if (stabilityScore >= 50) riskLevel = 'high';
   else riskLevel = 'critical';
-  
+
   return {
     stabilityScore,
     riskLevel,
-    recommendation: riskLevel === 'low' ? 'Proceed with deployment' : 'Investigate before deployment'
+    recommendation:
+      riskLevel === 'low' ? 'Proceed with deployment' : 'Investigate before deployment',
   };
 }
 
-function recommendAction(successRate: number, rollbackRate: number, failurePatternCount: number): 'proceed' | 'block' | 'investigate' {
+function recommendAction(
+  successRate: number,
+  rollbackRate: number,
+  failurePatternCount: number
+): 'proceed' | 'block' | 'investigate' {
   if (successRate < 50 || rollbackRate > 40) return 'block';
   if (successRate < 80 || rollbackRate > 20 || failurePatternCount > 2) return 'investigate';
   return 'proceed';
@@ -753,7 +878,7 @@ function categorizeFailure(failureReason: string): string {
     { regex: /dependency.*error/i, category: 'Dependency Issues' },
     { regex: /timeout/i, category: 'Timeout Issues' },
     { regex: /permission.*denied/i, category: 'Permission Issues' },
-    { regex: /out.*of.*memory/i, category: 'Resource Issues' }
+    { regex: /out.*of.*memory/i, category: 'Resource Issues' },
   ];
 
   for (const pattern of patterns) {
@@ -774,9 +899,9 @@ function suggestResolution(category: string): string {
     'Dependency Issues': 'Update and verify package dependencies',
     'Timeout Issues': 'Optimize performance and increase timeout values',
     'Permission Issues': 'Check file and directory permissions',
-    'Resource Issues': 'Increase available memory and resources'
+    'Resource Issues': 'Increase available memory and resources',
   };
-  
+
   return resolutions[category] || 'Investigate failure details and resolve underlying issue';
 }
 
@@ -785,9 +910,9 @@ function isPreventable(category: string): boolean {
     'Test Failures',
     'Environment Configuration',
     'Build Failures',
-    'Dependency Issues'
+    'Dependency Issues',
   ];
-  
+
   return preventableCategories.includes(category);
 }
 
@@ -798,7 +923,6 @@ function generateDeploymentReadinessResponse(
   result: DeploymentReadinessResult,
   args: z.infer<typeof DeploymentReadinessSchema>
 ): any {
-  
   if (result.isDeploymentReady) {
     return generateSuccessResponse(result, args);
   } else {
@@ -806,11 +930,15 @@ function generateDeploymentReadinessResponse(
   }
 }
 
-function generateSuccessResponse(result: DeploymentReadinessResult, args: z.infer<typeof DeploymentReadinessSchema>): any {
+function generateSuccessResponse(
+  result: DeploymentReadinessResult,
+  args: z.infer<typeof DeploymentReadinessSchema>
+): any {
   return validateMcpResponse({
-    content: [{
-      type: 'text',
-      text: `✅ **DEPLOYMENT READY - All Gates Passed**
+    content: [
+      {
+        type: 'text',
+        text: `✅ **DEPLOYMENT READY - All Gates Passed**
 
 ## 🎯 Overall Assessment
 - **Deployment Ready**: ✅ **YES**
@@ -832,21 +960,30 @@ function generateSuccessResponse(result: DeploymentReadinessResult, args: z.infe
 ## 🚀 Deployment Approved
 ${args.triggerSmartGitPush ? 'Triggering smart git push...' : 'Ready to proceed with deployment'}
 
-${result.warnings.length > 0 ? `
+${
+  result.warnings.length > 0
+    ? `
 ## ⚠️ Warnings
 ${result.warnings.map(w => `- ${w}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
-**✅ DEPLOYMENT CAN PROCEED SAFELY**`
-    }]
+**✅ DEPLOYMENT CAN PROCEED SAFELY**`,
+      },
+    ],
   });
 }
 
-function generateBlockedResponse(result: DeploymentReadinessResult, args: z.infer<typeof DeploymentReadinessSchema>): any {
+function generateBlockedResponse(
+  result: DeploymentReadinessResult,
+  args: z.infer<typeof DeploymentReadinessSchema>
+): any {
   return validateMcpResponse({
-    content: [{
-      type: 'text',
-      text: `🚨 **DEPLOYMENT BLOCKED - Critical Issues Found**
+    content: [
+      {
+        type: 'text',
+        text: `🚨 **DEPLOYMENT BLOCKED - Critical Issues Found**
 
 ## 🎯 Overall Assessment
 - **Deployment Ready**: ❌ **NO**
@@ -855,30 +992,42 @@ function generateBlockedResponse(result: DeploymentReadinessResult, args: z.infe
 - **Target Environment**: ${args.targetEnvironment}
 
 ## 🧪 Test Validation Issues
-${result.testFailureBlockers.length > 0 ? `
+${
+  result.testFailureBlockers.length > 0
+    ? `
 **Test Failures**: ${result.testValidationResult.failureCount} failures detected
 **Coverage**: ${result.testValidationResult.coveragePercentage}% (Required: ${args.requireTestCoverage}%)
 
 ### Critical Test Failures:
 ${result.testValidationResult.criticalTestFailures.map(f => `- ❌ ${f.testSuite}: ${f.testName}`).join('\n')}
-` : '✅ Tests passing'}
+`
+    : '✅ Tests passing'
+}
 
 ## 📊 Deployment History Issues
-${result.deploymentHistoryBlockers.length > 0 ? `
+${
+  result.deploymentHistoryBlockers.length > 0
+    ? `
 **Success Rate**: ${result.deploymentHistoryAnalysis.successRate}% (Required: ${args.deploymentSuccessThreshold}%)
 **Rollback Rate**: ${result.deploymentHistoryAnalysis.rollbackRate}% (Threshold: ${args.rollbackFrequencyThreshold}%)
 
 ### Recent Failure Patterns:
 ${result.deploymentHistoryAnalysis.failurePatterns.map(p => `- **${p.pattern}**: ${p.frequency} occurrences`).join('\n')}
-` : '✅ Deployment history stable'}
+`
+    : '✅ Deployment history stable'
+}
 
 ## 🚨 Critical Blockers (Must Fix Before Deployment)
-${result.criticalBlockers.map(blocker => `
+${result.criticalBlockers
+  .map(
+    blocker => `
 ### ${blocker.category.toUpperCase()}: ${blocker.title}
 - **Impact**: ${blocker.impact}
 - **Resolution**: ${blocker.resolutionSteps.join(' → ')}
 - **Estimated Time**: ${blocker.estimatedResolutionTime}
-`).join('\n')}
+`
+  )
+  .join('\n')}
 
 ## 🛠️ Immediate Actions Required
 
@@ -910,7 +1059,8 @@ For critical fixes only:
 deployment_readiness --operation emergency_override --business-justification "Your justification"
 \`\`\`
 
-**❌ DEPLOYMENT CANNOT PROCEED UNTIL ALL CRITICAL BLOCKERS ARE RESOLVED**`
-    }]
+**❌ DEPLOYMENT CANNOT PROCEED UNTIL ALL CRITICAL BLOCKERS ARE RESOLVED**`,
+      },
+    ],
   });
 }
