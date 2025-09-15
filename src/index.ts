@@ -2444,6 +2444,158 @@ export class McpAdrAnalysisServer {
               required: ['operation', 'projectPath'],
             },
           },
+          {
+            name: 'memory_loading',
+            description:
+              'Advanced memory loading tool for the memory-centric architecture. Query, explore, and manage memory entities and relationships. Load ADRs into memory system and perform intelligent queries.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                action: {
+                  type: 'string',
+                  enum: [
+                    'load_adrs',
+                    'query_entities',
+                    'get_entity',
+                    'find_related',
+                    'get_intelligence',
+                    'create_snapshot',
+                  ],
+                  description: 'Memory operation to perform',
+                  default: 'query_entities',
+                },
+                query: {
+                  type: 'object',
+                  properties: {
+                    entityTypes: {
+                      type: 'array',
+                      items: {
+                        type: 'string',
+                        enum: [
+                          'architectural_decision',
+                          'code_component',
+                          'business_requirement',
+                          'technical_constraint',
+                          'quality_concern',
+                          'implementation_pattern',
+                          'environmental_factor',
+                          'stakeholder_input',
+                          'knowledge_artifact',
+                          'decision_context',
+                        ],
+                      },
+                      description: 'Filter by entity types',
+                    },
+                    tags: {
+                      type: 'array',
+                      items: { type: 'string' },
+                      description: 'Filter by tags',
+                    },
+                    textQuery: {
+                      type: 'string',
+                      description: 'Full-text search query',
+                    },
+                    relationshipTypes: {
+                      type: 'array',
+                      items: {
+                        type: 'string',
+                        enum: [
+                          'depends_on',
+                          'influences',
+                          'conflicts_with',
+                          'implements',
+                          'supersedes',
+                          'relates_to',
+                          'originated_from',
+                          'impacts',
+                          'constrains',
+                        ],
+                      },
+                      description: 'Filter by relationship types',
+                    },
+                    confidenceThreshold: {
+                      type: 'number',
+                      minimum: 0,
+                      maximum: 1,
+                      description: 'Minimum confidence threshold',
+                    },
+                    relevanceThreshold: {
+                      type: 'number',
+                      minimum: 0,
+                      maximum: 1,
+                      description: 'Minimum relevance threshold',
+                    },
+                    timeRange: {
+                      type: 'object',
+                      properties: {
+                        from: { type: 'string', description: 'Start date (ISO 8601)' },
+                        to: { type: 'string', description: 'End date (ISO 8601)' },
+                      },
+                      description: 'Filter by time range',
+                    },
+                    contextFilters: {
+                      type: 'object',
+                      properties: {
+                        projectPhase: { type: 'string', description: 'Project phase filter' },
+                        businessDomain: { type: 'string', description: 'Business domain filter' },
+                        technicalStack: {
+                          type: 'array',
+                          items: { type: 'string' },
+                          description: 'Technical stack filter',
+                        },
+                        environmentalFactors: {
+                          type: 'array',
+                          items: { type: 'string' },
+                          description: 'Environmental factors filter',
+                        },
+                      },
+                      description: 'Context-based filters',
+                    },
+                    limit: {
+                      type: 'number',
+                      minimum: 1,
+                      description: 'Maximum number of results',
+                    },
+                    sortBy: {
+                      type: 'string',
+                      enum: ['relevance', 'confidence', 'lastModified', 'created', 'accessCount'],
+                      description: 'Sort field',
+                      default: 'relevance',
+                    },
+                    includeRelated: {
+                      type: 'boolean',
+                      description: 'Include related entities and relationships',
+                      default: false,
+                    },
+                    relationshipDepth: {
+                      type: 'number',
+                      minimum: 1,
+                      maximum: 5,
+                      description: 'Maximum relationship traversal depth',
+                      default: 2,
+                    },
+                  },
+                  description: 'Query parameters for entity search',
+                },
+                entityId: {
+                  type: 'string',
+                  description: 'Entity ID for get_entity and find_related actions',
+                },
+                maxDepth: {
+                  type: 'number',
+                  minimum: 1,
+                  maximum: 5,
+                  description: 'Maximum depth for relationship traversal (find_related action)',
+                  default: 2,
+                },
+                forceReload: {
+                  type: 'boolean',
+                  description: 'Force reload of ADRs (load_adrs action)',
+                  default: false,
+                },
+              },
+            },
+          },
         ],
       };
     });
@@ -2566,6 +2718,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'mcp_planning':
             response = await this.mcpPlanning(args);
+            break;
+          case 'memory_loading':
+            response = await this.memoryLoading(args);
             break;
           case 'interactive_adr_planning':
             response = await this.interactiveAdrPlanning(args);
@@ -6274,6 +6429,19 @@ This tool has been deprecated and replaced with memory-centric health scoring.
       throw new McpAdrError(
         `MCP planning failed: ${error instanceof Error ? error.message : String(error)}`,
         'MCP_PLANNING_ERROR'
+      );
+    }
+  }
+
+  private async memoryLoading(args: any): Promise<any> {
+    try {
+      const { MemoryLoadingTool } = await import('./tools/memory-loading-tool.js');
+      const memoryTool = new MemoryLoadingTool();
+      return await memoryTool.execute(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `Memory loading failed: ${error instanceof Error ? error.message : String(error)}`,
+        'MEMORY_LOADING_ERROR'
       );
     }
   }
