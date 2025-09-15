@@ -452,7 +452,8 @@ export class McpAdrAnalysisServer {
           },
           {
             name: 'analyze_content_security',
-            description: 'Analyze content for sensitive information using AI-powered detection',
+            description:
+              'Analyze content for sensitive information using AI-powered detection with optional memory integration for security pattern learning',
             inputSchema: {
               type: 'object',
               properties: {
@@ -470,6 +471,23 @@ export class McpAdrAnalysisServer {
                   type: 'array',
                   items: { type: 'string' },
                   description: 'User-defined sensitive patterns to detect',
+                },
+                enableMemoryIntegration: {
+                  type: 'boolean',
+                  description:
+                    'Enable memory entity storage for security pattern learning and institutional knowledge building',
+                  default: true,
+                },
+                knowledgeEnhancement: {
+                  type: 'boolean',
+                  description:
+                    'Enable Generated Knowledge Prompting for security and privacy expertise',
+                  default: true,
+                },
+                enhancedMode: {
+                  type: 'boolean',
+                  description: 'Enable advanced prompting features',
+                  default: true,
                 },
               },
               required: ['content'],
@@ -998,7 +1016,8 @@ export class McpAdrAnalysisServer {
           },
           {
             name: 'analyze_environment',
-            description: 'Analyze environment context and provide optimization recommendations',
+            description:
+              'Analyze environment context and provide optimization recommendations with optional memory integration for environment snapshot tracking',
             inputSchema: {
               type: 'object',
               properties: {
@@ -1036,6 +1055,18 @@ export class McpAdrAnalysisServer {
                   type: 'array',
                   items: { type: 'string' },
                   description: 'Industry standards to assess compliance against',
+                },
+                enableMemoryIntegration: {
+                  type: 'boolean',
+                  description:
+                    'Enable memory entity storage for environment snapshot tracking and historical analysis',
+                  default: true,
+                },
+                enableTrendAnalysis: {
+                  type: 'boolean',
+                  description:
+                    'Enable analysis of environment changes over time using stored snapshots',
+                  default: true,
                 },
               },
             },
@@ -1887,6 +1918,17 @@ export class McpAdrAnalysisServer {
                   default: true,
                   description: 'Require approval for overrides',
                 },
+                enableMemoryIntegration: {
+                  type: 'boolean',
+                  description:
+                    'Enable memory entity storage for deployment assessment tracking and historical analysis',
+                  default: true,
+                },
+                migrateExistingHistory: {
+                  type: 'boolean',
+                  description: 'Migrate existing JSON-based deployment history to memory entities',
+                  default: true,
+                },
               },
               required: ['operation'],
             },
@@ -1894,7 +1936,7 @@ export class McpAdrAnalysisServer {
           {
             name: 'troubleshoot_guided_workflow',
             description:
-              'Structured failure analysis and test plan generation - provide JSON failure info to get specific test commands',
+              'Structured failure analysis and test plan generation with memory integration for troubleshooting session tracking and intelligent ADR/research suggestion capabilities - provide JSON failure info to get specific test commands',
             inputSchema: {
               type: 'object',
               properties: {
@@ -2000,6 +2042,28 @@ export class McpAdrAnalysisServer {
                   type: 'string',
                   description: 'Path to TODO.md file',
                   default: 'TODO.md',
+                },
+                enableMemoryIntegration: {
+                  type: 'boolean',
+                  description:
+                    'Enable memory entity storage for troubleshooting session tracking and pattern recognition',
+                  default: true,
+                },
+                enablePatternRecognition: {
+                  type: 'boolean',
+                  description: 'Enable automatic pattern recognition and failure classification',
+                  default: true,
+                },
+                enableAdrSuggestion: {
+                  type: 'boolean',
+                  description: 'Enable automatic ADR suggestion based on recurring failures',
+                  default: true,
+                },
+                enableResearchGeneration: {
+                  type: 'boolean',
+                  description:
+                    'Enable automatic research question generation for persistent problems',
+                  default: true,
                 },
                 conversationContext: CONVERSATION_CONTEXT_SCHEMA,
               },
@@ -5994,6 +6058,152 @@ Please provide:
    * Apply content masking to MCP response
    */
   /**
+   * Track memory operations performed by tools
+   */
+  private async trackMemoryOperations(
+    toolName: string,
+    parameters: any,
+    result: any,
+    success: boolean
+  ): Promise<void> {
+    try {
+      // Check if memory integration was enabled and used
+      if (parameters?.enableMemoryIntegration === false) {
+        return; // Memory integration was explicitly disabled
+      }
+
+      // Extract memory operation information from result
+      const memoryOps = this.extractMemoryOperations(toolName, parameters, result);
+
+      if (memoryOps.length > 0) {
+        // Store memory operation tracking in knowledge graph
+        for (const op of memoryOps) {
+          await this.kgManager.addMemoryExecution(
+            toolName,
+            op.action,
+            op.entityType,
+            success && op.success,
+            op.details
+          );
+        }
+      }
+    } catch (error) {
+      // Don't let memory tracking errors break execution
+      console.error('[WARN] Memory operation tracking failed:', error);
+    }
+  }
+
+  /**
+   * Extract memory operation details from tool execution
+   */
+  private extractMemoryOperations(toolName: string, parameters: any, result: any): any[] {
+    const operations: any[] = [];
+
+    // Define memory-enabled tools and their expected operations
+    const memoryEnabledTools = {
+      analyze_content_security: {
+        entityType: 'security_pattern',
+        actions: ['store_pattern', 'analyze_institutional_security', 'track_evolution'],
+      },
+      analyze_environment: {
+        entityType: 'environment_snapshot',
+        actions: ['store_snapshot', 'analyze_trends', 'compare_configurations'],
+      },
+      deployment_readiness: {
+        entityType: 'deployment_assessment',
+        actions: ['store_assessment', 'migrate_history', 'analyze_patterns'],
+      },
+      troubleshoot_guided_workflow: {
+        entityType: 'troubleshooting_session',
+        actions: ['store_session', 'pattern_recognition', 'suggest_adrs', 'generate_research'],
+      },
+    };
+
+    // Check if this tool supports memory operations
+    const toolConfig = memoryEnabledTools[toolName as keyof typeof memoryEnabledTools];
+    if (!toolConfig) {
+      return operations; // Tool doesn't support memory operations
+    }
+
+    // Extract memory operation details from result
+    if (result?.memoryIntegration) {
+      const memoryInfo = result.memoryIntegration;
+
+      // Pattern entity storage operation
+      if (memoryInfo.entityStored || memoryInfo.patternStored) {
+        operations.push({
+          action: 'entity_storage',
+          entityType: toolConfig.entityType,
+          success: memoryInfo.storageSuccess !== false,
+          details: {
+            entityId: memoryInfo.entityId || memoryInfo.patternId,
+            entityCount: memoryInfo.entityCount || 1,
+            storageMethod: memoryInfo.storageMethod || 'standard',
+          },
+        });
+      }
+
+      // Historical analysis operation
+      if (memoryInfo.historicalAnalysis || memoryInfo.trendAnalysis) {
+        operations.push({
+          action: 'historical_analysis',
+          entityType: toolConfig.entityType,
+          success: memoryInfo.analysisSuccess !== false,
+          details: {
+            analysisType: memoryInfo.analysisType || 'trend_analysis',
+            entitiesAnalyzed: memoryInfo.entitiesAnalyzed || 0,
+            insights: memoryInfo.insights || [],
+          },
+        });
+      }
+
+      // Evolution tracking operation
+      if (memoryInfo.evolutionTracking) {
+        operations.push({
+          action: 'evolution_tracking',
+          entityType: toolConfig.entityType,
+          success: memoryInfo.evolutionSuccess !== false,
+          details: {
+            improvements: memoryInfo.improvements || [],
+            degradations: memoryInfo.degradations || [],
+            recommendations: memoryInfo.recommendations || [],
+          },
+        });
+      }
+
+      // Migration operation (for deployment readiness)
+      if (memoryInfo.migrationCompleted) {
+        operations.push({
+          action: 'data_migration',
+          entityType: toolConfig.entityType,
+          success: memoryInfo.migrationSuccess !== false,
+          details: {
+            migratedRecords: memoryInfo.migratedRecords || 0,
+            migrationMethod: memoryInfo.migrationMethod || 'json_to_memory',
+          },
+        });
+      }
+    }
+
+    // If no specific memory integration info, infer from parameters
+    if (operations.length === 0 && parameters?.enableMemoryIntegration !== false) {
+      // Default assumption: entity was stored
+      operations.push({
+        action: 'entity_storage',
+        entityType: toolConfig.entityType,
+        success: true, // Assume success if no explicit info
+        details: {
+          entityCount: 1,
+          storageMethod: 'inferred',
+          note: 'Memory operation inferred from tool execution',
+        },
+      });
+    }
+
+    return operations;
+  }
+
+  /**
    * Track tool execution in knowledge graph
    */
   private async trackToolExecution(
@@ -6052,6 +6262,9 @@ Please provide:
           todoTasksModified.push(...result.metadata.taskIds);
         }
       }
+
+      // Track memory operations if present
+      await this.trackMemoryOperations(toolName, parameters, result, success);
 
       // Store execution in knowledge graph
       await this.kgManager.addToolExecution(
