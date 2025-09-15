@@ -3,7 +3,7 @@
 /**
  * MCP ADR Analysis Server
  * Main entry point for the Model Context Protocol server
- * 
+ *
  * This server provides Tools, Resources, and Prompts for analyzing
  * Architectural Decision Records and project architecture.
  */
@@ -16,7 +16,7 @@ import {
   ListResourcesRequestSchema,
   ReadResourceRequestSchema,
   ListPromptsRequestSchema,
-  GetPromptRequestSchema
+  GetPromptRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { readFileSync } from 'fs';
@@ -25,7 +25,13 @@ import { getCurrentDirCompat } from './utils/directory-compat.js';
 import { McpAdrError } from './types/index.js';
 import { CONVERSATION_CONTEXT_SCHEMA } from './types/conversation-context.js';
 import { maskMcpResponse, createMaskingConfig } from './utils/output-masking.js';
-import { loadConfig, validateProjectPath, createLogger, printConfigSummary, type ServerConfig } from './utils/config.js';
+import {
+  loadConfig,
+  validateProjectPath,
+  createLogger,
+  printConfigSummary,
+  type ServerConfig,
+} from './utils/config.js';
 import { KnowledgeGraphManager } from './utils/knowledge-graph-manager.js';
 
 /**
@@ -35,15 +41,15 @@ function getPackageVersion(): string {
   try {
     // Handle both Jest environment and normal execution
     const currentDir = getCurrentDirCompat();
-    
+
     // Strategy 1: Try multiple possible locations for package.json
     const possiblePaths = [
       join(currentDir, 'package.json'),
       join(currentDir, '..', 'package.json'),
       join(currentDir, '..', '..', 'package.json'),
-      join(process.cwd(), 'package.json')
+      join(process.cwd(), 'package.json'),
     ];
-    
+
     for (const packageJsonPath of possiblePaths) {
       try {
         const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
@@ -54,12 +60,12 @@ function getPackageVersion(): string {
         // Try next path
       }
     }
-    
+
     // Strategy 2: Use process.env.npm_package_version if available (during npm scripts)
     if (process.env['npm_package_version']) {
       return process.env['npm_package_version'];
     }
-    
+
     // Final fallback: Use generic version instead of hardcoded specific version
     // This prevents the need to update this code when version changes
     return 'unknown'; // Generic fallback - no longer tied to specific version
@@ -75,7 +81,7 @@ function getPackageVersion(): string {
 const SERVER_INFO = {
   name: 'mcp-adr-analysis-server',
   version: getPackageVersion(),
-  description: 'MCP server for analyzing Architectural Decision Records and project architecture'
+  description: 'MCP server for analyzing Architectural Decision Records and project architecture',
 };
 
 /**
@@ -103,8 +109,8 @@ export class McpAdrAnalysisServer {
       capabilities: {
         tools: {},
         resources: {},
-        prompts: {}
-      }
+        prompts: {},
+      },
     });
 
     this.maskingConfig = createMaskingConfig();
@@ -142,217 +148,240 @@ export class McpAdrAnalysisServer {
         tools: [
           {
             name: 'analyze_project_ecosystem',
-            description: 'Comprehensive recursive project ecosystem analysis with advanced prompting techniques (Knowledge Generation + Reflexion)',
+            description:
+              'Comprehensive recursive project ecosystem analysis with advanced prompting techniques (Knowledge Generation + Reflexion)',
             inputSchema: {
               type: 'object',
               properties: {
                 projectPath: {
                   type: 'string',
-                  description: 'Path to the project directory to analyze (optional, uses configured PROJECT_PATH if not provided)'
+                  description:
+                    'Path to the project directory to analyze (optional, uses configured PROJECT_PATH if not provided)',
                 },
                 includePatterns: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'File patterns to include in analysis'
+                  description: 'File patterns to include in analysis',
                 },
                 enhancedMode: {
                   type: 'boolean',
-                  description: 'Enable advanced prompting features (Knowledge Generation + Reflexion)',
-                  default: true
+                  description:
+                    'Enable advanced prompting features (Knowledge Generation + Reflexion)',
+                  default: true,
                 },
                 knowledgeEnhancement: {
                   type: 'boolean',
                   description: 'Enable Knowledge Generation for technology-specific insights',
-                  default: true
+                  default: true,
                 },
                 learningEnabled: {
                   type: 'boolean',
                   description: 'Enable Reflexion learning from past analysis outcomes',
-                  default: true
+                  default: true,
                 },
                 technologyFocus: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Specific technologies to focus analysis on (auto-detected if not provided)'
+                  description:
+                    'Specific technologies to focus analysis on (auto-detected if not provided)',
                 },
                 analysisDepth: {
                   type: 'string',
                   enum: ['basic', 'detailed', 'comprehensive'],
                   description: 'Depth of ecosystem analysis',
-                  default: 'comprehensive'
+                  default: 'comprehensive',
                 },
                 includeEnvironment: {
                   type: 'boolean',
-                  description: 'Automatically include comprehensive environment analysis (default: true)',
-                  default: true
+                  description:
+                    'Automatically include comprehensive environment analysis (default: true)',
+                  default: true,
                 },
                 recursiveDepth: {
                   type: 'string',
                   description: 'Depth of recursive project analysis',
                   enum: ['shallow', 'moderate', 'deep', 'comprehensive'],
-                  default: 'comprehensive'
+                  default: 'comprehensive',
                 },
                 analysisScope: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Specific analysis areas to focus on (e.g., ["security", "performance", "architecture", "dependencies"])'
+                  description:
+                    'Specific analysis areas to focus on (e.g., ["security", "performance", "architecture", "dependencies"])',
                 },
-                conversationContext: CONVERSATION_CONTEXT_SCHEMA
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA,
               },
-              required: []
-            }
+              required: [],
+            },
           },
           {
             name: 'get_architectural_context',
-            description: 'Get detailed architectural context for specific files or the entire project, automatically sets up ADR infrastructure if missing, and provides outcome-focused workflow for project success',
+            description:
+              'Get detailed architectural context for specific files or the entire project, automatically sets up ADR infrastructure if missing, and provides outcome-focused workflow for project success',
             inputSchema: {
               type: 'object',
               properties: {
                 filePath: {
                   type: 'string',
-                  description: 'Specific file path to analyze (optional, analyzes entire project if not provided)'
+                  description:
+                    'Specific file path to analyze (optional, analyzes entire project if not provided)',
                 },
                 includeCompliance: {
                   type: 'boolean',
                   description: 'Include compliance checks in the analysis',
-                  default: true
+                  default: true,
                 },
-                conversationContext: CONVERSATION_CONTEXT_SCHEMA
-              }
-            }
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA,
+              },
+            },
           },
           {
             name: 'generate_adrs_from_prd',
-            description: 'Generate Architectural Decision Records from a Product Requirements Document with advanced prompting techniques (APE + Knowledge Generation)',
+            description:
+              'Generate Architectural Decision Records from a Product Requirements Document with advanced prompting techniques (APE + Knowledge Generation)',
             inputSchema: {
               type: 'object',
               properties: {
                 prdPath: {
                   type: 'string',
-                  description: 'Path to the PRD.md file'
+                  description: 'Path to the PRD.md file',
                 },
                 outputDirectory: {
                   type: 'string',
-                  description: 'Directory to output generated ADRs (optional, uses configured ADR_DIRECTORY if not provided)'
+                  description:
+                    'Directory to output generated ADRs (optional, uses configured ADR_DIRECTORY if not provided)',
                 },
                 enhancedMode: {
                   type: 'boolean',
                   description: 'Enable advanced prompting features (APE + Knowledge Generation)',
-                  default: true
+                  default: true,
                 },
                 promptOptimization: {
                   type: 'boolean',
                   description: 'Enable Automatic Prompt Engineering for optimized ADR generation',
-                  default: true
+                  default: true,
                 },
                 knowledgeEnhancement: {
                   type: 'boolean',
                   description: 'Enable Knowledge Generation for domain-specific insights',
-                  default: true
+                  default: true,
                 },
                 prdType: {
                   type: 'string',
-                  enum: ['web-application', 'mobile-app', 'microservices', 'data-platform', 'api-service', 'general'],
+                  enum: [
+                    'web-application',
+                    'mobile-app',
+                    'microservices',
+                    'data-platform',
+                    'api-service',
+                    'general',
+                  ],
                   description: 'Type of PRD for optimized knowledge generation',
-                  default: 'general'
+                  default: 'general',
                 },
-                conversationContext: CONVERSATION_CONTEXT_SCHEMA
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA,
               },
-              required: ['prdPath']
-            }
+              required: ['prdPath'],
+            },
           },
           {
             name: 'generate_adr_todo',
-            description: 'Generate TDD-focused todo.md from existing ADRs with JSON-first approach: creates structured JSON TODO and syncs to markdown',
+            description:
+              'Generate TDD-focused todo.md from existing ADRs with JSON-first approach: creates structured JSON TODO and syncs to markdown',
             inputSchema: {
               type: 'object',
               properties: {
                 adrDirectory: {
                   type: 'string',
-                  description: 'Directory containing ADR files (optional, uses configured ADR_DIRECTORY if not provided)'
+                  description:
+                    'Directory containing ADR files (optional, uses configured ADR_DIRECTORY if not provided)',
                 },
                 scope: {
                   type: 'string',
                   enum: ['all', 'pending', 'in_progress'],
                   description: 'Scope of tasks to include',
-                  default: 'all'
+                  default: 'all',
                 },
                 phase: {
                   type: 'string',
                   enum: ['both', 'test', 'production'],
-                  description: 'TDD phase: both (default), test (mock test generation), production (implementation after tests)',
-                  default: 'both'
+                  description:
+                    'TDD phase: both (default), test (mock test generation), production (implementation after tests)',
+                  default: 'both',
                 },
                 linkAdrs: {
                   type: 'boolean',
                   description: 'Auto-detect and link ADR dependencies in task creation',
-                  default: true
+                  default: true,
                 },
                 includeRules: {
                   type: 'boolean',
                   description: 'Include architectural rules validation in TDD tasks',
-                  default: true
+                  default: true,
                 },
                 ruleSource: {
                   type: 'string',
                   enum: ['adrs', 'patterns', 'both'],
                   description: 'Source for architectural rules (only used if includeRules is true)',
-                  default: 'both'
+                  default: 'both',
                 },
                 todoPath: {
                   type: 'string',
                   description: 'Path to TODO.md file (relative to project root)',
-                  default: 'TODO.md'
+                  default: 'TODO.md',
                 },
                 preserveExisting: {
                   type: 'boolean',
-                  description: 'Preserve existing TODO.md content by merging instead of overwriting',
-                  default: true
+                  description:
+                    'Preserve existing TODO.md content by merging instead of overwriting',
+                  default: true,
                 },
                 forceSyncToMarkdown: {
                   type: 'boolean',
                   description: 'Force sync JSON to markdown even if markdown is newer',
-                  default: false
+                  default: false,
                 },
                 intentId: {
                   type: 'string',
-                  description: 'Link generated tasks to specific knowledge graph intent'
+                  description: 'Link generated tasks to specific knowledge graph intent',
                 },
                 createJsonBackup: {
                   type: 'boolean',
                   description: 'Create backup of existing JSON TODO data before import',
-                  default: true
+                  default: true,
                 },
-                conversationContext: CONVERSATION_CONTEXT_SCHEMA
-              }
-            }
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA,
+              },
+            },
           },
           {
             name: 'compare_adr_progress',
-            description: 'Compare TODO.md progress against ADRs and current environment to validate implementation status',
+            description:
+              'Compare TODO.md progress against ADRs and current environment to validate implementation status',
             inputSchema: {
               type: 'object',
               properties: {
                 todoPath: {
                   type: 'string',
                   description: 'Path to TODO.md file to analyze',
-                  default: 'TODO.md'
+                  default: 'TODO.md',
                 },
                 adrDirectory: {
                   type: 'string',
                   description: 'Directory containing ADR files',
-                  default: 'docs/adrs'
+                  default: 'docs/adrs',
                 },
                 projectPath: {
                   type: 'string',
                   description: 'Path to project root for environment analysis',
-                  default: '.'
+                  default: '.',
                 },
                 environment: {
                   type: 'string',
                   enum: ['development', 'staging', 'production', 'testing', 'auto-detect'],
-                  description: 'Target environment context for validation (auto-detect will infer from project structure)',
-                  default: 'auto-detect'
+                  description:
+                    'Target environment context for validation (auto-detect will infer from project structure)',
+                  default: 'auto-detect',
                 },
                 environmentConfig: {
                   type: 'object',
@@ -361,62 +390,65 @@ export class McpAdrAnalysisServer {
                     requiredFiles: {
                       type: 'array',
                       items: { type: 'string' },
-                      description: 'Files required for this environment'
+                      description: 'Files required for this environment',
                     },
                     requiredServices: {
                       type: 'array',
                       items: { type: 'string' },
-                      description: 'Services that must be implemented for this environment'
+                      description: 'Services that must be implemented for this environment',
                     },
                     securityLevel: {
                       type: 'string',
                       enum: ['low', 'medium', 'high', 'critical'],
-                      description: 'Required security level for this environment'
+                      description: 'Required security level for this environment',
                     },
                     performanceRequirements: {
                       type: 'object',
-                      description: 'Performance requirements for this environment'
-                    }
-                  }
+                      description: 'Performance requirements for this environment',
+                    },
+                  },
                 },
                 validationType: {
                   type: 'string',
                   enum: ['full', 'todo-only', 'adr-only', 'environment-only'],
                   description: 'Type of validation to perform',
-                  default: 'full'
+                  default: 'full',
                 },
                 includeFileChecks: {
                   type: 'boolean',
                   description: 'Include file existence and implementation checks',
-                  default: true
+                  default: true,
                 },
                 includeRuleValidation: {
                   type: 'boolean',
                   description: 'Include architectural rule compliance validation',
-                  default: true
+                  default: true,
                 },
                 deepCodeAnalysis: {
                   type: 'boolean',
-                  description: 'Perform deep code analysis to distinguish mock from production implementations',
-                  default: true
+                  description:
+                    'Perform deep code analysis to distinguish mock from production implementations',
+                  default: true,
                 },
                 functionalValidation: {
                   type: 'boolean',
-                  description: 'Validate that code actually functions according to ADR goals, not just exists',
-                  default: true
+                  description:
+                    'Validate that code actually functions according to ADR goals, not just exists',
+                  default: true,
                 },
                 strictMode: {
                   type: 'boolean',
-                  description: 'Enable strict validation mode with reality-check mechanisms against overconfident assessments',
-                  default: true
+                  description:
+                    'Enable strict validation mode with reality-check mechanisms against overconfident assessments',
+                  default: true,
                 },
                 environmentValidation: {
                   type: 'boolean',
                   description: 'Enable environment-specific validation rules and checks',
-                  default: true
-                }
-              }
-            }
+                  default: true,
+                },
+              },
+            },
           },
           {
             name: 'analyze_content_security',
@@ -426,22 +458,22 @@ export class McpAdrAnalysisServer {
               properties: {
                 content: {
                   type: 'string',
-                  description: 'Content to analyze for sensitive information'
+                  description: 'Content to analyze for sensitive information',
                 },
                 contentType: {
                   type: 'string',
                   enum: ['code', 'documentation', 'configuration', 'logs', 'general'],
                   description: 'Type of content being analyzed',
-                  default: 'general'
+                  default: 'general',
                 },
                 userDefinedPatterns: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'User-defined sensitive patterns to detect'
-                }
+                  description: 'User-defined sensitive patterns to detect',
+                },
               },
-              required: ['content']
-            }
+              required: ['content'],
+            },
           },
           {
             name: 'generate_content_masking',
@@ -451,7 +483,7 @@ export class McpAdrAnalysisServer {
               properties: {
                 content: {
                   type: 'string',
-                  description: 'Content to mask'
+                  description: 'Content to mask',
                 },
                 detectedItems: {
                   type: 'array',
@@ -462,20 +494,20 @@ export class McpAdrAnalysisServer {
                       content: { type: 'string' },
                       startPosition: { type: 'number' },
                       endPosition: { type: 'number' },
-                      severity: { type: 'string' }
-                    }
+                      severity: { type: 'string' },
+                    },
                   },
-                  description: 'Detected sensitive items to mask'
+                  description: 'Detected sensitive items to mask',
                 },
                 maskingStrategy: {
                   type: 'string',
                   enum: ['full', 'partial', 'placeholder', 'environment'],
                   description: 'Strategy for masking content',
-                  default: 'full'
-                }
+                  default: 'full',
+                },
               },
-              required: ['content', 'detectedItems']
-            }
+              required: ['content', 'detectedItems'],
+            },
           },
           {
             name: 'configure_custom_patterns',
@@ -485,16 +517,16 @@ export class McpAdrAnalysisServer {
               properties: {
                 projectPath: {
                   type: 'string',
-                  description: 'Path to the project directory'
+                  description: 'Path to the project directory',
                 },
                 existingPatterns: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Existing patterns to consider'
-                }
+                  description: 'Existing patterns to consider',
+                },
               },
-              required: ['projectPath']
-            }
+              required: ['projectPath'],
+            },
           },
           {
             name: 'apply_basic_content_masking',
@@ -504,17 +536,17 @@ export class McpAdrAnalysisServer {
               properties: {
                 content: {
                   type: 'string',
-                  description: 'Content to mask'
+                  description: 'Content to mask',
                 },
                 maskingStrategy: {
                   type: 'string',
                   enum: ['full', 'partial', 'placeholder'],
                   description: 'Strategy for masking content',
-                  default: 'full'
-                }
+                  default: 'full',
+                },
               },
-              required: ['content']
-            }
+              required: ['content'],
+            },
           },
           {
             name: 'validate_content_masking',
@@ -524,15 +556,15 @@ export class McpAdrAnalysisServer {
               properties: {
                 originalContent: {
                   type: 'string',
-                  description: 'Original content before masking'
+                  description: 'Original content before masking',
                 },
                 maskedContent: {
                   type: 'string',
-                  description: 'Content after masking'
-                }
+                  description: 'Content after masking',
+                },
               },
-              required: ['originalContent', 'maskedContent']
-            }
+              required: ['originalContent', 'maskedContent'],
+            },
           },
           {
             name: 'manage_cache',
@@ -543,15 +575,15 @@ export class McpAdrAnalysisServer {
                 action: {
                   type: 'string',
                   enum: ['clear', 'stats', 'cleanup', 'invalidate'],
-                  description: 'Cache management action to perform'
+                  description: 'Cache management action to perform',
                 },
                 key: {
                   type: 'string',
-                  description: 'Specific cache key to invalidate (for invalidate action)'
-                }
+                  description: 'Specific cache key to invalidate (for invalidate action)',
+                },
               },
-              required: ['action']
-            }
+              required: ['action'],
+            },
           },
           {
             name: 'configure_output_masking',
@@ -561,84 +593,86 @@ export class McpAdrAnalysisServer {
               properties: {
                 enabled: {
                   type: 'boolean',
-                  description: 'Enable or disable output masking'
+                  description: 'Enable or disable output masking',
                 },
                 strategy: {
                   type: 'string',
                   enum: ['full', 'partial', 'placeholder', 'environment'],
-                  description: 'Masking strategy to use'
+                  description: 'Masking strategy to use',
                 },
                 customPatterns: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Custom patterns to mask'
+                  description: 'Custom patterns to mask',
                 },
                 action: {
                   type: 'string',
                   enum: ['get', 'set', 'reset'],
                   description: 'Configuration action',
-                  default: 'get'
-                }
-              }
-            }
+                  default: 'get',
+                },
+              },
+            },
           },
           {
             name: 'suggest_adrs',
-            description: 'Suggest architectural decisions with advanced prompting techniques (Knowledge Generation + Reflexion)',
+            description:
+              'Suggest architectural decisions with advanced prompting techniques (Knowledge Generation + Reflexion)',
             inputSchema: {
               type: 'object',
               properties: {
                 projectPath: {
                   type: 'string',
                   description: 'Path to the project directory',
-                  default: '.'
+                  default: '.',
                 },
                 analysisType: {
                   type: 'string',
                   enum: ['implicit_decisions', 'code_changes', 'comprehensive'],
                   description: 'Type of analysis to perform',
-                  default: 'comprehensive'
+                  default: 'comprehensive',
                 },
                 beforeCode: {
                   type: 'string',
-                  description: 'Code before changes (for code_changes analysis)'
+                  description: 'Code before changes (for code_changes analysis)',
                 },
                 afterCode: {
                   type: 'string',
-                  description: 'Code after changes (for code_changes analysis)'
+                  description: 'Code after changes (for code_changes analysis)',
                 },
                 changeDescription: {
                   type: 'string',
-                  description: 'Description of the changes (for code_changes analysis)'
+                  description: 'Description of the changes (for code_changes analysis)',
                 },
                 commitMessages: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Related commit messages (for code_changes analysis)'
+                  description: 'Related commit messages (for code_changes analysis)',
                 },
                 existingAdrs: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'List of existing ADR titles to avoid duplication'
+                  description: 'List of existing ADR titles to avoid duplication',
                 },
                 enhancedMode: {
                   type: 'boolean',
-                  description: 'Enable advanced prompting features (Knowledge Generation + Reflexion)',
-                  default: true
+                  description:
+                    'Enable advanced prompting features (Knowledge Generation + Reflexion)',
+                  default: true,
                 },
                 learningEnabled: {
                   type: 'boolean',
                   description: 'Enable Reflexion learning from past experiences',
-                  default: true
+                  default: true,
                 },
                 knowledgeEnhancement: {
                   type: 'boolean',
                   description: 'Enable Knowledge Generation for domain-specific insights',
-                  default: true
+                  default: true,
                 },
-                conversationContext: CONVERSATION_CONTEXT_SCHEMA
-              }
-            }
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA,
+              },
+            },
           },
           {
             name: 'generate_adr_from_decision',
@@ -656,35 +690,35 @@ export class McpAdrAnalysisServer {
                     alternatives: {
                       type: 'array',
                       items: { type: 'string' },
-                      description: 'Alternative approaches considered'
+                      description: 'Alternative approaches considered',
                     },
                     evidence: {
                       type: 'array',
                       items: { type: 'string' },
-                      description: 'Supporting evidence for the decision'
-                    }
+                      description: 'Supporting evidence for the decision',
+                    },
                   },
-                  required: ['title', 'context', 'decision', 'consequences']
+                  required: ['title', 'context', 'decision', 'consequences'],
                 },
                 templateFormat: {
                   type: 'string',
                   enum: ['nygard', 'madr', 'custom'],
                   description: 'ADR template format to use',
-                  default: 'nygard'
+                  default: 'nygard',
                 },
                 existingAdrs: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'List of existing ADRs for numbering and references'
+                  description: 'List of existing ADRs for numbering and references',
                 },
                 adrDirectory: {
                   type: 'string',
                   description: 'Directory where ADRs are stored',
-                  default: 'docs/adrs'
-                }
+                  default: 'docs/adrs',
+                },
               },
-              required: ['decisionData']
-            }
+              required: ['decisionData'],
+            },
           },
           {
             name: 'discover_existing_adrs',
@@ -695,15 +729,15 @@ export class McpAdrAnalysisServer {
                 adrDirectory: {
                   type: 'string',
                   description: 'Directory to search for ADRs',
-                  default: 'docs/adrs'
+                  default: 'docs/adrs',
                 },
                 includeContent: {
                   type: 'boolean',
                   description: 'Whether to include ADR content in analysis',
-                  default: false
-                }
-              }
-            }
+                  default: false,
+                },
+              },
+            },
           },
           {
             name: 'incorporate_research',
@@ -714,23 +748,29 @@ export class McpAdrAnalysisServer {
                 researchPath: {
                   type: 'string',
                   description: 'Path to research directory',
-                  default: 'docs/research'
+                  default: 'docs/research',
                 },
                 adrDirectory: {
                   type: 'string',
                   description: 'Path to ADR directory',
-                  default: 'docs/adrs'
+                  default: 'docs/adrs',
                 },
                 analysisType: {
                   type: 'string',
-                  enum: ['monitor', 'extract_topics', 'evaluate_impact', 'generate_updates', 'comprehensive'],
+                  enum: [
+                    'monitor',
+                    'extract_topics',
+                    'evaluate_impact',
+                    'generate_updates',
+                    'comprehensive',
+                  ],
                   description: 'Type of research analysis to perform',
-                  default: 'comprehensive'
+                  default: 'comprehensive',
                 },
                 existingTopics: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Previously identified research topics'
+                  description: 'Previously identified research topics',
                 },
                 researchTopics: {
                   type: 'array',
@@ -741,19 +781,19 @@ export class McpAdrAnalysisServer {
                       title: { type: 'string' },
                       category: { type: 'string' },
                       keyFindings: { type: 'array', items: { type: 'string' } },
-                      relevanceScore: { type: 'number' }
-                    }
+                      relevanceScore: { type: 'number' },
+                    },
                   },
-                  description: 'Research topics for impact evaluation'
+                  description: 'Research topics for impact evaluation',
                 },
                 adrId: {
                   type: 'string',
-                  description: 'ADR ID for update generation'
+                  description: 'ADR ID for update generation',
                 },
                 updateType: {
                   type: 'string',
                   enum: ['content', 'status', 'consequences', 'alternatives', 'deprecation'],
-                  description: 'Type of ADR update to generate'
+                  description: 'Type of ADR update to generate',
                 },
                 researchFindings: {
                   type: 'array',
@@ -762,13 +802,13 @@ export class McpAdrAnalysisServer {
                     properties: {
                       finding: { type: 'string' },
                       evidence: { type: 'array', items: { type: 'string' } },
-                      impact: { type: 'string' }
-                    }
+                      impact: { type: 'string' },
+                    },
                   },
-                  description: 'Research findings for update generation'
-                }
-              }
-            }
+                  description: 'Research findings for update generation',
+                },
+              },
+            },
           },
           {
             name: 'create_research_template',
@@ -778,21 +818,21 @@ export class McpAdrAnalysisServer {
               properties: {
                 title: {
                   type: 'string',
-                  description: 'Title of the research'
+                  description: 'Title of the research',
                 },
                 category: {
                   type: 'string',
                   description: 'Research category',
-                  default: 'general'
+                  default: 'general',
                 },
                 researchPath: {
                   type: 'string',
                   description: 'Path to research directory',
-                  default: 'docs/research'
-                }
+                  default: 'docs/research',
+                },
               },
-              required: ['title']
-            }
+              required: ['title'],
+            },
           },
           {
             name: 'request_action_confirmation',
@@ -802,21 +842,21 @@ export class McpAdrAnalysisServer {
               properties: {
                 action: {
                   type: 'string',
-                  description: 'Description of the action to be performed'
+                  description: 'Description of the action to be performed',
                 },
                 details: {
                   type: 'string',
-                  description: 'Detailed information about the action'
+                  description: 'Detailed information about the action',
                 },
                 impact: {
                   type: 'string',
                   enum: ['low', 'medium', 'high', 'critical'],
                   description: 'Impact level of the action',
-                  default: 'medium'
-                }
+                  default: 'medium',
+                },
               },
-              required: ['action', 'details']
-            }
+              required: ['action', 'details'],
+            },
           },
           {
             name: 'generate_rules',
@@ -828,17 +868,17 @@ export class McpAdrAnalysisServer {
                   type: 'string',
                   enum: ['adrs', 'patterns', 'both'],
                   description: 'Source for rule generation',
-                  default: 'both'
+                  default: 'both',
                 },
                 adrDirectory: {
                   type: 'string',
                   description: 'Directory containing ADR files',
-                  default: 'docs/adrs'
+                  default: 'docs/adrs',
                 },
                 projectPath: {
                   type: 'string',
                   description: 'Path to project for pattern analysis',
-                  default: '.'
+                  default: '.',
                 },
                 existingRules: {
                   type: 'array',
@@ -847,19 +887,19 @@ export class McpAdrAnalysisServer {
                     properties: {
                       id: { type: 'string' },
                       name: { type: 'string' },
-                      description: { type: 'string' }
-                    }
+                      description: { type: 'string' },
+                    },
                   },
-                  description: 'Existing rules to avoid duplication'
+                  description: 'Existing rules to avoid duplication',
                 },
                 outputFormat: {
                   type: 'string',
                   enum: ['json', 'yaml', 'both'],
                   description: 'Output format for rules',
-                  default: 'json'
-                }
-              }
-            }
+                  default: 'json',
+                },
+              },
+            },
           },
           {
             name: 'validate_rules',
@@ -869,15 +909,15 @@ export class McpAdrAnalysisServer {
               properties: {
                 filePath: {
                   type: 'string',
-                  description: 'Path to file to validate'
+                  description: 'Path to file to validate',
                 },
                 fileContent: {
                   type: 'string',
-                  description: 'Content to validate (alternative to filePath)'
+                  description: 'Content to validate (alternative to filePath)',
                 },
                 fileName: {
                   type: 'string',
-                  description: 'Name of file being validated (when using fileContent)'
+                  description: 'Name of file being validated (when using fileContent)',
                 },
                 rules: {
                   type: 'array',
@@ -889,27 +929,27 @@ export class McpAdrAnalysisServer {
                       description: { type: 'string' },
                       pattern: { type: 'string' },
                       severity: { type: 'string' },
-                      message: { type: 'string' }
+                      message: { type: 'string' },
                     },
-                    required: ['id', 'name', 'pattern', 'severity', 'message']
+                    required: ['id', 'name', 'pattern', 'severity', 'message'],
                   },
-                  description: 'Rules to validate against'
+                  description: 'Rules to validate against',
                 },
                 validationType: {
                   type: 'string',
                   enum: ['file', 'function', 'component', 'module'],
                   description: 'Type of validation to perform',
-                  default: 'file'
+                  default: 'file',
                 },
                 reportFormat: {
                   type: 'string',
                   enum: ['summary', 'detailed', 'json'],
                   description: 'Format for validation report',
-                  default: 'detailed'
-                }
+                  default: 'detailed',
+                },
               },
-              required: ['rules']
-            }
+              required: ['rules'],
+            },
           },
           {
             name: 'create_rule_set',
@@ -919,42 +959,42 @@ export class McpAdrAnalysisServer {
               properties: {
                 name: {
                   type: 'string',
-                  description: 'Name of the rule set'
+                  description: 'Name of the rule set',
                 },
                 description: {
                   type: 'string',
                   description: 'Description of the rule set',
-                  default: 'Generated architectural rule set'
+                  default: 'Generated architectural rule set',
                 },
                 adrRules: {
                   type: 'array',
                   items: { type: 'object' },
-                  description: 'Rules extracted from ADRs'
+                  description: 'Rules extracted from ADRs',
                 },
                 patternRules: {
                   type: 'array',
                   items: { type: 'object' },
-                  description: 'Rules generated from code patterns'
+                  description: 'Rules generated from code patterns',
                 },
                 rules: {
                   type: 'array',
                   items: { type: 'object' },
-                  description: 'Additional rules to include'
+                  description: 'Additional rules to include',
                 },
                 outputFormat: {
                   type: 'string',
                   enum: ['json', 'yaml', 'both'],
                   description: 'Output format for rule set',
-                  default: 'json'
+                  default: 'json',
                 },
                 author: {
                   type: 'string',
                   description: 'Author of the rule set',
-                  default: 'MCP ADR Analysis Server'
-                }
+                  default: 'MCP ADR Analysis Server',
+                },
               },
-              required: ['name']
-            }
+              required: ['name'],
+            },
           },
           {
             name: 'analyze_environment',
@@ -965,38 +1005,45 @@ export class McpAdrAnalysisServer {
                 projectPath: {
                   type: 'string',
                   description: 'Path to project directory',
-                  default: '.'
+                  default: '.',
                 },
                 adrDirectory: {
                   type: 'string',
                   description: 'Directory containing ADR files',
-                  default: 'docs/adrs'
+                  default: 'docs/adrs',
                 },
                 analysisType: {
                   type: 'string',
-                  enum: ['specs', 'containerization', 'requirements', 'compliance', 'comprehensive'],
+                  enum: [
+                    'specs',
+                    'containerization',
+                    'requirements',
+                    'compliance',
+                    'comprehensive',
+                  ],
                   description: 'Type of environment analysis to perform',
-                  default: 'comprehensive'
+                  default: 'comprehensive',
                 },
                 currentEnvironment: {
                   type: 'object',
-                  description: 'Current environment specifications (for compliance analysis)'
+                  description: 'Current environment specifications (for compliance analysis)',
                 },
                 requirements: {
                   type: 'object',
-                  description: 'Environment requirements (for compliance analysis)'
+                  description: 'Environment requirements (for compliance analysis)',
                 },
                 industryStandards: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Industry standards to assess compliance against'
-                }
-              }
-            }
+                  description: 'Industry standards to assess compliance against',
+                },
+              },
+            },
           },
           {
             name: 'generate_research_questions',
-            description: 'Generate context-aware research questions and create research tracking system',
+            description:
+              'Generate context-aware research questions and create research tracking system',
             inputSchema: {
               type: 'object',
               properties: {
@@ -1004,7 +1051,7 @@ export class McpAdrAnalysisServer {
                   type: 'string',
                   enum: ['correlation', 'relevance', 'questions', 'tracking', 'comprehensive'],
                   description: 'Type of research analysis to perform',
-                  default: 'comprehensive'
+                  default: 'comprehensive',
                 },
                 researchContext: {
                   type: 'object',
@@ -1014,9 +1061,9 @@ export class McpAdrAnalysisServer {
                     scope: { type: 'string' },
                     objectives: { type: 'array', items: { type: 'string' } },
                     constraints: { type: 'array', items: { type: 'string' } },
-                    timeline: { type: 'string' }
+                    timeline: { type: 'string' },
                   },
-                  description: 'Research context and objectives'
+                  description: 'Research context and objectives',
                 },
                 problems: {
                   type: 'array',
@@ -1027,10 +1074,10 @@ export class McpAdrAnalysisServer {
                       description: { type: 'string' },
                       category: { type: 'string' },
                       severity: { type: 'string' },
-                      context: { type: 'string' }
-                    }
+                      context: { type: 'string' },
+                    },
                   },
-                  description: 'Problems to correlate with knowledge graph'
+                  description: 'Problems to correlate with knowledge graph',
                 },
                 knowledgeGraph: {
                   type: 'object',
@@ -1038,9 +1085,9 @@ export class McpAdrAnalysisServer {
                     technologies: { type: 'array', items: { type: 'object' } },
                     patterns: { type: 'array', items: { type: 'object' } },
                     adrs: { type: 'array', items: { type: 'object' } },
-                    relationships: { type: 'array', items: { type: 'object' } }
+                    relationships: { type: 'array', items: { type: 'object' } },
                   },
-                  description: 'Architectural knowledge graph'
+                  description: 'Architectural knowledge graph',
                 },
                 relevantKnowledge: {
                   type: 'object',
@@ -1048,9 +1095,9 @@ export class McpAdrAnalysisServer {
                     adrs: { type: 'array', items: { type: 'object' } },
                     patterns: { type: 'array', items: { type: 'object' } },
                     gaps: { type: 'array', items: { type: 'object' } },
-                    opportunities: { type: 'array', items: { type: 'object' } }
+                    opportunities: { type: 'array', items: { type: 'object' } },
                   },
-                  description: 'Relevant knowledge for question generation'
+                  description: 'Relevant knowledge for question generation',
                 },
                 researchQuestions: {
                   type: 'array',
@@ -1062,10 +1109,10 @@ export class McpAdrAnalysisServer {
                       type: { type: 'string' },
                       priority: { type: 'string' },
                       timeline: { type: 'string' },
-                      methodology: { type: 'string' }
-                    }
+                      methodology: { type: 'string' },
+                    },
                   },
-                  description: 'Research questions for task tracking'
+                  description: 'Research questions for task tracking',
                 },
                 currentProgress: {
                   type: 'array',
@@ -1076,23 +1123,23 @@ export class McpAdrAnalysisServer {
                       status: { type: 'string' },
                       progress: { type: 'number' },
                       findings: { type: 'array', items: { type: 'string' } },
-                      blockers: { type: 'array', items: { type: 'string' } }
-                    }
+                      blockers: { type: 'array', items: { type: 'string' } },
+                    },
                   },
-                  description: 'Current research progress'
+                  description: 'Current research progress',
                 },
                 projectPath: {
                   type: 'string',
                   description: 'Path to project directory',
-                  default: '.'
+                  default: '.',
                 },
                 adrDirectory: {
                   type: 'string',
                   description: 'Directory containing ADR files',
-                  default: 'docs/adrs'
-                }
-              }
-            }
+                  default: 'docs/adrs',
+                },
+              },
+            },
           },
           {
             name: 'analyze_deployment_progress',
@@ -1104,25 +1151,25 @@ export class McpAdrAnalysisServer {
                   type: 'string',
                   enum: ['tasks', 'cicd', 'progress', 'completion', 'comprehensive'],
                   description: 'Type of deployment analysis to perform',
-                  default: 'comprehensive'
+                  default: 'comprehensive',
                 },
                 adrDirectory: {
                   type: 'string',
                   description: 'Directory containing ADR files',
-                  default: 'docs/adrs'
+                  default: 'docs/adrs',
                 },
                 todoPath: {
                   type: 'string',
                   description: 'Path to TODO.md file for task identification',
-                  default: 'TODO.md'
+                  default: 'TODO.md',
                 },
                 cicdLogs: {
                   type: 'string',
-                  description: 'CI/CD pipeline logs for analysis'
+                  description: 'CI/CD pipeline logs for analysis',
                 },
                 pipelineConfig: {
                   type: 'string',
-                  description: 'CI/CD pipeline configuration'
+                  description: 'CI/CD pipeline configuration',
                 },
                 deploymentTasks: {
                   type: 'array',
@@ -1136,10 +1183,10 @@ export class McpAdrAnalysisServer {
                       category: { type: 'string' },
                       priority: { type: 'string' },
                       verificationCriteria: { type: 'array', items: { type: 'string' } },
-                      expectedOutcome: { type: 'string' }
-                    }
+                      expectedOutcome: { type: 'string' },
+                    },
                   },
-                  description: 'Deployment tasks for progress calculation'
+                  description: 'Deployment tasks for progress calculation',
                 },
                 outcomeRules: {
                   type: 'array',
@@ -1149,10 +1196,10 @@ export class McpAdrAnalysisServer {
                       ruleId: { type: 'string' },
                       description: { type: 'string' },
                       criteria: { type: 'array', items: { type: 'string' } },
-                      verificationMethod: { type: 'string' }
-                    }
+                      verificationMethod: { type: 'string' },
+                    },
                   },
-                  description: 'Outcome rules for completion verification'
+                  description: 'Outcome rules for completion verification',
                 },
                 actualOutcomes: {
                   type: 'array',
@@ -1162,115 +1209,146 @@ export class McpAdrAnalysisServer {
                       taskId: { type: 'string' },
                       outcome: { type: 'string' },
                       evidence: { type: 'array', items: { type: 'string' } },
-                      timestamp: { type: 'string' }
-                    }
+                      timestamp: { type: 'string' },
+                    },
                   },
-                  description: 'Actual deployment outcomes'
+                  description: 'Actual deployment outcomes',
                 },
                 cicdStatus: {
                   type: 'object',
-                  description: 'CI/CD pipeline status data'
+                  description: 'CI/CD pipeline status data',
                 },
                 environmentStatus: {
                   type: 'object',
-                  description: 'Environment status data'
-                }
-              }
-            }
+                  description: 'Environment status data',
+                },
+              },
+            },
           },
           {
             name: 'check_ai_execution_status',
-            description: 'Check AI execution configuration and status for debugging prompt-only mode issues',
+            description:
+              'Check AI execution configuration and status for debugging prompt-only mode issues',
             inputSchema: {
               type: 'object',
               properties: {},
-              required: []
-            }
+              required: [],
+            },
           },
           {
             name: 'get_workflow_guidance',
-            description: 'Get intelligent workflow guidance and tool recommendations based on your goals and project context to achieve expected outcomes efficiently',
+            description:
+              'Get intelligent workflow guidance and tool recommendations based on your goals and project context to achieve expected outcomes efficiently',
             inputSchema: {
               type: 'object',
               properties: {
                 goal: {
                   type: 'string',
-                  description: 'What you want to accomplish (e.g., "analyze new project", "document existing decisions", "security audit", "modernize legacy system")'
+                  description:
+                    'What you want to accomplish (e.g., "analyze new project", "document existing decisions", "security audit", "modernize legacy system")',
                 },
                 projectContext: {
                   type: 'string',
-                  description: 'Current state of your project (e.g., "new project", "existing project with ADRs", "legacy codebase", "greenfield development")',
-                  enum: ['new_project', 'existing_with_adrs', 'existing_without_adrs', 'legacy_codebase', 'greenfield', 'maintenance_mode', 'unknown']
+                  description:
+                    'Current state of your project (e.g., "new project", "existing project with ADRs", "legacy codebase", "greenfield development")',
+                  enum: [
+                    'new_project',
+                    'existing_with_adrs',
+                    'existing_without_adrs',
+                    'legacy_codebase',
+                    'greenfield',
+                    'maintenance_mode',
+                    'unknown',
+                  ],
                 },
                 availableAssets: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'What assets you already have (e.g., ["PRD.md", "existing ADRs", "codebase", "documentation", "test suite"])'
+                  description:
+                    'What assets you already have (e.g., ["PRD.md", "existing ADRs", "codebase", "documentation", "test suite"])',
                 },
                 timeframe: {
                   type: 'string',
                   description: 'Available time/effort level',
-                  enum: ['quick_analysis', 'thorough_review', 'comprehensive_audit', 'ongoing_process']
+                  enum: [
+                    'quick_analysis',
+                    'thorough_review',
+                    'comprehensive_audit',
+                    'ongoing_process',
+                  ],
                 },
                 primaryConcerns: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Main areas of concern (e.g., ["security", "performance", "maintainability", "scalability", "compliance"])'
-                }
+                  description:
+                    'Main areas of concern (e.g., ["security", "performance", "maintainability", "scalability", "compliance"])',
+                },
               },
-              required: ['goal', 'projectContext']
-            }
+              required: ['goal', 'projectContext'],
+            },
           },
           {
             name: 'get_development_guidance',
-            description: 'Get comprehensive development guidance that translates architectural decisions and workflow recommendations into specific coding tasks, implementation patterns, and development roadmap',
+            description:
+              'Get comprehensive development guidance that translates architectural decisions and workflow recommendations into specific coding tasks, implementation patterns, and development roadmap',
             inputSchema: {
               type: 'object',
               properties: {
                 developmentPhase: {
                   type: 'string',
                   description: 'Current development phase',
-                  enum: ['planning', 'setup', 'implementation', 'testing', 'deployment', 'maintenance', 'refactoring']
+                  enum: [
+                    'planning',
+                    'setup',
+                    'implementation',
+                    'testing',
+                    'deployment',
+                    'maintenance',
+                    'refactoring',
+                  ],
                 },
                 adrsToImplement: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'List of ADR titles or file paths that need to be implemented in code'
+                  description:
+                    'List of ADR titles or file paths that need to be implemented in code',
                 },
                 technologyStack: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Current technology stack (e.g., ["TypeScript", "React", "Node.js", "PostgreSQL", "Docker"])'
+                  description:
+                    'Current technology stack (e.g., ["TypeScript", "React", "Node.js", "PostgreSQL", "Docker"])',
                 },
                 currentProgress: {
                   type: 'string',
-                  description: 'What has already been implemented or current state of development'
+                  description: 'What has already been implemented or current state of development',
                 },
                 teamContext: {
                   type: 'object',
                   properties: {
                     size: {
                       type: 'string',
-                      enum: ['solo', 'small_team', 'medium_team', 'large_team']
+                      enum: ['solo', 'small_team', 'medium_team', 'large_team'],
                     },
                     experienceLevel: {
                       type: 'string',
-                      enum: ['junior', 'mixed', 'senior', 'expert']
-                    }
-                  }
+                      enum: ['junior', 'mixed', 'senior', 'expert'],
+                    },
+                  },
                 },
                 timeline: {
                   type: 'string',
-                  description: 'Development timeline or deadline constraints'
+                  description: 'Development timeline or deadline constraints',
                 },
                 focusAreas: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Specific areas to focus on (e.g., ["API design", "database schema", "testing strategy", "deployment pipeline"])'
-                }
+                  description:
+                    'Specific areas to focus on (e.g., ["API design", "database schema", "testing strategy", "deployment pipeline"])',
+                },
               },
-              required: ['developmentPhase']
-            }
+              required: ['developmentPhase'],
+            },
           },
           {
             name: 'read_file',
@@ -1280,11 +1358,11 @@ export class McpAdrAnalysisServer {
               properties: {
                 path: {
                   type: 'string',
-                  description: 'Path to the file to read'
-                }
+                  description: 'Path to the file to read',
+                },
               },
-              required: ['path']
-            }
+              required: ['path'],
+            },
           },
           {
             name: 'write_file',
@@ -1294,15 +1372,15 @@ export class McpAdrAnalysisServer {
               properties: {
                 path: {
                   type: 'string',
-                  description: 'Path to the file to write'
+                  description: 'Path to the file to write',
                 },
                 content: {
                   type: 'string',
-                  description: 'Content to write to the file'
-                }
+                  description: 'Content to write to the file',
+                },
               },
-              required: ['path', 'content']
-            }
+              required: ['path', 'content'],
+            },
           },
           {
             name: 'list_directory',
@@ -1312,309 +1390,341 @@ export class McpAdrAnalysisServer {
               properties: {
                 path: {
                   type: 'string',
-                  description: 'Path to the directory to list'
-                }
+                  description: 'Path to the directory to list',
+                },
               },
-              required: ['path']
-            }
+              required: ['path'],
+            },
           },
           {
             name: 'manage_todo_json',
-            description: 'JSON-first TODO management with consistent LLM interactions, automatic scoring sync, and knowledge graph integration',
+            description:
+              'JSON-first TODO management with consistent LLM interactions, automatic scoring sync, and knowledge graph integration',
             inputSchema: {
               type: 'object',
               properties: {
                 operation: {
                   type: 'string',
-                  enum: ['create_task', 'update_task', 'bulk_update', 'get_tasks', 'get_analytics', 'import_adr_tasks', 'sync_knowledge_graph', 'sync_to_markdown', 'import_from_markdown'],
-                  description: 'Operation to perform on TODO JSON backend'
+                  enum: [
+                    'create_task',
+                    'update_task',
+                    'bulk_update',
+                    'get_tasks',
+                    'get_analytics',
+                    'import_adr_tasks',
+                    'sync_knowledge_graph',
+                    'sync_to_markdown',
+                    'import_from_markdown',
+                  ],
+                  description: 'Operation to perform on TODO JSON backend',
                 },
                 projectPath: {
                   type: 'string',
-                  description: 'Project root path (uses configured PROJECT_PATH if not provided)'
+                  description: 'Project root path (uses configured PROJECT_PATH if not provided)',
                 },
                 taskId: {
                   type: 'string',
-                  description: 'Task ID for update operations'
+                  description: 'Task ID for update operations',
                 },
                 title: {
                   type: 'string',
-                  description: 'Task title for create operations'
+                  description: 'Task title for create operations',
                 },
                 description: {
                   type: 'string',
-                  description: 'Task description'
+                  description: 'Task description',
                 },
                 priority: {
                   type: 'string',
                   enum: ['low', 'medium', 'high', 'critical'],
                   default: 'medium',
-                  description: 'Task priority level'
+                  description: 'Task priority level',
                 },
                 assignee: {
                   type: 'string',
-                  description: 'Task assignee'
+                  description: 'Task assignee',
                 },
                 dueDate: {
                   type: 'string',
-                  description: 'Due date (ISO string format)'
+                  description: 'Due date (ISO string format)',
                 },
                 category: {
                   type: 'string',
-                  description: 'Task category'
+                  description: 'Task category',
                 },
                 tags: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Task tags'
+                  description: 'Task tags',
                 },
                 dependencies: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Task dependencies (task IDs)'
+                  description: 'Task dependencies (task IDs)',
                 },
                 intentId: {
                   type: 'string',
-                  description: 'Link to knowledge graph intent'
+                  description: 'Link to knowledge graph intent',
                 },
                 linkedAdrs: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Related ADR files'
+                  description: 'Related ADR files',
                 },
                 autoComplete: {
                   type: 'boolean',
                   default: false,
-                  description: 'Auto-complete when criteria are met'
+                  description: 'Auto-complete when criteria are met',
                 },
                 completionCriteria: {
                   type: 'string',
-                  description: 'Auto-completion rules'
+                  description: 'Auto-completion rules',
                 },
                 updates: {
                   type: 'object',
                   properties: {
                     title: { type: 'string' },
                     description: { type: 'string' },
-                    status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'] },
+                    status: {
+                      type: 'string',
+                      enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'],
+                    },
                     priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
                     assignee: { type: 'string' },
                     dueDate: { type: 'string' },
                     progressPercentage: { type: 'number', minimum: 0, maximum: 100 },
                     notes: { type: 'string' },
-                    tags: { type: 'array', items: { type: 'string' } }
+                    tags: { type: 'array', items: { type: 'string' } },
                   },
-                  description: 'Fields to update for update operations'
+                  description: 'Fields to update for update operations',
                 },
                 reason: {
                   type: 'string',
-                  description: 'Reason for update (for changelog)'
+                  description: 'Reason for update (for changelog)',
                 },
                 filters: {
                   type: 'object',
                   properties: {
-                    status: { type: 'string', enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'] },
+                    status: {
+                      type: 'string',
+                      enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'],
+                    },
                     priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
                     assignee: { type: 'string' },
                     category: { type: 'string' },
                     hasDeadline: { type: 'boolean' },
                     overdue: { type: 'boolean' },
-                    tags: { type: 'array', items: { type: 'string' } }
+                    tags: { type: 'array', items: { type: 'string' } },
                   },
-                  description: 'Filter criteria for get_tasks operation'
+                  description: 'Filter criteria for get_tasks operation',
                 },
                 sortBy: {
                   type: 'string',
                   enum: ['priority', 'dueDate', 'createdAt', 'updatedAt'],
                   default: 'priority',
-                  description: 'Sort field for get_tasks operation'
+                  description: 'Sort field for get_tasks operation',
                 },
                 sortOrder: {
                   type: 'string',
                   enum: ['asc', 'desc'],
                   default: 'desc',
-                  description: 'Sort order for get_tasks operation'
+                  description: 'Sort order for get_tasks operation',
                 },
                 limit: {
                   type: 'number',
-                  description: 'Maximum number of tasks to return'
+                  description: 'Maximum number of tasks to return',
                 },
                 timeframe: {
                   type: 'string',
                   enum: ['day', 'week', 'month', 'all'],
                   default: 'week',
-                  description: 'Analysis timeframe for analytics'
+                  description: 'Analysis timeframe for analytics',
                 },
                 includeVelocity: {
                   type: 'boolean',
                   default: true,
-                  description: 'Include velocity metrics in analytics'
+                  description: 'Include velocity metrics in analytics',
                 },
                 includeScoring: {
                   type: 'boolean',
                   default: true,
-                  description: 'Include scoring metrics in analytics'
+                  description: 'Include scoring metrics in analytics',
                 },
                 adrDirectory: {
                   type: 'string',
                   default: 'docs/adrs',
-                  description: 'ADR directory path for imports'
+                  description: 'ADR directory path for imports',
                 },
                 preserveExisting: {
                   type: 'boolean',
                   default: true,
-                  description: 'Keep existing tasks during imports'
+                  description: 'Keep existing tasks during imports',
                 },
                 autoLinkDependencies: {
                   type: 'boolean',
                   default: true,
-                  description: 'Auto-detect task dependencies'
+                  description: 'Auto-detect task dependencies',
                 },
                 direction: {
                   type: 'string',
                   enum: ['to_kg', 'from_kg', 'bidirectional'],
                   default: 'bidirectional',
-                  description: 'Knowledge graph sync direction'
+                  description: 'Knowledge graph sync direction',
                 },
                 force: {
                   type: 'boolean',
                   default: false,
-                  description: 'Force operation even if conflicts exist'
+                  description: 'Force operation even if conflicts exist',
                 },
                 mergeStrategy: {
                   type: 'string',
                   enum: ['overwrite', 'merge', 'preserve_json'],
                   default: 'merge',
-                  description: 'Merge strategy for imports'
+                  description: 'Merge strategy for imports',
                 },
                 backupExisting: {
                   type: 'boolean',
                   default: true,
-                  description: 'Create backup before destructive operations'
-                }
+                  description: 'Create backup before destructive operations',
+                },
               },
-              required: ['operation']
-            }
+              required: ['operation'],
+            },
           },
           {
             name: 'generate_deployment_guidance',
-            description: 'Generate deployment guidance and instructions from ADRs with environment-specific configurations',
+            description:
+              'Generate deployment guidance and instructions from ADRs with environment-specific configurations',
             inputSchema: {
               type: 'object',
               properties: {
                 adrDirectory: {
                   type: 'string',
                   default: 'docs/adrs',
-                  description: 'Directory containing ADR files'
+                  description: 'Directory containing ADR files',
                 },
                 environment: {
                   type: 'string',
                   enum: ['development', 'staging', 'production', 'all'],
                   default: 'production',
-                  description: 'Target deployment environment'
+                  description: 'Target deployment environment',
                 },
                 format: {
                   type: 'string',
                   enum: ['markdown', 'scripts', 'structured', 'all'],
                   default: 'markdown',
-                  description: 'Output format for guidance'
+                  description: 'Output format for guidance',
                 },
                 projectPath: {
                   type: 'string',
-                  description: 'Project root path (optional, uses configured PROJECT_PATH if not provided)'
+                  description:
+                    'Project root path (optional, uses configured PROJECT_PATH if not provided)',
                 },
                 includeScripts: {
                   type: 'boolean',
                   default: true,
-                  description: 'Generate deployment scripts'
+                  description: 'Generate deployment scripts',
                 },
                 includeConfigs: {
                   type: 'boolean',
                   default: true,
-                  description: 'Generate configuration files'
+                  description: 'Generate configuration files',
                 },
                 includeValidation: {
                   type: 'boolean',
                   default: true,
-                  description: 'Include validation and health checks'
+                  description: 'Include validation and health checks',
                 },
                 technologyFilter: {
                   type: 'array',
                   items: {
                     type: 'string',
-                    enum: ['containerization', 'database', 'web-server', 'cache', 'message-queue', 'monitoring', 'security', 'ci-cd', 'infrastructure']
+                    enum: [
+                      'containerization',
+                      'database',
+                      'web-server',
+                      'cache',
+                      'message-queue',
+                      'monitoring',
+                      'security',
+                      'ci-cd',
+                      'infrastructure',
+                    ],
                   },
-                  description: 'Filter by specific technology categories'
+                  description: 'Filter by specific technology categories',
                 },
                 customRequirements: {
                   type: 'array',
                   items: { type: 'string' },
-                  description: 'Additional custom requirements'
+                  description: 'Additional custom requirements',
                 },
                 includeRollback: {
                   type: 'boolean',
                   default: true,
-                  description: 'Include rollback procedures'
+                  description: 'Include rollback procedures',
                 },
                 generateFiles: {
                   type: 'boolean',
                   default: false,
-                  description: 'Actually generate files (vs just guidance)'
-                }
+                  description: 'Actually generate files (vs just guidance)',
+                },
               },
-              required: []
-            }
+              required: [],
+            },
           },
           {
             name: 'smart_git_push',
-            description: 'AI-driven security-focused git push with credential detection, file filtering, and deployment metrics tracking. Tests should be run by calling AI and results provided.',
+            description:
+              'AI-driven security-focused git push with credential detection, file filtering, and deployment metrics tracking. Tests should be run by calling AI and results provided.',
             inputSchema: {
               type: 'object',
               properties: {
                 branch: {
                   type: 'string',
-                  description: 'Target branch for push (optional, uses current branch if not specified)'
+                  description:
+                    'Target branch for push (optional, uses current branch if not specified)',
                 },
                 message: {
                   type: 'string',
-                  description: 'Commit message (optional, commits staged files if provided)'
+                  description: 'Commit message (optional, commits staged files if provided)',
                 },
                 testResults: {
                   type: 'object',
-                  description: 'Test results from AI-executed tests (required for proper deployment tracking)',
+                  description:
+                    'Test results from AI-executed tests (required for proper deployment tracking)',
                   properties: {
                     success: {
                       type: 'boolean',
-                      description: 'Whether all tests passed'
+                      description: 'Whether all tests passed',
                     },
                     testsRun: {
                       type: 'number',
-                      description: 'Total number of tests executed'
+                      description: 'Total number of tests executed',
                     },
                     testsPassed: {
                       type: 'number',
-                      description: 'Number of tests that passed'
+                      description: 'Number of tests that passed',
                     },
                     testsFailed: {
                       type: 'number',
-                      description: 'Number of tests that failed'
+                      description: 'Number of tests that failed',
                     },
                     duration: {
                       type: 'number',
-                      description: 'Test execution duration in seconds'
+                      description: 'Test execution duration in seconds',
                     },
                     command: {
                       type: 'string',
-                      description: 'Test command that was executed by AI'
+                      description: 'Test command that was executed by AI',
                     },
                     output: {
                       type: 'string',
-                      description: 'Test execution output'
+                      description: 'Test execution output',
                     },
                     failureDetails: {
                       type: 'array',
                       items: { type: 'string' },
-                      description: 'Details of test failures'
+                      description: 'Details of test failures',
                     },
                     testTypes: {
                       type: 'object',
@@ -1623,332 +1733,375 @@ export class McpAdrAnalysisServer {
                         type: 'object',
                         properties: {
                           passed: { type: 'number' },
-                          failed: { type: 'number' }
-                        }
-                      }
-                    }
+                          failed: { type: 'number' },
+                        },
+                      },
+                    },
                   },
-                  required: ['success', 'testsRun', 'testsPassed', 'testsFailed']
+                  required: ['success', 'testsRun', 'testsPassed', 'testsFailed'],
                 },
                 skipSecurity: {
                   type: 'boolean',
                   default: false,
-                  description: 'Skip security scanning (NOT RECOMMENDED)'
+                  description: 'Skip security scanning (NOT RECOMMENDED)',
                 },
                 dryRun: {
                   type: 'boolean',
                   default: false,
-                  description: 'Show what would be pushed without actually pushing'
+                  description: 'Show what would be pushed without actually pushing',
                 },
                 projectPath: {
                   type: 'string',
-                  description: 'Path to project directory (defaults to current working directory)'
+                  description: 'Path to project directory (defaults to current working directory)',
                 },
                 forceUnsafe: {
                   type: 'boolean',
                   default: false,
-                  description: 'Override security blocks and test failures (DANGEROUS)'
-                }
-              }
-            }
+                  description: 'Override security blocks and test failures (DANGEROUS)',
+                },
+              },
+            },
           },
           {
             name: 'deployment_readiness',
-            description: 'Comprehensive deployment readiness validation with test failure tracking, deployment history analysis, and hard blocking for unsafe deployments. Integrates with smart_git_push for deployment gating.',
+            description:
+              'Comprehensive deployment readiness validation with test failure tracking, deployment history analysis, and hard blocking for unsafe deployments. Integrates with smart_git_push for deployment gating.',
             inputSchema: {
               type: 'object',
               properties: {
                 operation: {
                   type: 'string',
-                  enum: ['check_readiness', 'validate_production', 'test_validation', 'deployment_history', 'full_audit', 'emergency_override'],
-                  description: 'Type of deployment readiness check to perform'
+                  enum: [
+                    'check_readiness',
+                    'validate_production',
+                    'test_validation',
+                    'deployment_history',
+                    'full_audit',
+                    'emergency_override',
+                  ],
+                  description: 'Type of deployment readiness check to perform',
                 },
                 projectPath: {
                   type: 'string',
-                  description: 'Path to project directory (defaults to current working directory)'
+                  description: 'Path to project directory (defaults to current working directory)',
                 },
                 targetEnvironment: {
                   type: 'string',
                   enum: ['staging', 'production', 'integration'],
                   default: 'production',
-                  description: 'Target deployment environment'
+                  description: 'Target deployment environment',
                 },
                 strictMode: {
                   type: 'boolean',
                   default: true,
-                  description: 'Enable strict validation (recommended for production)'
+                  description: 'Enable strict validation (recommended for production)',
                 },
                 allowMockCode: {
                   type: 'boolean',
                   default: false,
-                  description: 'Allow mock code in deployment (NOT RECOMMENDED)'
+                  description: 'Allow mock code in deployment (NOT RECOMMENDED)',
                 },
                 productionCodeThreshold: {
                   type: 'number',
                   default: 85,
-                  description: 'Minimum production code quality score (0-100)'
+                  description: 'Minimum production code quality score (0-100)',
                 },
                 mockCodeMaxAllowed: {
                   type: 'number',
                   default: 0,
-                  description: 'Maximum mock code indicators allowed'
+                  description: 'Maximum mock code indicators allowed',
                 },
                 maxTestFailures: {
                   type: 'number',
                   default: 0,
-                  description: 'Maximum test failures allowed (0 = zero tolerance)'
+                  description: 'Maximum test failures allowed (0 = zero tolerance)',
                 },
                 requireTestCoverage: {
                   type: 'number',
                   default: 80,
-                  description: 'Minimum test coverage percentage required'
+                  description: 'Minimum test coverage percentage required',
                 },
                 blockOnFailingTests: {
                   type: 'boolean',
                   default: true,
-                  description: 'Block deployment if tests are failing'
+                  description: 'Block deployment if tests are failing',
                 },
                 testSuiteRequired: {
                   type: 'array',
                   items: { type: 'string' },
                   default: [],
-                  description: 'Required test suites that must pass'
+                  description: 'Required test suites that must pass',
                 },
                 maxRecentFailures: {
                   type: 'number',
                   default: 2,
-                  description: 'Maximum recent deployment failures allowed'
+                  description: 'Maximum recent deployment failures allowed',
                 },
                 deploymentSuccessThreshold: {
                   type: 'number',
                   default: 80,
-                  description: 'Minimum deployment success rate required (%)'
+                  description: 'Minimum deployment success rate required (%)',
                 },
                 blockOnRecentFailures: {
                   type: 'boolean',
                   default: true,
-                  description: 'Block if recent deployments failed'
+                  description: 'Block if recent deployments failed',
                 },
                 rollbackFrequencyThreshold: {
                   type: 'number',
                   default: 20,
-                  description: 'Maximum rollback frequency allowed (%)'
+                  description: 'Maximum rollback frequency allowed (%)',
                 },
                 requireAdrCompliance: {
                   type: 'boolean',
                   default: true,
-                  description: 'Require ADR compliance validation'
+                  description: 'Require ADR compliance validation',
                 },
                 integrateTodoTasks: {
                   type: 'boolean',
                   default: true,
-                  description: 'Auto-create blocking tasks for issues'
+                  description: 'Auto-create blocking tasks for issues',
                 },
                 updateHealthScoring: {
                   type: 'boolean',
                   default: true,
-                  description: 'Update project health scores'
+                  description: 'Update project health scores',
                 },
                 triggerSmartGitPush: {
                   type: 'boolean',
                   default: false,
-                  description: 'Trigger smart git push validation'
+                  description: 'Trigger smart git push validation',
                 },
                 emergencyBypass: {
                   type: 'boolean',
                   default: false,
-                  description: 'Emergency bypass for critical fixes'
+                  description: 'Emergency bypass for critical fixes',
                 },
                 businessJustification: {
                   type: 'string',
-                  description: 'Business justification for overrides (required for emergency_override)'
+                  description:
+                    'Business justification for overrides (required for emergency_override)',
                 },
                 approvalRequired: {
                   type: 'boolean',
                   default: true,
-                  description: 'Require approval for overrides'
-                }
+                  description: 'Require approval for overrides',
+                },
               },
-              required: ['operation']
-            }
+              required: ['operation'],
+            },
           },
           {
             name: 'troubleshoot_guided_workflow',
-            description: 'Structured failure analysis and test plan generation - provide JSON failure info to get specific test commands',
+            description:
+              'Structured failure analysis and test plan generation - provide JSON failure info to get specific test commands',
             inputSchema: {
               type: 'object',
               properties: {
                 operation: {
                   type: 'string',
                   enum: ['analyze_failure', 'generate_test_plan', 'full_workflow'],
-                  description: 'Type of troubleshooting operation'
+                  description: 'Type of troubleshooting operation',
                 },
                 failure: {
                   type: 'object',
                   properties: {
                     failureType: {
                       type: 'string',
-                      enum: ['test_failure', 'deployment_failure', 'build_failure', 'runtime_error', 'performance_issue', 'security_issue', 'other'],
-                      description: 'Type of failure'
+                      enum: [
+                        'test_failure',
+                        'deployment_failure',
+                        'build_failure',
+                        'runtime_error',
+                        'performance_issue',
+                        'security_issue',
+                        'other',
+                      ],
+                      description: 'Type of failure',
                     },
                     failureDetails: {
                       type: 'object',
                       properties: {
                         command: {
                           type: 'string',
-                          description: 'Command that failed (optional)'
+                          description: 'Command that failed (optional)',
                         },
                         exitCode: {
                           type: 'number',
-                          description: 'Exit code of failed process (optional)'
+                          description: 'Exit code of failed process (optional)',
                         },
                         errorMessage: {
                           type: 'string',
-                          description: 'Primary error message'
+                          description: 'Primary error message',
                         },
                         stackTrace: {
                           type: 'string',
-                          description: 'Stack trace if available (optional)'
+                          description: 'Stack trace if available (optional)',
                         },
                         logOutput: {
                           type: 'string',
-                          description: 'Relevant log output (optional)'
+                          description: 'Relevant log output (optional)',
                         },
                         environment: {
                           type: 'string',
-                          description: 'Environment where failure occurred (optional)'
+                          description: 'Environment where failure occurred (optional)',
                         },
                         timestamp: {
                           type: 'string',
-                          description: 'When the failure occurred (optional)'
+                          description: 'When the failure occurred (optional)',
                         },
                         affectedFiles: {
                           type: 'array',
                           items: { type: 'string' },
-                          description: 'Files involved in the failure (optional)'
-                        }
+                          description: 'Files involved in the failure (optional)',
+                        },
                       },
                       required: ['errorMessage'],
-                      description: 'Detailed failure information'
+                      description: 'Detailed failure information',
                     },
                     context: {
                       type: 'object',
                       properties: {
                         recentChanges: {
                           type: 'string',
-                          description: 'Recent changes that might be related (optional)'
+                          description: 'Recent changes that might be related (optional)',
                         },
                         reproducible: {
                           type: 'boolean',
-                          description: 'Whether the failure is reproducible (optional)'
+                          description: 'Whether the failure is reproducible (optional)',
                         },
                         frequency: {
                           type: 'string',
-                          description: 'How often this failure occurs (optional)'
+                          description: 'How often this failure occurs (optional)',
                         },
                         impact: {
                           type: 'string',
                           enum: ['low', 'medium', 'high', 'critical'],
-                          description: 'Impact level of the failure (optional)'
-                        }
+                          description: 'Impact level of the failure (optional)',
+                        },
                       },
-                      description: 'Additional context about the failure (optional)'
-                    }
+                      description: 'Additional context about the failure (optional)',
+                    },
                   },
                   required: ['failureType', 'failureDetails'],
-                  description: 'Structured failure information (required for analyze_failure and generate_test_plan)'
+                  description:
+                    'Structured failure information (required for analyze_failure and generate_test_plan)',
                 },
                 projectPath: {
                   type: 'string',
-                  description: 'Path to project directory (optional)'
+                  description: 'Path to project directory (optional)',
                 },
                 adrDirectory: {
                   type: 'string',
                   description: 'ADR directory path',
-                  default: 'docs/adrs'
+                  default: 'docs/adrs',
                 },
                 todoPath: {
                   type: 'string',
                   description: 'Path to TODO.md file',
-                  default: 'TODO.md'
+                  default: 'TODO.md',
                 },
-                conversationContext: CONVERSATION_CONTEXT_SCHEMA
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA,
               },
-              required: ['operation']
-            }
+              required: ['operation'],
+            },
           },
           {
             name: 'smart_score',
-            description: 'Central coordination for project health scoring system - recalculate, sync, diagnose, optimize, and reset scores across all MCP tools',
+            description:
+              'Central coordination for project health scoring system - recalculate, sync, diagnose, optimize, and reset scores across all MCP tools',
             inputSchema: {
               type: 'object',
               properties: {
                 operation: {
                   type: 'string',
-                  enum: ['recalculate_scores', 'sync_scores', 'diagnose_scores', 'optimize_weights', 'reset_scores', 'get_score_trends', 'get_intent_scores'],
-                  description: 'Smart scoring operation to perform'
+                  enum: [
+                    'recalculate_scores',
+                    'sync_scores',
+                    'diagnose_scores',
+                    'optimize_weights',
+                    'reset_scores',
+                    'get_score_trends',
+                    'get_intent_scores',
+                  ],
+                  description: 'Smart scoring operation to perform',
                 },
                 projectPath: {
                   type: 'string',
-                  description: 'Path to project directory'
+                  description: 'Path to project directory',
                 },
                 components: {
                   type: 'array',
                   items: {
                     type: 'string',
-                    enum: ['task_completion', 'deployment_readiness', 'architecture_compliance', 'security_posture', 'code_quality', 'all']
+                    enum: [
+                      'task_completion',
+                      'deployment_readiness',
+                      'architecture_compliance',
+                      'security_posture',
+                      'code_quality',
+                      'all',
+                    ],
                   },
                   default: ['all'],
-                  description: 'Score components to recalculate (for recalculate_scores operation)'
+                  description: 'Score components to recalculate (for recalculate_scores operation)',
                 },
                 forceUpdate: {
                   type: 'boolean',
                   default: false,
-                  description: 'Force update even if data is fresh'
+                  description: 'Force update even if data is fresh',
                 },
                 updateSources: {
                   type: 'boolean',
                   default: true,
-                  description: 'Trigger source tool updates before recalculating'
+                  description: 'Trigger source tool updates before recalculating',
                 },
                 todoPath: {
                   type: 'string',
                   default: 'TODO.md',
-                  description: 'Path to TODO.md file (for sync_scores operation)'
+                  description: 'Path to TODO.md file (for sync_scores operation)',
                 },
                 triggerTools: {
                   type: 'array',
                   items: {
                     type: 'string',
-                    enum: ['manage_todo_json', 'smart_git_push', 'compare_adr_progress', 'analyze_content_security', 'validate_rules']
+                    enum: [
+                      'manage_todo_json',
+                      'smart_git_push',
+                      'compare_adr_progress',
+                      'analyze_content_security',
+                      'validate_rules',
+                    ],
                   },
-                  description: 'Tools to trigger for fresh data (for sync_scores operation)'
+                  description: 'Tools to trigger for fresh data (for sync_scores operation)',
                 },
                 rebalanceWeights: {
                   type: 'boolean',
                   default: false,
-                  description: 'Recalculate optimal scoring weights (for sync_scores operation)'
+                  description: 'Recalculate optimal scoring weights (for sync_scores operation)',
                 },
                 includeHistory: {
                   type: 'boolean',
                   default: true,
-                  description: 'Include score history analysis (for diagnose_scores operation)'
+                  description: 'Include score history analysis (for diagnose_scores operation)',
                 },
                 checkDataFreshness: {
                   type: 'boolean',
                   default: true,
-                  description: 'Validate data freshness across tools (for diagnose_scores operation)'
+                  description:
+                    'Validate data freshness across tools (for diagnose_scores operation)',
                 },
                 suggestImprovements: {
                   type: 'boolean',
                   default: true,
-                  description: 'Provide score improvement suggestions (for diagnose_scores operation)'
+                  description:
+                    'Provide score improvement suggestions (for diagnose_scores operation)',
                 },
                 analysisMode: {
                   type: 'string',
                   enum: ['current_state', 'historical_data', 'project_type'],
                   default: 'current_state',
-                  description: 'Method for weight optimization (for optimize_weights operation)'
+                  description: 'Method for weight optimization (for optimize_weights operation)',
                 },
                 customWeights: {
                   type: 'object',
@@ -1957,61 +2110,77 @@ export class McpAdrAnalysisServer {
                     deploymentReadiness: { type: 'number', minimum: 0, maximum: 1 },
                     architectureCompliance: { type: 'number', minimum: 0, maximum: 1 },
                     securityPosture: { type: 'number', minimum: 0, maximum: 1 },
-                    codeQuality: { type: 'number', minimum: 0, maximum: 1 }
+                    codeQuality: { type: 'number', minimum: 0, maximum: 1 },
                   },
-                  description: 'Custom weight overrides (for optimize_weights operation)'
+                  description: 'Custom weight overrides (for optimize_weights operation)',
                 },
                 previewOnly: {
                   type: 'boolean',
                   default: false,
-                  description: 'Preview changes without applying (for optimize_weights operation)'
+                  description: 'Preview changes without applying (for optimize_weights operation)',
                 },
                 component: {
                   type: 'string',
-                  enum: ['task_completion', 'deployment_readiness', 'architecture_compliance', 'security_posture', 'code_quality', 'all'],
+                  enum: [
+                    'task_completion',
+                    'deployment_readiness',
+                    'architecture_compliance',
+                    'security_posture',
+                    'code_quality',
+                    'all',
+                  ],
                   default: 'all',
-                  description: 'Score component to reset (for reset_scores operation)'
+                  description: 'Score component to reset (for reset_scores operation)',
                 },
                 preserveHistory: {
                   type: 'boolean',
                   default: true,
-                  description: 'Preserve score history in backup (for reset_scores operation)'
+                  description: 'Preserve score history in backup (for reset_scores operation)',
                 },
                 recalculateAfterReset: {
                   type: 'boolean',
                   default: true,
-                  description: 'Immediately recalculate after reset (for reset_scores operation)'
+                  description: 'Immediately recalculate after reset (for reset_scores operation)',
                 },
                 intentId: {
                   type: 'string',
-                  description: 'Intent ID to get score trends for (for get_intent_scores operation)'
-                }
+                  description:
+                    'Intent ID to get score trends for (for get_intent_scores operation)',
+                },
               },
-              required: ['operation', 'projectPath']
-            }
+              required: ['operation', 'projectPath'],
+            },
           },
           {
             name: 'mcp_planning',
-            description: 'Enhanced project planning and workflow management tool - phase-based project management, team resource allocation, progress tracking, risk analysis, and executive reporting',
+            description:
+              'Enhanced project planning and workflow management tool - phase-based project management, team resource allocation, progress tracking, risk analysis, and executive reporting',
             inputSchema: {
               type: 'object',
               properties: {
                 operation: {
                   type: 'string',
-                  enum: ['create_project', 'manage_phases', 'track_progress', 'manage_resources', 'risk_analysis', 'generate_reports'],
-                  description: 'Project planning operation to perform'
+                  enum: [
+                    'create_project',
+                    'manage_phases',
+                    'track_progress',
+                    'manage_resources',
+                    'risk_analysis',
+                    'generate_reports',
+                  ],
+                  description: 'Project planning operation to perform',
                 },
                 projectPath: {
                   type: 'string',
-                  description: 'Project root path'
+                  description: 'Project root path',
                 },
                 projectName: {
                   type: 'string',
-                  description: 'Project name (for create_project operation)'
+                  description: 'Project name (for create_project operation)',
                 },
                 description: {
                   type: 'string',
-                  description: 'Project description (for create_project operation)'
+                  description: 'Project description (for create_project operation)',
                 },
                 phases: {
                   type: 'array',
@@ -2023,17 +2192,17 @@ export class McpAdrAnalysisServer {
                       dependencies: {
                         type: 'array',
                         items: { type: 'string' },
-                        default: []
+                        default: [],
                       },
                       milestones: {
                         type: 'array',
                         items: { type: 'string' },
-                        default: []
-                      }
+                        default: [],
+                      },
                     },
-                    required: ['name', 'duration']
+                    required: ['name', 'duration'],
                   },
-                  description: 'Initial project phases (for create_project operation)'
+                  description: 'Initial project phases (for create_project operation)',
                 },
                 team: {
                   type: 'array',
@@ -2045,33 +2214,43 @@ export class McpAdrAnalysisServer {
                       skills: {
                         type: 'array',
                         items: { type: 'string' },
-                        default: []
+                        default: [],
                       },
-                      capacity: { type: 'string' }
+                      capacity: { type: 'string' },
                     },
-                    required: ['name', 'role', 'capacity']
+                    required: ['name', 'role', 'capacity'],
                   },
                   default: [],
-                  description: 'Team structure (for create_project operation)'
+                  description: 'Team structure (for create_project operation)',
                 },
                 importFromAdrs: {
                   type: 'boolean',
                   default: true,
-                  description: 'Import phases from existing ADRs (for create_project operation)'
+                  description: 'Import phases from existing ADRs (for create_project operation)',
                 },
                 importFromTodos: {
                   type: 'boolean',
                   default: true,
-                  description: 'Import tasks from TODO system (for create_project operation)'
+                  description: 'Import tasks from TODO system (for create_project operation)',
                 },
                 action: {
                   type: 'string',
-                  enum: ['list', 'create', 'update', 'delete', 'transition', 'add', 'remove', 'allocate', 'optimize'],
-                  description: 'Management action (for manage_phases/manage_resources operations)'
+                  enum: [
+                    'list',
+                    'create',
+                    'update',
+                    'delete',
+                    'transition',
+                    'add',
+                    'remove',
+                    'allocate',
+                    'optimize',
+                  ],
+                  description: 'Management action (for manage_phases/manage_resources operations)',
                 },
                 phaseId: {
                   type: 'string',
-                  description: 'Phase ID for phase operations'
+                  description: 'Phase ID for phase operations',
                 },
                 phaseData: {
                   type: 'object',
@@ -2081,49 +2260,69 @@ export class McpAdrAnalysisServer {
                     estimatedDuration: { type: 'string' },
                     dependencies: {
                       type: 'array',
-                      items: { type: 'string' }
+                      items: { type: 'string' },
                     },
                     milestones: {
                       type: 'array',
-                      items: { type: 'string' }
+                      items: { type: 'string' },
                     },
                     linkedAdrs: {
                       type: 'array',
-                      items: { type: 'string' }
-                    }
+                      items: { type: 'string' },
+                    },
                   },
-                  description: 'Phase data for create/update operations'
+                  description: 'Phase data for create/update operations',
                 },
                 targetStatus: {
                   type: 'string',
                   enum: ['planning', 'active', 'completed', 'blocked', 'cancelled'],
-                  description: 'Target status for phase transition'
+                  description: 'Target status for phase transition',
                 },
                 reportType: {
                   type: 'string',
-                  enum: ['summary', 'detailed', 'gantt', 'milestones', 'risks', 'executive', 'status', 'health', 'team_performance', 'milestone_tracking'],
+                  enum: [
+                    'summary',
+                    'detailed',
+                    'gantt',
+                    'milestones',
+                    'risks',
+                    'executive',
+                    'status',
+                    'health',
+                    'team_performance',
+                    'milestone_tracking',
+                  ],
                   default: 'summary',
-                  description: 'Type of progress report or generated report'
+                  description: 'Type of progress report or generated report',
                 },
                 timeframe: {
                   type: 'string',
-                  enum: ['current', 'weekly', 'monthly', 'quarterly', 'week', 'month', 'quarter', 'project'],
+                  enum: [
+                    'current',
+                    'weekly',
+                    'monthly',
+                    'quarterly',
+                    'week',
+                    'month',
+                    'quarter',
+                    'project',
+                  ],
                   default: 'current',
-                  description: 'Time frame for reports and tracking'
+                  description: 'Time frame for reports and tracking',
                 },
                 includeVisuals: {
                   type: 'boolean',
                   default: true,
-                  description: 'Include visual progress indicators'
+                  description: 'Include visual progress indicators',
                 },
                 updateTaskProgress: {
                   type: 'boolean',
                   default: true,
-                  description: 'Sync progress from TODO system'
+                  description: 'Sync progress from TODO system',
                 },
                 memberId: {
                   type: 'string',
-                  description: 'Team member ID for resource operations'
+                  description: 'Team member ID for resource operations',
                 },
                 memberData: {
                   type: 'object',
@@ -2132,11 +2331,11 @@ export class McpAdrAnalysisServer {
                     role: { type: 'string' },
                     skills: {
                       type: 'array',
-                      items: { type: 'string' }
+                      items: { type: 'string' },
                     },
-                    capacity: { type: 'string' }
+                    capacity: { type: 'string' },
                   },
-                  description: 'Team member data for resource operations'
+                  description: 'Team member data for resource operations',
                 },
                 allocationData: {
                   type: 'object',
@@ -2145,56 +2344,57 @@ export class McpAdrAnalysisServer {
                     allocation: {
                       type: 'number',
                       minimum: 0,
-                      maximum: 100
-                    }
+                      maximum: 100,
+                    },
                   },
                   required: ['phaseId', 'allocation'],
-                  description: 'Resource allocation data'
+                  description: 'Resource allocation data',
                 },
                 analysisType: {
                   type: 'string',
                   enum: ['automated', 'manual', 'comprehensive'],
                   default: 'comprehensive',
-                  description: 'Type of risk analysis'
+                  description: 'Type of risk analysis',
                 },
                 includeAdrRisks: {
                   type: 'boolean',
                   default: true,
-                  description: 'Analyze risks from ADR complexity'
+                  description: 'Analyze risks from ADR complexity',
                 },
                 includeDependencyRisks: {
                   type: 'boolean',
                   default: true,
-                  description: 'Analyze dependency chain risks'
+                  description: 'Analyze dependency chain risks',
                 },
                 includeResourceRisks: {
                   type: 'boolean',
                   default: true,
-                  description: 'Analyze resource allocation risks'
+                  description: 'Analyze resource allocation risks',
                 },
                 generateMitigation: {
                   type: 'boolean',
                   default: true,
-                  description: 'Generate mitigation strategies'
+                  description: 'Generate mitigation strategies',
                 },
                 format: {
                   type: 'string',
                   enum: ['markdown', 'json', 'html'],
                   default: 'markdown',
-                  description: 'Report output format'
+                  description: 'Report output format',
                 },
                 includeCharts: {
                   type: 'boolean',
                   default: true,
-                  description: 'Include progress charts and graphs'
-                }
+                  description: 'Include progress charts and graphs',
+                },
               },
-              required: ['operation', 'projectPath']
-            }
+              required: ['operation', 'projectPath'],
+            },
           },
           {
             name: 'interactive_adr_planning',
-            description: 'Interactive guided ADR planning and creation tool - walks users through structured decision-making process with research integration, option evaluation, and automatic ADR generation',
+            description:
+              'Interactive guided ADR planning and creation tool - walks users through structured decision-making process with research integration, option evaluation, and automatic ADR generation',
             inputSchema: {
               type: 'object',
               properties: {
@@ -2213,42 +2413,43 @@ export class McpAdrAnalysisServer {
                     'update_todos',
                     'get_guidance',
                     'save_session',
-                    'complete_session'
+                    'complete_session',
                   ],
-                  description: 'Interactive planning operation to perform'
+                  description: 'Interactive planning operation to perform',
                 },
                 sessionId: {
                   type: 'string',
-                  description: 'Planning session ID (required for all operations except start_session)'
+                  description:
+                    'Planning session ID (required for all operations except start_session)',
                 },
                 input: {
                   type: 'string',
-                  description: 'User input for the current phase (varies by phase)'
+                  description: 'User input for the current phase (varies by phase)',
                 },
                 projectPath: {
                   type: 'string',
-                  description: 'Project root path'
+                  description: 'Project root path',
                 },
                 autoResearch: {
                   type: 'boolean',
                   default: true,
-                  description: 'Automatically trigger research when needed'
+                  description: 'Automatically trigger research when needed',
                 },
                 generateTodos: {
                   type: 'boolean',
                   default: true,
-                  description: 'Automatically generate TODO items from decisions'
-                }
+                  description: 'Automatically generate TODO items from decisions',
+                },
               },
-              required: ['operation', 'projectPath']
-            }
-          }
-        ]
+              required: ['operation', 'projectPath'],
+            },
+          },
+        ],
       };
     });
 
     // Tool execution handler
-    this.server.setRequestHandler(CallToolRequestSchema, async (request) => {
+    this.server.setRequestHandler(CallToolRequestSchema, async request => {
       const { name, arguments: args } = request.params;
 
       try {
@@ -2376,12 +2577,18 @@ export class McpAdrAnalysisServer {
         // Apply content masking to response
         // Track tool execution in knowledge graph
         await this.trackToolExecution(name, args, response, true);
-        
+
         return await this.applyOutputMasking(response);
       } catch (error) {
         // Track failed execution
-        await this.trackToolExecution(name, args, {}, false, error instanceof Error ? error.message : String(error));
-        
+        await this.trackToolExecution(
+          name,
+          args,
+          {},
+          false,
+          error instanceof Error ? error.message : String(error)
+        );
+
         if (error instanceof McpAdrError) {
           throw error;
         }
@@ -2400,26 +2607,26 @@ export class McpAdrAnalysisServer {
             uri: 'adr://architectural_knowledge_graph',
             name: 'Architectural Knowledge Graph',
             description: 'Complete architectural knowledge graph of the project',
-            mimeType: 'application/json'
+            mimeType: 'application/json',
           },
           {
             uri: 'adr://analysis_report',
             name: 'Analysis Report',
             description: 'Comprehensive project analysis report',
-            mimeType: 'application/json'
+            mimeType: 'application/json',
           },
           {
             uri: 'adr://adr_list',
             name: 'ADR List',
             description: 'List of all Architectural Decision Records',
-            mimeType: 'application/json'
-          }
-        ]
+            mimeType: 'application/json',
+          },
+        ],
       };
     });
 
     // Resource reading handler
-    this.server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
+    this.server.setRequestHandler(ReadResourceRequestSchema, async request => {
       const { uri } = request.params;
 
       try {
@@ -2444,13 +2651,13 @@ export class McpAdrAnalysisServer {
         prompts: allPrompts.map(prompt => ({
           name: prompt.name,
           description: prompt.description,
-          arguments: prompt.arguments
-        }))
+          arguments: prompt.arguments,
+        })),
       };
     });
 
     // Prompt execution handler
-    this.server.setRequestHandler(GetPromptRequestSchema, async (request) => {
+    this.server.setRequestHandler(GetPromptRequestSchema, async request => {
       const { name, arguments: args } = request.params;
 
       try {
@@ -2477,10 +2684,10 @@ export class McpAdrAnalysisServer {
               role: 'user',
               content: {
                 type: 'text',
-                text: renderedTemplate
-              }
-            }
-          ]
+                text: renderedTemplate,
+              },
+            },
+          ],
         };
 
         return await this.applyOutputMasking(response);
@@ -2516,11 +2723,15 @@ export class McpAdrAnalysisServer {
 - **Execution Mode**: ${status.executionMode}
 - **AI Model**: ${status.model}
 
-${status.reason ? `## ⚠️ Issue Detected
+${
+  status.reason
+    ? `## ⚠️ Issue Detected
 **Problem**: ${status.reason}
 
 ## Solution
-${!status.hasApiKey ? `
+${
+  !status.hasApiKey
+    ? `
 1. Get an OpenRouter API key from https://openrouter.ai/keys
 2. Add it to your MCP configuration:
    \`\`\`json
@@ -2538,7 +2749,9 @@ ${!status.hasApiKey ? `
    }
    \`\`\`
 3. Restart your MCP client (Claude Desktop, etc.)
-` : status.executionMode !== 'full' ? `
+`
+    : status.executionMode !== 'full'
+      ? `
 1. Update your MCP configuration to set EXECUTION_MODE to "full":
    \`\`\`json
    {
@@ -2552,14 +2765,18 @@ ${!status.hasApiKey ? `
    }
    \`\`\`
 2. Restart your MCP client
-` : ''}` : `## ✅ Configuration Looks Good!
+`
+      : ''
+}`
+    : `## ✅ Configuration Looks Good!
 
 AI execution is properly configured. Tools should return actual results instead of prompts.
 
 If you're still seeing prompts instead of results, try:
 1. Restart your MCP client
 2. Check your OpenRouter API key has sufficient credits
-3. Verify network connectivity to OpenRouter.ai`}
+3. Verify network connectivity to OpenRouter.ai`
+}
 
 ## Environment Variables Expected
 - **OPENROUTER_API_KEY**: Your OpenRouter API key
@@ -2568,9 +2785,9 @@ If you're still seeing prompts instead of results, try:
 
 ## Testing
 After fixing the configuration, try calling \`suggest_adrs\` - it should return actual ADR suggestions instead of prompts.
-`
-          }
-        ]
+`,
+          },
+        ],
       };
     } catch (error) {
       return {
@@ -2588,9 +2805,9 @@ Verify these environment variables are set in your MCP configuration:
 - OPENROUTER_API_KEY
 - EXECUTION_MODE=full
 - AI_MODEL (optional)
-`
-          }
-        ]
+`,
+          },
+        ],
       };
     }
   }
@@ -2601,7 +2818,7 @@ Verify these environment variables are set in your MCP configuration:
       projectContext,
       availableAssets = [],
       timeframe = 'thorough_review',
-      primaryConcerns = []
+      primaryConcerns = [],
     } = args;
 
     try {
@@ -2722,7 +2939,9 @@ Make the guidance **actionable, specific, and outcome-focused** so the user can 
 `;
 
       // Execute the workflow guidance with AI if enabled
-      const { executePromptWithFallback, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const { executePromptWithFallback, formatMCPResponse } = await import(
+        './utils/prompt-execution.js'
+      );
       const executionResult = await executePromptWithFallback(
         workflowPrompt,
         'Analyze the user context and provide intelligent workflow guidance with specific tool recommendations.',
@@ -2732,7 +2951,7 @@ Make the guidance **actionable, specific, and outcome-focused** so the user can 
           systemPrompt: `You are an expert workflow advisor for the MCP ADR Analysis Server.
 Your role is to analyze user goals and project context, then recommend the optimal sequence of tools to achieve their objectives efficiently.
 Provide specific, actionable guidance with clear tool sequences, expected outcomes, and success criteria.
-Focus on practical workflows that deliver measurable results.`
+Focus on practical workflows that deliver measurable results.`,
         }
       );
 
@@ -2779,9 +2998,9 @@ This guidance is tailored to your specific context and goals for maximum effecti
           content: [
             {
               type: 'text',
-              text: workflowPrompt
-            }
-          ]
+              text: workflowPrompt,
+            },
+          ],
         };
       }
     } catch (error) {
@@ -2800,7 +3019,7 @@ This guidance is tailored to your specific context and goals for maximum effecti
       currentProgress = '',
       teamContext = { size: 'small_team', experienceLevel: 'mixed' },
       timeline = '',
-      focusAreas = []
+      focusAreas = [],
     } = args;
 
     try {
@@ -2812,13 +3031,18 @@ This guidance is tailored to your specific context and goals for maximum effecti
         const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
         const absoluteAdrPath = getAdrDirectoryPath(this.config);
 
-        const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, this.config.projectPath);
-        
+        const discoveryResult = await discoverAdrsInDirectory(
+          absoluteAdrPath,
+          true,
+          this.config.projectPath
+        );
+
         // Filter ADRs to only those specified for implementation
-        const targetAdrs = discoveryResult.adrs.filter(adr => 
-          adrsToImplement.some((target: string) => 
-            adr.title.toLowerCase().includes(target.toLowerCase()) ||
-            adr.filename.toLowerCase().includes(target.toLowerCase())
+        const targetAdrs = discoveryResult.adrs.filter(adr =>
+          adrsToImplement.some(
+            (target: string) =>
+              adr.title.toLowerCase().includes(target.toLowerCase()) ||
+              adr.filename.toLowerCase().includes(target.toLowerCase())
           )
         );
 
@@ -2829,14 +3053,18 @@ This guidance is tailored to your specific context and goals for maximum effecti
 **ADR Directory**: ${absoluteAdrPath}
 **Found ${targetAdrs.length} matching ADRs**
 
-${targetAdrs.map(adr => `
+${targetAdrs
+  .map(
+    adr => `
 ### ${adr.title}
 - **File**: ${adr.filename}
 - **Status**: ${adr.status}
 - **Context**: ${adr.context}
 - **Decision**: ${adr.decision}
 - **Consequences**: ${adr.consequences}
-`).join('\n')}
+`
+  )
+  .join('\n')}
 `;
       }
 
@@ -2968,7 +3196,9 @@ Make the guidance **actionable, specific, and immediately implementable** so dev
 `;
 
       // Execute the development guidance with AI if enabled
-      const { executePromptWithFallback, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const { executePromptWithFallback, formatMCPResponse } = await import(
+        './utils/prompt-execution.js'
+      );
       const executionResult = await executePromptWithFallback(
         developmentPrompt,
         'Analyze the development context and provide comprehensive implementation guidance that translates architectural decisions into specific coding tasks and development roadmap.',
@@ -2979,7 +3209,7 @@ Make the guidance **actionable, specific, and immediately implementable** so dev
 Your role is to bridge the gap between architectural planning and actual code development.
 Provide specific, actionable development guidance with clear implementation steps, code patterns, and quality criteria.
 Focus on practical guidance that ensures architectural decisions are properly implemented in code.
-Consider team context, technology stack, and development phase to provide tailored recommendations.`
+Consider team context, technology stack, and development phase to provide tailored recommendations.`,
         }
       );
 
@@ -3038,9 +3268,9 @@ This guidance ensures your development work is **architecturally aligned**, **qu
           content: [
             {
               type: 'text',
-              text: developmentPrompt
-            }
-          ]
+              text: developmentPrompt,
+            },
+          ],
         };
       }
     } catch (error) {
@@ -3063,14 +3293,20 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       analysisDepth = 'comprehensive',
       includeEnvironment = true,
       recursiveDepth = 'comprehensive',
-      analysisScope = []
+      analysisScope = [],
       // conversationContext - TODO: implement context integration for ecosystem analysis
     } = args;
 
     this.logger.info(`Generating comprehensive ecosystem analysis for project at: ${projectPath}`);
-    this.logger.info(`Analysis configuration - Depth: ${analysisDepth}, Recursive: ${recursiveDepth}, Environment: ${includeEnvironment}`);
-    this.logger.info(`Enhancement features - Knowledge: ${knowledgeEnhancement}, Learning: ${learningEnabled}`);
-    this.logger.info(`Analysis scope: ${analysisScope.length > 0 ? analysisScope.join(', ') : 'Full ecosystem analysis'}`);
+    this.logger.info(
+      `Analysis configuration - Depth: ${analysisDepth}, Recursive: ${recursiveDepth}, Environment: ${includeEnvironment}`
+    );
+    this.logger.info(
+      `Enhancement features - Knowledge: ${knowledgeEnhancement}, Learning: ${learningEnabled}`
+    );
+    this.logger.info(
+      `Analysis scope: ${analysisScope.length > 0 ? analysisScope.join(', ') : 'Full ecosystem analysis'}`
+    );
 
     try {
       // Import utilities dynamically to avoid circular dependencies
@@ -3100,17 +3336,20 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       let knowledgeContext = '';
       if (enhancedMode && knowledgeEnhancement && generateArchitecturalKnowledge) {
         try {
-          const knowledgeResult = await generateArchitecturalKnowledge({
-            projectPath,
-            technologies: technologyFocus,
-            patterns: [],
-            projectType: 'ecosystem-analysis',
-            existingAdrs: []
-          }, {
-            domains: this.getEcosystemAnalysisDomains(technologyFocus),
-            depth: analysisDepth === 'basic' ? 'basic' : 'intermediate',
-            cacheEnabled: true
-          });
+          const knowledgeResult = await generateArchitecturalKnowledge(
+            {
+              projectPath,
+              technologies: technologyFocus,
+              patterns: [],
+              projectType: 'ecosystem-analysis',
+              existingAdrs: [],
+            },
+            {
+              domains: this.getEcosystemAnalysisDomains(technologyFocus),
+              depth: analysisDepth === 'basic' ? 'basic' : 'intermediate',
+              cacheEnabled: true,
+            }
+          );
 
           knowledgeContext = `
 ## Technology-Specific Knowledge Enhancement
@@ -3166,7 +3405,7 @@ ${memoryResult.prompt}
           const environmentResult = await analyzeEnvironment({
             projectPath,
             adrDirectory: this.config.adrDirectory,
-            analysisType: 'comprehensive'
+            analysisType: 'comprehensive',
           });
 
           // Extract environment analysis content
@@ -3197,36 +3436,44 @@ ${environmentResult.content[0].text}
           const reflexionConfig = createToolReflexionConfig('analyze_project_ecosystem', {
             reflectionDepth: analysisDepth === 'basic' ? 'basic' : 'detailed',
             evaluationCriteria: ['task-success', 'accuracy', 'completeness'],
-            learningRate: 0.7
+            learningRate: 0.7,
           });
 
-          const reflexionResult = await executeWithReflexion({
-            prompt: baseProjectAnalysisPrompt.prompt + knowledgeContext + environmentAnalysisContext,
-            instructions: baseProjectAnalysisPrompt.instructions,
-            context: {
-              projectPath,
-              analysisDepth,
-              recursiveDepth,
-              technologyFocus,
-              includePatterns,
-              includeEnvironment,
-              analysisScope,
-              knowledgeEnhanced: knowledgeEnhancement,
-              learningEnabled: true
-            }
-          }, reflexionConfig);
+          const reflexionResult = await executeWithReflexion(
+            {
+              prompt:
+                baseProjectAnalysisPrompt.prompt + knowledgeContext + environmentAnalysisContext,
+              instructions: baseProjectAnalysisPrompt.instructions,
+              context: {
+                projectPath,
+                analysisDepth,
+                recursiveDepth,
+                technologyFocus,
+                includePatterns,
+                includeEnvironment,
+                analysisScope,
+                knowledgeEnhanced: knowledgeEnhancement,
+                learningEnabled: true,
+              },
+            },
+            reflexionConfig
+          );
 
           enhancedAnalysisPrompt = reflexionResult.prompt;
         } catch (error) {
           this.logger.warn('Reflexion execution failed:', error);
-          enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt + knowledgeContext + environmentAnalysisContext;
+          enhancedAnalysisPrompt =
+            baseProjectAnalysisPrompt.prompt + knowledgeContext + environmentAnalysisContext;
         }
       } else {
-        enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt + knowledgeContext + environmentAnalysisContext;
+        enhancedAnalysisPrompt =
+          baseProjectAnalysisPrompt.prompt + knowledgeContext + environmentAnalysisContext;
       }
 
       // Execute the analysis with AI if enabled, otherwise return prompt
-      const { executeEcosystemAnalysisPrompt, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const { executeEcosystemAnalysisPrompt, formatMCPResponse } = await import(
+        './utils/prompt-execution.js'
+      );
       const executionResult = await executeEcosystemAnalysisPrompt(
         enhancedAnalysisPrompt,
         baseProjectAnalysisPrompt.instructions,
@@ -3239,7 +3486,7 @@ ${environmentResult.content[0].text}
       // Step 6: Record project structure to knowledge graph
       try {
         this.logger.info('Recording project structure to knowledge graph');
-        
+
         const projectStructureSnapshot = {
           projectPath,
           analysisDepth,
@@ -3248,7 +3495,7 @@ ${environmentResult.content[0].text}
           analysisScope,
           includeEnvironment,
           timestamp: new Date().toISOString(),
-          structureData: baseProjectAnalysisPrompt.context || {}
+          structureData: baseProjectAnalysisPrompt.context || {},
         };
 
         await this.kgManager.recordProjectStructure(projectStructureSnapshot);
@@ -3287,7 +3534,9 @@ ${reflexionContext}
 
 ${executionResult.content}
 
-${includeEnvironment ? `
+${
+  includeEnvironment
+    ? `
 
 ## Environment Integration Summary
 
@@ -3298,7 +3547,9 @@ The analysis above includes comprehensive environment analysis covering:
 - **Compliance Assessment**: Security and regulatory compliance evaluation
 
 This integrated approach provides complete understanding of both codebase patterns AND operational environment.
-` : ''}
+`
+    : ''
+}
 
 ## Next Steps: Complete Ecosystem Understanding
 
@@ -3361,19 +3612,27 @@ ${baseProjectAnalysisPrompt.instructions}
 
 ### Enhancement-Specific Instructions
 
-${enhancedMode && knowledgeEnhancement ? `
+${
+  enhancedMode && knowledgeEnhancement
+    ? `
 #### Knowledge Enhancement
 - Apply technology-specific knowledge to ecosystem analysis
 - Use domain expertise to identify patterns and anti-patterns
 - Leverage architectural best practices for technology stack evaluation
-` : ''}
+`
+    : ''
+}
 
-${enhancedMode && learningEnabled ? `
+${
+  enhancedMode && learningEnabled
+    ? `
 #### Learning Integration
 - Apply lessons learned from past ecosystem analyses
 - Use memory insights to improve pattern recognition accuracy
 - Incorporate feedback from previous analysis outcomes
-` : ''}
+`
+    : ''
+}
 
 ## Expected Enhanced Output
 
@@ -3389,9 +3648,9 @@ The enhanced analysis should provide:
 - Ensure analysis leverages all available enhancement features
 - Verify technology-specific knowledge is properly applied
 - Confirm learning insights improve analysis accuracy
-- Validate recommendations align with domain best practices`
-            }
-          ]
+- Validate recommendations align with domain best practices`,
+            },
+          ],
         };
       }
     } catch (error) {
@@ -3406,11 +3665,15 @@ The enhanced analysis should provide:
     const { filePath, includeCompliance = true } = args;
 
     try {
-      const { analyzeProjectStructure, fileExists, ensureDirectory } = await import('./utils/file-system.js');
+      const { analyzeProjectStructure, fileExists, ensureDirectory } = await import(
+        './utils/file-system.js'
+      );
       const path = await import('path');
 
       // Determine project path
-      const projectPath = filePath ? filePath.split('/').slice(0, -1).join('/') : this.config.projectPath;
+      const projectPath = filePath
+        ? filePath.split('/').slice(0, -1).join('/')
+        : this.config.projectPath;
       const adrDirectory = path.join(projectPath, this.config.adrDirectory);
 
       // Generate prompts for ADR directory setup
@@ -3472,12 +3735,16 @@ ${filePath ? `- **File-specific Context**: How ${filePath} fits into the overall
 - **Technology Rationale**: Understand selection criteria and trade-offs
 - **Evolution Path**: How the architecture has changed over time
 
-${includeCompliance ? `### 5. Compliance & Standards Assessment
+${
+  includeCompliance
+    ? `### 5. Compliance & Standards Assessment
 - **Industry Standards**: Adherence to relevant industry standards and best practices
 - **Security Compliance**: Security standards compliance (OWASP, SOC2, etc.)
 - **Code Standards**: Coding standards and style guide compliance
 - **Architectural Compliance**: Adherence to established architectural principles
-- **Regulatory Requirements**: Any regulatory compliance requirements (GDPR, HIPAA, etc.)` : ''}
+- **Regulatory Requirements**: Any regulatory compliance requirements (GDPR, HIPAA, etc.)`
+    : ''
+}
 
 ## Expected Output: Outcome-Focused Architectural Context
 
@@ -3573,7 +3840,9 @@ This approach ensures that architectural work is **grounded in measurable outcom
 `;
 
       // Execute the analysis with AI if enabled, otherwise return prompt
-      const { executeEcosystemAnalysisPrompt, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const { executeEcosystemAnalysisPrompt, formatMCPResponse } = await import(
+        './utils/prompt-execution.js'
+      );
       const executionResult = await executeEcosystemAnalysisPrompt(
         architecturalPrompt,
         projectAnalysisPrompt.instructions,
@@ -3582,7 +3851,7 @@ This approach ensures that architectural work is **grounded in measurable outcom
           maxTokens: 5000,
           systemPrompt: `You are a senior software architect specializing in architectural context analysis.
 Analyze the provided project to understand its architectural patterns, design decisions, and structural organization.
-Focus on providing actionable insights about the architecture that can guide development decisions.`
+Focus on providing actionable insights about the architecture that can guide development decisions.`,
         }
       );
 
@@ -3639,9 +3908,9 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
           content: [
             {
               type: 'text',
-              text: architecturalPrompt
-            }
-          ]
+              text: architecturalPrompt,
+            },
+          ],
         };
       }
     } catch (error) {
@@ -3658,12 +3927,14 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
       enhancedMode = true,
       promptOptimization = true,
       knowledgeEnhancement = true,
-      prdType = 'general'
+      prdType = 'general',
     } = args;
     const outputDirectory = args.outputDirectory || this.config.adrDirectory;
 
     this.logger.info(`Generating enhanced ADRs from PRD: ${prdPath} to ${outputDirectory}`);
-    this.logger.info(`Enhancement features - APE: ${promptOptimization}, Knowledge: ${knowledgeEnhancement}, Type: ${prdType}`);
+    this.logger.info(
+      `Enhancement features - APE: ${promptOptimization}, Knowledge: ${knowledgeEnhancement}, Type: ${prdType}`
+    );
 
     try {
       const { readFileContent, fileExists } = await import('./utils/file-system.js');
@@ -3696,17 +3967,20 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
       let knowledgeContext = '';
       if (enhancedMode && knowledgeEnhancement && generateArchitecturalKnowledge) {
         try {
-          const knowledgeResult = await generateArchitecturalKnowledge({
-            projectPath: outputDirectory,
-            technologies: [],
-            patterns: [],
-            projectType: prdType,
-            existingAdrs: []
-          }, {
-            domains: this.getPrdTypeDomains(prdType),
-            depth: 'intermediate',
-            cacheEnabled: true
-          });
+          const knowledgeResult = await generateArchitecturalKnowledge(
+            {
+              projectPath: outputDirectory,
+              technologies: [],
+              patterns: [],
+              projectType: prdType,
+              existingAdrs: [],
+            },
+            {
+              domains: this.getPrdTypeDomains(prdType),
+              depth: 'intermediate',
+              cacheEnabled: true,
+            }
+          );
 
           knowledgeContext = `
 ## Domain-Specific Knowledge Enhancement
@@ -3734,14 +4008,22 @@ ${knowledgeResult.prompt}
             candidateCount: 5,
             evaluationCriteria: ['task-completion', 'clarity', 'specificity'],
             optimizationRounds: 2,
-            qualityThreshold: 0.75
+            qualityThreshold: 0.75,
           });
 
-          const apeResult = await optimizePromptWithAPE({
-            prompt: baseAdrPrompt,
-            instructions: 'Generate comprehensive ADRs from PRD analysis',
-            context: { prdPath, outputDirectory, prdType, knowledgeEnhanced: knowledgeEnhancement }
-          }, apeConfig);
+          const apeResult = await optimizePromptWithAPE(
+            {
+              prompt: baseAdrPrompt,
+              instructions: 'Generate comprehensive ADRs from PRD analysis',
+              context: {
+                prdPath,
+                outputDirectory,
+                prdType,
+                knowledgeEnhanced: knowledgeEnhancement,
+              },
+            },
+            apeConfig
+          );
 
           finalAdrPrompt = apeResult.prompt;
         } catch (error) {
@@ -3774,12 +4056,16 @@ ${fileContentPrompt.prompt}
 
 ## Step 3: Enhanced ADR Generation
 
-${enhancedMode && promptOptimization ? `
+${
+  enhancedMode && promptOptimization
+    ? `
 ### APE-Optimized Analysis
 This prompt has been optimized using Automatic Prompt Engineering for superior ADR generation quality.
 The optimization focused on task completion, clarity, and specificity for PRD analysis.
 
-` : ''}
+`
+    : ''
+}
 
 ${finalAdrPrompt}
 
@@ -3801,7 +4087,9 @@ For each generated ADR, create a file creation prompt using the following patter
 `;
 
       // Execute the ADR generation with AI if enabled, otherwise return prompt
-      const { executeADRGenerationPrompt, formatMCPResponse } = await import('./utils/prompt-execution.js');
+      const { executeADRGenerationPrompt, formatMCPResponse } = await import(
+        './utils/prompt-execution.js'
+      );
       const executionResult = await executeADRGenerationPrompt(
         adrPrompt,
         'Generate comprehensive ADRs from PRD analysis with enhanced domain knowledge and optimization',
@@ -3810,7 +4098,7 @@ For each generated ADR, create a file creation prompt using the following patter
           maxTokens: 8000,
           systemPrompt: `You are an expert software architect who creates comprehensive Architectural Decision Records (ADRs) from Product Requirements Documents (PRDs).
 Generate well-structured ADRs that follow best practices and include all necessary sections.
-Focus on extracting architectural decisions from the PRD and creating actionable ADRs with clear reasoning.`
+Focus on extracting architectural decisions from the PRD and creating actionable ADRs with clear reasoning.`,
         }
       );
 
@@ -3892,19 +4180,27 @@ ${adrPrompt}
 
 ## Advanced Features
 
-${enhancedMode && knowledgeEnhancement ? `
+${
+  enhancedMode && knowledgeEnhancement
+    ? `
 ### Knowledge Enhancement
 - Domain-specific architectural knowledge has been generated
 - PRD analysis is enhanced with ${prdType} domain expertise
 - ADR decisions leverage domain best practices and patterns
-` : ''}
+`
+    : ''
+}
 
-${enhancedMode && promptOptimization ? `
+${
+  enhancedMode && promptOptimization
+    ? `
 ### APE Optimization
 - Prompts have been automatically optimized for quality
 - Enhanced evaluation criteria ensure superior ADR generation
 - Optimization focused on task completion, clarity, and specificity
-` : ''}
+`
+    : ''
+}
 
 ## Security and Validation
 
@@ -3924,9 +4220,9 @@ ${enhancedMode && promptOptimization ? `
 6. Create file creation prompts for each enhanced ADR
 7. Confirm with user before writing files to: ${outputDirectory}
 
-The enhanced process maintains full traceability from PRD requirements to generated ADRs while providing superior quality through advanced prompting techniques and ensuring security and user control over file operations.`
-            }
-          ]
+The enhanced process maintains full traceability from PRD requirements to generated ADRs while providing superior quality through advanced prompting techniques and ensuring security and user control over file operations.`,
+            },
+          ],
         };
       }
     } catch (error) {
@@ -3938,36 +4234,38 @@ The enhanced process maintains full traceability from PRD requirements to genera
   }
 
   private async generateAdrTodo(args: any): Promise<any> {
-    const { 
-      scope = 'all', 
-      phase = 'both', 
-      linkAdrs = true, 
-      includeRules = true, 
+    const {
+      scope = 'all',
+      phase = 'both',
+      linkAdrs = true,
+      includeRules = true,
       ruleSource = 'both',
       preserveExisting = true,
       forceSyncToMarkdown = false,
       intentId,
-      createJsonBackup = true
+      createJsonBackup = true,
     } = args;
     const { getAdrDirectoryPath } = await import('./utils/config.js');
     const path = await import('path');
 
     // Use absolute ADR path relative to project
-    const absoluteAdrPath = args.adrDirectory ?
-      path.resolve(this.config.projectPath, args.adrDirectory) :
-      getAdrDirectoryPath(this.config);
+    const absoluteAdrPath = args.adrDirectory
+      ? path.resolve(this.config.projectPath, args.adrDirectory)
+      : getAdrDirectoryPath(this.config);
 
     // Keep relative path for display purposes
     const adrDirectory = args.adrDirectory || this.config.adrDirectory;
 
-    this.logger.info(`Generating JSON-first TODO for ADRs in: ${absoluteAdrPath} (phase: ${phase})`);
+    this.logger.info(
+      `Generating JSON-first TODO for ADRs in: ${absoluteAdrPath} (phase: ${phase})`
+    );
 
     try {
       // Always use JSON-first TODO system
       this.logger.info('Using JSON-first TODO system for ADR task generation');
-      
+
       const { manageTodoV2 } = await import('./tools/todo-management-tool-v2.js');
-      
+
       // Optional: Create backup if requested and JSON exists
       if (createJsonBackup) {
         try {
@@ -3975,7 +4273,7 @@ The enhanced process maintains full traceability from PRD requirements to genera
             operation: 'import_from_markdown',
             projectPath: this.config.projectPath,
             mergeStrategy: 'preserve_json',
-            backupExisting: true
+            backupExisting: true,
           });
           this.logger.info('Created backup of existing JSON TODO data');
         } catch (error) {
@@ -3983,7 +4281,7 @@ The enhanced process maintains full traceability from PRD requirements to genera
           this.logger.debug('No existing JSON data to backup');
         }
       }
-      
+
       // Import ADR tasks into JSON system with enhanced parameters
       const importResult = await manageTodoV2({
         operation: 'import_adr_tasks',
@@ -3991,20 +4289,21 @@ The enhanced process maintains full traceability from PRD requirements to genera
         adrDirectory: absoluteAdrPath,
         preserveExisting,
         autoLinkDependencies: linkAdrs,
-        ...(intentId && { intentId })
+        ...(intentId && { intentId }),
       });
 
       // Sync JSON data to markdown with force option
       await manageTodoV2({
         operation: 'sync_to_markdown',
         projectPath: this.config.projectPath,
-        force: forceSyncToMarkdown
+        force: forceSyncToMarkdown,
       });
 
       return {
-        content: [{
-          type: 'text',
-          text: `# ✅ JSON-First TODO Generated from ADRs
+        content: [
+          {
+            type: 'text',
+            text: `# ✅ JSON-First TODO Generated from ADRs
 
 ## 🏗️ JSON-First TODO System Active
 ✅ **todo-data.json** - JSON-first TODO backend created/updated  
@@ -4049,9 +4348,10 @@ ${importResult.content[0].text}
 - **Dependencies**: ADR relationships mapped to task dependencies
 - **Validation**: Architectural rules integrated into task criteria
 
-*All TODO data is now managed in JSON format with automatic markdown sync*`
-        }]
-      }
+*All TODO data is now managed in JSON format with automatic markdown sync*`,
+          },
+        ],
+      };
     } catch (error) {
       throw new McpAdrError(
         `Failed to generate ADR todo: ${error instanceof Error ? error.message : String(error)}`,
@@ -4061,9 +4361,9 @@ ${importResult.content[0].text}
   }
 
   private async compareAdrProgress(args: any): Promise<any> {
-    const { 
-      todoPath = 'TODO.md', 
-      adrDirectory = this.config.adrDirectory, 
+    const {
+      todoPath = 'TODO.md',
+      adrDirectory = this.config.adrDirectory,
       projectPath = this.config.projectPath,
       environment = 'auto-detect',
       environmentConfig = {},
@@ -4073,32 +4373,43 @@ ${importResult.content[0].text}
       deepCodeAnalysis = true,
       functionalValidation = true,
       strictMode = true,
-      environmentValidation = true
+      environmentValidation = true,
     } = args;
-    
+
     const { getAdrDirectoryPath } = await import('./utils/config.js');
     const path = await import('path');
 
     // Resolve paths
     const absoluteTodoPath = path.resolve(projectPath, todoPath);
-    const absoluteAdrPath = adrDirectory ?
-      path.resolve(projectPath, adrDirectory) :
-      getAdrDirectoryPath(this.config);
+    const absoluteAdrPath = adrDirectory
+      ? path.resolve(projectPath, adrDirectory)
+      : getAdrDirectoryPath(this.config);
 
-    this.logger.info(`Comparing ADR progress: TODO(${absoluteTodoPath}) vs ADRs(${absoluteAdrPath}) vs Environment(${projectPath}) [env: ${environment}]`);
+    this.logger.info(
+      `Comparing ADR progress: TODO(${absoluteTodoPath}) vs ADRs(${absoluteAdrPath}) vs Environment(${projectPath}) [env: ${environment}]`
+    );
 
     // Environment validation and auto-detection
     let detectedEnvironment = environment;
     let finalEnvironmentConfig = { ...environmentConfig };
-    
-    if (environmentValidation && (validationType === 'full' || validationType === 'environment-only')) {
+
+    if (
+      environmentValidation &&
+      (validationType === 'full' || validationType === 'environment-only')
+    ) {
       try {
-        const envResult = await this.detectAndValidateEnvironment(projectPath, environment, environmentConfig);
+        const envResult = await this.detectAndValidateEnvironment(
+          projectPath,
+          environment,
+          environmentConfig
+        );
         detectedEnvironment = envResult.detectedEnvironment;
         finalEnvironmentConfig = { ...finalEnvironmentConfig, ...envResult.environmentConfig };
         this.logger.info(`Environment detection result: ${detectedEnvironment}`);
       } catch (error) {
-        this.logger.warn(`Environment detection failed: ${error instanceof Error ? error.message : String(error)}`);
+        this.logger.warn(
+          `Environment detection failed: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
     }
 
@@ -4110,7 +4421,9 @@ ${importResult.content[0].text}
           const fs = await import('fs/promises');
           todoContent = await fs.readFile(absoluteTodoPath, 'utf-8');
         } catch (error) {
-          this.logger.warn(`Could not read TODO.md file: ${error instanceof Error ? error.message : String(error)}`);
+          this.logger.warn(
+            `Could not read TODO.md file: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
 
@@ -4120,15 +4433,16 @@ ${importResult.content[0].text}
         try {
           const { scanProjectStructure } = await import('./utils/actual-file-operations.js');
           const includeContent = deepCodeAnalysis || functionalValidation;
-          projectStructure = await scanProjectStructure(projectPath, { 
-            readContent: includeContent, 
-            maxFileSize: includeContent ? 10000 : 0 
+          projectStructure = await scanProjectStructure(projectPath, {
+            readContent: includeContent,
+            maxFileSize: includeContent ? 10000 : 0,
           });
         } catch (error) {
-          this.logger.warn(`Could not scan project structure: ${error instanceof Error ? error.message : String(error)}`);
+          this.logger.warn(
+            `Could not scan project structure: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
-
 
       // Perform actual analysis locally instead of relying on AI execution
       let discoveryResult: any = null;
@@ -4151,16 +4465,16 @@ ${importResult.content[0].text}
         strictMode,
         environment: detectedEnvironment,
         environmentConfig: finalEnvironmentConfig,
-        environmentValidation
+        environmentValidation,
       });
 
       return {
         content: [
           {
             type: 'text',
-            text: analysis
-          }
-        ]
+            text: analysis,
+          },
+        ],
       };
     } catch (error) {
       throw new McpAdrError(
@@ -4174,30 +4488,30 @@ ${importResult.content[0].text}
    * Detect and validate environment context
    */
   private async detectAndValidateEnvironment(
-    projectPath: string, 
-    environment: string, 
+    projectPath: string,
+    environment: string,
     environmentConfig: any
   ): Promise<{ detectedEnvironment: string; environmentConfig: any }> {
     const path = await import('path');
     const fs = await import('fs/promises');
-    
+
     let detectedEnvironment = environment;
     let finalConfig = { ...environmentConfig };
-    
+
     if (environment === 'auto-detect') {
       // Auto-detect environment based on project structure
       try {
         // Check for environment indicator files
         const envFiles = [
           '.env.development',
-          '.env.staging', 
+          '.env.staging',
           '.env.production',
           '.env.test',
           'package.json',
           'docker-compose.yml',
-          'Dockerfile'
+          'Dockerfile',
         ];
-        
+
         const existingFiles: string[] = [];
         for (const file of envFiles) {
           try {
@@ -4207,18 +4521,18 @@ ${importResult.content[0].text}
             // File doesn't exist, continue
           }
         }
-        
+
         // Environment detection logic
         if (existingFiles.includes('.env.production') || existingFiles.includes('Dockerfile')) {
           detectedEnvironment = 'production';
         } else if (existingFiles.includes('.env.staging')) {
-          detectedEnvironment = 'staging';  
+          detectedEnvironment = 'staging';
         } else if (existingFiles.includes('.env.test')) {
           detectedEnvironment = 'testing';
         } else {
           detectedEnvironment = 'development';
         }
-        
+
         // Set environment-specific default configurations
         switch (detectedEnvironment) {
           case 'production':
@@ -4227,7 +4541,7 @@ ${importResult.content[0].text}
               requiredFiles: ['package.json', 'README.md'],
               requiredServices: ['monitoring', 'logging'],
               performanceRequirements: { minUptime: 99.9 },
-              ...finalConfig
+              ...finalConfig,
             };
             break;
           case 'staging':
@@ -4236,7 +4550,7 @@ ${importResult.content[0].text}
               requiredFiles: ['package.json'],
               requiredServices: ['testing', 'monitoring'],
               performanceRequirements: { minUptime: 95 },
-              ...finalConfig
+              ...finalConfig,
             };
             break;
           case 'testing':
@@ -4245,7 +4559,7 @@ ${importResult.content[0].text}
               requiredFiles: ['package.json'],
               requiredServices: ['testing'],
               performanceRequirements: {},
-              ...finalConfig
+              ...finalConfig,
             };
             break;
           default: // development
@@ -4254,16 +4568,17 @@ ${importResult.content[0].text}
               requiredFiles: ['package.json'],
               requiredServices: [],
               performanceRequirements: {},
-              ...finalConfig
+              ...finalConfig,
             };
         }
-        
       } catch (error) {
-        this.logger.warn(`Environment auto-detection failed: ${error instanceof Error ? error.message : String(error)}`);
+        this.logger.warn(
+          `Environment auto-detection failed: ${error instanceof Error ? error.message : String(error)}`
+        );
         detectedEnvironment = 'development'; // fallback
       }
     }
-    
+
     return { detectedEnvironment, environmentConfig: finalConfig };
   }
 
@@ -4302,41 +4617,53 @@ ${importResult.content[0].text}
       strictMode,
       environment,
       environmentConfig,
-      environmentValidation
+      environmentValidation,
     } = params;
 
     const currentDate = new Date().toISOString().split('T')[0];
-    
+
     // Parse TODO content to extract tasks
     const todoTasks = this.parseTodoTasks(todoContent);
-    
+
     // Basic analysis
     const totalAdrs = discoveredAdrs.length;
     const totalTasks = todoTasks.length;
     const completedTasks = todoTasks.filter(task => task.completed).length;
-    
+
     // Calculate alignment score (simplified, now environment-aware)
-    const adrTaskMapping = this.mapTasksToAdrs(todoTasks, discoveredAdrs, environment, environmentConfig);
+    const adrTaskMapping = this.mapTasksToAdrs(
+      todoTasks,
+      discoveredAdrs,
+      environment,
+      environmentConfig
+    );
     const alignedTasks = adrTaskMapping.aligned.length;
     let alignmentScore = totalTasks > 0 ? Math.round((alignedTasks / totalTasks) * 100) : 0;
-    
+
     // Environment-aware scoring adjustments
     if (environmentValidation && environmentConfig) {
-      const envScore = this.calculateEnvironmentScore(projectStructure, environment, environmentConfig);
+      const envScore = this.calculateEnvironmentScore(
+        projectStructure,
+        environment,
+        environmentConfig
+      );
       alignmentScore = Math.round((alignmentScore + envScore) / 2); // Blend scores
     }
-    
+
     // File existence checks
     let fileCheckResults = '';
     if (includeFileChecks && projectStructure) {
       fileCheckResults = this.performFileExistenceChecks(todoTasks, projectStructure);
     }
-    
+
     // Environment compliance checks
     let environmentAnalysisResults = '';
     if (environmentValidation && environmentConfig) {
       environmentAnalysisResults = this.performEnvironmentComplianceAnalysis(
-        projectStructure, environment, environmentConfig, strictMode
+        projectStructure,
+        environment,
+        environmentConfig,
+        strictMode
       );
     }
 
@@ -4378,35 +4705,49 @@ ${importResult.content[0].text}
 - **Required Services**: ${environmentConfig.requiredServices?.length || 0} services
 
 ## ADR Discovery Results
-${totalAdrs > 0 ? 
-  `Found ${totalAdrs} ADRs:\n${discoveredAdrs.map((adr, i) => 
-    `${i + 1}. **${adr.title}** (${adr.status}) - ${adr.filename}`
-  ).join('\n')}` : 
-  'No ADRs found in the specified directory.'}
+${
+  totalAdrs > 0
+    ? `Found ${totalAdrs} ADRs:\n${discoveredAdrs
+        .map((adr, i) => `${i + 1}. **${adr.title}** (${adr.status}) - ${adr.filename}`)
+        .join('\n')}`
+    : 'No ADRs found in the specified directory.'
+}
 
 ## TODO Task Analysis
-${totalTasks > 0 ? 
-  `Found ${totalTasks} tasks:\n${todoTasks.map((task, i) => 
-    `${i + 1}. ${task.completed ? '✅' : '⏳'} ${task.title}`
-  ).join('\n')}` : 
-  'No tasks found in TODO.md file.'}
+${
+  totalTasks > 0
+    ? `Found ${totalTasks} tasks:\n${todoTasks
+        .map((task, i) => `${i + 1}. ${task.completed ? '✅' : '⏳'} ${task.title}`)
+        .join('\n')}`
+    : 'No tasks found in TODO.md file.'
+}
 
 ## Alignment Analysis
 
 ### ✅ Properly Aligned Tasks
-${adrTaskMapping.aligned.length > 0 ? 
-  adrTaskMapping.aligned.map(task => `- ${task.title}: Corresponds to ADR requirements`).join('\n') :
-  '- No aligned tasks identified'}
+${
+  adrTaskMapping.aligned.length > 0
+    ? adrTaskMapping.aligned
+        .map(task => `- ${task.title}: Corresponds to ADR requirements`)
+        .join('\n')
+    : '- No aligned tasks identified'
+}
 
 ### ⚠️ Misaligned Tasks
-${adrTaskMapping.misaligned.length > 0 ? 
-  adrTaskMapping.misaligned.map(task => `- ${task.title}: May not fully align with ADR specifications`).join('\n') :
-  '- No misaligned tasks identified'}
+${
+  adrTaskMapping.misaligned.length > 0
+    ? adrTaskMapping.misaligned
+        .map(task => `- ${task.title}: May not fully align with ADR specifications`)
+        .join('\n')
+    : '- No misaligned tasks identified'
+}
 
 ### ❌ Missing Tasks
-${adrTaskMapping.missing.length > 0 ? 
-  adrTaskMapping.missing.map(gap => `- ${gap}: Required by ADRs but not in TODO`).join('\n') :
-  '- No obvious missing tasks identified'}
+${
+  adrTaskMapping.missing.length > 0
+    ? adrTaskMapping.missing.map(gap => `- ${gap}: Required by ADRs but not in TODO`).join('\n')
+    : '- No obvious missing tasks identified'
+}
 
 ## Implementation Status
 
@@ -4419,19 +4760,30 @@ ${mockAnalysisResults || ''}
 ## Recommendations
 
 ### High Priority Actions
-${alignmentScore < 70 ? 
-  '1. **Improve ADR-TODO Alignment**: Review TODO tasks against ADR requirements\n2. **Add Missing Tasks**: Identify and add tasks required by ADRs' :
-  '1. **Maintain Current Alignment**: Continue following ADR specifications'}
-${completedTasks < totalTasks * 0.5 ? 
-  '\n3. **Accelerate Implementation**: Focus on completing pending tasks' : ''}
-${environmentValidation && environment === 'production' && alignmentScore < 90 ?
-  '\n4. **⚠️ Production Environment Warning**: Current alignment may not meet production requirements' : ''}
+${
+  alignmentScore < 70
+    ? '1. **Improve ADR-TODO Alignment**: Review TODO tasks against ADR requirements\n2. **Add Missing Tasks**: Identify and add tasks required by ADRs'
+    : '1. **Maintain Current Alignment**: Continue following ADR specifications'
+}
+${
+  completedTasks < totalTasks * 0.5
+    ? '\n3. **Accelerate Implementation**: Focus on completing pending tasks'
+    : ''
+}
+${
+  environmentValidation && environment === 'production' && alignmentScore < 90
+    ? '\n4. **⚠️ Production Environment Warning**: Current alignment may not meet production requirements'
+    : ''
+}
 
 ### Medium Priority Actions
 1. **Review Implementation Quality**: ${strictMode ? 'Strict mode analysis above shows' : 'Consider enabling strict mode for'} detailed quality assessment
 2. **Update Documentation**: Ensure TODO.md reflects current project state
-${environmentValidation ? 
-  `3. **Environment Compliance**: Ensure ${environment} environment requirements are met` : ''}
+${
+  environmentValidation
+    ? `3. **Environment Compliance**: Ensure ${environment} environment requirements are met`
+    : ''
+}
 
 ### Low Priority Actions
 1. **Optimize Workflow**: Consider tools for automated ADR-TODO synchronization
@@ -4478,12 +4830,14 @@ To re-run this validation with strict mode:
   /**
    * Parse TODO.md content to extract tasks
    */
-  private parseTodoTasks(todoContent: string): Array<{title: string, completed: boolean, description?: string}> {
+  private parseTodoTasks(
+    todoContent: string
+  ): Array<{ title: string; completed: boolean; description?: string }> {
     if (!todoContent) return [];
-    
+
     const lines = todoContent.split('\n');
-    const tasks: Array<{title: string, completed: boolean, description?: string}> = [];
-    
+    const tasks: Array<{ title: string; completed: boolean; description?: string }> = [];
+
     for (const line of lines) {
       // Look for markdown checkbox patterns
       const taskMatch = line.match(/^\s*[-*]\s*\[([x\s])\]\s*(.+)$/i);
@@ -4492,21 +4846,22 @@ To re-run this validation with strict mode:
         const title = taskMatch[2];
         tasks.push({
           title: title.trim(),
-          completed: checkbox.toLowerCase() === 'x'
+          completed: checkbox.toLowerCase() === 'x',
         });
       }
       // Also look for simple list items that might be tasks
       else if (line.match(/^\s*[-*]\s+\w+/)) {
         const title = line.replace(/^\s*[-*]\s+/, '').trim();
-        if (title.length > 3) { // Avoid very short items
+        if (title.length > 3) {
+          // Avoid very short items
           tasks.push({
             title,
-            completed: false
+            completed: false,
           });
         }
       }
     }
-    
+
     return tasks;
   }
 
@@ -4514,26 +4869,32 @@ To re-run this validation with strict mode:
    * Map TODO tasks to ADRs to identify alignment (now environment-aware)
    */
   private mapTasksToAdrs(
-    tasks: Array<{title: string, completed: boolean}>, 
-    adrs: any[], 
-    environment?: string, 
+    tasks: Array<{ title: string; completed: boolean }>,
+    adrs: any[],
+    environment?: string,
     environmentConfig?: any
   ): {
-    aligned: typeof tasks,
-    misaligned: typeof tasks,
-    missing: string[]
+    aligned: typeof tasks;
+    misaligned: typeof tasks;
+    missing: string[];
   } {
     const aligned: typeof tasks = [];
     const misaligned: typeof tasks = [];
     const missing: string[] = [];
-    
+
     // Simple keyword matching for alignment detection
     const adrKeywords = adrs.flatMap(adr => [
       adr.title.toLowerCase(),
-      ...(adr.decision || '').toLowerCase().split(/\s+/).filter((w: string) => w.length > 4),
-      ...(adr.context || '').toLowerCase().split(/\s+/).filter((w: string) => w.length > 4)
+      ...(adr.decision || '')
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w: string) => w.length > 4),
+      ...(adr.context || '')
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w: string) => w.length > 4),
     ]);
-    
+
     // Environment-specific keywords that should be prioritized
     const envKeywords: string[] = [];
     if (environment && environmentConfig) {
@@ -4545,46 +4906,54 @@ To re-run this validation with strict mode:
         envKeywords.push('setup', 'development', 'local', 'debug');
       }
     }
-    
+
     for (const task of tasks) {
       const taskLower = task.title.toLowerCase();
-      const hasKeywordMatch = adrKeywords.some(keyword => 
-        taskLower.includes(keyword) || keyword.includes(taskLower.split(' ')[0])
+      const hasKeywordMatch = adrKeywords.some(
+        keyword => taskLower.includes(keyword) || keyword.includes(taskLower.split(' ')[0])
       );
-      
+
       // Environment-aware alignment scoring
       const hasEnvKeywordMatch = envKeywords.some(keyword => taskLower.includes(keyword));
-      
+
       if (hasKeywordMatch || hasEnvKeywordMatch) {
         aligned.push(task);
       } else {
         misaligned.push(task);
       }
     }
-    
+
     // Identify potential missing tasks based on ADR content
     for (const adr of adrs) {
       if (adr.status === 'accepted' && adr.decision) {
         const decisionWords = adr.decision.toLowerCase().split(/\s+/);
-        const implementationWords = ['implement', 'create', 'build', 'develop', 'add', 'setup', 'configure'];
-        
+        const implementationWords = [
+          'implement',
+          'create',
+          'build',
+          'develop',
+          'add',
+          'setup',
+          'configure',
+        ];
+
         if (implementationWords.some(word => decisionWords.includes(word))) {
-          const hasCorrespondingTask = tasks.some(task => 
+          const hasCorrespondingTask = tasks.some(task =>
             task.title.toLowerCase().includes(adr.title.toLowerCase().split(' ')[0])
           );
-          
+
           if (!hasCorrespondingTask) {
             missing.push(`Implement ${adr.title}`);
           }
         }
       }
     }
-    
+
     // Environment-specific missing tasks
     if (environment && environmentConfig) {
       if (environmentConfig.requiredFiles) {
         for (const file of environmentConfig.requiredFiles) {
-          const hasFileTask = tasks.some(task => 
+          const hasFileTask = tasks.some(task =>
             task.title.toLowerCase().includes(file.toLowerCase())
           );
           if (!hasFileTask) {
@@ -4592,10 +4961,10 @@ To re-run this validation with strict mode:
           }
         }
       }
-      
+
       if (environmentConfig.requiredServices) {
         for (const service of environmentConfig.requiredServices) {
-          const hasServiceTask = tasks.some(task => 
+          const hasServiceTask = tasks.some(task =>
             task.title.toLowerCase().includes(service.toLowerCase())
           );
           if (!hasServiceTask) {
@@ -4604,51 +4973,59 @@ To re-run this validation with strict mode:
         }
       }
     }
-    
+
     return { aligned, misaligned, missing };
   }
 
   /**
    * Check file existence for completed tasks
    */
-  private performFileExistenceChecks(tasks: Array<{title: string, completed: boolean}>, projectStructure: any): string {
+  private performFileExistenceChecks(
+    tasks: Array<{ title: string; completed: boolean }>,
+    projectStructure: any
+  ): string {
     if (!projectStructure) return '- Project structure not available';
-    
+
     const allFiles = [
-      ...projectStructure.packageFiles || [],
-      ...projectStructure.configFiles || [],
-      ...projectStructure.buildFiles || [],
-      ...projectStructure.dockerFiles || [],
-      ...projectStructure.ciFiles || [],
-      ...projectStructure.scriptFiles || []
+      ...(projectStructure.packageFiles || []),
+      ...(projectStructure.configFiles || []),
+      ...(projectStructure.buildFiles || []),
+      ...(projectStructure.dockerFiles || []),
+      ...(projectStructure.ciFiles || []),
+      ...(projectStructure.scriptFiles || []),
     ];
-    
+
     let results = '### File Existence Validation\n';
     let checkCount = 0;
-    
+
     for (const task of tasks) {
       if (task.completed) {
         // Simple heuristic: look for files mentioned in task title
         const taskLower = task.title.toLowerCase();
-        const mentionedFiles = allFiles.filter(file => 
-          taskLower.includes(file.filename.toLowerCase()) ||
-          taskLower.includes(file.filename.replace(/\.[^.]+$/, '').toLowerCase())
+        const mentionedFiles = allFiles.filter(
+          file =>
+            taskLower.includes(file.filename.toLowerCase()) ||
+            taskLower.includes(file.filename.replace(/\.[^.]+$/, '').toLowerCase())
         );
-        
+
         if (mentionedFiles.length > 0) {
           results += `- ✅ **${task.title}**: Found related files (${mentionedFiles.map(f => f.filename).join(', ')})\n`;
           checkCount++;
-        } else if (taskLower.includes('file') || taskLower.includes('create') || taskLower.includes('implement')) {
+        } else if (
+          taskLower.includes('file') ||
+          taskLower.includes('create') ||
+          taskLower.includes('implement')
+        ) {
           results += `- ⚠️ **${task.title}**: No clearly related files found\n`;
           checkCount++;
         }
       }
     }
-    
+
     if (checkCount === 0) {
       results += '- No file-related completed tasks to validate\n';
     }
-    
+
     return results;
   }
 
@@ -4657,18 +5034,18 @@ To re-run this validation with strict mode:
    */
   private performMockVsProductionAnalysis(projectStructure: any, strictMode: boolean): string {
     if (!projectStructure) return '';
-    
+
     const codeFiles = [
-      ...projectStructure.buildFiles || [],
-      ...projectStructure.configFiles || []
+      ...(projectStructure.buildFiles || []),
+      ...(projectStructure.configFiles || []),
     ].filter(file => file.content && file.content !== '[Binary or unreadable file]');
-    
+
     if (codeFiles.length === 0) return '';
-    
+
     let results = '\n### Mock vs Production Code Analysis\n';
     let mockIndicators = 0;
     let productionIndicators = 0;
-    
+
     const mockPatterns = [
       /TODO:/gi,
       /FIXME:/gi,
@@ -4680,9 +5057,9 @@ To re-run this validation with strict mode:
       /return\s+null;/gi,
       /return\s+""/gi,
       /return\s+\[\]/gi,
-      /return\s+{}/gi
+      /return\s+{}/gi,
     ];
-    
+
     const productionPatterns = [
       /error\s+handling/gi,
       /try\s*{/gi,
@@ -4692,24 +5069,32 @@ To re-run this validation with strict mode:
       /authorization/gi,
       /database/gi,
       /api/gi,
-      /config/gi
+      /config/gi,
     ];
-    
-    for (const file of codeFiles.slice(0, 10)) { // Limit analysis to prevent overwhelming output
+
+    for (const file of codeFiles.slice(0, 10)) {
+      // Limit analysis to prevent overwhelming output
       const content = file.content;
-      const fileMockCount = mockPatterns.reduce((count, pattern) => 
-        count + (content.match(pattern) || []).length, 0);
-      const fileProdCount = productionPatterns.reduce((count, pattern) => 
-        count + (content.match(pattern) || []).length, 0);
-      
+      const fileMockCount = mockPatterns.reduce(
+        (count, pattern) => count + (content.match(pattern) || []).length,
+        0
+      );
+      const fileProdCount = productionPatterns.reduce(
+        (count, pattern) => count + (content.match(pattern) || []).length,
+        0
+      );
+
       mockIndicators += fileMockCount;
       productionIndicators += fileProdCount;
-      
+
       if (fileMockCount > 0 || fileProdCount > 2) {
-        const status = fileMockCount > fileProdCount ? '❌ **Mock/Stub**' : 
-                     fileProdCount > fileMockCount * 2 ? '✅ **Production Ready**' : 
-                     '⚠️ **Partial Implementation**';
-        
+        const status =
+          fileMockCount > fileProdCount
+            ? '❌ **Mock/Stub**'
+            : fileProdCount > fileMockCount * 2
+              ? '✅ **Production Ready**'
+              : '⚠️ **Partial Implementation**';
+
         results += `- ${status}: ${file.filename} `;
         if (fileMockCount > 0) {
           results += `(${fileMockCount} mock indicators) `;
@@ -4720,59 +5105,67 @@ To re-run this validation with strict mode:
         results += '\n';
       }
     }
-    
+
     results += `\n#### Overall Code Quality Assessment\n`;
     results += `- **Mock Indicators Found**: ${mockIndicators} instances\n`;
     results += `- **Production Indicators Found**: ${productionIndicators} instances\n`;
-    
+
     if (strictMode) {
-      const qualityScore = productionIndicators > mockIndicators * 2 ? 'Good' :
-                          productionIndicators > mockIndicators ? 'Fair' : 'Needs Improvement';
+      const qualityScore =
+        productionIndicators > mockIndicators * 2
+          ? 'Good'
+          : productionIndicators > mockIndicators
+            ? 'Fair'
+            : 'Needs Improvement';
       results += `- **Quality Assessment**: ${qualityScore}\n`;
-      
+
       if (mockIndicators > 0) {
         results += `- **⚠️ Strict Mode Warning**: Found ${mockIndicators} potential mock/stub indicators\n`;
       }
     }
-    
+
     return results;
   }
 
   /**
    * Calculate environment-specific compliance score
    */
-  private calculateEnvironmentScore(projectStructure: any, environment: string, environmentConfig: any): number {
+  private calculateEnvironmentScore(
+    projectStructure: any,
+    environment: string,
+    environmentConfig: any
+  ): number {
     if (!projectStructure || !environmentConfig) return 0;
-    
+
     let score = 100; // Start with perfect score
-    
+
     // Check required files
     if (environmentConfig.requiredFiles) {
       const allFiles = [
-        ...projectStructure.packageFiles || [],
-        ...projectStructure.configFiles || [],
-        ...projectStructure.buildFiles || [],
-        ...projectStructure.dockerFiles || [],
-        ...projectStructure.ciFiles || [],
-        ...projectStructure.scriptFiles || []
+        ...(projectStructure.packageFiles || []),
+        ...(projectStructure.configFiles || []),
+        ...(projectStructure.buildFiles || []),
+        ...(projectStructure.dockerFiles || []),
+        ...(projectStructure.ciFiles || []),
+        ...(projectStructure.scriptFiles || []),
       ];
-      
+
       const existingFiles = allFiles.map(f => f.filename);
       const missingFiles = environmentConfig.requiredFiles.filter(
         (file: string) => !existingFiles.includes(file)
       );
-      
+
       // Deduct 10 points per missing required file
       score -= missingFiles.length * 10;
     }
-    
+
     // Environment-specific penalties
     if (environment === 'production') {
       // Production requires higher standards
       if (!projectStructure.dockerFiles?.length) score -= 15;
       if (!projectStructure.ciFiles?.length) score -= 10;
     }
-    
+
     return Math.max(score, 0);
   }
 
@@ -4780,54 +5173,59 @@ To re-run this validation with strict mode:
    * Perform environment compliance analysis
    */
   private performEnvironmentComplianceAnalysis(
-    projectStructure: any, 
-    environment: string, 
-    environmentConfig: any, 
+    projectStructure: any,
+    environment: string,
+    environmentConfig: any,
     strictMode: boolean
   ): string {
     if (!projectStructure || !environmentConfig) {
       return '\n### Environment Compliance Analysis\n- Environment analysis disabled or no project structure available\n';
     }
-    
+
     let results = '\n### Environment Compliance Analysis\n';
-    
+
     // Required files analysis
     if (environmentConfig.requiredFiles) {
       results += `#### Required Files for ${environment} Environment\n`;
       const allFiles = [
-        ...projectStructure.packageFiles || [],
-        ...projectStructure.configFiles || [],
-        ...projectStructure.buildFiles || [],
-        ...projectStructure.dockerFiles || [],
-        ...projectStructure.ciFiles || [],
-        ...projectStructure.scriptFiles || []
+        ...(projectStructure.packageFiles || []),
+        ...(projectStructure.configFiles || []),
+        ...(projectStructure.buildFiles || []),
+        ...(projectStructure.dockerFiles || []),
+        ...(projectStructure.ciFiles || []),
+        ...(projectStructure.scriptFiles || []),
       ];
-      
+
       const existingFiles = allFiles.map(f => f.filename);
-      
+
       for (const requiredFile of environmentConfig.requiredFiles) {
         const exists = existingFiles.includes(requiredFile);
         results += `- ${exists ? '✅' : '❌'} **${requiredFile}**: ${exists ? 'Found' : 'Missing'}\n`;
       }
     }
-    
+
     // Security level compliance
     if (environmentConfig.securityLevel) {
       results += `\n#### Security Level: ${environmentConfig.securityLevel}\n`;
-      
-      const securityIndicators = this.analyzeSecurityCompliance(projectStructure, environmentConfig.securityLevel);
+
+      const securityIndicators = this.analyzeSecurityCompliance(
+        projectStructure,
+        environmentConfig.securityLevel
+      );
       results += securityIndicators;
     }
-    
+
     // Environment-specific recommendations
     results += `\n#### ${environment} Environment Recommendations\n`;
     switch (environment) {
       case 'production':
-        results += '- ⚠️ **Production Critical**: Ensure monitoring, logging, and backup strategies are implemented\n';
+        results +=
+          '- ⚠️ **Production Critical**: Ensure monitoring, logging, and backup strategies are implemented\n';
         results += '- 🔒 **Security**: Implement comprehensive security measures\n';
         results += '- 📊 **Performance**: Monitor and optimize for production workloads\n';
         if (strictMode) {
-          results += '- 🔍 **Strict Mode**: Enhanced validation enabled for production environment\n';
+          results +=
+            '- 🔍 **Strict Mode**: Enhanced validation enabled for production environment\n';
         }
         break;
       case 'staging':
@@ -4839,7 +5237,7 @@ To re-run this validation with strict mode:
         results += '- 🔄 **Iteration**: Ensure fast feedback loops\n';
         break;
     }
-    
+
     return results;
   }
 
@@ -4848,19 +5246,20 @@ To re-run this validation with strict mode:
    */
   private analyzeSecurityCompliance(projectStructure: any, securityLevel: string): string {
     let results = '';
-    
+
     const securityFiles = [
-      ...projectStructure.configFiles || [],
-      ...projectStructure.dockerFiles || []
-    ].filter(file => 
-      file.filename.includes('security') || 
-      file.filename.includes('auth') ||
-      file.filename.includes('.env') ||
-      file.filename === 'Dockerfile'
+      ...(projectStructure.configFiles || []),
+      ...(projectStructure.dockerFiles || []),
+    ].filter(
+      file =>
+        file.filename.includes('security') ||
+        file.filename.includes('auth') ||
+        file.filename.includes('.env') ||
+        file.filename === 'Dockerfile'
     );
-    
+
     const hasSecurityConfig = securityFiles.length > 0;
-    
+
     switch (securityLevel) {
       case 'critical':
         results += `- ${hasSecurityConfig ? '✅' : '❌'} **Critical Security**: ${hasSecurityConfig ? 'Security configuration found' : 'No security configuration detected'}\n`;
@@ -4877,7 +5276,7 @@ To re-run this validation with strict mode:
       default:
         results += `- ℹ️ **Security Level**: ${securityLevel} (consider increasing for production)\n`;
     }
-    
+
     return results;
   }
 
@@ -4913,7 +5312,9 @@ To re-run this validation with strict mode:
     const { action, key } = args;
 
     try {
-      const { clearCache, getCacheStats, cleanupCache, invalidateCache } = await import('./utils/cache.js');
+      const { clearCache, getCacheStats, cleanupCache, invalidateCache } = await import(
+        './utils/cache.js'
+      );
 
       switch (action) {
         case 'clear': {
@@ -4936,9 +5337,9 @@ ${clearPrompt.instructions}
 
 ## Expected Result
 
-After successful execution, all cache entries will be removed while preserving the cache directory structure and metadata.json file.`
-              }
-            ]
+After successful execution, all cache entries will be removed while preserving the cache directory structure and metadata.json file.`,
+              },
+            ],
           };
         }
 
@@ -4980,9 +5381,9 @@ The AI agent will provide:
 Use \`manage_cache\` tool with different actions:
 - \`clear\`: Remove all cache entries
 - \`cleanup\`: Remove expired entries only
-- \`invalidate\`: Remove specific cache entry`
-              }
-            ]
+- \`invalidate\`: Remove specific cache entry`,
+              },
+            ],
           };
         }
 
@@ -5006,9 +5407,9 @@ ${cleanupPrompt.instructions}
 
 ## Expected Result
 
-The AI agent will remove expired cache entries and provide a count of cleaned files.`
-              }
-            ]
+The AI agent will remove expired cache entries and provide a count of cleaned files.`,
+              },
+            ],
           };
         }
 
@@ -5038,9 +5439,9 @@ ${invalidatePrompt.instructions}
 
 **Cache Key**: ${key}
 
-The AI agent will safely remove the specified cache entry.`
-              }
-            ]
+The AI agent will safely remove the specified cache entry.`,
+              },
+            ],
           };
         }
 
@@ -5088,9 +5489,9 @@ Use \`configure_output_masking\` tool with:
 
 ## Current Status
 ${this.maskingConfig.enabled ? '✅ Output masking is ACTIVE' : '⚠️ Output masking is DISABLED'}
-`
-              }
-            ]
+`,
+              },
+            ],
           };
         }
 
@@ -5130,13 +5531,14 @@ ${this.maskingConfig.enabled ? '✅ Output masking is ACTIVE' : '⚠️ Output m
 - **Strategy**: ${newConfig.strategy}
 - **Custom Patterns**: ${newConfig.customPatterns?.length || 0} patterns
 
-${newConfig.enabled ?
-  '🔒 All MCP tool and resource outputs will now be masked according to the new configuration.' :
-  '⚠️ Output masking is disabled. Sensitive information may be exposed in responses.'
+${
+  newConfig.enabled
+    ? '🔒 All MCP tool and resource outputs will now be masked according to the new configuration.'
+    : '⚠️ Output masking is disabled. Sensitive information may be exposed in responses.'
 }
-`
-              }
-            ]
+`,
+              },
+            ],
           };
         }
 
@@ -5157,9 +5559,9 @@ ${newConfig.enabled ?
 - **Skip Patterns**: ${this.maskingConfig.skipPatterns?.length || 0} patterns
 
 🔒 Default masking is now active for all outputs.
-`
-              }
-            ]
+`,
+              },
+            ],
           };
         }
 
@@ -5181,13 +5583,20 @@ ${newConfig.enabled ?
     const domainMap: Record<string, string[]> = {
       'web-application': ['api-design', 'frontend-architecture', 'database-design', 'security'],
       'mobile-app': ['mobile-architecture', 'api-design', 'performance-optimization', 'security'],
-      'microservices': ['microservices', 'api-design', 'distributed-systems', 'database-design'],
-      'data-platform': ['database-design', 'data-architecture', 'performance-optimization', 'scalability'],
+      microservices: ['microservices', 'api-design', 'distributed-systems', 'database-design'],
+      'data-platform': [
+        'database-design',
+        'data-architecture',
+        'performance-optimization',
+        'scalability',
+      ],
       'api-service': ['api-design', 'microservices', 'security', 'performance-optimization'],
-      'general': ['api-design', 'database-design', 'security']
+      general: ['api-design', 'database-design', 'security'],
     };
 
-    return domainMap[prdType] || domainMap['general'] || ['api-design', 'database-design', 'security'];
+    return (
+      domainMap[prdType] || domainMap['general'] || ['api-design', 'database-design', 'security']
+    );
   }
 
   /**
@@ -5199,35 +5608,35 @@ ${newConfig.enabled ?
 
     // Technology-specific domain mapping
     const technologyDomainMap: Record<string, string[]> = {
-      'react': ['frontend-architecture', 'web-applications'],
-      'vue': ['frontend-architecture', 'web-applications'],
-      'angular': ['frontend-architecture', 'web-applications'],
-      'node': ['api-design', 'microservices'],
-      'express': ['api-design', 'web-applications'],
-      'fastify': ['api-design', 'performance-optimization'],
-      'nestjs': ['api-design', 'microservices'],
-      'spring': ['api-design', 'microservices'],
-      'django': ['api-design', 'web-applications'],
-      'flask': ['api-design', 'web-applications'],
-      'rails': ['api-design', 'web-applications'],
-      'laravel': ['api-design', 'web-applications'],
-      'docker': ['containerization', 'microservices'],
-      'kubernetes': ['containerization', 'distributed-systems'],
-      'mongodb': ['database-design', 'data-architecture'],
-      'postgresql': ['database-design', 'data-architecture'],
-      'mysql': ['database-design', 'data-architecture'],
-      'redis': ['database-design', 'performance-optimization'],
-      'elasticsearch': ['database-design', 'data-architecture'],
-      'kafka': ['distributed-systems', 'data-architecture'],
-      'rabbitmq': ['distributed-systems', 'microservices'],
-      'aws': ['cloud-architecture', 'scalability'],
-      'azure': ['cloud-architecture', 'scalability'],
-      'gcp': ['cloud-architecture', 'scalability'],
-      'terraform': ['infrastructure-as-code', 'cloud-architecture'],
-      'ansible': ['infrastructure-as-code', 'automation'],
-      'jenkins': ['ci-cd', 'automation'],
+      react: ['frontend-architecture', 'web-applications'],
+      vue: ['frontend-architecture', 'web-applications'],
+      angular: ['frontend-architecture', 'web-applications'],
+      node: ['api-design', 'microservices'],
+      express: ['api-design', 'web-applications'],
+      fastify: ['api-design', 'performance-optimization'],
+      nestjs: ['api-design', 'microservices'],
+      spring: ['api-design', 'microservices'],
+      django: ['api-design', 'web-applications'],
+      flask: ['api-design', 'web-applications'],
+      rails: ['api-design', 'web-applications'],
+      laravel: ['api-design', 'web-applications'],
+      docker: ['containerization', 'microservices'],
+      kubernetes: ['containerization', 'distributed-systems'],
+      mongodb: ['database-design', 'data-architecture'],
+      postgresql: ['database-design', 'data-architecture'],
+      mysql: ['database-design', 'data-architecture'],
+      redis: ['database-design', 'performance-optimization'],
+      elasticsearch: ['database-design', 'data-architecture'],
+      kafka: ['distributed-systems', 'data-architecture'],
+      rabbitmq: ['distributed-systems', 'microservices'],
+      aws: ['cloud-architecture', 'scalability'],
+      azure: ['cloud-architecture', 'scalability'],
+      gcp: ['cloud-architecture', 'scalability'],
+      terraform: ['infrastructure-as-code', 'cloud-architecture'],
+      ansible: ['infrastructure-as-code', 'automation'],
+      jenkins: ['ci-cd', 'automation'],
       'github-actions': ['ci-cd', 'automation'],
-      'gitlab-ci': ['ci-cd', 'automation']
+      'gitlab-ci': ['ci-cd', 'automation'],
     };
 
     // Collect domains based on technology focus
@@ -5253,7 +5662,11 @@ ${newConfig.enabled ?
   /**
    * Helper method to create base ADR generation prompt
    */
-  private createBaseAdrPrompt(prdPath: string, outputDirectory: string, knowledgeContext: string): string {
+  private createBaseAdrPrompt(
+    prdPath: string,
+    outputDirectory: string,
+    knowledgeContext: string
+  ): string {
     return `
 # Enhanced ADR Generation from PRD Request
 
@@ -5436,7 +5849,7 @@ Please provide:
     try {
       // Extract intentId from metadata if available
       let intentId: string | undefined;
-      
+
       if (result?.metadata?.intentId) {
         intentId = result.metadata.intentId;
       } else {
@@ -5450,7 +5863,7 @@ Please provide:
           }
         }
       }
-      
+
       // If no intent found, create a standalone execution record
       if (!intentId) {
         // Extract human request from conversation context if available
@@ -5458,18 +5871,18 @@ Please provide:
         if (parameters?.conversationContext?.humanRequest) {
           humanRequest = parameters.conversationContext.humanRequest;
         }
-        
+
         intentId = await this.kgManager.createIntent(
           humanRequest,
           [`Execute ${toolName}`, 'Complete tool operation'],
           'medium'
         );
       }
-      
+
       // Determine tasks created/modified from tool operation
       const todoTasksCreated: string[] = [];
       const todoTasksModified: string[] = [];
-      
+
       // Extract task information from result metadata
       if (result?.metadata) {
         if (result.metadata.tasksCreated) {
@@ -5482,7 +5895,7 @@ Please provide:
           todoTasksModified.push(...result.metadata.taskIds);
         }
       }
-      
+
       // Store execution in knowledge graph
       await this.kgManager.addToolExecution(
         intentId,
@@ -5494,7 +5907,7 @@ Please provide:
         todoTasksModified,
         error
       );
-      
+
       // If execution completed successfully, update intent status
       if (success && !error) {
         // Check if this might be the final tool in a chain
@@ -5507,7 +5920,6 @@ Please provide:
           }
         }
       }
-      
     } catch (trackingError) {
       // Don't let tracking errors break tool execution
       console.error('[WARN] Knowledge graph tracking failed:', trackingError);
@@ -5548,9 +5960,9 @@ Please provide:
               {
                 uri,
                 mimeType: result.contentType,
-                text: JSON.stringify(result.data, null, 2)
-              }
-            ]
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
           };
         }
 
@@ -5567,9 +5979,9 @@ Please provide:
               {
                 uri,
                 mimeType: result.contentType,
-                text: JSON.stringify(result.data, null, 2)
-              }
-            ]
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
           };
         }
 
@@ -5579,9 +5991,9 @@ Please provide:
           const path = await import('path');
 
           // Use absolute ADR path relative to project
-          const absoluteAdrPath = params['adrDirectory'] ?
-            path.resolve(this.config.projectPath, params['adrDirectory']) :
-            getAdrDirectoryPath(this.config);
+          const absoluteAdrPath = params['adrDirectory']
+            ? path.resolve(this.config.projectPath, params['adrDirectory'])
+            : getAdrDirectoryPath(this.config);
 
           // Generate resource directly (caching is now handled through AI delegation)
           const result = await generateAdrList(absoluteAdrPath, this.config.projectPath);
@@ -5591,9 +6003,9 @@ Please provide:
               {
                 uri,
                 mimeType: result.contentType,
-                text: JSON.stringify(result.data, null, 2)
-              }
-            ]
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
           };
         }
 
@@ -5620,7 +6032,7 @@ Please provide:
 
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
-    
+
     // Keep the process alive
     process.on('SIGINT', async () => {
       await this.server.close();
@@ -5633,28 +6045,28 @@ Please provide:
    */
   private async readFile(args: any): Promise<any> {
     const { path: filePath } = args;
-    
+
     try {
       const fs = await import('fs/promises');
       const path = await import('path');
-      
+
       // Resolve path relative to project path for security
       const safePath = path.resolve(this.config.projectPath, filePath);
-      
+
       // Security check: ensure path is within project directory
       if (!safePath.startsWith(this.config.projectPath)) {
         throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
       }
-      
+
       const content = await fs.readFile(safePath, 'utf-8');
-      
+
       return {
         content: [
           {
             type: 'text',
-            text: content
-          }
-        ]
+            text: content,
+          },
+        ],
       };
     } catch (error) {
       throw new McpAdrError(
@@ -5666,32 +6078,32 @@ Please provide:
 
   private async writeFile(args: any): Promise<any> {
     const { path: filePath, content } = args;
-    
+
     try {
       const fs = await import('fs/promises');
       const path = await import('path');
-      
+
       // Resolve path relative to project path for security
       const safePath = path.resolve(this.config.projectPath, filePath);
-      
+
       // Security check: ensure path is within project directory
       if (!safePath.startsWith(this.config.projectPath)) {
         throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
       }
-      
+
       // Ensure directory exists
       await fs.mkdir(path.dirname(safePath), { recursive: true });
-      
+
       // Write file
       await fs.writeFile(safePath, content, 'utf-8');
-      
+
       return {
         content: [
           {
             type: 'text',
-            text: `Successfully wrote to ${filePath}`
-          }
-        ]
+            text: `Successfully wrote to ${filePath}`,
+          },
+        ],
       };
     } catch (error) {
       throw new McpAdrError(
@@ -5703,33 +6115,33 @@ Please provide:
 
   private async listDirectory(args: any): Promise<any> {
     const { path: dirPath } = args;
-    
+
     try {
       const fs = await import('fs/promises');
       const path = await import('path');
-      
+
       // Resolve path relative to project path for security
       const safePath = path.resolve(this.config.projectPath, dirPath);
-      
+
       // Security check: ensure path is within project directory
       if (!safePath.startsWith(this.config.projectPath)) {
         throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
       }
-      
+
       const entries = await fs.readdir(safePath, { withFileTypes: true });
       const fileList = entries.map(entry => ({
         name: entry.name,
         type: entry.isDirectory() ? 'directory' : 'file',
-        path: path.join(dirPath, entry.name)
+        path: path.join(dirPath, entry.name),
       }));
-      
+
       return {
         content: [
           {
             type: 'text',
-            text: JSON.stringify(fileList, null, 2)
-          }
-        ]
+            text: JSON.stringify(fileList, null, 2),
+          },
+        ],
       };
     } catch (error) {
       throw new McpAdrError(
@@ -5739,14 +6151,13 @@ Please provide:
     }
   }
 
-
   private async manageTodoJson(args: any): Promise<any> {
     try {
       const { manageTodoV2 } = await import('./tools/todo-management-tool-v2.js');
       // Add projectPath to args if not provided
       const argsWithPath = {
         ...args,
-        projectPath: args.projectPath || this.config.projectPath
+        projectPath: args.projectPath || this.config.projectPath,
       };
       return await manageTodoV2(argsWithPath);
     } catch (error) {
@@ -5754,7 +6165,7 @@ Please provide:
       if (error instanceof Error && error.name === 'McpAdrError') {
         throw error;
       }
-      
+
       throw new McpAdrError(
         `JSON TODO management failed: ${error instanceof Error ? error.message : String(error)}`,
         'TODO_JSON_MANAGEMENT_ERROR'
@@ -5800,7 +6211,9 @@ Please provide:
 
   private async troubleshootGuidedWorkflow(args: any): Promise<any> {
     try {
-      const { troubleshootGuidedWorkflow } = await import('./tools/troubleshoot-guided-workflow-tool.js');
+      const { troubleshootGuidedWorkflow } = await import(
+        './tools/troubleshoot-guided-workflow-tool.js'
+      );
       return await troubleshootGuidedWorkflow(args);
     } catch (error) {
       throw new McpAdrError(
@@ -5810,16 +6223,28 @@ Please provide:
     }
   }
 
-  private async smartScore(args: any): Promise<any> {
-    try {
-      const { smartScore } = await import('./tools/smart-score-tool.js');
-      return await smartScore(args);
-    } catch (error) {
-      throw new McpAdrError(
-        `Smart score analysis failed: ${error instanceof Error ? error.message : String(error)}`,
-        'SMART_SCORE_ERROR'
-      );
-    }
+  private async smartScore(_args: any): Promise<any> {
+    // Smart score tool was removed - return deprecation message
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `⚠️ **Smart Score Tool Deprecated**
+
+This tool has been deprecated and replaced with memory-centric health scoring.
+
+**Replacement:** The new MemoryHealthScoring system tracks:
+- Memory quality and relevance
+- Retrieval performance
+- Entity relationship coherence
+- Context utilization
+- Decision alignment
+
+**Migration:** Health scoring is now integrated into the knowledge graph and automatically calculated based on memory usage patterns.`,
+        },
+      ],
+      isError: false,
+    };
   }
 
   private async mcpPlanning(args: any): Promise<any> {
@@ -5912,12 +6337,13 @@ Examples:
 // Start the server if this file is run directly
 // Jest-compatible check: avoid import.meta.url which Jest cannot handle
 // Handle both direct execution and npm global package symlinks
-if (process.argv[1] && (
-  process.argv[1].endsWith('index.js') ||
-  process.argv[1].endsWith('index.ts') ||
-  process.argv[1].endsWith('mcp-adr-analysis-server')
-)) {
-  main().catch((error) => {
+if (
+  process.argv[1] &&
+  (process.argv[1].endsWith('index.js') ||
+    process.argv[1].endsWith('index.ts') ||
+    process.argv[1].endsWith('mcp-adr-analysis-server'))
+) {
+  main().catch(error => {
     console.error('Unhandled error:', error);
     process.exit(1);
   });
