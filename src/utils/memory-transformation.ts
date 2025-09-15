@@ -791,7 +791,7 @@ export class MemoryTransformer {
         if (match[1] && match[1].trim().length > 5) {
           actionableItems.push({
             action: match[1].trim(),
-            priority: this.inferActionPriority(match[1]),
+            priority: this.inferActionPriority(match[0]), // Use full match for priority inference
             timeframe: 'undefined',
             dependencies: [],
           });

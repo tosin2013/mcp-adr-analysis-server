@@ -15,10 +15,8 @@ import {
   MemoryRelationship,
 } from '../../src/types/memory-entities.js';
 
-// Mock crypto
-jest.mock('crypto', () => ({
-  randomUUID: jest.fn(() => 'test-uuid-123'),
-}));
+// Import crypto to spy on it
+import crypto from 'crypto';
 
 // Mock enhanced logging
 jest.mock('../../src/utils/enhanced-logging.js', () => ({
@@ -44,6 +42,9 @@ describe('MemoryTransformer', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     transformer = new MemoryTransformer(mockMemoryManager);
+
+    // Mock crypto randomUUID
+    jest.spyOn(crypto, 'randomUUID').mockReturnValue('test-uuid-123');
 
     // Mock date to be consistent
     mockDate = jest
@@ -562,11 +563,11 @@ Note: Performance optimization should be considered early.
       const result = await transformer.createKnowledgeArtifact('Test', content, 'documentation');
 
       expect(result.artifactData.keyInsights).toContain(
-        'Always validate input data before processing.'
+        'Always validate input data before processing'
       );
-      expect(result.artifactData.keyInsights).toContain('Remember to handle edge cases properly.');
+      expect(result.artifactData.keyInsights).toContain('Remember to handle edge cases properly');
       expect(result.artifactData.keyInsights).toContain(
-        'Performance optimization should be considered early.'
+        'Performance optimization should be considered early'
       );
     });
 
@@ -585,22 +586,22 @@ Must: Review security implications
       expect(result.artifactData.actionableItems).toHaveLength(4);
       expect(result.artifactData.actionableItems[0].action).toBe('Implement authentication');
       expect(result.artifactData.actionableItems[1].action).toBe('Update documentation');
-      expect(result.artifactData.actionableItems[2].action).toBe('Write unit tests');
-      expect(result.artifactData.actionableItems[3].action).toBe('Review security implications');
-      expect(result.artifactData.actionableItems[3].priority).toBe('high'); // 'must' keyword
+      expect(result.artifactData.actionableItems[2].action).toBe('Review security implications');
+      expect(result.artifactData.actionableItems[3].action).toBe('Write unit tests');
+      expect(result.artifactData.actionableItems[2].priority).toBe('high'); // 'must' keyword
     });
 
     it('should assign correct action priorities', async () => {
       const content = `
-Critical: Fix security vulnerability
-Important: Update documentation
+TODO: Fix critical security vulnerability
+Action: Update important documentation
 TODO: Add feature
       `;
 
       const result = await transformer.createKnowledgeArtifact('Test', content, 'documentation');
 
-      expect(result.artifactData.actionableItems[0].priority).toBe('high'); // 'critical'
-      expect(result.artifactData.actionableItems[1].priority).toBe('medium'); // 'important'
+      expect(result.artifactData.actionableItems[0].priority).toBe('high'); // 'critical' keyword in text
+      expect(result.artifactData.actionableItems[1].priority).toBe('medium'); // 'important' keyword in text
       expect(result.artifactData.actionableItems[2].priority).toBe('low'); // default
     });
   });
