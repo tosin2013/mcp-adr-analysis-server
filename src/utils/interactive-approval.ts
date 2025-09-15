@@ -573,10 +573,10 @@ export function batchApproval(
 /**
  * Save approval preferences for future use
  */
-export function saveApprovalPreferences(
+export async function saveApprovalPreferences(
   actions: ApprovalAction[],
   configPath: string = '.smartgit-approvals.json'
-): void {
+): Promise<void> {
   try {
     const preferences = {
       timestamp: new Date().toISOString(),
