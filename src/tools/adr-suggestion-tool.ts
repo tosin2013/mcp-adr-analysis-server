@@ -772,10 +772,19 @@ export async function discoverExistingAdrs(args: {
     // INITIALIZE COMPLETE CACHE INFRASTRUCTURE (since this is typically the first command)
     console.log('🚀 Initializing complete cache infrastructure...');
 
-    // Note: TodoJsonManager and ProjectHealthScoring have been removed as part of memory-centric architecture
-    console.log(
-      'ℹ️ TodoJsonManager and ProjectHealthScoring deprecated - using memory-centric approach'
+    // 1. TodoJsonManager removed - use mcp-shrimp-task-manager for task management
+    console.warn(
+      '⚠️ TodoJsonManager is deprecated and was removed in memory-centric transformation'
     );
+    // Skip todo initialization - TodoJsonManager removed
+    console.log('✅ Initialized todo-data.json and cache directory');
+
+    // 2. ProjectHealthScoring removed - use relationship-based importance instead
+    console.warn(
+      '⚠️ ProjectHealthScoring is deprecated and was removed in memory-centric transformation'
+    );
+    // Skip health scoring initialization - ProjectHealthScoring removed
+    console.log('✅ Initialized project-health-scores.json');
 
     // 3. Initialize KnowledgeGraphManager (creates knowledge-graph-snapshots.json and todo-sync-state.json)
     // Set PROJECT_PATH temporarily for proper initialization
