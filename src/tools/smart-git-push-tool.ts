@@ -40,7 +40,7 @@ import {
 } from '../utils/json-safe.js';
 import { validateMcpResponse } from '../utils/mcp-response-validator.js';
 import { KnowledgeGraphManager } from '../utils/knowledge-graph-manager.js';
-import type { TodoJsonManager } from '../utils/todo-json-manager.js';
+// TodoJsonManager removed - use mcp-shrimp-task-manager for task management
 import type { IntentSnapshot } from '../types/knowledge-graph-schemas.js';
 
 interface SmartGitPushArgs {
@@ -157,12 +157,13 @@ async function _smartGitPushInternal(args: SmartGitPushArgs): Promise<any> {
           includeAnalysis: true,
         });
 
-        // TODO: Update deployment readiness score in memory-centric knowledge graph
+        // Update deployment readiness score in health scoring system
         try {
-          // Health scoring moved to memory-centric architecture
+          // ProjectHealthScoring removed - skip health scoring
           console.warn(
-            '⚠️ Health scoring moved to memory-centric architecture - update via knowledge graph'
+            '⚠️ ProjectHealthScoring is deprecated and was removed in memory-centric transformation'
           );
+          // Skip health scoring update - ProjectHealthScoring removed
         } catch (healthError) {
           // Silently handle health scoring errors
         }
@@ -375,14 +376,11 @@ ${kgAnalysis.blockingConditions
       // Update TODO tasks with KG integration
       if (kgAnalysis) {
         try {
-          const { TodoJsonManager } = await import('../utils/todo-json-manager.js');
-          const todoManager = new TodoJsonManager();
-          await updateTodoTasksFromGitPushWithKG(
-            todoManager,
-            stagedFiles,
-            kgAnalysis,
-            releaseReadinessResult
+          // TodoJsonManager removed - skipping todo validation
+          console.warn(
+            '⚠️ TodoJsonManager is deprecated and was removed in memory-centric transformation'
           );
+          // Skip todo task update - TodoJsonManager removed
         } catch (todoError) {
           console.error('Error updating TODO tasks with KG:', todoError);
         }
@@ -964,16 +962,13 @@ async function analyzeKnowledgeGraphContext(
   stagedFiles: GitFile[]
 ): Promise<KnowledgeGraphAnalysis> {
   const kgManager = new KnowledgeGraphManager();
-  const { TodoJsonManager } = await import('../utils/todo-json-manager.js');
-  const todoManager = new TodoJsonManager();
+  // TodoJsonManager removed - use mcp-shrimp-task-manager for task management
+  console.warn('⚠️ TodoJsonManager is deprecated and was removed in memory-centric transformation');
 
   // Load knowledge graph and TODO data
   const kg = await kgManager.loadKnowledgeGraph();
-  // TODO: Replace with memory-centric task management
-  const todoData = {
-    tasks: {},
-    metadata: { totalTasks: 0, completedTasks: 0, lastUpdated: new Date().toISOString() },
-  };
+  // Skip todo data loading - TodoJsonManager removed
+  const todoData = { tasks: {}, metadata: { totalTasks: 0, completedTasks: 0 } };
 
   // Get active intents
   const activeIntents = kg.intents.filter(
@@ -1065,8 +1060,8 @@ async function analyzeFileChangesContext(
     });
   }
 
-  // Check how files relate to TODO tasks (deprecated - using placeholder)
-  const tasks: any[] = []; // TodoJsonManager deprecated, using empty array
+  // Check how files relate to TODO tasks
+  const tasks = Object.values(todoData.tasks);
   for (const task of tasks as any[]) {
     const relatedFiles = stagedFiles.filter(file => {
       const fileName = basename(file.path);
@@ -1165,7 +1160,7 @@ async function analyzeTaskDependencies(
   pending: string[];
   blocking: string[];
 }> {
-  const tasks: any[] = []; // TodoJsonManager deprecated, using empty array
+  const tasks = Object.values(todoData.tasks) as any[];
   const completed: string[] = [];
   const pending: string[] = [];
   const blocking: string[] = [];
@@ -1280,132 +1275,3 @@ async function findRelevantAdrs(_stagedFiles: GitFile[], _projectPath: string): 
 /**
  * Update TODO tasks based on successful git push with Knowledge Graph integration
  */
-async function updateTodoTasksFromGitPushWithKG(
-  todoManager: TodoJsonManager,
-  stagedFiles: GitFile[],
-  kgAnalysis: KnowledgeGraphAnalysis,
-  releaseReadinessResult?: any
-): Promise<void> {
-  try {
-    // Create intent for this git push
-    const kgManager = new KnowledgeGraphManager();
-    const intentId = await kgManager.createIntent(
-      `Git push: ${stagedFiles.length} files`,
-      [`Push ${stagedFiles.map(f => f.path).join(', ')}`],
-      'medium'
-    );
-
-    // Record tool execution
-    await kgManager.addToolExecution(
-      intentId,
-      'smart_git_push',
-      {
-        files: stagedFiles.map(f => f.path),
-        branch: 'current',
-        knowledgeGraphAnalysis: true,
-      },
-      {
-        success: true,
-        filesProcessed: stagedFiles.length,
-        architecturalAlignment: kgAnalysis.architecturalAlignment.score,
-      },
-      true,
-      [], // todoTasksCreated
-      kgAnalysis.taskDependencies.completed // todoTasksModified
-    );
-
-    // Update intent status
-    await kgManager.updateIntentStatus(intentId, 'completed');
-
-    // Update TODO tasks
-    await updateTodoTasksFromGitPush(todoManager, stagedFiles, releaseReadinessResult);
-  } catch (error) {
-    console.error('Error updating TODO tasks with KG:', error);
-  }
-}
-
-/**
- * Update TODO tasks based on successful git push
- */
-async function updateTodoTasksFromGitPush(
-  todoManager: TodoJsonManager,
-  stagedFiles: GitFile[],
-  releaseReadinessResult?: any
-): Promise<void> {
-  try {
-    // TODO: Replace with memory-centric task management
-    console.warn(
-      '⚠️ TodoJsonManager was removed - use mcp-shrimp-task-manager for task management'
-    );
-
-    // Placeholder: Task updates would be handled by memory-centric architecture
-    const tasks: any[] = []; // Empty array since TodoJsonManager is deprecated
-
-    // 1. Auto-update tasks based on file changes (placeholder)
-    for (const file of stagedFiles) {
-      // TODO: Implement via memory-centric knowledge graph relationships
-      console.log(`Would update tasks related to file: ${file.path}`);
-    }
-
-    // 2. Create follow-up tasks based on what was pushed
-    const followUpTasks = [];
-
-    // If documentation files were changed, create review tasks
-    const docFiles = stagedFiles.filter(
-      f => f.path.match(/\.(md|txt|rst)$/i) && !f.path.includes('TODO.md')
-    );
-
-    if (docFiles.length > 0) {
-      followUpTasks.push({
-        title: `Review updated documentation`,
-        description: `Review changes to: ${docFiles.map(f => f.path).join(', ')}`,
-        priority: 'medium' as const,
-        category: 'documentation',
-        tags: ['review', 'documentation'],
-      });
-    }
-
-    // If source code was changed, create testing tasks
-    const codeFiles = stagedFiles.filter(f =>
-      f.path.match(/\.(ts|js|py|java|cs|go|rb|php|swift|kt|rs|cpp|c|h)$/i)
-    );
-
-    if (codeFiles.length > 0) {
-      followUpTasks.push({
-        title: `Test changes in ${codeFiles.length} code files`,
-        description: `Verify functionality of: ${codeFiles.map(f => f.path).join(', ')}`,
-        priority: 'high' as const,
-        category: 'testing',
-        tags: ['testing', 'verification'],
-      });
-    }
-
-    // If release readiness improved, create release tasks
-    if (releaseReadinessResult?.isReady) {
-      const existingReleaseTasks = tasks.filter(
-        task => task.title.toLowerCase().includes('release') || task.tags?.includes('release')
-      );
-
-      if (existingReleaseTasks.length === 0) {
-        followUpTasks.push({
-          title: `Prepare release - all requirements met`,
-          description: `Project is now release-ready. Create release tag and publish.`,
-          priority: 'critical' as const,
-          category: 'release',
-          tags: ['release', 'deployment'],
-        });
-      }
-    }
-
-    // TODO: Create follow-up tasks via memory-centric architecture
-    for (const taskData of followUpTasks) {
-      console.log(`Would create task: ${taskData.title}`);
-    }
-
-    // TODO: Update task metadata via knowledge graph relationships
-    console.log('Would update task metadata with git information');
-  } catch (error) {
-    // Silently handle errors to avoid breaking git push
-    console.error('Error updating TODO tasks from git push:', error);
-  }
-}

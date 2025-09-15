@@ -20,11 +20,13 @@ import { McpAdrError } from '../types/index.js';
 
 export class MemoryTransformer {
   private logger: EnhancedLogger;
-  private memoryManager: MemoryEntityManager;
+  // @ts-ignore - keeping for future memory persistence integration
+  private _memoryManager: MemoryEntityManager;
 
   constructor(memoryManager: MemoryEntityManager) {
-    this.logger = new EnhancedLogger({});
-    this.memoryManager = memoryManager;
+    this.logger = new EnhancedLogger();
+    this._memoryManager = memoryManager;
+    // Note: memoryManager is kept for future memory persistence integration
   }
 
   /**
@@ -157,8 +159,10 @@ export class MemoryTransformer {
         const sourceEntity = entities[i];
         const targetEntity = entities[j];
 
-        const inferredRelationships = this.inferAdrRelationships(sourceEntity, targetEntity);
-        relationships.push(...inferredRelationships);
+        if (sourceEntity && targetEntity) {
+          const inferredRelationships = this.inferAdrRelationships(sourceEntity, targetEntity);
+          relationships.push(...inferredRelationships);
+        }
       }
     }
 
@@ -277,17 +281,17 @@ export class MemoryTransformer {
     const risksMatch = consequencesText.match(/(?:risks?|concerns?)[:\s]*([^#]*?)$/is);
 
     // Extract positive consequences
-    if (positiveMatch) {
+    if (positiveMatch && positiveMatch[1]) {
       consequences.positive = this.extractListItems(positiveMatch[1]);
     }
 
     // Extract negative consequences
-    if (negativeMatch) {
+    if (negativeMatch && negativeMatch[1]) {
       consequences.negative = this.extractListItems(negativeMatch[1]);
     }
 
     // Extract risks
-    if (risksMatch) {
+    if (risksMatch && risksMatch[1]) {
       consequences.risks = this.extractListItems(risksMatch[1]);
     }
 
@@ -336,14 +340,16 @@ export class MemoryTransformer {
     const taskSectionMatch = content.match(
       /(?:implementation tasks?|tasks?|todo)[:\s]*([^#]*?)(?=\n##|\n#|$)/is
     );
-    if (taskSectionMatch) {
+    if (taskSectionMatch && taskSectionMatch[1]) {
       tasks.push(...this.extractListItems(taskSectionMatch[1]));
     }
 
     // Look for checkbox items
     const checkboxMatches = content.matchAll(/- \[[ x]\] (.+)/gi);
     for (const match of checkboxMatches) {
-      tasks.push(match[1].trim());
+      if (match[1]) {
+        tasks.push(match[1].trim());
+      }
     }
 
     return tasks;
@@ -597,7 +603,7 @@ export class MemoryTransformer {
     const alternativesMatch = content.match(
       /(?:alternatives?|options?|considered)[:\s]*([^#]*?)(?=\n##|\n#|$)/is
     );
-    if (alternativesMatch) {
+    if (alternativesMatch && alternativesMatch[1]) {
       const alternativesText = alternativesMatch[1];
       const items = this.extractListItems(alternativesText);
 
@@ -706,12 +712,13 @@ export class MemoryTransformer {
 
   private extractTagsFromContent(content: string): string[] {
     const tags: string[] = [];
-    const contentLower = content.toLowerCase();
 
     // Extract hashtags
     const hashtagMatches = content.matchAll(/#(\w+)/g);
     for (const match of hashtagMatches) {
-      tags.push(match[1]);
+      if (match[1]) {
+        tags.push(match[1]);
+      }
     }
 
     // Extract technical terms
