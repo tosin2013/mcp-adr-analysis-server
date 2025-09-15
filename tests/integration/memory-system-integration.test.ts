@@ -53,6 +53,215 @@ jest.mock('../../src/utils/enhanced-logging.js', () => ({
   })),
 }));
 
+// Helper functions for creating valid test entities (matching memory-entity-manager.test.ts)
+function createValidADREntity(overrides: any = {}) {
+  return {
+    type: 'architectural_decision' as const,
+    title: 'Test ADR Entity',
+    description: 'A test architectural decision',
+    confidence: 0.9,
+    tags: ['database', 'architecture'],
+    context: {
+      projectPhase: 'design',
+      businessDomain: 'ecommerce',
+      technicalStack: ['Node.js', 'TypeScript'],
+      environmentalFactors: ['cloud-native', 'high-availability'],
+      stakeholders: ['engineering-team', 'devops-team'],
+    },
+    relationships: [],
+    accessPattern: {
+      accessCount: 1,
+      lastAccessed: '2024-01-01T00:00:00.000Z',
+      accessContext: ['test', 'integration'],
+    },
+    evolution: {
+      origin: 'created' as const,
+      transformations: [
+        {
+          timestamp: '2024-01-01T00:00:00.000Z',
+          type: 'creation',
+          description: 'Initial entity creation for testing',
+          agent: 'test-suite',
+        },
+      ],
+    },
+    validation: {
+      isVerified: true,
+      verificationMethod: 'automated-test',
+      verificationTimestamp: '2024-01-01T00:00:00.000Z',
+      conflictResolution: 'none',
+    },
+    decisionData: {
+      status: 'accepted' as const,
+      context:
+        'We need to choose a database technology for our cloud-native ecommerce platform requiring strong consistency guarantees.',
+      decision:
+        'We will use PostgreSQL as our primary database technology with read replicas for scaling read operations.',
+      consequences: {
+        positive: ['Strong data consistency', 'Mature ecosystem', 'Rich SQL support'],
+        negative: ['Complex horizontal scaling', 'Higher operational overhead'],
+        risks: ['Scaling bottlenecks', 'Single point of failure'],
+      },
+      alternatives: [
+        {
+          name: 'MongoDB',
+          description: 'Document database with horizontal scaling capabilities',
+          tradeoffs: 'Eventual consistency not suitable for financial data integrity requirements',
+        },
+      ],
+      implementationStatus: 'not_started' as const,
+      implementationTasks: [
+        'Set up PostgreSQL cluster',
+        'Configure read replicas',
+        'Implement connection pooling',
+        'Set up monitoring',
+      ],
+      reviewHistory: [
+        {
+          timestamp: '2024-01-01T00:00:00.000Z',
+          reviewer: 'tech-lead',
+          decision: 'approve' as const,
+          comments: 'Approved for production use with recommended scaling strategy',
+        },
+      ],
+    },
+    ...overrides,
+  };
+}
+
+function createValidCodeComponentEntity(overrides: any = {}) {
+  return {
+    type: 'code_component' as const,
+    title: 'Test Code Component',
+    description: 'A test code component',
+    confidence: 0.8,
+    tags: ['component', 'react'],
+    context: {
+      projectPhase: 'development',
+      businessDomain: 'frontend',
+      technicalStack: ['react', 'typescript'],
+      environmentalFactors: ['browser'],
+      stakeholders: ['frontend-team'],
+    },
+    relationships: [],
+    accessPattern: {
+      accessCount: 1,
+      lastAccessed: '2024-01-01T00:00:00.000Z',
+      accessContext: ['development', 'test'],
+    },
+    evolution: {
+      origin: 'created' as const,
+      transformations: [
+        {
+          timestamp: '2024-01-01T00:00:00.000Z',
+          type: 'creation',
+          description: 'Initial component creation',
+          agent: 'test-suite',
+        },
+      ],
+    },
+    validation: {
+      isVerified: true,
+      verificationMethod: 'automated-test',
+      verificationTimestamp: '2024-01-01T00:00:00.000Z',
+      conflictResolution: 'none',
+    },
+    componentData: {
+      codebase: 'frontend',
+      filePath: 'src/components/TestComponent.tsx',
+      language: 'typescript',
+      framework: 'react',
+      architecture: {
+        layer: 'presentation',
+        pattern: 'component',
+        dependencies: ['react', '@types/react'],
+        interfaces: ['ComponentProps'],
+      },
+      qualityMetrics: {
+        complexity: 3,
+        testCoverage: 85,
+        maintainabilityIndex: 75,
+        codeQuality: 'good',
+      },
+      documentation: {
+        hasDocumentation: true,
+        documentationQuality: 'comprehensive',
+        examples: ['Basic usage', 'With props'],
+      },
+    },
+    ...overrides,
+  };
+}
+
+function createValidKnowledgeArtifactEntity(overrides: any = {}) {
+  return {
+    type: 'knowledge_artifact' as const,
+    title: 'Test Knowledge Artifact',
+    description: 'A test knowledge artifact',
+    confidence: 0.8,
+    tags: ['documentation', 'knowledge'],
+    context: {
+      projectPhase: 'documentation',
+      businessDomain: 'knowledge-management',
+      technicalStack: ['markdown', 'docs'],
+      environmentalFactors: ['internal'],
+      stakeholders: ['documentation-team'],
+    },
+    relationships: [],
+    accessPattern: {
+      accessCount: 1,
+      lastAccessed: '2024-01-01T00:00:00.000Z',
+      accessContext: ['documentation', 'reference'],
+    },
+    evolution: {
+      origin: 'created' as const,
+      transformations: [
+        {
+          timestamp: '2024-01-01T00:00:00.000Z',
+          type: 'creation',
+          description: 'Initial artifact creation',
+          agent: 'test-suite',
+        },
+      ],
+    },
+    validation: {
+      isVerified: true,
+      verificationMethod: 'automated-test',
+      verificationTimestamp: '2024-01-01T00:00:00.000Z',
+      conflictResolution: 'none',
+    },
+    artifactData: {
+      artifactType: 'documentation' as const,
+      content:
+        'This is a test knowledge artifact containing important information for the development team.',
+      format: 'markdown' as const,
+      sourceReliability: 0.95,
+      applicabilityScope: ['development', 'testing', 'documentation'],
+      lastValidated: '2024-01-01T00:00:00.000Z',
+      keyInsights: [
+        'This artifact provides essential knowledge for team productivity',
+        'Regular updates ensure information accuracy',
+        'Proper categorization improves discoverability',
+      ],
+      actionableItems: [
+        {
+          action: 'Review and update content quarterly',
+          priority: 'medium' as const,
+          timeframe: '3 months',
+          dependencies: ['subject-matter-expert-review'],
+        },
+        {
+          action: 'Validate external references',
+          priority: 'low' as const,
+          timeframe: '6 months',
+          dependencies: ['link-checker-tool'],
+        },
+      ],
+    },
+    ...overrides,
+  };
+}
+
 describe('Memory System Integration', () => {
   let memoryManager: MemoryEntityManager;
   let memoryTransformer: MemoryTransformer;
@@ -427,23 +636,25 @@ We will use PostgreSQL as our primary database with proper indexing strategy.
   describe('memory persistence integration', () => {
     it('should persist and reload memory data correctly', async () => {
       // Create test entity
-      const testEntity = await memoryManager.upsertEntity({
-        type: 'architectural_decision',
-        title: 'Test Persistence',
-        description: 'Testing persistence functionality',
-        confidence: 0.9,
-      });
+      const testEntity = await memoryManager.upsertEntity(
+        createValidADREntity({
+          title: 'Test Persistence',
+          description: 'Testing persistence functionality',
+          confidence: 0.9,
+        })
+      );
 
       // Mock time progression to trigger persistence
       const now = Date.now();
       jest.spyOn(Date, 'now').mockReturnValue(now + 31 * 60 * 1000); // 31 minutes later
 
       // Create another entity to trigger persistence
-      await memoryManager.upsertEntity({
-        type: 'knowledge_artifact',
-        title: 'Another Entity',
-        description: 'Trigger persistence',
-      });
+      await memoryManager.upsertEntity(
+        createValidKnowledgeArtifactEntity({
+          title: 'Another Entity',
+          description: 'Trigger persistence',
+        })
+      );
 
       // Verify persistence was attempted
       expect(mockFs.writeFile).toHaveBeenCalledWith(
@@ -474,11 +685,12 @@ We will use PostgreSQL as our primary database with proper indexing strategy.
 
       // Should not throw when persistence fails
       await expect(
-        memoryManager.upsertEntity({
-          type: 'architectural_decision',
-          title: 'Test Entity',
-          description: 'Test description',
-        })
+        memoryManager.upsertEntity(
+          createValidADREntity({
+            title: 'Test Entity',
+            description: 'Test description',
+          })
+        )
       ).resolves.not.toThrow();
     });
   });
@@ -487,35 +699,27 @@ We will use PostgreSQL as our primary database with proper indexing strategy.
     it('should correctly infer and manage complex relationships', async () => {
       // Create entities with various relationship patterns
       const entities = await Promise.all([
-        memoryManager.upsertEntity({
-          type: 'architectural_decision',
-          title: 'Frontend Framework Choice',
-          description: 'Decision about React frontend',
-          tags: ['frontend', 'react'],
-          context: {
-            technicalStack: ['react', 'typescript'],
-            businessDomain: 'ecommerce',
-          },
-        }),
-        memoryManager.upsertEntity({
-          type: 'architectural_decision',
-          title: 'Component Library',
-          description: 'Decision about React component library',
-          tags: ['frontend', 'react', 'components'],
-          context: {
-            technicalStack: ['react', 'typescript'],
-            businessDomain: 'ecommerce',
-          },
-        }),
-        memoryManager.upsertEntity({
-          type: 'code_component',
-          title: 'Button Component',
-          description: 'Reusable button component',
-          tags: ['react', 'components'],
-          context: {
-            technicalStack: ['react'],
-          },
-        }),
+        memoryManager.upsertEntity(
+          createValidADREntity({
+            title: 'Frontend Framework Choice',
+            description: 'Decision about React frontend',
+            tags: ['frontend', 'react'],
+          })
+        ),
+        memoryManager.upsertEntity(
+          createValidADREntity({
+            title: 'Component Library',
+            description: 'Decision about React component library',
+            tags: ['frontend', 'react', 'components'],
+          })
+        ),
+        memoryManager.upsertEntity(
+          createValidCodeComponentEntity({
+            title: 'Button Component',
+            description: 'Reusable button component',
+            tags: ['react', 'components'],
+          })
+        ),
       ]);
 
       // Create explicit relationships
@@ -554,31 +758,34 @@ We will use PostgreSQL as our primary database with proper indexing strategy.
   describe('intelligence system integration', () => {
     it('should evolve intelligence based on system usage', async () => {
       // Create initial entities
-      await memoryManager.upsertEntity({
-        type: 'architectural_decision',
-        title: 'Initial Decision',
-        description: 'First decision',
-        confidence: 0.5, // Low confidence
-      });
+      await memoryManager.upsertEntity(
+        createValidADREntity({
+          title: 'Initial Decision',
+          description: 'First decision',
+          confidence: 0.5, // Low confidence
+        })
+      );
 
       // Get initial intelligence
       const initialIntelligence = await memoryManager.getIntelligence();
       expect(initialIntelligence.adaptiveRecommendations.knowledgeGaps.length).toBeGreaterThan(0);
 
       // Add more entities to improve the system
-      await memoryManager.upsertEntity({
-        type: 'architectural_decision',
-        title: 'Well Documented Decision',
-        description: 'Comprehensive decision with high confidence',
-        confidence: 0.95,
-      });
+      await memoryManager.upsertEntity(
+        createValidADREntity({
+          title: 'Well Documented Decision',
+          description: 'Comprehensive decision with high confidence',
+          confidence: 0.95,
+        })
+      );
 
-      await memoryManager.upsertEntity({
-        type: 'knowledge_artifact',
-        title: 'Supporting Documentation',
-        description: 'Documentation that supports decisions',
-        confidence: 0.9,
-      });
+      await memoryManager.upsertEntity(
+        createValidKnowledgeArtifactEntity({
+          title: 'Supporting Documentation',
+          description: 'Documentation that supports decisions',
+          confidence: 0.9,
+        })
+      );
 
       // Get updated intelligence
       const updatedIntelligence = await memoryManager.getIntelligence();
@@ -633,11 +840,12 @@ We will use PostgreSQL as our primary database with proper indexing strategy.
     it('should maintain system consistency during concurrent operations', async () => {
       // Simulate concurrent entity creation
       const concurrentOperations = Array.from({ length: 5 }, (_, i) =>
-        memoryManager.upsertEntity({
-          type: 'architectural_decision',
-          title: `Concurrent Decision ${i}`,
-          description: `Decision created concurrently ${i}`,
-        })
+        memoryManager.upsertEntity(
+          createValidADREntity({
+            title: `Concurrent Decision ${i}`,
+            description: `Decision created concurrently ${i}`,
+          })
+        )
       );
 
       const results = await Promise.all(concurrentOperations);
@@ -657,13 +865,14 @@ We will use PostgreSQL as our primary database with proper indexing strategy.
 
       // Create many entities
       for (let i = 0; i < entityCount; i++) {
-        const entity = await memoryManager.upsertEntity({
-          type: 'architectural_decision',
-          title: `Decision ${i}`,
-          description: `Test decision number ${i}`,
-          tags: [`tag${i % 10}`, 'test'],
-          confidence: 0.7 + (i % 3) * 0.1,
-        });
+        const entity = await memoryManager.upsertEntity(
+          createValidADREntity({
+            title: `Decision ${i}`,
+            description: `Test decision number ${i}`,
+            tags: [`tag${i % 10}`, 'test'],
+            confidence: 0.7 + (i % 3) * 0.1,
+          })
+        );
         entities.push(entity);
       }
 
@@ -688,11 +897,12 @@ We will use PostgreSQL as our primary database with proper indexing strategy.
       // Create a network of related entities
       const entities: MemoryEntity[] = [];
       for (let i = 0; i < 10; i++) {
-        const entity = await memoryManager.upsertEntity({
-          type: 'architectural_decision',
-          title: `Network Node ${i}`,
-          description: `Node in relationship network ${i}`,
-        });
+        const entity = await memoryManager.upsertEntity(
+          createValidADREntity({
+            title: `Network Node ${i}`,
+            description: `Node in relationship network ${i}`,
+          })
+        );
         entities.push(entity);
       }
 

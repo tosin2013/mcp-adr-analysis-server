@@ -5,8 +5,28 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+
+// Mock fs module first
+const mockFsPromises = {
+  access: jest.fn(),
+  mkdir: jest.fn(),
+  readFile: jest.fn(),
+  writeFile: jest.fn(),
+};
+
+jest.mock('fs', () => ({
+  promises: mockFsPromises,
+}));
+
+// Mock crypto module first
+const mockCrypto = {
+  randomUUID: jest.fn(() => 'test-uuid-123'),
+};
+
+jest.mock('crypto', () => mockCrypto);
+
+// Import after mocking
 import * as path from 'path';
-import crypto from 'crypto';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import {
   MemoryEntity,
@@ -17,24 +37,7 @@ import {
   KnowledgeArtifactMemory,
 } from '../../src/types/memory-entities.js';
 
-// Mock fs module
-jest.mock('fs', () => ({
-  promises: {
-    access: jest.fn(),
-    mkdir: jest.fn(),
-    readFile: jest.fn(),
-    writeFile: jest.fn(),
-  },
-}));
-
-// Import after mocking
-import * as fs from 'fs';
-const mockFs = fs.promises as jest.Mocked<typeof fs.promises>;
-
-// Mock crypto
-jest.mock('crypto', () => ({
-  randomUUID: jest.fn(() => 'test-uuid-123'),
-}));
+const mockFs = mockFsPromises;
 
 // Mock config
 jest.mock('../../src/utils/config.js', () => ({
@@ -54,6 +57,112 @@ jest.mock('../../src/utils/enhanced-logging.js', () => ({
   })),
 }));
 
+// Helper functions for creating valid test entities
+function createValidADREntity(overrides: any = {}) {
+  return {
+    type: 'architectural_decision' as const,
+    title: 'Test ADR Entity',
+    description: 'A test architectural decision',
+    confidence: 0.9,
+    decisionData: {
+      status: 'proposed' as const,
+      context:
+        'We are building a microservices architecture and need to select a database technology for high-availability requirements.',
+      decision:
+        'We will use PostgreSQL as our primary database technology for the microservices architecture.',
+      consequences: {
+        positive: [
+          'Strong ACID compliance',
+          'Rich query capabilities',
+          'Excellent ecosystem support',
+        ],
+        negative: ['More complex horizontal scaling', 'Higher operational overhead'],
+        risks: ['Single point of failure if not properly clustered', 'Learning curve for team'],
+      },
+      alternatives: [
+        {
+          name: 'PostgreSQL',
+          description: 'Relational database with strong consistency',
+          tradeoffs: 'Strong consistency vs horizontal scalability',
+        },
+        {
+          name: 'MongoDB',
+          description: 'Document database with flexible schema',
+          tradeoffs: 'Flexibility vs consistency guarantees',
+        },
+      ],
+      implementationStatus: 'not_started' as const,
+      implementationTasks: ['Setup database cluster', 'Configure connection pooling'],
+      reviewHistory: [],
+    },
+    ...overrides,
+  };
+}
+
+function createValidKnowledgeArtifactEntity(overrides: any = {}) {
+  return {
+    type: 'knowledge_artifact' as const,
+    title: 'Test Knowledge Artifact',
+    description: 'A test knowledge artifact',
+    confidence: 0.8,
+    artifactData: {
+      artifactType: 'documentation' as const,
+      content: 'Test content',
+      format: 'markdown' as const,
+      sourceReliability: 0.8,
+      applicabilityScope: ['backend', 'api'],
+      keyInsights: ['Key insight 1', 'Key insight 2'],
+      actionableItems: [
+        {
+          action: 'Update documentation',
+          priority: 'medium' as const,
+          timeframe: '1 week',
+          dependencies: [],
+        },
+      ],
+    },
+    ...overrides,
+  };
+}
+
+function createValidCodeComponentEntity(overrides: any = {}) {
+  return {
+    type: 'code_component' as const,
+    title: 'Test Code Component',
+    description: 'A test code component',
+    confidence: 0.85,
+    componentData: {
+      filePath: '/src/components/TestComponent.ts',
+      componentType: 'class' as const,
+      language: 'TypeScript',
+      size: {
+        lines: 150,
+        complexity: 5,
+        dependencies: 3,
+      },
+      qualityMetrics: {
+        maintainability: 0.8,
+        testCoverage: 0.9,
+        performance: 0.85,
+        security: 0.9,
+      },
+      architecturalRole: 'Business logic component',
+      businessValue: 'Core functionality implementation',
+      technicalDebt: [],
+      dependencies: ['lodash', 'react'],
+      publicInterface: ['render', 'update'],
+      changeFrequency: 'medium' as const,
+      riskProfile: {
+        technicalRisk: 'low' as const,
+        businessRisk: 'medium' as const,
+        changeRisk: 'low' as const,
+        mitigationStrategies: ['Unit testing', 'Code review'],
+      },
+    },
+    ...overrides,
+  };
+}
+
 describe('MemoryEntityManager', () => {
   let memoryManager: MemoryEntityManager;
   let mockDate: jest.SpyInstance;
@@ -67,6 +176,9 @@ describe('MemoryEntityManager', () => {
       .spyOn(Date.prototype, 'toISOString')
       .mockReturnValue('2024-01-01T00:00:00.000Z');
     jest.spyOn(Date, 'now').mockReturnValue(1704067200000); // 2024-01-01
+
+    // Reset crypto mock
+    mockCrypto.randomUUID.mockReturnValue('test-uuid-123');
 
     // Mock filesystem operations
     mockFs.access.mockResolvedValue(undefined);
@@ -160,16 +272,13 @@ describe('MemoryEntityManager', () => {
 
     describe('upsertEntity', () => {
       it('should create a new entity with all required fields', async () => {
-        const entityData = {
-          type: 'architectural_decision' as const,
-          title: 'Test ADR Entity',
-          description: 'A test architectural decision',
-          confidence: 0.9,
-        };
+        const entityData = createValidADREntity();
 
         const result = await memoryManager.upsertEntity(entityData);
 
-        expect(result.id).toBe('test-uuid-123');
+        expect(result.id).toMatch(
+          /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+        ); // UUID v4 format
         expect(result.type).toBe('architectural_decision');
         expect(result.title).toBe('Test ADR Entity');
         expect(result.description).toBe('A test architectural decision');
@@ -178,25 +287,30 @@ describe('MemoryEntityManager', () => {
         expect(result.lastModified).toBe('2024-01-01T00:00:00.000Z');
         expect(result.version).toBe(1);
         expect(result.accessPattern.accessCount).toBe(1);
+
+        // Validate the schema-specific data structure
+        expect(result.decisionData).toBeDefined();
+        expect(result.decisionData.status).toBe('proposed');
+        expect(result.decisionData.decision).toContain('PostgreSQL');
+        expect(result.decisionData.consequences).toBeDefined();
+        expect(result.decisionData.alternatives).toHaveLength(2);
       });
 
       it('should update an existing entity', async () => {
         // First create an entity
-        const createData = {
-          type: 'knowledge_artifact' as const,
+        const createData = createValidKnowledgeArtifactEntity({
           title: 'Original Title',
           description: 'Original description',
-        };
+        });
         const created = await memoryManager.upsertEntity(createData);
 
         // Update the entity
-        const updateData = {
+        const updateData = createValidKnowledgeArtifactEntity({
           id: created.id,
-          type: 'knowledge_artifact' as const,
           title: 'Updated Title',
           description: 'Updated description',
           confidence: 0.95,
-        };
+        });
         const updated = await memoryManager.upsertEntity(updateData);
 
         expect(updated.id).toBe(created.id);
@@ -209,11 +323,10 @@ describe('MemoryEntityManager', () => {
       });
 
       it('should apply default values correctly', async () => {
-        const minimalData = {
-          type: 'code_component' as const,
+        const minimalData = createValidCodeComponentEntity({
           title: 'Test Component',
           description: 'Test description',
-        };
+        });
 
         const result = await memoryManager.upsertEntity(minimalData);
 
