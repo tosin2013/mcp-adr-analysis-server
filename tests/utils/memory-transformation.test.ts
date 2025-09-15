@@ -4,7 +4,7 @@
  * Test coverage for ADR to memory entity transformation
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import crypto from 'crypto';
 import { MemoryTransformer } from '../../src/utils/memory-transformation.js';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
@@ -14,9 +14,6 @@ import {
   KnowledgeArtifactMemory,
   MemoryRelationship,
 } from '../../src/types/memory-entities.js';
-
-// Import crypto to spy on it
-import crypto from 'crypto';
 
 // Mock enhanced logging
 jest.mock('../../src/utils/enhanced-logging.js', () => ({
@@ -43,8 +40,8 @@ describe('MemoryTransformer', () => {
     jest.clearAllMocks();
     transformer = new MemoryTransformer(mockMemoryManager);
 
-    // Mock crypto randomUUID
-    jest.spyOn(crypto, 'randomUUID').mockReturnValue('test-uuid-123');
+    // Mock crypto randomUUID with proper UUID format
+    jest.spyOn(crypto, 'randomUUID').mockReturnValue('550e8400-e29b-41d4-a716-446655440000');
 
     // Mock date to be consistent
     mockDate = jest
@@ -76,7 +73,7 @@ describe('MemoryTransformer', () => {
 
       const result = await transformer.transformAdrToMemory(adr);
 
-      expect(result.id).toBe('test-uuid-123');
+      expect(result.id).toBe('550e8400-e29b-41d4-a716-446655440000');
       expect(result.type).toBe('architectural_decision');
       expect(result.title).toBe('Use React for Frontend');
       expect(result.description).toBe('We need a modern frontend framework');
@@ -365,6 +362,9 @@ We chose React.
     });
 
     it('should handle ADR date parsing', async () => {
+      // Create a test that doesn't rely on date mocking for this specific test
+      mockDate.mockRestore();
+
       const adr: DiscoveredAdr = {
         filename: 'test.md',
         number: 1,
@@ -380,6 +380,11 @@ We chose React.
       expect(result.decisionData.reviewHistory).toHaveLength(1);
       expect(result.decisionData.reviewHistory[0].timestamp).toBe('2023-12-15T00:00:00.000Z');
       expect(result.decisionData.reviewHistory[0].decision).toBe('approve');
+
+      // Restore mock for other tests
+      mockDate = jest
+        .spyOn(Date.prototype, 'toISOString')
+        .mockReturnValue('2024-01-01T00:00:00.000Z');
     });
 
     it('should handle transformation errors', async () => {
@@ -513,7 +518,7 @@ We chose React.
 
       const result = await transformer.createKnowledgeArtifact(title, content, artifactType);
 
-      expect(result.id).toBe('test-uuid-123');
+      expect(result.id).toBe('550e8400-e29b-41d4-a716-446655440000');
       expect(result.type).toBe('knowledge_artifact');
       expect(result.title).toBe(title);
       expect(result.artifactData.artifactType).toBe(artifactType);
