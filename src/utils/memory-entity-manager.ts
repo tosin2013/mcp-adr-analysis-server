@@ -818,4 +818,180 @@ export class MemoryEntityManager {
       this.logger.warn('Failed to log evolution event', 'MemoryEntityManager', { event, error });
     }
   }
+
+  /**
+   * Create cross-tool relationships using the MemoryRelationshipMapper
+   */
+  async createCrossToolRelationships(): Promise<{
+    suggestedRelationships: Array<{
+      sourceId: string;
+      targetId: string;
+      type: MemoryRelationship['type'];
+      confidence: number;
+      reasoning: string;
+      evidence: string[];
+    }>;
+    conflicts: Array<{
+      description: string;
+      entityIds: string[];
+      severity: 'low' | 'medium' | 'high';
+      recommendation: string;
+    }>;
+    autoCreatedCount: number;
+  }> {
+    const { MemoryRelationshipMapper } = await import('./memory-relationship-mapper.js');
+    const mapper = new MemoryRelationshipMapper(this);
+
+    this.logger.info('Starting cross-tool relationship creation', 'MemoryEntityManager');
+
+    const result = await mapper.createCrossToolRelationships();
+
+    const autoCreatedCount = result.suggestedRelationships.filter(
+      rel => rel.confidence >= 0.8
+    ).length;
+
+    this.logger.info('Cross-tool relationships created', 'MemoryEntityManager', {
+      totalSuggested: result.suggestedRelationships.length,
+      autoCreated: autoCreatedCount,
+      conflicts: result.conflicts.length,
+    });
+
+    return {
+      ...result,
+      autoCreatedCount,
+    };
+  }
+
+  /**
+   * Infer and suggest new relationships based on existing entity patterns
+   */
+  async inferRelationships(
+    entityTypes?: MemoryEntity['type'][],
+    minConfidence = 0.7
+  ): Promise<{
+    suggestedRelationships: Array<{
+      sourceId: string;
+      targetId: string;
+      type: MemoryRelationship['type'];
+      confidence: number;
+      reasoning: string;
+    }>;
+  }> {
+    const { MemoryRelationshipMapper } = await import('./memory-relationship-mapper.js');
+    const mapper = new MemoryRelationshipMapper(this, { confidenceThreshold: minConfidence });
+
+    const result = await mapper.createCrossToolRelationships();
+
+    // Filter by entity types if specified
+    let filteredSuggestions = result.suggestedRelationships;
+    if (entityTypes && entityTypes.length > 0) {
+      const entityCache = this.entitiesCache;
+      filteredSuggestions = result.suggestedRelationships.filter(rel => {
+        const sourceEntity = entityCache.get(rel.sourceId);
+        const targetEntity = entityCache.get(rel.targetId);
+        return (
+          sourceEntity &&
+          targetEntity &&
+          (entityTypes.includes(sourceEntity.type) || entityTypes.includes(targetEntity.type))
+        );
+      });
+    }
+
+    return {
+      suggestedRelationships: filteredSuggestions.filter(rel => rel.confidence >= minConfidence),
+    };
+  }
+
+  /**
+   * Validate existing relationships and detect conflicts
+   */
+  async validateRelationships(): Promise<{
+    validRelationships: string[];
+    invalidRelationships: Array<{
+      relationshipId: string;
+      reason: string;
+      severity: 'low' | 'medium' | 'high';
+    }>;
+    suggestedActions: Array<{
+      action: 'remove' | 'update' | 'investigate';
+      relationshipId: string;
+      reason: string;
+    }>;
+  }> {
+    const validRelationships: string[] = [];
+    const invalidRelationships: Array<{
+      relationshipId: string;
+      reason: string;
+      severity: 'low' | 'medium' | 'high';
+    }> = [];
+    const suggestedActions: Array<{
+      action: 'remove' | 'update' | 'investigate';
+      relationshipId: string;
+      reason: string;
+    }> = [];
+
+    for (const [relationshipId, relationship] of this.relationshipsCache) {
+      // Check if both entities still exist
+      const sourceExists = this.entitiesCache.has(relationship.sourceId);
+      const targetExists = this.entitiesCache.has(relationship.targetId);
+
+      if (!sourceExists || !targetExists) {
+        invalidRelationships.push({
+          relationshipId,
+          reason: `${!sourceExists ? 'Source' : 'Target'} entity no longer exists`,
+          severity: 'high',
+        });
+        suggestedActions.push({
+          action: 'remove',
+          relationshipId,
+          reason: 'Orphaned relationship - entity deleted',
+        });
+        continue;
+      }
+
+      // Check relationship age and confidence
+      const createdDate = new Date(relationship.created);
+      const now = new Date();
+      const ageInDays = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (ageInDays > 90 && relationship.confidence < 0.6) {
+        invalidRelationships.push({
+          relationshipId,
+          reason: 'Old relationship with low confidence',
+          severity: 'medium',
+        });
+        suggestedActions.push({
+          action: 'investigate',
+          relationshipId,
+          reason: 'Requires validation - old and low confidence',
+        });
+      } else if (relationship.strength < 0.3) {
+        invalidRelationships.push({
+          relationshipId,
+          reason: 'Very low relationship strength',
+          severity: 'low',
+        });
+        suggestedActions.push({
+          action: 'update',
+          relationshipId,
+          reason: 'Consider strengthening or removing weak relationship',
+        });
+      } else {
+        validRelationships.push(relationshipId);
+      }
+    }
+
+    this.logger.info('Relationship validation completed', 'MemoryEntityManager', {
+      total: this.relationshipsCache.size,
+      valid: validRelationships.length,
+      invalid: invalidRelationships.length,
+      suggestedActions: suggestedActions.length,
+    });
+
+    return {
+      validRelationships,
+      invalidRelationships,
+      suggestedActions,
+    };
+  }
 }
