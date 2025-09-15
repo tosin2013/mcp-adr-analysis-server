@@ -35,15 +35,8 @@
     "incremental": true,
     "tsBuildInfoFile": "./dist/.tsbuildinfo"
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    ".mcp-adr-cache",
-    "tests/todo-management-tool-v2.test.ts"
-  ],
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", ".mcp-adr-cache"],
   "ts-node": {
     "esm": true
   }
