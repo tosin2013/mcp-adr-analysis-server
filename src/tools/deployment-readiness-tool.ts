@@ -1,18 +1,21 @@
 /**
- * Deployment Readiness Tool - Version 1.0
+ * Deployment Readiness Tool - Version 2.0
  *
  * Comprehensive deployment validation with test failure tracking, deployment history analysis,
  * and hard blocking integration with smart git push.
+ * Enhanced with memory integration for deployment assessment tracking and pattern recognition.
  *
  * IMPORTANT FOR AI ASSISTANTS: This tool provides:
  * 1. Test Execution Validation: Zero tolerance for test failures
  * 2. Deployment History Analysis: Pattern detection and success rate tracking
  * 3. Code Quality Gates: Mock vs production code detection
  * 4. Hard Blocking: Prevents unsafe deployments via smart git push integration
+ * 5. Memory Integration: Stores deployment assessments as memory entities
  *
- * Cache Dependencies:
- * - CREATES/UPDATES: .mcp-adr-cache/deployment-history.json (deployment tracking)
- * - CREATES/UPDATES: .mcp-adr-cache/deployment-readiness-cache.json (analysis cache)
+ * Memory Dependencies:
+ * - CREATES: deployment_assessment memory entities
+ * - MIGRATES: Existing deployment history to memory entities
+ * - ANALYZES: Deployment patterns across memory entities
  * - INTEGRATES: smart-git-push-tool for deployment blocking
  * - INTEGRATES: todo-file-watcher for automatic task creation
  */
@@ -24,6 +27,8 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join } from 'path';
 import { validateMcpResponse } from '../utils/mcp-response-validator.js';
 import { jsonSafeError } from '../utils/json-safe.js';
+import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
+import { EnhancedLogger } from '../utils/enhanced-logging.js';
 
 // Core schemas
 const DeploymentReadinessSchema = z.object({
@@ -91,6 +96,13 @@ const DeploymentReadinessSchema = z.object({
   emergencyBypass: z.boolean().default(false).describe('Emergency bypass for critical fixes'),
   businessJustification: z.string().optional().describe('Business justification for overrides'),
   approvalRequired: z.boolean().default(true).describe('Require approval for overrides'),
+
+  // Memory Integration
+  enableMemoryIntegration: z.boolean().default(true).describe('Enable memory entity storage'),
+  migrateExistingHistory: z
+    .boolean()
+    .default(false)
+    .describe('Migrate existing deployment history to memory'),
 });
 
 // Result interfaces
@@ -220,6 +232,581 @@ interface DeploymentReadinessResult {
 }
 
 /**
+ * Deployment Memory Manager for tracking deployment assessments and patterns
+ */
+class DeploymentMemoryManager {
+  private memoryManager: MemoryEntityManager;
+  private logger: EnhancedLogger;
+
+  constructor() {
+    this.memoryManager = new MemoryEntityManager();
+    this.logger = new EnhancedLogger();
+  }
+
+  async initialize(): Promise<void> {
+    await this.memoryManager.initialize();
+  }
+
+  /**
+   * Store deployment assessment as memory entity
+   */
+  async storeDeploymentAssessment(
+    environment: string,
+    readinessData: DeploymentReadinessResult,
+    validationResults: any,
+    projectPath?: string
+  ): Promise<string> {
+    try {
+      const assessmentData = {
+        environment: environment as 'development' | 'staging' | 'production' | 'testing',
+        readinessScore: readinessData.overallScore / 100, // Convert to 0-1 range
+        validationResults: {
+          testResults: {
+            passed: readinessData.testValidationResult.testSuitesExecuted.reduce(
+              (sum, suite) => sum + suite.passedTests,
+              0
+            ),
+            failed: readinessData.testValidationResult.failureCount,
+            coverage: readinessData.testValidationResult.coveragePercentage / 100, // Convert to 0-1 range
+            criticalFailures: readinessData.testValidationResult.criticalTestFailures.map(
+              f => f.testName
+            ),
+          },
+          securityValidation: {
+            vulnerabilities: 0, // Default - could be enhanced with actual security scan data
+            securityScore: 0.8, // Default - could be enhanced with actual security analysis
+            criticalIssues: readinessData.criticalBlockers
+              .filter(b => b.category === 'adr_compliance')
+              .map(b => b.title),
+          },
+          performanceValidation: {
+            performanceScore: Math.max(0, (readinessData.overallScore - 20) / 80), // Derived from overall score
+            bottlenecks: [],
+            resourceUtilization: {},
+          },
+        },
+        blockingIssues: [
+          ...readinessData.criticalBlockers.map(b => ({
+            issue: `${b.title}: ${b.description}`,
+            severity: b.severity as 'low' | 'medium' | 'high' | 'critical',
+            category: this.mapBlockerCategory(b.category),
+            resolution: b.resolutionSteps.join('; '),
+            estimatedEffort: b.estimatedResolutionTime,
+          })),
+          ...readinessData.testFailureBlockers.map(b => ({
+            issue: `${b.title}: ${b.description}`,
+            severity: b.severity as 'low' | 'medium' | 'high' | 'critical',
+            category: 'test' as const,
+            resolution: b.resolutionSteps.join('; '),
+            estimatedEffort: b.estimatedResolutionTime,
+          })),
+          ...readinessData.deploymentHistoryBlockers.map(b => ({
+            issue: `${b.title}: ${b.description}`,
+            severity: b.severity as 'low' | 'medium' | 'high' | 'critical',
+            category: 'configuration' as const,
+            resolution: b.resolutionSteps.join('; '),
+            estimatedEffort: b.estimatedResolutionTime,
+          })),
+        ],
+        deploymentStrategy: {
+          type: 'rolling' as const, // Default strategy - could be made configurable
+          rollbackPlan: 'Automated rollback via deployment pipeline with health check validation',
+          monitoringPlan:
+            'Monitor application metrics, error rates, and performance indicators for 30 minutes post-deployment',
+          estimatedDowntime: readinessData.isDeploymentReady
+            ? '0 minutes (rolling deployment)'
+            : 'Cannot deploy - blockers present',
+        },
+        complianceChecks: {
+          adrCompliance: readinessData.adrComplianceResult.score / 100, // Convert to 0-1 range
+          regulatoryCompliance: [], // Could be enhanced with actual compliance data
+          auditTrail: [
+            `Deployment assessment completed at ${new Date().toISOString()}`,
+            `Test validation: ${readinessData.testValidationResult.overallTestStatus}`,
+            `Overall readiness score: ${readinessData.overallScore}%`,
+            `Git push status: ${readinessData.gitPushStatus}`,
+          ],
+        },
+      };
+
+      const entity = await this.memoryManager.upsertEntity({
+        type: 'deployment_assessment',
+        title: `Deployment Assessment: ${environment} - ${readinessData.isDeploymentReady ? 'READY' : 'BLOCKED'} - ${new Date().toISOString().split('T')[0]}`,
+        description: `Deployment readiness assessment for ${environment} environment${readinessData.isDeploymentReady ? ' - APPROVED' : ' - BLOCKED'}`,
+        tags: [
+          'deployment',
+          environment.toLowerCase(),
+          'readiness-assessment',
+          readinessData.isDeploymentReady ? 'approved' : 'blocked',
+          `score-${Math.floor(readinessData.overallScore / 10) * 10}`,
+          ...(readinessData.criticalBlockers.length > 0 ? ['critical-issues'] : []),
+          ...(readinessData.testValidationResult.failureCount > 0 ? ['test-failures'] : []),
+          ...(readinessData.deploymentHistoryAnalysis.rollbackRate > 20
+            ? ['high-rollback-risk']
+            : []),
+        ],
+        assessmentData,
+        relationships: [],
+        context: {
+          projectPhase: 'deployment-validation',
+          technicalStack: this.extractTechnicalStack(validationResults),
+          environmentalFactors: [environment, projectPath || 'unknown-project'].filter(Boolean),
+          stakeholders: ['deployment-team', 'qa-team', 'infrastructure-team'],
+        },
+        accessPattern: {
+          lastAccessed: new Date().toISOString(),
+          accessCount: 1,
+          accessContext: ['deployment-assessment'],
+        },
+        evolution: {
+          origin: 'created',
+          transformations: [
+            {
+              timestamp: new Date().toISOString(),
+              type: 'assessment_creation',
+              description: `Deployment assessment created for ${environment}`,
+              agent: 'deployment-readiness-tool',
+            },
+          ],
+        },
+        validation: {
+          isVerified: readinessData.isDeploymentReady,
+          verificationMethod: 'comprehensive-deployment-audit',
+          verificationTimestamp: new Date().toISOString(),
+        },
+      });
+
+      this.logger.info(
+        `Deployment assessment stored for ${environment}`,
+        'DeploymentMemoryManager',
+        {
+          environment,
+          entityId: entity.id,
+          readinessScore: readinessData.overallScore,
+          isReady: readinessData.isDeploymentReady,
+          blockingIssues: assessmentData.blockingIssues.length,
+        }
+      );
+
+      return entity.id;
+    } catch (error) {
+      this.logger.error(
+        'Failed to store deployment assessment',
+        'DeploymentMemoryManager',
+        error as Error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Migrate existing deployment history to memory entities
+   */
+  async migrateExistingHistory(historyPath: string): Promise<void> {
+    try {
+      if (!existsSync(historyPath)) {
+        this.logger.info(
+          'No existing deployment history found to migrate',
+          'DeploymentMemoryManager'
+        );
+        return;
+      }
+
+      const historyData = JSON.parse(readFileSync(historyPath, 'utf8'));
+      const deployments = historyData.deployments || [];
+
+      let migratedCount = 0;
+      for (const deployment of deployments) {
+        try {
+          await this.migrateDeploymentRecord(deployment);
+          migratedCount++;
+        } catch (error) {
+          this.logger.error(
+            `Failed to migrate deployment ${deployment.deploymentId}`,
+            'DeploymentMemoryManager',
+            error as Error
+          );
+        }
+      }
+
+      this.logger.info(
+        `Migration completed: ${migratedCount}/${deployments.length} deployments migrated`,
+        'DeploymentMemoryManager'
+      );
+    } catch (error) {
+      this.logger.error(
+        'Failed to migrate deployment history',
+        'DeploymentMemoryManager',
+        error as Error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Analyze deployment patterns across memory entities
+   */
+  async analyzeDeploymentPatterns(environment?: string): Promise<{
+    patterns: any[];
+    trends: any[];
+    recommendations: string[];
+    riskFactors: any[];
+  }> {
+    try {
+      const query: any = {
+        entityTypes: ['deployment_assessment'],
+        limit: 100,
+        sortBy: 'lastModified',
+      };
+
+      if (environment) {
+        query.tags = [environment.toLowerCase()];
+      }
+
+      const assessments = await this.memoryManager.queryEntities(query);
+
+      const patterns = this.detectDeploymentPatterns(assessments.entities);
+      const trends = this.calculateDeploymentTrends(assessments.entities);
+      const recommendations = this.generatePatternRecommendations(patterns, trends);
+      const riskFactors = this.identifyRiskFactors(assessments.entities);
+
+      return {
+        patterns,
+        trends,
+        recommendations,
+        riskFactors,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Failed to analyze deployment patterns',
+        'DeploymentMemoryManager',
+        error as Error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Compare current assessment with historical patterns
+   */
+  async compareWithHistory(
+    currentAssessment: DeploymentReadinessResult,
+    environment: string
+  ): Promise<{
+    isImprovement: boolean;
+    comparison: any;
+    insights: string[];
+  }> {
+    try {
+      const recentAssessments = await this.memoryManager.queryEntities({
+        entityTypes: ['deployment_assessment'],
+        tags: [environment.toLowerCase()],
+        limit: 10,
+        sortBy: 'lastModified',
+      });
+
+      if (recentAssessments.entities.length === 0) {
+        return {
+          isImprovement: true,
+          comparison: { type: 'first_assessment' },
+          insights: ['This is the first deployment assessment for this environment'],
+        };
+      }
+
+      const lastAssessment = recentAssessments.entities[0] as any;
+      const comparison = this.compareAssessments(currentAssessment, lastAssessment.assessmentData);
+
+      return {
+        isImprovement: comparison.scoreImprovement > 0,
+        comparison,
+        insights: this.generateComparisonInsights(comparison),
+      };
+    } catch (error) {
+      this.logger.error(
+        'Failed to compare with history',
+        'DeploymentMemoryManager',
+        error as Error
+      );
+      return {
+        isImprovement: false,
+        comparison: { type: 'comparison_failed' },
+        insights: ['Unable to compare with historical data'],
+      };
+    }
+  }
+
+  // Private helper methods
+
+  private async migrateDeploymentRecord(deployment: DeploymentRecord): Promise<void> {
+    const assessmentData = {
+      environment: deployment.environment as 'development' | 'staging' | 'production' | 'testing',
+      readinessScore: deployment.status === 'success' ? 1.0 : 0.0, // Use 0-1 range
+      validationResults: {
+        testResults: deployment.testResults
+          ? {
+              passed: deployment.testResults.testSuitesExecuted.reduce(
+                (sum, suite) => sum + suite.passedTests,
+                0
+              ),
+              failed: deployment.testResults.failureCount,
+              coverage: deployment.testResults.coveragePercentage / 100,
+              criticalFailures: deployment.testResults.criticalTestFailures.map(f => f.testName),
+            }
+          : {
+              passed: 0,
+              failed: 0,
+              coverage: 0,
+              criticalFailures: [],
+            },
+        securityValidation: {
+          vulnerabilities: 0,
+          securityScore: 0.8,
+          criticalIssues: [],
+        },
+        performanceValidation: {
+          performanceScore: deployment.status === 'success' ? 0.8 : 0.2,
+          bottlenecks: [],
+          resourceUtilization: {},
+        },
+      },
+      blockingIssues: deployment.failureReason
+        ? [
+            {
+              issue: `Historical Deployment Failure: ${deployment.failureReason}`,
+              severity: 'high' as const,
+              category: 'configuration' as const,
+              resolution: 'Review and address historical failure causes',
+            },
+          ]
+        : [],
+      deploymentStrategy: {
+        type: 'rolling' as const,
+        rollbackPlan: 'Standard rollback procedure',
+        monitoringPlan: 'Basic monitoring',
+        estimatedDowntime: deployment.rollbackRequired ? 'Variable' : '0 minutes',
+      },
+      complianceChecks: {
+        adrCompliance: 1.0,
+        regulatoryCompliance: [],
+        auditTrail: [
+          `Migrated deployment record from ${deployment.timestamp}`,
+          `Original status: ${deployment.status}`,
+          `Rollback required: ${deployment.rollbackRequired}`,
+        ],
+      },
+    };
+
+    await this.memoryManager.upsertEntity({
+      type: 'deployment_assessment',
+      title: `Historical Deployment: ${deployment.environment} - ${deployment.status.toUpperCase()} - ${deployment.timestamp.split('T')[0]}`,
+      description: `Migrated deployment record for ${deployment.environment} (ID: ${deployment.deploymentId})`,
+      tags: [
+        'deployment',
+        deployment.environment.toLowerCase(),
+        'migrated-record',
+        deployment.status,
+        ...(deployment.rollbackRequired ? ['rollback-required'] : []),
+      ],
+      assessmentData,
+      relationships: [],
+      context: {
+        projectPhase: 'deployment-execution',
+        technicalStack: [],
+        environmentalFactors: [deployment.environment],
+        stakeholders: ['deployment-team'],
+      },
+      accessPattern: {
+        lastAccessed: new Date().toISOString(),
+        accessCount: 1,
+        accessContext: ['migration'],
+      },
+      evolution: {
+        origin: 'imported',
+        transformations: [
+          {
+            timestamp: new Date().toISOString(),
+            type: 'migration',
+            description: `Migrated from deployment-history.json (original: ${deployment.timestamp})`,
+            agent: 'deployment-readiness-tool',
+          },
+        ],
+      },
+      validation: {
+        isVerified: true,
+        verificationMethod: 'historical-migration',
+        verificationTimestamp: new Date().toISOString(),
+      },
+    });
+  }
+
+  private extractTechnicalStack(_validationResults: any): string[] {
+    // Extract technical stack from validation results
+    // This is a simplified implementation
+    return [];
+  }
+
+  private detectDeploymentPatterns(assessments: any[]): any[] {
+    // Analyze deployment patterns across assessments
+    const patterns = [];
+
+    // Pattern: Time-based failures
+    const timePatterns = this.analyzeTimePatterns(assessments);
+    if (timePatterns.length > 0) {
+      patterns.push({ type: 'time_based', patterns: timePatterns });
+    }
+
+    // Pattern: Environment-specific issues
+    const envPatterns = this.analyzeEnvironmentPatterns(assessments);
+    if (envPatterns.length > 0) {
+      patterns.push({ type: 'environment_specific', patterns: envPatterns });
+    }
+
+    return patterns;
+  }
+
+  private calculateDeploymentTrends(assessments: any[]): any[] {
+    if (assessments.length < 3) return [];
+
+    const trends = [];
+    const scores = assessments.map((a: any) => a.assessmentData.readinessScore);
+
+    // Calculate score trend
+    const scoreTrend = this.calculateTrend(scores);
+    trends.push({
+      metric: 'readiness_score',
+      trend: scoreTrend > 0 ? 'improving' : scoreTrend < 0 ? 'declining' : 'stable',
+      change: scoreTrend,
+    });
+
+    return trends;
+  }
+
+  private generatePatternRecommendations(patterns: any[], trends: any[]): string[] {
+    const recommendations: string[] = [];
+
+    // Generate recommendations based on patterns
+    patterns.forEach(pattern => {
+      if (pattern.type === 'time_based') {
+        recommendations.push('Consider scheduling deployments during low-risk time windows');
+      }
+      if (pattern.type === 'environment_specific') {
+        recommendations.push('Address environment-specific configuration issues');
+      }
+    });
+
+    // Generate recommendations based on trends
+    trends.forEach(trend => {
+      if (trend.metric === 'readiness_score' && trend.trend === 'declining') {
+        recommendations.push('Investigate causes of declining deployment readiness scores');
+      }
+    });
+
+    return recommendations;
+  }
+
+  /**
+   * Map deployment blocker category to schema-compliant category
+   */
+  private mapBlockerCategory(
+    category: string
+  ): 'test' | 'security' | 'performance' | 'configuration' | 'dependencies' {
+    switch (category) {
+      case 'test_failure':
+        return 'test';
+      case 'adr_compliance':
+      case 'environment':
+      case 'deployment_history':
+        return 'configuration';
+      case 'code_quality':
+        return 'performance';
+      default:
+        return 'configuration';
+    }
+  }
+
+  private identifyRiskFactors(assessments: any[]): any[] {
+    const riskFactors = [];
+
+    // Analyze recent failures
+    const recentFailures = assessments
+      .filter((a: any) => !a.assessmentData.deploymentReady)
+      .slice(0, 5);
+
+    if (recentFailures.length >= 3) {
+      riskFactors.push({
+        factor: 'frequent_failures',
+        description: `${recentFailures.length} deployment blocks in recent assessments`,
+        severity: 'high',
+      });
+    }
+
+    return riskFactors;
+  }
+
+  private compareAssessments(current: DeploymentReadinessResult, historical: any): any {
+    return {
+      scoreImprovement: current.overallScore - historical.readinessScore,
+      confidenceChange: current.confidence - historical.confidence,
+      blockingIssuesChange: current.criticalBlockers.length - historical.blockingIssues.length,
+      testImprovements: {
+        failureCountChange:
+          current.testValidationResult.failureCount -
+          (historical.validationResults?.testValidation?.failureCount || 0),
+        coverageChange:
+          current.testValidationResult.coveragePercentage -
+          (historical.validationResults?.testValidation?.coveragePercentage || 0),
+      },
+    };
+  }
+
+  private generateComparisonInsights(comparison: any): string[] {
+    const insights = [];
+
+    if (comparison.scoreImprovement > 0) {
+      insights.push(`Deployment readiness improved by ${comparison.scoreImprovement} points`);
+    } else if (comparison.scoreImprovement < 0) {
+      insights.push(
+        `Deployment readiness declined by ${Math.abs(comparison.scoreImprovement)} points`
+      );
+    }
+
+    if (comparison.testImprovements.failureCountChange < 0) {
+      insights.push(
+        `Test stability improved: ${Math.abs(comparison.testImprovements.failureCountChange)} fewer failures`
+      );
+    }
+
+    if (comparison.testImprovements.coverageChange > 0) {
+      insights.push(`Test coverage increased by ${comparison.testImprovements.coverageChange}%`);
+    }
+
+    return insights;
+  }
+
+  private analyzeTimePatterns(_assessments: any[]): any[] {
+    // Simplified time pattern analysis
+    return [];
+  }
+
+  private analyzeEnvironmentPatterns(_assessments: any[]): any[] {
+    // Simplified environment pattern analysis
+    return [];
+  }
+
+  private calculateTrend(values: number[]): number {
+    if (values.length < 2) return 0;
+
+    const recent = values.slice(0, Math.min(5, values.length));
+    const older = values.slice(Math.min(5, values.length));
+
+    const recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+    const olderAvg = older.length > 0 ? older.reduce((a, b) => a + b, 0) / older.length : recentAvg;
+
+    return recentAvg - olderAvg;
+  }
+}
+
+/**
  * Main deployment readiness function
  */
 export async function deploymentReadiness(args: any): Promise<any> {
@@ -235,6 +822,18 @@ export async function deploymentReadiness(args: any): Promise<any> {
     // Ensure cache directory exists
     if (!existsSync(cacheDir)) {
       mkdirSync(cacheDir, { recursive: true });
+    }
+
+    // Initialize memory manager if enabled
+    let memoryManager: DeploymentMemoryManager | null = null;
+    if (validatedArgs.enableMemoryIntegration) {
+      memoryManager = new DeploymentMemoryManager();
+      await memoryManager.initialize();
+
+      // Migrate existing history if requested
+      if (validatedArgs.migrateExistingHistory) {
+        await memoryManager.migrateExistingHistory(deploymentHistoryPath);
+      }
     }
 
     let result: DeploymentReadinessResult;
@@ -276,8 +875,89 @@ export async function deploymentReadiness(args: any): Promise<any> {
       )
     );
 
-    // Generate response based on deployment readiness
-    return generateDeploymentReadinessResponse(result, validatedArgs);
+    // Memory integration: store assessment and analyze patterns
+    let memoryIntegrationInfo = '';
+    if (memoryManager) {
+      try {
+        // Store deployment assessment
+        const assessmentId = await memoryManager.storeDeploymentAssessment(
+          validatedArgs.targetEnvironment,
+          result,
+          { projectPath, operation: validatedArgs.operation },
+          projectPath
+        );
+
+        // Compare with historical patterns
+        const historyComparison = await memoryManager.compareWithHistory(
+          result,
+          validatedArgs.targetEnvironment
+        );
+
+        // Analyze deployment patterns
+        const patternAnalysis = await memoryManager.analyzeDeploymentPatterns(
+          validatedArgs.targetEnvironment
+        );
+
+        memoryIntegrationInfo = `
+
+## 🧠 Memory Integration Analysis
+
+- **Assessment Stored**: ✅ Deployment assessment saved (ID: ${assessmentId.substring(0, 8)}...)
+- **Environment**: ${validatedArgs.targetEnvironment}
+- **Historical Comparison**: ${historyComparison.isImprovement ? '📈 Improvement detected' : '📊 Baseline established'}
+
+${
+  historyComparison.insights.length > 0
+    ? `### Historical Insights
+${historyComparison.insights.map(insight => `- ${insight}`).join('\n')}
+`
+    : ''
+}
+
+${
+  patternAnalysis.trends.length > 0
+    ? `### Deployment Trends
+${patternAnalysis.trends.map(trend => `- **${trend.metric}**: ${trend.trend} (${trend.change > 0 ? '+' : ''}${trend.change})`).join('\n')}
+`
+    : ''
+}
+
+${
+  patternAnalysis.recommendations.length > 0
+    ? `### Pattern-Based Recommendations
+${patternAnalysis.recommendations.map(rec => `- ${rec}`).join('\n')}
+`
+    : ''
+}
+
+${
+  patternAnalysis.riskFactors.length > 0
+    ? `### Risk Factors Identified
+${patternAnalysis.riskFactors.map(risk => `- **${risk.factor}**: ${risk.description} (${risk.severity})`).join('\n')}
+`
+    : ''
+}
+`;
+      } catch (memoryError) {
+        memoryIntegrationInfo = `
+
+## 🧠 Memory Integration Status
+
+- **Status**: ⚠️ Memory integration failed - assessment continued without persistence
+- **Error**: ${memoryError instanceof Error ? memoryError.message : 'Unknown error'}
+`;
+      }
+    }
+
+    // Generate enhanced response with memory integration
+    const baseResponse = generateDeploymentReadinessResponse(result, validatedArgs);
+
+    // Add memory integration info if available
+    if (memoryIntegrationInfo && baseResponse.content?.[0]?.text) {
+      baseResponse.content[0].text += memoryIntegrationInfo;
+    }
+
+    return baseResponse;
   } catch (error) {
     throw new McpAdrError(
       'DEPLOYMENT_READINESS_ERROR',
