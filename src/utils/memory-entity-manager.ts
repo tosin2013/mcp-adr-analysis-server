@@ -33,6 +33,7 @@ export class MemoryEntityManager {
   private evolutionLogFile: string;
   private config: MemoryPersistenceConfig;
   private logger: EnhancedLogger;
+  private isTestMode: boolean;
 
   // In-memory caches for performance
   private entitiesCache: Map<string, MemoryEntity> = new Map();
@@ -40,7 +41,8 @@ export class MemoryEntityManager {
   private intelligence: MemoryIntelligence | null = null;
   private lastSnapshotTime = 0;
 
-  constructor(config?: Partial<MemoryPersistenceConfig>) {
+  constructor(config?: Partial<MemoryPersistenceConfig>, testMode = false) {
+    this.isTestMode = testMode;
     const projectConfig = loadConfig();
     this.logger = new EnhancedLogger();
 
@@ -52,10 +54,10 @@ export class MemoryEntityManager {
 
     this.config = {
       storageType: 'file',
-      snapshotFrequency: 30, // 30 minutes
+      snapshotFrequency: testMode ? 0 : 30, // No automatic persistence in test mode
       compressionEnabled: true,
       backupRetention: 30, // 30 days
-      syncEnabled: true,
+      syncEnabled: !testMode, // Disable sync in test mode
       conflictResolution: 'merge',
       ...config,
     };
@@ -118,7 +120,7 @@ export class MemoryEntityManager {
           accessContext: entity.accessPattern?.accessContext || [],
         },
         evolution: {
-          origin: entity.evolution?.origin || (existing ? 'updated' : 'created'),
+          origin: entity.evolution?.origin || (existing ? existing.evolution.origin : 'created'),
           transformations: [
             ...(existing?.evolution?.transformations || []),
             {
@@ -141,7 +143,14 @@ export class MemoryEntityManager {
       } as MemoryEntity;
 
       // Validate the entity
-      MemoryEntitySchema.parse(fullEntity);
+      try {
+        MemoryEntitySchema.parse(fullEntity);
+      } catch (validationError) {
+        throw new McpAdrError(
+          `Entity validation failed: ${validationError instanceof Error ? validationError.message : String(validationError)}`,
+          'ENTITY_VALIDATION_ERROR'
+        );
+      }
 
       // Store in cache
       this.entitiesCache.set(id, fullEntity);
@@ -558,12 +567,18 @@ export class MemoryEntityManager {
   private async ensureMemoryDirectory(): Promise<void> {
     try {
       await fs.access(this.memoryDir);
-    } catch {
+    } catch (error) {
+      // Directory doesn't exist, create it
       await fs.mkdir(this.memoryDir, { recursive: true });
     }
   }
 
   private async loadFromPersistence(): Promise<void> {
+    // Skip loading from persistence in test mode to avoid conflicts
+    if (this.isTestMode) {
+      return;
+    }
+
     try {
       // Load entities
       try {
@@ -602,6 +617,11 @@ export class MemoryEntityManager {
   }
 
   private async maybePersist(): Promise<void> {
+    // Skip auto-persistence in test mode
+    if (this.isTestMode || this.config.snapshotFrequency === 0) {
+      return;
+    }
+
     const now = Date.now();
     const timeSinceLastSnapshot = now - this.lastSnapshotTime;
     const snapshotIntervalMs = this.config.snapshotFrequency * 60 * 1000;
@@ -817,6 +837,23 @@ export class MemoryEntityManager {
     } catch (error) {
       this.logger.warn('Failed to log evolution event', 'MemoryEntityManager', { event, error });
     }
+  }
+
+  /**
+   * Clear all cached data (useful for testing)
+   */
+  clearCache(): void {
+    this.entitiesCache.clear();
+    this.relationshipsCache.clear();
+    this.intelligence = null;
+    this.lastSnapshotTime = 0;
+  }
+
+  /**
+   * Force persistence (useful for testing)
+   */
+  async forcePersist(): Promise<void> {
+    return this.persistToStorage();
   }
 
   /**

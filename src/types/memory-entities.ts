@@ -166,6 +166,15 @@ export const CodeComponentMemorySchema = BaseMemoryEntitySchema.extend({
         estimatedEffort: z.string(),
       })
     ),
+    dependencies: z.array(z.string()),
+    publicInterface: z.array(z.string()),
+    changeFrequency: z.enum(['low', 'medium', 'high']),
+    riskProfile: z.object({
+      technicalRisk: z.enum(['low', 'medium', 'high']),
+      businessRisk: z.enum(['low', 'medium', 'high']),
+      changeRisk: z.enum(['low', 'medium', 'high']),
+      mitigationStrategies: z.array(z.string()),
+    }),
   }),
 });
 
