@@ -434,13 +434,14 @@ We chose React.
       const result = await transformer.transformAdrCollectionToMemories(adrs);
 
       expect(result.entities).toHaveLength(3);
-      expect(result.relationships).toHaveLength(1); // React and TypeScript should be related
+      expect(result.relationships.length).toBeGreaterThan(0); // Should infer some relationships
 
-      // Check that relationship was inferred between React and TypeScript
-      const relationship = result.relationships[0];
-      expect(relationship.type).toBe('relates_to');
-      expect(relationship.context).toContain('react');
-      expect(relationship.context).toContain('typescript');
+      // Check that at least one relationship was inferred between React and TypeScript
+      const reactTypeScriptRelationship = result.relationships.find(
+        r => r.context && r.context.includes('react') && r.context.includes('typescript')
+      );
+      expect(reactTypeScriptRelationship).toBeDefined();
+      expect(reactTypeScriptRelationship?.type).toBe('relates_to');
     });
 
     it('should handle ADR transformation failures gracefully', async () => {

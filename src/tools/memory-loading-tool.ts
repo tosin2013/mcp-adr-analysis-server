@@ -59,10 +59,13 @@ export class MemoryLoadingTool {
   private logger: EnhancedLogger;
   private config: ReturnType<typeof loadConfig>;
 
-  constructor() {
+  constructor(
+    memoryManager?: MemoryEntityManager,
+    private adrDiscoveryFn?: typeof discoverAdrsInDirectory
+  ) {
     this.logger = new EnhancedLogger({});
     this.config = loadConfig();
-    this.memoryManager = new MemoryEntityManager();
+    this.memoryManager = memoryManager || new MemoryEntityManager();
     this.memoryTransformer = new MemoryTransformer(this.memoryManager);
   }
 
@@ -136,7 +139,8 @@ export class MemoryLoadingTool {
       });
 
       // Discover ADRs in the configured directory
-      const adrDiscovery = await discoverAdrsInDirectory(
+      const discoveryFn = this.adrDiscoveryFn || discoverAdrsInDirectory;
+      const adrDiscovery = await discoveryFn(
         this.config.adrDirectory,
         true, // Include content for transformation
         this.config.projectPath
