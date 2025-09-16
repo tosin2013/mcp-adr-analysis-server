@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="44" failures="1" errors="0" time="0.616">
-  <testsuite name="MemoryEntityManager" errors="0" failures="1" skipped="43" timestamp="2025-09-16T02:04:39" time="0.389" tests="44">
+<testsuites name="jest tests" tests="44" failures="1" errors="0" time="0.633">
+  <testsuite name="MemoryEntityManager" errors="0" failures="1" skipped="43" timestamp="2025-09-16T02:09:46" time="0.405" tests="44">
     <testcase classname="MemoryEntityManager initialization should initialize successfully with empty memory" name="MemoryEntityManager initialization should initialize successfully with empty memory" time="0">
       <skipped/>
     </testcase>
-    <testcase classname="MemoryEntityManager initialization should create memory directory if it does not exist" name="MemoryEntityManager initialization should create memory directory if it does not exist" time="0.01">
-      <failure>Error: expect(jest.fn()).toHaveBeenCalled()
-
-Expected number of calls: &gt;= 1
-Received number of calls:    0
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/utils/memory-entity-manager.test.ts:223:25)</failure>
+    <testcase classname="MemoryEntityManager initialization should create memory directory if it does not exist" name="MemoryEntityManager initialization should create memory directory if it does not exist" time="0">
+      <skipped/>
     </testcase>
     <testcase classname="MemoryEntityManager initialization should load existing entities from persistence" name="MemoryEntityManager initialization should load existing entities from persistence" time="0">
       <skipped/>
@@ -116,8 +112,12 @@ Received number of calls:    0
     <testcase classname="MemoryEntityManager intelligence should generate recommendations based on current state" name="MemoryEntityManager intelligence should generate recommendations based on current state" time="0">
       <skipped/>
     </testcase>
-    <testcase classname="MemoryEntityManager snapshots should create a memory snapshot" name="MemoryEntityManager snapshots should create a memory snapshot" time="0">
-      <skipped/>
+    <testcase classname="MemoryEntityManager snapshots should create a memory snapshot" name="MemoryEntityManager snapshots should create a memory snapshot" time="0.023">
+      <failure>Error: expect(received).toBe(expected) // Object.is equality
+
+Expected: &quot;test-uuid-123&quot;
+Received: &quot;42e7bbd2-9add-492e-a189-09f7ff8064b6&quot;
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/utils/memory-entity-manager.test.ts:905:27)</failure>
     </testcase>
     <testcase classname="MemoryEntityManager snapshots should include intelligence in snapshot" name="MemoryEntityManager snapshots should include intelligence in snapshot" time="0">
       <skipped/>
