@@ -14,9 +14,7 @@ const mockFsPromises = {
   writeFile: jest.fn(),
 };
 
-jest.mock('fs', () => ({
-  promises: mockFsPromises,
-}));
+jest.mock('fs/promises', () => mockFsPromises);
 
 // Mock crypto module first
 const mockCrypto = {
@@ -169,6 +167,23 @@ describe('MemoryEntityManager', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Reset crypto mock
+    mockCrypto.randomUUID.mockReturnValue('test-uuid-123');
+
+    // Mock filesystem operations - ensure fresh mocks each time
+    mockFs.access.mockReset();
+    mockFs.mkdir.mockReset();
+    mockFs.readFile.mockReset();
+    mockFs.writeFile.mockReset();
+
+    // Set default behavior - directory doesn't exist by default
+    mockFs.access.mockRejectedValue(new Error('ENOENT')); // Directory doesn't exist by default
+    mockFs.mkdir.mockResolvedValue(undefined);
+    mockFs.readFile.mockRejectedValue(new Error('ENOENT'));
+    mockFs.writeFile.mockResolvedValue(undefined);
+
+    // Create memory manager instance after mocks are set up
     memoryManager = new MemoryEntityManager();
 
     // Mock date to be consistent
@@ -176,15 +191,6 @@ describe('MemoryEntityManager', () => {
       .spyOn(Date.prototype, 'toISOString')
       .mockReturnValue('2024-01-01T00:00:00.000Z');
     jest.spyOn(Date, 'now').mockReturnValue(1704067200000); // 2024-01-01
-
-    // Reset crypto mock
-    mockCrypto.randomUUID.mockReturnValue('test-uuid-123');
-
-    // Mock filesystem operations
-    mockFs.access.mockResolvedValue(undefined);
-    mockFs.mkdir.mockResolvedValue(undefined);
-    mockFs.readFile.mockRejectedValue(new Error('ENOENT'));
-    mockFs.writeFile.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -193,16 +199,31 @@ describe('MemoryEntityManager', () => {
 
   describe('initialization', () => {
     it('should initialize successfully with empty memory', async () => {
+      // For this test, directory exists
+      mockFs.access.mockResolvedValueOnce(undefined);
       await expect(memoryManager.initialize()).resolves.not.toThrow();
     });
 
     it('should create memory directory if it does not exist', async () => {
-      mockFs.access.mockRejectedValueOnce(new Error('ENOENT'));
+      // Access check should fail (directory doesn't exist) - already set as default
       mockFs.mkdir.mockResolvedValueOnce(undefined);
 
-      await memoryManager.initialize();
+      // Set up spy to see what methods are called
+      const accessSpy = jest.spyOn(mockFsPromises, 'access');
+      const mkdirSpy = jest.spyOn(mockFsPromises, 'mkdir');
 
-      expect(mockFs.mkdir).toHaveBeenCalledWith(path.join('/test/project', '.mcp-adr-memory'), {
+      try {
+        await memoryManager.initialize();
+      } catch (error) {
+        console.error('Initialize error:', error);
+        throw error;
+      }
+
+      // Check if access was called
+      expect(accessSpy).toHaveBeenCalled();
+
+      // Check if mkdir was called
+      expect(mkdirSpy).toHaveBeenCalledWith(path.join('/test/project', '.mcp-adr-memory'), {
         recursive: true,
       });
     });
@@ -240,6 +261,9 @@ describe('MemoryEntityManager', () => {
           },
         } as ArchitecturalDecisionMemory,
       ];
+
+      // Directory exists for this test
+      mockFs.access.mockResolvedValueOnce(undefined);
 
       mockFs.readFile.mockImplementation(file => {
         if (file.toString().includes('entities.json')) {
