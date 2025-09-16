@@ -177,6 +177,11 @@ export class MemoryRelationshipMapper {
       'architectural_decision'
     )) as ArchitecturalDecisionMemory[];
 
+    this.logger.debug(
+      `Found ${deploymentAssessments.length} deployments and ${adrs.length} ADRs`,
+      'MemoryRelationshipMapper'
+    );
+
     const result: RelationshipInferenceResult = {
       suggestedRelationships: [],
       conflicts: [],
@@ -455,10 +460,18 @@ export class MemoryRelationshipMapper {
     }
 
     // Check for conflicts
+    this.logger.debug(
+      `Checking conflict: readiness=${deployment.assessmentData.readinessScore}, status=${adr.decisionData.status}`,
+      'MemoryRelationshipMapper'
+    );
     if (deployment.assessmentData.readinessScore < 0.7 && adr.decisionData.status === 'accepted') {
       hasConflict = true;
       conflictSeverity = deployment.assessmentData.readinessScore < 0.5 ? 'high' : 'medium';
       evidence.push('Low deployment readiness conflicts with accepted ADR');
+      this.logger.debug(
+        `Conflict detected: severity=${conflictSeverity}`,
+        'MemoryRelationshipMapper'
+      );
     }
 
     return {
