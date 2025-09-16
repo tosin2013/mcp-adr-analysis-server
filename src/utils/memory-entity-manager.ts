@@ -118,7 +118,7 @@ export class MemoryEntityManager {
           accessContext: entity.accessPattern?.accessContext || [],
         },
         evolution: {
-          origin: entity.evolution?.origin || (existing ? 'created' : 'discovered'),
+          origin: entity.evolution?.origin || (existing ? 'updated' : 'created'),
           transformations: [
             ...(existing?.evolution?.transformations || []),
             {
