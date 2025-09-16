@@ -242,8 +242,8 @@ export class MemoryRelationshipMapper {
             confidence,
             reasoning: 'Security pattern provides protection for architectural decision',
             evidence: [
-              `Security type: ${security.securityData.contentType}`,
-              `Risk level: ${security.securityData.riskAssessment.overallRisk}`,
+              `Security type: ${security.securityData?.contentType || 'unknown'}`,
+              `Risk level: ${security.securityData?.riskAssessment?.overallRisk || 'unknown'}`,
               `Architecture domain: ${this.extractArchitectureDomain(adr)}`,
             ],
           });
@@ -282,7 +282,7 @@ export class MemoryRelationshipMapper {
             confidence,
             reasoning: `Failure pattern matches troubleshooting session failure signature`,
             evidence: [
-              `Failure type match: ${failure.patternData.failureType} === ${session.sessionData.failurePattern.failureType}`,
+              `Failure type match: ${failure.patternData?.failureType || 'unknown'} === ${session.sessionData?.failurePattern?.failureType || 'unknown'}`,
               `Error signature similarity: ${this.getErrorSignatureSimilarity(failure, session)}`,
               `Environment overlap: ${this.getEnvironmentOverlap(failure, session)}`,
             ],
@@ -322,8 +322,8 @@ export class MemoryRelationshipMapper {
             confidence,
             reasoning: `Environment snapshot validates deployment assessment configuration`,
             evidence: [
-              `Environment type: ${env.environmentData.environmentType}`,
-              `Deployment environment: ${deployment.assessmentData.environment}`,
+              `Environment type: ${env.environmentData?.environmentType || 'unknown'}`,
+              `Deployment environment: ${deployment.assessmentData?.environment || 'unknown'}`,
               `Configuration overlap: ${this.getConfigurationOverlap(env, deployment)}`,
             ],
           });
@@ -406,8 +406,8 @@ export class MemoryRelationshipMapper {
     confidence += temporalScore * 0.3;
 
     // Environment type match (0.0 - 0.2)
-    const sessionEnv = session.sessionData.environmentContext['environment'] || 'unknown';
-    if (sessionEnv === env.environmentData.environmentType) {
+    const sessionEnv = session.sessionData?.environmentContext?.['environment'] || 'unknown';
+    if (sessionEnv === env.environmentData?.environmentType) {
       confidence += 0.2;
     }
 
@@ -451,20 +451,24 @@ export class MemoryRelationshipMapper {
     evidence.push(`Technology alignment: ${(techAlignment * 100).toFixed(1)}%`);
 
     // Decision implementation status
-    if (adr.decisionData.implementationStatus === 'completed') {
+    if (adr.decisionData?.implementationStatus === 'completed') {
       complianceScore += 0.3;
       evidence.push('ADR implementation is complete');
-    } else if (adr.decisionData.implementationStatus === 'in_progress') {
+    } else if (adr.decisionData?.implementationStatus === 'in_progress') {
       complianceScore += 0.2;
       evidence.push('ADR implementation in progress');
     }
 
     // Check for conflicts
     this.logger.debug(
-      `Checking conflict: readiness=${deployment.assessmentData.readinessScore}, status=${adr.decisionData.status}`,
+      `Checking conflict: readiness=${deployment.assessmentData?.readinessScore || 'unknown'}, status=${adr.decisionData?.status || 'unknown'}`,
       'MemoryRelationshipMapper'
     );
-    if (deployment.assessmentData.readinessScore < 0.7 && adr.decisionData.status === 'accepted') {
+    if (
+      deployment.assessmentData?.readinessScore != null &&
+      deployment.assessmentData.readinessScore < 0.7 &&
+      adr.decisionData?.status === 'accepted'
+    ) {
       hasConflict = true;
       conflictSeverity = deployment.assessmentData.readinessScore < 0.5 ? 'high' : 'medium';
       evidence.push('Low deployment readiness conflicts with accepted ADR');
@@ -493,8 +497,8 @@ export class MemoryRelationshipMapper {
     let confidence = 0.3; // Base confidence
 
     // Risk level alignment
-    const adrRiskMentioned = adr.decisionData.consequences.risks.length > 0;
-    if (adrRiskMentioned && security.securityData.riskAssessment.overallRisk === 'high') {
+    const adrRiskMentioned = (adr.decisionData?.consequences?.risks?.length || 0) > 0;
+    if (adrRiskMentioned && security.securityData?.riskAssessment?.overallRisk === 'high') {
       confidence += 0.3;
     }
 
@@ -514,7 +518,7 @@ export class MemoryRelationshipMapper {
     const adrTags = adr.tags || [];
 
     const hasCommonTags = securityTags.some(tag => adrTags.includes(tag));
-    const hasSecurityRisks = adr.decisionData.consequences.risks.length > 0;
+    const hasSecurityRisks = (adr.decisionData?.consequences?.risks?.length || 0) > 0;
 
     return hasCommonTags || hasSecurityRisks;
   }
@@ -524,7 +528,7 @@ export class MemoryRelationshipMapper {
     session: TroubleshootingSessionMemory
   ): boolean {
     return (
-      failure.patternData.failureType === session.sessionData.failurePattern.failureType &&
+      failure.patternData?.failureType === session.sessionData?.failurePattern?.failureType &&
       this.getErrorSignatureSimilarity(failure, session) > 0.7
     );
   }
@@ -536,7 +540,7 @@ export class MemoryRelationshipMapper {
     let confidence = 0.3;
 
     // Failure type exact match
-    if (failure.patternData.failureType === session.sessionData.failurePattern.failureType) {
+    if (failure.patternData?.failureType === session.sessionData?.failurePattern?.failureType) {
       confidence += 0.4;
     }
 
@@ -551,7 +555,7 @@ export class MemoryRelationshipMapper {
     env: EnvironmentSnapshotMemory,
     deployment: DeploymentAssessmentMemory
   ): boolean {
-    return env.environmentData.environmentType === deployment.assessmentData.environment;
+    return env.environmentData?.environmentType === deployment.assessmentData?.environment;
   }
 
   private calculateEnvironmentDeploymentConfidence(
@@ -561,7 +565,7 @@ export class MemoryRelationshipMapper {
     let confidence = 0.4; // Base confidence
 
     // Environment type exact match
-    if (env.environmentData.environmentType === deployment.assessmentData.environment) {
+    if (env.environmentData?.environmentType === deployment.assessmentData?.environment) {
       confidence += 0.3;
     }
 
@@ -584,8 +588,8 @@ export class MemoryRelationshipMapper {
     session: TroubleshootingSessionMemory,
     env: EnvironmentSnapshotMemory
   ): string {
-    const sessionEnv = session.sessionData.environmentContext['environment'] || 'unknown';
-    const envType = env.environmentData.environmentType;
+    const sessionEnv = session.sessionData?.environmentContext?.['environment'] || 'unknown';
+    const envType = env.environmentData?.environmentType || 'unknown';
     return sessionEnv === envType ? 'exact match' : 'different environments';
   }
 
@@ -663,7 +667,7 @@ export class MemoryRelationshipMapper {
     session: TroubleshootingSessionMemory
   ): string {
     const failureEnvs = failure.patternData.environments || [];
-    const sessionEnv = session.sessionData.environmentContext['environment'] || 'unknown';
+    const sessionEnv = session.sessionData?.environmentContext?.['environment'] || 'unknown';
 
     return failureEnvs.includes(sessionEnv) ? 'environment match' : 'different environments';
   }
