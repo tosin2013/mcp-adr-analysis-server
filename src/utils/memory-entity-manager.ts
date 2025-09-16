@@ -101,7 +101,7 @@ export class MemoryEntityManager {
         created: existing?.created || now,
         lastModified: now,
         version: (existing?.version || 0) + 1,
-        confidence: entity.confidence || 0.8,
+        confidence: entity.confidence || 0.85,
         relevance: entity.relevance || 0.7,
         tags: entity.tags || [],
         relationships: entity.relationships || existing?.relationships || [],
@@ -261,7 +261,7 @@ export class MemoryEntityManager {
         evidence: relationship.evidence || [],
         created: relationship.created || now,
         lastValidated: relationship.lastValidated || now,
-        confidence: relationship.confidence || 0.8,
+        confidence: relationship.confidence || 0.85,
       };
 
       // Store in cache
@@ -847,7 +847,7 @@ export class MemoryEntityManager {
     const result = await mapper.createCrossToolRelationships();
 
     const autoCreatedCount = result.suggestedRelationships.filter(
-      rel => rel.confidence >= 0.8
+      rel => rel.confidence >= 0.85
     ).length;
 
     this.logger.info('Cross-tool relationships created', 'MemoryEntityManager', {

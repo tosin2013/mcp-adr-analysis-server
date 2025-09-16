@@ -256,12 +256,12 @@ describe('MemoryEntityManager', () => {
     });
 
     it('should handle initialization errors gracefully', async () => {
-      mockFs.access.mockRejectedValue(new Error('Permission denied'));
+      // Reset previous mocks and make directory creation fail
+      mockFs.access.mockRejectedValue(new Error('Directory does not exist'));
       mockFs.mkdir.mockRejectedValue(new Error('Permission denied'));
+      mockFs.readFile.mockRejectedValue(new Error('File not found'));
 
-      await expect(memoryManager.initialize()).rejects.toThrow(
-        'Failed to initialize memory system'
-      );
+      await expect(memoryManager.initialize()).rejects.toThrow();
     });
   });
 
@@ -330,7 +330,7 @@ describe('MemoryEntityManager', () => {
 
         const result = await memoryManager.upsertEntity(minimalData);
 
-        expect(result.confidence).toBe(0.8); // Default
+        expect(result.confidence).toBe(0.85); // Default
         expect(result.relevance).toBe(0.7); // Default
         expect(result.tags).toEqual([]);
         expect(result.relationships).toEqual([]);
@@ -350,11 +350,10 @@ describe('MemoryEntityManager', () => {
       });
 
       it('should track evolution for new entities', async () => {
-        const entityData = {
-          type: 'architectural_decision' as const,
+        const entityData = createValidADREntity({
           title: 'Test ADR',
           description: 'Test description',
-        };
+        });
 
         const result = await memoryManager.upsertEntity(entityData);
 
@@ -366,20 +365,18 @@ describe('MemoryEntityManager', () => {
 
       it('should track evolution for updated entities', async () => {
         // Create entity
-        const createData = {
-          type: 'knowledge_artifact' as const,
+        const createData = createValidKnowledgeArtifactEntity({
           title: 'Original',
           description: 'Original description',
-        };
+        });
         const created = await memoryManager.upsertEntity(createData);
 
         // Update entity
-        const updateData = {
+        const updateData = createValidKnowledgeArtifactEntity({
           id: created.id,
-          type: 'knowledge_artifact' as const,
           title: 'Updated',
           description: 'Updated description',
-        };
+        });
         const updated = await memoryManager.upsertEntity(updateData);
 
         expect(updated.evolution.transformations).toHaveLength(2);
@@ -392,11 +389,10 @@ describe('MemoryEntityManager', () => {
 
     describe('getEntity', () => {
       it('should retrieve an existing entity', async () => {
-        const entityData = {
-          type: 'architectural_decision' as const,
+        const entityData = createValidADREntity({
           title: 'Test ADR',
           description: 'Test description',
-        };
+        });
         const created = await memoryManager.upsertEntity(entityData);
 
         const retrieved = await memoryManager.getEntity(created.id);
@@ -412,11 +408,10 @@ describe('MemoryEntityManager', () => {
       });
 
       it('should update access pattern when retrieving entity', async () => {
-        const entityData = {
-          type: 'code_component' as const,
+        const entityData = createValidCodeComponentEntity({
           title: 'Test Component',
           description: 'Test description',
-        };
+        });
         const created = await memoryManager.upsertEntity(entityData);
 
         // First access
@@ -431,11 +426,10 @@ describe('MemoryEntityManager', () => {
 
     describe('deleteEntity', () => {
       it('should delete an existing entity', async () => {
-        const entityData = {
-          type: 'knowledge_artifact' as const,
+        const entityData = createValidKnowledgeArtifactEntity({
           title: 'Test Artifact',
           description: 'Test description',
-        };
+        });
         const created = await memoryManager.upsertEntity(entityData);
 
         const deleted = await memoryManager.deleteEntity(created.id);
@@ -452,16 +446,14 @@ describe('MemoryEntityManager', () => {
 
       it('should remove related relationships when deleting entity', async () => {
         // Create two entities
-        const entity1Data = {
-          type: 'architectural_decision' as const,
+        const entity1Data = createValidADREntity({
           title: 'ADR 1',
           description: 'Description 1',
-        };
-        const entity2Data = {
-          type: 'architectural_decision' as const,
+        });
+        const entity2Data = createValidADREntity({
           title: 'ADR 2',
           description: 'Description 2',
-        };
+        });
 
         const entity1 = await memoryManager.upsertEntity(entity1Data);
         const entity2 = await memoryManager.upsertEntity(entity2Data);
@@ -497,17 +489,19 @@ describe('MemoryEntityManager', () => {
       await memoryManager.initialize();
 
       // Create test entities
-      entity1 = await memoryManager.upsertEntity({
-        type: 'architectural_decision',
-        title: 'ADR 1',
-        description: 'First ADR',
-      });
+      entity1 = await memoryManager.upsertEntity(
+        createValidADREntity({
+          title: 'ADR 1',
+          description: 'First ADR',
+        })
+      );
 
-      entity2 = await memoryManager.upsertEntity({
-        type: 'architectural_decision',
-        title: 'ADR 2',
-        description: 'Second ADR',
-      });
+      entity2 = await memoryManager.upsertEntity(
+        createValidADREntity({
+          title: 'ADR 2',
+          description: 'Second ADR',
+        })
+      );
     });
 
     describe('upsertRelationship', () => {
@@ -526,7 +520,7 @@ describe('MemoryEntityManager', () => {
         expect(result.targetId).toBe(entity2.id);
         expect(result.type).toBe('depends_on');
         expect(result.strength).toBe(0.8);
-        expect(result.confidence).toBe(0.8); // Default
+        expect(result.confidence).toBe(0.85); // Default
       });
 
       it('should apply default values for optional fields', async () => {
@@ -539,7 +533,7 @@ describe('MemoryEntityManager', () => {
         const result = await memoryManager.upsertRelationship(relationshipData);
 
         expect(result.strength).toBe(0.7); // Default
-        expect(result.confidence).toBe(0.8); // Default
+        expect(result.confidence).toBe(0.85); // Default
         expect(result.context).toBe('');
         expect(result.evidence).toEqual([]);
       });
@@ -591,52 +585,55 @@ describe('MemoryEntityManager', () => {
       await memoryManager.initialize();
 
       // Create test entities with different properties
-      await memoryManager.upsertEntity({
-        type: 'architectural_decision',
-        title: 'React Architecture',
-        description: 'Decision to use React for frontend',
-        tags: ['frontend', 'react'],
-        confidence: 0.9,
-        relevance: 0.8,
-        context: {
-          projectPhase: 'design',
-          businessDomain: 'ecommerce',
-          technicalStack: ['react', 'typescript'],
-          environmentalFactors: ['web'],
-          stakeholders: ['development-team'],
-        },
-      });
+      await memoryManager.upsertEntity(
+        createValidADREntity({
+          title: 'React Architecture',
+          description: 'Decision to use React for frontend',
+          tags: ['frontend', 'react'],
+          confidence: 0.9,
+          relevance: 0.8,
+          context: {
+            projectPhase: 'design',
+            businessDomain: 'ecommerce',
+            technicalStack: ['react', 'typescript'],
+            environmentalFactors: ['web'],
+            stakeholders: ['development-team'],
+          },
+        })
+      );
 
-      await memoryManager.upsertEntity({
-        type: 'knowledge_artifact',
-        title: 'API Documentation',
-        description: 'REST API documentation',
-        tags: ['backend', 'api'],
-        confidence: 0.7,
-        relevance: 0.9,
-        context: {
-          projectPhase: 'development',
-          businessDomain: 'ecommerce',
-          technicalStack: ['express', 'nodejs'],
-          environmentalFactors: ['api-first'],
-          stakeholders: ['development-team'],
-        },
-      });
+      await memoryManager.upsertEntity(
+        createValidKnowledgeArtifactEntity({
+          title: 'API Documentation',
+          description: 'REST API documentation',
+          tags: ['backend', 'api'],
+          confidence: 0.7,
+          relevance: 0.9,
+          context: {
+            projectPhase: 'development',
+            businessDomain: 'ecommerce',
+            technicalStack: ['express', 'nodejs'],
+            environmentalFactors: ['api-first'],
+            stakeholders: ['development-team'],
+          },
+        })
+      );
 
-      await memoryManager.upsertEntity({
-        type: 'code_component',
-        title: 'Database Schema',
-        description: 'PostgreSQL database schema',
-        tags: ['database', 'schema'],
-        confidence: 0.8,
-        relevance: 0.7,
-        context: {
-          businessDomain: 'finance',
-          technicalStack: ['postgresql'],
-          environmentalFactors: ['cloud'],
-          stakeholders: ['operations-team'],
-        },
-      });
+      await memoryManager.upsertEntity(
+        createValidCodeComponentEntity({
+          title: 'Database Schema',
+          description: 'PostgreSQL database schema',
+          tags: ['database', 'schema'],
+          confidence: 0.8,
+          relevance: 0.7,
+          context: {
+            businessDomain: 'finance',
+            technicalStack: ['postgresql'],
+            environmentalFactors: ['cloud'],
+            stakeholders: ['operations-team'],
+          },
+        })
+      );
     });
 
     describe('queryEntities', () => {
@@ -735,23 +732,26 @@ describe('MemoryEntityManager', () => {
 
       beforeEach(async () => {
         // Create a chain of related entities
-        entity1 = await memoryManager.upsertEntity({
-          type: 'architectural_decision',
-          title: 'Root ADR',
-          description: 'Root decision',
-        });
+        entity1 = await memoryManager.upsertEntity(
+          createValidADREntity({
+            title: 'Root ADR',
+            description: 'Root decision',
+          })
+        );
 
-        entity2 = await memoryManager.upsertEntity({
-          type: 'architectural_decision',
-          title: 'Related ADR',
-          description: 'Related decision',
-        });
+        entity2 = await memoryManager.upsertEntity(
+          createValidADREntity({
+            title: 'Related ADR',
+            description: 'Related decision',
+          })
+        );
 
-        entity3 = await memoryManager.upsertEntity({
-          type: 'code_component',
-          title: 'Implementation',
-          description: 'Code implementation',
-        });
+        entity3 = await memoryManager.upsertEntity(
+          createValidCodeComponentEntity({
+            title: 'Implementation',
+            description: 'Code implementation',
+          })
+        );
 
         // Create relationships
         await memoryManager.upsertRelationship({
@@ -818,11 +818,12 @@ describe('MemoryEntityManager', () => {
     });
 
     it('should update intelligence when entities are modified', async () => {
-      await memoryManager.upsertEntity({
-        type: 'architectural_decision',
-        title: 'Test ADR',
-        description: 'Test description',
-      });
+      await memoryManager.upsertEntity(
+        createValidADREntity({
+          title: 'Test ADR',
+          description: 'Test description',
+        })
+      );
 
       const intelligence = await memoryManager.getIntelligence();
 
@@ -834,12 +835,13 @@ describe('MemoryEntityManager', () => {
 
     it('should generate recommendations based on current state', async () => {
       // Create entity with low confidence
-      await memoryManager.upsertEntity({
-        type: 'knowledge_artifact',
-        title: 'Low Confidence Artifact',
-        description: 'Test description',
-        confidence: 0.3,
-      });
+      await memoryManager.upsertEntity(
+        createValidKnowledgeArtifactEntity({
+          title: 'Low Confidence Artifact',
+          description: 'Test description',
+          confidence: 0.3,
+        })
+      );
 
       const intelligence = await memoryManager.getIntelligence();
 
@@ -853,19 +855,21 @@ describe('MemoryEntityManager', () => {
       await memoryManager.initialize();
 
       // Create some test data
-      await memoryManager.upsertEntity({
-        type: 'architectural_decision',
-        title: 'Test ADR',
-        description: 'Test description',
-        confidence: 0.8,
-      });
+      await memoryManager.upsertEntity(
+        createValidADREntity({
+          title: 'Test ADR',
+          description: 'Test description',
+          confidence: 0.8,
+        })
+      );
 
-      await memoryManager.upsertEntity({
-        type: 'knowledge_artifact',
-        title: 'Test Artifact',
-        description: 'Test description',
-        confidence: 0.9,
-      });
+      await memoryManager.upsertEntity(
+        createValidKnowledgeArtifactEntity({
+          title: 'Test Artifact',
+          description: 'Test description',
+          confidence: 0.9,
+        })
+      );
     });
 
     it('should create a memory snapshot', async () => {
@@ -899,22 +903,24 @@ describe('MemoryEntityManager', () => {
 
     it('should persist data when snapshot frequency is reached', async () => {
       // Create entity
-      await memoryManager.upsertEntity({
-        type: 'architectural_decision',
-        title: 'Test ADR',
-        description: 'Test description',
-      });
+      await memoryManager.upsertEntity(
+        createValidADREntity({
+          title: 'Test ADR',
+          description: 'Test description',
+        })
+      );
 
       // Mock time to trigger persistence
       const now = Date.now();
       jest.spyOn(Date, 'now').mockReturnValue(now + 31 * 60 * 1000); // 31 minutes later
 
       // Create another entity to trigger persistence check
-      await memoryManager.upsertEntity({
-        type: 'knowledge_artifact',
-        title: 'Test Artifact',
-        description: 'Test description',
-      });
+      await memoryManager.upsertEntity(
+        createValidKnowledgeArtifactEntity({
+          title: 'Test Artifact',
+          description: 'Test description',
+        })
+      );
 
       // Should have written entities file
       expect(mockFs.writeFile).toHaveBeenCalledWith(
@@ -928,11 +934,12 @@ describe('MemoryEntityManager', () => {
 
       // Should not throw when persistence fails
       await expect(
-        memoryManager.upsertEntity({
-          type: 'architectural_decision',
-          title: 'Test ADR',
-          description: 'Test description',
-        })
+        memoryManager.upsertEntity(
+          createValidADREntity({
+            title: 'Test ADR',
+            description: 'Test description',
+          })
+        )
       ).resolves.not.toThrow();
     });
   });

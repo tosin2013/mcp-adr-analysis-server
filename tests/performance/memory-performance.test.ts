@@ -5,6 +5,7 @@
  * Validates system performance under various load conditions.
  */
 
+import crypto from 'crypto';
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import { MemoryMigrationManager } from '../../src/utils/memory-migration-manager.js';
@@ -79,7 +80,7 @@ describe('Memory System Performance Tests', () => {
       const promises = [];
       for (let i = 0; i < entityCount; i++) {
         const entity: ArchitecturalDecisionMemory = {
-          id: `test-uuid-${i + 1}`,
+          id: crypto.randomUUID(),
           type: 'architectural_decision',
           title: `Performance Test ADR ${i}`,
           description: `Test architectural decision ${i} for performance testing`,
@@ -160,7 +161,7 @@ describe('Memory System Performance Tests', () => {
         for (let i = 0; i < concurrentCount / 10; i++) {
           const entityId = batch * 10 + i;
           const entity: DeploymentAssessmentMemory = {
-            id: `test-uuid-${entityId + 1}`,
+            id: crypto.randomUUID(),
             type: 'deployment_assessment',
             title: `Concurrent Test Deployment ${entityId}`,
             description: `Concurrent deployment assessment ${entityId}`,
@@ -257,7 +258,7 @@ describe('Memory System Performance Tests', () => {
 
       for (let i = 0; i < entityCount; i++) {
         entities.push({
-          id: `test-uuid-${i + 1}`,
+          id: crypto.randomUUID(),
           type: 'troubleshooting_session',
           title: `Query Test Session ${i}`,
           description: `Test session ${i}`,
@@ -371,7 +372,7 @@ describe('Memory System Performance Tests', () => {
 
       for (let i = 0; i < entityCount; i++) {
         entities.push({
-          id: `test-uuid-${i + 1}`,
+          id: crypto.randomUUID(),
           type: 'architectural_decision',
           title: `Relationship Test ADR ${i}`,
           description: `Test ADR ${i}`,
@@ -424,7 +425,7 @@ describe('Memory System Performance Tests', () => {
       jest.spyOn(memoryManager, 'upsertRelationship').mockImplementation(async () => {
         relationshipCount++;
         return {
-          id: `rel-${relationshipCount}`,
+          id: crypto.randomUUID(),
           sourceId: 'source',
           targetId: 'target',
           type: 'relates_to',
@@ -494,7 +495,7 @@ describe('Memory System Performance Tests', () => {
 
       jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: Array.from({ length: entityCount }, (_, i) => ({
-          id: `entity-${i}`,
+          id: crypto.randomUUID(),
           type: 'deployment_assessment',
         })) as any,
         totalCount: entityCount,
@@ -534,7 +535,7 @@ describe('Memory System Performance Tests', () => {
           const entityId = batch * 50 + i;
           batchPromises.push(
             memoryManager.upsertEntity({
-              id: `bulk-uuid-${entityId}`,
+              id: crypto.randomUUID(),
               type: 'architectural_decision',
               title: `Bulk Test ${entityId}`,
               description: 'Bulk operation test',
