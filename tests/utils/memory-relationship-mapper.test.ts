@@ -34,6 +34,154 @@ const mockCrypto = {
 
 jest.mock('crypto', () => mockCrypto);
 
+// Helper functions for creating valid test entities
+function createValidDeploymentAssessmentEntity(overrides: any = {}) {
+  return {
+    type: 'deployment_assessment' as const,
+    title: 'Test Deployment Assessment',
+    description: 'A test deployment assessment',
+    confidence: 0.8,
+    tags: ['deployment', 'assessment'],
+    context: {
+      projectPhase: 'deployment',
+      businessDomain: 'ecommerce',
+      technicalStack: ['docker', 'kubernetes'],
+      environmentalFactors: ['cloud'],
+      stakeholders: ['devops-team'],
+    },
+    relationships: [],
+    accessPattern: {
+      accessCount: 1,
+      lastAccessed: '2024-01-01T00:00:00.000Z',
+      accessContext: ['deployment'],
+    },
+    evolution: {
+      origin: 'created' as const,
+      transformations: [
+        {
+          timestamp: '2024-01-01T00:00:00.000Z',
+          type: 'creation',
+          description: 'Initial assessment creation',
+          agent: 'test-suite',
+        },
+      ],
+    },
+    validation: {
+      isVerified: true,
+      verificationMethod: 'automated-test',
+      verificationTimestamp: '2024-01-01T00:00:00.000Z',
+      conflictResolution: 'none',
+    },
+    assessmentData: {
+      environment: 'staging',
+      readinessScore: 0.9,
+      validationResults: {
+        testResults: {
+          passed: 95,
+          failed: 2,
+          coverage: 0.92,
+          criticalFailures: [],
+        },
+        securityScan: {
+          vulnerabilities: {
+            critical: 0,
+            high: 0,
+            medium: 1,
+            low: 3,
+          },
+          overallRating: 'good',
+        },
+      },
+      deploymentStrategy: {
+        type: 'rolling',
+        rollbackPlan: 'Automated rollback with health checks',
+        monitoringPlan: 'Standard monitoring and alerting',
+        estimatedDowntime: '< 1 minute',
+      },
+      complianceChecks: {
+        adrCompliance: 0.9,
+        regulatoryCompliance: ['GDPR', 'SOX'],
+        auditTrail: ['All tests passed', 'Security scan completed'],
+      },
+      riskAssessment: {
+        overallRisk: 'low',
+        identifiedRisks: [
+          {
+            category: 'technical',
+            description: 'Minor dependency update',
+            probability: 0.1,
+            impact: 'low',
+            mitigation: 'Automated testing coverage',
+          },
+        ],
+      },
+      recommendations: ['Deploy during low-traffic hours', 'Monitor key metrics for 24 hours'],
+    },
+    ...overrides,
+  };
+}
+
+function createValidADREntity(overrides: any = {}) {
+  return {
+    type: 'architectural_decision' as const,
+    title: 'Test ADR Entity',
+    description: 'A test architectural decision',
+    confidence: 0.9,
+    tags: ['database', 'architecture'],
+    context: {
+      projectPhase: 'design',
+      businessDomain: 'ecommerce',
+      technicalStack: ['Node.js', 'TypeScript'],
+      environmentalFactors: ['cloud-native', 'high-availability'],
+      stakeholders: ['engineering-team', 'devops-team'],
+    },
+    relationships: [],
+    accessPattern: {
+      accessCount: 1,
+      lastAccessed: '2024-01-01T00:00:00.000Z',
+      accessContext: ['test', 'integration'],
+    },
+    evolution: {
+      origin: 'created' as const,
+      transformations: [
+        {
+          timestamp: '2024-01-01T00:00:00.000Z',
+          type: 'creation',
+          description: 'Initial entity creation for testing',
+          agent: 'test-suite',
+        },
+      ],
+    },
+    validation: {
+      isVerified: true,
+      verificationMethod: 'automated-test',
+      verificationTimestamp: '2024-01-01T00:00:00.000Z',
+      conflictResolution: 'none',
+    },
+    decisionData: {
+      status: 'accepted' as const,
+      context: 'We need to choose a database for our microservices architecture.',
+      decision: 'We will use PostgreSQL as our primary database.',
+      consequences: {
+        positive: ['Strong consistency', 'Rich feature set'],
+        negative: ['More complex scaling'],
+        risks: ['Vendor lock-in'],
+      },
+      alternatives: [
+        {
+          name: 'MongoDB',
+          description: 'Document database',
+          tradeoffs: 'Flexibility vs consistency',
+        },
+      ],
+      implementationStatus: 'completed' as const,
+      implementationTasks: ['Setup cluster', 'Configure connection'],
+      reviewHistory: [],
+    },
+    ...overrides,
+  };
+}
+
 describe('MemoryRelationshipMapper', () => {
   let memoryManager: MemoryEntityManager;
   let mapper: MemoryRelationshipMapper;
@@ -373,8 +521,8 @@ describe('MemoryRelationshipMapper', () => {
     });
 
     it('should detect and report conflicts between entities', async () => {
-      // Create conflicting entities - deployment with low readiness vs accepted ADR
-      const adr: ArchitecturalDecisionMemory = {
+      // Create conflicting entities using helper functions
+      const adr = createValidADREntity({
         id: '550e8400-e29b-41d4-a716-446655440005',
         type: 'architectural_decision',
         title: 'Microservices Architecture',
@@ -423,11 +571,10 @@ describe('MemoryRelationshipMapper', () => {
           implementationTasks: ['Set up service mesh', 'Implement API gateway'],
           reviewHistory: [],
         },
-      };
+      });
 
-      const deployment: DeploymentAssessmentMemory = {
+      const deployment = createValidDeploymentAssessmentEntity({
         id: '550e8400-e29b-41d4-a716-446655440006',
-        type: 'deployment_assessment',
         title: 'Failed Microservices Deployment',
         description: 'Assessment showing deployment issues',
         confidence: 0.7,
@@ -525,7 +672,7 @@ describe('MemoryRelationshipMapper', () => {
             auditTrail: ['Multiple test failures', 'Security scan issues'],
           },
         },
-      };
+      });
 
       // Add entities to memory manager
       await memoryManager.upsertEntity(adr);
@@ -539,6 +686,8 @@ describe('MemoryRelationshipMapper', () => {
       console.log('Conflicts detected:', result.conflicts.length);
       console.log('First relationship:', result.suggestedRelationships[0]);
       console.log('First conflict:', result.conflicts[0]);
+      console.log('ADR status:', adr.decisionData.status);
+      console.log('Deployment readiness:', deployment.assessmentData.readinessScore);
 
       // Verify conflicts were detected
       expect(result.conflicts.length).toBeGreaterThan(0);
