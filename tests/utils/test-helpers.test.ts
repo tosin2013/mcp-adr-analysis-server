@@ -392,13 +392,22 @@ describe('PerformanceBenchmark Class', () => {
   });
 
   it('should track timing correctly', async () => {
+    jest.useFakeTimers();
+
     benchmark.start();
-    await new Promise(resolve => setTimeout(resolve, 100));
+    const delay = new Promise(resolve => setTimeout(resolve, 100));
+
+    // Advance timers by exactly 100ms to simulate the delay
+    jest.advanceTimersByTime(100);
+
+    await delay;
     benchmark.end();
 
     const duration = benchmark.getDuration();
-    expect(duration).toBeGreaterThanOrEqual(100);
-    expect(duration).toBeLessThan(200);
+    // With fake timers, we get precise timing
+    expect(duration).toBe(100);
+
+    jest.useRealTimers();
   });
 
   it('should track memory usage', () => {
