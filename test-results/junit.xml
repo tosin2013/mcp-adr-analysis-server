@@ -1,167 +1,141 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="49" failures="21" errors="0" time="1.077">
-  <testsuite name="Content Masking Tool" errors="0" failures="21" skipped="0" timestamp="2025-09-16T01:55:44" time="0.844" tests="49">
-    <testcase classname="Content Masking Tool analyzeContentSecurity function basic functionality analyzes content with default parameters" name="Content Masking Tool analyzeContentSecurity function basic functionality analyzes content with default parameters" time="0.035">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:43:24)</failure>
+<testsuites name="jest tests" tests="44" failures="1" errors="0" time="0.616">
+  <testsuite name="MemoryEntityManager" errors="0" failures="1" skipped="43" timestamp="2025-09-16T02:04:39" time="0.389" tests="44">
+    <testcase classname="MemoryEntityManager initialization should initialize successfully with empty memory" name="MemoryEntityManager initialization should initialize successfully with empty memory" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function basic functionality handles different content types" name="Content Masking Tool analyzeContentSecurity function basic functionality handles different content types" time="0.008">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:58:26)</failure>
+    <testcase classname="MemoryEntityManager initialization should create memory directory if it does not exist" name="MemoryEntityManager initialization should create memory directory if it does not exist" time="0.01">
+      <failure>Error: expect(jest.fn()).toHaveBeenCalled()
+
+Expected number of calls: &gt;= 1
+Received number of calls:    0
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/utils/memory-entity-manager.test.ts:223:25)</failure>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function basic functionality processes user-defined patterns" name="Content Masking Tool analyzeContentSecurity function basic functionality processes user-defined patterns" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:69:24)</failure>
+    <testcase classname="MemoryEntityManager initialization should load existing entities from persistence" name="MemoryEntityManager initialization should load existing entities from persistence" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function enhancement modes works with knowledge enhancement enabled" name="Content Masking Tool analyzeContentSecurity function enhancement modes works with knowledge enhancement enabled" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:81:24)</failure>
+    <testcase classname="MemoryEntityManager initialization should handle initialization errors gracefully" name="MemoryEntityManager initialization should handle initialization errors gracefully" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function enhancement modes works with enhancements disabled" name="Content Masking Tool analyzeContentSecurity function enhancement modes works with enhancements disabled" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:93:24)</failure>
+    <testcase classname="MemoryEntityManager entity management upsertEntity should create a new entity with all required fields" name="MemoryEntityManager entity management upsertEntity should create a new entity with all required fields" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function memory integration (prompt-only mode) provides comprehensive analysis prompts when memory integration is enabled" name="Content Masking Tool analyzeContentSecurity function memory integration (prompt-only mode) provides comprehensive analysis prompts when memory integration is enabled" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:106:24)</failure>
+    <testcase classname="MemoryEntityManager entity management upsertEntity should update an existing entity" name="MemoryEntityManager entity management upsertEntity should update an existing entity" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function memory integration (prompt-only mode) includes proper analysis instructions" name="Content Masking Tool analyzeContentSecurity function memory integration (prompt-only mode) includes proper analysis instructions" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:119:24)</failure>
+    <testcase classname="MemoryEntityManager entity management upsertEntity should apply default values correctly" name="MemoryEntityManager entity management upsertEntity should apply default values correctly" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function memory integration (prompt-only mode) handles different content types correctly" name="Content Masking Tool analyzeContentSecurity function memory integration (prompt-only mode) handles different content types correctly" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:136:26)</failure>
+    <testcase classname="MemoryEntityManager entity management upsertEntity should validate entity schema" name="MemoryEntityManager entity management upsertEntity should validate entity schema" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function memory integration (prompt-only mode) includes user-defined patterns in analysis prompt" name="Content Masking Tool analyzeContentSecurity function memory integration (prompt-only mode) includes user-defined patterns in analysis prompt" time="0.002">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:149:24)</failure>
+    <testcase classname="MemoryEntityManager entity management upsertEntity should track evolution for new entities" name="MemoryEntityManager entity management upsertEntity should track evolution for new entities" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function parameter validation throws error for empty content" name="Content Masking Tool analyzeContentSecurity function parameter validation throws error for empty content" time="0.002">
+    <testcase classname="MemoryEntityManager entity management upsertEntity should track evolution for updated entities" name="MemoryEntityManager entity management upsertEntity should track evolution for updated entities" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function parameter validation throws error for missing content" name="Content Masking Tool analyzeContentSecurity function parameter validation throws error for missing content" time="0.001">
+    <testcase classname="MemoryEntityManager entity management getEntity should retrieve an existing entity" name="MemoryEntityManager entity management getEntity should retrieve an existing entity" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool analyzeContentSecurity function error handling handles analysis errors gracefully" name="Content Masking Tool analyzeContentSecurity function error handling handles analysis errors gracefully" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:189:24)</failure>
+    <testcase classname="MemoryEntityManager entity management getEntity should return null for non-existent entity" name="MemoryEntityManager entity management getEntity should return null for non-existent entity" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool generateContentMasking function basic functionality generates masking for detected items" name="Content Masking Tool generateContentMasking function basic functionality generates masking for detected items" time="0.129">
+    <testcase classname="MemoryEntityManager entity management getEntity should update access pattern when retrieving entity" name="MemoryEntityManager entity management getEntity should update access pattern when retrieving entity" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool generateContentMasking function basic functionality handles different masking strategies" name="Content Masking Tool generateContentMasking function basic functionality handles different masking strategies" time="0.003">
+    <testcase classname="MemoryEntityManager entity management deleteEntity should delete an existing entity" name="MemoryEntityManager entity management deleteEntity should delete an existing entity" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool generateContentMasking function basic functionality handles no detected items" name="Content Masking Tool generateContentMasking function basic functionality handles no detected items" time="0.001">
+    <testcase classname="MemoryEntityManager entity management deleteEntity should return false for non-existent entity" name="MemoryEntityManager entity management deleteEntity should return false for non-existent entity" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool generateContentMasking function parameter validation throws error for empty content" name="Content Masking Tool generateContentMasking function parameter validation throws error for empty content" time="0.001">
+    <testcase classname="MemoryEntityManager entity management deleteEntity should remove related relationships when deleting entity" name="MemoryEntityManager entity management deleteEntity should remove related relationships when deleting entity" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool generateContentMasking function parameter validation throws error for missing content" name="Content Masking Tool generateContentMasking function parameter validation throws error for missing content" time="0.001">
+    <testcase classname="MemoryEntityManager relationship management upsertRelationship should create a new relationship" name="MemoryEntityManager relationship management upsertRelationship should create a new relationship" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool generateContentMasking function detected items processing handles items with missing optional fields" name="Content Masking Tool generateContentMasking function detected items processing handles items with missing optional fields" time="0.001">
+    <testcase classname="MemoryEntityManager relationship management upsertRelationship should apply default values for optional fields" name="MemoryEntityManager relationship management upsertRelationship should apply default values for optional fields" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool generateContentMasking function detected items processing processes items with all fields" name="Content Masking Tool generateContentMasking function detected items processing processes items with all fields" time="0.001">
+    <testcase classname="MemoryEntityManager relationship management upsertRelationship should fail when source entity does not exist" name="MemoryEntityManager relationship management upsertRelationship should fail when source entity does not exist" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool generateContentMasking function memory integration features works with memory integration enabled" name="Content Masking Tool generateContentMasking function memory integration features works with memory integration enabled" time="0.001">
+    <testcase classname="MemoryEntityManager relationship management upsertRelationship should fail when target entity does not exist" name="MemoryEntityManager relationship management upsertRelationship should fail when target entity does not exist" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool generateContentMasking function memory integration features works with memory integration disabled" name="Content Masking Tool generateContentMasking function memory integration features works with memory integration disabled" time="0.001">
+    <testcase classname="MemoryEntityManager relationship management upsertRelationship should update entity relationships" name="MemoryEntityManager relationship management upsertRelationship should update entity relationships" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool generateContentMasking function memory integration features handles memory integration with various content types" name="Content Masking Tool generateContentMasking function memory integration features handles memory integration with various content types" time="0.003">
+    <testcase classname="MemoryEntityManager querying queryEntities should return all entities with default query" name="MemoryEntityManager querying queryEntities should return all entities with default query" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool configureCustomPatterns function basic functionality configures patterns for project path" name="Content Masking Tool configureCustomPatterns function basic functionality configures patterns for project path" time="0.038">
+    <testcase classname="MemoryEntityManager querying queryEntities should filter by entity types" name="MemoryEntityManager querying queryEntities should filter by entity types" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool configureCustomPatterns function basic functionality includes existing patterns in analysis" name="Content Masking Tool configureCustomPatterns function basic functionality includes existing patterns in analysis" time="0.006">
+    <testcase classname="MemoryEntityManager querying queryEntities should filter by tags" name="MemoryEntityManager querying queryEntities should filter by tags" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool configureCustomPatterns function project structure analysis analyzes project structure correctly" name="Content Masking Tool configureCustomPatterns function project structure analysis analyzes project structure correctly" time="0.008">
+    <testcase classname="MemoryEntityManager querying queryEntities should filter by text query" name="MemoryEntityManager querying queryEntities should filter by text query" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool configureCustomPatterns function error handling handles invalid project paths gracefully" name="Content Masking Tool configureCustomPatterns function error handling handles invalid project paths gracefully" time="0.004">
+    <testcase classname="MemoryEntityManager querying queryEntities should filter by confidence threshold" name="MemoryEntityManager querying queryEntities should filter by confidence threshold" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool applyBasicContentMasking function basic functionality applies basic masking with default strategy" name="Content Masking Tool applyBasicContentMasking function basic functionality applies basic masking with default strategy" time="0.002">
+    <testcase classname="MemoryEntityManager querying queryEntities should filter by context filters" name="MemoryEntityManager querying queryEntities should filter by context filters" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool applyBasicContentMasking function basic functionality handles different masking strategies" name="Content Masking Tool applyBasicContentMasking function basic functionality handles different masking strategies" time="0.001">
+    <testcase classname="MemoryEntityManager querying queryEntities should sort entities correctly" name="MemoryEntityManager querying queryEntities should sort entities correctly" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool applyBasicContentMasking function validation integration includes validation results" name="Content Masking Tool applyBasicContentMasking function validation integration includes validation results" time="0.001">
+    <testcase classname="MemoryEntityManager querying queryEntities should limit results" name="MemoryEntityManager querying queryEntities should limit results" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool applyBasicContentMasking function parameter validation throws error for empty content" name="Content Masking Tool applyBasicContentMasking function parameter validation throws error for empty content" time="0">
+    <testcase classname="MemoryEntityManager querying queryEntities should include aggregations" name="MemoryEntityManager querying queryEntities should include aggregations" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool applyBasicContentMasking function parameter validation throws error for missing content" name="Content Masking Tool applyBasicContentMasking function parameter validation throws error for missing content" time="0">
+    <testcase classname="MemoryEntityManager querying findRelatedEntities should find directly related entities" name="MemoryEntityManager querying findRelatedEntities should find directly related entities" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool validateContentMasking function basic functionality validates masking correctly" name="Content Masking Tool validateContentMasking function basic functionality validates masking correctly" time="0.001">
+    <testcase classname="MemoryEntityManager querying findRelatedEntities should find entities at multiple depths" name="MemoryEntityManager querying findRelatedEntities should find entities at multiple depths" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool validateContentMasking function basic functionality calculates size changes correctly" name="Content Masking Tool validateContentMasking function basic functionality calculates size changes correctly" time="0.001">
+    <testcase classname="MemoryEntityManager querying findRelatedEntities should respect maxDepth parameter" name="MemoryEntityManager querying findRelatedEntities should respect maxDepth parameter" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool validateContentMasking function security assessment provides security assessment based on score" name="Content Masking Tool validateContentMasking function security assessment provides security assessment based on score" time="0">
+    <testcase classname="MemoryEntityManager querying findRelatedEntities should filter by relationship types" name="MemoryEntityManager querying findRelatedEntities should filter by relationship types" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool validateContentMasking function parameter validation throws error for missing original content" name="Content Masking Tool validateContentMasking function parameter validation throws error for missing original content" time="0.001">
+    <testcase classname="MemoryEntityManager intelligence should initialize default intelligence" name="MemoryEntityManager intelligence should initialize default intelligence" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool validateContentMasking function parameter validation throws error for missing masked content" name="Content Masking Tool validateContentMasking function parameter validation throws error for missing masked content" time="0.001">
+    <testcase classname="MemoryEntityManager intelligence should update intelligence when entities are modified" name="MemoryEntityManager intelligence should update intelligence when entities are modified" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool validateContentMasking function parameter validation throws error for missing parameters" name="Content Masking Tool validateContentMasking function parameter validation throws error for missing parameters" time="0">
+    <testcase classname="MemoryEntityManager intelligence should generate recommendations based on current state" name="MemoryEntityManager intelligence should generate recommendations based on current state" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool Integration and Edge Cases full workflow integration handles complete security analysis to masking workflow" name="Content Masking Tool Integration and Edge Cases full workflow integration handles complete security analysis to masking workflow" time="0">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:556:32)</failure>
+    <testcase classname="MemoryEntityManager snapshots should create a memory snapshot" name="MemoryEntityManager snapshots should create a memory snapshot" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool Integration and Edge Cases performance and edge cases handles large content efficiently" name="Content Masking Tool Integration and Edge Cases performance and edge cases handles large content efficiently" time="0">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:585:24)</failure>
+    <testcase classname="MemoryEntityManager snapshots should include intelligence in snapshot" name="MemoryEntityManager snapshots should include intelligence in snapshot" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool Integration and Edge Cases performance and edge cases handles special characters and encoding" name="Content Masking Tool Integration and Edge Cases performance and edge cases handles special characters and encoding" time="0">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:596:24)</failure>
+    <testcase classname="MemoryEntityManager persistence should persist data when snapshot frequency is reached" name="MemoryEntityManager persistence should persist data when snapshot frequency is reached" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool Integration and Edge Cases performance and edge cases handles empty detected items gracefully" name="Content Masking Tool Integration and Edge Cases performance and edge cases handles empty detected items gracefully" time="0">
+    <testcase classname="MemoryEntityManager persistence should handle persistence errors gracefully" name="MemoryEntityManager persistence should handle persistence errors gracefully" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool Integration and Edge Cases error recovery and resilience recovers from knowledge generation failures" name="Content Masking Tool Integration and Edge Cases error recovery and resilience recovers from knowledge generation failures" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:617:24)</failure>
+    <testcase classname="MemoryEntityManager error handling should handle invalid entity data" name="MemoryEntityManager error handling should handle invalid entity data" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool Advanced functionality and analysis patterns comprehensive security pattern detection provides detailed analysis prompts for complex patterns" name="Content Masking Tool Advanced functionality and analysis patterns comprehensive security pattern detection provides detailed analysis prompts for complex patterns" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:636:24)</failure>
+    <testcase classname="MemoryEntityManager error handling should handle query errors gracefully" name="MemoryEntityManager error handling should handle query errors gracefully" time="0">
+      <skipped/>
     </testcase>
-    <testcase classname="Content Masking Tool Advanced functionality and analysis patterns comprehensive security pattern detection handles complex configuration files with sensitive data" name="Content Masking Tool Advanced functionality and analysis patterns comprehensive security pattern detection handles complex configuration files with sensitive data" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:666:24)</failure>
-    </testcase>
-    <testcase classname="Content Masking Tool Advanced functionality and analysis patterns comprehensive security pattern detection integrates knowledge enhancement with security analysis" name="Content Masking Tool Advanced functionality and analysis patterns comprehensive security pattern detection integrates knowledge enhancement with security analysis" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:684:24)</failure>
-    </testcase>
-    <testcase classname="Content Masking Tool Advanced functionality and analysis patterns comprehensive workflow testing supports full security analysis workflow" name="Content Masking Tool Advanced functionality and analysis patterns comprehensive workflow testing supports full security analysis workflow" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:709:26)</failure>
-    </testcase>
-    <testcase classname="Content Masking Tool Advanced functionality and analysis patterns comprehensive workflow testing handles complete masking workflow integration" name="Content Masking Tool Advanced functionality and analysis patterns comprehensive workflow testing handles complete masking workflow integration" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:724:32)</failure>
-    </testcase>
-    <testcase classname="Content Masking Tool Advanced functionality and analysis patterns performance and resilience testing handles large content volumes efficiently" name="Content Masking Tool Advanced functionality and analysis patterns performance and resilience testing handles large content volumes efficiently" time="0.001">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:759:24)</failure>
-    </testcase>
-    <testcase classname="Content Masking Tool Advanced functionality and analysis patterns performance and resilience testing supports concurrent analysis operations" name="Content Masking Tool Advanced functionality and analysis patterns performance and resilience testing supports concurrent analysis operations" time="0.002">
-      <failure>McpAdrError: Failed to analyze content security: Failed to initialize memory system: Error: EACCES: permission denied, mkdir &apos;/Users&apos;
-    at analyzeContentSecurity (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/content-masking-tool.ts:618:11)
-    at async Promise.all (index 1)
-    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/content-masking-tool.test.ts:783:25)</failure>
+    <testcase classname="MemoryEntityManager error handling should handle relationship creation with missing entities" name="MemoryEntityManager error handling should handle relationship creation with missing entities" time="0">
+      <skipped/>
     </testcase>
   </testsuite>
 </testsuites>

@@ -12,6 +12,46 @@
 import { jest } from '@jest/globals';
 import { McpAdrError } from '../../src/types/index.js';
 
+// Mock config to provide test-safe paths
+jest.mock('../../src/utils/config.js', () => ({
+  loadConfig: jest.fn(() => ({
+    projectPath: '/tmp/test-project',
+    adrDirectory: '/tmp/test-project/docs/adrs',
+    logLevel: 'INFO',
+    cacheEnabled: true,
+    cacheDirectory: '.mcp-adr-cache',
+    maxCacheSize: 100 * 1024 * 1024,
+    analysisTimeout: 30000,
+  })),
+}));
+
+// Mock enhanced logging to prevent actual logging
+jest.mock('../../src/utils/enhanced-logging.js', () => ({
+  EnhancedLogger: jest.fn().mockImplementation(() => ({
+    info: jest.fn(),
+    debug: jest.fn(),
+    warn: jest.fn(),
+    error: jest.fn(),
+  })),
+}));
+
+// Mock filesystem operations for memory system
+const mockFsPromises = {
+  access: jest.fn().mockResolvedValue(undefined),
+  mkdir: jest.fn().mockResolvedValue(undefined),
+  readFile: jest.fn().mockRejectedValue(new Error('ENOENT')),
+  writeFile: jest.fn().mockResolvedValue(undefined),
+};
+
+jest.mock('fs', () => ({
+  promises: mockFsPromises,
+}));
+
+// Mock crypto for consistent UUIDs
+jest.mock('crypto', () => ({
+  randomUUID: jest.fn(() => 'test-uuid-123'),
+}));
+
 import {
   analyzeContentSecurity,
   generateContentMasking,
@@ -23,10 +63,15 @@ import {
 describe('Content Masking Tool', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Mock process.cwd() for consistent test environment
-    jest
-      .spyOn(process, 'cwd')
-      .mockReturnValue('/Users/tosinakinosho/workspaces/mcp-adr-analysis-server');
+
+    // Reset filesystem mocks
+    mockFsPromises.access.mockResolvedValue(undefined);
+    mockFsPromises.mkdir.mockResolvedValue(undefined);
+    mockFsPromises.readFile.mockRejectedValue(new Error('ENOENT'));
+    mockFsPromises.writeFile.mockResolvedValue(undefined);
+
+    // Mock process.cwd() for consistent test environment - use /tmp instead of Users path
+    jest.spyOn(process, 'cwd').mockReturnValue('/tmp/test-workspace/mcp-adr-analysis-server');
   });
 
   afterEach(() => {

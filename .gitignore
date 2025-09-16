@@ -3,6 +3,9 @@
 # Cache directory (MUST exclude per shrimp-rules.md)
 .mcp-adr-cache/
 
+# Memory system storage (exclude from repository)
+.mcp-adr-memory/
+
 # Node.js dependencies
 node_modules/
 
