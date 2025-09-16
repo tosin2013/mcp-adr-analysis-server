@@ -21,7 +21,10 @@ const mockCrypto = {
   randomUUID: jest.fn(() => 'test-uuid-123'),
 };
 
-jest.mock('crypto', () => mockCrypto);
+jest.mock('crypto', () => ({
+  ...mockCrypto,
+  default: mockCrypto,
+}));
 
 // Import after mocking
 import * as path from 'path';

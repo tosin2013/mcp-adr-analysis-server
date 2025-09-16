@@ -6,6 +6,9 @@
 # Memory system storage (exclude from repository)
 .mcp-adr-memory/
 
+# Migration backup files (exclude from repository)
+.mcp-migration-backups/
+
 # Node.js dependencies
 node_modules/
 
