@@ -1,9 +1,0 @@
-{
-  "timestamp": "2024-01-01T00:00:00.000Z",
-  "migrationVersion": "1.0.0",
-  "projectPath": "/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server",
-  "backupContents": {
-    "cache": true,
-    "docs": true
-  }
-}
