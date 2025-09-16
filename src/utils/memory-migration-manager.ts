@@ -122,13 +122,15 @@ export class MemoryMigrationManager {
       }
 
       // Define migration sources
+      const deploymentHistoryPath = path.join(
+        this.projectConfig.projectPath,
+        '.mcp-adr-cache',
+        'deployment-history.json'
+      );
+
       const migrationSources: DataSourceConfig[] = [
         {
-          path: path.join(
-            this.projectConfig.projectPath,
-            '.mcp-adr-cache',
-            'deployment-history.json'
-          ),
+          path: deploymentHistoryPath,
           type: 'deployment_history',
           format: 'json',
           migrationStrategy: 'full',
@@ -401,14 +403,12 @@ export class MemoryMigrationManager {
 
           await this.memoryManager.upsertEntity(memoryEntity);
           migratedCount++;
-
-          if (this.config.logLevel === 'verbose') {
-            this.logger.debug('Migrated deployment assessment', 'MemoryMigrationManager', {
-              id: memoryEntity.id,
-              environment: deployment.environment,
-            });
-          }
         } catch (error) {
+          this.logger.error(
+            'Failed to migrate deployment',
+            'MemoryMigrationManager',
+            error instanceof Error ? error : new Error(String(error))
+          );
           errors.push({
             source: 'deployment',
             error: error instanceof Error ? error.message : String(error),
@@ -419,6 +419,11 @@ export class MemoryMigrationManager {
 
       return { migratedCount, failedCount: errors.length, errors };
     } catch (error) {
+      this.logger.error(
+        'Critical error in deployment history migration',
+        'MemoryMigrationManager',
+        error instanceof Error ? error : new Error(String(error))
+      );
       throw new McpAdrError(
         `Failed to migrate deployment history: ${error instanceof Error ? error.message : String(error)}`,
         'MIGRATION_ERROR'
