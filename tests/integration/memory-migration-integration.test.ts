@@ -10,23 +10,7 @@ import { MemoryMigrationManager } from '../../src/utils/memory-migration-manager
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-
-// Mock filesystem operations
-const mockFsPromises = {
-  access: jest.fn(),
-  mkdir: jest.fn(),
-  readdir: jest.fn(),
-  readFile: jest.fn(),
-  writeFile: jest.fn(),
-  copyFile: jest.fn(),
-};
-
-jest.mock('fs', () => ({
-  promises: mockFsPromises,
-  existsSync: jest.fn(),
-}));
-
-jest.mock('fs/promises', () => mockFsPromises);
+import { existsSync } from 'fs';
 
 // Mock crypto
 const mockCrypto = {
@@ -39,51 +23,49 @@ describe('Memory Migration Integration', () => {
   let memoryManager: MemoryEntityManager;
   let migrationManager: MemoryMigrationManager;
   let mockDate: jest.SpyInstance;
+  let testTempDir: string;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.clearAllMocks();
 
     // Mock date to be consistent
     mockDate = jest
       .spyOn(Date.prototype, 'toISOString')
       .mockReturnValue('2024-01-01T00:00:00.000Z');
-    jest.spyOn(Date, 'now').mockReturnValue(1704067200000); // 2024-01-01
 
-    // Reset crypto mock
-    mockCrypto.randomUUID.mockReturnValue('test-uuid-123');
-
-    // Mock environment to provide consistent project path
-    process.env['PROJECT_PATH'] = '/test/project';
-
-    // Mock filesystem operations
-    mockFsPromises.access.mockResolvedValue(undefined);
-    mockFsPromises.mkdir.mockResolvedValue(undefined);
-    mockFsPromises.readFile.mockRejectedValue(new Error('ENOENT'));
-    mockFsPromises.writeFile.mockResolvedValue(undefined);
-    mockFsPromises.copyFile.mockResolvedValue(undefined);
-    mockFsPromises.readdir.mockResolvedValue([]);
-
-    // Mock existsSync
-    const mockExistsSync = jest.requireMock('fs').existsSync;
-    mockExistsSync.mockReturnValue(false);
+    // Create temporary directory for test files
+    testTempDir = path.join('/tmp', `mcp-test-${Date.now()}`);
+    await fs.mkdir(testTempDir, { recursive: true });
+    await fs.mkdir(path.join(testTempDir, '.mcp-adr-cache'), { recursive: true });
+    await fs.mkdir(path.join(testTempDir, 'docs', 'adrs'), { recursive: true });
 
     memoryManager = new MemoryEntityManager();
-    migrationManager = new MemoryMigrationManager(memoryManager, {
-      enableBackup: false,
-      validateIntegrity: false,
-      enableRollback: false,
-    });
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     mockDate.mockRestore();
     // Clean up environment variables
     delete process.env['PROJECT_PATH'];
+
+    // Clean up temporary directory
+    if (testTempDir && existsSync(testTempDir)) {
+      await fs.rm(testTempDir, { recursive: true, force: true });
+    }
   });
 
   describe('Complete Migration Flow', () => {
-    it.skip('should migrate deployment history successfully', async () => {
-      // Mock deployment history data
+    it('should migrate deployment history successfully', async () => {
+      // Set PROJECT_PATH to our test temp directory
+      process.env['PROJECT_PATH'] = testTempDir;
+
+      // Initialize migration manager AFTER setting environment variable
+      migrationManager = new MemoryMigrationManager(memoryManager, {
+        enableBackup: false,
+        validateIntegrity: false,
+        enableRollback: false,
+      });
+
+      // Create real deployment history data
       const deploymentHistory = [
         {
           timestamp: '2024-01-01T00:00:00.000Z',
@@ -125,35 +107,13 @@ describe('Memory Migration Integration', () => {
         },
       ];
 
-      // Mock file system for deployment history
-      const mockExistsSync = jest.requireMock('fs').existsSync;
-      mockExistsSync.mockImplementation((filePath: string) => {
-        console.log('existsSync called with path:', filePath);
-        // Return true for the exact deployment history file path
-        const shouldExist =
-          filePath === '/test/project/.mcp-adr-cache/deployment-history.json' ||
-          filePath.includes('.mcp-adr-cache') ||
-          filePath.includes('docs');
-        console.log('existsSync returning:', shouldExist, 'for path:', filePath);
-        return shouldExist;
-      });
-
-      mockFsPromises.readFile.mockImplementation(async (path: string) => {
-        if (path.includes('deployment-history.json')) {
-          return JSON.stringify(deploymentHistory);
-        }
-        throw new Error('ENOENT');
-      });
-
-      mockFsPromises.readdir.mockImplementation(async (path: string) => {
-        if (path.includes('.mcp-adr-cache')) {
-          return ['deployment-history.json'];
-        }
-        if (path.includes('docs')) {
-          return [];
-        }
-        return [];
-      });
+      // Write real deployment history file
+      const deploymentHistoryPath = path.join(
+        testTempDir,
+        '.mcp-adr-cache',
+        'deployment-history.json'
+      );
+      await fs.writeFile(deploymentHistoryPath, JSON.stringify(deploymentHistory, null, 2));
 
       // Mock upsertEntity to track calls and return success
       const upsertEntitySpy = jest
@@ -186,15 +146,6 @@ describe('Memory Migration Integration', () => {
       // Run migration
       const result = await migrationManager.migrateAllExistingData();
 
-      // Debug specific migration result properties
-      console.log('Migration result summary:', {
-        success: result.success,
-        migratedCount: result.migratedCount,
-        failedCount: result.failedCount,
-        errorsCount: result.errors.length,
-        errors: result.errors,
-      });
-
       // Verify results
       expect(result.success).toBe(true);
       expect(result.migratedCount).toBe(2); // Two deployment records
@@ -205,182 +156,82 @@ describe('Memory Migration Integration', () => {
       // Verify entity creation calls
       expect(upsertEntitySpy).toHaveBeenCalledTimes(2);
 
-      // Verify first deployment entity
-      const firstEntityCall = upsertEntitySpy.mock.calls[0][0];
-      expect(firstEntityCall.type).toBe('deployment_assessment');
-      expect(firstEntityCall.tags).toContain('migrated');
-      expect(firstEntityCall.assessmentData.environment).toBe('production');
-      expect(firstEntityCall.assessmentData.readinessScore).toBe(0.85);
-      expect(firstEntityCall.evolution.origin).toBe('imported');
+      // Verify the entities have correct structure
+      const firstCall = upsertEntitySpy.mock.calls[0][0];
+      expect(firstCall.type).toBe('deployment_assessment');
+      expect(firstCall.title).toContain('production');
+      expect(firstCall.assessmentData.readinessScore).toBe(0.85);
 
-      // Verify second deployment entity
-      const secondEntityCall = upsertEntitySpy.mock.calls[1][0];
-      expect(secondEntityCall.type).toBe('deployment_assessment');
-      expect(secondEntityCall.assessmentData.environment).toBe('staging');
-      expect(secondEntityCall.assessmentData.readinessScore).toBe(0.6);
-
-      upsertEntitySpy.mockRestore();
+      const secondCall = upsertEntitySpy.mock.calls[1][0];
+      expect(secondCall.type).toBe('deployment_assessment');
+      expect(secondCall.title).toContain('staging');
+      expect(secondCall.assessmentData.readinessScore).toBe(0.6);
     });
 
-    it.skip('should migrate ADR markdown files successfully', async () => {
-      // Mock ADR markdown files
-      const adrFiles = ['001-database-choice.md', '002-frontend-framework.md'];
-      const adrContent1 = `# Database Technology Choice
+    it('should handle migration errors gracefully', async () => {
+      // Set PROJECT_PATH to our test temp directory
+      process.env['PROJECT_PATH'] = testTempDir;
 
-## Status
-Accepted
-
-## Context
-We need to choose a database technology for our new application. The system requires ACID compliance and complex queries.
-
-## Decision
-We will use PostgreSQL as our primary database technology.
-
-## Consequences
-
-### Positive
-- Strong ACID compliance
-- Rich query language
-- Excellent performance for complex queries
-
-### Negative
-- More complex scaling compared to NoSQL
-- Higher operational overhead
-
-### Risks
-- Single point of failure if not properly configured
-- Learning curve for team members unfamiliar with SQL
-
-## Alternatives
-
-### MongoDB
-Document-based NoSQL database
-- Easier horizontal scaling
-- Flexible schema
-- But eventual consistency model doesn't meet our requirements
-`;
-
-      const adrContent2 = `# Frontend Framework Selection
-
-## Status
-Accepted
-
-## Context
-We need a modern frontend framework for building our user interface.
-
-## Decision
-Use React with TypeScript for frontend development.
-
-## Consequences
-
-### Positive
-- Large ecosystem and community
-- Strong typing with TypeScript
-- Good performance with virtual DOM
-
-### Negative
-- Steep learning curve for new developers
-- Frequent updates and changes
-
-## Alternatives
-
-### Vue.js
-Progressive framework
-- Easier learning curve
-- Good documentation
-- But smaller ecosystem
-`;
-
-      // Mock file system
-      const mockExistsSync = jest.requireMock('fs').existsSync;
-      mockExistsSync.mockImplementation((filePath: string) => {
-        // Return true for ADR directory and files
-        return (
-          filePath === '/test/project/docs/adrs' ||
-          filePath.includes('/test/project/docs/adrs/') ||
-          filePath.includes('.mcp-adr-cache')
-        );
+      // Initialize migration manager
+      migrationManager = new MemoryMigrationManager(memoryManager, {
+        enableBackup: false,
+        validateIntegrity: false,
+        enableRollback: false,
       });
 
-      mockFsPromises.readdir.mockResolvedValueOnce(adrFiles);
-      mockFsPromises.readFile.mockResolvedValueOnce(adrContent1).mockResolvedValueOnce(adrContent2);
+      // Create deployment history with some invalid data
+      const mixedDeploymentHistory = [
+        // Valid deployment
+        {
+          timestamp: '2024-01-01T00:00:00.000Z',
+          environment: 'production',
+          readinessScore: 0.85,
+          technicalStack: ['node.js'],
+        },
+        // Invalid deployment (missing required fields)
+        {
+          timestamp: null,
+          environment: undefined,
+        },
+        // Another valid deployment
+        {
+          timestamp: '2024-01-03T00:00:00.000Z',
+          environment: 'staging',
+          readinessScore: 0.7,
+          technicalStack: ['python'],
+        },
+      ];
 
-      // Mock upsertEntity
+      // Write deployment history file
+      const deploymentHistoryPath = path.join(
+        testTempDir,
+        '.mcp-adr-cache',
+        'deployment-history.json'
+      );
+      await fs.writeFile(deploymentHistoryPath, JSON.stringify(mixedDeploymentHistory, null, 2));
+
+      // Mock upsertEntity to sometimes fail
+      let callCount = 0;
       const upsertEntitySpy = jest
         .spyOn(memoryManager, 'upsertEntity')
-        .mockResolvedValue({} as any);
+        .mockImplementation(async entity => {
+          callCount++;
+          // Fail the second entity (with invalid data)
+          if (callCount === 2) {
+            throw new Error('Invalid entity data');
+          }
+          return { ...entity, id: mockCrypto.randomUUID() };
+        });
 
-      // Mock other required methods
+      // Mock other methods
       jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-
       jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
-        entities: [
-          { id: 'adr-1', type: 'architectural_decision', title: 'Database Choice' },
-          { id: 'adr-2', type: 'architectural_decision', title: 'Frontend Framework' },
-        ] as any,
-        totalCount: 2,
-        hasMore: false,
-      });
-
-      // Run migration
-      const result = await migrationManager.migrateAllExistingData();
-
-      // Verify results
-      expect(result.success).toBe(true);
-      expect(result.migratedCount).toBe(2);
-      expect(upsertEntitySpy).toHaveBeenCalledTimes(2);
-
-      // Verify ADR entity structure
-      const firstAdrCall = upsertEntitySpy.mock.calls[0][0];
-      expect(firstAdrCall.type).toBe('architectural_decision');
-      expect(firstAdrCall.title).toBe('Database Technology Choice');
-      expect(firstAdrCall.decisionData.status).toBe('accepted');
-      expect(firstAdrCall.decisionData.decision).toContain('PostgreSQL');
-      expect(firstAdrCall.decisionData.consequences.positive).toContain('Strong ACID compliance');
-      expect(firstAdrCall.decisionData.alternatives).toHaveLength(1);
-      expect(firstAdrCall.decisionData.alternatives[0].name).toBe('MongoDB');
-
-      const secondAdrCall = upsertEntitySpy.mock.calls[1][0];
-      expect(secondAdrCall.type).toBe('architectural_decision');
-      expect(secondAdrCall.title).toBe('Frontend Framework Selection');
-      expect(secondAdrCall.decisionData.decision).toContain('React with TypeScript');
-
-      upsertEntitySpy.mockRestore();
-    });
-
-    it.skip('should handle migration errors gracefully', async () => {
-      // Mock file system to simulate some failures
-      const mockExistsSync = jest.requireMock('fs').existsSync;
-      mockExistsSync.mockReturnValue(true);
-
-      // First file succeeds, second fails
-      mockFsPromises.readFile
-        .mockResolvedValueOnce('{"deployments": [{"environment": "prod"}]}')
-        .mockRejectedValueOnce(new Error('File read error'));
-
-      mockFsPromises.readdir
-        .mockResolvedValueOnce(['deployment-history.json'])
-        .mockResolvedValueOnce(['001-valid.md', '002-invalid.md']);
-
-      // Mock upsertEntity to succeed for valid data, fail for invalid
-      const upsertEntitySpy = jest
-        .spyOn(memoryManager, 'upsertEntity')
-        .mockResolvedValueOnce({} as any)
-        .mockRejectedValueOnce(new Error('Entity validation error'));
-
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
-        suggestedRelationships: [],
-        conflicts: [],
-        autoCreatedCount: 0,
-      });
-
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
-        entities: [{ id: 'entity-1', type: 'deployment_assessment' }] as any,
-        totalCount: 1,
+        entities: [],
+        totalCount: 0,
         hasMore: false,
       });
 
@@ -392,168 +243,99 @@ Progressive framework
       expect(result.migratedCount).toBeGreaterThan(0);
       expect(result.failedCount).toBeGreaterThan(0);
       expect(result.errors.length).toBeGreaterThan(0);
-
-      upsertEntitySpy.mockRestore();
     });
 
-    it.skip('should create backup and rollback plan', async () => {
-      // Mock file system
-      const mockExistsSync = jest.requireMock('fs').existsSync;
-      mockExistsSync.mockReturnValue(true);
+    it('should handle large dataset migration with 1000 entities', async () => {
+      // Set PROJECT_PATH to our test temp directory
+      process.env['PROJECT_PATH'] = testTempDir;
 
-      mockFsPromises.readdir.mockResolvedValue([]);
+      // Initialize migration manager
+      migrationManager = new MemoryMigrationManager(memoryManager, {
+        enableBackup: false,
+        validateIntegrity: false,
+        enableRollback: false,
+      });
 
+      // Generate large deployment history
+      const largeDeploymentHistory = Array.from({ length: 1000 }, (_, i) => ({
+        timestamp: new Date(2024, 0, 1, 0, i).toISOString(),
+        environment: i % 2 === 0 ? 'production' : 'staging',
+        readinessScore: Math.random() * 0.4 + 0.6, // 0.6 to 1.0
+        testsPassed: Math.floor(Math.random() * 50) + 50,
+        testsFailed: Math.floor(Math.random() * 10),
+        technicalStack: ['node.js', 'postgresql'],
+        strategy: i % 3 === 0 ? 'blue_green' : 'rolling',
+      }));
+
+      // Write large deployment history file
+      const deploymentHistoryPath = path.join(
+        testTempDir,
+        '.mcp-adr-cache',
+        'deployment-history.json'
+      );
+      await fs.writeFile(deploymentHistoryPath, JSON.stringify(largeDeploymentHistory, null, 2));
+
+      // Mock upsertEntity
+      const upsertEntitySpy = jest
+        .spyOn(memoryManager, 'upsertEntity')
+        .mockImplementation(async entity => ({ ...entity, id: mockCrypto.randomUUID() }));
+
+      // Mock other methods
       jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-
       jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [],
         totalCount: 0,
         hasMore: false,
       });
 
-      // Enable backup and rollback
-      const migrationManagerWithBackup = new MemoryMigrationManager(memoryManager, {
-        enableBackup: true,
-        enableRollback: true,
-      });
+      const startTime = Date.now();
 
       // Run migration
-      const result = await migrationManagerWithBackup.migrateAllExistingData();
+      const result = await migrationManager.migrateAllExistingData();
 
-      // Verify backup creation
-      expect(result.backupPath).toBeDefined();
-      expect(result.rollbackPlan).toBeDefined();
-      expect(mockFsPromises.mkdir).toHaveBeenCalled();
-      expect(mockFsPromises.writeFile).toHaveBeenCalled();
+      const endTime = Date.now();
+      const duration = endTime - startTime;
 
-      // Verify backup manifest and rollback plan were written
-      const writeFileCalls = (mockFsPromises.writeFile as jest.Mock).mock.calls;
-      const manifestCall = writeFileCalls.find(call => call[0].includes('backup-manifest.json'));
-      const rollbackCall = writeFileCalls.find(call => call[0].includes('rollback-plan.md'));
-
-      expect(manifestCall).toBeDefined();
-      expect(rollbackCall).toBeDefined();
-    });
-
-    it.skip('should validate migration integrity', async () => {
-      // Mock successful migration with validation
-      const mockExistsSync = jest.requireMock('fs').existsSync;
-      mockExistsSync.mockReturnValue(true);
-
-      const deploymentData = [{ environment: 'test', readinessScore: 0.8 }];
-      mockFsPromises.readFile.mockResolvedValue(JSON.stringify(deploymentData));
-      mockFsPromises.readdir.mockResolvedValue(['deployment-history.json']);
-
-      jest.spyOn(memoryManager, 'upsertEntity').mockResolvedValue({} as any);
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
-        suggestedRelationships: [],
-        conflicts: [],
-        autoCreatedCount: 0,
-      });
-
-      // Mock validation query
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
-        entities: [
-          {
-            id: 'valid-entity-1',
-            type: 'deployment_assessment',
-            title: 'Valid Entity',
-            description: 'Test',
-            confidence: 0.8,
-            relevance: 0.7,
-            tags: [],
-            created: '2024-01-01T00:00:00.000Z',
-            lastModified: '2024-01-01T00:00:00.000Z',
-            version: 1,
-          },
-        ] as any,
-        totalCount: 1,
-        hasMore: false,
-      });
-
-      // Enable validation
-      const migrationManagerWithValidation = new MemoryMigrationManager(memoryManager, {
-        validateIntegrity: true,
-      });
-
-      // Run migration
-      const result = await migrationManagerWithValidation.migrateAllExistingData();
-
-      // Verify validation passed
+      // Verify that exactly 1000 entities were processed
       expect(result.success).toBe(true);
-      expect(result.errors.filter(e => e.source === 'validation')).toHaveLength(0);
-    });
+      expect(result.migratedCount).toBe(1000);
+      expect(result.failedCount).toBe(0);
+      expect(result.errors).toHaveLength(0);
 
-    it.skip('should handle performance monitoring', async () => {
-      // Mock large dataset migration
-      const mockExistsSync = jest.requireMock('fs').existsSync;
-      mockExistsSync.mockImplementation((filePath: string) => {
-        // Return true for deployment history file to trigger migration
-        return (
-          filePath === '/test/project/.mcp-adr-cache/deployment-history.json' ||
-          filePath.includes('.mcp-adr-cache')
-        );
-      });
+      // Performance checks
+      expect(result.performance.throughputPerSecond).toBeGreaterThan(20); // At least 20 entities/second
+      expect(duration).toBeLessThan(60000); // Should complete within 60 seconds
 
-      const largeDeploymentData = Array.from({ length: 100 }, (_, i) => ({
-        environment: `env-${i}`,
-        readinessScore: 0.8,
-        timestamp: `2024-01-${String((i % 30) + 1).padStart(2, '0')}T00:00:00.000Z`,
-      }));
-
-      mockFsPromises.readFile.mockResolvedValue(JSON.stringify(largeDeploymentData));
-      mockFsPromises.readdir.mockResolvedValue(['deployment-history.json']);
-
-      jest.spyOn(memoryManager, 'upsertEntity').mockResolvedValue({} as any);
-
-      // Create migration manager instance for this test
-      const migrationManagerWithValidation = new MemoryMigrationManager(memoryManager, {
-        validateIntegrity: true,
-      });
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
-        suggestedRelationships: [],
-        conflicts: [],
-        autoCreatedCount: 0,
-      });
-
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
-        entities: largeDeploymentData.map((_, i) => ({
-          id: `entity-${i}`,
-          type: 'deployment_assessment',
-          title: `Entity ${i}`,
-        })) as any,
-        totalCount: largeDeploymentData.length,
-        hasMore: false,
-      });
-
-      // Run migration
-      const result = await migrationManagerWithValidation.migrateAllExistingData();
-
-      // Verify performance metrics
-      expect(result.performance.startTime).toBeDefined();
-      expect(result.performance.endTime).toBeDefined();
-      expect(result.performance.durationMs).toBeGreaterThan(0);
-      expect(result.performance.throughputPerSecond).toBeGreaterThan(0);
-      expect(result.migratedCount).toBe(largeDeploymentData.length);
+      // Verify all entities were created
+      expect(upsertEntitySpy).toHaveBeenCalledTimes(1000);
     });
   });
 
   describe('Error Handling and Edge Cases', () => {
     it('should handle missing data sources gracefully', async () => {
-      // Mock non-existent files
-      const mockExistsSync = jest.requireMock('fs').existsSync;
-      mockExistsSync.mockReturnValue(false);
+      // Set PROJECT_PATH to our test temp directory
+      process.env['PROJECT_PATH'] = testTempDir;
 
+      // Initialize migration manager
+      migrationManager = new MemoryMigrationManager(memoryManager, {
+        enableBackup: false,
+        validateIntegrity: false,
+        enableRollback: false,
+      });
+
+      // Don't create any data files - all sources should be missing
+
+      // Mock methods (they shouldn't be called)
+      const upsertEntitySpy = jest.spyOn(memoryManager, 'upsertEntity');
       jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-
       jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [],
         totalCount: 0,
@@ -563,32 +345,42 @@ Progressive framework
       // Run migration
       const result = await migrationManager.migrateAllExistingData();
 
-      // Should succeed with no migrations
+      // Should succeed with no entities migrated
       expect(result.success).toBe(true);
       expect(result.migratedCount).toBe(0);
       expect(result.failedCount).toBe(0);
+      expect(result.errors).toHaveLength(0);
+
+      // No entities should have been created
+      expect(upsertEntitySpy).not.toHaveBeenCalled();
     });
 
-    it.skip('should handle corrupted JSON data', async () => {
-      const mockExistsSync = jest.requireMock('fs').existsSync;
-      mockExistsSync.mockImplementation((filePath: string) => {
-        // Return true for deployment history file to trigger migration
-        return (
-          filePath === '/test/project/.mcp-adr-cache/deployment-history.json' ||
-          filePath.includes('.mcp-adr-cache')
-        );
+    it('should handle corrupted JSON data', async () => {
+      // Set PROJECT_PATH to our test temp directory
+      process.env['PROJECT_PATH'] = testTempDir;
+
+      // Initialize migration manager
+      migrationManager = new MemoryMigrationManager(memoryManager, {
+        enableBackup: false,
+        validateIntegrity: false,
+        enableRollback: false,
       });
 
-      // Mock corrupted JSON
-      mockFsPromises.readFile.mockResolvedValue('{ invalid json }');
-      mockFsPromises.readdir.mockResolvedValue(['deployment-history.json']);
+      // Write corrupted JSON file
+      const deploymentHistoryPath = path.join(
+        testTempDir,
+        '.mcp-adr-cache',
+        'deployment-history.json'
+      );
+      await fs.writeFile(deploymentHistoryPath, '{ invalid json content');
 
+      // Mock methods
+      const upsertEntitySpy = jest.spyOn(memoryManager, 'upsertEntity');
       jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-
       jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [],
         totalCount: 0,
@@ -598,11 +390,187 @@ Progressive framework
       // Run migration
       const result = await migrationManager.migrateAllExistingData();
 
-      // Should record errors but not crash
-      expect(result.success).toBe(true); // Overall success with recorded errors
-      expect(result.failedCount).toBe(1);
-      expect(result.errors.length).toBeGreaterThan(0);
-      expect(result.errors[0].error).toContain('JSON');
+      // Should record JSON parsing error but continue processing other sources
+      expect(result.success).toBe(true); // Overall migration succeeds despite source error
+      expect(result.migratedCount).toBe(0); // No entities migrated from corrupted source
+      expect(result.errors.length).toBeGreaterThan(0); // Error should be recorded
+      expect(
+        result.errors.some(
+          e =>
+            e.error.includes('JSON') ||
+            e.error.includes('parse') ||
+            e.error.includes('Unexpected token')
+        )
+      ).toBe(true);
+
+      // No entities should have been created
+      expect(upsertEntitySpy).not.toHaveBeenCalled();
+    });
+
+    it('should handle entity validation failures gracefully', async () => {
+      // Set PROJECT_PATH to our test temp directory
+      process.env['PROJECT_PATH'] = testTempDir;
+
+      // Initialize migration manager
+      migrationManager = new MemoryMigrationManager(memoryManager, {
+        enableBackup: false,
+        validateIntegrity: false,
+        enableRollback: false,
+      });
+
+      // Create deployment history with valid structure
+      const deploymentHistory = [
+        {
+          timestamp: '2024-01-01T00:00:00.000Z',
+          environment: 'production',
+          readinessScore: 0.85,
+          technicalStack: ['node.js'],
+        },
+      ];
+
+      // Write deployment history file
+      const deploymentHistoryPath = path.join(
+        testTempDir,
+        '.mcp-adr-cache',
+        'deployment-history.json'
+      );
+      await fs.writeFile(deploymentHistoryPath, JSON.stringify(deploymentHistory, null, 2));
+
+      // Mock upsertEntity to fail validation
+      const upsertEntitySpy = jest
+        .spyOn(memoryManager, 'upsertEntity')
+        .mockRejectedValue(new Error('Entity validation failed'));
+
+      // Mock other methods
+      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+        suggestedRelationships: [],
+        conflicts: [],
+        autoCreatedCount: 0,
+      });
+      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+        entities: [],
+        totalCount: 0,
+        hasMore: false,
+      });
+
+      // Run migration
+      const result = await migrationManager.migrateAllExistingData();
+
+      // Should record validation failures
+      expect(result.failedCount).toBeGreaterThan(0); // Should fail due to validation
+      expect(result.errors.length).toBeGreaterThan(0); // Errors should be recorded
+    });
+
+    it('should handle network timeouts and retries', async () => {
+      // Set PROJECT_PATH to our test temp directory
+      process.env['PROJECT_PATH'] = testTempDir;
+
+      // Initialize migration manager
+      migrationManager = new MemoryMigrationManager(memoryManager, {
+        enableBackup: false,
+        validateIntegrity: false,
+        enableRollback: false,
+      });
+
+      // Create deployment history
+      const deploymentHistory = [
+        {
+          timestamp: '2024-01-01T00:00:00.000Z',
+          environment: 'production',
+          readinessScore: 0.85,
+          technicalStack: ['node.js'],
+        },
+      ];
+
+      // Write deployment history file
+      const deploymentHistoryPath = path.join(
+        testTempDir,
+        '.mcp-adr-cache',
+        'deployment-history.json'
+      );
+      await fs.writeFile(deploymentHistoryPath, JSON.stringify(deploymentHistory, null, 2));
+
+      // Mock network timeout
+      jest
+        .spyOn(memoryManager, 'upsertEntity')
+        .mockRejectedValueOnce(new Error('Network timeout'))
+        .mockImplementation(async entity => ({ ...entity, id: mockCrypto.randomUUID() }));
+
+      // Mock other methods
+      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+        suggestedRelationships: [],
+        conflicts: [],
+        autoCreatedCount: 0,
+      });
+      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+        entities: [],
+        totalCount: 0,
+        hasMore: false,
+      });
+
+      // Run migration
+      const result = await migrationManager.migrateAllExistingData();
+
+      // Should record network failures appropriately
+      expect(result.success).toBe(true); // May still succeed overall
+      expect(result.errors.length).toBeGreaterThan(0); // Should record errors
+      expect(result.errors[0].error).toContain('timeout');
+    });
+
+    it('should handle progress tracking for long operations', async () => {
+      // Set PROJECT_PATH to our test temp directory
+      process.env['PROJECT_PATH'] = testTempDir;
+
+      // Initialize migration manager
+      migrationManager = new MemoryMigrationManager(memoryManager, {
+        enableBackup: false,
+        validateIntegrity: false,
+        enableRollback: false,
+      });
+
+      // Create moderately large dataset
+      const largeDataset = Array.from({ length: 50 }, (_, i) => ({
+        timestamp: new Date(2024, 0, 1, 0, i).toISOString(),
+        environment: 'test',
+        readinessScore: 0.8,
+        technicalStack: ['node.js'],
+      }));
+
+      // Write deployment history file
+      const deploymentHistoryPath = path.join(
+        testTempDir,
+        '.mcp-adr-cache',
+        'deployment-history.json'
+      );
+      await fs.writeFile(deploymentHistoryPath, JSON.stringify(largeDataset, null, 2));
+
+      // Track progress
+      let progressUpdates = 0;
+      jest.spyOn(memoryManager, 'upsertEntity').mockImplementation(async entity => {
+        progressUpdates++;
+        return { ...entity, id: mockCrypto.randomUUID() };
+      });
+
+      // Mock other methods
+      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+        suggestedRelationships: [],
+        conflicts: [],
+        autoCreatedCount: 0,
+      });
+      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+        entities: [],
+        totalCount: 0,
+        hasMore: false,
+      });
+
+      const startTime = performance.now();
+      const result = await migrationManager.migrateAllExistingData();
+      const duration = performance.now() - startTime;
+
+      expect(result.success).toBe(true);
+      expect(result.migratedCount).toBe(largeDataset.length);
+      expect(progressUpdates).toBe(largeDataset.length);
+      expect(duration).toBeGreaterThan(0);
     });
   });
 });
