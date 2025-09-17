@@ -1,0 +1,220 @@
+name: Auto Release on PR Merge
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+
+jobs:
+  auto-release:
+    # Only run if PR was merged (not just closed) and not already handled by dependabot workflow
+    if: github.event.pull_request.merged == true && github.actor != 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      actions: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Configure Git
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
+      - name: Check auto-release configuration
+        id: config
+        run: |
+          if [[ -f ".github/auto-release.config.json" ]]; then
+            ENABLED=$(jq -r '.enabled' .github/auto-release.config.json)
+            SKIP_LABELS=$(jq -r '.skipLabels[]' .github/auto-release.config.json | tr '\n' ' ')
+            echo "enabled=$ENABLED" >> $GITHUB_OUTPUT
+            echo "skip_labels=$SKIP_LABELS" >> $GITHUB_OUTPUT
+            echo "Auto-release enabled: $ENABLED"
+            echo "Skip labels: $SKIP_LABELS"
+          else
+            echo "enabled=true" >> $GITHUB_OUTPUT
+            echo "skip_labels=" >> $GITHUB_OUTPUT
+            echo "No config found, using defaults"
+          fi
+
+      - name: Check if release should be skipped
+        id: should-skip
+        run: |
+          PR_LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          SKIP_LABELS="${{ steps.config.outputs.skip_labels }}"
+
+          for label in $SKIP_LABELS; do
+            if [[ "$PR_LABELS" == *"$label"* ]]; then
+              echo "should_skip=true" >> $GITHUB_OUTPUT
+              echo "🚫 Skipping release due to label: $label"
+              exit 0
+            fi
+          done
+
+          echo "should_skip=false" >> $GITHUB_OUTPUT
+          echo "✅ Release should proceed"
+
+      - name: Determine version bump type
+        id: version-type
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        run: |
+          echo "Analyzing PR: ${{ github.event.pull_request.title }}"
+          echo "Labels: ${{ join(github.event.pull_request.labels.*.name, ', ') }}"
+
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
+          PR_BODY="${{ github.event.pull_request.body }}"
+
+          # Check for breaking changes or major version indicators
+          if [[ "$PR_TITLE" == *"BREAKING"* ]] || [[ "$PR_TITLE" == *"breaking"* ]] || \
+             [[ "$PR_LABELS" == *"breaking"* ]] || [[ "$PR_LABELS" == *"major"* ]] || \
+             [[ "$PR_BODY" == *"BREAKING CHANGE"* ]]; then
+            VERSION_TYPE="major"
+            echo "🚨 Major version bump detected (breaking changes)"
+          # Check for features or minor version indicators
+          elif [[ "$PR_TITLE" == *"feat"* ]] || [[ "$PR_TITLE" == *"feature"* ]] || \
+               [[ "$PR_LABELS" == *"feature"* ]] || [[ "$PR_LABELS" == *"enhancement"* ]] || \
+               [[ "$PR_LABELS" == *"minor"* ]]; then
+            VERSION_TYPE="minor"
+            echo "✨ Minor version bump detected (new features)"
+          # Default to patch for fixes, chores, docs, etc.
+          else
+            VERSION_TYPE="patch"
+            echo "🔧 Patch version bump detected (fixes/chores)"
+          fi
+
+          echo "version_type=$VERSION_TYPE" >> $GITHUB_OUTPUT
+          echo "Version bump type: $VERSION_TYPE"
+
+      - name: Bump version
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        run: |
+          echo "Bumping version with type: ${{ steps.version-type.outputs.version_type }}"
+
+          # Bump version without creating git tag (we'll do that separately)
+          npm version ${{ steps.version-type.outputs.version_type }} --no-git-tag-version
+
+          NEW_VERSION=$(node -p "require('./package.json').version")
+          echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "New version: $NEW_VERSION"
+
+      - name: Generate release notes preview
+        id: release-notes
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_AUTHOR="${{ github.event.pull_request.user.login }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+
+          # Create basic release notes
+          cat > release_notes.md << EOF
+          # Release v${{ env.NEW_VERSION }}
+
+          ## Changes
+          - $PR_TITLE (#$PR_NUMBER) by @$PR_AUTHOR
+
+          **Full Changelog**: [View PR]($PR_URL)
+
+          ---
+          🤖 Auto-generated release following PR merge
+          EOF
+
+          echo "Generated release notes preview"
+          cat release_notes.md
+
+      - name: Commit version bump
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        run: |
+          git add package.json package-lock.json
+          git commit -m "chore: release v${{ env.NEW_VERSION }}
+
+          Auto-release following PR merge:
+          - ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})
+          - Author: @${{ github.event.pull_request.user.login }}
+          - Type: ${{ steps.version-type.outputs.version_type }} version bump
+
+          🤖 Generated with [Claude Code](https://claude.ai/code)
+
+          Co-Authored-By: Claude <noreply@anthropic.com>"
+
+      - name: Push version bump
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        run: |
+          git push origin main
+
+      - name: Create and push tag
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        run: |
+          TAG_NAME="v${{ env.NEW_VERSION }}"
+          echo "Creating tag: $TAG_NAME"
+
+          # Create annotated tag with release info
+          git tag -a "$TAG_NAME" -m "Release $TAG_NAME
+
+          Auto-release following PR merge:
+          - ${{ github.event.pull_request.title }}
+          - PR #${{ github.event.pull_request.number }} by @${{ github.event.pull_request.user.login }}
+          - Type: ${{ steps.version-type.outputs.version_type }} version bump
+
+          This tag will trigger:
+          - AI-enhanced release notes generation
+          - NPM package publishing
+          - Documentation updates"
+
+          git push origin "$TAG_NAME"
+
+          echo "✅ Tag $TAG_NAME created and pushed"
+          echo "🚀 This will trigger AI release notes generation and NPM publishing"
+
+      - name: Create GitHub Release (Basic)
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ env.NEW_VERSION }}
+          release_name: Release v${{ env.NEW_VERSION }}
+          body_path: release_notes.md
+          draft: false
+          prerelease: false
+
+      - name: Summary
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        run: |
+          echo "## 🎉 Auto-release completed!" >> $GITHUB_STEP_SUMMARY
+          echo "**Version**: v${{ env.NEW_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Type**: ${{ steps.version-type.outputs.version_type }} bump" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by**: ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Author**: @${{ github.event.pull_request.user.login }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tag v${{ env.NEW_VERSION }} created" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔄 AI release notes workflow will trigger" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 NPM publishing workflow will trigger" >> $GITHUB_STEP_SUMMARY
+          echo "- 📚 Documentation will be updated" >> $GITHUB_STEP_SUMMARY
+
+      - name: Skipped Summary
+        if: steps.config.outputs.enabled == 'false' || steps.should-skip.outputs.should_skip == 'true'
+        run: |
+          echo "## ⏭️ Auto-release skipped" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ steps.config.outputs.enabled }}" == "false" ]]; then
+            echo "**Reason**: Auto-release disabled in configuration" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Reason**: PR has skip label" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "**PR**: ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "To enable auto-release, update `.github/auto-release.config.json` or remove skip labels." >> $GITHUB_STEP_SUMMARY
