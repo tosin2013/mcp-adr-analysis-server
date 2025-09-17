@@ -2,7 +2,8 @@
 
 **Learning Goal**: By the end of this tutorial, you'll understand MCP basics and have created your first architectural decision record.
 
-**Prerequisites**: 
+**Prerequisites**:
+
 - Node.js ≥20.0.0 installed
 - Basic understanding of software architecture
 - Text editor or IDE
@@ -43,6 +44,7 @@ graph TB
 ```
 
 The MCP ADR Analysis Server specializes in:
+
 - **Project Analysis** - Understanding your codebase and architecture
 - **Decision Discovery** - Finding architectural decisions that need documentation
 - **ADR Generation** - Creating professional architectural decision records
@@ -87,6 +89,7 @@ Add this configuration to your MCP client (e.g., Claude Desktop):
 ```
 
 **Important Configuration Notes**:
+
 - Replace `/path/to/your/project` with your actual project path
 - Get your OpenRouter API key from [https://openrouter.ai/keys](https://openrouter.ai/keys)
 - `EXECUTION_MODE: "full"` enables AI-powered analysis (use `"prompt-only"` for basic mode)
@@ -96,13 +99,39 @@ Add this configuration to your MCP client (e.g., Claude Desktop):
 ### Test the Connection
 
 In your MCP client, try this simple command:
+
 ```
 analyze_project_ecosystem
 ```
 
 If you see detailed analysis output, you're ready to proceed! 🎉
 
+### Initialize the Memory System
+
+**Important**: To enable the intelligent memory features (pattern recognition, relationship inference, etc.), you need to load your ADRs into the memory system first:
+
+```json
+{
+  "tool": "memory_loading",
+  "parameters": {
+    "action": "load_adrs",
+    "forceReload": true
+  }
+}
+```
+
+This command will:
+
+- Discover all ADRs in your configured directory
+- Transform them into memory entities
+- Build relationship graphs between decisions
+- Enable intelligent pattern recognition
+- Populate the `.mcp-adr-memory` directory
+
+After running this, your memory system will be actively learning from your architectural decisions and providing intelligent insights!
+
 **Note**: The server works in two modes:
+
 - **`EXECUTION_MODE: "full"`** - AI-powered analysis with intelligent insights (requires OpenRouter API key)
 - **`EXECUTION_MODE: "prompt-only"`** - Basic analysis with structured prompts for manual AI use
 
@@ -113,6 +142,22 @@ For the full learning experience, we recommend using "full" mode with an OpenRou
 ## 🔍 Step 3: Your First Project Analysis
 
 Let's analyze a project to understand what the server can do.
+
+### First: Load ADRs into Memory (If You Have Any)
+
+If your project already has ADRs in the `docs/adrs` directory (or your configured ADR directory), load them into the memory system first:
+
+```json
+{
+  "tool": "memory_loading",
+  "parameters": {
+    "action": "load_adrs",
+    "forceReload": true
+  }
+}
+```
+
+This populates the `.mcp-adr-memory` directory and enables intelligent pattern recognition.
 
 ### Create a Sample Project
 
@@ -157,6 +202,7 @@ The analysis will show you:
 5. **💡 Recommendations** - Suggested next steps and improvements
 
 **Exercise**: Look through the analysis results and identify:
+
 - What programming language(s) were detected?
 - What project structure pattern was identified?
 - What recommendations were made?
@@ -195,7 +241,11 @@ Pick one of the suggested decisions and create an ADR:
       "context": "Need to choose a web framework for the HTTP API",
       "decision": "Express.js",
       "rationale": "Widely adopted, excellent ecosystem, team familiarity",
-      "consequences": ["Fast development", "Large community support", "Potential performance limitations for high-scale scenarios"]
+      "consequences": [
+        "Fast development",
+        "Large community support",
+        "Potential performance limitations for high-scale scenarios"
+      ]
     },
     "adrDirectory": "docs/adrs"
   }
@@ -207,9 +257,26 @@ Pick one of the suggested decisions and create an ADR:
 Check the `docs/adrs/` directory. You should see a new file like `001-web-framework-selection.md`.
 
 **Exercise**: Open the ADR file and review:
+
 - Is the structure clear and professional?
 - Does the rationale make sense for your project?
 - Are the consequences realistic?
+
+### Load Your New ADR into Memory
+
+Now that you've created an ADR, load it into the memory system to enable intelligent insights:
+
+```json
+{
+  "tool": "memory_loading",
+  "parameters": {
+    "action": "load_adrs",
+    "forceReload": true
+  }
+}
+```
+
+This will process your new ADR and start building the knowledge graph that powers the intelligent features.
 
 ---
 
@@ -255,7 +322,7 @@ Congratulations! You've just:
 ✅ **Set up MCP** - Connected an AI assistant to powerful analysis tools  
 ✅ **Analyzed Architecture** - Used AI to understand your project structure  
 ✅ **Created Professional ADRs** - Generated industry-standard architectural documentation  
-✅ **Established Process** - Set up a system for tracking architectural decisions  
+✅ **Established Process** - Set up a system for tracking architectural decisions
 
 ### Key Concepts You've Learned
 
@@ -271,14 +338,17 @@ Congratulations! You've just:
 Now that you understand the basics, you can:
 
 ### **Immediate Next Steps**
+
 - **[Tutorial 2: Working with Existing Projects](02-existing-projects.md)** - Learn to analyze codebases with existing architecture
 - **[Tutorial 3: Advanced Analysis Techniques](03-advanced-analysis.md)** - Explore security scanning, deployment readiness, and more
 
 ### **Explore Specific Use Cases**
+
 - **[How-To: Handle Security Concerns](../how-to-guides/security-analysis.md)** - Scan for sensitive content and credentials
 - **[How-To: Prepare for Deployment](../how-to-guides/deployment-readiness.md)** - Validate your project is ready for production
 
 ### **Deep Dive into Features**
+
 - **[API Reference](../reference/api-reference.md)** - Complete documentation of all 37 available tools
 - **[Architecture Concepts](../explanation/mcp-concepts.md)** - Understand the deeper architectural principles
 
@@ -289,15 +359,18 @@ Now that you understand the basics, you can:
 ### Common Issues
 
 **"Tool not found" error**
+
 - Verify MCP server installation: `mcp-adr-analysis-server --version`
 - Check MCP client configuration
 - Ensure environment variables are set correctly
 
 **"Permission denied" errors**
+
 - Check file permissions in your project directory
 - Ensure `ADR_DIRECTORY` exists or can be created
 
 **Analysis seems incomplete**
+
 - Try `enhancedMode: true` for more comprehensive analysis
 - Increase `recursiveDepth` to "comprehensive"
 - Check that `PROJECT_PATH` points to your project root
@@ -312,15 +385,15 @@ Now that you understand the basics, you can:
 
 **"AI execution not enabled" errors**
 
-* Check that `OPENROUTER_API_KEY` is set in your MCP configuration
-* Verify your API key is valid at [https://openrouter.ai/keys](https://openrouter.ai/keys)
-* Ensure `EXECUTION_MODE` is set to `"full"`
+- Check that `OPENROUTER_API_KEY` is set in your MCP configuration
+- Verify your API key is valid at [https://openrouter.ai/keys](https://openrouter.ai/keys)
+- Ensure `EXECUTION_MODE` is set to `"full"`
 
 **"Permission denied" or rate limit errors**
 
-* Check your OpenRouter account has sufficient credits
-* Try a different AI model (e.g., "openai/gpt-4o-mini" for lower cost)
-* Reduce analysis scope with `enhancedMode: false`
+- Check your OpenRouter account has sufficient credits
+- Try a different AI model (e.g., "openai/gpt-4o-mini" for lower cost)
+- Reduce analysis scope with `enhancedMode: false`
 
 ---
 
@@ -328,5 +401,4 @@ Now that you understand the basics, you can:
 
 ---
 
-*This tutorial is part of the MCP ADR Analysis Server learning path. Each tutorial builds on the previous one while being useful on its own.*
-
+_This tutorial is part of the MCP ADR Analysis Server learning path. Each tutorial builds on the previous one while being useful on its own._
