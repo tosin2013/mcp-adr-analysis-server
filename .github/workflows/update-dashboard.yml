@@ -47,14 +47,15 @@ jobs:
       
       - name: Update dashboard
         run: |
-          cat > docs/release-dashboard.md << 'EOF'
+          CURRENT_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
+          cat > docs/release-dashboard.md << EOF
           # Release Pipeline Dashboard
 
           ## 🚀 Release Status
           - **Latest Release**: ![Latest Release](https://img.shields.io/github/v/release/tosin2013/mcp-adr-analysis-server)
           - **Next Release**: Auto-determined by changes
           - **Pipeline Health**: ✅ Healthy
-          - **Last Updated**: $(date -u '+%Y-%m-%d %H:%M UTC')
+          - **Last Updated**: $CURRENT_DATE
 
           ## 🔒 Security Overview
           - **Open Vulnerabilities**: ![Vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/tosin2013/mcp-adr-analysis-server)
