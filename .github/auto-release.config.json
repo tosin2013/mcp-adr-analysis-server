@@ -1,0 +1,20 @@
+{
+  "enabled": true,
+  "skipLabels": ["no-release", "skip-release", "documentation"],
+  "versionBumpRules": {
+    "major": {
+      "keywords": ["BREAKING", "breaking", "major"],
+      "labels": ["breaking", "major", "breaking-change"]
+    },
+    "minor": {
+      "keywords": ["feat", "feature", "minor"],
+      "labels": ["feature", "enhancement", "minor"]
+    },
+    "patch": {
+      "keywords": ["fix", "patch", "chore", "docs", "refactor"],
+      "labels": ["bug", "fix", "patch", "documentation", "maintenance"]
+    }
+  },
+  "excludeAuthors": ["dependabot[bot]"],
+  "description": "Configuration for automatic releases on PR merge. Set 'enabled' to false to disable auto-releases."
+}
