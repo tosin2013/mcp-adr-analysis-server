@@ -5,7 +5,7 @@
 - **Latest Release**: ![Latest Release](https://img.shields.io/github/v/release/tosin2013/mcp-adr-analysis-server)
 - **Next Release**: Auto-determined by changes
 - **Pipeline Health**: ✅ Healthy
-- **Last Updated**: 2025-09-17 12:14 UTC
+- **Last Updated**: 2025-09-17 18:11 UTC
 
 ## 🔒 Security Overview
 
