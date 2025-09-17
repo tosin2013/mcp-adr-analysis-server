@@ -81,22 +81,89 @@ jobs:
           # Update package.json with the new version
           npm version "${VERSION_NO_V}" --no-git-tag-version --allow-same-version
           echo "Updated package.json to version ${VERSION_NO_V}"
-      
+
+      - name: Generate commit analysis report
+        id: analysis
+        run: |
+          # Generate detailed commit analysis for AI context
+          echo "## Commit Analysis Report" > commit-analysis.md
+          echo "" >> commit-analysis.md
+
+          # Get previous tag for comparison
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "HEAD~20")
+          echo "Analyzing commits from $PREV_TAG to HEAD" >> commit-analysis.md
+          echo "" >> commit-analysis.md
+
+          # Commit statistics
+          echo "### Statistics" >> commit-analysis.md
+          echo "- Total commits: $(git rev-list --count $PREV_TAG..HEAD)" >> commit-analysis.md
+          echo "- Contributors: $(git shortlog -sn $PREV_TAG..HEAD | wc -l)" >> commit-analysis.md
+          echo "- Files changed: $(git diff --name-only $PREV_TAG..HEAD | wc -l)" >> commit-analysis.md
+          echo "" >> commit-analysis.md
+
+          # Save for AI context
+          echo "PREV_TAG=${PREV_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Fetch PR and Issue context
+        if: github.event_name == 'push' || github.event.inputs.version != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch recent merged PRs for better context
+          echo "### Recently Merged PRs" >> pr-context.md
+          gh pr list --state merged --limit 20 --json number,title,labels,body --jq '.[] | "- PR #\(.number): \(.title)\n  Labels: \(.labels | map(.name) | join(", "))\n"' >> pr-context.md || echo "No recent PRs" >> pr-context.md
+
+      - name: Generate AI Release Notes
+        run: |
+          if [ -z "${{ secrets.OPENAI_API_KEY }}" ]; then
+            echo "⚠️ OPENAI_API_KEY not found, generating basic release notes..."
+
+            # Generate basic release notes without AI
+            VERSION="${{ steps.version.outputs.VERSION }}"
+            echo "# Changelog" > CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "# Release ${VERSION}" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "## Changes" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+
+            # Get commit messages since last tag
+            PREV_TAG="${{ steps.analysis.outputs.PREV_TAG }}"
+            git log --pretty=format:"- %s" $PREV_TAG..HEAD >> CHANGELOG.md
+
+            echo "" >> CHANGELOG.md
+            echo "" >> CHANGELOG.md
+            echo "## Contributors" >> CHANGELOG.md
+            git log --pretty=format:"- @%an" $PREV_TAG..HEAD | sort -u >> CHANGELOG.md
+
+            echo "" >> CHANGELOG.md
+            echo "---" >> CHANGELOG.md
+            echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/$PREV_TAG...${VERSION}" >> CHANGELOG.md
+          else
+            npx tsx scripts/ai-release-notes.ts
+          fi
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          RELEASE_NOTES_MODEL: ${{ github.event.inputs.ai_model || 'gpt-4o-mini' }}
+          RELEASE_STYLE: ${{ github.event.inputs.release_style || 'comprehensive' }}
+          VERSION: ${{ steps.version.outputs.VERSION }}
+          PREV_TAG: ${{ steps.analysis.outputs.PREV_TAG }}
+
       - name: Validate generated release notes
         run: |
           if [ ! -f "CHANGELOG.md" ]; then
             echo "Error: CHANGELOG.md was not generated"
             exit 1
           fi
-          
+
           # Check if release notes contain the version
           if ! grep -q "${{ steps.version.outputs.VERSION }}" CHANGELOG.md; then
             echo "Error: Version ${{ steps.version.outputs.VERSION }} not found in CHANGELOG.md"
             exit 1
           fi
-          
+
           echo "✅ Release notes validated successfully"
-      
+
       - name: Commit version and changelog updates
         run: |
           VERSION_NO_V="${{ steps.version.outputs.VERSION }}"
@@ -124,45 +191,6 @@ jobs:
             git push origin HEAD:main || echo "Push failed (may be protected branch)"
           fi
       
-      - name: Generate commit analysis report
-        id: analysis
-        run: |
-          # Generate detailed commit analysis for AI context
-          echo "## Commit Analysis Report" > commit-analysis.md
-          echo "" >> commit-analysis.md
-          
-          # Get previous tag for comparison
-          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "HEAD~20")
-          echo "Analyzing commits from $PREV_TAG to HEAD" >> commit-analysis.md
-          echo "" >> commit-analysis.md
-          
-          # Commit statistics
-          echo "### Statistics" >> commit-analysis.md
-          echo "- Total commits: $(git rev-list --count $PREV_TAG..HEAD)" >> commit-analysis.md
-          echo "- Contributors: $(git shortlog -sn $PREV_TAG..HEAD | wc -l)" >> commit-analysis.md
-          echo "- Files changed: $(git diff --name-only $PREV_TAG..HEAD | wc -l)" >> commit-analysis.md
-          echo "" >> commit-analysis.md
-          
-          # Save for AI context
-          echo "PREV_TAG=${PREV_TAG}" >> $GITHUB_OUTPUT
-      
-      - name: Fetch PR and Issue context
-        if: github.event_name == 'push' || github.event.inputs.version != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Fetch recent merged PRs for better context
-          echo "### Recently Merged PRs" >> pr-context.md
-          gh pr list --state merged --limit 20 --json number,title,labels,body --jq '.[] | "- PR #\(.number): \(.title)\n  Labels: \(.labels | map(.name) | join(", "))\n"' >> pr-context.md || echo "No recent PRs" >> pr-context.md
-      
-      - name: Generate AI Release Notes
-        run: npx tsx scripts/ai-release-notes.ts
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          RELEASE_NOTES_MODEL: ${{ github.event.inputs.ai_model || 'gpt-4o-mini' }}
-          RELEASE_STYLE: ${{ github.event.inputs.release_style || 'comprehensive' }}
-          VERSION: ${{ steps.version.outputs.VERSION }}
-          PREV_TAG: ${{ steps.analysis.outputs.PREV_TAG }}
       
       - name: Extract release body
         id: release_body
