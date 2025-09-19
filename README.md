@@ -27,11 +27,10 @@ The Model Context Protocol enables seamless integration between AI assistants an
 🔍 **Mock Detection** - Sophisticated analysis to distinguish mock from production code
 🚀 **Deployment Readiness** - Zero-tolerance test validation with deployment history tracking and hard blocking
 
-
-
 ## 📦 Installation
 
 ### NPM Installation (Recommended)
+
 ```bash
 # Global installation
 npm install -g mcp-adr-analysis-server
@@ -41,6 +40,7 @@ npm install mcp-adr-analysis-server
 ```
 
 ### RHEL 9/10 Installation (Recommended for RHEL systems)
+
 ```bash
 # Download and run the RHEL-specific installer
 curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/main/scripts/install-rhel.sh | bash
@@ -52,11 +52,13 @@ cd mcp-adr-analysis-server
 ```
 
 **Why RHEL needs special handling:**
+
 - RHEL 9/10 have specific npm PATH and permission issues
 - Global npm installations often fail due to SELinux policies
 - The script handles npm prefix configuration and PATH setup automatically
 
 ### From Source
+
 ```bash
 git clone https://github.com/tosin2013/mcp-adr-analysis-server.git
 cd mcp-adr-analysis-server
@@ -83,33 +85,37 @@ The MCP server supports **AI-powered execution** that transforms tools from retu
 ### Environment Variables
 
 #### **AI Execution (Recommended)**
+
 - **`OPENROUTER_API_KEY`** (Required for AI): OpenRouter API key from https://openrouter.ai/keys
 - **`EXECUTION_MODE`** (Optional): `full` (AI execution) or `prompt-only` (legacy)
 - **`AI_MODEL`** (Optional): AI model to use (see supported models below)
 
 #### **Performance Tuning (Optional)**
+
 - **`AI_TEMPERATURE`** (Optional): Response consistency (0-1, default: 0.1)
 - **`AI_MAX_TOKENS`** (Optional): Response length limit (default: 4000)
 - **`AI_TIMEOUT`** (Optional): Request timeout in ms (default: 60000)
 - **`AI_CACHE_ENABLED`** (Optional): Enable response caching (default: true)
 
 #### **Project Configuration**
+
 - **`PROJECT_PATH`** (Required): Path to the project directory to analyze
 - **`ADR_DIRECTORY`** (Optional): Directory containing ADR files (default: `docs/adrs`)
 - **`LOG_LEVEL`** (Optional): Logging level (DEBUG, INFO, WARN, ERROR)
 
 ### Supported AI Models
 
-| Model | Provider | Use Case | Input Cost | Output Cost |
-|-------|----------|----------|------------|-------------|
-| `anthropic/claude-3-sonnet` | Anthropic | Analysis, reasoning | $3.00/1K | $15.00/1K |
-| `anthropic/claude-3-haiku` | Anthropic | Quick tasks | $0.25/1K | $1.25/1K |
-| `openai/gpt-4o` | OpenAI | Versatile analysis | $5.00/1K | $15.00/1K |
-| `openai/gpt-4o-mini` | OpenAI | Cost-effective | $0.15/1K | $0.60/1K |
+| Model                       | Provider  | Use Case            | Input Cost | Output Cost |
+| --------------------------- | --------- | ------------------- | ---------- | ----------- |
+| `anthropic/claude-3-sonnet` | Anthropic | Analysis, reasoning | $3.00/1K   | $15.00/1K   |
+| `anthropic/claude-3-haiku`  | Anthropic | Quick tasks         | $0.25/1K   | $1.25/1K    |
+| `openai/gpt-4o`             | OpenAI    | Versatile analysis  | $5.00/1K   | $15.00/1K   |
+| `openai/gpt-4o-mini`        | OpenAI    | Cost-effective      | $0.15/1K   | $0.60/1K    |
 
 ## ⚙️ Client Configuration
 
 ### Claude Desktop (Recommended Setup)
+
 Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
 
 ```json
@@ -132,6 +138,7 @@ Add to your Claude Desktop configuration (`~/Library/Application Support/Claude/
 ```
 
 ### Cline (VS Code Extension)
+
 Add to your `cline_mcp_settings.json`:
 
 ```json
@@ -151,6 +158,7 @@ Add to your `cline_mcp_settings.json`:
 ```
 
 ### Cursor
+
 Create `.cursor/mcp.json` in your project:
 
 ```json
@@ -170,6 +178,7 @@ Create `.cursor/mcp.json` in your project:
 ```
 
 ### Windsurf
+
 Add to `~/.codeium/windsurf/mcp_config.json`:
 
 ```json
@@ -191,176 +200,184 @@ Add to `~/.codeium/windsurf/mcp_config.json`:
 ## 🚀 Usage Examples
 
 ### Basic Project Analysis
+
 ```typescript
 // Analyze any project's technology stack and architecture
 const analysis = await analyzeProjectEcosystem({
-  projectPath: "/path/to/project",
-  analysisType: "comprehensive"
+  projectPath: '/path/to/project',
+  analysisType: 'comprehensive',
 });
 
 // Get intelligent architectural insights
 const context = await getArchitecturalContext({
-  projectPath: "/path/to/project",
-  focusAreas: ["security", "scalability", "maintainability"]
+  projectPath: '/path/to/project',
+  focusAreas: ['security', 'scalability', 'maintainability'],
 });
 ```
 
 ### ADR Generation from Requirements
+
 ```typescript
 // Convert PRD to structured ADRs
 const adrs = await generateAdrsFromPrd({
-  prdPath: "docs/PRD.md",
-  outputDirectory: "docs/adrs",
-  template: "nygard"
+  prdPath: 'docs/PRD.md',
+  outputDirectory: 'docs/adrs',
+  template: 'nygard',
 });
 
 // Generate actionable todos from ADRs with enhanced TDD approach
 const todos = await generateAdrTodo({
-  adrDirectory: "docs/adrs",
-  outputPath: "todo.md",
-  phase: "both",           // Two-phase TDD: test + production
-  linkAdrs: true,          // Link all ADRs for system-wide coverage
-  includeRules: true       // Include architectural rules validation
+  adrDirectory: 'docs/adrs',
+  outputPath: 'todo.md',
+  phase: 'both', // Two-phase TDD: test + production
+  linkAdrs: true, // Link all ADRs for system-wide coverage
+  includeRules: true, // Include architectural rules validation
 });
 ```
 
 ### Enhanced TDD Workflow
+
 ```typescript
 // Phase 1: Generate comprehensive test specifications
 const testPhase = await generateAdrTodo({
-  adrDirectory: "docs/adrs",
-  outputPath: "todo-tests.md",
-  phase: "test",           // Generate mock test specifications
-  linkAdrs: true,          // Connect all ADRs for complete test coverage
-  includeRules: true       // Validate against architectural rules
+  adrDirectory: 'docs/adrs',
+  outputPath: 'todo-tests.md',
+  phase: 'test', // Generate mock test specifications
+  linkAdrs: true, // Connect all ADRs for complete test coverage
+  includeRules: true, // Validate against architectural rules
 });
 
 // Phase 2: Generate production implementation tasks
 const prodPhase = await generateAdrTodo({
-  adrDirectory: "docs/adrs", 
-  outputPath: "todo-implementation.md",
-  phase: "production",     // Generate production-ready implementation tasks
-  linkAdrs: true,          // Ensure system-wide consistency
-  includeRules: true       // Enforce architectural compliance
+  adrDirectory: 'docs/adrs',
+  outputPath: 'todo-implementation.md',
+  phase: 'production', // Generate production-ready implementation tasks
+  linkAdrs: true, // Ensure system-wide consistency
+  includeRules: true, // Enforce architectural compliance
 });
 
 // Validate progress and detect mock vs production code
 const validation = await compareAdrProgress({
-  todoPath: "todo.md",
-  adrDirectory: "docs/adrs",
-  projectPath: "/path/to/project",
-  deepCodeAnalysis: true,     // Distinguish mock from production code
+  todoPath: 'todo.md',
+  adrDirectory: 'docs/adrs',
+  projectPath: '/path/to/project',
+  deepCodeAnalysis: true, // Distinguish mock from production code
   functionalValidation: true, // Validate code actually works
-  strictMode: true           // Reality-check against LLM overconfidence
+  strictMode: true, // Reality-check against LLM overconfidence
 });
 ```
 
 ### Security and Compliance
+
 ```typescript
 // Analyze and mask sensitive content
 const maskedContent = await maskContent({
-  content: "API_KEY=secret123",
-  maskingLevel: "strict"
+  content: 'API_KEY=secret123',
+  maskingLevel: 'strict',
 });
 
 // Validate architectural rules
 const validation = await validateRules({
-  projectPath: "/path/to/project",
-  ruleSet: "enterprise-security"
+  projectPath: '/path/to/project',
+  ruleSet: 'enterprise-security',
 });
 ```
 
 ### Research and Documentation
+
 ```typescript
 // Generate context-aware research questions
 const questions = await generateResearchQuestions({
   projectContext: analysis,
-  focusArea: "microservices-migration"
+  focusArea: 'microservices-migration',
 });
 
 // Incorporate research findings
 const updatedAdrs = await incorporateResearch({
   researchFindings: findings,
-  adrDirectory: "docs/adrs"
+  adrDirectory: 'docs/adrs',
 });
 ```
 
 ### Advanced Validation & Quality Assurance
+
 ```typescript
 // Comprehensive validation with mock detection
 const qualityCheck = await compareAdrProgress({
-  todoPath: "todo.md",
-  adrDirectory: "docs/adrs",
-  projectPath: "/path/to/project",
-  
+  todoPath: 'todo.md',
+  adrDirectory: 'docs/adrs',
+  projectPath: '/path/to/project',
+
   // Prevent LLM deception about code completeness
-  deepCodeAnalysis: true,        // Detects mock patterns vs real implementation
-  functionalValidation: true,    // Tests if code actually works
-  strictMode: true,             // Reality-check mechanisms
-  
+  deepCodeAnalysis: true, // Detects mock patterns vs real implementation
+  functionalValidation: true, // Tests if code actually works
+  strictMode: true, // Reality-check mechanisms
+
   // Advanced analysis options
-  includeTestCoverage: true,     // Validate test coverage meets ADR goals
-  validateDependencies: true,    // Check cross-ADR dependencies
-  environmentValidation: true    // Test in realistic environments
+  includeTestCoverage: true, // Validate test coverage meets ADR goals
+  validateDependencies: true, // Check cross-ADR dependencies
+  environmentValidation: true, // Test in realistic environments
 });
 
 // Generate architectural rules from ADRs and patterns
 const rules = await generateRules({
-  source: "both",               // Extract from ADRs and code patterns
-  adrDirectory: "docs/adrs",
-  projectPath: "/path/to/project",
-  outputFormat: "json"          // Machine-readable format
+  source: 'both', // Extract from ADRs and code patterns
+  adrDirectory: 'docs/adrs',
+  projectPath: '/path/to/project',
+  outputFormat: 'json', // Machine-readable format
 });
 ```
 
 ### Deployment Readiness & Safety
+
 ```typescript
 // Comprehensive deployment validation with zero tolerance
 const deploymentCheck = await deploymentReadiness({
-  operation: "full_audit",
-  projectPath: "/path/to/project",
-  targetEnvironment: "production",
-  
+  operation: 'full_audit',
+  projectPath: '/path/to/project',
+  targetEnvironment: 'production',
+
   // Test validation (zero tolerance by default)
-  maxTestFailures: 0,              // Hard block on any test failures
-  requireTestCoverage: 80,         // Minimum coverage requirement
-  blockOnFailingTests: true,       // Prevent deployment with failing tests
-  
+  maxTestFailures: 0, // Hard block on any test failures
+  requireTestCoverage: 80, // Minimum coverage requirement
+  blockOnFailingTests: true, // Prevent deployment with failing tests
+
   // Deployment history validation
-  maxRecentFailures: 2,            // Max recent deployment failures
-  deploymentSuccessThreshold: 80,  // Required success rate
-  rollbackFrequencyThreshold: 20,  // Max rollback frequency
-  
+  maxRecentFailures: 2, // Max recent deployment failures
+  deploymentSuccessThreshold: 80, // Required success rate
+  rollbackFrequencyThreshold: 20, // Max rollback frequency
+
   // Integration options
-  integrateTodoTasks: true,        // Auto-create blocking tasks
-  updateHealthScoring: true,       // Update project metrics
-  strictMode: true                 // Enable all safety checks
+  integrateTodoTasks: true, // Auto-create blocking tasks
+  updateHealthScoring: true, // Update project metrics
+  strictMode: true, // Enable all safety checks
 });
 
 // Enhanced git push with deployment readiness
 const pushResult = await smartGitPush({
-  message: "Deploy feature X",
-  branch: "main",
-  
+  message: 'Deploy feature X',
+  branch: 'main',
+
   // Deployment readiness integration
-  checkDeploymentReadiness: true,     // Validate before push
-  enforceDeploymentReadiness: true,   // Hard block on issues
-  targetEnvironment: "production",    // Environment-specific checks
-  strictDeploymentMode: true          // Maximum safety
+  checkDeploymentReadiness: true, // Validate before push
+  enforceDeploymentReadiness: true, // Hard block on issues
+  targetEnvironment: 'production', // Environment-specific checks
+  strictDeploymentMode: true, // Maximum safety
 });
 
 // Emergency override for critical fixes
 const override = await deploymentReadiness({
-  operation: "emergency_override",
-  businessJustification: "Critical security patch - CVE-2024-XXXX",
-  approvalRequired: true
+  operation: 'emergency_override',
+  businessJustification: 'Critical security patch - CVE-2024-XXXX',
+  approvalRequired: true,
 });
 ```
 
 ## 🎯 Use Cases
 
 ### 👨‍💻 **AI Coding Assistants**
-*Enhance AI coding assistants like Cline, Cursor, and Claude Code*
+
+_Enhance AI coding assistants like Cline, Cursor, and Claude Code_
 
 - **Test-Driven Development**: Two-phase TDD workflow with comprehensive ADR integration
 - **Intelligent Code Generation**: Generate code that follows architectural patterns and best practices
@@ -371,7 +388,8 @@ const override = await deploymentReadiness({
 - **Quality Validation**: Reality-check mechanisms against overconfident AI assessments
 
 ### 💬 **Conversational AI Assistants**
-*Enhance chatbots and business agents with architectural intelligence*
+
+_Enhance chatbots and business agents with architectural intelligence_
 
 - **Technical Documentation**: Answer questions about system architecture and design decisions
 - **Compliance Checking**: Verify that proposed changes meet architectural standards
@@ -379,7 +397,8 @@ const override = await deploymentReadiness({
 - **Decision Support**: Provide data-driven recommendations for architectural choices
 
 ### 🤖 **Autonomous Development Agents**
-*Enable autonomous agents to understand and work with complex architectures*
+
+_Enable autonomous agents to understand and work with complex architectures_
 
 - **Automated Analysis**: Continuously analyze codebases for architectural drift
 - **Rule Enforcement**: Automatically enforce architectural rules and patterns
@@ -387,7 +406,8 @@ const override = await deploymentReadiness({
 - **Deployment Validation**: Verify deployment readiness and compliance
 
 ### 🏢 **Enterprise Architecture Management**
-*Support enterprise architects and development teams*
+
+_Support enterprise architects and development teams_
 
 - **Portfolio Analysis**: Analyze multiple projects for consistency and compliance
 - **Migration Planning**: Plan and track architectural migrations and modernization
@@ -444,6 +464,7 @@ npm run test:package
 ```
 
 ### Test Coverage
+
 - **Unit Tests**: Individual component testing with >80% coverage
 - **Integration Tests**: MCP protocol and file system testing
 - **Custom Matchers**: ADR and schema validation helpers
@@ -452,11 +473,13 @@ npm run test:package
 ## 🔧 Development
 
 ### Prerequisites
+
 - Node.js >= 18.0.0
 - npm or yarn
 - Git
 
 ### Setup
+
 ```bash
 # Clone the repository
 git clone https://github.com/tosin2013/mcp-adr-analysis-server.git
@@ -476,6 +499,7 @@ npm run dev
 ```
 
 ### Available Scripts
+
 ```bash
 npm run build         # Build TypeScript to JavaScript
 npm run dev           # Start development server with hot reload
@@ -488,6 +512,7 @@ npm run typecheck     # Run TypeScript type checking
 ```
 
 ### Pre-Commit Hook
+
 The repository includes an automated pre-commit hook that ensures code quality:
 
 ```bash
@@ -495,13 +520,13 @@ The repository includes an automated pre-commit hook that ensures code quality:
 # It runs automatically on every commit and checks:
 
 # ✅ TypeScript compilation
-# ✅ Related tests (or smoke test fallback)  
+# ✅ Related tests (or smoke test fallback)
 # ✅ Code formatting (Prettier)
 # ✅ Only processes staged TypeScript/JavaScript files
 
 # If checks fail, the commit is blocked with clear error messages:
 # • TypeScript errors: Fix compilation issues
-# • Test failures: Address failing tests  
+# • Test failures: Address failing tests
 # • Formatting issues: Run 'npm run format' to auto-fix
 
 # For comprehensive pre-release validation:
@@ -509,14 +534,13 @@ The repository includes an automated pre-commit hook that ensures code quality:
 ```
 
 ### Code Quality Standards
+
 - **TypeScript**: Strict mode with comprehensive type checking
 - **ESLint**: Enforced code quality and security rules
 - **Testing**: Jest with custom matchers for ADR validation
 - **Coverage**: Minimum 80% test coverage required
 - **Security**: Content masking and secret prevention
 - **MCP Compliance**: Strict adherence to Model Context Protocol specification
-
-
 
 ## 🚀 Getting Started
 
@@ -539,8 +563,8 @@ The repository includes an automated pre-commit hook that ensures code quality:
       }
     }
   }
-   }
-   ```
+}
+```
 
 4. **Restart Claude Desktop** and start getting AI-powered architectural insights!
 
@@ -561,10 +585,13 @@ The server will now return **actual analysis results** instead of prompts to sub
 The MCP server now provides a **complete development lifecycle assistant** with intelligent workflow guidance:
 
 ### **🎯 Step 1: Get Workflow Guidance**
+
 ```
 get_workflow_guidance
 ```
+
 **Parameters:**
+
 ```json
 {
   "goal": "analyze new project and set up architectural documentation",
@@ -577,38 +604,46 @@ get_workflow_guidance
 **Result**: Intelligent tool sequence recommendations and workflow guidance.
 
 ### **🏗️ Step 2: Get Development Guidance**
+
 ```
 get_development_guidance
 ```
+
 **Parameters:**
+
 ```json
 {
   "developmentPhase": "implementation",
   "adrsToImplement": ["ADR-001: API Design", "ADR-002: Database Schema"],
   "technologyStack": ["TypeScript", "React", "Node.js"],
-  "teamContext": {"size": "small_team", "experienceLevel": "mixed"}
+  "teamContext": { "size": "small_team", "experienceLevel": "mixed" }
 }
 ```
 
 **Result**: Specific coding tasks, implementation patterns, and development roadmap.
 
 ### **📊 Step 3: Execute Recommended Tools**
+
 Follow the workflow guidance to execute the recommended tool sequence for your specific goals.
 
 ### **🔄 Complete Workflow Examples**
 
 #### **New Project Setup**
+
 1. `get_workflow_guidance` → 2. `analyze_project_ecosystem` → 3. `get_architectural_context` → 4. `suggest_adrs` → 5. `get_development_guidance`
 
 #### **Existing Project Analysis**
+
 1. `get_workflow_guidance` → 2. `discover_existing_adrs` (initializes cache) → 3. `get_architectural_context` → 4. `generate_adr_todo` → 5. `get_development_guidance`
 
 #### **Security Audit**
+
 1. `get_workflow_guidance` → 2. `analyze_content_security` → 3. `generate_content_masking` → 4. `validate_content_masking`
 
 ### Configuration Examples
 
 #### Example 1: AI-Powered Project Analysis
+
 ```json
 {
   "mcpServers": {
@@ -629,6 +664,7 @@ Follow the workflow guidance to execute the recommended tool sequence for your s
 ```
 
 #### Example 2: Cost-Effective Setup
+
 ```json
 {
   "mcpServers": {
@@ -648,6 +684,7 @@ Follow the workflow guidance to execute the recommended tool sequence for your s
 ```
 
 #### Example 3: Prompt-Only Mode (Legacy)
+
 ```json
 {
   "mcpServers": {
@@ -664,6 +701,7 @@ Follow the workflow guidance to execute the recommended tool sequence for your s
 ```
 
 #### Example 4: Multi-Project Setup
+
 ```json
 {
   "mcpServers": {
@@ -694,6 +732,7 @@ Follow the workflow guidance to execute the recommended tool sequence for your s
 ```
 
 #### Example 5: Development Environment
+
 ```json
 {
   "mcpServers": {
@@ -714,8 +753,6 @@ Follow the workflow guidance to execute the recommended tool sequence for your s
 }
 ```
 
-
-
 ## � Troubleshooting
 
 ### 🔴 **RHEL 9/10 Specific Issues**
@@ -725,11 +762,13 @@ Follow the workflow guidance to execute the recommended tool sequence for your s
 **Root Cause**: RHEL has specific npm global installation and PATH issues due to SELinux policies and default npm configuration.
 
 **Solution**: Use the RHEL-specific installer:
+
 ```bash
 curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/main/scripts/install-rhel.sh | bash
 ```
 
 **Manual Fix for RHEL**:
+
 ```bash
 # Fix npm prefix for user directory
 mkdir -p ~/.npm-global
@@ -745,6 +784,7 @@ npm install -g mcp-adr-analysis-server
 
 **RHEL MCP Configuration**:
 If the command is still not found, use the npx approach:
+
 ```json
 {
   "mcpServers": {
@@ -789,19 +829,23 @@ If the command is still not found, use the npx approach:
 ```
 
 **Verification**: After adding these variables and restarting, tools should return actual results like:
+
 - `suggest_adrs` → Actual ADR suggestions with titles and reasoning
 - `analyze_project_ecosystem` → Real technology analysis and recommendations
 - `generate_content_masking` → Actual masked content, not masking instructions
 
 **Quick Diagnostic**: Use the built-in diagnostic tool:
+
 ```
 check_ai_execution_status
 ```
+
 This will show exactly what's wrong with your configuration and provide step-by-step fix instructions.
 
 ### Other AI Execution Issues
 
 **Problem**: "AI execution not available" errors
+
 ```bash
 # Check execution mode
 echo $EXECUTION_MODE
@@ -815,12 +859,14 @@ curl -H "Authorization: Bearer $OPENROUTER_API_KEY" \
 ```
 
 **Problem**: "AI execution not available" errors
+
 - ✅ Verify `OPENROUTER_API_KEY` is set correctly
 - ✅ Check `EXECUTION_MODE=full` in environment
 - ✅ Ensure API key has sufficient credits
 - ✅ Verify network connectivity to OpenRouter
 
 **Problem**: Slow AI responses
+
 ```bash
 # Reduce token limits for faster responses
 AI_MAX_TOKENS=2000
@@ -832,6 +878,7 @@ AI_CACHE_TTL=3600
 ```
 
 **Problem**: High API costs
+
 ```bash
 # Use cost-effective models
 AI_MODEL=anthropic/claude-3-haiku
@@ -846,6 +893,7 @@ AI_TEMPERATURE=0.1
 ### Environment Configuration
 
 **Check current configuration:**
+
 ```bash
 # View AI execution status
 node -e "
@@ -855,6 +903,7 @@ console.log(JSON.stringify(getAIExecutionStatus(), null, 2));
 ```
 
 **Reset configuration:**
+
 ```bash
 # Clear cache and restart
 rm -rf .mcp-adr-cache
@@ -863,23 +912,25 @@ npm run build
 
 ### Common Issues
 
-| Issue | Solution |
-|-------|----------|
-| "Module not found" errors | Run `npm install && npm run build` |
-| TypeScript compilation errors | Check Node.js version >= 18.0.0 |
-| Permission denied | Check file permissions and project path |
-| API rate limits | Reduce `AI_MAX_TOKENS` or increase `AI_TIMEOUT` |
-| Cache issues | Clear cache with `rm -rf .mcp-adr-cache` |
+| Issue                         | Solution                                        |
+| ----------------------------- | ----------------------------------------------- |
+| "Module not found" errors     | Run `npm install && npm run build`              |
+| TypeScript compilation errors | Check Node.js version >= 18.0.0                 |
+| Permission denied             | Check file permissions and project path         |
+| API rate limits               | Reduce `AI_MAX_TOKENS` or increase `AI_TIMEOUT` |
+| Cache issues                  | Clear cache with `rm -rf .mcp-adr-cache`        |
 
 ## �🔒 Security Features
 
 ### Content Protection
+
 - **Automatic Secret Detection**: Identifies API keys, passwords, and sensitive data
 - **Intelligent Masking**: Context-aware content masking with configurable levels
 - **Security Validation**: Comprehensive security checks and recommendations
 - **Compliance Tracking**: Ensure adherence to security standards and best practices
 
 ### Privacy & Data Handling
+
 - **Local Processing**: All analysis performed locally, no data sent to external services
 - **Configurable Masking**: Customize masking rules for your organization's needs
 - **Audit Trail**: Track all security-related actions and decisions
@@ -888,12 +939,14 @@ npm run build
 ## 📊 Performance & Scalability
 
 ### Intelligent Caching
+
 - **Multi-level Caching**: File system, memory, and analysis result caching
 - **Cache Invalidation**: Smart cache invalidation based on file changes
 - **Performance Optimization**: Optimized for large codebases and complex projects
 - **Resource Management**: Efficient memory and CPU usage
 
 ### Scalability Features
+
 - **Incremental Analysis**: Only analyze changed files and dependencies
 - **Parallel Processing**: Multi-threaded analysis for large projects
 - **Memory Optimization**: Efficient memory usage for large codebases
@@ -904,6 +957,7 @@ npm run build
 We welcome contributions! This project follows strict development standards to ensure quality and security.
 
 ### Development Standards
+
 - **TypeScript**: Strict mode with comprehensive type checking
 - **Testing**: >80% code coverage with Jest
 - **Linting**: ESLint with security-focused rules
@@ -911,6 +965,7 @@ We welcome contributions! This project follows strict development standards to e
 - **MCP Compliance**: Strict adherence to Model Context Protocol specification
 
 ### Getting Started
+
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes with tests
@@ -924,16 +979,19 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 ## 🔗 Related Resources
 
 ### Official Documentation
+
 - [Model Context Protocol Specification](https://modelcontextprotocol.io/)
 - [MCP Server Development Guide](https://modelcontextprotocol.io/docs/concepts/servers)
 - [TypeScript MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk)
 
 ### Community Resources
+
 - [MCP Servers Registry](https://github.com/modelcontextprotocol/servers)
 - [Awesome MCP Servers](https://github.com/punkpeye/awesome-mcp-servers)
 - [MCP Community Discord](https://discord.gg/modelcontextprotocol)
 
 ### Project Documentation
+
 - [Implementation Progress](./todo.md)
 - [Architecture Decisions](./docs/adrs/)
 - [NPM Publishing Guide](./docs/NPM_PUBLISHING.md)
@@ -952,4 +1010,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Built with ❤️ by [Tosin Akinosho](https://github.com/tosin2013) for AI-driven architectural analysis**
 
-*Empowering AI assistants with deep architectural intelligence and decision-making capabilities.*
+_Empowering AI assistants with deep architectural intelligence and decision-making capabilities._
+
+# Test lint.yml workflow update
+
+# Test lint.yml workflow update
