@@ -96,7 +96,7 @@
     "*.{ts,js}": [
       "prettier --write"
     ],
-    "*.{ts,js,json,md}": [
+    "*.{ts,js,json,md,yaml,yml}": [
       "prettier --write"
     ]
   }
