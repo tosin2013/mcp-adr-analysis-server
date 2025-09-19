@@ -391,6 +391,235 @@ If you need to include sensitive information:
 };
 
 /**
+ * TODO task management prompt for generating development tasks from ADRs
+ */
+export const todoTaskGenerationPrompt: PromptTemplate = {
+  name: 'todo_task_generation',
+  description: 'Generate comprehensive development task list from ADRs with cloud/DevOps expertise',
+  arguments: [
+    {
+      name: 'adrDirectory',
+      description: 'Directory containing ADR files',
+      required: false,
+    },
+    {
+      name: 'scope',
+      description: 'Task scope: all, pending, in_progress',
+      required: false,
+    },
+    {
+      name: 'phase',
+      description: 'Development phase: both, test, production',
+      required: false,
+    },
+    {
+      name: 'projectPath',
+      description: 'Path to the project directory',
+      required: false,
+    },
+  ],
+  template: `# Generate Development Tasks from ADRs
+
+## Project Configuration
+- **ADR Directory**: {{adrDirectory}}
+- **Project Path**: {{projectPath}}
+- **Task Scope**: {{scope}}
+- **Development Phase**: {{phase}}
+
+You are an expert task planner with deep expertise in cloud architecture, DevOps practices, and modern software development. Your specialty areas include:
+
+- **Cloud Platforms**: AWS, GCP, Azure
+- **Container Technologies**: Docker, Kubernetes
+- **Infrastructure as Code**: Terraform, CloudFormation
+- **DevOps Practices**: CI/CD, monitoring, observability
+- **Security**: Cloud security, compliance, best practices
+
+## Analysis Instructions
+
+1. **Discover ADRs**: Analyze all ADR files in the specified directory
+2. **Extract Requirements**: Identify implementation tasks from each ADR
+3. **Apply Cloud Expertise**: Leverage cloud/DevOps knowledge for task creation
+4. **Prioritize Tasks**: Use enterprise-grade prioritization framework
+5. **Create Dependencies**: Map task relationships and critical path
+
+## Deliverable
+
+Provide a comprehensive task breakdown optimized for cloud-native, enterprise-grade implementation following modern DevOps practices.
+
+Focus especially on:
+- Infrastructure automation
+- Container orchestration
+- Security-first implementation
+- Monitoring and observability
+- Scalable architecture patterns`,
+};
+
+/**
+ * TODO task status management prompt
+ */
+export const todoStatusManagementPrompt: PromptTemplate = {
+  name: 'todo_status_management',
+  description: 'Manage task status, priorities, and progress tracking',
+  arguments: [
+    {
+      name: 'action',
+      description: 'Action to perform: list, update, complete, prioritize',
+      required: true,
+    },
+    {
+      name: 'taskId',
+      description: 'Specific task ID (for update/complete actions)',
+      required: false,
+    },
+    {
+      name: 'newStatus',
+      description: 'New status for update action',
+      required: false,
+    },
+    {
+      name: 'filters',
+      description: 'Filters for list action (JSON array)',
+      required: false,
+    },
+  ],
+  template: `# Task Status Management
+
+## Action Configuration
+- **Action**: {{action}}
+- **Task ID**: {{taskId}}
+- **New Status**: {{newStatus}}
+- **Filters**: {{filters}}
+
+You are a technical project manager with expertise in software delivery and team coordination. You excel at:
+
+- **Status Tracking**: Maintaining accurate task progress
+- **Priority Management**: Balancing business and technical priorities
+- **Risk Assessment**: Identifying blockers and dependencies
+- **Resource Optimization**: Maximizing team productivity
+
+## Management Framework
+
+Apply enterprise project management principles with focus on:
+- Clear status definitions and transitions
+- Impact-driven prioritization
+- Dependency-aware scheduling
+- Quality gate validation
+- Continuous improvement metrics
+
+Provide actionable insights and recommendations for maintaining project velocity and quality.`,
+};
+
+/**
+ * TODO dependency analysis prompt
+ */
+export const todoDependencyAnalysisPrompt: PromptTemplate = {
+  name: 'todo_dependency_analysis',
+  description: 'Analyze task dependencies and critical path optimization',
+  arguments: [
+    {
+      name: 'taskId',
+      description: 'Target task for dependency analysis',
+      required: false,
+    },
+    {
+      name: 'includeUpstream',
+      description: 'Include upstream dependencies (true/false)',
+      required: false,
+    },
+    {
+      name: 'includeDownstream',
+      description: 'Include downstream dependencies (true/false)',
+      required: false,
+    },
+    {
+      name: 'analysisDepth',
+      description: 'Analysis depth: shallow, deep',
+      required: false,
+    },
+  ],
+  template: `# Task Dependency Analysis
+
+## Analysis Configuration
+- **Target Task**: {{taskId}}
+- **Include Upstream**: {{includeUpstream}}
+- **Include Downstream**: {{includeDownstream}}
+- **Analysis Depth**: {{analysisDepth}}
+
+You are a systems architect and project planning expert specializing in complex technical dependencies. Your expertise includes:
+
+- **Critical Path Analysis**: Identifying bottlenecks and optimization opportunities
+- **Risk Assessment**: Evaluating dependency risks and mitigation strategies
+- **Resource Optimization**: Maximizing parallel execution and team efficiency
+- **Technical Dependencies**: Understanding code, infrastructure, and integration dependencies
+
+## Analysis Framework
+
+Provide comprehensive dependency analysis focusing on:
+- Critical path identification and optimization
+- Bottleneck detection and resolution strategies
+- Risk assessment and contingency planning
+- Resource allocation recommendations
+- Timeline optimization opportunities
+
+Consider both technical and business impacts in your analysis.`,
+};
+
+/**
+ * TODO estimation and planning prompt
+ */
+export const todoEstimationPrompt: PromptTemplate = {
+  name: 'todo_estimation',
+  description: 'Provide accurate task estimation and timeline planning',
+  arguments: [
+    {
+      name: 'taskId',
+      description: 'Task to estimate',
+      required: false,
+    },
+    {
+      name: 'estimationType',
+      description: 'Type of estimation: effort, duration, resources',
+      required: false,
+    },
+    {
+      name: 'includeUncertainty',
+      description: 'Include uncertainty analysis (true/false)',
+      required: false,
+    },
+    {
+      name: 'granularity',
+      description: 'Estimation granularity: high, medium, low',
+      required: false,
+    },
+  ],
+  template: `# Task Estimation and Planning
+
+## Estimation Configuration
+- **Task**: {{taskId}}
+- **Estimation Type**: {{estimationType}}
+- **Include Uncertainty**: {{includeUncertainty}}
+- **Granularity**: {{granularity}}
+
+You are a senior engineering manager with extensive experience in software estimation and delivery planning. Your expertise includes:
+
+- **Estimation Techniques**: Three-point estimation, historical data analysis, expert judgment
+- **Uncertainty Management**: Risk assessment and buffer planning
+- **Resource Planning**: Team capacity and skill assessment
+- **Quality Assurance**: Ensuring estimates include proper validation and testing
+
+## Estimation Framework
+
+Provide professional-grade estimates considering:
+- Historical data and team velocity
+- Technical complexity and risk factors
+- Resource availability and skill levels
+- Quality requirements and validation needs
+- Uncertainty factors and contingency planning
+
+Use industry best practices for accurate and reliable estimation.`,
+};
+
+/**
  * All available prompts
  */
 export const allPrompts: PromptTemplate[] = [
@@ -400,4 +629,8 @@ export const allPrompts: PromptTemplate[] = [
   customRuleDefinitionPrompt,
   baselineAnalysisPrompt,
   secretPreventionPrompt,
+  todoTaskGenerationPrompt,
+  todoStatusManagementPrompt,
+  todoDependencyAnalysisPrompt,
+  todoEstimationPrompt,
 ];
