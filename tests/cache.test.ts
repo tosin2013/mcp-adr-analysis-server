@@ -16,6 +16,7 @@ import {
   getCachedOrGenerate,
   CacheOptions,
 } from '../src/utils/cache.js';
+import { loadConfig, getCacheDirectoryPath } from '../src/utils/config.js';
 
 // Mock console.error to avoid noise in tests
 const originalConsoleError = console.error;
@@ -28,7 +29,8 @@ afterEach(() => {
 });
 
 describe('Cache System', () => {
-  const CACHE_DIR = '.mcp-adr-cache';
+  const config = loadConfig();
+  const CACHE_DIR = getCacheDirectoryPath(config);
   const testKey = 'test-key';
   const testData = { message: 'test data', timestamp: '2024-01-01T00:00:00Z' };
   const testOptions: CacheOptions = { ttl: 1800, compression: true };
@@ -47,7 +49,7 @@ describe('Cache System', () => {
         cacheDirectory: CACHE_DIR,
         operation: 'cache_initialization',
         securityLevel: 'high',
-        expectedFormat: 'json'
+        expectedFormat: 'json',
       });
     });
 
@@ -103,7 +105,7 @@ describe('Cache System', () => {
         ttl: testOptions.ttl,
         operation: 'cache_set',
         securityLevel: 'high',
-        expectedFormat: 'json'
+        expectedFormat: 'json',
       });
     });
 
@@ -178,7 +180,7 @@ describe('Cache System', () => {
         currentTime: expect.any(String),
         operation: 'cache_get',
         securityLevel: 'high',
-        expectedFormat: 'json'
+        expectedFormat: 'json',
       });
     });
 
@@ -241,7 +243,7 @@ describe('Cache System', () => {
         cacheKey: testKey,
         operation: 'cache_validity_check',
         securityLevel: 'high',
-        expectedFormat: 'json'
+        expectedFormat: 'json',
       });
     });
 
@@ -258,7 +260,9 @@ describe('Cache System', () => {
 
       expect(result.prompt).toContain('isValid: true only if');
       expect(result.prompt).toContain('cache exists AND is not expired');
-      expect(result.instructions).toContain('isValid: true only if cache exists and is not expired');
+      expect(result.instructions).toContain(
+        'isValid: true only if cache exists and is not expired'
+      );
     });
 
     test('should include expected output formats for validity', async () => {
@@ -288,7 +292,7 @@ describe('Cache System', () => {
         filePath: `${CACHE_DIR}/${testKey.replace(/[^a-zA-Z0-9-_]/g, '_')}.json`,
         operation: 'cache_invalidate',
         securityLevel: 'high',
-        expectedFormat: 'json'
+        expectedFormat: 'json',
       });
     });
 
@@ -296,7 +300,7 @@ describe('Cache System', () => {
       const result = await invalidateCache(testKey);
 
       expect(result.prompt).toContain('File Existence Check');
-      expect(result.prompt).toContain('If file doesn\'t exist, consider operation successful');
+      expect(result.prompt).toContain("If file doesn't exist, consider operation successful");
       expect(result.prompt).toContain('Cache File Deletion');
     });
 
@@ -336,7 +340,7 @@ describe('Cache System', () => {
         operation: 'cache_clear',
         securityLevel: 'high',
         protectedFiles: ['metadata.json'],
-        expectedFormat: 'json'
+        expectedFormat: 'json',
       });
     });
 
@@ -384,7 +388,7 @@ describe('Cache System', () => {
         operation: 'cache_stats',
         securityLevel: 'high',
         expectedFormat: 'json',
-        expectedFields: ['totalEntries', 'totalSize', 'oldestEntry', 'newestEntry']
+        expectedFields: ['totalEntries', 'totalSize', 'oldestEntry', 'newestEntry'],
       });
     });
 
@@ -428,7 +432,7 @@ describe('Cache System', () => {
         operation: 'cache_cleanup',
         securityLevel: 'high',
         expectedFormat: 'json',
-        expectedReturn: 'cleanedCount'
+        expectedReturn: 'cleanedCount',
       });
     });
 
@@ -485,7 +489,7 @@ describe('Cache System', () => {
         compression: testOptions.compression,
         operation: 'cache_or_generate',
         securityLevel: 'high',
-        expectedFormat: 'json'
+        expectedFormat: 'json',
       });
     });
 
@@ -531,7 +535,7 @@ describe('Cache System', () => {
       // Test that all functions handle errors gracefully
       const mockGen = jest.fn<() => Promise<any>>();
       mockGen.mockResolvedValue({ data: 'test' });
-      
+
       const functions = [
         () => initializeCache(),
         () => setCache(testKey, testData),
@@ -552,7 +556,7 @@ describe('Cache System', () => {
     test('should include error handling in all prompts', async () => {
       const mockGen = jest.fn<() => Promise<any>>();
       mockGen.mockResolvedValue({ data: 'test' });
-      
+
       const functions = [
         initializeCache,
         () => setCache(testKey, testData),
@@ -576,7 +580,7 @@ describe('Cache System', () => {
     test('should include security validation in all operations', async () => {
       const mockGen = jest.fn<() => Promise<any>>();
       mockGen.mockResolvedValue({ data: 'test' });
-      
+
       const functions = [
         initializeCache,
         () => setCache(testKey, testData),
@@ -600,7 +604,9 @@ describe('Cache System', () => {
       const maliciousKey = '../../../etc/passwd';
       const result = await setCache(maliciousKey, testData);
 
-      expect(result.context.filePath).toBe(`${CACHE_DIR}/${maliciousKey.replace(/[^a-zA-Z0-9-_]/g, '_')}.json`);
+      expect(result.context.filePath).toBe(
+        `${CACHE_DIR}/${maliciousKey.replace(/[^a-zA-Z0-9-_]/g, '_')}.json`
+      );
       expect(result.context.filePath).not.toContain('../');
     });
 
@@ -654,7 +660,7 @@ describe('Cache System', () => {
       ];
 
       const results = await Promise.all(operations);
-      
+
       // All operations should complete successfully
       results.forEach(result => {
         expect(result).toBeValidPromptObject();
@@ -680,7 +686,7 @@ describe('Cache System', () => {
     test('should include consistent context across operations', async () => {
       const mockGen = jest.fn<() => Promise<any>>();
       mockGen.mockResolvedValue({ data: 'test' });
-      
+
       const operations = [
         initializeCache,
         () => setCache(testKey, testData),

@@ -10,6 +10,7 @@ import { MemoryMigrationManager } from '../../src/utils/memory-migration-manager
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as os from 'os';
 import { existsSync } from 'fs';
 
 // Mock crypto
@@ -51,6 +52,15 @@ describe('Memory Migration Integration', () => {
     if (testTempDir && existsSync(testTempDir)) {
       await fs.rm(testTempDir, { recursive: true, force: true });
     }
+
+    // Clean up cache directory in os.tmpdir()
+    if (testTempDir) {
+      const projectName = path.basename(testTempDir);
+      const cacheDir = path.join(os.tmpdir(), projectName);
+      if (existsSync(cacheDir)) {
+        await fs.rm(cacheDir, { recursive: true, force: true });
+      }
+    }
   });
 
   describe('Complete Migration Flow', () => {
@@ -65,7 +75,7 @@ describe('Memory Migration Integration', () => {
         enableRollback: false,
       });
 
-      // Create real deployment history data
+      // Create deployment history data and write to expected file location
       const deploymentHistory = [
         {
           timestamp: '2024-01-01T00:00:00.000Z',
@@ -107,12 +117,12 @@ describe('Memory Migration Integration', () => {
         },
       ];
 
-      // Write real deployment history file
-      const deploymentHistoryPath = path.join(
-        testTempDir,
-        '.mcp-adr-cache',
-        'deployment-history.json'
-      );
+      // Write real deployment history file to the expected cache location
+      // Migration manager uses: os.tmpdir() + projectName + 'cache'
+      const projectName = path.basename(testTempDir);
+      const cacheDir = path.join(os.tmpdir(), projectName, 'cache');
+      await fs.mkdir(cacheDir, { recursive: true });
+      const deploymentHistoryPath = path.join(cacheDir, 'deployment-history.json');
       await fs.writeFile(deploymentHistoryPath, JSON.stringify(deploymentHistory, null, 2));
 
       // Mock upsertEntity to track calls and return success
