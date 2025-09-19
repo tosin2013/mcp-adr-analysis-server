@@ -157,16 +157,19 @@ export class TreeSitterAnalyzer {
 
   private async loadParser(language: string, packageName: string): Promise<void> {
     try {
-      const TreeSitter = (await import('tree-sitter')).default;
+      const TreeSitterModule = await import('tree-sitter');
+      const TreeSitter = (TreeSitterModule as any).default || TreeSitterModule;
 
       let Parser: any;
       if (language === 'typescript') {
-        Parser = (await import('tree-sitter-typescript')).typescript;
+        const tsModule = await import('tree-sitter-typescript');
+        Parser = (tsModule as any).typescript;
       } else if (language === 'hcl') {
-        Parser = (await import('@tree-sitter-grammars/tree-sitter-hcl')).default;
+        const hclModule = await import('@tree-sitter-grammars/tree-sitter-hcl');
+        Parser = (hclModule as any).default || hclModule;
       } else {
         const module = await import(packageName);
-        Parser = module.default || module;
+        Parser = (module as any).default || module;
       }
 
       const parser = new TreeSitter();
@@ -789,27 +792,210 @@ export class TreeSitterAnalyzer {
 
   private async analyzeAnsibleYAML(
     _node: TreeSitterNode,
-    _lines: string[],
-    _result: CodeAnalysisResult
+    lines: string[],
+    result: CodeAnalysisResult
   ): Promise<void> {
-    // Ansible-specific analysis would go here
-    // For now, basic implementation
+    const content = lines.join('\n');
+
+    // Detect Ansible tasks and roles
+    if (content.includes('tasks:')) {
+      const taskMatches = content.match(/- name:\s*(.+)/g) || [];
+      taskMatches.forEach(match => {
+        const taskName = match.replace(/- name:\s*/, '').trim();
+        result.functions.push({
+          name: taskName,
+          type: 'task',
+          parameters: [],
+          location: { line: this.findLineNumber(lines, match), column: 0 },
+          complexity: 1,
+          securitySensitive: this.isSecuritySensitiveTask(taskName),
+        });
+      });
+    }
+
+    // Detect role imports
+    const roleMatches = content.match(/roles?:\s*\n([\s\S]*?)(?=\n\w|$)/g) || [];
+    roleMatches.forEach(roleBlock => {
+      const roles = roleBlock.match(/- ([\w.-]+)/g) || [];
+      roles.forEach(role => {
+        const roleName = role.replace(/- /, '');
+        result.imports.push({
+          module: roleName,
+          type: 'role',
+          location: { line: this.findLineNumber(lines, role), column: 0 },
+          isExternal: !roleName.startsWith('./'),
+          isDangerous: this.isDangerousAnsibleRole(roleName),
+        });
+      });
+    });
+
+    // Check for security-sensitive variables
+    const varMatches =
+      content.match(/\b\w*(?:password|secret|key|token)\w*:\s*["']?([^"'\n]+)["']?/gi) || [];
+    varMatches.forEach(varMatch => {
+      const [fullMatch, value] = varMatch.match(/([\w_]+):\s*["']?([^"'\n]+)["']?/) || [];
+      if (fullMatch && value) {
+        result.secrets.push({
+          type: 'credential',
+          value: value,
+          location: { line: this.findLineNumber(lines, fullMatch), column: 0 },
+          confidence: 0.7,
+          context: 'Ansible variable',
+        });
+      }
+    });
   }
 
   private async analyzeKubernetesYAML(
     _node: TreeSitterNode,
-    _lines: string[],
-    _result: CodeAnalysisResult
+    lines: string[],
+    result: CodeAnalysisResult
   ): Promise<void> {
-    // Kubernetes-specific analysis would go here
+    const content = lines.join('\n');
+
+    // Extract Kubernetes resources
+    const resourceMatches = content.match(/kind:\s*(\w+)/g) || [];
+    const apiVersionMatches = content.match(/apiVersion:\s*([\w\/]+)/g) || [];
+    const nameMatches = content.match(/name:\s*([\w.-]+)/g) || [];
+
+    if (resourceMatches.length > 0) {
+      resourceMatches.forEach((kindMatch, index) => {
+        const kind = kindMatch.replace(/kind:\s*/, '');
+        const apiVersion = apiVersionMatches[index]?.replace(/apiVersion:\s*/, '') || 'v1';
+        const name = nameMatches[index]?.replace(/name:\s*/, '') || 'unnamed';
+
+        const securityRisks = this.analyzeKubernetesSecurityRisks(content, kind);
+
+        result.infraStructure.push({
+          resourceType: kind.toLowerCase(),
+          name: name,
+          provider: 'kubernetes',
+          configuration: { apiVersion, kind },
+          securityRisks,
+          location: { line: this.findLineNumber(lines, kindMatch), column: 0 },
+        });
+      });
+    }
+
+    // Check for security contexts and privileged containers
+    if (content.includes('privileged: true')) {
+      result.securityIssues.push({
+        type: 'privilege_escalation',
+        severity: 'high',
+        message: 'Container running in privileged mode',
+        location: { line: this.findLineNumber(lines, 'privileged: true'), column: 0 },
+        suggestion: 'Remove privileged: true and use specific capabilities instead',
+      });
+    }
+
+    // Check for missing resource limits
+    if (content.includes('containers:') && !content.includes('resources:')) {
+      result.securityIssues.push({
+        type: 'insecure_config',
+        severity: 'medium',
+        message: 'Container missing resource limits',
+        location: { line: this.findLineNumber(lines, 'containers:'), column: 0 },
+        suggestion: 'Add resource requests and limits to prevent resource exhaustion',
+      });
+    }
+
+    // Detect secrets in environment variables
+    const envMatches = content.match(/env:\s*\n([\s\S]*?)(?=\n\s*\w|$)/g) || [];
+    envMatches.forEach(envBlock => {
+      const secretRefs = envBlock.match(/valueFrom:\s*\n\s*secretKeyRef:/g) || [];
+      if (secretRefs.length === 0 && envBlock.includes('value:')) {
+        // Direct environment values might contain secrets
+        const directValues =
+          envBlock.match(
+            /- name:\s*(\w*(?:PASSWORD|SECRET|KEY|TOKEN)\w*)\s*\n\s*value:\s*([^\n]+)/gi
+          ) || [];
+        directValues.forEach(match => {
+          const [, envName, envValue] =
+            match.match(/- name:\s*(\w+)\s*\n\s*value:\s*([^\n]+)/i) || [];
+          if (envName && envValue) {
+            result.secrets.push({
+              type: 'credential',
+              value: envValue,
+              location: { line: this.findLineNumber(lines, match), column: 0 },
+              confidence: 0.8,
+              context: `Kubernetes env var: ${envName}`,
+            });
+          }
+        });
+      }
+    });
   }
 
   private async analyzeDockerComposeYAML(
     _node: TreeSitterNode,
-    _lines: string[],
-    _result: CodeAnalysisResult
+    lines: string[],
+    result: CodeAnalysisResult
   ): Promise<void> {
-    // Docker Compose-specific analysis would go here
+    const content = lines.join('\n');
+
+    // Extract services
+    const serviceMatches = content.match(/^\s{2}(\w[\w.-]*):$/gm) || [];
+    serviceMatches.forEach(serviceMatch => {
+      const serviceName = serviceMatch.replace(/^\s{2}/, '').replace(/:$/, '');
+
+      result.infraStructure.push({
+        resourceType: 'docker_service',
+        name: serviceName,
+        provider: 'docker',
+        configuration: {},
+        securityRisks: this.analyzeDockerComposeSecurityRisks(content, serviceName),
+        location: { line: this.findLineNumber(lines, serviceMatch), column: 0 },
+      });
+    });
+
+    // Check for exposed ports
+    const portMatches = content.match(/ports:\s*\n([\s\S]*?)(?=\n\s*\w|$)/g) || [];
+    portMatches.forEach(portBlock => {
+      if (portBlock.includes('"80:') || portBlock.includes('"443:')) {
+        const webPorts = portBlock.match(/"(80|443):[^"]+"/g) || [];
+        webPorts.forEach(port => {
+          result.securityIssues.push({
+            type: 'insecure_config',
+            severity: 'medium',
+            message: `Web port ${port} exposed without TLS configuration`,
+            location: { line: this.findLineNumber(lines, port), column: 0 },
+            suggestion: 'Ensure proper TLS termination and security headers',
+          });
+        });
+      }
+    });
+
+    // Check for environment variables with secrets
+    const envMatches = content.match(/environment:\s*\n([\s\S]*?)(?=\n\s*\w|$)/g) || [];
+    envMatches.forEach(envBlock => {
+      const secretVars =
+        envBlock.match(
+          /\s*-?\s*(\w*(?:PASSWORD|SECRET|KEY|TOKEN|API_KEY)\w*)\s*[:=]\s*([^\n]+)/gi
+        ) || [];
+      secretVars.forEach(secretVar => {
+        const [, varName, varValue] = secretVar.match(/\s*-?\s*(\w+)\s*[:=]\s*([^\n]+)/i) || [];
+        if (varName && varValue && !varValue.includes('${')) {
+          result.secrets.push({
+            type: 'credential',
+            value: varValue,
+            location: { line: this.findLineNumber(lines, secretVar), column: 0 },
+            confidence: 0.8,
+            context: `Docker Compose env var: ${varName}`,
+          });
+        }
+      });
+    });
+
+    // Check for privileged containers
+    if (content.includes('privileged: true')) {
+      result.securityIssues.push({
+        type: 'privilege_escalation',
+        severity: 'high',
+        message: 'Container running in privileged mode',
+        location: { line: this.findLineNumber(lines, 'privileged: true'), column: 0 },
+        suggestion: 'Remove privileged mode and use specific capabilities instead',
+      });
+    }
   }
 
   private analyzeTerraformSecurity(resource: TreeSitterNode): string[] {
@@ -824,6 +1010,135 @@ export class TreeSitterAnalyzer {
 
     if (resourceText.includes('port = 22') && resourceText.includes('0.0.0.0/0')) {
       risks.push('SSH port open to internet');
+    }
+
+    return risks;
+  }
+
+  // Helper methods for the enhanced YAML analysis
+  private findLineNumber(lines: string[], searchText: string): number {
+    for (let i = 0; i < lines.length; i++) {
+      if (lines[i]?.includes(searchText)) {
+        return i + 1;
+      }
+    }
+    return 1;
+  }
+
+  private isSecuritySensitiveTask(taskName: string): boolean {
+    const sensitiveKeywords = [
+      'password',
+      'secret',
+      'key',
+      'token',
+      'auth',
+      'login',
+      'credential',
+      'sudo',
+      'become',
+      'privilege',
+      'root',
+      'admin',
+      'ssh',
+      'ssl',
+      'tls',
+    ];
+    const lowerTaskName = taskName.toLowerCase();
+    return sensitiveKeywords.some(keyword => lowerTaskName.includes(keyword));
+  }
+
+  private isDangerousAnsibleRole(roleName: string): boolean {
+    const dangerousRoles = [
+      'shell',
+      'command',
+      'raw',
+      'script',
+      'sudo',
+      'become',
+      'privilege',
+      'firewall',
+      'iptables',
+      'selinux',
+      'apparmor',
+    ];
+    const lowerRoleName = roleName.toLowerCase();
+    return dangerousRoles.some(dangerous => lowerRoleName.includes(dangerous));
+  }
+
+  private analyzeKubernetesSecurityRisks(content: string, kind: string): string[] {
+    const risks: string[] = [];
+    const lowerContent = content.toLowerCase();
+
+    // Check for privileged containers
+    if (lowerContent.includes('privileged: true')) {
+      risks.push('Privileged container detected');
+    }
+
+    // Check for host network
+    if (lowerContent.includes('hostnetwork: true')) {
+      risks.push('Host network access enabled');
+    }
+
+    // Check for host PID
+    if (lowerContent.includes('hostpid: true')) {
+      risks.push('Host PID namespace access enabled');
+    }
+
+    // Check for missing security context
+    if (kind.toLowerCase() === 'deployment' && !lowerContent.includes('securitycontext')) {
+      risks.push('Missing security context configuration');
+    }
+
+    // Check for root user
+    if (lowerContent.includes('runasuser: 0')) {
+      risks.push('Container running as root user');
+    }
+
+    // Check for missing resource limits
+    if (lowerContent.includes('containers:') && !lowerContent.includes('resources:')) {
+      risks.push('Missing resource limits');
+    }
+
+    return risks;
+  }
+
+  private analyzeDockerComposeSecurityRisks(content: string, serviceName: string): string[] {
+    const risks: string[] = [];
+
+    // Extract service-specific content
+    const serviceRegex = new RegExp(
+      `\\s{2}${serviceName}:\\s*\\n([\\s\\S]*?)(?=\\n\\s{2}\\w|$)`,
+      'i'
+    );
+    const serviceMatch = content.match(serviceRegex);
+    const serviceContent = serviceMatch?.[1]?.toLowerCase() || '';
+
+    // Check for privileged mode
+    if (serviceContent.includes('privileged: true')) {
+      risks.push('Service running in privileged mode');
+    }
+
+    // Check for host network
+    if (serviceContent.includes('network_mode: host')) {
+      risks.push('Service using host network');
+    }
+
+    // Check for volume mounts to sensitive paths
+    const sensitiveVolumes = ['/etc', '/var/run/docker.sock', '/proc', '/sys'];
+    sensitiveVolumes.forEach(path => {
+      if (serviceContent.includes(`${path}:`)) {
+        risks.push(`Mounting sensitive host path: ${path}`);
+      }
+    });
+
+    // Check for exposed ports without proper configuration
+    if (serviceContent.includes('ports:') && serviceContent.includes('"80:')) {
+      risks.push('HTTP port exposed without TLS');
+    }
+
+    // Check for missing restart policy
+    if (!serviceContent.includes('restart:')) {
+      risks.push('Missing restart policy');
     }
 
     return risks;
