@@ -620,9 +620,278 @@ Use industry best practices for accurate and reliable estimation.`,
 };
 
 /**
- * All available prompts
+ * Function-based prompts from individual modules
+ */
+import * as analysisPrompts from './analysis-prompts.js';
+import * as adrSuggestionPrompts from './adr-suggestion-prompts.js';
+import * as deploymentAnalysisPrompts from './deployment-analysis-prompts.js';
+import * as environmentAnalysisPrompts from './environment-analysis-prompts.js';
+import * as researchIntegrationPrompts from './research-integration-prompts.js';
+import * as researchQuestionPrompts from './research-question-prompts.js';
+import * as ruleGenerationPrompts from './rule-generation-prompts.js';
+import * as securityPrompts from './security-prompts.js';
+import * as todoPrompts from './todo-prompts.js';
+
+/**
+ * Convert function-based prompts to template format
+ */
+function createFunctionPromptTemplate(
+  name: string,
+  description: string,
+  argumentsSchema: Array<{ name: string; description: string; required: boolean }>,
+  fn: Function
+): PromptTemplate {
+  return {
+    name,
+    description,
+    arguments: argumentsSchema,
+    template: `This is a dynamic prompt. Call the function with the provided arguments to generate the actual prompt content.
+
+Function: ${fn.name}
+Arguments: ${JSON.stringify(argumentsSchema, null, 2)}
+
+To use this prompt, provide the required arguments and the system will generate the appropriate prompt content.`,
+  };
+}
+
+/**
+ * Dynamic function-based prompts
+ */
+const functionBasedPrompts: PromptTemplate[] = [
+  // Analysis prompts
+  createFunctionPromptTemplate(
+    'technology_detection_prompt',
+    'Generate technology detection analysis prompt',
+    [
+      {
+        name: 'projectContext',
+        description: 'Project context for technology detection',
+        required: true,
+      },
+    ],
+    analysisPrompts.generateTechnologyDetectionPrompt
+  ),
+  createFunctionPromptTemplate(
+    'pattern_detection_prompt',
+    'Generate architectural pattern detection prompt',
+    [
+      {
+        name: 'projectContext',
+        description: 'Project context for pattern detection',
+        required: true,
+      },
+    ],
+    analysisPrompts.generatePatternDetectionPrompt
+  ),
+  createFunctionPromptTemplate(
+    'comprehensive_analysis_prompt',
+    'Generate comprehensive project analysis prompt',
+    [{ name: 'context', description: 'Analysis context and parameters', required: true }],
+    analysisPrompts.generateComprehensiveAnalysisPrompt
+  ),
+
+  // ADR suggestion prompts
+  createFunctionPromptTemplate(
+    'implicit_decision_detection_prompt',
+    'Generate prompt for detecting implicit architectural decisions in code',
+    [
+      {
+        name: 'args',
+        description: 'Analysis arguments including code patterns and context',
+        required: true,
+      },
+    ],
+    adrSuggestionPrompts.generateImplicitDecisionDetectionPrompt
+  ),
+  createFunctionPromptTemplate(
+    'code_change_analysis_prompt',
+    'Generate prompt for analyzing code changes for architectural decisions',
+    [{ name: 'args', description: 'Code change analysis parameters', required: true }],
+    adrSuggestionPrompts.generateCodeChangeAnalysisPrompt
+  ),
+  createFunctionPromptTemplate(
+    'adr_template_prompt',
+    'Generate ADR template prompt with specific format and context',
+    [{ name: 'args', description: 'ADR template generation parameters', required: true }],
+    adrSuggestionPrompts.generateAdrTemplatePrompt
+  ),
+
+  // Deployment analysis prompts
+  createFunctionPromptTemplate(
+    'deployment_task_identification_prompt',
+    'Generate prompt for identifying deployment tasks',
+    [{ name: 'args', description: 'Deployment context and requirements', required: true }],
+    deploymentAnalysisPrompts.generateDeploymentTaskIdentificationPrompt
+  ),
+  createFunctionPromptTemplate(
+    'cicd_analysis_prompt',
+    'Generate CI/CD pipeline analysis prompt',
+    [{ name: 'args', description: 'CI/CD analysis parameters', required: true }],
+    deploymentAnalysisPrompts.generateCiCdAnalysisPrompt
+  ),
+  createFunctionPromptTemplate(
+    'deployment_progress_calculation_prompt',
+    'Generate deployment progress calculation prompt',
+    [{ name: 'args', description: 'Progress calculation parameters', required: true }],
+    deploymentAnalysisPrompts.generateDeploymentProgressCalculationPrompt
+  ),
+  createFunctionPromptTemplate(
+    'completion_verification_prompt',
+    'Generate completion verification prompt',
+    [{ name: 'args', description: 'Verification parameters and criteria', required: true }],
+    deploymentAnalysisPrompts.generateCompletionVerificationPrompt
+  ),
+
+  // Environment analysis prompts
+  createFunctionPromptTemplate(
+    'environment_spec_analysis_prompt',
+    'Generate environment specification analysis prompt',
+    [{ name: 'args', description: 'Environment analysis parameters', required: true }],
+    environmentAnalysisPrompts.generateEnvironmentSpecAnalysisPrompt
+  ),
+  createFunctionPromptTemplate(
+    'containerization_detection_prompt',
+    'Generate containerization detection prompt',
+    [{ name: 'args', description: 'Containerization analysis parameters', required: true }],
+    environmentAnalysisPrompts.generateContainerizationDetectionPrompt
+  ),
+  createFunctionPromptTemplate(
+    'adr_environment_requirements_prompt',
+    'Generate ADR environment requirements prompt',
+    [{ name: 'args', description: 'Environment requirements analysis parameters', required: true }],
+    environmentAnalysisPrompts.generateAdrEnvironmentRequirementsPrompt
+  ),
+  createFunctionPromptTemplate(
+    'environment_compliance_prompt',
+    'Generate environment compliance analysis prompt',
+    [{ name: 'args', description: 'Compliance analysis parameters', required: true }],
+    environmentAnalysisPrompts.generateEnvironmentCompliancePrompt
+  ),
+
+  // Research integration prompts
+  createFunctionPromptTemplate(
+    'research_topic_extraction_prompt',
+    'Generate research topic extraction prompt',
+    [{ name: 'args', description: 'Research extraction parameters', required: true }],
+    researchIntegrationPrompts.generateResearchTopicExtractionPrompt
+  ),
+  createFunctionPromptTemplate(
+    'research_impact_evaluation_prompt',
+    'Generate research impact evaluation prompt',
+    [{ name: 'args', description: 'Impact evaluation parameters', required: true }],
+    researchIntegrationPrompts.generateResearchImpactEvaluationPrompt
+  ),
+  createFunctionPromptTemplate(
+    'adr_update_suggestion_prompt',
+    'Generate ADR update suggestion prompt',
+    [{ name: 'args', description: 'ADR update parameters', required: true }],
+    researchIntegrationPrompts.generateAdrUpdateSuggestionPrompt
+  ),
+
+  // Research question prompts
+  createFunctionPromptTemplate(
+    'problem_knowledge_correlation_prompt',
+    'Generate problem-knowledge correlation prompt',
+    [{ name: 'args', description: 'Correlation analysis parameters', required: true }],
+    researchQuestionPrompts.generateProblemKnowledgeCorrelationPrompt
+  ),
+  createFunctionPromptTemplate(
+    'relevant_adr_pattern_prompt',
+    'Generate relevant ADR pattern identification prompt',
+    [{ name: 'args', description: 'Pattern identification parameters', required: true }],
+    researchQuestionPrompts.generateRelevantAdrPatternPrompt
+  ),
+  createFunctionPromptTemplate(
+    'context_aware_research_questions_prompt',
+    'Generate context-aware research questions prompt',
+    [{ name: 'args', description: 'Research question generation parameters', required: true }],
+    researchQuestionPrompts.generateContextAwareResearchQuestionsPrompt
+  ),
+  createFunctionPromptTemplate(
+    'research_task_tracking_prompt',
+    'Generate research task tracking prompt',
+    [{ name: 'args', description: 'Task tracking parameters', required: true }],
+    researchQuestionPrompts.generateResearchTaskTrackingPrompt
+  ),
+
+  // Rule generation prompts
+  createFunctionPromptTemplate(
+    'rule_extraction_prompt',
+    'Generate rule extraction prompt from code and ADRs',
+    [{ name: 'args', description: 'Rule extraction parameters', required: true }],
+    ruleGenerationPrompts.generateRuleExtractionPrompt
+  ),
+  createFunctionPromptTemplate(
+    'pattern_based_rule_prompt',
+    'Generate pattern-based rule creation prompt',
+    [{ name: 'args', description: 'Pattern-based rule parameters', required: true }],
+    ruleGenerationPrompts.generatePatternBasedRulePrompt
+  ),
+  createFunctionPromptTemplate(
+    'code_validation_prompt',
+    'Generate code validation prompt against rules',
+    [{ name: 'args', description: 'Code validation parameters', required: true }],
+    ruleGenerationPrompts.generateCodeValidationPrompt
+  ),
+  createFunctionPromptTemplate(
+    'rule_deviation_report_prompt',
+    'Generate rule deviation report prompt',
+    [{ name: 'args', description: 'Deviation report parameters', required: true }],
+    ruleGenerationPrompts.generateRuleDeviationReportPrompt
+  ),
+
+  // Security prompts
+  createFunctionPromptTemplate(
+    'sensitive_content_detection_prompt',
+    'Generate sensitive content detection prompt',
+    [{ name: 'args', description: 'Content security analysis parameters', required: true }],
+    securityPrompts.generateSensitiveContentDetectionPrompt
+  ),
+  createFunctionPromptTemplate(
+    'content_masking_prompt',
+    'Generate content masking strategy prompt',
+    [{ name: 'args', description: 'Content masking parameters', required: true }],
+    securityPrompts.generateContentMaskingPrompt
+  ),
+  createFunctionPromptTemplate(
+    'custom_pattern_configuration_prompt',
+    'Generate custom security pattern configuration prompt',
+    [{ name: 'args', description: 'Custom pattern configuration parameters', required: true }],
+    securityPrompts.generateCustomPatternConfigurationPrompt
+  ),
+
+  // TODO prompts
+  createFunctionPromptTemplate(
+    'todo_creation_prompt',
+    'Generate TODO task creation prompt',
+    [{ name: 'args', description: 'TODO creation parameters', required: true }],
+    todoPrompts.generateTodoCreationPrompt
+  ),
+  createFunctionPromptTemplate(
+    'task_status_prompt',
+    'Generate task status management prompt',
+    [{ name: 'args', description: 'Task status management parameters', required: true }],
+    todoPrompts.generateTaskStatusPrompt
+  ),
+  createFunctionPromptTemplate(
+    'dependency_analysis_prompt',
+    'Generate task dependency analysis prompt',
+    [{ name: 'args', description: 'Dependency analysis parameters', required: true }],
+    todoPrompts.generateDependencyAnalysisPrompt
+  ),
+  createFunctionPromptTemplate(
+    'task_estimation_prompt',
+    'Generate task estimation prompt',
+    [{ name: 'args', description: 'Task estimation parameters', required: true }],
+    todoPrompts.generateTaskEstimationPrompt
+  ),
+];
+
+/**
+ * All available prompts (static + dynamic)
  */
 export const allPrompts: PromptTemplate[] = [
+  // Static template-based prompts
   goalSpecificationPrompt,
   actionConfirmationPrompt,
   ambiguityResolutionPrompt,
@@ -633,4 +902,7 @@ export const allPrompts: PromptTemplate[] = [
   todoStatusManagementPrompt,
   todoDependencyAnalysisPrompt,
   todoEstimationPrompt,
+
+  // Dynamic function-based prompts
+  ...functionBasedPrompts,
 ];
