@@ -739,6 +739,53 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'generate_adr_bootstrap',
+            description:
+              'Generate bootstrap.sh and validate_bootstrap.sh scripts to ensure deployed code follows ADR requirements',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to the project directory',
+                  default: '.',
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory where ADRs are stored',
+                  default: 'docs/adrs',
+                },
+                outputPath: {
+                  type: 'string',
+                  description: 'Directory where to generate scripts',
+                  default: '.',
+                },
+                scriptType: {
+                  type: 'string',
+                  enum: ['bootstrap', 'validate', 'both'],
+                  description: 'Which scripts to generate',
+                  default: 'both',
+                },
+                includeTests: {
+                  type: 'boolean',
+                  description: 'Include test execution in bootstrap',
+                  default: true,
+                },
+                includeDeployment: {
+                  type: 'boolean',
+                  description: 'Include deployment steps in bootstrap',
+                  default: true,
+                },
+                customValidations: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Custom validation commands to include',
+                },
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA,
+              },
+            },
+          },
+          {
             name: 'discover_existing_adrs',
             description: 'Discover and catalog existing ADRs in the project',
             inputSchema: {
@@ -2795,6 +2842,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'generate_adr_from_decision':
             response = await this.generateAdrFromDecision(args);
+            break;
+          case 'generate_adr_bootstrap':
+            response = await this.generateAdrBootstrap(args);
             break;
           case 'discover_existing_adrs':
             response = await this.discoverExistingAdrs(args);
@@ -6075,6 +6125,13 @@ Please provide:
   private async generateAdrFromDecision(args: any): Promise<any> {
     const { generateAdrFromDecision } = await import('./tools/adr-suggestion-tool.js');
     return await generateAdrFromDecision(args);
+  }
+
+  private async generateAdrBootstrap(args: any): Promise<any> {
+    const { default: generateAdrBootstrapScripts } = await import(
+      './tools/adr-bootstrap-validation-tool.js'
+    );
+    return await generateAdrBootstrapScripts(args);
   }
 
   private async discoverExistingAdrs(args: any): Promise<any> {

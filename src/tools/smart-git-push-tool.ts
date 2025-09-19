@@ -107,7 +107,13 @@ interface ValidationResult {
 }
 
 interface ValidationIssue {
-  type: 'sensitive-content' | 'llm-artifact' | 'wrong-location' | 'temporary-file';
+  type:
+    | 'sensitive-content'
+    | 'llm-artifact'
+    | 'wrong-location'
+    | 'temporary-file'
+    | 'security-risk'
+    | 'architecture-violation';
   severity: 'error' | 'warning' | 'info';
   message: string;
   pattern?: string;
@@ -824,17 +830,25 @@ async function checkLocationRules(
 ): Promise<ValidationIssue[]> {
   try {
     // Use enhanced location filter
-    const { validateFileLocation } = await import('../utils/location-filter.js');
+    const { validateFileLocationIntelligent } = await import('../utils/location-filter.js');
 
     // Skip if explicitly allowed
     if (allowedArtifacts.includes(basename(filePath)) || allowedArtifacts.includes(filePath)) {
       return [];
     }
 
-    const result = validateFileLocation(filePath);
+    // Read file content for intelligent analysis
+    let fileContent: string | undefined;
+    try {
+      fileContent = readFileSync(filePath, 'utf-8');
+    } catch (error) {
+      console.warn(`Could not read file for analysis: ${filePath}`);
+    }
+
+    const result = await validateFileLocationIntelligent(filePath, fileContent);
 
     if (!result.isValid) {
-      return [
+      const issues: ValidationIssue[] = [
         {
           type: 'wrong-location',
           severity:
@@ -847,6 +861,56 @@ async function checkLocationRules(
           pattern: result.rule?.name || 'location-rule',
         },
       ];
+
+      // Add tree-sitter security insights
+      if (result.treeSitterAnalysis) {
+        const analysis = result.treeSitterAnalysis;
+
+        // Critical security issues
+        if (analysis.hasSecrets) {
+          issues.push({
+            type: 'security-risk',
+            severity: 'error',
+            message: `🔐 Security Risk: File contains ${analysis.secrets.length} potential secret(s). Secrets should be in secure locations or environment variables.`,
+            pattern: 'tree-sitter-secrets',
+          });
+        }
+
+        // Dangerous imports
+        const dangerousImports = analysis.imports.filter(i => i.isDangerous);
+        if (dangerousImports.length > 0) {
+          issues.push({
+            type: 'security-risk',
+            severity: 'warning',
+            message: `⚠️  Dangerous imports detected: ${dangerousImports.map(i => i.module).join(', ')}. Consider safer alternatives.`,
+            pattern: 'tree-sitter-dangerous-imports',
+          });
+        }
+
+        // Infrastructure security risks
+        const riskyInfra = analysis.infraStructure.filter(i => i.securityRisks.length > 0);
+        if (riskyInfra.length > 0) {
+          const risks = riskyInfra.flatMap(i => i.securityRisks);
+          issues.push({
+            type: 'security-risk',
+            severity: 'error',
+            message: `🏗️  Infrastructure security risks: ${risks.join(', ')}. Review before deployment.`,
+            pattern: 'tree-sitter-infra-security',
+          });
+        }
+
+        // Architectural violations
+        if (result.intelligentReasons?.some(r => r.includes('violates'))) {
+          issues.push({
+            type: 'architecture-violation',
+            severity: 'error',
+            message: `🏗️  Architectural violation detected. This may affect system maintainability and scalability.`,
+            pattern: 'tree-sitter-architecture',
+          });
+        }
+      }
+
+      return issues;
     }
 
     return [];
