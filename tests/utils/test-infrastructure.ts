@@ -190,7 +190,7 @@ export class TestInfrastructure {
     for (const timer of timers) {
       try {
         clearTimeout(timer);
-      } catch (error) {
+      } catch {
         // Ignore errors when clearing timers
       }
     }
@@ -201,7 +201,7 @@ export class TestInfrastructure {
     for (const interval of intervals) {
       try {
         clearInterval(interval);
-      } catch (error) {
+      } catch {
         // Ignore errors when clearing intervals
       }
     }
@@ -319,7 +319,7 @@ export class TestInfrastructure {
           for (const interval of this.resources.intervals) {
             clearInterval(interval);
           }
-        } catch (error) {
+        } catch {
           // Ignore cleanup errors during exit
         }
       }

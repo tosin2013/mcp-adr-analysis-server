@@ -117,7 +117,7 @@ describe('TestInfrastructure', () => {
     });
 
     it('should record memory usage', () => {
-      const initialMemStats = infrastructure.getMemoryStats();
+      const _initialMemStats = infrastructure.getMemoryStats();
 
       infrastructure.recordMemoryUsage();
       infrastructure.recordMemoryUsage();
@@ -287,7 +287,7 @@ describe('TestInfrastructure', () => {
     });
 
     it('should maintain state across getInstance calls', async () => {
-      const tempDir = await infrastructure.createTempDir('singleton-test-');
+      const _tempDir = await infrastructure.createTempDir('singleton-test-');
 
       const anotherInstance = TestInfrastructure.getInstance();
       const status = anotherInstance.getResourceStatus();

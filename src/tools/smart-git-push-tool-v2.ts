@@ -499,7 +499,7 @@ async function updateDeploymentHistory(
   if (existsSync(historyFile)) {
     try {
       history = JSON.parse(readFileSync(historyFile, 'utf8'));
-    } catch (error) {
+    } catch {
       // Ignore parse errors
     }
   }
@@ -611,7 +611,7 @@ async function getDeploymentMetricsSummary(projectPath: string): Promise<string>
     ];
 
     return lines.join('\n');
-  } catch (error) {
+  } catch {
     return '- Error reading deployment history';
   }
 }

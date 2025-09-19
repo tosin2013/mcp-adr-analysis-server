@@ -230,7 +230,7 @@ describe('Research Integration Tool', () => {
         java: ['.java'],
       };
 
-      Object.entries(languageExtensions).forEach(([lang, extensions]) => {
+      Object.entries(languageExtensions).forEach(([_lang, extensions]) => {
         expect(extensions.length).toBeGreaterThan(0);
       });
     });
