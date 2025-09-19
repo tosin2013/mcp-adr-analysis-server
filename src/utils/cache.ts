@@ -4,8 +4,19 @@
  */
 
 import { McpAdrError, CacheEntry } from '../types/index.js';
+import * as os from 'os';
+import * as path from 'path';
 
-const CACHE_DIR = '.mcp-adr-cache';
+// Use proper temporary directory based on OS and current project
+const getCacheDirectory = (): string => {
+  // Get the project name from the current working directory
+  const cwd = process.cwd();
+  const projectName = path.basename(cwd);
+  const tempDir = os.tmpdir();
+  return path.join(tempDir, projectName, 'cache');
+};
+
+const CACHE_DIR = getCacheDirectory();
 
 export interface CacheOptions {
   ttl?: number; // Time to live in seconds
@@ -16,7 +27,11 @@ export interface CacheOptions {
 /**
  * Generate prompt for AI-driven cache directory initialization
  */
-export async function initializeCache(): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function initializeCache(): Promise<{
+  prompt: string;
+  instructions: string;
+  context: any;
+}> {
   try {
     console.error(`[DEBUG] Generating cache initialization prompt for: ${CACHE_DIR}`);
 
@@ -137,10 +152,9 @@ The AI agent must:
         cacheDirectory: CACHE_DIR,
         operation: 'cache_initialization',
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate cache initialization prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -161,7 +175,11 @@ function getCacheFilePath(key: string): string {
 /**
  * Generate prompt for AI-driven cache data storage
  */
-export async function setCache<T>(key: string, data: T, options: CacheOptions = {}): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function setCache<T>(
+  key: string,
+  data: T,
+  options: CacheOptions = {}
+): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
     console.error(`[DEBUG] Generating cache set prompt for key: ${key}`);
 
@@ -313,10 +331,9 @@ The AI agent must:
         ttl: cacheEntry.ttl,
         operation: 'cache_set',
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate cache set prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -328,7 +345,9 @@ The AI agent must:
 /**
  * Generate prompt for AI-driven cache data retrieval
  */
-export async function getCache(key: string): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function getCache(
+  key: string
+): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
     console.error(`[DEBUG] Generating cache get prompt for key: ${key}`);
 
@@ -494,10 +513,9 @@ The AI agent must:
         currentTime,
         operation: 'cache_get',
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate cache get prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -509,7 +527,9 @@ The AI agent must:
 /**
  * Generate prompt for AI-driven cache validity check
  */
-export async function hasValidCache(key: string): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function hasValidCache(
+  key: string
+): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
     console.error(`[DEBUG] Generating cache validity check prompt for key: ${key}`);
 
@@ -584,10 +604,9 @@ ${getCachePrompt.prompt}
         cacheKey: key,
         operation: 'cache_validity_check',
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate cache validity check prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -599,7 +618,9 @@ ${getCachePrompt.prompt}
 /**
  * Generate prompt for AI-driven cache entry invalidation
  */
-export async function invalidateCache(key: string): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function invalidateCache(
+  key: string
+): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
     console.error(`[DEBUG] Generating cache invalidation prompt for key: ${key}`);
 
@@ -715,10 +736,9 @@ The AI agent must:
         filePath,
         operation: 'cache_invalidate',
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate cache invalidation prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -730,7 +750,11 @@ The AI agent must:
 /**
  * Generate prompt for AI-driven cache clearing
  */
-export async function clearCache(): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function clearCache(): Promise<{
+  prompt: string;
+  instructions: string;
+  context: any;
+}> {
   try {
     console.error(`[DEBUG] Generating cache clear prompt for directory: ${CACHE_DIR}`);
 
@@ -862,10 +886,9 @@ The AI agent must:
         operation: 'cache_clear',
         securityLevel: 'high',
         protectedFiles: ['metadata.json'],
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate cache clear prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -877,7 +900,11 @@ The AI agent must:
 /**
  * Generate prompt for AI-driven cache statistics collection
  */
-export async function getCacheStats(): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function getCacheStats(): Promise<{
+  prompt: string;
+  instructions: string;
+  context: any;
+}> {
   try {
     console.error(`[DEBUG] Generating cache stats prompt for directory: ${CACHE_DIR}`);
 
@@ -1030,10 +1057,9 @@ The AI agent must:
         operation: 'cache_stats',
         securityLevel: 'high',
         expectedFormat: 'json',
-        expectedFields: ['totalEntries', 'totalSize', 'oldestEntry', 'newestEntry']
-      }
+        expectedFields: ['totalEntries', 'totalSize', 'oldestEntry', 'newestEntry'],
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate cache stats prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -1045,7 +1071,11 @@ The AI agent must:
 /**
  * Generate prompt for AI-driven cache cleanup (remove expired entries)
  */
-export async function cleanupCache(): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function cleanupCache(): Promise<{
+  prompt: string;
+  instructions: string;
+  context: any;
+}> {
   try {
     console.error(`[DEBUG] Generating cache cleanup prompt for directory: ${CACHE_DIR}`);
 
@@ -1211,10 +1241,9 @@ The AI agent must:
         operation: 'cache_cleanup',
         securityLevel: 'high',
         expectedFormat: 'json',
-        expectedReturn: 'cleanedCount'
-      }
+        expectedReturn: 'cleanedCount',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate cache cleanup prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -1405,10 +1434,9 @@ This operation combines cache retrieval and data generation. The AI agent should
         compression: options.compression || false,
         operation: 'cache_or_generate',
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate cache-or-generate prompt: ${error instanceof Error ? error.message : String(error)}`,

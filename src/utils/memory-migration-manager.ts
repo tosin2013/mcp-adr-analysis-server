@@ -8,6 +8,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as os from 'os';
 import { existsSync } from 'fs';
 import crypto from 'crypto';
 
@@ -122,11 +123,10 @@ export class MemoryMigrationManager {
       }
 
       // Define migration sources
-      const deploymentHistoryPath = path.join(
-        this.projectConfig.projectPath,
-        '.mcp-adr-cache',
-        'deployment-history.json'
-      );
+      // Use proper temp directory for cache
+      const projectName = path.basename(this.projectConfig.projectPath);
+      const cacheDir = path.join(os.tmpdir(), projectName, 'cache');
+      const deploymentHistoryPath = path.join(cacheDir, 'deployment-history.json');
 
       const migrationSources: DataSourceConfig[] = [
         {
@@ -136,11 +136,7 @@ export class MemoryMigrationManager {
           migrationStrategy: 'full',
         },
         {
-          path: path.join(
-            this.projectConfig.projectPath,
-            '.mcp-adr-cache',
-            'knowledge-graph-snapshots.json'
-          ),
+          path: path.join(cacheDir, 'knowledge-graph-snapshots.json'),
           type: 'knowledge_graph',
           format: 'json',
           migrationStrategy: 'selective',
@@ -152,7 +148,7 @@ export class MemoryMigrationManager {
           migrationStrategy: 'full',
         },
         {
-          path: path.join(this.projectConfig.projectPath, '.mcp-adr-cache'),
+          path: cacheDir,
           type: 'troubleshooting_sessions',
           format: 'json',
           migrationStrategy: 'incremental',

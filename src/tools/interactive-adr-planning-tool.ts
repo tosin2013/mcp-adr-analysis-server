@@ -1,13 +1,13 @@
 /**
  * Interactive ADR Planning Tool - Guided ADR Creation and Planning
- * 
+ *
  * Provides an interactive, conversational approach to ADR planning that:
  * - Guides users through structured decision-making process
  * - Integrates research capabilities for informed decisions
  * - Generates ADR content progressively with user feedback
  * - Updates TODO items based on ADR decisions
  * - Orchestrates other MCP tools for comprehensive planning
- * 
+ *
  * Key Features:
  * - Multi-step wizard for ADR creation
  * - Context-aware research integration
@@ -15,7 +15,7 @@
  * - Automatic TODO generation from decisions
  * - ADR template customization
  * - Decision rationale capture
- * 
+ *
  * Workflow Phases:
  * 1. Problem Definition - Clarify the architectural challenge
  * 2. Research & Analysis - Gather relevant information
@@ -24,7 +24,7 @@
  * 5. Impact Assessment - Analyze consequences and risks
  * 6. Implementation Planning - Generate TODOs and timeline
  * 7. ADR Generation - Create structured ADR document
- * 
+ *
  * Integration Points:
  * - Research tools for context gathering
  * - Analysis tools for impact assessment
@@ -35,7 +35,8 @@
 
 import { z } from 'zod';
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join, basename } from 'path';
+import * as os from 'os';
 import { McpAdrError } from '../types/index.js';
 
 // Planning session schema
@@ -43,63 +44,81 @@ const PlanningSessionSchema = z.object({
   sessionId: z.string(),
   phase: z.enum([
     'problem_definition',
-    'research_analysis', 
+    'research_analysis',
     'option_exploration',
     'decision_making',
     'impact_assessment',
     'implementation_planning',
     'adr_generation',
-    'completed'
+    'completed',
   ]),
   context: z.object({
     projectPath: z.string(),
     adrDirectory: z.string().default('docs/adrs'),
     problemStatement: z.string().optional(),
-    researchFindings: z.array(z.object({
-      source: z.string(),
-      insight: z.string(),
-      relevance: z.string()
-    })).default([]),
-    options: z.array(z.object({
-      name: z.string(),
-      description: z.string(),
-      pros: z.array(z.string()),
-      cons: z.array(z.string()),
-      risks: z.array(z.string()),
-      effort: z.enum(['low', 'medium', 'high']),
-      confidence: z.number().min(0).max(100)
-    })).default([]),
-    selectedOption: z.object({
-      name: z.string(),
-      rationale: z.string(),
-      tradeoffs: z.array(z.string())
-    }).optional(),
-    impacts: z.object({
-      technical: z.array(z.string()).default([]),
-      business: z.array(z.string()).default([]),
-      team: z.array(z.string()).default([]),
-      risks: z.array(z.string()).default([]),
-      dependencies: z.array(z.string()).default([])
-    }).optional(),
-    implementation: z.object({
-      phases: z.array(z.string()).default([]),
-      tasks: z.array(z.object({
-        description: z.string(),
-        priority: z.enum(['low', 'medium', 'high', 'critical']),
-        effort: z.string(),
-        assignee: z.string().optional()
-      })).default([]),
-      timeline: z.string().optional(),
-      successCriteria: z.array(z.string()).default([])
-    }).optional(),
-    adrContent: z.string().optional()
+    researchFindings: z
+      .array(
+        z.object({
+          source: z.string(),
+          insight: z.string(),
+          relevance: z.string(),
+        })
+      )
+      .default([]),
+    options: z
+      .array(
+        z.object({
+          name: z.string(),
+          description: z.string(),
+          pros: z.array(z.string()),
+          cons: z.array(z.string()),
+          risks: z.array(z.string()),
+          effort: z.enum(['low', 'medium', 'high']),
+          confidence: z.number().min(0).max(100),
+        })
+      )
+      .default([]),
+    selectedOption: z
+      .object({
+        name: z.string(),
+        rationale: z.string(),
+        tradeoffs: z.array(z.string()),
+      })
+      .optional(),
+    impacts: z
+      .object({
+        technical: z.array(z.string()).default([]),
+        business: z.array(z.string()).default([]),
+        team: z.array(z.string()).default([]),
+        risks: z.array(z.string()).default([]),
+        dependencies: z.array(z.string()).default([]),
+      })
+      .optional(),
+    implementation: z
+      .object({
+        phases: z.array(z.string()).default([]),
+        tasks: z
+          .array(
+            z.object({
+              description: z.string(),
+              priority: z.enum(['low', 'medium', 'high', 'critical']),
+              effort: z.string(),
+              assignee: z.string().optional(),
+            })
+          )
+          .default([]),
+        timeline: z.string().optional(),
+        successCriteria: z.array(z.string()).default([]),
+      })
+      .optional(),
+    adrContent: z.string().optional(),
   }),
   metadata: z.object({
     createdAt: z.string(),
     updatedAt: z.string(),
     lastAction: z.string(),
-    nextSteps: z.array(z.string()).default([])
-  })
+    nextSteps: z.array(z.string()).default([]),
+  }),
 });
 
 // Input schema for tool operations
@@ -117,13 +136,16 @@ const InteractiveAdrPlanningSchema = z.object({
     'update_todos',
     'get_guidance',
     'save_session',
-    'complete_session'
+    'complete_session',
   ]),
   sessionId: z.string().optional(),
   input: z.any().optional(),
   projectPath: z.string(),
   autoResearch: z.boolean().default(true).describe('Automatically trigger research when needed'),
-  generateTodos: z.boolean().default(true).describe('Automatically generate TODO items from decisions')
+  generateTodos: z
+    .boolean()
+    .default(true)
+    .describe('Automatically generate TODO items from decisions'),
 });
 
 type PlanningSession = z.infer<typeof PlanningSessionSchema>;
@@ -136,7 +158,8 @@ const sessions = new Map<string, PlanningSession>();
  * Get or create cache directory
  */
 async function getCacheDir(projectPath: string): Promise<string> {
-  const cacheDir = join(projectPath, '.mcp-adr-cache');
+  const projectName = basename(projectPath);
+  const cacheDir = join(os.tmpdir(), projectName, 'cache');
   await fs.mkdir(cacheDir, { recursive: true });
   return cacheDir;
 }
@@ -153,7 +176,10 @@ async function saveSession(session: PlanningSession): Promise<void> {
 /**
  * Load session from cache
  */
-async function loadSession(projectPath: string, sessionId: string): Promise<PlanningSession | null> {
+async function loadSession(
+  projectPath: string,
+  sessionId: string
+): Promise<PlanningSession | null> {
   try {
     const cacheDir = await getCacheDir(projectPath);
     const sessionFile = join(cacheDir, `adr-planning-session-${sessionId}.json`);
@@ -176,7 +202,7 @@ async function startSession(args: InteractiveAdrPlanningInput): Promise<any> {
       projectPath: args.projectPath,
       adrDirectory: 'docs/adrs',
       researchFindings: [],
-      options: []
+      options: [],
     },
     metadata: {
       createdAt: new Date().toISOString(),
@@ -185,9 +211,9 @@ async function startSession(args: InteractiveAdrPlanningInput): Promise<any> {
       nextSteps: [
         'Define the architectural problem or decision point',
         'Identify key stakeholders and constraints',
-        'Determine success criteria'
-      ]
-    }
+        'Determine success criteria',
+      ],
+    },
   };
 
   sessions.set(sessionId, session);
@@ -214,7 +240,7 @@ Please provide:
 ${session.metadata.nextSteps.map(step => `- ${step}`).join('\n')}
 
 Use \`provide_input\` with your problem statement to continue.`,
-    nextAction: 'provide_input'
+    nextAction: 'provide_input',
   };
 }
 
@@ -244,7 +270,7 @@ async function continueSession(args: InteractiveAdrPlanningInput): Promise<any> 
     impact_assessment: 'Analyze the impacts and risks of the decision',
     implementation_planning: 'Plan the implementation with tasks and timeline',
     adr_generation: 'Generate the final ADR document',
-    completed: 'Session completed - ADR has been generated'
+    completed: 'Session completed - ADR has been generated',
   };
 
   return {
@@ -254,7 +280,7 @@ async function continueSession(args: InteractiveAdrPlanningInput): Promise<any> 
     context: session.context,
     guidance: phaseGuidance[session.phase],
     nextSteps: session.metadata.nextSteps,
-    progress: getSessionProgress(session)
+    progress: getSessionProgress(session),
   };
 }
 
@@ -315,7 +341,7 @@ async function handleProblemDefinition(session: PlanningSession, input: any): Pr
   session.metadata.nextSteps = [
     'Research existing solutions',
     'Analyze current architecture',
-    'Identify relevant patterns and practices'
+    'Identify relevant patterns and practices',
   ];
 
   return {
@@ -338,7 +364,7 @@ Would you like me to:
 - Automatically research this topic? (use \`request_research\`)
 - Or provide your own research findings? (use \`provide_input\` with findings)`,
     nextAction: 'request_research',
-    autoResearch: true
+    autoResearch: true,
   };
 }
 
@@ -355,7 +381,7 @@ async function handleResearchAnalysis(session: PlanningSession, input: any): Pro
   session.metadata.nextSteps = [
     'Identify possible solutions',
     'Evaluate pros and cons',
-    'Assess implementation effort'
+    'Assess implementation effort',
   ];
 
   return {
@@ -390,7 +416,7 @@ Please provide options in this format:
 \`\`\`
 
 Or use \`evaluate_options\` to have me help generate options based on the research.`,
-    nextAction: 'evaluate_options'
+    nextAction: 'evaluate_options',
   };
 }
 
@@ -407,17 +433,20 @@ async function handleOptionExploration(session: PlanningSession, input: any): Pr
   session.metadata.nextSteps = [
     'Compare options against criteria',
     'Select best approach',
-    'Document rationale'
+    'Document rationale',
   ];
 
-  const optionComparison = session.context.options.map(opt => 
-    `### ${opt.name} (Confidence: ${opt.confidence}%)
+  const optionComparison = session.context.options
+    .map(
+      opt =>
+        `### ${opt.name} (Confidence: ${opt.confidence}%)
 **Description:** ${opt.description}
 **Pros:** ${opt.pros.join(', ')}
 **Cons:** ${opt.cons.join(', ')}
 **Effort:** ${opt.effort}
 **Risks:** ${opt.risks.join(', ')}`
-  ).join('\n\n');
+    )
+    .join('\n\n');
 
   return {
     success: true,
@@ -445,7 +474,7 @@ Provide your decision with:
 \`\`\`
 
 Use \`make_decision\` to proceed.`,
-    nextAction: 'make_decision'
+    nextAction: 'make_decision',
   };
 }
 
@@ -462,7 +491,7 @@ async function handleDecisionMaking(session: PlanningSession, input: any): Promi
   session.metadata.nextSteps = [
     'Assess technical impacts',
     'Evaluate business impacts',
-    'Identify risks and dependencies'
+    'Identify risks and dependencies',
   ];
 
   return {
@@ -493,7 +522,7 @@ Provide impact analysis:
 \`\`\`
 
 Use \`assess_impact\` to continue.`,
-    nextAction: 'assess_impact'
+    nextAction: 'assess_impact',
   };
 }
 
@@ -510,7 +539,7 @@ async function handleImpactAssessment(session: PlanningSession, input: any): Pro
   session.metadata.nextSteps = [
     'Define implementation phases',
     'Create task list',
-    'Set timeline and milestones'
+    'Set timeline and milestones',
   ];
 
   return {
@@ -551,7 +580,7 @@ Provide implementation details:
 \`\`\`
 
 Use \`plan_implementation\` to continue.`,
-    nextAction: 'plan_implementation'
+    nextAction: 'plan_implementation',
   };
 }
 
@@ -568,7 +597,7 @@ async function handleImplementationPlanning(session: PlanningSession, input: any
   session.metadata.nextSteps = [
     'Generate ADR document',
     'Create TODO items',
-    'Update project plan'
+    'Update project plan',
   ];
 
   return {
@@ -597,7 +626,7 @@ The ADR will include:
 
 Use \`generate_adr\` to create the ADR document.`,
     nextAction: 'generate_adr',
-    readyToGenerate: true
+    readyToGenerate: true,
   };
 }
 
@@ -607,17 +636,17 @@ Use \`generate_adr\` to create the ADR document.`,
 async function handleAdrGeneration(session: PlanningSession, _input: any): Promise<any> {
   const adrContent = generateAdrContent(session);
   session.context.adrContent = adrContent;
-  
+
   // Save ADR to file
   const adrDir = join(session.context.projectPath, session.context.adrDirectory);
   await fs.mkdir(adrDir, { recursive: true });
-  
+
   const adrNumber = await getNextAdrNumber(adrDir);
   const adrFilename = `${String(adrNumber).padStart(4, '0')}-${session.context.selectedOption?.name.toLowerCase().replace(/\s+/g, '-')}.md`;
   const adrPath = join(adrDir, adrFilename);
-  
+
   await fs.writeFile(adrPath, adrContent);
-  
+
   session.phase = 'completed';
   session.metadata.lastAction = 'ADR generated';
   session.metadata.nextSteps = [];
@@ -645,7 +674,7 @@ You can:
 - Use \`complete_session\` to finish and clean up
 - Make manual edits to the ADR file as needed`,
     nextAction: 'update_todos',
-    completed: true
+    completed: true,
   };
 }
 
@@ -667,18 +696,18 @@ async function requestResearch(args: InteractiveAdrPlanningInput): Promise<any> 
     {
       source: 'Industry Best Practices',
       insight: `For ${session.context.problemStatement}, microservices architecture is commonly used for scalability`,
-      relevance: 'High - Addresses core scalability concerns'
+      relevance: 'High - Addresses core scalability concerns',
     },
     {
       source: 'Current Codebase Analysis',
       insight: 'Existing monolithic structure with clear domain boundaries',
-      relevance: 'High - Shows feasibility of decomposition'
+      relevance: 'High - Shows feasibility of decomposition',
     },
     {
       source: 'Team Experience',
       insight: 'Team has limited microservices experience but strong domain knowledge',
-      relevance: 'Medium - Impacts implementation approach'
-    }
+      relevance: 'Medium - Impacts implementation approach',
+    },
   ];
 
   session.context.researchFindings = researchFindings;
@@ -691,7 +720,7 @@ async function requestResearch(args: InteractiveAdrPlanningInput): Promise<any> 
     sessionId: args.sessionId,
     researchFindings,
     guidance: 'Research complete. Moving to option exploration phase.',
-    nextAction: 'evaluate_options'
+    nextAction: 'evaluate_options',
   };
 }
 
@@ -717,7 +746,7 @@ async function evaluateOptions(args: InteractiveAdrPlanningInput): Promise<any> 
       cons: ['High complexity', 'Significant refactoring', 'Operational overhead'],
       risks: ['Team learning curve', 'Integration complexity', 'Data consistency'],
       effort: 'high' as const,
-      confidence: 60
+      confidence: 60,
     },
     {
       name: 'Modular Monolith',
@@ -726,7 +755,7 @@ async function evaluateOptions(args: InteractiveAdrPlanningInput): Promise<any> 
       cons: ['Limited scalability', 'Shared deployment', 'Technology constraints'],
       risks: ['Module boundary violations', 'Scaling limitations'],
       effort: 'medium' as const,
-      confidence: 80
+      confidence: 80,
     },
     {
       name: 'Selective Service Extraction',
@@ -735,8 +764,8 @@ async function evaluateOptions(args: InteractiveAdrPlanningInput): Promise<any> 
       cons: ['Partial benefits', 'Mixed architecture'],
       risks: ['Service boundary decisions', 'Integration points'],
       effort: 'medium' as const,
-      confidence: 85
-    }
+      confidence: 85,
+    },
   ];
 
   session.context.options = options;
@@ -749,7 +778,7 @@ async function evaluateOptions(args: InteractiveAdrPlanningInput): Promise<any> 
     sessionId: args.sessionId,
     options,
     guidance: 'Options evaluated. Ready for decision making.',
-    nextAction: 'make_decision'
+    nextAction: 'make_decision',
   };
 }
 
@@ -778,7 +807,7 @@ async function updateTodos(args: InteractiveAdrPlanningInput): Promise<any> {
     effort: task.effort,
     assignee: task.assignee,
     adrLink: session.context.adrContent ? 'Generated ADR' : undefined,
-    status: 'pending'
+    status: 'pending',
   }));
 
   return {
@@ -786,7 +815,7 @@ async function updateTodos(args: InteractiveAdrPlanningInput): Promise<any> {
     sessionId: args.sessionId,
     todosGenerated: todos.length,
     todos,
-    guidance: `Generated ${todos.length} TODO items from the implementation plan.`
+    guidance: `Generated ${todos.length} TODO items from the implementation plan.`,
   };
 }
 
@@ -809,53 +838,53 @@ async function getGuidance(args: InteractiveAdrPlanningInput): Promise<any> {
         'Be specific about the problem',
         'Include quantifiable metrics if possible',
         'Identify all stakeholders',
-        'Define clear success criteria'
+        'Define clear success criteria',
       ],
       questions: [
         'What specific problem are we solving?',
         'Why does this need to be addressed now?',
         'What happens if we do nothing?',
-        'How will we measure success?'
+        'How will we measure success?',
       ],
       examples: [
         'Application response time exceeds 3 seconds under load',
         'Cannot deploy services independently',
-        'Database becoming a bottleneck for scaling'
-      ]
+        'Database becoming a bottleneck for scaling',
+      ],
     },
     research_analysis: {
       tips: [
         'Look for industry patterns',
         'Analyze similar problems in your codebase',
         'Consider team capabilities',
-        'Research tooling and frameworks'
+        'Research tooling and frameworks',
       ],
       questions: [
         'What solutions have others used?',
         'What patterns apply to our context?',
         'What are the technical constraints?',
-        'What skills does the team have?'
-      ]
+        'What skills does the team have?',
+      ],
     },
     option_exploration: {
       tips: [
         'Consider at least 3 options',
         'Include a "do nothing" option if relevant',
         'Be honest about pros and cons',
-        'Estimate effort realistically'
+        'Estimate effort realistically',
       ],
       questions: [
         'What are all possible approaches?',
         'What are the tradeoffs?',
         'How much effort is each option?',
-        'What are the risks?'
-      ]
-    }
+        'What are the risks?',
+      ],
+    },
   };
 
   const currentGuidance = phaseGuidance[session.phase] || {
     tips: ['Follow the structured process'],
-    questions: ['What do you need help with?']
+    questions: ['What do you need help with?'],
   };
 
   return {
@@ -864,7 +893,7 @@ async function getGuidance(args: InteractiveAdrPlanningInput): Promise<any> {
     phase: session.phase,
     guidance: currentGuidance,
     progress: getSessionProgress(session),
-    nextSteps: session.metadata.nextSteps
+    nextSteps: session.metadata.nextSteps,
   };
 }
 
@@ -883,12 +912,12 @@ async function completeSession(args: InteractiveAdrPlanningInput): Promise<any> 
 
   // Clean up session
   sessions.delete(args.sessionId);
-  
+
   // Archive session file
   const cacheDir = await getCacheDir(session.context.projectPath);
   const sessionFile = join(cacheDir, `adr-planning-session-${session.sessionId}.json`);
   const archiveFile = join(cacheDir, `archived-adr-planning-session-${session.sessionId}.json`);
-  
+
   try {
     await fs.rename(sessionFile, archiveFile);
   } catch (error) {
@@ -903,9 +932,9 @@ async function completeSession(args: InteractiveAdrPlanningInput): Promise<any> 
       decision: session.context.selectedOption?.name,
       adrGenerated: !!session.context.adrContent,
       tasksCreated: session.context.implementation?.tasks.length || 0,
-      duration: calculateDuration(session.metadata.createdAt, session.metadata.updatedAt)
+      duration: calculateDuration(session.metadata.createdAt, session.metadata.updatedAt),
     },
-    message: 'Planning session completed successfully!'
+    message: 'Planning session completed successfully!',
   };
 }
 
@@ -915,7 +944,7 @@ async function completeSession(args: InteractiveAdrPlanningInput): Promise<any> 
 function generateAdrContent(session: PlanningSession): string {
   const date = new Date().toISOString().split('T')[0];
   const status = 'Draft';
-  
+
   return `# ${session.context.selectedOption?.name}
 
 **Status:** ${status}  
@@ -944,7 +973,9 @@ ${session.context.selectedOption?.tradeoffs.map(t => `- ${t}`).join('\n')}
 
 ## Considered Options
 
-${session.context.options.map(opt => `
+${session.context.options
+  .map(
+    opt => `
 ### ${opt.name}
 
 ${opt.description}
@@ -957,7 +988,9 @@ ${opt.cons.map(c => `- ${c}`).join('\n')}
 
 **Effort:** ${opt.effort}  
 **Confidence:** ${opt.confidence}%
-`).join('\n')}
+`
+  )
+  .join('\n')}
 
 ## Consequences
 
@@ -982,9 +1015,12 @@ ${session.context.impacts?.dependencies.map(d => `- ${d}`).join('\n')}
 ${session.context.implementation?.phases.map((p, i) => `${i + 1}. ${p}`).join('\n')}
 
 ### Tasks
-${session.context.implementation?.tasks.map(t => 
-  `- [ ] ${t.description} (Priority: ${t.priority}, Effort: ${t.effort}${t.assignee ? `, Assignee: ${t.assignee}` : ''})`
-).join('\n')}
+${session.context.implementation?.tasks
+  .map(
+    t =>
+      `- [ ] ${t.description} (Priority: ${t.priority}, Effort: ${t.effort}${t.assignee ? `, Assignee: ${t.assignee}` : ''})`
+  )
+  .join('\n')}
 
 ### Timeline
 ${session.context.implementation?.timeline}
@@ -1012,7 +1048,7 @@ async function getNextAdrNumber(adrDir: string): Promise<number> {
     const files = await fs.readdir(adrDir);
     const adrFiles = files.filter(f => f.match(/^\d{4}-.*\.md$/));
     if (adrFiles.length === 0) return 1;
-    
+
     const numbers = adrFiles.map(f => parseInt(f.substring(0, 4)));
     return Math.max(...numbers) + 1;
   } catch {
@@ -1031,12 +1067,12 @@ function getSessionProgress(session: PlanningSession): number {
     'decision_making',
     'impact_assessment',
     'implementation_planning',
-    'adr_generation'
+    'adr_generation',
   ];
-  
+
   const currentIndex = phases.indexOf(session.phase);
   if (currentIndex === -1) return 100; // completed
-  
+
   return Math.round((currentIndex / phases.length) * 100);
 }
 
@@ -1047,10 +1083,10 @@ function calculateDuration(start: string, end: string): string {
   const startTime = new Date(start).getTime();
   const endTime = new Date(end).getTime();
   const duration = endTime - startTime;
-  
+
   const hours = Math.floor(duration / (1000 * 60 * 60));
   const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
-  
+
   if (hours > 0) {
     return `${hours}h ${minutes}m`;
   }
@@ -1063,53 +1099,53 @@ function calculateDuration(start: string, end: string): string {
 export async function interactiveAdrPlanning(args: any): Promise<any> {
   try {
     const input = InteractiveAdrPlanningSchema.parse(args);
-    
+
     switch (input.operation) {
       case 'start_session':
         return await startSession(input);
-      
+
       case 'continue_session':
         return await continueSession(input);
-      
+
       case 'provide_input':
         return await provideInput(input);
-      
+
       case 'request_research':
         return await requestResearch(input);
-      
+
       case 'evaluate_options':
         return await evaluateOptions(input);
-      
+
       case 'make_decision':
         input.input = { selectedOption: input.input };
         return await provideInput(input);
-      
+
       case 'assess_impact':
         input.input = { impacts: input.input };
         return await provideInput(input);
-      
+
       case 'plan_implementation':
         input.input = { implementation: input.input };
         return await provideInput(input);
-      
+
       case 'generate_adr':
         return await provideInput(input);
-      
+
       case 'update_todos':
         return await updateTodos(input);
-      
+
       case 'get_guidance':
         return await getGuidance(input);
-      
+
       case 'save_session':
         const session = sessions.get(input.sessionId!);
         if (!session) throw new McpAdrError('Session not found', 'SESSION_NOT_FOUND');
         await saveSession(session);
         return { success: true, message: 'Session saved' };
-      
+
       case 'complete_session':
         return await completeSession(input);
-      
+
       default:
         throw new McpAdrError(`Unknown operation: ${input.operation}`, 'INVALID_OPERATION');
     }
