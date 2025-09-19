@@ -3,7 +3,7 @@
  * Provides resource tracking, cleanup, and environment management for tests
  */
 
-import { jest } from '@jest/globals';
+import { jest as _jest } from '@jest/globals';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';

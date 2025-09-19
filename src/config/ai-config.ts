@@ -1,6 +1,6 @@
 /**
  * AI Configuration for OpenRouter.ai Integration
- * 
+ *
  * This module handles configuration for AI execution capabilities,
  * allowing the MCP server to execute prompts internally and return
  * actual results instead of prompts.
@@ -61,7 +61,7 @@ export const AVAILABLE_MODELS: Record<string, ModelConfig> = {
     inputCost: 3.0,
     outputCost: 15.0,
     contextLength: 200000,
-    useCases: ['analysis', 'reasoning', 'code-generation']
+    useCases: ['analysis', 'reasoning', 'code-generation'],
   },
   'claude-3-haiku': {
     id: 'anthropic/claude-3-haiku',
@@ -70,7 +70,7 @@ export const AVAILABLE_MODELS: Record<string, ModelConfig> = {
     inputCost: 0.25,
     outputCost: 1.25,
     contextLength: 200000,
-    useCases: ['quick-analysis', 'simple-tasks']
+    useCases: ['quick-analysis', 'simple-tasks'],
   },
   'gpt-4o': {
     id: 'openai/gpt-4o',
@@ -79,7 +79,7 @@ export const AVAILABLE_MODELS: Record<string, ModelConfig> = {
     inputCost: 5.0,
     outputCost: 15.0,
     contextLength: 128000,
-    useCases: ['analysis', 'reasoning', 'creative-tasks']
+    useCases: ['analysis', 'reasoning', 'creative-tasks'],
   },
   'gpt-4o-mini': {
     id: 'openai/gpt-4o-mini',
@@ -88,14 +88,17 @@ export const AVAILABLE_MODELS: Record<string, ModelConfig> = {
     inputCost: 0.15,
     outputCost: 0.6,
     contextLength: 128000,
-    useCases: ['quick-analysis', 'simple-tasks', 'cost-effective']
-  }
+    useCases: ['quick-analysis', 'simple-tasks', 'cost-effective'],
+  },
 };
 
 /**
  * Default AI configuration
  */
-export const DEFAULT_AI_CONFIG: Omit<AIConfig, 'siteUrl' | 'siteName'> & { siteUrl: string; siteName: string } = {
+export const DEFAULT_AI_CONFIG: Omit<AIConfig, 'siteUrl' | 'siteName'> & {
+  siteUrl: string;
+  siteName: string;
+} = {
   apiKey: '',
   baseURL: 'https://openrouter.ai/api/v1',
   defaultModel: 'anthropic/claude-3-sonnet',
@@ -107,7 +110,7 @@ export const DEFAULT_AI_CONFIG: Omit<AIConfig, 'siteUrl' | 'siteName'> & { siteU
   temperature: 0.1, // Lower for more consistent results
   maxTokens: 4000,
   cacheEnabled: true,
-  cacheTTL: 3600 // 1 hour
+  cacheTTL: 3600, // 1 hour
 };
 
 /**
@@ -118,7 +121,8 @@ export function loadAIConfig(): AIConfig {
     apiKey: process.env['OPENROUTER_API_KEY'] || '',
     baseURL: 'https://openrouter.ai/api/v1',
     defaultModel: process.env['AI_MODEL'] || DEFAULT_AI_CONFIG.defaultModel,
-    executionMode: (process.env['EXECUTION_MODE'] as 'full' | 'prompt-only') || DEFAULT_AI_CONFIG.executionMode,
+    executionMode:
+      (process.env['EXECUTION_MODE'] as 'full' | 'prompt-only') || DEFAULT_AI_CONFIG.executionMode,
     siteUrl: process.env['SITE_URL'] || DEFAULT_AI_CONFIG.siteUrl,
     siteName: process.env['SITE_NAME'] || DEFAULT_AI_CONFIG.siteName,
     timeout: parseInt(process.env['AI_TIMEOUT'] || '') || DEFAULT_AI_CONFIG.timeout,
@@ -126,7 +130,7 @@ export function loadAIConfig(): AIConfig {
     temperature: parseFloat(process.env['AI_TEMPERATURE'] || '') || DEFAULT_AI_CONFIG.temperature,
     maxTokens: parseInt(process.env['AI_MAX_TOKENS'] || '') || DEFAULT_AI_CONFIG.maxTokens,
     cacheEnabled: process.env['AI_CACHE_ENABLED'] !== 'false',
-    cacheTTL: parseInt(process.env['AI_CACHE_TTL'] || '') || DEFAULT_AI_CONFIG.cacheTTL
+    cacheTTL: parseInt(process.env['AI_CACHE_TTL'] || '') || DEFAULT_AI_CONFIG.cacheTTL,
   };
 
   return config;
@@ -178,8 +182,8 @@ export function isAIExecutionEnabled(config: AIConfig): boolean {
 export function getRecommendedModel(useCase: string, costSensitive: boolean = false): string {
   const models = Object.values(AVAILABLE_MODELS);
 
-  const suitableModels = models.filter(model =>
-    model.useCases.includes(useCase) || model.useCases.includes('analysis')
+  const suitableModels = models.filter(
+    model => model.useCases.includes(useCase) || model.useCases.includes('analysis')
   );
 
   if (suitableModels.length === 0) {
@@ -188,8 +192,8 @@ export function getRecommendedModel(useCase: string, costSensitive: boolean = fa
 
   if (costSensitive) {
     // Sort by cost (input + output cost)
-    suitableModels.sort((a, b) => (a.inputCost + a.outputCost) - (b.inputCost + b.outputCost));
+    suitableModels.sort((a, b) => a.inputCost + a.outputCost - (b.inputCost + b.outputCost));
   }
 
-  return suitableModels[0]!.id;
+  return suitableModels[0]?.id ?? DEFAULT_AI_CONFIG.defaultModel;
 }
