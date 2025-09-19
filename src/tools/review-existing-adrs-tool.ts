@@ -6,6 +6,7 @@
 
 import { McpAdrError } from '../types/index.js';
 import { ConversationContext } from '../types/conversation-context.js';
+import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -39,6 +40,9 @@ interface CodeAnalysisResult {
     databases: string[];
     frameworks: string[];
     patterns: string[];
+    securityFindings?: string[];
+    infrastructureResources?: string[];
+    devopsTools?: string[];
   };
 }
 
@@ -209,10 +213,60 @@ ${result.analysis}
 - **Architectural Patterns**: ${codeAnalysis.patterns.join(', ')}
 
 ### Architectural Elements
-- **APIs**: ${codeAnalysis.architecturalElements.apis.length}
-- **Databases**: ${codeAnalysis.architecturalElements.databases.length}
-- **Frameworks**: ${codeAnalysis.architecturalElements.frameworks.length}
-- **Patterns**: ${codeAnalysis.architecturalElements.patterns.length}
+- **APIs**: ${codeAnalysis.architecturalElements.apis?.length || 0}
+- **Databases**: ${codeAnalysis.architecturalElements.databases?.length || 0}
+- **Frameworks**: ${codeAnalysis.architecturalElements.frameworks?.length || 0}
+- **Patterns**: ${codeAnalysis.architecturalElements.patterns?.length || 0}
+- **Infrastructure Resources**: ${codeAnalysis.architecturalElements.infrastructureResources?.length || 0}
+- **DevOps Tools**: ${codeAnalysis.architecturalElements.devopsTools?.length || 0}
+
+### Enterprise Security Analysis (Tree-sitter)
+${
+  includeTreeSitter
+    ? `
+- **Security Findings**: ${codeAnalysis.architecturalElements.securityFindings?.length || 0}
+${
+  (codeAnalysis.architecturalElements.securityFindings?.length || 0) > 0
+    ? `
+#### Critical Security Issues:
+${codeAnalysis.architecturalElements
+  .securityFindings!.slice(0, 10)
+  .map((finding: string) => `- ${finding}`)
+  .join('\n')}
+${(codeAnalysis.architecturalElements.securityFindings!.length || 0) > 10 ? `\n*... and ${(codeAnalysis.architecturalElements.securityFindings!.length || 0) - 10} more security findings*` : ''}
+`
+    : '- ✅ No security issues detected'
+}
+`
+    : '- Tree-sitter security analysis disabled'
+}
+
+### DevOps Stack Analysis
+${
+  includeTreeSitter && (codeAnalysis.architecturalElements.infrastructureResources?.length || 0) > 0
+    ? `
+#### Infrastructure Resources:
+${codeAnalysis.architecturalElements
+  .infrastructureResources!.slice(0, 10)
+  .map((resource: string) => `- ${resource}`)
+  .join('\n')}
+${(codeAnalysis.architecturalElements.infrastructureResources!.length || 0) > 10 ? `\n*... and ${(codeAnalysis.architecturalElements.infrastructureResources!.length || 0) - 10} more resources*` : ''}
+`
+    : '- No infrastructure resources detected'
+}
+
+${
+  includeTreeSitter && (codeAnalysis.architecturalElements.devopsTools?.length || 0) > 0
+    ? `
+#### DevOps Tools Detected:
+${codeAnalysis.architecturalElements
+  .devopsTools!.slice(0, 10)
+  .map((tool: string) => `- ${tool}`)
+  .join('\n')}
+${(codeAnalysis.architecturalElements.devopsTools!.length || 0) > 10 ? `\n*... and ${(codeAnalysis.architecturalElements.devopsTools!.length || 0) - 10} more tools*` : ''}
+`
+    : '- No DevOps tools detected'
+}
 
 ${generateUpdatePlan ? updatePlan : ''}
 
@@ -927,15 +981,271 @@ async function detectArchitecturalPatterns(files: string[]): Promise<string[]> {
   return [...new Set(patterns)];
 }
 
-async function performTreeSitterAnalysis(_files: string[]): Promise<any> {
-  // Placeholder for tree-sitter analysis
-  // This would require installing tree-sitter and language parsers
-  return {
-    apis: [],
-    databases: [],
-    frameworks: [],
-    patterns: [],
+async function performTreeSitterAnalysis(files: string[]): Promise<any> {
+  const analyzer = new TreeSitterAnalyzer();
+  const architecturalElements = {
+    apis: [] as string[],
+    databases: [] as string[],
+    frameworks: [] as string[],
+    patterns: [] as string[],
+    securityFindings: [] as string[],
+    infrastructureResources: [] as string[],
+    devopsTools: [] as string[],
   };
+
+  try {
+    for (const filePath of files.slice(0, 50)) {
+      // Limit to first 50 files for performance
+      try {
+        const analysis = await analyzer.analyzeFile(filePath);
+
+        // Extract API endpoints and routes
+        if (analysis.functions) {
+          analysis.functions.forEach(func => {
+            if (func.name && isApiFunction(func.name)) {
+              architecturalElements.apis.push(`${func.name} (${filePath})`);
+            }
+            // Enhanced: Add security-sensitive functions
+            if (func.securitySensitive) {
+              architecturalElements.securityFindings.push(
+                `Security-sensitive function: ${func.name} in ${filePath}`
+              );
+            }
+          });
+        }
+
+        // Enhanced database and framework detection
+        if (analysis.imports) {
+          analysis.imports.forEach(imp => {
+            if (isDatabaseImport(imp.module)) {
+              architecturalElements.databases.push(`${imp.module} (${filePath})`);
+            }
+            if (isFrameworkImport(imp.module)) {
+              architecturalElements.frameworks.push(`${imp.module} (${filePath})`);
+            }
+            // Enhanced: Add DevOps tools detection
+            if (isDevOpsImport(imp.module)) {
+              architecturalElements.devopsTools.push(`${imp.module} (${filePath})`);
+            }
+            // Enhanced: Track dangerous imports
+            if (imp.isDangerous) {
+              architecturalElements.securityFindings.push(
+                `Dangerous import: ${imp.module} in ${filePath}${imp.reason ? ` - ${imp.reason}` : ''}`
+              );
+            }
+          });
+        }
+
+        // Enhanced infrastructure analysis for enterprise DevOps
+        if (analysis.infraStructure) {
+          analysis.infraStructure.forEach(infra => {
+            architecturalElements.patterns.push(
+              `${infra.resourceType}: ${infra.name} (${infra.provider})`
+            );
+            architecturalElements.infrastructureResources.push(
+              `${infra.provider}: ${infra.resourceType} (${filePath})`
+            );
+            // Enhanced: Track security risks in infrastructure
+            if (infra.securityRisks.length > 0) {
+              infra.securityRisks.forEach(risk => {
+                architecturalElements.securityFindings.push(
+                  `Infrastructure security risk in ${filePath}: ${risk}`
+                );
+              });
+            }
+          });
+        }
+
+        // Enhanced security analysis
+        if (analysis.hasSecrets) {
+          analysis.secrets.forEach(secret => {
+            architecturalElements.securityFindings.push(
+              `${secret.type} detected in ${filePath} at line ${secret.location.line} (confidence: ${secret.confidence})`
+            );
+          });
+        }
+
+        // Enhanced: Security issues from tree-sitter analysis
+        if (analysis.securityIssues && analysis.securityIssues.length > 0) {
+          analysis.securityIssues.forEach(issue => {
+            architecturalElements.securityFindings.push(
+              `${issue.severity.toUpperCase()}: ${issue.message} in ${filePath} at line ${issue.location.line}`
+            );
+          });
+        }
+
+        // Enhanced: Architectural violations
+        if (analysis.architecturalViolations && analysis.architecturalViolations.length > 0) {
+          analysis.architecturalViolations.forEach(violation => {
+            architecturalElements.patterns.push(
+              `Architectural violation in ${filePath}: ${violation.message}`
+            );
+          });
+        }
+
+        // Enhanced: Track language-specific patterns
+        if (analysis.language) {
+          switch (analysis.language) {
+            case 'python':
+              architecturalElements.patterns.push(`Python microservice detected (${filePath})`);
+              break;
+            case 'typescript':
+            case 'javascript':
+              architecturalElements.patterns.push(`Node.js application detected (${filePath})`);
+              break;
+            case 'yaml':
+              architecturalElements.patterns.push(
+                `Configuration/Infrastructure YAML (${filePath})`
+              );
+              break;
+            case 'hcl':
+              architecturalElements.patterns.push(`Terraform infrastructure (${filePath})`);
+              break;
+            case 'dockerfile':
+              architecturalElements.patterns.push(`Container configuration (${filePath})`);
+              break;
+            case 'bash':
+              architecturalElements.patterns.push(`Shell automation script (${filePath})`);
+              break;
+          }
+        }
+      } catch (fileError) {
+        // Gracefully skip files that can't be analyzed
+        console.warn(`Skipping file analysis for ${filePath}:`, fileError);
+      }
+    }
+
+    // Deduplicate results
+    architecturalElements.apis = [...new Set(architecturalElements.apis)];
+    architecturalElements.databases = [...new Set(architecturalElements.databases)];
+    architecturalElements.frameworks = [...new Set(architecturalElements.frameworks)];
+    architecturalElements.patterns = [...new Set(architecturalElements.patterns)];
+    architecturalElements.securityFindings = [...new Set(architecturalElements.securityFindings)];
+    architecturalElements.infrastructureResources = [
+      ...new Set(architecturalElements.infrastructureResources),
+    ];
+    architecturalElements.devopsTools = [...new Set(architecturalElements.devopsTools)];
+
+    return architecturalElements;
+  } catch (error) {
+    console.warn('Tree-sitter analysis failed, using fallback:', error);
+    return {
+      apis: [],
+      databases: [],
+      frameworks: [],
+      patterns: [],
+      securityFindings: [],
+      infrastructureResources: [],
+      devopsTools: [],
+    };
+  }
+}
+
+/**
+ * Helper functions for intelligent detection
+ */
+function isApiFunction(name: string): boolean {
+  const apiPatterns = [
+    /^(get|post|put|delete|patch)_/i,
+    /^handle_/i,
+    /^endpoint_/i,
+    /^route_/i,
+    /^api_/i,
+    /controller$/i,
+    /handler$/i,
+  ];
+  return apiPatterns.some(pattern => pattern.test(name));
+}
+
+function isDatabaseImport(module: string): boolean {
+  const dbPatterns = [
+    'mongoose',
+    'sequelize',
+    'typeorm',
+    'prisma',
+    'knex',
+    'mongodb',
+    'mysql',
+    'postgresql',
+    'sqlite',
+    'redis',
+    'firebase',
+    'dynamodb',
+    'cassandra',
+    'neo4j',
+    'psycopg2',
+    'pymongo',
+    'sqlalchemy',
+    'django.db',
+  ];
+  return dbPatterns.some(pattern => module.toLowerCase().includes(pattern));
+}
+
+function isFrameworkImport(module: string): boolean {
+  const frameworkPatterns = [
+    'express',
+    'fastify',
+    'koa',
+    'hapi',
+    'nest',
+    'flask',
+    'django',
+    'fastapi',
+    'tornado',
+    'spring',
+    'gin',
+    'echo',
+    'fiber',
+    'react',
+    'vue',
+    'angular',
+    'svelte',
+    'next',
+    'nuxt',
+    'gatsby',
+  ];
+  return frameworkPatterns.some(pattern => module.toLowerCase().includes(pattern));
+}
+
+function isDevOpsImport(module: string): boolean {
+  const devopsPatterns = [
+    'docker',
+    'kubernetes',
+    'terraform',
+    'ansible',
+    'helm',
+    'aws-sdk',
+    '@aws-sdk',
+    'boto3',
+    'azure',
+    '@azure',
+    'google-cloud',
+    '@google-cloud',
+    'gcp',
+    'prometheus',
+    'grafana',
+    'jaeger',
+    'zipkin',
+    'jenkins',
+    'gitlab',
+    'github',
+    'ci',
+    'cd',
+    'vault',
+    'consul',
+    'etcd',
+    'redis',
+    'nginx',
+    'elasticsearch',
+    'logstash',
+    'kibana',
+    'fluentd',
+    'kafka',
+    'rabbitmq',
+    'celery',
+    'airflow',
+  ];
+  return devopsPatterns.some(pattern => module.toLowerCase().includes(pattern));
 }
 
 async function generateUpdatePlanContent(
