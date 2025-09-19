@@ -239,16 +239,6 @@ export class TestConfigManager {
     };
   }
 
-  private detectLowMemoryEnvironment(): boolean {
-    try {
-      const totalMemory = require('os').totalmem();
-      const totalMemoryGB = totalMemory / (1024 * 1024 * 1024);
-      return totalMemoryGB < 4; // Consider < 4GB as low memory
-    } catch {
-      return false;
-    }
-  }
-
   public getConcurrencyLimits(): { maxOperations: number; queueSize: number } {
     return {
       maxOperations: this.config.concurrency.maxOperations,
