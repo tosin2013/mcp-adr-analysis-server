@@ -1,0 +1,15 @@
+{
+  "entries": [
+    [
+      "0ca5b139db349982",
+      {
+        "file": "analysis_2025_09.jsonl",
+        "line": 1,
+        "size": 2661
+      }
+    ]
+  ],
+  "lineCounters": {
+    "analysis_2025_09.jsonl": 1
+  }
+}

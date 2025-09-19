@@ -2701,6 +2701,47 @@ export class McpAdrAnalysisServer {
               },
             },
           },
+          {
+            name: 'tool_chain_orchestrator',
+            description:
+              'AI-powered dynamic tool sequencing - intelligently analyze user requests and generate structured tool execution plans',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                userRequest: {
+                  type: 'string',
+                  description: 'User request to analyze and create tool execution plan for',
+                },
+                availableTools: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'List of available MCP tools to orchestrate',
+                },
+                executionMode: {
+                  type: 'string',
+                  enum: ['plan_only', 'plan_and_execute', 'validate_plan'],
+                  description: 'Orchestration mode',
+                  default: 'plan_only',
+                },
+                maxSteps: {
+                  type: 'number',
+                  description: 'Maximum number of steps in the execution plan',
+                  default: 10,
+                },
+                allowParallel: {
+                  type: 'boolean',
+                  description: 'Allow parallel execution of independent steps',
+                  default: true,
+                },
+                contextHints: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Additional context hints for better plan generation',
+                },
+              },
+              required: ['userRequest'],
+            },
+          },
         ],
       };
     });
@@ -2832,6 +2873,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'interactive_adr_planning':
             response = await this.interactiveAdrPlanning(args);
+            break;
+          case 'tool_chain_orchestrator':
+            response = await this.toolChainOrchestrator(args);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -6716,6 +6760,21 @@ This tool has been deprecated and replaced with memory-centric health scoring.
       throw new McpAdrError(
         `Interactive ADR planning failed: ${error instanceof Error ? error.message : String(error)}`,
         'INTERACTIVE_ADR_PLANNING_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Tool chain orchestrator implementation
+   */
+  private async toolChainOrchestrator(args: any): Promise<any> {
+    try {
+      const { toolChainOrchestrator } = await import('./tools/tool-chain-orchestrator.js');
+      return await toolChainOrchestrator(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `Tool chain orchestration failed: ${error instanceof Error ? error.message : String(error)}`,
+        'TOOL_CHAIN_ORCHESTRATOR_ERROR'
       );
     }
   }
