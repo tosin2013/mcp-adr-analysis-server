@@ -7,32 +7,46 @@ import {
   ResearchProblem,
   KnowledgeGraph,
   ResearchContext,
-  ResearchQuestion
+  ResearchQuestion,
 } from '../../src/utils/research-questions.js';
 
 // Mock dependencies
 jest.mock('../../src/prompts/research-question-prompts.js', () => ({
   generateProblemKnowledgeCorrelationPrompt: jest.fn().mockReturnValue('correlation prompt'),
-  generateContextAwareResearchQuestionsPrompt: jest.fn().mockReturnValue('question generation prompt'),
-  generateResearchTaskTrackingPrompt: jest.fn().mockReturnValue('task tracking prompt')
+  generateContextAwareResearchQuestionsPrompt: jest
+    .fn()
+    .mockReturnValue('question generation prompt'),
+  generateResearchTaskTrackingPrompt: jest.fn().mockReturnValue('task tracking prompt'),
 }));
 
 jest.mock('../../src/utils/adr-discovery.js', () => ({
   discoverAdrsInDirectory: jest.fn().mockResolvedValue({
     totalAdrs: 2,
     adrs: [
-      { title: 'Test ADR 1', filename: 'adr-001.md', status: 'accepted', path: '/test/adr-001.md', content: 'Test content 1' },
-      { title: 'Test ADR 2', filename: 'adr-002.md', status: 'proposed', path: '/test/adr-002.md', content: 'Test content 2' }
-    ]
-  })
+      {
+        title: 'Test ADR 1',
+        filename: 'adr-001.md',
+        status: 'accepted',
+        path: '/test/adr-001.md',
+        content: 'Test content 1',
+      },
+      {
+        title: 'Test ADR 2',
+        filename: 'adr-002.md',
+        status: 'proposed',
+        path: '/test/adr-002.md',
+        content: 'Test content 2',
+      },
+    ],
+  }),
 }));
 
 jest.mock('../../src/utils/actual-file-operations.js', () => ({
   scanProjectStructure: jest.fn().mockResolvedValue({
     files: ['package.json', 'src/index.ts'],
     directories: ['src', 'tests'],
-    structure: { type: 'project' }
-  })
+    structure: { type: 'project' },
+  }),
 }));
 
 describe('Research Questions Utilities', () => {
@@ -47,28 +61,202 @@ describe('Research Questions Utilities', () => {
         description: 'A test research problem',
         category: 'architecture',
         severity: 'medium',
-        context: 'software development'
-      }
+        context: 'software development',
+      },
+      {
+        id: 'prob-2',
+        description: 'Performance optimization issue',
+        category: 'performance',
+        severity: 'high',
+        context: 'web application',
+      },
     ];
 
-    const mockKnowledge: KnowledgeGraph = {
+    const mockKnowledgeGraph: KnowledgeGraph = {
       technologies: [
-        { name: 'Node.js', description: 'JavaScript runtime', category: 'backend' }
+        { name: 'React', description: 'Frontend framework', category: 'frontend' },
+        { name: 'Node.js', description: 'Backend runtime', category: 'backend' },
       ],
       patterns: [
-        { name: 'Microservices', description: 'Distributed architecture', category: 'architecture' }
+        { name: 'MVC', description: 'Model-View-Controller', category: 'architectural' },
+        { name: 'Observer', description: 'Observer pattern', category: 'behavioral' },
       ],
       adrs: [
-        { id: 'adr-001', title: 'Use Microservices', status: 'accepted' }
+        {
+          id: 'adr-1',
+          title: 'Use React for frontend',
+          status: 'accepted',
+          content: 'React ADR content',
+        },
+        {
+          id: 'adr-2',
+          title: 'Database selection',
+          status: 'proposed',
+          content: 'Database ADR content',
+        },
       ],
       relationships: [
-        { source: 'Node.js', target: 'Microservices', type: 'implements' }
-      ]
+        { source: 'React', target: 'frontend', type: 'implements' },
+        { source: 'Node.js', target: 'backend', type: 'implements' },
+      ],
+    };
+
+    it('should successfully correlate problems with knowledge graph', async () => {
+      const result = await correlateProblemKnowledge(mockProblems, mockKnowledgeGraph);
+
+      expect(result).toHaveProperty('correlationPrompt');
+      expect(result).toHaveProperty('instructions');
+      expect(typeof result.correlationPrompt).toBe('string');
+      expect(typeof result.instructions).toBe('string');
+    });
+
+    it('should include problem and knowledge graph statistics in instructions', async () => {
+      const result = await correlateProblemKnowledge(mockProblems, mockKnowledgeGraph);
+
+      expect(result.instructions).toContain('2 problems identified');
+      expect(result.instructions).toContain('2 technologies in knowledge graph');
+      expect(result.instructions).toContain('2 patterns in knowledge graph');
+      expect(result.instructions).toContain('2 ADRs in knowledge graph');
+      expect(result.instructions).toContain('2 relationships mapped');
+    });
+
+    it('should handle empty problems array', async () => {
+      const result = await correlateProblemKnowledge([], mockKnowledgeGraph);
+
+      expect(result.instructions).toContain('0 problems identified');
+      expect(result.correlationPrompt).toBeDefined();
+    });
+
+    it('should handle empty knowledge graph', async () => {
+      const emptyGraph: KnowledgeGraph = {
+        technologies: [],
+        patterns: [],
+        adrs: [],
+        relationships: [],
+      };
+
+      const result = await correlateProblemKnowledge(mockProblems, emptyGraph);
+
+      expect(result.instructions).toContain('0 technologies in knowledge graph');
+      expect(result.instructions).toContain('0 patterns in knowledge graph');
+      expect(result.instructions).toContain('0 ADRs in knowledge graph');
+      expect(result.instructions).toContain('0 relationships mapped');
+    });
+
+    it('should include usage instructions', async () => {
+      const result = await correlateProblemKnowledge(mockProblems, mockKnowledgeGraph);
+
+      expect(result.instructions).toContain('Submit the correlation prompt');
+      expect(result.instructions).toContain('Parse the JSON response');
+      expect(result.instructions).toContain('Usage Example');
+    });
+
+    it('should include expected response format', async () => {
+      const result = await correlateProblemKnowledge(mockProblems, mockKnowledgeGraph);
+
+      expect(result.instructions).toContain('correlationAnalysis');
+      expect(result.instructions).toContain('problemCorrelations');
+      expect(result.instructions).toContain('knowledgeGaps');
+      expect(result.instructions).toContain('researchOpportunities');
+    });
+
+    it('should throw McpAdrError on import failure', async () => {
+      // Mock the import to fail
+      const originalImport = (global as any).__original_import || eval('import');
+      (global as any).import = jest.fn().mockRejectedValue(new Error('Import failed'));
+
+      await expect(correlateProblemKnowledge(mockProblems, mockKnowledgeGraph)).rejects.toThrow(
+        'Failed to correlate problems with knowledge'
+      );
+
+      // Restore original import
+      (global as any).import = originalImport;
+    });
+  });
+
+  describe('findRelevantAdrPatterns', () => {
+    const mockResearchContext: ResearchContext = {
+      topic: 'Database Architecture',
+      category: 'architecture',
+      scope: 'backend',
+      objectives: ['Select appropriate database', 'Ensure scalability'],
+      constraints: ['Budget limitations', 'Time constraints'],
+      timeline: 'Q1 2025',
+    };
+
+    it('should successfully find relevant ADR patterns', async () => {
+      const result = await findRelevantAdrPatterns(mockResearchContext);
+
+      expect(result).toHaveProperty('relevancePrompt');
+      expect(result).toHaveProperty('instructions');
+      expect(typeof result.relevancePrompt).toBe('string');
+      expect(typeof result.instructions).toBe('string');
+    });
+
+    it('should include research context in analysis', async () => {
+      const result = await findRelevantAdrPatterns(mockResearchContext);
+
+      expect(result.relevancePrompt).toContain('Database Architecture');
+      expect(result.relevancePrompt).toContain('architecture');
+      expect(result.relevancePrompt).toContain('backend');
+      expect(result.relevancePrompt).toContain('Select appropriate database');
+    });
+
+    it('should include discovered ADRs in prompt', async () => {
+      const result = await findRelevantAdrPatterns(mockResearchContext);
+
+      expect(result.relevancePrompt).toContain('Test ADR 1');
+      expect(result.relevancePrompt).toContain('Test ADR 2');
+      expect(result.relevancePrompt).toContain('Test content 1');
+    });
+
+    it('should handle custom ADR directory', async () => {
+      const result = await findRelevantAdrPatterns(mockResearchContext, 'custom/adrs');
+
+      expect(result.instructions).toContain('custom/adrs');
+    });
+
+    it('should include architectural patterns', async () => {
+      const result = await findRelevantAdrPatterns(mockResearchContext);
+
+      expect(result.relevancePrompt).toContain('Architectural Patterns');
+    });
+
+    it('should provide analysis instructions', async () => {
+      const result = await findRelevantAdrPatterns(mockResearchContext);
+
+      expect(result.instructions).toContain('Submit the relevance prompt');
+      expect(result.instructions).toContain('ADRs Found: 2');
+      expect(result.instructions).toContain('relevanceAnalysis');
+    });
+  });
+
+  describe('generateContextAwareQuestions', () => {
+    const mockResearchContext: ResearchContext = {
+      topic: 'Microservices Migration',
+      category: 'architecture',
+      scope: 'system-wide',
+      objectives: ['Improve scalability', 'Reduce coupling'],
+      constraints: ['Limited budget'],
+      timeline: '6 months',
+    };
+
+    const mockKnowledge: KnowledgeGraph = {
+      technologies: [{ name: 'Node.js', description: 'JavaScript runtime', category: 'backend' }],
+      patterns: [
+        {
+          name: 'Microservices',
+          description: 'Distributed architecture',
+          category: 'architecture',
+        },
+      ],
+      adrs: [{ id: 'adr-001', title: 'Use Microservices', status: 'accepted' }],
+      relationships: [{ source: 'Node.js', target: 'Microservices', type: 'implements' }],
     };
 
     it('should correlate problems with knowledge graph', async () => {
       const result = await correlateProblemKnowledge(mockProblems, mockKnowledge);
-      
+
       expect(result).toHaveProperty('correlationPrompt');
       expect(result).toHaveProperty('instructions');
       expect(typeof result.correlationPrompt).toBe('string');
@@ -80,7 +268,7 @@ describe('Research Questions Utilities', () => {
         technologies: [],
         patterns: [],
         adrs: [],
-        relationships: []
+        relationships: [],
       };
 
       const result = await correlateProblemKnowledge(mockProblems, emptyKnowledge);
@@ -102,8 +290,8 @@ describe('Research Questions Utilities', () => {
           description: 'Another research problem',
           category: 'performance',
           severity: 'high',
-          context: 'optimization'
-        }
+          context: 'optimization',
+        },
       ];
 
       const result = await correlateProblemKnowledge(multipleProblems, mockKnowledge);
@@ -119,12 +307,12 @@ describe('Research Questions Utilities', () => {
       scope: 'system-wide',
       objectives: ['improve-performance', 'reduce-complexity'],
       constraints: ['scalability', 'performance'],
-      timeline: '3 months'
+      timeline: '3 months',
     };
 
     it('should find relevant ADR patterns', async () => {
       const result = await findRelevantAdrPatterns(mockContext);
-      
+
       expect(result).toHaveProperty('relevancePrompt');
       expect(result).toHaveProperty('instructions');
       expect(typeof result.relevancePrompt).toBe('string');
@@ -142,7 +330,7 @@ describe('Research Questions Utilities', () => {
         topic: 'Test Topic',
         category: 'test',
         scope: 'limited',
-        objectives: ['test-objective']
+        objectives: ['test-objective'],
       };
 
       const result = await findRelevantAdrPatterns(minimalContext);
@@ -157,7 +345,7 @@ describe('Research Questions Utilities', () => {
         scope: 'enterprise',
         objectives: ['obj1', 'obj2', 'obj3'],
         constraints: ['constraint1', 'constraint2'],
-        timeline: '6 months'
+        timeline: '6 months',
       };
 
       const result = await findRelevantAdrPatterns(fullContext);
@@ -173,27 +361,19 @@ describe('Research Questions Utilities', () => {
       scope: 'system-wide',
       objectives: ['improve-performance', 'reduce-complexity'],
       constraints: ['scalability', 'performance'],
-      timeline: '3 months'
+      timeline: '3 months',
     };
 
     const mockRelevantKnowledge = {
-      adrs: [
-        { id: 'adr-001', title: 'Use Microservices', status: 'accepted' }
-      ],
-      patterns: [
-        { name: 'Event Sourcing', category: 'data' }
-      ],
-      gaps: [
-        { area: 'monitoring', severity: 'medium' }
-      ],
-      opportunities: [
-        { type: 'optimization', priority: 'high' }
-      ]
+      adrs: [{ id: 'adr-001', title: 'Use Microservices', status: 'accepted' }],
+      patterns: [{ name: 'Event Sourcing', category: 'data' }],
+      gaps: [{ area: 'monitoring', severity: 'medium' }],
+      opportunities: [{ type: 'optimization', priority: 'high' }],
     };
 
     it('should generate context-aware questions', async () => {
       const result = await generateContextAwareQuestions(mockContext, mockRelevantKnowledge);
-      
+
       expect(result).toHaveProperty('questionPrompt');
       expect(result).toHaveProperty('instructions');
       expect(typeof result.questionPrompt).toBe('string');
@@ -201,7 +381,11 @@ describe('Research Questions Utilities', () => {
     });
 
     it('should handle custom project path', async () => {
-      const result = await generateContextAwareQuestions(mockContext, mockRelevantKnowledge, '/custom/path');
+      const result = await generateContextAwareQuestions(
+        mockContext,
+        mockRelevantKnowledge,
+        '/custom/path'
+      );
       expect(result).toHaveProperty('questionPrompt');
       expect(result).toHaveProperty('instructions');
     });
@@ -211,7 +395,7 @@ describe('Research Questions Utilities', () => {
         adrs: [],
         patterns: [],
         gaps: [],
-        opportunities: []
+        opportunities: [],
       };
 
       const result = await generateContextAwareQuestions(mockContext, emptyKnowledge);
@@ -227,20 +411,20 @@ describe('Research Questions Utilities', () => {
         status: 'in_progress',
         progress: 50,
         findings: ['finding 1', 'finding 2'],
-        blockers: ['blocker 1']
+        blockers: ['blocker 1'],
       },
       {
         questionId: 'q-2',
         status: 'not_started',
         progress: 0,
         findings: [],
-        blockers: []
-      }
+        blockers: [],
+      },
     ];
 
     it('should create research task tracking', async () => {
       const result = await createResearchTaskTracking(mockCurrentProgress);
-      
+
       expect(result).toHaveProperty('trackingPrompt');
       expect(result).toHaveProperty('instructions');
       expect(typeof result.trackingPrompt).toBe('string');
@@ -249,7 +433,7 @@ describe('Research Questions Utilities', () => {
 
     it('should handle empty progress array', async () => {
       const result = await createResearchTaskTracking([]);
-      
+
       expect(result).toHaveProperty('trackingPrompt');
       expect(result).toHaveProperty('instructions');
     });
@@ -262,15 +446,15 @@ describe('Research Questions Utilities', () => {
           status: 'completed',
           progress: 100,
           findings: ['final finding'],
-          blockers: []
+          blockers: [],
         },
         {
           questionId: 'q-4',
           status: 'blocked',
           progress: 25,
           findings: ['partial finding'],
-          blockers: ['critical blocker']
-        }
+          blockers: ['critical blocker'],
+        },
       ];
 
       const result = await createResearchTaskTracking(mixedProgress);
@@ -286,7 +470,7 @@ describe('Research Questions Utilities', () => {
         description: 'Test Description',
         category: 'test-category',
         severity: 'medium',
-        context: 'test-context'
+        context: 'test-context',
       };
 
       expect(problem.id).toBe('test-id');
@@ -301,7 +485,7 @@ describe('Research Questions Utilities', () => {
         technologies: [{ name: 'Test Tech', description: 'Test', category: 'test' }],
         patterns: [{ name: 'Test Pattern', description: 'Test', category: 'test' }],
         adrs: [{ id: 'adr-1', title: 'Test ADR', status: 'accepted' }],
-        relationships: [{ source: 'src', target: 'tgt', type: 'test' }]
+        relationships: [{ source: 'src', target: 'tgt', type: 'test' }],
       };
 
       expect(Array.isArray(knowledge.technologies)).toBe(true);
@@ -317,7 +501,7 @@ describe('Research Questions Utilities', () => {
         scope: 'test-scope',
         objectives: ['obj1', 'obj2'],
         constraints: ['constraint1'],
-        timeline: '3 months'
+        timeline: '3 months',
       };
 
       expect(typeof context.topic).toBe('string');
@@ -342,7 +526,7 @@ describe('Research Questions Utilities', () => {
         relatedKnowledge: ['knowledge1'],
         resources: ['resource1'],
         risks: ['risk1'],
-        dependencies: ['dep1']
+        dependencies: ['dep1'],
       };
 
       expect(typeof question.id).toBe('string');
@@ -356,19 +540,16 @@ describe('Research Questions Utilities', () => {
 
   describe('Error Handling', () => {
     it('should handle null inputs gracefully', async () => {
-      await expect(correlateProblemKnowledge(null as any, null as any))
-        .rejects.toThrow();
+      await expect(correlateProblemKnowledge(null as any, null as any)).rejects.toThrow();
     });
 
     it('should handle undefined inputs gracefully', async () => {
-      await expect(findRelevantAdrPatterns(undefined as any))
-        .rejects.toThrow();
+      await expect(findRelevantAdrPatterns(undefined as any)).rejects.toThrow();
     });
 
     it('should handle invalid context gracefully', async () => {
       const invalidContext = {} as ResearchContext;
-      await expect(findRelevantAdrPatterns(invalidContext))
-        .rejects.toThrow();
+      await expect(findRelevantAdrPatterns(invalidContext)).rejects.toThrow();
     });
   });
 
@@ -378,23 +559,23 @@ describe('Research Questions Utilities', () => {
         technologies: Array.from({ length: 100 }, (_, i) => ({
           name: `Tech ${i}`,
           description: `Description ${i}`,
-          category: `Category ${i % 5}`
+          category: `Category ${i % 5}`,
         })),
         patterns: Array.from({ length: 50 }, (_, i) => ({
           name: `Pattern ${i}`,
           description: `Description ${i}`,
-          category: `Category ${i % 3}`
+          category: `Category ${i % 3}`,
         })),
         adrs: Array.from({ length: 25 }, (_, i) => ({
           id: `adr-${i}`,
           title: `ADR ${i}`,
-          status: i % 2 === 0 ? 'accepted' : 'proposed'
+          status: i % 2 === 0 ? 'accepted' : 'proposed',
         })),
         relationships: Array.from({ length: 75 }, (_, i) => ({
           source: `Tech ${i % 10}`,
           target: `Pattern ${i % 5}`,
-          type: 'implements'
-        }))
+          type: 'implements',
+        })),
       };
 
       const problems: ResearchProblem[] = [
@@ -403,8 +584,8 @@ describe('Research Questions Utilities', () => {
           description: 'Testing with large knowledge graph',
           category: 'performance',
           severity: 'high',
-          context: 'scalability testing'
-        }
+          context: 'scalability testing',
+        },
       ];
 
       const result = await correlateProblemKnowledge(problems, largeKnowledge);
@@ -419,7 +600,7 @@ describe('Research Questions Utilities', () => {
         scope: 'ünïcödë-scöpë',
         objectives: ['öbjëctïvë-1', 'öbjëctïvë-2'],
         constraints: ['cönstraïnt-1'],
-        timeline: '3 mönths'
+        timeline: '3 mönths',
       };
 
       const result = await findRelevantAdrPatterns(specialContext);
