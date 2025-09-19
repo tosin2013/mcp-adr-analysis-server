@@ -3,6 +3,27 @@ set -e
 
 echo "🔍 Running pre-commit checks..."
 
+# Security check - scan for secrets and sensitive data
+echo "🔒 Running security checks..."
+if command -v gitleaks &> /dev/null; then
+    echo "  • Scanning for secrets with gitleaks..."
+    gitleaks detect --source . --verbose || {
+        echo "❌ Secret detection failed! Please review and fix any detected secrets."
+        echo "💡 Use 'git secret' or replace with placeholders for test data."
+        exit 1
+    }
+else
+    echo "  • gitleaks not found, skipping secret scan (install with: brew install gitleaks)"
+fi
+
+# Check for private keys (excluding test patterns and detectors)
+echo "  • Checking for private keys..."
+if grep -r "BEGIN PRIVATE KEY\|BEGIN RSA PRIVATE KEY\|BEGIN OPENSSH PRIVATE KEY" --include="*.ts" --include="*.js" --include="*.json" src/ tests/ 2>/dev/null | grep -v "pattern:" | grep -v "test.*key.*:" | grep -v "example.*key" | grep -v "placeholder" | grep -v "detector" | grep -v "\.test\." | grep -v "//.*BEGIN"; then
+    echo "❌ Real private keys detected! Remove them before committing."
+    echo "💡 Test patterns and detectors are allowed."
+    exit 1
+fi
+
 # Run lint-staged for formatting
 echo "🎨 Running code formatting..."
 npx lint-staged
