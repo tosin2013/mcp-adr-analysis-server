@@ -1,0 +1,48 @@
+# Gitleaks configuration for MCP ADR Analysis Server
+title = "gitleaks config for MCP ADR Analysis Server"
+
+# Extend default config
+[extend]
+useDefault = true
+
+# Custom rules for additional secret detection
+[[rules]]
+id = "twilio-sid"
+description = "Twilio Account SID"
+regex = '''AC[0-9a-fA-F]{32}'''
+tags = ["key", "twilio"]
+
+[[rules]]
+id = "stripe-key"
+description = "Stripe API key"
+regex = '''sk_live_[0-9a-zA-Z]{24,}'''
+tags = ["key", "stripe"]
+
+[[rules]]
+id = "openrouter-key"
+description = "OpenRouter API key"
+regex = '''sk-or-v1-[0-9a-f]{64}'''
+tags = ["key", "openrouter"]
+
+# Allowlist for test files and safe patterns
+[allowlist]
+description = "Global allowlist for safe patterns"
+paths = [
+    '''tests/.*\.test\.ts''',
+    '''tests/.*\.spec\.ts''',
+    '''README\.md''',
+    '''.*\.md''',
+    '''package\.json''',
+    '''package-lock\.json''',
+    '''\.gitleaks\.toml''',
+]
+regexes = [
+    '''ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx''',  # Placeholder Twilio SID
+    '''sk_test_.*''',  # Stripe test keys
+    '''eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\..*''',  # Common test JWT
+    '''test.*secret''',
+    '''example.*key''',
+    '''fake.*token''',
+    '''placeholder.*''',
+    '''xxxxxxxxxx.*''',
+]
