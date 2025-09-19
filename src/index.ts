@@ -758,6 +758,47 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'review_existing_adrs',
+            description:
+              'Review existing ADRs against actual code implementation with cloud/DevOps expertise',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory containing ADR files',
+                  default: 'docs/adrs',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to the project directory',
+                  default: '.',
+                },
+                specificAdr: {
+                  type: 'string',
+                  description: 'Specific ADR filename or title to review (optional)',
+                },
+                analysisDepth: {
+                  type: 'string',
+                  enum: ['basic', 'detailed', 'comprehensive'],
+                  description: 'Depth of analysis to perform',
+                  default: 'detailed',
+                },
+                includeTreeSitter: {
+                  type: 'boolean',
+                  description: 'Use tree-sitter for enhanced code analysis',
+                  default: true,
+                },
+                generateUpdatePlan: {
+                  type: 'boolean',
+                  description: 'Generate action plan for updating non-compliant ADRs',
+                  default: true,
+                },
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA,
+              },
+            },
+          },
+          {
             name: 'incorporate_research',
             description: 'Incorporate research findings into architectural decisions',
             inputSchema: {
@@ -2716,6 +2757,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'discover_existing_adrs':
             response = await this.discoverExistingAdrs(args);
+            break;
+          case 'review_existing_adrs':
+            response = await this.reviewExistingAdrs(args);
             break;
           case 'incorporate_research':
             response = await this.incorporateResearch(args);
@@ -5992,6 +6036,11 @@ Please provide:
   private async discoverExistingAdrs(args: any): Promise<any> {
     const { discoverExistingAdrs } = await import('./tools/adr-suggestion-tool.js');
     return await discoverExistingAdrs(args);
+  }
+
+  private async reviewExistingAdrs(args: any): Promise<any> {
+    const { reviewExistingAdrs } = await import('./tools/review-existing-adrs-tool.js');
+    return await reviewExistingAdrs(args);
   }
 
   /**
