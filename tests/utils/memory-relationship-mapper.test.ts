@@ -26,7 +26,7 @@ const mockCrypto = {
 jest.mock('crypto', () => mockCrypto);
 
 // Helper functions for creating valid test entities
-function createValidDeploymentAssessmentEntity(overrides: any = {}) {
+function _createValidDeploymentAssessmentEntity(overrides: any = {}) {
   return {
     type: 'deployment_assessment' as const,
     title: 'Test Deployment Assessment',
@@ -667,7 +667,7 @@ describe('MemoryRelationshipMapper', () => {
 
       // Find any conflict involving our specific entities (or any high severity conflict)
       let conflict = result.conflicts.find(
-        c => c.entityIds.includes(savedAdr.id!) && c.entityIds.includes(savedDeployment.id!)
+        c => c.entityIds.includes(adr.id!) && c.entityIds.includes(deployment.id!)
       );
 
       // If not found, look for any high severity conflict (since there should be one)
