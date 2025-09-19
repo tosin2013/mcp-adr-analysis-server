@@ -173,7 +173,7 @@ async function _smartGitPushInternal(args: SmartGitPushArgs): Promise<any> {
         } catch {
           // Silently handle health scoring errors
         }
-      } catch (error) {
+      } catch {
         // Silently handle release readiness analysis errors
       }
     }
@@ -775,7 +775,7 @@ async function checkSensitiveContent(
     }
 
     return issues;
-  } catch (error) {
+  } catch {
     // Silently handle sensitive content check errors
     return [];
   }
@@ -815,7 +815,7 @@ async function checkLLMArtifacts(filePath: string, content?: string): Promise<Va
     }
 
     return issues;
-  } catch (error) {
+  } catch {
     // Silently handle LLM artifact check errors
     return [];
   }
@@ -841,7 +841,7 @@ async function checkLocationRules(
     let fileContent: string | undefined;
     try {
       fileContent = readFileSync(filePath, 'utf-8');
-    } catch (error) {
+    } catch {
       console.warn(`Could not read file for analysis: ${filePath}`);
     }
 
@@ -914,7 +914,7 @@ async function checkLocationRules(
     }
 
     return [];
-  } catch (error) {
+  } catch {
     // Silently handle location rule check errors
     return [];
   }

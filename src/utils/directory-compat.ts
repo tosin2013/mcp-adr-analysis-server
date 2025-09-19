@@ -14,16 +14,16 @@ export function getCurrentDirCompat(): string {
     if (typeof process !== 'undefined' && process.env['NODE_ENV'] === 'test') {
       return process.cwd();
     }
-    
+
     // Try import.meta.url for normal ESM execution
     if (typeof import.meta !== 'undefined' && import.meta.url) {
       const __filename = fileURLToPath(import.meta.url);
       return dirname(__filename);
     }
-  } catch (error) {
+  } catch {
     // Fallback for any environment issues
   }
-  
+
   // Final fallback
   return process.cwd();
 }

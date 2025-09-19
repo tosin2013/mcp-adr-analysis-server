@@ -144,7 +144,7 @@ describe('Smart Git Push Tool', () => {
         'pom.xml': ['mvn test', 'mvn checkstyle:check', 'mvn compile'],
       };
 
-      Object.entries(validationCommands).forEach(([file, commands]) => {
+      Object.entries(validationCommands).forEach(([_file, commands]) => {
         expect(commands).toHaveLength(3);
         expect(commands.every(cmd => cmd.length > 0)).toBe(true);
       });

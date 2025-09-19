@@ -268,25 +268,29 @@ export class MemoryMigrationManager {
 
     try {
       switch (source.type) {
-        case 'deployment_history':
+        case 'deployment_history': {
           const deploymentResult = await this.migrateDeploymentHistory(source.path);
           Object.assign(result, deploymentResult);
           break;
+        }
 
-        case 'knowledge_graph':
+        case 'knowledge_graph': {
           const knowledgeResult = await this.migrateKnowledgeGraph(source.path);
           Object.assign(result, knowledgeResult);
           break;
+        }
 
-        case 'adr_collection':
+        case 'adr_collection': {
           const adrResult = await this.migrateAdrCollection(source.path);
           Object.assign(result, adrResult);
           break;
+        }
 
-        case 'troubleshooting_sessions':
+        case 'troubleshooting_sessions': {
           const troubleshootingResult = await this.migrateTroubleshootingSessions(source.path);
           Object.assign(result, troubleshootingResult);
           break;
+        }
 
         default:
           this.logger.warn('Unknown data source type', 'MemoryMigrationManager', {
