@@ -4,7 +4,7 @@
 
 import { jest } from '@jest/globals';
 import { execSync } from 'child_process';
-import { writeFileSync, unlinkSync, existsSync, readFileSync } from 'fs';
+import { unlinkSync, existsSync, readFileSync } from 'fs';
 
 // Mock child_process to control gitleaks behavior in tests
 jest.mock('child_process');
@@ -12,7 +12,7 @@ const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
 
 // Mock fs functions
 jest.mock('fs');
-const mockWriteFileSync = writeFileSync as jest.MockedFunction<typeof writeFileSync>;
+// const mockWriteFileSync = writeFileSync as jest.MockedFunction<typeof writeFileSync>;
 const mockUnlinkSync = unlinkSync as jest.MockedFunction<typeof unlinkSync>;
 const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
 const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;

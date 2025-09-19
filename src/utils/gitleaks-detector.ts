@@ -423,7 +423,7 @@ export async function integrateWithContentMasking(
         existingRecommendations = recMatch[1].split('\n').filter((line: string) => line.trim());
       }
     }
-  } catch (error) {
+  } catch {
     // Silently handle integration errors
   }
 

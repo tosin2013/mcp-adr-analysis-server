@@ -1,14 +1,14 @@
 /**
  * Unit tests for environment-analysis-tool.ts
  * Tests environment analysis functionality with different analysis types
- * 
+ *
  * Note: This test suite uses a pragmatic approach to mocking, focusing on
  * functional verification rather than complex dependency injection.
  * Confidence: 85% - Tests cover core functionality with simplified mocking
  */
 
 import { jest } from '@jest/globals';
-import { McpAdrError } from '../../src/types/index.js';
+// import { McpAdrError } from '../../src/types/index.js';
 
 // Mock all utility modules
 jest.mock('../../src/utils/environment-analysis.js');
@@ -33,10 +33,12 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({ analysisType: 'specs' });
 
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Environment Specification Analysis')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Environment Specification Analysis'),
+            },
+          ],
         });
       });
 
@@ -44,14 +46,16 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({
           analysisType: 'specs',
           knowledgeEnhancement: true,
-          enhancedMode: true
+          enhancedMode: true,
         });
 
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Generated Knowledge Prompting')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Generated Knowledge Prompting'),
+            },
+          ],
         });
       });
 
@@ -59,14 +63,16 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({
           analysisType: 'specs',
           knowledgeEnhancement: false,
-          enhancedMode: false
+          enhancedMode: false,
         });
 
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Environment Specification Analysis')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Environment Specification Analysis'),
+            },
+          ],
         });
       });
 
@@ -74,14 +80,16 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({
           analysisType: 'specs',
           projectPath: '/custom/project',
-          adrDirectory: 'custom/adrs'
+          adrDirectory: 'custom/adrs',
         });
 
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Environment Specification Analysis')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Environment Specification Analysis'),
+            },
+          ],
         });
       });
     });
@@ -91,10 +99,12 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({ analysisType: 'containerization' });
 
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Containerization Technology Detection')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Containerization Technology Detection'),
+            },
+          ],
         });
       });
 
@@ -102,7 +112,7 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({
           analysisType: 'containerization',
           knowledgeEnhancement: true,
-          enhancedMode: true
+          enhancedMode: true,
         });
 
         expect(result.content[0].text).toContain('Generated Knowledge Prompting');
@@ -125,10 +135,12 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({ analysisType: 'requirements' });
 
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Environment Requirements from ADRs')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Environment Requirements from ADRs'),
+            },
+          ],
         });
       });
 
@@ -136,7 +148,7 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({
           analysisType: 'requirements',
           knowledgeEnhancement: true,
-          enhancedMode: true
+          enhancedMode: true,
         });
 
         expect(result.content[0].text).toContain('Requirements engineering');
@@ -160,14 +172,16 @@ describe('environment-analysis-tool', () => {
           analysisType: 'compliance',
           currentEnvironment: { infrastructure: 'cloud' },
           requirements: { security: 'high' },
-          industryStandards: ['SOC2', 'ISO27001']
+          industryStandards: ['SOC2', 'ISO27001'],
         });
 
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Environment Compliance Assessment')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Environment Compliance Assessment'),
+            },
+          ],
         });
       });
 
@@ -177,7 +191,7 @@ describe('environment-analysis-tool', () => {
           currentEnvironment: { infrastructure: 'cloud' },
           requirements: { security: 'high' },
           knowledgeEnhancement: true,
-          enhancedMode: true
+          enhancedMode: true,
         });
 
         expect(result.content[0].text).toContain('Compliance frameworks');
@@ -189,7 +203,7 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({
           analysisType: 'compliance',
           currentEnvironment: { infrastructure: 'cloud' },
-          requirements: { security: 'high' }
+          requirements: { security: 'high' },
         });
 
         expect(result.content[0].text).toContain('Compliance Assessment');
@@ -199,17 +213,21 @@ describe('environment-analysis-tool', () => {
       });
 
       it('should throw error when currentEnvironment is missing', async () => {
-        await expect(analyzeEnvironment({
-          analysisType: 'compliance',
-          requirements: { security: 'high' }
-        })).rejects.toThrow('Current environment and requirements are required');
+        await expect(
+          analyzeEnvironment({
+            analysisType: 'compliance',
+            requirements: { security: 'high' },
+          })
+        ).rejects.toThrow('Current environment and requirements are required');
       });
 
       it('should throw error when requirements is missing', async () => {
-        await expect(analyzeEnvironment({
-          analysisType: 'compliance',
-          currentEnvironment: { infrastructure: 'cloud' }
-        })).rejects.toThrow('Current environment and requirements are required');
+        await expect(
+          analyzeEnvironment({
+            analysisType: 'compliance',
+            currentEnvironment: { infrastructure: 'cloud' },
+          })
+        ).rejects.toThrow('Current environment and requirements are required');
       });
     });
 
@@ -218,10 +236,12 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({ analysisType: 'comprehensive' });
 
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Comprehensive Environment Analysis')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Comprehensive Environment Analysis'),
+            },
+          ],
         });
       });
 
@@ -238,7 +258,7 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({
           analysisType: 'comprehensive',
           knowledgeEnhancement: true,
-          enhancedMode: true
+          enhancedMode: true,
         });
 
         expect(result.content[0].text).toContain('Cloud infrastructure');
@@ -271,22 +291,28 @@ describe('environment-analysis-tool', () => {
 
     describe('error handling', () => {
       it('should throw error for unknown analysis type', async () => {
-        await expect(analyzeEnvironment({
-          analysisType: 'unknown' as any
-        })).rejects.toThrow('Unknown analysis type: unknown');
+        await expect(
+          analyzeEnvironment({
+            analysisType: 'unknown' as any,
+          })
+        ).rejects.toThrow('Unknown analysis type: unknown');
       });
 
       it('should handle analysis errors gracefully', async () => {
         // This test would require more complex mocking to simulate internal errors
         // For now, test basic error handling structure
-        await expect(analyzeEnvironment({
-          analysisType: 'specs',
-          projectPath: '/nonexistent/path'
-        })).resolves.toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Environment Specification Analysis')
-          }]
+        await expect(
+          analyzeEnvironment({
+            analysisType: 'specs',
+            projectPath: '/nonexistent/path',
+          })
+        ).resolves.toEqual({
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Environment Specification Analysis'),
+            },
+          ],
         });
       });
     });
@@ -296,10 +322,12 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({});
 
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Comprehensive Environment Analysis')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Comprehensive Environment Analysis'),
+            },
+          ],
         });
       });
 
@@ -308,10 +336,12 @@ describe('environment-analysis-tool', () => {
 
         // Should not throw error and should use defaults
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Environment Specification Analysis')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Environment Specification Analysis'),
+            },
+          ],
         });
       });
 
@@ -328,7 +358,7 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({
           analysisType: 'specs',
           knowledgeEnhancement: true,
-          enhancedMode: true
+          enhancedMode: true,
         });
 
         expect(result.content[0].text).toContain('✅ Applied');
@@ -338,7 +368,7 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({
           analysisType: 'specs',
           knowledgeEnhancement: false,
-          enhancedMode: false
+          enhancedMode: false,
         });
 
         expect(result.content[0].text).toContain('❌ Disabled');
@@ -348,14 +378,16 @@ describe('environment-analysis-tool', () => {
         const result = await analyzeEnvironment({
           analysisType: 'containerization',
           knowledgeEnhancement: true,
-          enhancedMode: false
+          enhancedMode: false,
         });
 
         expect(result).toEqual({
-          content: [{
-            type: 'text',
-            text: expect.stringContaining('Containerization Technology Detection')
-          }]
+          content: [
+            {
+              type: 'text',
+              text: expect.stringContaining('Containerization Technology Detection'),
+            },
+          ],
         });
       });
     });
@@ -363,7 +395,7 @@ describe('environment-analysis-tool', () => {
     describe('analysis type variations', () => {
       it('should handle all valid analysis types', async () => {
         const analysisTypes = ['specs', 'containerization', 'requirements', 'comprehensive'];
-        
+
         for (const type of analysisTypes) {
           const result = await analyzeEnvironment({ analysisType: type as any });
           expect(result).toHaveProperty('content');
