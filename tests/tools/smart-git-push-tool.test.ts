@@ -1,8 +1,63 @@
 import { jest } from '@jest/globals';
 
+// Mock child_process to prevent actual git commands during tests
+const mockExecSync = jest.fn();
+jest.unstable_mockModule('child_process', () => ({
+  execSync: mockExecSync,
+}));
+
+// Mock fs functions to prevent actual file system operations
+const mockExistsSync = jest.fn();
+const mockReadFileSync = jest.fn();
+const mockStatSync = jest.fn();
+
+jest.unstable_mockModule('fs', () => ({
+  existsSync: mockExistsSync,
+  readFileSync: mockReadFileSync,
+  statSync: mockStatSync,
+}));
+
 describe('Smart Git Push Tool', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+
+    // Mock execSync to return successful git command outputs
+    mockExecSync.mockImplementation((command: string) => {
+      if (command.includes('git diff --cached --name-status')) {
+        return ''; // No staged files
+      }
+      if (command.includes('git commit')) {
+        return 'Commit successful';
+      }
+      if (command.includes('git push')) {
+        return 'Push successful';
+      }
+      return '';
+    });
+
+    // Mock file system operations
+    mockExistsSync.mockImplementation((path: string) => {
+      if (typeof path === 'string') {
+        if (path.includes('.git')) return true;
+        if (path.includes('package.json')) return true;
+        if (path.includes('.mcp-adr-cache')) return true;
+      }
+      return false;
+    });
+
+    mockReadFileSync.mockImplementation((path: string) => {
+      if (typeof path === 'string') {
+        if (path.includes('package.json')) {
+          return JSON.stringify({ name: 'test-project', version: '1.0.0' });
+        }
+        if (path.includes('.mcp-adr-cache')) {
+          return JSON.stringify({});
+        }
+      }
+      return '';
+    });
+
+    mockStatSync.mockReturnValue({ size: 1024 } as any);
   });
 
   describe('Module Loading', () => {
