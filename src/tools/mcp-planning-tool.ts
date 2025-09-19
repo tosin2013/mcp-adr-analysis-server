@@ -22,7 +22,8 @@
 
 import { z } from 'zod';
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join, basename } from 'path';
+import * as os from 'os';
 import { McpAdrError } from '../types/index.js';
 // TodoJsonManager removed - use mcp-shrimp-task-manager for task management
 
@@ -261,7 +262,8 @@ const McpPlanningSchema = z.union([
  * Get planning cache directory
  */
 function getPlanningCacheDir(projectPath: string): string {
-  return join(projectPath, '.mcp-adr-cache');
+  const projectName = basename(projectPath);
+  return join(os.tmpdir(), projectName, 'cache');
 }
 
 /**

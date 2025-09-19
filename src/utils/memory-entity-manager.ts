@@ -7,6 +7,7 @@
 
 import * as fs from 'fs/promises';
 import * as path from 'path';
+import * as os from 'os';
 import crypto from 'crypto';
 
 import {
@@ -50,7 +51,9 @@ export class MemoryEntityManager {
     const projectConfig = loadConfig();
     this.logger = new EnhancedLogger();
 
-    this.memoryDir = path.join(projectConfig.projectPath, '.mcp-adr-memory');
+    // Use OS temp directory for memory storage
+    const projectName = path.basename(projectConfig.projectPath);
+    this.memoryDir = path.join(os.tmpdir(), projectName, 'memory');
     this.entitiesFile = path.join(this.memoryDir, 'entities.json');
     this.relationshipsFile = path.join(this.memoryDir, 'relationships.json');
     this.intelligenceFile = path.join(this.memoryDir, 'intelligence.json');

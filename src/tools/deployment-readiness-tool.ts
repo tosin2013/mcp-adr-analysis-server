@@ -24,7 +24,8 @@ import { z } from 'zod';
 import { McpAdrError } from '../types/index.js';
 import { execSync } from 'child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
+import { join, basename } from 'path';
+import * as os from 'os';
 import { validateMcpResponse } from '../utils/mcp-response-validator.js';
 import { jsonSafeError } from '../utils/json-safe.js';
 import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
@@ -815,7 +816,8 @@ export async function deploymentReadiness(args: any): Promise<any> {
 
     // Initialize paths and cache
     const projectPath = validatedArgs.projectPath || process.cwd();
-    const cacheDir = join(projectPath, '.mcp-adr-cache');
+    const projectName = basename(projectPath);
+    const cacheDir = join(os.tmpdir(), projectName, 'cache');
     const deploymentHistoryPath = join(cacheDir, 'deployment-history.json');
     const readinessCachePath = join(cacheDir, 'deployment-readiness-cache.json');
 
@@ -1444,7 +1446,9 @@ async function performEmergencyOverride(
     overriddenBy: process.env['USER'] || 'unknown',
   };
 
-  const overridePath = join(projectPath, '.mcp-adr-cache', 'emergency-overrides.json');
+  const projectName = basename(projectPath);
+  const cacheDir = join(os.tmpdir(), projectName, 'cache');
+  const overridePath = join(cacheDir, 'emergency-overrides.json');
   const overrides = existsSync(overridePath) ? JSON.parse(readFileSync(overridePath, 'utf8')) : [];
   overrides.push(overrideRecord);
   writeFileSync(overridePath, JSON.stringify(overrides, null, 2));

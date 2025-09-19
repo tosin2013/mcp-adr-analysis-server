@@ -1,5 +1,6 @@
 import * as fs from 'fs/promises';
 import path from 'path';
+import * as os from 'os';
 import crypto from 'crypto';
 import {
   IntentSnapshot,
@@ -21,7 +22,9 @@ export class KnowledgeGraphManager {
 
   constructor() {
     const config = loadConfig();
-    this.cacheDir = path.join(config.projectPath, '.mcp-adr-cache');
+    // Use OS temp directory for cache
+    const projectName = path.basename(config.projectPath);
+    this.cacheDir = path.join(os.tmpdir(), projectName, 'cache');
     this.snapshotsFile = path.join(this.cacheDir, 'knowledge-graph-snapshots.json');
     this.syncStateFile = path.join(this.cacheDir, 'todo-sync-state.json');
     this.memoryScoring = new MemoryHealthScoring();
