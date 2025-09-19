@@ -4,19 +4,11 @@
  */
 
 import { McpAdrError, CacheEntry } from '../types/index.js';
-import * as os from 'os';
-import * as path from 'path';
+import { loadConfig, getCacheDirectoryPath } from './config.js';
 
-// Use proper temporary directory based on OS and current project
-const getCacheDirectory = (): string => {
-  // Get the project name from the current working directory
-  const cwd = process.cwd();
-  const projectName = path.basename(cwd);
-  const tempDir = os.tmpdir();
-  return path.join(tempDir, projectName, 'cache');
-};
-
-const CACHE_DIR = getCacheDirectory();
+// Use configuration-based cache directory
+const config = loadConfig();
+const CACHE_DIR = getCacheDirectoryPath(config);
 
 export interface CacheOptions {
   ttl?: number; // Time to live in seconds

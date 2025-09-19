@@ -33,7 +33,7 @@ describe('Configuration Management', () => {
       expect(config.adrDirectory).toBe('docs/adrs');
       expect(config.logLevel).toBe('INFO');
       expect(config.cacheEnabled).toBe(true);
-      expect(config.cacheDirectory).toBeUndefined(); // New behavior: uses OS temp directory
+      expect(config.cacheDirectory).toBe('.mcp-adr-cache');
     });
 
     test('should load configuration from environment variables', () => {
