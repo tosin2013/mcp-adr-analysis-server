@@ -8,6 +8,7 @@
 import { McpAdrError } from '../types/index.js';
 import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
+import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 
 /**
  * Security Memory Manager for tracking security patterns and masking effectiveness
@@ -376,6 +377,7 @@ export async function analyzeContentSecurity(args: {
   knowledgeEnhancement?: boolean; // Enable GKP for security and privacy knowledge
   enhancedMode?: boolean; // Enable advanced prompting features
   enableMemoryIntegration?: boolean; // Enable memory entity storage
+  enableTreeSitterAnalysis?: boolean; // Enable tree-sitter for enhanced code analysis
 }): Promise<any> {
   const {
     content,
@@ -384,6 +386,7 @@ export async function analyzeContentSecurity(args: {
     knowledgeEnhancement = true, // Default to GKP enabled
     enhancedMode = true, // Default to enhanced mode
     enableMemoryIntegration = true, // Default to memory integration enabled
+    enableTreeSitterAnalysis = true, // Default to tree-sitter enabled
   } = args;
 
   try {
@@ -398,6 +401,108 @@ export async function analyzeContentSecurity(args: {
     if (enableMemoryIntegration) {
       securityMemoryManager = new SecurityMemoryManager();
       await securityMemoryManager.initialize();
+    }
+
+    // Perform tree-sitter analysis for enhanced security detection
+    let treeSitterFindings: any[] = [];
+    let treeSitterContext = '';
+    if (enableTreeSitterAnalysis && contentType === 'code') {
+      try {
+        const analyzer = new TreeSitterAnalyzer();
+
+        // Create a temporary file to analyze the content
+        const { writeFileSync, unlinkSync } = await import('fs');
+        const { join } = await import('path');
+        const { tmpdir } = await import('os');
+
+        // Determine file extension based on content patterns
+        let extension = '.txt';
+        if (
+          content.includes('import ') ||
+          content.includes('export ') ||
+          content.includes('function ')
+        ) {
+          extension =
+            content.includes('interface ') || content.includes(': string') ? '.ts' : '.js';
+        } else if (content.includes('def ') || content.includes('import ')) {
+          extension = '.py';
+        } else if (content.includes('apiVersion:') || content.includes('kind:')) {
+          extension = '.yaml';
+        } else if (content.includes('resource ') || content.includes('provider ')) {
+          extension = '.tf';
+        }
+
+        const tempFile = join(tmpdir(), `content-analysis-${Date.now()}${extension}`);
+        writeFileSync(tempFile, content);
+
+        try {
+          const analysis = await analyzer.analyzeFile(tempFile);
+
+          // Extract security-relevant findings
+          if (analysis.hasSecrets && analysis.secrets.length > 0) {
+            analysis.secrets.forEach(secret => {
+              treeSitterFindings.push({
+                type: 'secret',
+                category: secret.type,
+                content: secret.value,
+                confidence: secret.confidence,
+                severity:
+                  secret.confidence > 0.8 ? 'high' : secret.confidence > 0.6 ? 'medium' : 'low',
+                location: secret.location,
+                context: secret.context,
+                source: 'tree-sitter',
+              });
+            });
+          }
+
+          // Security issues
+          if (analysis.securityIssues && analysis.securityIssues.length > 0) {
+            analysis.securityIssues.forEach(issue => {
+              treeSitterFindings.push({
+                type: 'security_issue',
+                category: issue.type,
+                content: issue.message,
+                confidence: 0.9,
+                severity: issue.severity,
+                location: issue.location,
+                context: issue.suggestion,
+                source: 'tree-sitter',
+              });
+            });
+          }
+
+          // Dangerous imports
+          if (analysis.imports) {
+            analysis.imports.forEach(imp => {
+              if (imp.isDangerous) {
+                treeSitterFindings.push({
+                  type: 'dangerous_import',
+                  category: 'import',
+                  content: imp.module,
+                  confidence: 0.8,
+                  severity: 'medium',
+                  location: imp.location,
+                  context: imp.reason || 'Potentially dangerous import detected',
+                  source: 'tree-sitter',
+                });
+              }
+            });
+          }
+
+          if (treeSitterFindings.length > 0) {
+            treeSitterContext = `\n## 🔍 Tree-sitter Enhanced Analysis\n\n**Detected ${treeSitterFindings.length} security findings:**\n${treeSitterFindings.map(f => `- **${f.type}**: ${f.content} (${f.severity} confidence)`).join('\n')}\n\n---\n`;
+          }
+        } finally {
+          // Clean up temp file
+          try {
+            unlinkSync(tempFile);
+          } catch (error) {
+            // Ignore cleanup errors
+          }
+        }
+      } catch (error) {
+        console.warn('Tree-sitter analysis failed, continuing with standard analysis:', error);
+      }
     }
 
     let enhancedPrompt = '';
@@ -566,6 +671,7 @@ ${institutionalAnalysis.recommendations
 - **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 - **Memory Integration**: ${enableMemoryIntegration ? '✅ Enabled' : '❌ Disabled'}
+- **Tree-sitter Analysis**: ${enableTreeSitterAnalysis ? '✅ Enabled' : '❌ Disabled'}
 - **Knowledge Domains**: Cybersecurity, data privacy, regulatory compliance, secret management
 
 ## Analysis Information
@@ -579,6 +685,7 @@ ${knowledgeContext}
 `
     : ''
 }
+${treeSitterContext}
 - **Content Length**: ${content.length} characters
 - **User-Defined Patterns**: ${userDefinedPatterns?.length || 0} patterns
 

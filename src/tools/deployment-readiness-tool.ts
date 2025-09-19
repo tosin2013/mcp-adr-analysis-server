@@ -30,6 +30,7 @@ import { validateMcpResponse } from '../utils/mcp-response-validator.js';
 import { jsonSafeError } from '../utils/json-safe.js';
 import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
+import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 
 // Core schemas
 const DeploymentReadinessSchema = z.object({
@@ -104,6 +105,16 @@ const DeploymentReadinessSchema = z.object({
     .boolean()
     .default(false)
     .describe('Migrate existing deployment history to memory'),
+
+  // Tree-sitter Analysis
+  enableTreeSitterAnalysis: z
+    .boolean()
+    .default(true)
+    .describe('Use tree-sitter for enhanced code analysis'),
+  treeSitterLanguages: z
+    .array(z.string())
+    .default(['typescript', 'javascript', 'python', 'yaml', 'hcl'])
+    .describe('Languages to analyze with tree-sitter'),
 });
 
 // Result interfaces
@@ -197,6 +208,29 @@ interface CodeQualityAnalysis {
   mockIndicators: number;
   failingFiles: string[];
   recommendations: string[];
+  // Enhanced with tree-sitter analysis
+  securityIssues: Array<{
+    type: string;
+    severity: 'low' | 'medium' | 'high' | 'critical';
+    message: string;
+    file: string;
+    line: number;
+  }>;
+  architecturalViolations: string[];
+  codeComplexity: {
+    averageComplexity: number;
+    highComplexityFiles: string[];
+    totalFunctions: number;
+  };
+  dependencyAnalysis: {
+    dangerousImports: Array<{
+      module: string;
+      file: string;
+      reason: string;
+    }>;
+    frameworksDetected: string[];
+    securityLibraries: string[];
+  };
 }
 
 interface AdrComplianceResult {
@@ -1020,13 +1054,11 @@ async function performTestValidation(
     isDeploymentReady: testBlockers.length === 0,
     overallScore: calculateTestScore(testResult, args),
     confidence: 85,
-    codeQualityAnalysis: {
-      qualityScore: 75,
-      productionIndicators: 10,
-      mockIndicators: 2,
-      failingFiles: [],
-      recommendations: [],
-    },
+    codeQualityAnalysis: await analyzeCodeQualityWithTreeSitter(
+      args.projectPath || process.cwd(),
+      args.enableTreeSitterAnalysis,
+      args.treeSitterLanguages
+    ),
     testValidationResult: testResult,
     deploymentHistoryAnalysis: {
       recentDeployments: [],
@@ -1271,13 +1303,11 @@ async function performDeploymentHistoryAnalysis(
     isDeploymentReady: historyBlockers.length === 0,
     overallScore: Math.min(analysis.successRate, 100 - analysis.rollbackRate),
     confidence: 80,
-    codeQualityAnalysis: {
-      qualityScore: 75,
-      productionIndicators: 10,
-      mockIndicators: 2,
-      failingFiles: [],
-      recommendations: [],
-    },
+    codeQualityAnalysis: await analyzeCodeQualityWithTreeSitter(
+      args.projectPath || process.cwd(),
+      args.enableTreeSitterAnalysis,
+      args.treeSitterLanguages
+    ),
     testValidationResult: {
       testSuitesExecuted: [],
       overallTestStatus: 'not_run',
@@ -1457,13 +1487,7 @@ async function performEmergencyOverride(
     isDeploymentReady: true,
     overallScore: 100,
     confidence: 50, // Lower confidence for overrides
-    codeQualityAnalysis: {
-      qualityScore: 100,
-      productionIndicators: 0,
-      mockIndicators: 0,
-      failingFiles: [],
-      recommendations: ['Emergency override active - review post-deployment'],
-    },
+    codeQualityAnalysis: createDefaultCodeQualityAnalysis(100, 0, 0),
     testValidationResult: {
       testSuitesExecuted: [],
       overallTestStatus: 'not_run',
@@ -1667,13 +1691,13 @@ function generateBlockedResponse(
     content: [
       {
         type: 'text',
-        text: `🚨 **DEPLOYMENT BLOCKED - Critical Issues Found**
+        text: `# 🚨 DEPLOYMENT BLOCKED - Critical Issues Detected
 
-## 🎯 Overall Assessment
-- **Deployment Ready**: ❌ **NO**
-- **Readiness Score**: ${result.overallScore}%
+## ⚠️ Deployment Readiness: ${result.isDeploymentReady ? '✅ READY' : '❌ BLOCKED'}
+- **Overall Score**: ${result.overallScore}/100
 - **Confidence**: ${result.confidence}%
 - **Target Environment**: ${args.targetEnvironment}
+- **Tree-sitter Analysis**: ${args.enableTreeSitterAnalysis ? '✅ Enhanced' : '❌ Basic'}
 
 ## 🧪 Test Validation Issues
 ${
@@ -1737,14 +1761,227 @@ npm run test:coverage
 deployment_readiness --operation full_audit --target-environment ${args.targetEnvironment}
 \`\`\`
 
-## ⚠️ Emergency Override
-For critical fixes only:
+### 3. Emergency Override (If Justified)
 \`\`\`bash
-deployment_readiness --operation emergency_override --business-justification "Your justification"
+# Only if business critical and approved
+npm run deploy:emergency -- --justification="Critical security fix"
 \`\`\`
 
-**❌ DEPLOYMENT CANNOT PROCEED UNTIL ALL CRITICAL BLOCKERS ARE RESOLVED**`,
+**⚠️ WARNING**: Emergency overrides bypass safety checks. Use only when absolutely necessary.
+`,
       },
     ],
   });
+}
+
+/**
+ * Create default CodeQualityAnalysis structure
+ */
+function createDefaultCodeQualityAnalysis(
+  qualityScore: number = 75,
+  productionIndicators: number = 10,
+  mockIndicators: number = 2
+): CodeQualityAnalysis {
+  return {
+    qualityScore,
+    productionIndicators,
+    mockIndicators,
+    failingFiles: [],
+    recommendations: [],
+    securityIssues: [],
+    architecturalViolations: [],
+    codeComplexity: {
+      averageComplexity: 0,
+      highComplexityFiles: [],
+      totalFunctions: 0,
+    },
+    dependencyAnalysis: {
+      dangerousImports: [],
+      frameworksDetected: [],
+      securityLibraries: [],
+    },
+  };
+}
+
+/**
+ * Perform tree-sitter enhanced code quality analysis
+ */
+async function analyzeCodeQualityWithTreeSitter(
+  projectPath: string,
+  enableTreeSitter: boolean,
+  _languages: string[]
+): Promise<CodeQualityAnalysis> {
+  const baseAnalysis = createDefaultCodeQualityAnalysis();
+
+  if (!enableTreeSitter) {
+    return baseAnalysis;
+  }
+
+  try {
+    const analyzer = new TreeSitterAnalyzer();
+    const { readdirSync, statSync } = await import('fs');
+    const { join } = await import('path');
+
+    // Find source files to analyze
+    const sourceFiles: string[] = [];
+    const findSourceFiles = (dir: string, depth: number = 0) => {
+      if (depth > 3) return; // Limit recursion depth
+
+      try {
+        const items = readdirSync(dir);
+        for (const item of items) {
+          if (item.startsWith('.') || item === 'node_modules') continue;
+
+          const fullPath = join(dir, item);
+          const stat = statSync(fullPath);
+
+          if (stat.isDirectory()) {
+            findSourceFiles(fullPath, depth + 1);
+          } else if (stat.isFile()) {
+            const ext = item.split('.').pop()?.toLowerCase();
+            if (['ts', 'js', 'py', 'yml', 'yaml', 'tf', 'hcl'].includes(ext || '')) {
+              sourceFiles.push(fullPath);
+            }
+          }
+        }
+      } catch (error) {
+        // Skip directories we can't read
+      }
+    };
+
+    findSourceFiles(projectPath);
+
+    // Analyze files (limit to first 20 for performance)
+    const filesToAnalyze = sourceFiles.slice(0, 20);
+    let totalComplexity = 0;
+    let totalFunctions = 0;
+    const highComplexityFiles: string[] = [];
+
+    for (const filePath of filesToAnalyze) {
+      try {
+        const analysis = await analyzer.analyzeFile(filePath);
+
+        // Security issues
+        if (analysis.hasSecrets && analysis.secrets.length > 0) {
+          analysis.secrets.forEach(secret => {
+            baseAnalysis.securityIssues.push({
+              type: secret.type,
+              severity:
+                secret.confidence > 0.8 ? 'high' : secret.confidence > 0.6 ? 'medium' : 'low',
+              message: `${secret.type} detected: ${secret.context}`,
+              file: filePath,
+              line: secret.location.line,
+            });
+          });
+        }
+
+        // Security issues from general analysis
+        if (analysis.securityIssues && analysis.securityIssues.length > 0) {
+          analysis.securityIssues.forEach(issue => {
+            baseAnalysis.securityIssues.push({
+              type: issue.type,
+              severity: issue.severity,
+              message: issue.message,
+              file: filePath,
+              line: issue.location.line,
+            });
+          });
+        }
+
+        // Dangerous imports
+        if (analysis.imports) {
+          analysis.imports.forEach(imp => {
+            if (imp.isDangerous) {
+              baseAnalysis.dependencyAnalysis.dangerousImports.push({
+                module: imp.module,
+                file: filePath,
+                reason: imp.reason || 'Potentially dangerous import',
+              });
+            }
+
+            // Detect frameworks
+            const frameworks = ['express', 'react', 'vue', 'angular', 'fastapi', 'django', 'flask'];
+            frameworks.forEach(framework => {
+              if (
+                imp.module.toLowerCase().includes(framework) &&
+                !baseAnalysis.dependencyAnalysis.frameworksDetected.includes(framework)
+              ) {
+                baseAnalysis.dependencyAnalysis.frameworksDetected.push(framework);
+              }
+            });
+
+            // Detect security libraries
+            const securityLibs = ['bcrypt', 'crypto', 'jwt', 'passport', 'helmet'];
+            securityLibs.forEach(lib => {
+              if (
+                imp.module.toLowerCase().includes(lib) &&
+                !baseAnalysis.dependencyAnalysis.securityLibraries.includes(lib)
+              ) {
+                baseAnalysis.dependencyAnalysis.securityLibraries.push(lib);
+              }
+            });
+          });
+        }
+
+        // Function complexity analysis
+        if (analysis.functions) {
+          analysis.functions.forEach(func => {
+            totalFunctions++;
+            totalComplexity += func.complexity;
+
+            if (func.complexity > 10) {
+              highComplexityFiles.push(`${filePath}:${func.name} (complexity: ${func.complexity})`);
+            }
+          });
+        }
+
+        // Architectural violations (basic detection)
+        if (analysis.architecturalViolations && analysis.architecturalViolations.length > 0) {
+          analysis.architecturalViolations.forEach(violation => {
+            baseAnalysis.architecturalViolations.push(`${filePath}: ${violation.message}`);
+          });
+        }
+      } catch (error) {
+        // Skip files that can't be analyzed
+        console.warn(`Could not analyze file ${filePath}:`, error);
+      }
+    }
+
+    // Update complexity metrics
+    baseAnalysis.codeComplexity = {
+      averageComplexity: totalFunctions > 0 ? totalComplexity / totalFunctions : 0,
+      highComplexityFiles: highComplexityFiles.slice(0, 10), // Limit to top 10
+      totalFunctions,
+    };
+
+    // Calculate enhanced quality score
+    let qualityScore = 85; // Base score
+
+    // Deduct for security issues
+    const criticalSecurity = baseAnalysis.securityIssues.filter(
+      i => i.severity === 'critical'
+    ).length;
+    const highSecurity = baseAnalysis.securityIssues.filter(i => i.severity === 'high').length;
+    qualityScore -= criticalSecurity * 20 + highSecurity * 10;
+
+    // Deduct for dangerous imports
+    qualityScore -= Math.min(baseAnalysis.dependencyAnalysis.dangerousImports.length * 5, 20);
+
+    // Deduct for high complexity
+    qualityScore -= Math.min(highComplexityFiles.length * 2, 15);
+
+    // Bonus for security libraries
+    qualityScore += Math.min(baseAnalysis.dependencyAnalysis.securityLibraries.length * 2, 10);
+
+    baseAnalysis.qualityScore = Math.max(0, Math.min(100, qualityScore));
+
+    // Update production/mock indicators based on analysis
+    baseAnalysis.productionIndicators = Math.max(10, baseAnalysis.qualityScore - 20);
+    baseAnalysis.mockIndicators = Math.max(0, 100 - baseAnalysis.qualityScore) / 10;
+
+    return baseAnalysis;
+  } catch (error) {
+    console.warn('Tree-sitter analysis failed, using basic analysis:', error);
+    return baseAnalysis;
+  }
 }
