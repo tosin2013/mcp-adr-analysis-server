@@ -4,7 +4,6 @@
  */
 
 import path from 'path';
-import os from 'os';
 import { z } from 'zod';
 
 /**
@@ -15,7 +14,7 @@ const ConfigSchema = z.object({
   adrDirectory: z.string().default('docs/adrs'),
   logLevel: z.enum(['DEBUG', 'INFO', 'WARN', 'ERROR']).default('INFO'),
   cacheEnabled: z.boolean().default(true),
-  cacheDirectory: z.string().optional(),
+  cacheDirectory: z.string().default('.mcp-adr-cache'),
   maxCacheSize: z.number().default(100 * 1024 * 1024), // 100MB
   analysisTimeout: z.number().default(30000), // 30 seconds
 });
@@ -37,7 +36,7 @@ export function loadConfig(): ServerConfig {
     adrDirectory: process.env['ADR_DIRECTORY'] || 'docs/adrs',
     logLevel: (process.env['LOG_LEVEL'] || 'INFO').toUpperCase(),
     cacheEnabled: process.env['CACHE_ENABLED'] !== 'false',
-    cacheDirectory: process.env['CACHE_DIRECTORY'],
+    cacheDirectory: process.env['CACHE_DIRECTORY'] || '.mcp-adr-cache',
     maxCacheSize: parseInt(process.env['MAX_CACHE_SIZE'] || '104857600'), // 100MB
     analysisTimeout: parseInt(process.env['ANALYSIS_TIMEOUT'] || '30000'), // 30 seconds
   };
@@ -66,13 +65,8 @@ export function getAdrDirectoryPath(config: ServerConfig): string {
  * Get the absolute path for cache directory
  */
 export function getCacheDirectoryPath(config: ServerConfig): string {
-  if (config.cacheDirectory) {
-    // Use user-provided cache directory
-    return path.resolve(config.projectPath, config.cacheDirectory);
-  }
-  // Use OS temp directory with project-specific subdirectory
-  const projectName = path.basename(config.projectPath);
-  return path.join(os.tmpdir(), projectName, 'cache');
+  // Always use the cache directory relative to project path
+  return path.resolve(config.projectPath, config.cacheDirectory);
 }
 
 /**
