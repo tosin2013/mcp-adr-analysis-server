@@ -354,7 +354,7 @@ async function getStagedFiles(projectPath: string): Promise<GitFile[]> {
           if (size < 100 * 1024 && isTextFile(path)) {
             content = readFileSync(fullPath, 'utf8');
           }
-        } catch (err) {
+        } catch {
           // Ignore read errors
         }
       }
@@ -386,7 +386,7 @@ async function scanForSecurityIssues(
   const issues: SecurityIssue[] = [];
 
   try {
-    const { analyzeSensitiveContent } = await import('../utils/enhanced-sensitive-detector.js');
+    const { analyzeSensitiveContent } = await import('../utils/gitleaks-detector.js');
 
     for (const file of files) {
       if (file.status === 'deleted' || !file.content) continue;

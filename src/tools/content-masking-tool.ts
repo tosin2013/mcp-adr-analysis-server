@@ -404,7 +404,7 @@ export async function analyzeContentSecurity(args: {
     }
 
     // Perform tree-sitter analysis for enhanced security detection
-    let treeSitterFindings: any[] = [];
+    const treeSitterFindings: any[] = [];
     let treeSitterContext = '';
     if (enableTreeSitterAnalysis && contentType === 'code') {
       try {
