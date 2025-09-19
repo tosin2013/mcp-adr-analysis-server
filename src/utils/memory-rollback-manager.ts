@@ -182,7 +182,7 @@ export class MemoryRollbackManager {
       try {
         await this.attemptPartialRecovery();
         result.rollbackType = 'partial';
-      } catch (recoveryError) {
+      } catch {
         this.logger.error('Partial recovery also failed', 'MemoryRollbackManager');
       }
     }
@@ -456,7 +456,7 @@ export class MemoryRollbackManager {
       return migrationBackups.length > 0
         ? path.join(this.config.backupDirectory, migrationBackups[0] || '')
         : null;
-    } catch (error) {
+    } catch {
       this.logger.error('Failed to find latest backup', 'MemoryRollbackManager');
       return null;
     }
@@ -485,7 +485,7 @@ export class MemoryRollbackManager {
           if (!manifest.timestamp || !manifest.projectPath) {
             issues.push('Invalid backup manifest format');
           }
-        } catch (error) {
+        } catch {
           issues.push('Cannot parse backup manifest');
         }
       }

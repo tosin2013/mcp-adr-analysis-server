@@ -3,20 +3,22 @@
     "es2022": true,
     "node": true
   },
-  "extends": [
-    "eslint:recommended",
-    "@typescript-eslint/recommended"
-  ],
+  "extends": ["eslint:recommended", "@typescript-eslint/recommended"],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module"
   },
-  "plugins": [
-    "@typescript-eslint"
-  ],
+  "plugins": ["@typescript-eslint"],
   "rules": {
-    "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_" }],
+    "@typescript-eslint/no-unused-vars": [
+      "error",
+      {
+        "caughtErrors": "none",
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_"
+      }
+    ],
     "@typescript-eslint/no-explicit-any": "off",
     "@typescript-eslint/explicit-function-return-type": "off",
     "@typescript-eslint/explicit-module-boundary-types": "off",
@@ -27,10 +29,5 @@
     "no-undef": "off",
     "no-useless-escape": "warn"
   },
-  "ignorePatterns": [
-    "dist/",
-    "node_modules/",
-    "coverage/",
-    "*.js"
-  ]
+  "ignorePatterns": ["dist/", "node_modules/", "coverage/", "*.js"]
 }

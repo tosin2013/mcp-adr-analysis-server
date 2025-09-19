@@ -8,14 +8,14 @@ import { MemoryRelationshipMapper } from '../../src/utils/memory-relationship-ma
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { existsSync } from 'fs';
+// import { existsSync } from 'fs';
 import {
   TroubleshootingSessionMemory,
   EnvironmentSnapshotMemory,
   DeploymentAssessmentMemory,
-  SecurityPatternMemory,
+  // SecurityPatternMemory,
   ArchitecturalDecisionMemory,
-  FailurePatternMemory,
+  // FailurePatternMemory,
 } from '../../src/types/memory-entities.js';
 
 // Mock crypto
@@ -116,7 +116,7 @@ function _createValidDeploymentAssessmentEntity(overrides: any = {}) {
   };
 }
 
-function createValidADREntity(overrides: any = {}) {
+function _createValidADREntity(overrides: any = {}) {
   return {
     type: 'architectural_decision' as const,
     title: 'Test ADR Entity',
@@ -227,7 +227,7 @@ describe('MemoryRelationshipMapper', () => {
     // Clean up the temporary directory
     try {
       await fs.rm(testTempDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors
     }
   });
@@ -868,7 +868,7 @@ describe('MemoryRelationshipMapper', () => {
       // Clean up
       try {
         await fs.rm(cleanTempDir, { recursive: true, force: true });
-      } catch (error) {
+      } catch {
         // Ignore cleanup errors
       }
     });

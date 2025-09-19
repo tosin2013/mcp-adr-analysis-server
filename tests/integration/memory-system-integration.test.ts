@@ -5,8 +5,8 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
-import * as fs from 'fs/promises';
-import * as path from 'path';
+// import * as fs from 'fs/promises';
+// import * as path from 'path';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import { MemoryTransformer } from '../../src/utils/memory-transformation.js';
 import { MemoryLoadingTool } from '../../src/tools/memory-loading-tool.js';
@@ -14,7 +14,7 @@ import { DiscoveredAdr } from '../../src/utils/adr-discovery.js';
 import {
   MemoryEntity,
   MemoryRelationship,
-  ArchitecturalDecisionMemory,
+  // ArchitecturalDecisionMemory,
 } from '../../src/types/memory-entities.js';
 
 // Mock filesystem operations for integration tests
@@ -271,12 +271,12 @@ describe('Memory System Integration', () => {
   let memoryManager: MemoryEntityManager;
   let memoryTransformer: MemoryTransformer;
   let memoryLoadingTool: MemoryLoadingTool;
-  let testMemoryDir: string;
+  let _testMemoryDir: string;
 
   beforeEach(async () => {
     jest.clearAllMocks();
 
-    testMemoryDir = '/test/integration/project/.mcp-adr-memory';
+    _testMemoryDir = '/test/integration/project/.mcp-adr-memory';
 
     // Setup filesystem mocks
     mockFs.access.mockResolvedValue(undefined);
@@ -878,7 +878,7 @@ We will use PostgreSQL as our primary database with proper indexing strategy.
         },
       ];
 
-      const { entities, relationships } =
+      const { entities, relationships: _relationships } =
         await memoryTransformer.transformAdrCollectionToMemories(testAdrs);
 
       // Should have transformed only valid ADRs

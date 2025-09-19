@@ -496,7 +496,7 @@ export async function analyzeContentSecurity(args: {
           // Clean up temp file
           try {
             unlinkSync(tempFile);
-          } catch (error) {
+          } catch {
             // Ignore cleanup errors
           }
         }

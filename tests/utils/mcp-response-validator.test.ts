@@ -3,7 +3,7 @@ import {
   validateMcpResponse,
   validateJsonRpcSerialization,
   safeMcpToolWrapper,
-  type McpToolResponse,
+  // type McpToolResponse,
 } from '../../src/utils/mcp-response-validator.js';
 
 describe('MCP Response Validator', () => {

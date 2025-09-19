@@ -27,7 +27,7 @@ async function setupTestEnvironment(): Promise<void> {
 async function cleanupTestEnvironment(): Promise<void> {
   try {
     await fs.rm(TEST_PROJECT_PATH, { recursive: true, force: true });
-  } catch (error) {
+  } catch {
     // Ignore cleanup errors
   }
 }
@@ -37,8 +37,10 @@ async function cleanupTestEnvironment(): Promise<void> {
  */
 async function createMockAdrs(): Promise<void> {
   const adrDir = join(TEST_PROJECT_PATH, 'docs', 'adrs');
-  
-  await fs.writeFile(join(adrDir, '001-database-architecture.md'), `
+
+  await fs.writeFile(
+    join(adrDir, '001-database-architecture.md'),
+    `
 # ADR-001: Database Architecture
 
 ## Status
@@ -54,9 +56,12 @@ We will use PostgreSQL as our primary database.
 - High performance for complex queries
 - ACID compliance
 - Strong ecosystem support
-`);
+`
+  );
 
-  await fs.writeFile(join(adrDir, '002-api-design.md'), `
+  await fs.writeFile(
+    join(adrDir, '002-api-design.md'),
+    `
 # ADR-002: API Design
 
 ## Status
@@ -72,7 +77,8 @@ We will use RESTful design with OpenAPI specification.
 - Clear API documentation
 - Standard HTTP methods
 - Easy client generation
-`);
+`
+  );
 }
 
 /**
@@ -84,7 +90,7 @@ async function createMockTodoData(): Promise<void> {
     metadata: {
       projectName: 'Test Project',
       createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      updatedAt: new Date().toISOString(),
     },
     tasks: {
       'task-1': {
@@ -98,7 +104,7 @@ async function createMockTodoData(): Promise<void> {
         updatedAt: new Date().toISOString(),
         tags: [],
         version: 1,
-        changeLog: []
+        changeLog: [],
       },
       'task-2': {
         id: 'task-2',
@@ -111,21 +117,18 @@ async function createMockTodoData(): Promise<void> {
         updatedAt: new Date().toISOString(),
         tags: [],
         version: 1,
-        changeLog: []
-      }
+        changeLog: [],
+      },
     },
     sections: {},
     analytics: {
       totalTasks: 2,
       completedTasks: 1,
-      lastUpdated: new Date().toISOString()
-    }
+      lastUpdated: new Date().toISOString(),
+    },
   };
 
-  await fs.writeFile(
-    join(TEST_CACHE_DIR, 'todo-data.json'),
-    JSON.stringify(todoData, null, 2)
-  );
+  await fs.writeFile(join(TEST_CACHE_DIR, 'todo-data.json'), JSON.stringify(todoData, null, 2));
 }
 
 describe('MCP Planning Tool', () => {
@@ -149,31 +152,31 @@ describe('MCP Planning Tool', () => {
             name: 'Phase 1: Setup',
             duration: '2 weeks',
             dependencies: [],
-            milestones: ['Database ready', 'Environment configured']
+            milestones: ['Database ready', 'Environment configured'],
           },
           {
             name: 'Phase 2: Development',
             duration: '4 weeks',
             dependencies: ['Phase 1'],
-            milestones: ['API endpoints created', 'Tests written']
-          }
+            milestones: ['API endpoints created', 'Tests written'],
+          },
         ],
         team: [
           {
             name: 'John Doe',
             role: 'Developer',
             skills: ['JavaScript', 'Node.js'],
-            capacity: '40h/week'
+            capacity: '40h/week',
           },
           {
             name: 'Jane Smith',
             role: 'Designer',
             skills: ['UI/UX', 'Figma'],
-            capacity: '30h/week'
-          }
+            capacity: '30h/week',
+          },
         ],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       };
 
       const result = await mcpPlanning(validInput);
@@ -190,7 +193,7 @@ describe('MCP Planning Tool', () => {
     it('should reject invalid operation', async () => {
       const invalidInput = {
         operation: 'invalid_operation',
-        projectPath: TEST_PROJECT_PATH
+        projectPath: TEST_PROJECT_PATH,
       };
 
       await expect(mcpPlanning(invalidInput)).rejects.toThrow();
@@ -199,7 +202,7 @@ describe('MCP Planning Tool', () => {
     it('should reject create_project without required fields', async () => {
       const invalidInput = {
         operation: 'create_project',
-        projectPath: TEST_PROJECT_PATH
+        projectPath: TEST_PROJECT_PATH,
         // Missing projectName and phases
       };
 
@@ -215,17 +218,17 @@ describe('MCP Planning Tool', () => {
         phases: [
           {
             name: 'Phase 1',
-            duration: '2 weeks'
-          }
+            duration: '2 weeks',
+          },
         ],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       });
 
       const validInput = {
         operation: 'manage_phases',
         projectPath: TEST_PROJECT_PATH,
-        action: 'list'
+        action: 'list',
       };
 
       const result = await mcpPlanning(validInput);
@@ -243,18 +246,18 @@ describe('MCP Planning Tool', () => {
         phases: [
           {
             name: 'Phase 1',
-            duration: '2 weeks'
-          }
+            duration: '2 weeks',
+          },
         ],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       });
 
       const validInput = {
         operation: 'track_progress',
         projectPath: TEST_PROJECT_PATH,
         reportType: 'summary',
-        updateTaskProgress: false
+        updateTaskProgress: false,
       };
 
       const result = await mcpPlanning(validInput);
@@ -273,19 +276,19 @@ describe('MCP Planning Tool', () => {
         phases: [
           {
             name: 'Planning',
-            duration: '1 week'
+            duration: '1 week',
           },
           {
             name: 'Implementation',
-            duration: '3 weeks'
-          }
+            duration: '3 weeks',
+          },
         ],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       };
 
       const result = await mcpPlanning(input);
-      
+
       expect(result.content[0].text).toContain('Basic Test Project');
       expect(result.content[0].text).toContain('Planning');
       expect(result.content[0].text).toContain('Implementation');
@@ -293,7 +296,10 @@ describe('MCP Planning Tool', () => {
 
       // Verify file was created
       const planningFile = join(TEST_CACHE_DIR, 'project-planning.json');
-      const fileExists = await fs.access(planningFile).then(() => true).catch(() => false);
+      const fileExists = await fs
+        .access(planningFile)
+        .then(() => true)
+        .catch(() => false);
       expect(fileExists).toBe(true);
 
       // Verify file content
@@ -307,7 +313,7 @@ describe('MCP Planning Tool', () => {
 
     it('should import from ADRs when requested', async () => {
       await createMockAdrs();
-      
+
       const input = {
         operation: 'create_project',
         projectPath: TEST_PROJECT_PATH,
@@ -315,26 +321,26 @@ describe('MCP Planning Tool', () => {
         phases: [
           {
             name: 'Database Setup',
-            duration: '2 weeks'
+            duration: '2 weeks',
           },
           {
             name: 'API Development',
-            duration: '3 weeks'
-          }
+            duration: '3 weeks',
+          },
         ],
         importFromAdrs: true,
-        importFromTodos: false
+        importFromTodos: false,
       };
 
       const result = await mcpPlanning(input);
-      
+
       expect(result.content[0].text).toContain('✅ Linked');
-      
+
       // Verify ADRs were attempted to be imported (may not link if names don't match)
       const planningFile = join(TEST_CACHE_DIR, 'project-planning.json');
       const fileContent = await fs.readFile(planningFile, 'utf-8');
       const projectData = JSON.parse(fileContent);
-      
+
       // The test should pass if the project was created successfully with ADR import enabled
       expect(projectData.phases).toHaveLength(2);
       expect(projectData.metadata.linkedAdrs).toBeDefined();
@@ -342,7 +348,7 @@ describe('MCP Planning Tool', () => {
 
     it('should import from TODOs when requested', async () => {
       await createMockTodoData();
-      
+
       const input = {
         operation: 'create_project',
         projectPath: TEST_PROJECT_PATH,
@@ -350,19 +356,19 @@ describe('MCP Planning Tool', () => {
         phases: [
           {
             name: 'Database Phase',
-            duration: '2 weeks'
+            duration: '2 weeks',
           },
           {
             name: 'API Phase',
-            duration: '3 weeks'
-          }
+            duration: '3 weeks',
+          },
         ],
         importFromAdrs: false,
-        importFromTodos: true
+        importFromTodos: true,
       };
 
       const result = await mcpPlanning(input);
-      
+
       expect(result.content[0].text).toContain('✅ Imported tasks');
     });
 
@@ -374,7 +380,7 @@ describe('MCP Planning Tool', () => {
         projectName: 'First Project',
         phases: [{ name: 'Phase 1', duration: '1 week' }],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       });
 
       // Try to create another project in same location
@@ -384,7 +390,7 @@ describe('MCP Planning Tool', () => {
         projectName: 'Second Project',
         phases: [{ name: 'Phase 1', duration: '1 week' }],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       };
 
       await expect(mcpPlanning(input)).rejects.toThrow(McpAdrError);
@@ -402,11 +408,11 @@ describe('MCP Planning Tool', () => {
         phases: [
           {
             name: 'Initial Phase',
-            duration: '2 weeks'
-          }
+            duration: '2 weeks',
+          },
         ],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       });
     });
 
@@ -414,7 +420,7 @@ describe('MCP Planning Tool', () => {
       const result = await mcpPlanning({
         operation: 'manage_phases',
         projectPath: TEST_PROJECT_PATH,
-        action: 'list'
+        action: 'list',
       });
 
       expect(result.content[0].text).toContain('Project Phases');
@@ -433,8 +439,8 @@ describe('MCP Planning Tool', () => {
           description: 'A newly created phase',
           estimatedDuration: '3 weeks',
           dependencies: [],
-          milestones: ['Milestone 1', 'Milestone 2']
-        }
+          milestones: ['Milestone 1', 'Milestone 2'],
+        },
       });
 
       expect(result.content[0].text).toContain('Phase Created');
@@ -444,10 +450,10 @@ describe('MCP Planning Tool', () => {
 
     it('should transition phase status', async () => {
       // First get the phase ID
-      const listResult = await mcpPlanning({
+      const _listResult = await mcpPlanning({
         operation: 'manage_phases',
         projectPath: TEST_PROJECT_PATH,
-        action: 'list'
+        action: 'list',
       });
 
       // Read the project data to get phase ID
@@ -461,7 +467,7 @@ describe('MCP Planning Tool', () => {
         projectPath: TEST_PROJECT_PATH,
         action: 'transition',
         phaseId: phaseId,
-        targetStatus: 'active'
+        targetStatus: 'active',
       });
 
       expect(result.content[0].text).toContain('Phase Transition Complete');
@@ -469,15 +475,17 @@ describe('MCP Planning Tool', () => {
     });
 
     it('should handle phase not found error', async () => {
-      await expect(mcpPlanning({
-        operation: 'manage_phases',
-        projectPath: TEST_PROJECT_PATH,
-        action: 'update',
-        phaseId: 'nonexistent-phase-id',
-        phaseData: {
-          name: 'Updated Phase'
-        }
-      })).rejects.toThrow(McpAdrError);
+      await expect(
+        mcpPlanning({
+          operation: 'manage_phases',
+          projectPath: TEST_PROJECT_PATH,
+          action: 'update',
+          phaseId: 'nonexistent-phase-id',
+          phaseData: {
+            name: 'Updated Phase',
+          },
+        })
+      ).rejects.toThrow(McpAdrError);
     });
   });
 
@@ -491,33 +499,33 @@ describe('MCP Planning Tool', () => {
         phases: [
           {
             name: 'Completed Phase',
-            duration: '2 weeks'
+            duration: '2 weeks',
           },
           {
-            name: 'Active Phase', 
-            duration: '3 weeks'
+            name: 'Active Phase',
+            duration: '3 weeks',
           },
           {
             name: 'Future Phase',
-            duration: '1 week'
-          }
+            duration: '1 week',
+          },
         ],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       });
 
       // Set up different phase statuses
       const planningFile = join(TEST_CACHE_DIR, 'project-planning.json');
       const fileContent = await fs.readFile(planningFile, 'utf-8');
       const projectData = JSON.parse(fileContent);
-      
+
       projectData.phases[0].status = 'completed';
       projectData.phases[0].completion = 100;
       projectData.phases[1].status = 'active';
       projectData.phases[1].completion = 60;
       projectData.phases[2].status = 'planning';
       projectData.phases[2].completion = 0;
-      
+
       await fs.writeFile(planningFile, JSON.stringify(projectData, null, 2));
     });
 
@@ -526,7 +534,7 @@ describe('MCP Planning Tool', () => {
         operation: 'track_progress',
         projectPath: TEST_PROJECT_PATH,
         reportType: 'summary',
-        updateTaskProgress: false
+        updateTaskProgress: false,
       });
 
       expect(result.content[0].text).toContain('Project Progress Summary');
@@ -543,7 +551,7 @@ describe('MCP Planning Tool', () => {
         operation: 'track_progress',
         projectPath: TEST_PROJECT_PATH,
         reportType: 'detailed',
-        updateTaskProgress: false
+        updateTaskProgress: false,
       });
 
       expect(result.content[0].text).toContain('Detailed Progress Report');
@@ -558,7 +566,7 @@ describe('MCP Planning Tool', () => {
         operation: 'track_progress',
         projectPath: TEST_PROJECT_PATH,
         reportType: 'milestones',
-        updateTaskProgress: false
+        updateTaskProgress: false,
       });
 
       expect(result.content[0].text).toContain('Milestone Tracking');
@@ -577,19 +585,19 @@ describe('MCP Planning Tool', () => {
         phases: [
           {
             name: 'Development Phase',
-            duration: '4 weeks'
-          }
+            duration: '4 weeks',
+          },
         ],
         team: [
           {
             name: 'Alice Developer',
             role: 'Senior Developer',
             skills: ['TypeScript', 'React'],
-            capacity: '40h/week'
-          }
+            capacity: '40h/week',
+          },
         ],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       });
     });
 
@@ -597,7 +605,7 @@ describe('MCP Planning Tool', () => {
       const result = await mcpPlanning({
         operation: 'manage_resources',
         projectPath: TEST_PROJECT_PATH,
-        action: 'list'
+        action: 'list',
       });
 
       expect(result.content[0].text).toContain('Team Resources');
@@ -615,8 +623,8 @@ describe('MCP Planning Tool', () => {
           name: 'Bob Designer',
           role: 'UI/UX Designer',
           skills: ['Figma', 'Sketch'],
-          capacity: '32h/week'
-        }
+          capacity: '32h/week',
+        },
       });
 
       expect(result.content[0].text).toContain('Team Member Added');
@@ -635,36 +643,36 @@ describe('MCP Planning Tool', () => {
         phases: [
           {
             name: 'High Dependency Phase',
-            duration: '2 weeks'
+            duration: '2 weeks',
           },
           {
             name: 'Complex Phase',
-            duration: '4 weeks'
-          }
+            duration: '4 weeks',
+          },
         ],
         team: [
           {
             name: 'Overloaded Dev',
             role: 'Developer',
             skills: ['JavaScript'],
-            capacity: '40h/week'
-          }
+            capacity: '40h/week',
+          },
         ],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       });
 
       // Simulate high-risk conditions
       const planningFile = join(TEST_CACHE_DIR, 'project-planning.json');
       const fileContent = await fs.readFile(planningFile, 'utf-8');
       const projectData = JSON.parse(fileContent);
-      
+
       // Add many dependencies to first phase
       projectData.phases[0].dependencies = ['dep1', 'dep2', 'dep3', 'dep4'];
-      
+
       // Simulate overloaded team member
       projectData.team[0].currentWorkload = 95;
-      
+
       await fs.writeFile(planningFile, JSON.stringify(projectData, null, 2));
     });
 
@@ -676,7 +684,7 @@ describe('MCP Planning Tool', () => {
         includeAdrRisks: true,
         includeDependencyRisks: true,
         includeResourceRisks: true,
-        generateMitigation: true
+        generateMitigation: true,
       });
 
       expect(result.content[0].text).toContain('Risk Analysis Report');
@@ -691,7 +699,7 @@ describe('MCP Planning Tool', () => {
         operation: 'risk_analysis',
         projectPath: TEST_PROJECT_PATH,
         includeDependencyRisks: true,
-        generateMitigation: true
+        generateMitigation: true,
       });
 
       expect(result.content[0].text).toContain('Dependencies');
@@ -703,7 +711,7 @@ describe('MCP Planning Tool', () => {
         operation: 'risk_analysis',
         projectPath: TEST_PROJECT_PATH,
         includeResourceRisks: true,
-        generateMitigation: true
+        generateMitigation: true,
       });
 
       expect(result.content[0].text).toContain('Resources');
@@ -715,7 +723,7 @@ describe('MCP Planning Tool', () => {
         operation: 'risk_analysis',
         projectPath: TEST_PROJECT_PATH,
         includeAdrRisks: true,
-        generateMitigation: true
+        generateMitigation: true,
       });
 
       expect(result.content[0].text).toContain('Architecture');
@@ -733,23 +741,23 @@ describe('MCP Planning Tool', () => {
         phases: [
           {
             name: 'Analysis Phase',
-            duration: '2 weeks'
+            duration: '2 weeks',
           },
           {
             name: 'Development Phase',
-            duration: '6 weeks'
-          }
+            duration: '6 weeks',
+          },
         ],
         team: [
           {
             name: 'Lead Developer',
             role: 'Tech Lead',
             skills: ['Architecture', 'Leadership'],
-            capacity: '40h/week'
-          }
+            capacity: '40h/week',
+          },
         ],
         importFromAdrs: false,
-        importFromTodos: false
+        importFromTodos: false,
       });
     });
 
@@ -760,7 +768,7 @@ describe('MCP Planning Tool', () => {
         reportType: 'executive',
         format: 'markdown',
         includeCharts: true,
-        timeframe: 'month'
+        timeframe: 'month',
       });
 
       expect(result.content[0].text).toContain('Executive Summary');
@@ -777,7 +785,7 @@ describe('MCP Planning Tool', () => {
         projectPath: TEST_PROJECT_PATH,
         reportType: 'status',
         format: 'markdown',
-        timeframe: 'week'
+        timeframe: 'week',
       });
 
       expect(result.content[0].text).toContain('Status Report');
@@ -789,60 +797,76 @@ describe('MCP Planning Tool', () => {
 
   describe('Error Handling', () => {
     it('should handle missing project for operations requiring existing project', async () => {
-      await expect(mcpPlanning({
-        operation: 'manage_phases',
-        projectPath: '/tmp/nonexistent-project',
-        action: 'list'
-      })).rejects.toThrow(McpAdrError);
-      
-      await expect(mcpPlanning({
-        operation: 'track_progress',
-        projectPath: '/tmp/nonexistent-project',
-        reportType: 'summary'
-      })).rejects.toThrow(McpAdrError);
-      
-      await expect(mcpPlanning({
-        operation: 'manage_resources',
-        projectPath: '/tmp/nonexistent-project',
-        action: 'list'
-      })).rejects.toThrow(McpAdrError);
-      
-      await expect(mcpPlanning({
-        operation: 'risk_analysis',
-        projectPath: '/tmp/nonexistent-project'
-      })).rejects.toThrow(McpAdrError);
-      
-      await expect(mcpPlanning({
-        operation: 'generate_reports',
-        projectPath: '/tmp/nonexistent-project',
-        reportType: 'executive'
-      })).rejects.toThrow(McpAdrError);
+      await expect(
+        mcpPlanning({
+          operation: 'manage_phases',
+          projectPath: '/tmp/nonexistent-project',
+          action: 'list',
+        })
+      ).rejects.toThrow(McpAdrError);
+
+      await expect(
+        mcpPlanning({
+          operation: 'track_progress',
+          projectPath: '/tmp/nonexistent-project',
+          reportType: 'summary',
+        })
+      ).rejects.toThrow(McpAdrError);
+
+      await expect(
+        mcpPlanning({
+          operation: 'manage_resources',
+          projectPath: '/tmp/nonexistent-project',
+          action: 'list',
+        })
+      ).rejects.toThrow(McpAdrError);
+
+      await expect(
+        mcpPlanning({
+          operation: 'risk_analysis',
+          projectPath: '/tmp/nonexistent-project',
+        })
+      ).rejects.toThrow(McpAdrError);
+
+      await expect(
+        mcpPlanning({
+          operation: 'generate_reports',
+          projectPath: '/tmp/nonexistent-project',
+          reportType: 'executive',
+        })
+      ).rejects.toThrow(McpAdrError);
     });
 
     it('should handle invalid input gracefully', async () => {
-      await expect(mcpPlanning({
-        operation: 'create_project',
-        projectPath: TEST_PROJECT_PATH
-        // Missing required fields
-      })).rejects.toThrow();
-      
-      await expect(mcpPlanning({
-        operation: 'manage_phases',
-        projectPath: TEST_PROJECT_PATH,
-        action: 'invalid_action'
-      })).rejects.toThrow();
+      await expect(
+        mcpPlanning({
+          operation: 'create_project',
+          projectPath: TEST_PROJECT_PATH,
+          // Missing required fields
+        })
+      ).rejects.toThrow();
+
+      await expect(
+        mcpPlanning({
+          operation: 'manage_phases',
+          projectPath: TEST_PROJECT_PATH,
+          action: 'invalid_action',
+        })
+      ).rejects.toThrow();
     });
 
     it('should handle file system errors gracefully', async () => {
       // Try to create project in read-only directory (simulated)
-      await expect(mcpPlanning({
-        operation: 'create_project',
-        projectPath: '/invalid-path-that-cannot-be-created',
-        projectName: 'Test Project',
-        phases: [{ name: 'Phase 1', duration: '1 week' }],
-        importFromAdrs: false,
-        importFromTodos: false
-      })).rejects.toThrow();
+      await expect(
+        mcpPlanning({
+          operation: 'create_project',
+          projectPath: '/invalid-path-that-cannot-be-created',
+          projectName: 'Test Project',
+          phases: [{ name: 'Phase 1', duration: '1 week' }],
+          importFromAdrs: false,
+          importFromTodos: false,
+        })
+      ).rejects.toThrow();
     });
   });
 
@@ -855,7 +879,7 @@ describe('MCP Planning Tool', () => {
         projectName: 'ADR Error Test',
         phases: [{ name: 'Phase 1', duration: '1 week' }],
         importFromAdrs: true,
-        importFromTodos: false
+        importFromTodos: false,
       });
 
       // Should still create project even if ADR import fails
@@ -870,7 +894,7 @@ describe('MCP Planning Tool', () => {
         projectName: 'TODO Error Test',
         phases: [{ name: 'Phase 1', duration: '1 week' }],
         importFromAdrs: false,
-        importFromTodos: true
+        importFromTodos: true,
       });
 
       // Should still create project even if TODO import fails

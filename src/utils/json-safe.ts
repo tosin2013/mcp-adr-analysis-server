@@ -1,6 +1,6 @@
 /**
  * JSON-Safe String Utilities
- * 
+ *
  * Utilities for safely escaping strings in JSON-RPC 2.0 responses
  * to prevent parse errors in MCP communication
  */
@@ -10,29 +10,34 @@
  * Only escapes actual control characters and problematic JSON chars
  */
 export function jsonSafe(str: string | undefined | null): string {
-  if (str == null) {
+  if (str === null || str === undefined) {
     return '';
   }
-  
-  return String(str)
-    // Escape backslashes first (before escaping quotes)
-    .replace(/\\/g, '\\\\')
-    // Escape double quotes
-    .replace(/"/g, '\\"')
-    // Only escape actual control characters (not regex \b)
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '\\r')
-    .replace(/\t/g, '\\t')
-    // Escape other potentially problematic control characters (but not \b word boundary)
-    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, (char) => {
-      const code = char.charCodeAt(0);
-      switch (code) {
-        case 0x08: return '\\b'; // actual backspace character
-        case 0x0C: return '\\f'; // form feed
-        default:
-          return '\\u' + ('0000' + code.toString(16)).slice(-4);
-      }
-    });
+
+  return (
+    String(str)
+      // Escape backslashes first (before escaping quotes)
+      .replace(/\\/g, '\\\\')
+      // Escape double quotes
+      .replace(/"/g, '\\"')
+      // Only escape actual control characters (not regex \b)
+      .replace(/\n/g, '\\n')
+      .replace(/\r/g, '\\r')
+      .replace(/\t/g, '\\t')
+      // Escape other potentially problematic control characters (but not \b word boundary)
+      // eslint-disable-next-line no-control-regex
+      .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, char => {
+        const code = char.charCodeAt(0);
+        switch (code) {
+          case 0x08:
+            return '\\b'; // actual backspace character
+          case 0x0c:
+            return '\\f'; // form feed
+          default:
+            return '\\u' + ('0000' + code.toString(16)).slice(-4);
+        }
+      })
+  );
 }
 
 /**
@@ -52,7 +57,10 @@ export function jsonSafeJoin(arr: (string | undefined | null)[], separator: stri
 /**
  * Create a JSON-safe markdown list from an array of items
  */
-export function jsonSafeMarkdownList(items: (string | undefined | null)[], prefix: string = '- '): string {
+export function jsonSafeMarkdownList(
+  items: (string | undefined | null)[],
+  prefix: string = '- '
+): string {
   return jsonSafeArray(items)
     .filter(item => item.length > 0)
     .map(item => `${prefix}${item}`)
@@ -67,7 +75,7 @@ export function jsonSafeFilePath(filePath: string | undefined | null): string {
   if (!filePath) {
     return '';
   }
-  
+
   // For file paths, only escape quotes and backslashes, normalize separators
   return String(filePath)
     .replace(/\\/g, '/') // Normalize Windows paths
@@ -89,7 +97,7 @@ export function jsonSafeError(error: unknown): string {
   if (!error) {
     return 'Unknown error';
   }
-  
+
   const message = error instanceof Error ? error.message : String(error);
   return jsonSafe(message);
 }
