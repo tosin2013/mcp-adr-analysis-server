@@ -3,7 +3,7 @@
  * Comprehensive test coverage for all exported functions and interfaces
  */
 
-import { jest } from '@jest/globals';
+import { jest as _jest } from '@jest/globals';
 import {
   extractRulesFromAdrs,
   generateRulesFromPatterns,

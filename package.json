@@ -36,7 +36,7 @@
     "test:package": "./scripts/test-npm-package.sh"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "1.17.5",
+    "@modelcontextprotocol/sdk": "^1.18.0",
     "@tree-sitter-grammars/tree-sitter-hcl": "^1.2.0",
     "fast-glob": "^3.3.2",
     "tree-sitter": "^0.25.0",
