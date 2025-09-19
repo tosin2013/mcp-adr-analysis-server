@@ -13,6 +13,7 @@ import {
   createToolReflexionConfig,
 } from '../utils/reflexion.js';
 import { executeADRSuggestionPrompt, formatMCPResponse } from '../utils/prompt-execution.js';
+import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 
 /**
  * Suggest ADRs based on project analysis with advanced prompting techniques
@@ -29,6 +30,7 @@ export async function suggestAdrs(args: {
   enhancedMode?: boolean; // Enable advanced prompting features
   learningEnabled?: boolean; // Enable Reflexion learning
   knowledgeEnhancement?: boolean; // Enable Knowledge Generation
+  enableTreeSitterAnalysis?: boolean; // Enable tree-sitter for enhanced code analysis
   conversationContext?: ConversationContext; // Context from calling LLM
 }): Promise<any> {
   const {
@@ -42,6 +44,7 @@ export async function suggestAdrs(args: {
     enhancedMode = true, // Default to enhanced mode
     learningEnabled = true, // Default to learning enabled
     knowledgeEnhancement = true, // Default to knowledge enhancement
+    enableTreeSitterAnalysis = true, // Default to tree-sitter enabled
     conversationContext, // Context from calling LLM
   } = args;
 
@@ -199,6 +202,7 @@ The enhanced AI analysis will identify implicit architectural decisions and prov
         let enhancementInfo = '';
 
         // Apply enhancements if enabled
+        let treeSitterAnalysis = '';
         if (enhancedMode && (knowledgeEnhancement || learningEnabled)) {
           let knowledgeContext = '';
 
@@ -222,6 +226,73 @@ The enhanced AI analysis will identify implicit architectural decisions and prov
               knowledgeContext = `\n## Knowledge Enhancement\n${knowledgeResult.prompt}\n`;
             } catch (error) {
               console.error('[WARNING] Knowledge generation failed:', error);
+            }
+          }
+
+          // Perform tree-sitter analysis for enhanced code change understanding
+          if (enableTreeSitterAnalysis) {
+            try {
+              const codeChangeAnalysis = await performTreeSitterCodeChangeAnalysis(
+                beforeCode,
+                afterCode,
+                changeDescription
+              );
+
+              if (
+                codeChangeAnalysis.architecturalChanges.length > 0 ||
+                codeChangeAnalysis.securityImpacts.length > 0
+              ) {
+                treeSitterAnalysis = `
+
+## 🔍 Tree-sitter Code Change Analysis
+
+**Analysis Results:**
+- **Architectural Changes**: ${codeChangeAnalysis.architecturalChanges.length}
+- **Security Impacts**: ${codeChangeAnalysis.securityImpacts.length}
+- **Complexity Change**: ${codeChangeAnalysis.complexityDelta > 0 ? '+' : ''}${codeChangeAnalysis.complexityDelta}
+- **New Dependencies**: ${codeChangeAnalysis.newDependencies.length}
+
+${
+  codeChangeAnalysis.architecturalChanges.length > 0
+    ? `
+### 🏗️ Architectural Changes Detected
+${codeChangeAnalysis.architecturalChanges.map(change => `- **${change.type}**: ${change.description} (impact: ${change.impact})`).join('\n')}
+`
+    : ''
+}
+
+${
+  codeChangeAnalysis.securityImpacts.length > 0
+    ? `
+### 🔒 Security Impact Analysis
+${codeChangeAnalysis.securityImpacts.map(impact => `- **${impact.type}**: ${impact.description} (severity: ${impact.severity})`).join('\n')}
+`
+    : ''
+}
+
+${
+  codeChangeAnalysis.newDependencies.length > 0
+    ? `
+### 📦 New Dependencies
+${codeChangeAnalysis.newDependencies.map(dep => `- **${dep.name}**: ${dep.reason} (risk: ${dep.riskLevel})`).join('\n')}
+`
+    : ''
+}
+
+---
+`;
+              }
+            } catch (error) {
+              console.warn('Tree-sitter code change analysis failed:', error);
+              treeSitterAnalysis = `
+
+## 🔍 Tree-sitter Code Change Analysis
+
+**Status**: ⚠️ Analysis failed - continuing with standard analysis
+**Error**: ${error instanceof Error ? error.message : 'Unknown error'}
+
+---
+`;
             }
           }
 
@@ -315,7 +386,7 @@ The enhanced AI analysis will identify implicit architectural decisions and prov
               text: `# ADR Suggestions: Enhanced Code Change Analysis
 
 ${enhancementInfo}
-
+${treeSitterAnalysis}
 ${baseResult.instructions}
 
 ## Enhanced AI Analysis Prompt
@@ -936,4 +1007,156 @@ ${JSON.stringify(discoveryResult, null, 2)}
       'DISCOVERY_ERROR'
     );
   }
+}
+
+/**
+ * Perform tree-sitter analysis for code change architectural impact
+ */
+async function performTreeSitterCodeChangeAnalysis(
+  beforeCode: string,
+  afterCode: string,
+  _changeDescription: string
+): Promise<{
+  architecturalChanges: Array<{
+    type: string;
+    description: string;
+    impact: string;
+  }>;
+  securityImpacts: Array<{
+    type: string;
+    description: string;
+    severity: string;
+  }>;
+  complexityDelta: number;
+  newDependencies: Array<{
+    name: string;
+    reason: string;
+    riskLevel: string;
+  }>;
+}> {
+  const analyzer = new TreeSitterAnalyzer();
+  const { writeFileSync, unlinkSync } = await import('fs');
+  const { join } = await import('path');
+  const { tmpdir } = await import('os');
+
+  const results = {
+    architecturalChanges: [] as any[],
+    securityImpacts: [] as any[],
+    complexityDelta: 0,
+    newDependencies: [] as any[],
+  };
+
+  try {
+    // Determine file extension based on content patterns
+    let extension = '.txt';
+    if (
+      beforeCode.includes('import ') ||
+      beforeCode.includes('export ') ||
+      beforeCode.includes('function ')
+    ) {
+      extension =
+        beforeCode.includes('interface ') || beforeCode.includes(': string') ? '.ts' : '.js';
+    } else if (beforeCode.includes('def ') || beforeCode.includes('import ')) {
+      extension = '.py';
+    }
+
+    // Create temporary files for analysis
+    const beforeFile = join(tmpdir(), `before-analysis-${Date.now()}${extension}`);
+    const afterFile = join(tmpdir(), `after-analysis-${Date.now()}${extension}`);
+
+    writeFileSync(beforeFile, beforeCode);
+    writeFileSync(afterFile, afterCode);
+
+    try {
+      // Analyze both versions
+      const beforeAnalysis = await analyzer.analyzeFile(beforeFile);
+      const afterAnalysis = await analyzer.analyzeFile(afterFile);
+
+      // Compare complexity
+      const beforeComplexity =
+        beforeAnalysis.functions?.reduce((sum, func) => sum + func.complexity, 0) || 0;
+      const afterComplexity =
+        afterAnalysis.functions?.reduce((sum, func) => sum + func.complexity, 0) || 0;
+      results.complexityDelta = afterComplexity - beforeComplexity;
+
+      // Detect new dependencies
+      const beforeImports = new Set(beforeAnalysis.imports?.map(imp => imp.module) || []);
+      const afterImports = afterAnalysis.imports?.map(imp => imp.module) || [];
+
+      for (const imp of afterImports) {
+        if (!beforeImports.has(imp)) {
+          const riskLevel =
+            imp.includes('eval') || imp.includes('exec') || imp.includes('shell')
+              ? 'high'
+              : imp.includes('crypto') || imp.includes('auth')
+                ? 'medium'
+                : 'low';
+
+          results.newDependencies.push({
+            name: imp,
+            reason: `New dependency introduced in code change`,
+            riskLevel,
+          });
+        }
+      }
+
+      // Detect architectural changes
+      const beforeFunctions = beforeAnalysis.functions?.map(f => f.name) || [];
+      const afterFunctions = afterAnalysis.functions?.map(f => f.name) || [];
+
+      // New functions
+      for (const funcName of afterFunctions) {
+        if (!beforeFunctions.includes(funcName)) {
+          const funcType = funcName.toLowerCase().includes('controller')
+            ? 'controller'
+            : funcName.toLowerCase().includes('service')
+              ? 'service'
+              : funcName.toLowerCase().includes('repository')
+                ? 'repository'
+                : 'function';
+
+          results.architecturalChanges.push({
+            type: 'new_component',
+            description: `New ${funcType}: ${funcName}`,
+            impact: funcType === 'controller' ? 'high' : funcType === 'service' ? 'medium' : 'low',
+          });
+        }
+      }
+
+      // Security impact analysis
+      const beforeSecrets = beforeAnalysis.secrets?.length || 0;
+      const afterSecrets = afterAnalysis.secrets?.length || 0;
+
+      if (afterSecrets > beforeSecrets) {
+        results.securityImpacts.push({
+          type: 'secret_introduction',
+          description: `${afterSecrets - beforeSecrets} new secrets detected in code`,
+          severity: 'high',
+        });
+      }
+
+      // Check for security issues
+      if (afterAnalysis.securityIssues && afterAnalysis.securityIssues.length > 0) {
+        for (const issue of afterAnalysis.securityIssues) {
+          results.securityImpacts.push({
+            type: issue.type,
+            description: issue.message,
+            severity: issue.severity,
+          });
+        }
+      }
+    } finally {
+      // Clean up temp files
+      try {
+        unlinkSync(beforeFile);
+        unlinkSync(afterFile);
+      } catch (error) {
+        // Ignore cleanup errors
+      }
+    }
+  } catch (error) {
+    console.warn('Tree-sitter code change analysis failed:', error);
+  }
+
+  return results;
 }

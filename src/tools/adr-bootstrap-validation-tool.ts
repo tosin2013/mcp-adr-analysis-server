@@ -6,6 +6,7 @@
 
 import { McpAdrError } from '../types/index.js';
 import { ConversationContext } from '../types/conversation-context.js';
+import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 
 /**
  * Interface for bootstrap script generation
@@ -45,6 +46,7 @@ export async function generateAdrBootstrapScripts(args: {
   includeTests?: boolean;
   includeDeployment?: boolean;
   customValidations?: string[];
+  enableTreeSitterAnalysis?: boolean;
   conversationContext?: ConversationContext;
 }): Promise<any> {
   const {
@@ -55,6 +57,7 @@ export async function generateAdrBootstrapScripts(args: {
     includeTests = true,
     includeDeployment = true,
     customValidations = [],
+    enableTreeSitterAnalysis = true,
     // conversationContext is available but not used currently
   } = args;
 
@@ -65,6 +68,66 @@ export async function generateAdrBootstrapScripts(args: {
 
     // Extract validation requirements from ADRs
     const complianceChecks = await extractComplianceChecks(discoveryResult.adrs);
+
+    // Perform tree-sitter analysis for ADR compliance validation
+    let codeAnalysisResults: any = null;
+    let complianceValidation = '';
+    if (enableTreeSitterAnalysis) {
+      try {
+        codeAnalysisResults = await performAdrComplianceAnalysis(
+          projectPath,
+          discoveryResult.adrs,
+          complianceChecks
+        );
+
+        if (
+          codeAnalysisResults.violations.length > 0 ||
+          codeAnalysisResults.implementations.length > 0
+        ) {
+          complianceValidation = `
+
+## 🔍 Tree-sitter ADR Compliance Analysis
+
+**Analysis Results:**
+- **Files Analyzed**: ${codeAnalysisResults.filesAnalyzed}
+- **ADR Implementations Found**: ${codeAnalysisResults.implementations.length}
+- **Compliance Violations**: ${codeAnalysisResults.violations.length}
+- **Architecture Patterns Detected**: ${codeAnalysisResults.patterns.join(', ') || 'None'}
+
+${
+  codeAnalysisResults.implementations.length > 0
+    ? `
+### ✅ Detected ADR Implementations
+${codeAnalysisResults.implementations.map((impl: any) => `- **${impl.adrTitle}**: ${impl.evidence} (${impl.file}:${impl.line})`).join('\n')}
+`
+    : ''
+}
+
+${
+  codeAnalysisResults.violations.length > 0
+    ? `
+### ❌ ADR Compliance Violations
+${codeAnalysisResults.violations.map((violation: any) => `- **${violation.adrTitle}**: ${violation.issue} (${violation.file}:${violation.line})`).join('\n')}
+`
+    : ''
+}
+
+---
+`;
+        }
+      } catch (error) {
+        console.warn('Tree-sitter ADR compliance analysis failed:', error);
+        complianceValidation = `
+
+## 🔍 Tree-sitter ADR Compliance Analysis
+
+**Status**: ⚠️ Analysis failed - continuing with basic validation
+**Error**: ${error instanceof Error ? error.message : 'Unknown error'}
+
+---
+`;
+      }
+    }
 
     // Generate bootstrap.sh script
     const bootstrapScript = generateBootstrapScript(
@@ -92,6 +155,8 @@ The bootstrap script deploys the code while the validation script verifies ADR c
 
 ## Discovered ADRs (${discoveryResult.totalAdrs} total)
 ${discoveryResult.adrs.map(adr => `- ${adr.title} (${adr.status})`).join('\n')}
+
+${complianceValidation}
 
 ## Generated Scripts
 
@@ -644,6 +709,222 @@ else
     exit 0
 fi
 `;
+}
+
+/**
+ * Perform tree-sitter analysis for ADR compliance validation
+ */
+async function performAdrComplianceAnalysis(
+  projectPath: string,
+  adrs: any[],
+  complianceChecks: AdrComplianceCheck[]
+): Promise<{
+  filesAnalyzed: number;
+  implementations: Array<{
+    adrTitle: string;
+    evidence: string;
+    file: string;
+    line: number;
+    confidence: number;
+  }>;
+  violations: Array<{
+    adrTitle: string;
+    issue: string;
+    file: string;
+    line: number;
+    severity: string;
+  }>;
+  patterns: string[];
+}> {
+  const analyzer = new TreeSitterAnalyzer();
+  const { readdirSync, statSync } = await import('fs');
+  const { join } = await import('path');
+
+  const results = {
+    filesAnalyzed: 0,
+    implementations: [] as any[],
+    violations: [] as any[],
+    patterns: [] as string[],
+  };
+
+  // Find source files to analyze
+  const sourceFiles: string[] = [];
+  const findSourceFiles = (dir: string, depth: number = 0) => {
+    if (depth > 3) return; // Limit recursion depth
+
+    try {
+      const items = readdirSync(dir);
+      for (const item of items) {
+        if (item.startsWith('.') || item === 'node_modules') continue;
+
+        const fullPath = join(dir, item);
+        const stat = statSync(fullPath);
+
+        if (stat.isDirectory()) {
+          findSourceFiles(fullPath, depth + 1);
+        } else if (stat.isFile()) {
+          const ext = item.split('.').pop()?.toLowerCase();
+          if (['ts', 'js', 'py', 'yml', 'yaml', 'tf', 'hcl', 'json'].includes(ext || '')) {
+            sourceFiles.push(fullPath);
+          }
+        }
+      }
+    } catch (error) {
+      // Skip directories we can't read
+    }
+  };
+
+  findSourceFiles(projectPath);
+
+  // Analyze files (limit to first 15 for performance)
+  const filesToAnalyze = sourceFiles.slice(0, 15);
+  results.filesAnalyzed = filesToAnalyze.length;
+
+  for (const filePath of filesToAnalyze) {
+    try {
+      const analysis = await analyzer.analyzeFile(filePath);
+
+      // Check for ADR implementation evidence
+      for (const adr of adrs) {
+        if (!adr.content) continue;
+
+        // Look for technology/framework mentions in ADR
+        const adrTechnologies = extractTechnologiesFromAdr(adr.content);
+
+        // Check if file implements required technologies
+        if (analysis.imports) {
+          for (const imp of analysis.imports) {
+            for (const tech of adrTechnologies) {
+              if (imp.module.toLowerCase().includes(tech.toLowerCase())) {
+                results.implementations.push({
+                  adrTitle: adr.title || 'Unknown ADR',
+                  evidence: `Uses required technology: ${tech} (import: ${imp.module})`,
+                  file: filePath,
+                  line: imp.location.line,
+                  confidence: 0.8,
+                });
+              }
+            }
+          }
+        }
+
+        // Check for architectural pattern compliance
+        if (analysis.functions) {
+          const adrPatterns = extractPatternsFromAdr(adr.content);
+          for (const pattern of adrPatterns) {
+            // Look for functions that match architectural patterns
+            const matchingFunctions = analysis.functions.filter(
+              func =>
+                func.name.toLowerCase().includes(pattern.toLowerCase()) ||
+                (pattern.includes('service') && func.name.toLowerCase().includes('service')) ||
+                (pattern.includes('controller') && func.name.toLowerCase().includes('controller'))
+            );
+
+            if (matchingFunctions.length > 0) {
+              results.implementations.push({
+                adrTitle: adr.title || 'Unknown ADR',
+                evidence: `Implements ${pattern} pattern (${matchingFunctions.length} functions)`,
+                file: filePath,
+                line: matchingFunctions[0]?.location.line || 1,
+                confidence: 0.7,
+              });
+
+              if (!results.patterns.includes(pattern)) {
+                results.patterns.push(pattern);
+              }
+            }
+          }
+        }
+      }
+
+      // Check for compliance violations
+      for (const check of complianceChecks) {
+        // Security-related violations
+        if (analysis.hasSecrets && check.requirement.toLowerCase().includes('security')) {
+          results.violations.push({
+            adrTitle: check.adrTitle,
+            issue: `Security violation: ${analysis.secrets.length} secrets detected`,
+            file: filePath,
+            line: analysis.secrets[0]?.location.line || 1,
+            severity: check.severity,
+          });
+        }
+
+        // Architecture violations
+        if (analysis.architecturalViolations && analysis.architecturalViolations.length > 0) {
+          for (const violation of analysis.architecturalViolations) {
+            results.violations.push({
+              adrTitle: check.adrTitle,
+              issue: `Architectural violation: ${violation.message}`,
+              file: filePath,
+              line: violation.location.line,
+              severity: check.severity,
+            });
+          }
+        }
+      }
+    } catch (error) {
+      // Skip files that can't be analyzed
+      console.warn(`Could not analyze file ${filePath}:`, error);
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Extract technologies mentioned in ADR content
+ */
+function extractTechnologiesFromAdr(content: string): string[] {
+  const technologies = [];
+  const techPatterns = [
+    /\b(react|vue|angular|express|fastapi|django|flask|spring|laravel)\b/gi,
+    /\b(postgres|mysql|mongodb|redis|elasticsearch)\b/gi,
+    /\b(docker|kubernetes|terraform|ansible)\b/gi,
+    /\b(aws|azure|gcp|cloudflare)\b/gi,
+  ];
+
+  for (const pattern of techPatterns) {
+    const matches = content.match(pattern);
+    if (matches) {
+      technologies.push(...matches.map(m => m.toLowerCase()));
+    }
+  }
+
+  return [...new Set(technologies)]; // Remove duplicates
+}
+
+/**
+ * Extract architectural patterns mentioned in ADR content
+ */
+function extractPatternsFromAdr(content: string): string[] {
+  const patterns = [];
+  const patternKeywords = [
+    'microservice',
+    'service',
+    'controller',
+    'repository',
+    'factory',
+    'singleton',
+    'observer',
+    'strategy',
+    'adapter',
+    'facade',
+    'mvc',
+    'mvp',
+    'mvvm',
+    'layered',
+    'hexagonal',
+    'clean',
+  ];
+
+  for (const keyword of patternKeywords) {
+    if (content.toLowerCase().includes(keyword)) {
+      patterns.push(keyword);
+    }
+  }
+
+  return patterns;
 }
 
 export default generateAdrBootstrapScripts;
