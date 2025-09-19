@@ -280,7 +280,7 @@ async function ensureCacheDir(projectPath: string): Promise<void> {
   const cacheDir = getPlanningCacheDir(projectPath);
   try {
     await fs.mkdir(cacheDir, { recursive: true });
-  } catch (error) {
+  } catch {
     // Directory might already exist, that's ok
   }
 }
@@ -295,7 +295,7 @@ async function loadPlanningData(
   try {
     const data = await fs.readFile(planningPath, 'utf-8');
     return ProjectPlanSchema.parse(JSON.parse(data));
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -554,7 +554,7 @@ Total phases: ${projectPlan.phases.length}
         ],
       };
 
-    case 'create':
+    case 'create': {
       if (!phaseData?.name) {
         throw new McpAdrError('Phase name is required for creation', 'INVALID_INPUT');
       }
@@ -599,8 +599,9 @@ Use \`manage_resources\` to allocate team members to this phase.
           },
         ],
       };
+    }
 
-    case 'update':
+    case 'update': {
       if (!phaseId) {
         throw new McpAdrError('Phase ID is required for update', 'INVALID_INPUT');
       }
@@ -637,8 +638,9 @@ Updated fields: ${Object.keys(phaseData || {}).join(', ')}
           },
         ],
       };
+    }
 
-    case 'transition':
+    case 'transition': {
       if (!phaseId || !targetStatus) {
         throw new McpAdrError(
           'Phase ID and target status are required for transition',
@@ -682,8 +684,9 @@ Current completion: ${transitionPhase.completion}%
           },
         ],
       };
+    }
 
-    case 'delete':
+    case 'delete': {
       if (!phaseId) {
         throw new McpAdrError('Phase ID is required for deletion', 'INVALID_INPUT');
       }
@@ -712,6 +715,7 @@ Remaining phases: ${projectPlan.phases.length}
           },
         ],
       };
+    }
 
     default:
       throw new McpAdrError(`Unknown phase action: ${action}`, 'INVALID_INPUT');
@@ -979,7 +983,7 @@ Total team members: ${projectPlan.team.length}
         ],
       };
 
-    case 'add':
+    case 'add': {
       if (!memberData?.name || !memberData?.role) {
         throw new McpAdrError('Member name and role are required', 'INVALID_INPUT');
       }
@@ -1013,6 +1017,7 @@ Use \`allocate\` action to assign them to project phases.
           },
         ],
       };
+    }
 
     default:
       return {
@@ -1233,7 +1238,7 @@ async function generateReports(args: z.infer<typeof GenerateReportsSchema>): Pro
   }
 
   switch (reportType) {
-    case 'executive':
+    case 'executive': {
       const overallProgress = calculateOverallProgress(projectPlan);
       const teamUtilization = calculateTeamUtilization(projectPlan);
       const riskLevel = calculateProjectRisk(projectPlan);
@@ -1289,6 +1294,7 @@ ${
           },
         ],
       };
+    }
 
     case 'status':
       return {

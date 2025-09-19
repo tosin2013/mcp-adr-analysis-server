@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { jest as _jest } from '@jest/globals';
 import {
   combinePrompts,
   createAIDelegationPrompt,
@@ -16,7 +16,7 @@ import {
   CombinedPrompt,
   AIDelegationPrompt,
   JSONSchemaSpec,
-  PromptValidationResult
+  PromptValidationResult,
 } from '../../src/utils/prompt-composition.js';
 
 describe('Prompt Composition Utilities', () => {
@@ -24,13 +24,13 @@ describe('Prompt Composition Utilities', () => {
     const mockPrompt1: PromptObject = {
       prompt: 'Analyze the system architecture',
       instructions: 'Focus on scalability patterns',
-      context: { type: 'architecture', priority: 'high' }
+      context: { type: 'architecture', priority: 'high' },
     };
 
     const mockPrompt2: PromptObject = {
       prompt: 'Review security considerations',
       instructions: 'Identify potential vulnerabilities',
-      context: { domain: 'security', level: 'critical' }
+      context: { domain: 'security', level: 'critical' },
     };
 
     it('should combine multiple prompts correctly', () => {
@@ -45,7 +45,7 @@ describe('Prompt Composition Utilities', () => {
         type: 'architecture',
         priority: 'high',
         domain: 'security',
-        level: 'critical'
+        level: 'critical',
       });
       expect(result.metadata.sourcePrompts).toBe(2);
       expect(result.metadata.combinedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
@@ -69,7 +69,7 @@ describe('Prompt Composition Utilities', () => {
       const promptWithoutContext: PromptObject = {
         prompt: 'Test prompt',
         instructions: 'Test instructions',
-        context: {}
+        context: {},
       };
 
       const result = combinePrompts(promptWithoutContext, mockPrompt1);
@@ -123,10 +123,10 @@ describe('Prompt Composition Utilities', () => {
       type: 'object',
       properties: {
         name: { type: 'string' },
-        age: { type: 'number' }
+        age: { type: 'number' },
       },
       required: ['name'],
-      description: 'Person information'
+      description: 'Person information',
     };
 
     it('should add JSON schema to prompt', () => {
@@ -145,7 +145,7 @@ describe('Prompt Composition Utilities', () => {
     it('should handle schema without description', () => {
       const schemaWithoutDesc: JSONSchemaSpec = {
         type: 'array',
-        items: { type: 'string' }
+        items: { type: 'string' },
       };
 
       const result = addJSONSchema('Test prompt', schemaWithoutDesc);
@@ -225,14 +225,18 @@ describe('Prompt Composition Utilities', () => {
       const longResponse = 'A'.repeat(15000);
       const result = validatePromptResponse(longResponse, 'text');
 
-      expect(result.suggestions).toContain('Consider breaking down the response into smaller sections');
+      expect(result.suggestions).toContain(
+        'Consider breaking down the response into smaller sections'
+      );
     });
 
     it('should suggest structure improvements', () => {
       const unstructuredResponse = 'Single line response without breaks';
       const result = validatePromptResponse(unstructuredResponse, 'text');
 
-      expect(result.suggestions).toContain('Consider adding more structure with line breaks and sections');
+      expect(result.suggestions).toContain(
+        'Consider adding more structure with line breaks and sections'
+      );
     });
   });
 
@@ -253,7 +257,7 @@ describe('Prompt Composition Utilities', () => {
     it('should include JSON schema when provided', () => {
       const schema: JSONSchemaSpec = {
         type: 'object',
-        properties: { analysis: { type: 'string' } }
+        properties: { analysis: { type: 'string' } },
       };
       const result = createFileAnalysisPrompt(['test.ts'], 'testing', schema);
 
@@ -395,17 +399,21 @@ console.log('code block');
       const projectPrompt: PromptObject = {
         prompt: 'Analyze project structure',
         instructions: 'Focus on architecture',
-        context: { type: 'project' }
+        context: { type: 'project' },
       };
 
       const filePrompt: PromptObject = {
         prompt: 'Analyze individual files',
         instructions: 'Check code quality',
-        context: { type: 'files' }
+        context: { type: 'files' },
       };
 
       const additionalRequirements = ['Include performance metrics', 'Add security assessment'];
-      const result = createComprehensiveAnalysisPrompt(projectPrompt, filePrompt, additionalRequirements);
+      const result = createComprehensiveAnalysisPrompt(
+        projectPrompt,
+        filePrompt,
+        additionalRequirements
+      );
 
       expect(result.prompt).toContain('Analyze project structure');
       expect(result.prompt).toContain('---');
@@ -419,13 +427,13 @@ console.log('code block');
       const projectPrompt: PromptObject = {
         prompt: 'Test prompt 1',
         instructions: 'Test instructions 1',
-        context: {}
+        context: {},
       };
 
       const filePrompt: PromptObject = {
         prompt: 'Test prompt 2',
         instructions: 'Test instructions 2',
-        context: {}
+        context: {},
       };
 
       const result = createComprehensiveAnalysisPrompt(projectPrompt, filePrompt);
@@ -449,8 +457,12 @@ console.log('code block');
     });
 
     it('should create ADR analysis prompt for different analysis types', () => {
-      const analysisTypes: Array<'structure' | 'content' | 'relationships' | 'compliance'> = 
-        ['structure', 'content', 'relationships', 'compliance'];
+      const analysisTypes: Array<'structure' | 'content' | 'relationships' | 'compliance'> = [
+        'structure',
+        'content',
+        'relationships',
+        'compliance',
+      ];
 
       analysisTypes.forEach(type => {
         const result = createADRAnalysisPrompt('/docs/adrs', type);
@@ -497,7 +509,7 @@ console.log('code block');
       const prompt: PromptObject = {
         prompt: 'Test prompt',
         instructions: 'Test instructions',
-        context: { key: 'value' }
+        context: { key: 'value' },
       };
 
       expect(prompt.prompt).toBe('Test prompt');
@@ -513,8 +525,8 @@ console.log('code block');
         metadata: {
           sourcePrompts: 2,
           combinedAt: '2024-01-01T00:00:00.000Z',
-          totalLength: 100
-        }
+          totalLength: 100,
+        },
       };
 
       expect(combined.metadata.sourcePrompts).toBe(2);
@@ -528,7 +540,7 @@ console.log('code block');
         instructions: 'Test instructions',
         requirements: ['req1', 'req2'],
         outputFormat: 'JSON format',
-        context: { optional: true }
+        context: { optional: true },
       };
 
       expect(delegation.task).toBe('Test task');
@@ -541,10 +553,10 @@ console.log('code block');
         type: 'object',
         properties: {
           name: { type: 'string' },
-          age: { type: 'number' }
+          age: { type: 'number' },
         },
         required: ['name'],
-        description: 'Test schema'
+        description: 'Test schema',
       };
 
       expect(schema.type).toBe('object');
@@ -558,7 +570,7 @@ console.log('code block');
         isValid: true,
         errors: ['error1'],
         warnings: ['warning1'],
-        suggestions: ['suggestion1']
+        suggestions: ['suggestion1'],
       };
 
       expect(result.isValid).toBe(true);

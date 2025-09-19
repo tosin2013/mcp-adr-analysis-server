@@ -1243,7 +1243,7 @@ async function checkTestCoverage(projectPath: string): Promise<number> {
         }
       }
     }
-  } catch (error) {
+  } catch {
     // Coverage not available
   }
 
@@ -1348,7 +1348,7 @@ function loadDeploymentHistory(historyPath: string): { deployments: DeploymentRe
   try {
     const content = readFileSync(historyPath, 'utf8');
     return JSON.parse(content);
-  } catch (error) {
+  } catch {
     return { deployments: [] };
   }
 }
@@ -1844,7 +1844,7 @@ async function analyzeCodeQualityWithTreeSitter(
             }
           }
         }
-      } catch (error) {
+      } catch {
         // Skip directories we can't read
       }
     };

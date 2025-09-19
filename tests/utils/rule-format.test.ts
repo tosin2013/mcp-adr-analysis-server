@@ -3,7 +3,7 @@
  * Comprehensive test coverage for all exported functions and interfaces
  */
 
-import { jest } from '@jest/globals';
+import { jest as _jest } from '@jest/globals';
 import {
   createRuleSet,
   serializeRuleSetToJson,
@@ -12,9 +12,13 @@ import {
   createComplianceReport,
   serializeComplianceReportToJson,
   RuleSet,
-  ComplianceReport
+  ComplianceReport,
 } from '../../src/utils/rule-format';
-import { ArchitecturalRule, ValidationResult, RuleViolation } from '../../src/utils/rule-generation';
+import {
+  ArchitecturalRule,
+  ValidationResult,
+  RuleViolation,
+} from '../../src/utils/rule-generation';
 
 describe('rule-format', () => {
   const mockArchitecturalRule: ArchitecturalRule = {
@@ -29,13 +33,13 @@ describe('rule-format', () => {
     message: 'Test rule violation',
     examples: {
       valid: ['valid example'],
-      invalid: ['invalid example']
+      invalid: ['invalid example'],
     },
     sourceAdrs: ['adr-001'],
     evidence: ['test evidence'],
     automatable: true,
     confidence: 0.9,
-    tags: ['test', 'architecture']
+    tags: ['test', 'architecture'],
   };
 
   const mockRuleViolation: RuleViolation = {
@@ -47,13 +51,13 @@ describe('rule-format', () => {
       line: 10,
       column: 5,
       endLine: 10,
-      endColumn: 20
+      endColumn: 20,
     },
     codeSnippet: 'test code snippet',
     suggestion: 'Fix the test issue',
     effort: 'low',
     priority: 'medium',
-    category: 'architectural'
+    category: 'architectural',
   };
 
   const mockValidationResult: ValidationResult = {
@@ -70,9 +74,9 @@ describe('rule-format', () => {
         ruleName: 'Passing Rule',
         status: 'passed',
         evidence: 'Code follows the rule',
-        location: 'line 5'
-      }
-    ]
+        location: 'line 5',
+      },
+    ],
   };
 
   describe('createRuleSet', () => {
@@ -113,7 +117,7 @@ describe('rule-format', () => {
       const securityRule: ArchitecturalRule = {
         ...mockArchitecturalRule,
         id: 'security-rule-1',
-        category: 'security'
+        category: 'security',
       };
       const rules = [mockArchitecturalRule, securityRule];
       const ruleSet = createRuleSet('Mixed Rules', 'Mixed rule set', rules);
@@ -250,15 +254,17 @@ describe('rule-format', () => {
     it('should validate rule types and severities', () => {
       const invalidRuleSet = {
         metadata: { version: '1.0.0', name: 'Test' },
-        rules: [{
-          id: 'test',
-          name: 'Test',
-          description: 'Test',
-          type: 'invalid_type',
-          severity: 'invalid_severity'
-        }],
+        rules: [
+          {
+            id: 'test',
+            name: 'Test',
+            description: 'Test',
+            type: 'invalid_type',
+            severity: 'invalid_severity',
+          },
+        ],
         categories: [],
-        dependencies: []
+        dependencies: [],
       };
 
       expect(() => parseRuleSetFromJson(JSON.stringify(invalidRuleSet))).toThrow();
@@ -292,20 +298,22 @@ describe('rule-format', () => {
       const criticalViolation: RuleViolation = { ...mockRuleViolation, severity: 'critical' };
       const criticalResult: ValidationResult = {
         ...mockValidationResult,
-        violations: [criticalViolation]
+        violations: [criticalViolation],
       };
       const criticalReport = createComplianceReport('Test', '1.0.0', [criticalResult]);
       expect(criticalReport.summary.riskLevel).toBe('critical');
 
       // Test high risk level
-      const errorViolations = Array(6).fill(0).map((_, i) => ({
-        ...mockRuleViolation,
-        ruleId: `error-rule-${i}`,
-        severity: 'error' as const
-      }));
+      const errorViolations = Array(6)
+        .fill(0)
+        .map((_, i) => ({
+          ...mockRuleViolation,
+          ruleId: `error-rule-${i}`,
+          severity: 'error' as const,
+        }));
       const highRiskResult: ValidationResult = {
         ...mockValidationResult,
-        violations: errorViolations
+        violations: errorViolations,
       };
       const highRiskReport = createComplianceReport('Test', '1.0.0', [highRiskResult]);
       expect(highRiskReport.summary.riskLevel).toBe('high');
@@ -314,7 +322,7 @@ describe('rule-format', () => {
       const mediumRiskResult: ValidationResult = {
         ...mockValidationResult,
         overallCompliance: 0.7,
-        violations: []
+        violations: [],
       };
       const mediumRiskReport = createComplianceReport('Test', '1.0.0', [mediumRiskResult]);
       expect(mediumRiskReport.summary.riskLevel).toBe('medium');
@@ -404,7 +412,9 @@ describe('rule-format', () => {
     });
 
     it('should validate ComplianceReport interface structure', () => {
-      const report: ComplianceReport = createComplianceReport('Test', '1.0.0', [mockValidationResult]);
+      const report: ComplianceReport = createComplianceReport('Test', '1.0.0', [
+        mockValidationResult,
+      ]);
 
       expect(report).toHaveProperty('metadata');
       expect(report).toHaveProperty('summary');
@@ -449,7 +459,7 @@ describe('rule-format', () => {
       circularRuleSet.circular = circularRuleSet;
 
       expect(() => serializeRuleSetToJson(circularRuleSet)).toThrow();
-      
+
       // Test YAML serialization with invalid data structure
       const invalidRuleSet: any = { metadata: { name: null } };
       expect(() => serializeRuleSetToYaml(invalidRuleSet)).toThrow();

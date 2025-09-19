@@ -313,9 +313,10 @@ function processChoice(
     case 'i':
       return { type: 'ignore', filePath: item.filePath };
 
-    case 'm':
+    case 'm': {
       const targetDir = getMoveTarget(item);
       return { type: 'move', filePath: item.filePath, target: targetDir };
+    }
 
     case 'v':
       viewFileContent(item.filePath);

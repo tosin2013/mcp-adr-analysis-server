@@ -1,7 +1,7 @@
 import { jest } from '@jest/globals';
 import { generateAdrBootstrapScripts } from '../../src/tools/adr-bootstrap-validation-tool.js';
 import { McpAdrError } from '../../src/types/index.js';
-import path from 'path';
+// import path from 'path';
 
 // Mock the adr-discovery module
 jest.mock('../../src/utils/adr-discovery.js', () => ({

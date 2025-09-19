@@ -1,9 +1,9 @@
-import { jest } from '@jest/globals';
+import { jest as _jest } from '@jest/globals';
 import {
   generateRuleExtractionPrompt,
   generatePatternBasedRulePrompt,
   generateCodeValidationPrompt,
-  generateRuleDeviationReportPrompt
+  generateRuleDeviationReportPrompt,
 } from '../../src/prompts/rule-generation-prompts.js';
 
 describe('Rule Generation Prompts', () => {
@@ -12,30 +12,32 @@ describe('Rule Generation Prompts', () => {
       {
         id: 'adr-001',
         title: 'Use Microservices Architecture',
-        content: 'We have decided to adopt a microservices architecture for better scalability and maintainability. Each service should be independently deployable and have its own database.',
+        content:
+          'We have decided to adopt a microservices architecture for better scalability and maintainability. Each service should be independently deployable and have its own database.',
         status: 'accepted',
-        category: 'architecture'
+        category: 'architecture',
       },
       {
         id: 'adr-002',
         title: 'Implement Event-Driven Communication',
-        content: 'Services will communicate through events using a message broker. This ensures loose coupling and better resilience.',
+        content:
+          'Services will communicate through events using a message broker. This ensures loose coupling and better resilience.',
         status: 'accepted',
-        category: 'integration'
-      }
+        category: 'integration',
+      },
     ];
 
     const mockExistingRules = [
       {
         id: 'rule-001',
         name: 'Service Independence',
-        description: 'Each microservice must be independently deployable'
+        description: 'Each microservice must be independently deployable',
       },
       {
         id: 'rule-002',
         name: 'Database Per Service',
-        description: 'Each service should have its own dedicated database'
-      }
+        description: 'Each service should have its own dedicated database',
+      },
     ];
 
     it('should generate rule extraction prompt with ADR files and existing rules', () => {
@@ -51,8 +53,12 @@ describe('Rule Generation Prompts', () => {
       expect(result).toContain('**ID**: adr-002');
       expect(result).toContain('**Category**: integration');
       expect(result).toContain('## Existing Rules');
-      expect(result).toContain('- **Service Independence**: Each microservice must be independently deployable');
-      expect(result).toContain('- **Database Per Service**: Each service should have its own dedicated database');
+      expect(result).toContain(
+        '- **Service Independence**: Each microservice must be independently deployable'
+      );
+      expect(result).toContain(
+        '- **Database Per Service**: Each service should have its own dedicated database'
+      );
     });
 
     it('should generate rule extraction prompt without existing rules', () => {
@@ -81,13 +87,15 @@ describe('Rule Generation Prompts', () => {
     });
 
     it('should truncate long ADR content', () => {
-      const longContentAdr = [{
-        id: 'adr-long',
-        title: 'Long ADR',
-        content: 'A'.repeat(2000),
-        status: 'accepted',
-        category: 'test'
-      }];
+      const longContentAdr = [
+        {
+          id: 'adr-long',
+          title: 'Long ADR',
+          content: 'A'.repeat(2000),
+          status: 'accepted',
+          category: 'test',
+        },
+      ];
 
       const result = generateRuleExtractionPrompt(longContentAdr);
 
@@ -103,12 +111,14 @@ describe('Rule Generation Prompts', () => {
     });
 
     it('should handle ADRs without categories', () => {
-      const adrWithoutCategory = [{
-        id: 'adr-no-cat',
-        title: 'No Category ADR',
-        content: 'Content without category',
-        status: 'draft'
-      }];
+      const adrWithoutCategory = [
+        {
+          id: 'adr-no-cat',
+          title: 'No Category ADR',
+          content: 'Content without category',
+          status: 'draft',
+        },
+      ];
 
       const result = generateRuleExtractionPrompt(adrWithoutCategory);
 
@@ -119,12 +129,16 @@ describe('Rule Generation Prompts', () => {
       const result = generateRuleExtractionPrompt(mockAdrFiles);
 
       expect(result).toContain('## Extraction Guidelines');
-      expect(result).toContain('1. **Actionable Rules**: Focus on rules that can be validated or enforced');
+      expect(result).toContain(
+        '1. **Actionable Rules**: Focus on rules that can be validated or enforced'
+      );
       expect(result).toContain('2. **Clear Patterns**: Ensure rules have clear detection patterns');
       expect(result).toContain('3. **Specific Messages**: Provide helpful violation messages');
       expect(result).toContain('4. **Evidence-Based**: Link rules to specific ADR content');
-      expect(result).toContain('5. **Practical Implementation**: Consider how rules can be validated in practice');
-      expect(result).toContain('6. **Avoid Duplication**: Don\'t extract rules that already exist');
+      expect(result).toContain(
+        '5. **Practical Implementation**: Consider how rules can be validated in practice'
+      );
+      expect(result).toContain("6. **Avoid Duplication**: Don't extract rules that already exist");
     });
   });
 
@@ -148,28 +162,32 @@ src/
         frequency: 15,
         examples: [
           'export const Button = ({ onClick, children }) => { return <button onClick={onClick}>{children}</button>; };',
-          'export const Input = ({ value, onChange }) => { return <input value={value} onChange={onChange} />; };'
+          'export const Input = ({ value, onChange }) => { return <input value={value} onChange={onChange} />; };',
         ],
-        category: 'component'
+        category: 'component',
       },
       {
         pattern: 'Service Class Pattern',
         frequency: 8,
         examples: [
           'export class ApiService { async get(url: string) { return fetch(url); } }',
-          'export class AuthService { login(credentials: any) { /* implementation */ } }'
+          'export class AuthService { login(credentials: any) { /* implementation */ } }',
         ],
-        category: 'service'
-      }
+        category: 'service',
+      },
     ];
 
     const mockExistingRules = [
       'Components must use TypeScript',
-      'Services must implement error handling'
+      'Services must implement error handling',
     ];
 
     it('should generate pattern-based rule prompt with all parameters', () => {
-      const result = generatePatternBasedRulePrompt(mockProjectStructure, mockCodePatterns, mockExistingRules);
+      const result = generatePatternBasedRulePrompt(
+        mockProjectStructure,
+        mockCodePatterns,
+        mockExistingRules
+      );
 
       expect(result).toContain('# Pattern-Based Rule Generation');
       expect(result).toContain('## Project Structure');
@@ -231,11 +249,17 @@ src/
 
       expect(result).toContain('## Generation Guidelines');
       expect(result).toContain('1. **Pattern-Based**: Base rules on actual observed patterns');
-      expect(result).toContain('2. **Frequency-Weighted**: Prioritize rules based on pattern frequency');
+      expect(result).toContain(
+        '2. **Frequency-Weighted**: Prioritize rules based on pattern frequency'
+      );
       expect(result).toContain('3. **Consistency-Focused**: Emphasize consistency over perfection');
-      expect(result).toContain('4. **Practical Validation**: Ensure rules can be automatically validated');
+      expect(result).toContain(
+        '4. **Practical Validation**: Ensure rules can be automatically validated'
+      );
       expect(result).toContain('5. **Clear Rationale**: Explain why each rule is beneficial');
-      expect(result).toContain('6. **Incremental Implementation**: Provide phased implementation approach');
+      expect(result).toContain(
+        '6. **Incremental Implementation**: Provide phased implementation approach'
+      );
     });
   });
 
@@ -268,7 +292,7 @@ export const Button = ({ onClick, children, disabled = false }) => {
         description: 'All React components must define TypeScript interfaces for props',
         pattern: 'interface.*Props',
         severity: 'error',
-        message: 'Component props must be typed with TypeScript interface'
+        message: 'Component props must be typed with TypeScript interface',
       },
       {
         id: 'react-002',
@@ -276,8 +300,8 @@ export const Button = ({ onClick, children, disabled = false }) => {
         description: 'Optional callback props should be safely invoked',
         pattern: '\\?\\.',
         severity: 'warning',
-        message: 'Use optional chaining for callback props'
-      }
+        message: 'Use optional chaining for callback props',
+      },
     ];
 
     it('should generate code validation prompt with default file type', () => {
@@ -299,7 +323,12 @@ export const Button = ({ onClick, children, disabled = false }) => {
     });
 
     it('should generate code validation prompt with custom validation type', () => {
-      const result = generateCodeValidationPrompt(mockCodeToValidate, 'Button.tsx', mockRules, 'component');
+      const result = generateCodeValidationPrompt(
+        mockCodeToValidate,
+        'Button.tsx',
+        mockRules,
+        'component'
+      );
 
       expect(result).toContain('**Validation Type**: component');
     });
@@ -349,14 +378,25 @@ export const Button = ({ onClick, children, disabled = false }) => {
       expect(result).toContain('## Validation Guidelines');
       expect(result).toContain('1. **Thorough Analysis**: Check every applicable rule carefully');
       expect(result).toContain('2. **Precise Locations**: Provide exact line and column numbers');
-      expect(result).toContain('3. **Actionable Feedback**: Give specific, implementable suggestions');
+      expect(result).toContain(
+        '3. **Actionable Feedback**: Give specific, implementable suggestions'
+      );
       expect(result).toContain('4. **Severity Appropriate**: Use appropriate severity levels');
-      expect(result).toContain('5. **Context Aware**: Consider the specific context and purpose of the code');
-      expect(result).toContain('6. **Constructive Tone**: Focus on improvement rather than criticism');
+      expect(result).toContain(
+        '5. **Context Aware**: Consider the specific context and purpose of the code'
+      );
+      expect(result).toContain(
+        '6. **Constructive Tone**: Focus on improvement rather than criticism'
+      );
     });
 
     it('should handle different validation types', () => {
-      const validationTypes: Array<'file' | 'function' | 'component' | 'module'> = ['file', 'function', 'component', 'module'];
+      const validationTypes: Array<'file' | 'function' | 'component' | 'module'> = [
+        'file',
+        'function',
+        'component',
+        'module',
+      ];
 
       validationTypes.forEach(type => {
         const result = generateCodeValidationPrompt(mockCodeToValidate, 'test.ts', mockRules, type);
@@ -375,24 +415,24 @@ export const Button = ({ onClick, children, disabled = false }) => {
             ruleName: 'Use TypeScript for Props',
             severity: 'error',
             message: 'Component props must be typed with TypeScript interface',
-            location: { line: 3, column: 1 }
+            location: { line: 3, column: 1 },
           },
           {
             ruleId: 'react-002',
             ruleName: 'Handle Optional Callbacks',
             severity: 'warning',
             message: 'Use optional chaining for callback props',
-            location: { line: 6, column: 5 }
-          }
+            location: { line: 6, column: 5 },
+          },
         ],
         compliance: [
           {
             ruleId: 'react-003',
             ruleName: 'Use Functional Components',
-            status: 'compliant'
-          }
+            status: 'compliant',
+          },
         ],
-        overallCompliance: 0.85
+        overallCompliance: 0.85,
       },
       {
         fileName: 'Input.tsx',
@@ -402,23 +442,23 @@ export const Button = ({ onClick, children, disabled = false }) => {
             ruleName: 'Use TypeScript for Props',
             severity: 'error',
             message: 'Component props must be typed with TypeScript interface',
-            location: { line: 2, column: 1 }
-          }
+            location: { line: 2, column: 1 },
+          },
         ],
         compliance: [
           {
             ruleId: 'react-002',
             ruleName: 'Handle Optional Callbacks',
-            status: 'compliant'
+            status: 'compliant',
           },
           {
             ruleId: 'react-003',
             ruleName: 'Use Functional Components',
-            status: 'compliant'
-          }
+            status: 'compliant',
+          },
         ],
-        overallCompliance: 0.75
-      }
+        overallCompliance: 0.75,
+      },
     ];
 
     const mockRules = [
@@ -426,20 +466,20 @@ export const Button = ({ onClick, children, disabled = false }) => {
         id: 'react-001',
         name: 'Use TypeScript for Props',
         category: 'typing',
-        severity: 'error'
+        severity: 'error',
       },
       {
         id: 'react-002',
         name: 'Handle Optional Callbacks',
         category: 'safety',
-        severity: 'warning'
+        severity: 'warning',
       },
       {
         id: 'react-003',
         name: 'Use Functional Components',
         category: 'architecture',
-        severity: 'info'
-      }
+        severity: 'info',
+      },
     ];
 
     it('should generate rule deviation report with default summary type', () => {
@@ -458,7 +498,11 @@ export const Button = ({ onClick, children, disabled = false }) => {
     });
 
     it('should generate rule deviation report with custom report type', () => {
-      const result = generateRuleDeviationReportPrompt(mockValidationResults, mockRules, 'detailed');
+      const result = generateRuleDeviationReportPrompt(
+        mockValidationResults,
+        mockRules,
+        'detailed'
+      );
 
       expect(result).toContain('## Report Type');
       expect(result).toContain('DETAILED');
@@ -489,7 +533,11 @@ export const Button = ({ onClick, children, disabled = false }) => {
     });
 
     it('should include output format with metadata', () => {
-      const result = generateRuleDeviationReportPrompt(mockValidationResults, mockRules, 'compliance');
+      const result = generateRuleDeviationReportPrompt(
+        mockValidationResults,
+        mockRules,
+        'compliance'
+      );
 
       expect(result).toContain('## Output Format');
       expect(result).toContain('"reportMetadata"');
@@ -525,16 +573,29 @@ export const Button = ({ onClick, children, disabled = false }) => {
       const result = generateRuleDeviationReportPrompt(mockValidationResults, mockRules);
 
       expect(result).toContain('## Report Guidelines');
-      expect(result).toContain('1. **Data-Driven**: Base all conclusions on actual validation data');
-      expect(result).toContain('2. **Actionable**: Provide specific, implementable recommendations');
+      expect(result).toContain(
+        '1. **Data-Driven**: Base all conclusions on actual validation data'
+      );
+      expect(result).toContain(
+        '2. **Actionable**: Provide specific, implementable recommendations'
+      );
       expect(result).toContain('3. **Prioritized**: Rank issues and actions by impact and urgency');
       expect(result).toContain('4. **Realistic**: Set achievable goals and timelines');
-      expect(result).toContain('5. **Comprehensive**: Cover all aspects of compliance and improvement');
-      expect(result).toContain('6. **Strategic**: Align recommendations with business and technical goals');
+      expect(result).toContain(
+        '5. **Comprehensive**: Cover all aspects of compliance and improvement'
+      );
+      expect(result).toContain(
+        '6. **Strategic**: Align recommendations with business and technical goals'
+      );
     });
 
     it('should handle different report types', () => {
-      const reportTypes: Array<'summary' | 'detailed' | 'trend' | 'compliance'> = ['summary', 'detailed', 'trend', 'compliance'];
+      const reportTypes: Array<'summary' | 'detailed' | 'trend' | 'compliance'> = [
+        'summary',
+        'detailed',
+        'trend',
+        'compliance',
+      ];
 
       reportTypes.forEach(type => {
         const result = generateRuleDeviationReportPrompt(mockValidationResults, mockRules, type);
@@ -545,33 +606,41 @@ export const Button = ({ onClick, children, disabled = false }) => {
     it('should display violation details correctly', () => {
       const result = generateRuleDeviationReportPrompt(mockValidationResults, mockRules);
 
-      expect(result).toContain('- **Use TypeScript for Props** (error): Component props must be typed with TypeScript interface');
-      expect(result).toContain('- **Handle Optional Callbacks** (warning): Use optional chaining for callback props');
+      expect(result).toContain(
+        '- **Use TypeScript for Props** (error): Component props must be typed with TypeScript interface'
+      );
+      expect(result).toContain(
+        '- **Handle Optional Callbacks** (warning): Use optional chaining for callback props'
+      );
     });
   });
 
   describe('Edge Cases and Error Handling', () => {
     it('should handle very long content in ADR files', () => {
-      const longAdr = [{
-        id: 'long-adr',
-        title: 'Very Long ADR',
-        content: 'A'.repeat(5000),
-        status: 'accepted',
-        category: 'test'
-      }];
+      const longAdr = [
+        {
+          id: 'long-adr',
+          title: 'Very Long ADR',
+          content: 'A'.repeat(5000),
+          status: 'accepted',
+          category: 'test',
+        },
+      ];
 
       const result = generateRuleExtractionPrompt(longAdr);
       expect(result).toContain('... (truncated for analysis)');
     });
 
     it('should handle special characters in content', () => {
-      const specialCharAdr = [{
-        id: 'special-adr',
-        title: 'ADR with émojis 🚀 and ünïcödé',
-        content: 'Content with special characters: @#$%^&*()_+{}|:"<>?',
-        status: 'accepted',
-        category: 'test'
-      }];
+      const specialCharAdr = [
+        {
+          id: 'special-adr',
+          title: 'ADR with émojis 🚀 and ünïcödé',
+          content: 'Content with special characters: @#$%^&*()_+{}|:"<>?',
+          status: 'accepted',
+          category: 'test',
+        },
+      ];
 
       const result = generateRuleExtractionPrompt(specialCharAdr);
       expect(result).toContain('ADR with émojis 🚀 and ünïcödé');
@@ -579,13 +648,15 @@ export const Button = ({ onClick, children, disabled = false }) => {
     });
 
     it('should handle empty strings in various fields', () => {
-      const emptyFieldsAdr = [{
-        id: '',
-        title: '',
-        content: '',
-        status: '',
-        category: ''
-      }];
+      const emptyFieldsAdr = [
+        {
+          id: '',
+          title: '',
+          content: '',
+          status: '',
+          category: '',
+        },
+      ];
 
       const result = generateRuleExtractionPrompt(emptyFieldsAdr);
       expect(result).toContain('**ID**: ');
@@ -606,7 +677,7 @@ export const Button = ({ onClick, children, disabled = false }) => {
         description: `Description for rule ${i}`,
         pattern: `pattern-${i}`,
         severity: 'info',
-        message: `Message for rule ${i}`
+        message: `Message for rule ${i}`,
       }));
 
       const result = generateCodeValidationPrompt('test code', 'test.ts', manyRules);
@@ -614,25 +685,29 @@ export const Button = ({ onClick, children, disabled = false }) => {
     });
 
     it('should handle complex nested data structures', () => {
-      const complexValidationResults = [{
-        fileName: 'complex.ts',
-        violations: [{
-          ruleId: 'complex-rule',
-          ruleName: 'Complex Rule',
-          severity: 'error',
-          message: 'Complex violation message',
-          location: {
-            line: 1,
-            column: 1,
-            nested: {
-              data: 'test',
-              array: [1, 2, 3]
-            }
-          }
-        }],
-        compliance: [],
-        overallCompliance: 0.5
-      }];
+      const complexValidationResults = [
+        {
+          fileName: 'complex.ts',
+          violations: [
+            {
+              ruleId: 'complex-rule',
+              ruleName: 'Complex Rule',
+              severity: 'error',
+              message: 'Complex violation message',
+              location: {
+                line: 1,
+                column: 1,
+                nested: {
+                  data: 'test',
+                  array: [1, 2, 3],
+                },
+              },
+            },
+          ],
+          compliance: [],
+          overallCompliance: 0.5,
+        },
+      ];
 
       const result = generateRuleDeviationReportPrompt(complexValidationResults, []);
       expect(result).toContain('Complex Rule');
@@ -649,7 +724,7 @@ export const Button = ({ onClick, children, disabled = false }) => {
         '## ADR Files',
         '## Suggested Rule Categories',
         '## Output Format',
-        '## Extraction Guidelines'
+        '## Extraction Guidelines',
       ];
 
       requiredSections.forEach(section => {
@@ -666,7 +741,7 @@ export const Button = ({ onClick, children, disabled = false }) => {
         '## Detected Code Patterns',
         '## Pattern Analysis Requirements',
         '## Output Format',
-        '## Generation Guidelines'
+        '## Generation Guidelines',
       ];
 
       requiredSections.forEach(section => {
@@ -683,7 +758,7 @@ export const Button = ({ onClick, children, disabled = false }) => {
         '## Architectural Rules',
         '## Validation Requirements',
         '## Output Format',
-        '## Validation Guidelines'
+        '## Validation Guidelines',
       ];
 
       requiredSections.forEach(section => {
@@ -701,7 +776,7 @@ export const Button = ({ onClick, children, disabled = false }) => {
         '## Report Type',
         '## Report Requirements',
         '## Output Format',
-        '## Report Guidelines'
+        '## Report Guidelines',
       ];
 
       requiredSections.forEach(section => {

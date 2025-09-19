@@ -4632,7 +4632,7 @@ The enhanced process maintains full traceability from PRD requirements to genera
           this.logger.info(
             'Backup feature deprecated - use mcp-shrimp-task-manager for task management'
           );
-        } catch (error) {
+        } catch {
           // Continue if backup fails - might be first time setup
           this.logger.debug('No existing JSON data to backup');
         }

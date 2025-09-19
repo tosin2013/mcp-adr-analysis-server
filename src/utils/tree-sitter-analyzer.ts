@@ -855,7 +855,7 @@ export class TreeSitterAnalyzer {
 
     // Extract Kubernetes resources
     const resourceMatches = content.match(/kind:\s*(\w+)/g) || [];
-    const apiVersionMatches = content.match(/apiVersion:\s*([\w\/]+)/g) || [];
+    const apiVersionMatches = content.match(/apiVersion:\s*([\w/]+)/g) || [];
     const nameMatches = content.match(/name:\s*([\w.-]+)/g) || [];
 
     if (resourceMatches.length > 0) {

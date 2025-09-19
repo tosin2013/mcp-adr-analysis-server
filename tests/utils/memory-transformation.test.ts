@@ -10,9 +10,9 @@ import { MemoryTransformer } from '../../src/utils/memory-transformation.js';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import { DiscoveredAdr } from '../../src/utils/adr-discovery.js';
 import {
-  ArchitecturalDecisionMemory,
-  KnowledgeArtifactMemory,
-  MemoryRelationship,
+  ArchitecturalDecisionMemory as _ArchitecturalDecisionMemory,
+  KnowledgeArtifactMemory as _KnowledgeArtifactMemory,
+  MemoryRelationship as _MemoryRelationship,
 } from '../../src/types/memory-entities.js';
 
 // Mock enhanced logging

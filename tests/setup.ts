@@ -75,7 +75,7 @@ afterAll(async () => {
     } else {
       console.warn('⚠️ TestInfrastructure.getMemoryStats not available for memory reporting');
     }
-  } catch (error) {
+  } catch {
     // Ignore cleanup errors in afterAll
   }
 });

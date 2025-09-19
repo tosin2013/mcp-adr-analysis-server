@@ -89,17 +89,17 @@ health: build
 	npm run health
 	@echo "Health check completed"
 
-# Run linting (TypeScript check only - most reliable)
+# Run linting (ESLint + TypeScript check)
 lint: check-deps
-	@echo "Running TypeScript compiler check..."
-	@npm run typecheck
-	@echo "✅ TypeScript linting completed successfully"
+	@echo "Running ESLint and TypeScript checks..."
+	@npm run lint
+	@echo "✅ Linting completed successfully"
 
 # CI-safe linting (skips audit check)
 lint-ci:
-	@echo "Running CI-safe TypeScript compiler check..."
-	@npm run typecheck
-	@echo "✅ CI TypeScript linting completed successfully"
+	@echo "Running CI-safe ESLint and TypeScript checks..."
+	@npm run lint
+	@echo "✅ CI linting completed successfully"
 
 # Clean build artifacts
 clean:
