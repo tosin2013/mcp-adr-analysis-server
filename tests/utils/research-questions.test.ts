@@ -162,7 +162,7 @@ describe('Research Questions Utilities', () => {
 
     it('should throw McpAdrError on import failure', async () => {
       // Mock the import to fail
-      const originalImport = (global as any).__original_import || eval('import');
+      const originalImport = (global as any).__original_import || (global as any).import;
       (global as any).import = jest.fn().mockRejectedValue(new Error('Import failed'));
 
       await expect(correlateProblemKnowledge(mockProblems, mockKnowledgeGraph)).rejects.toThrow(
@@ -232,7 +232,7 @@ describe('Research Questions Utilities', () => {
   });
 
   describe('generateContextAwareQuestions', () => {
-    const mockResearchContext: ResearchContext = {
+    const _mockResearchContext: ResearchContext = {
       topic: 'Microservices Migration',
       category: 'architecture',
       scope: 'system-wide',
@@ -253,6 +253,16 @@ describe('Research Questions Utilities', () => {
       adrs: [{ id: 'adr-001', title: 'Use Microservices', status: 'accepted' }],
       relationships: [{ source: 'Node.js', target: 'Microservices', type: 'implements' }],
     };
+
+    const mockProblems: ResearchProblem[] = [
+      {
+        id: 'prob-1',
+        description: 'A test research problem',
+        category: 'architecture',
+        severity: 'medium',
+        context: 'software development',
+      },
+    ];
 
     it('should correlate problems with knowledge graph', async () => {
       const result = await correlateProblemKnowledge(mockProblems, mockKnowledge);
