@@ -3,19 +3,26 @@
  */
 
 import { jest } from '@jest/globals';
-import { execSync } from 'child_process';
-import { unlinkSync, existsSync, readFileSync } from 'fs';
 
 // Mock child_process to control gitleaks behavior in tests
-jest.mock('child_process');
-const mockExecSync = execSync as jest.MockedFunction<typeof execSync>;
+const mockExecSync = jest.fn();
+const mockExistsSync = jest.fn();
+const mockReadFileSync = jest.fn();
+const mockUnlinkSync = jest.fn();
+const mockWriteFileSync = jest.fn();
 
-// Mock fs functions
-jest.mock('fs');
-// const mockWriteFileSync = writeFileSync as jest.MockedFunction<typeof writeFileSync>;
-const mockUnlinkSync = unlinkSync as jest.MockedFunction<typeof unlinkSync>;
-const mockExistsSync = existsSync as jest.MockedFunction<typeof existsSync>;
-const mockReadFileSync = readFileSync as jest.MockedFunction<typeof readFileSync>;
+// Set up mocks BEFORE importing the module
+jest.unstable_mockModule('child_process', () => ({
+  execSync: mockExecSync,
+  spawn: jest.fn(),
+}));
+
+jest.unstable_mockModule('fs', () => ({
+  existsSync: mockExistsSync,
+  readFileSync: mockReadFileSync,
+  unlinkSync: mockUnlinkSync,
+  writeFileSync: mockWriteFileSync,
+}));
 
 describe('Gitleaks Detector', () => {
   let analyzeSensitiveContent: any;
@@ -30,18 +37,24 @@ describe('Gitleaks Detector', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    // Default mocks
-    mockExistsSync.mockImplementation((path: string) => {
-      if (path.includes('.gitleaks.toml')) return true;
-      if (path.includes('gitleaks-output')) return true;
-      return false;
-    });
+
+    // Mock writeFileSync to avoid actual file operations
+    mockWriteFileSync.mockImplementation(() => {});
+
+    // Mock unlinkSync to avoid actual file deletion
+    mockUnlinkSync.mockImplementation(() => {});
   });
 
   describe('analyzeSensitiveContent', () => {
     it('should return empty result when no secrets found', async () => {
       // Mock gitleaks returning success (no secrets)
       mockExecSync.mockImplementation(() => '');
+
+      // Mock existsSync for config file check
+      mockExistsSync.mockImplementation((path: string) => {
+        if (path.includes('.gitleaks.toml')) return true;
+        return false;
+      });
 
       const result = await analyzeSensitiveContent('test.js', 'console.log("hello");');
 
@@ -61,14 +74,23 @@ describe('Gitleaks Detector', () => {
     });
 
     it('should parse gitleaks output when secrets are found', async () => {
-      // Mock gitleaks finding secrets (exit code 1)
-      const error = new Error('Gitleaks found secrets') as any;
-      error.status = 1;
+      // Setup: Create proper error object with status 1
+      const gitleaksError = new Error('Command failed') as any;
+      gitleaksError.status = 1;
+
+      // Setup: Mock execSync to throw the error
       mockExecSync.mockImplementation(() => {
-        throw error;
+        throw gitleaksError;
       });
 
-      // Mock the JSON output file
+      // Setup: Mock existsSync to return true for output files
+      mockExistsSync.mockImplementation((path: string) => {
+        if (path.includes('.gitleaks.toml')) return true;
+        if (path.includes('gitleaks-output')) return true;
+        return false;
+      });
+
+      // Setup: Mock the gitleaks JSON output
       const gitleaksOutput = [
         {
           Description: 'GitHub Personal Access Token',
@@ -82,16 +104,25 @@ describe('Gitleaks Detector', () => {
           RuleID: 'github-pat',
           Tags: ['key', 'github'],
           Entropy: 5.2,
+          Commit: '',
+          SymlinkFile: '',
+          Author: '',
+          Email: '',
+          Date: '',
+          Message: '',
+          Fingerprint: '',
         },
       ];
 
       mockReadFileSync.mockReturnValue(JSON.stringify(gitleaksOutput));
 
+      // Execute
       const result = await analyzeSensitiveContent(
         'test.js',
         'const token = "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";'
       );
 
+      // Verify
       expect(result.hasIssues).toBe(true);
       expect(result.matches).toHaveLength(1);
       expect(result.matches[0].pattern.name).toBe('github-pat');
@@ -120,6 +151,12 @@ describe('Gitleaks Detector', () => {
         throw error;
       });
 
+      mockExistsSync.mockImplementation((path: string) => {
+        if (path.includes('.gitleaks.toml')) return true;
+        if (path.includes('gitleaks-output')) return true;
+        return false;
+      });
+
       const gitleaksOutput = [
         {
           Description: 'Database password',
@@ -133,6 +170,13 @@ describe('Gitleaks Detector', () => {
           RuleID: 'db-password',
           Tags: ['password'],
           Entropy: 3.5,
+          Commit: '',
+          SymlinkFile: '',
+          Author: '',
+          Email: '',
+          Date: '',
+          Message: '',
+          Fingerprint: '',
         },
       ];
 
@@ -146,6 +190,13 @@ describe('Gitleaks Detector', () => {
 
     it('should clean up temporary files', async () => {
       mockExecSync.mockImplementation(() => '');
+
+      mockExistsSync.mockImplementation((path: string) => {
+        if (path.includes('.gitleaks.toml')) return true;
+        // For cleanup, we need to simulate that temp files exist
+        if (path.includes('gitleaks-scan-') || path.includes('gitleaks-output-')) return true;
+        return false;
+      });
 
       await analyzeSensitiveContent('test.js', 'console.log("hello");');
 
@@ -189,6 +240,12 @@ describe('Gitleaks Detector', () => {
           throw error;
         });
 
+        mockExistsSync.mockImplementation((path: string) => {
+          if (path.includes('.gitleaks.toml')) return true;
+          if (path.includes('gitleaks-output')) return true;
+          return false;
+        });
+
         const gitleaksOutput = [
           {
             Description: 'Test secret',
@@ -202,6 +259,13 @@ describe('Gitleaks Detector', () => {
             RuleID: testCase.ruleId,
             Tags: [],
             Entropy: 4.0,
+            Commit: '',
+            SymlinkFile: '',
+            Author: '',
+            Email: '',
+            Date: '',
+            Message: '',
+            Fingerprint: '',
           },
         ];
 
@@ -221,6 +285,12 @@ describe('Gitleaks Detector', () => {
         throw error;
       });
 
+      mockExistsSync.mockImplementation((path: string) => {
+        if (path.includes('.gitleaks.toml')) return true;
+        if (path.includes('gitleaks-output')) return true;
+        return false;
+      });
+
       const gitleaksOutput = [
         {
           Description: 'API Key',
@@ -234,6 +304,13 @@ describe('Gitleaks Detector', () => {
           RuleID: 'api-key',
           Tags: ['key'],
           Entropy: 4.0,
+          Commit: '',
+          SymlinkFile: '',
+          Author: '',
+          Email: '',
+          Date: '',
+          Message: '',
+          Fingerprint: '',
         },
       ];
 
@@ -254,6 +331,12 @@ describe('Gitleaks Detector', () => {
         throw error;
       });
 
+      mockExistsSync.mockImplementation((path: string) => {
+        if (path.includes('.gitleaks.toml')) return true;
+        if (path.includes('gitleaks-output')) return true;
+        return false;
+      });
+
       const gitleaksOutput = [
         {
           Description: 'Private Key',
@@ -267,6 +350,13 @@ describe('Gitleaks Detector', () => {
           RuleID: 'private-key',
           Tags: ['key'],
           Entropy: 4.0,
+          Commit: '',
+          SymlinkFile: '',
+          Author: '',
+          Email: '',
+          Date: '',
+          Message: '',
+          Fingerprint: '',
         },
       ];
 
