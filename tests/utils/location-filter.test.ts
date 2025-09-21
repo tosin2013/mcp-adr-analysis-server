@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect /* , beforeEach */ } from '@jest/globals';
 import {
   validateFileLocation,
   getLocationSuggestions,
   validateMultipleFiles,
   LocationRule,
-  LocationValidationResult,
+  // LocationValidationResult,
   DEFAULT_LOCATION_RULES,
 } from '../../src/utils/location-filter.js';
 

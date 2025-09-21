@@ -465,7 +465,8 @@ export class MemoryRelationshipMapper {
       'MemoryRelationshipMapper'
     );
     if (
-      deployment.assessmentData?.readinessScore != null &&
+      deployment.assessmentData?.readinessScore !== null &&
+      deployment.assessmentData?.readinessScore !== undefined &&
       deployment.assessmentData.readinessScore < 0.7 &&
       adr.decisionData?.status === 'accepted'
     ) {

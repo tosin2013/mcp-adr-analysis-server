@@ -1137,11 +1137,12 @@ export async function interactiveAdrPlanning(args: any): Promise<any> {
       case 'get_guidance':
         return await getGuidance(input);
 
-      case 'save_session':
+      case 'save_session': {
         const session = sessions.get(input.sessionId!);
         if (!session) throw new McpAdrError('Session not found', 'SESSION_NOT_FOUND');
         await saveSession(session);
         return { success: true, message: 'Session saved' };
+      }
 
       case 'complete_session':
         return await completeSession(input);
