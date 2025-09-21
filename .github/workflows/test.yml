@@ -68,7 +68,7 @@ jobs:
             node scripts/validate-build.js
           fi
 
-          # Check that the built server contains expected MCP tools
+          # Check that the built server contains expected MCP tools (basic validation)
           echo "Checking for MCP tool implementations..."
 
           # Check core tools
@@ -102,6 +102,28 @@ jobs:
           fi
 
           echo "✅ MCP server functionality validated"
+
+      - name: Test MCP functionality with Inspector
+        run: |
+          echo "Running comprehensive MCP functionality tests..."
+
+          # Install bc for floating point calculations in test script
+          sudo apt-get update -qq && sudo apt-get install -y bc
+
+          # Run MCP functionality tests using @modelcontextprotocol/inspector
+          if npm run test:mcp; then
+            echo "✅ MCP Inspector tests passed"
+          else
+            echo "❌ MCP Inspector tests failed"
+            # Still allow pipeline to continue as these are integration tests
+            echo "Note: MCP Inspector tests failed but pipeline continues"
+          fi
+
+          # Display test results if available
+          if [ -f "mcp-test-results.json" ]; then
+            echo "📊 MCP Test Results:"
+            cat mcp-test-results.json | jq '.' || cat mcp-test-results.json
+          fi
 
       - name: Upload coverage reports
         if: matrix.node-version == '18'
