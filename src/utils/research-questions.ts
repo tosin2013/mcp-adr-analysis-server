@@ -137,7 +137,7 @@ export async function findRelevantAdrPatterns(
     let discoveryResult: any;
     try {
       discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
-    } catch (error) {
+    } catch {
       // If ADR discovery fails, create empty result
       discoveryResult = {
         directory: adrDirectory,

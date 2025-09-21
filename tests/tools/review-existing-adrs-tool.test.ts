@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { reviewExistingAdrs } from '../../src/tools/review-existing-adrs-tool.js';
-import { McpAdrError } from '../../src/types/index.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
 import { tmpdir } from 'os';
@@ -144,7 +143,7 @@ export const pool = new Pool({
     // Clean up the test directory
     try {
       await fs.rm(testProjectPath, { recursive: true, force: true });
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors
     }
   });
