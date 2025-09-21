@@ -6,7 +6,7 @@
  */
 
 import { execSync } from 'child_process';
-import { writeFileSync, unlinkSync, existsSync } from 'fs';
+import { writeFileSync, unlinkSync, existsSync, readFileSync } from 'fs';
 import { join, basename } from 'path';
 import { tmpdir } from 'os';
 
@@ -132,7 +132,7 @@ function parseGitleaksOutput(
   content: string
 ): SensitiveContentResult {
   try {
-    const outputContent = require('fs').readFileSync(outputFile, 'utf8');
+    const outputContent = readFileSync(outputFile, 'utf8');
     const gitleaksResults: GitLeaksResult[] = JSON.parse(outputContent);
 
     const matches: SensitiveMatch[] = gitleaksResults.map(result => ({

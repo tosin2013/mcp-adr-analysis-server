@@ -125,7 +125,7 @@ interface DeployHistory {
 /**
  * Main smart git push function - Security and Metrics Focused
  */
-async function smartGitPushV2(args: SmartGitPushArgs): Promise<any> {
+export async function smartGitPushV2(args: SmartGitPushArgs): Promise<any> {
   const {
     branch,
     message,
