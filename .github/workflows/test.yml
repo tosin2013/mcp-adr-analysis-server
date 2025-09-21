@@ -2,9 +2,9 @@ name: Test MCP Server
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [main, develop]
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   test:
@@ -16,93 +16,126 @@ jobs:
       fail-fast: false
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v5
 
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v5
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-    - name: Install dependencies
-      run: |
-        # Try make install first
-        if ! make install; then
-          echo "❌ Make install failed, trying npm install..."
-          npm install
-        fi
+      - name: Install dependencies
+        run: |
+          # Install build tools for native compilation
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential python3
 
-    - name: Test Node.js compatibility
-      run: |
-        make node-compat
-        echo "Testing server health check..."
-        node dist/src/index.js --test
+          # Try make install first
+          if ! make install; then
+            echo "❌ Make install failed, trying npm install..."
+            npm install
+          fi
 
-    - name: Run unit tests
-      run: make test
+          # Rebuild native bindings for tree-sitter with proper error handling
+          echo "🔨 Rebuilding tree-sitter native bindings..."
+          if ! npm rebuild tree-sitter; then
+            echo "⚠️ Tree-sitter rebuild failed, but continuing (tests handle graceful fallback)"
+          fi
 
-    - name: Build the project
-      run: npm run build
+      - name: Test Node.js compatibility
+        run: |
+          make node-compat
+          echo "Testing server health check..."
+          node dist/src/index.js --test
 
-    - name: Test MCP server health check
-      run: |
-        echo "Testing MCP server health check..."
-        if npm run health; then
-          echo "✅ MCP server health check passed"
-        else
-          echo "❌ MCP server health check failed"
-          exit 1
-        fi
+      - name: Run unit tests
+        run: make test
 
-    - name: Test MCP server functionality
-      run: |
-        echo "Testing MCP server functionality..."
+      - name: Build the project
+        run: npm run build
 
-        # Use our validation script to check build output
-        if [ -f "scripts/validate-build.js" ]; then
-          echo "Running comprehensive build validation..."
-          node scripts/validate-build.js
-        fi
+      - name: Test MCP server health check
+        run: |
+          echo "Testing MCP server health check..."
+          if npm run health; then
+            echo "✅ MCP server health check passed"
+          else
+            echo "❌ MCP server health check failed"
+            exit 1
+          fi
 
-        # Check that the built server contains expected MCP tools
-        echo "Checking for MCP tool implementations..."
-        
-        # Check core tools
-        if grep -q "analyze_project" dist/src/index.js; then
-          echo "✅ analyze_project tool found"
-        else
-          echo "❌ analyze_project tool not found"
-          exit 1
-        fi
-        
-        # Check new planning tools
-        if grep -q "mcp_planning" dist/src/index.js; then
-          echo "✅ mcp_planning tool found"
-        else
-          echo "❌ mcp_planning tool not found"
-          exit 1
-        fi
-        
-        if grep -q "interactive_adr_planning" dist/src/index.js; then
-          echo "✅ interactive_adr_planning tool found"
-        else
-          echo "❌ interactive_adr_planning tool not found"
-          exit 1
-        fi
+      - name: Test MCP server functionality
+        run: |
+          echo "Testing MCP server functionality..."
 
-        if grep -q "ListToolsRequestSchema" dist/src/index.js; then
-          echo "✅ ListToolsRequestSchema handler found"
-        else
-          echo "❌ ListToolsRequestSchema handler not found"
-          exit 1
-        fi
+          # Use our validation script to check build output
+          if [ -f "scripts/validate-build.js" ]; then
+            echo "Running comprehensive build validation..."
+            node scripts/validate-build.js
+          fi
 
-        echo "✅ MCP server functionality validated"
+          # Check that the built server contains expected MCP tools (basic validation)
+          echo "Checking for MCP tool implementations..."
 
-    - name: Upload coverage reports
-      if: matrix.node-version == '18'
-      uses: codecov/codecov-action@v5
-      with:
-        file: ./coverage/lcov.info
-        fail_ci_if_error: false
+          # Check core tools
+          if grep -q "analyze_project" dist/src/index.js; then
+            echo "✅ analyze_project tool found"
+          else
+            echo "❌ analyze_project tool not found"
+            exit 1
+          fi
+
+          # Check new planning tools
+          if grep -q "mcp_planning" dist/src/index.js; then
+            echo "✅ mcp_planning tool found"
+          else
+            echo "❌ mcp_planning tool not found"
+            exit 1
+          fi
+
+          if grep -q "interactive_adr_planning" dist/src/index.js; then
+            echo "✅ interactive_adr_planning tool found"
+          else
+            echo "❌ interactive_adr_planning tool not found"
+            exit 1
+          fi
+
+          if grep -q "ListToolsRequestSchema" dist/src/index.js; then
+            echo "✅ ListToolsRequestSchema handler found"
+          else
+            echo "❌ ListToolsRequestSchema handler not found"
+            exit 1
+          fi
+
+          echo "✅ MCP server functionality validated"
+
+      - name: Test MCP functionality with Inspector
+        continue-on-error: true
+        run: |
+          echo "Running comprehensive MCP functionality tests..."
+
+          # Install bc for floating point calculations in test script
+          sudo apt-get install -y bc
+
+          # Run MCP functionality tests using @modelcontextprotocol/inspector
+          if npm run test:mcp; then
+            echo "✅ MCP Inspector tests passed"
+          else
+            echo "❌ MCP Inspector tests failed"
+            # Still allow pipeline to continue as these are integration tests
+            echo "Note: MCP Inspector tests failed but pipeline continues"
+          fi
+
+          # Display test results if available
+          if [ -f "mcp-test-results.json" ]; then
+            echo "📊 MCP Test Results:"
+            cat mcp-test-results.json | jq '.' || cat mcp-test-results.json
+          fi
+
+      - name: Upload coverage reports
+        if: matrix.node-version == '20'
+        uses: codecov/codecov-action@v5
+        with:
+          file: ./coverage/lcov.info
+          fail_ci_if_error: false

@@ -46,7 +46,7 @@ jest.mock('crypto', () => mockCrypto);
 describe('Memory System Performance Tests', () => {
   let memoryManager: MemoryEntityManager;
   let migrationManager: MemoryMigrationManager;
-  let relationshipMapper: MemoryRelationshipMapper;
+  let _relationshipMapper: MemoryRelationshipMapper;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -69,7 +69,7 @@ describe('Memory System Performance Tests', () => {
 
     memoryManager = new MemoryEntityManager(undefined, true); // Enable test mode
     migrationManager = new MemoryMigrationManager(memoryManager);
-    relationshipMapper = new MemoryRelationshipMapper(memoryManager);
+    _relationshipMapper = new MemoryRelationshipMapper(memoryManager);
   });
 
   afterEach(() => {
@@ -428,9 +428,9 @@ describe('Memory System Performance Tests', () => {
       });
 
       // Mock relationship creation
-      let relationshipCount = 0;
+      let _relationshipCount = 0;
       jest.spyOn(memoryManager, 'upsertRelationship').mockImplementation(async () => {
-        relationshipCount++;
+        _relationshipCount++;
         return {
           id: crypto.randomUUID(),
           sourceId: 'source',
@@ -700,7 +700,7 @@ describe('Memory System Performance Tests', () => {
 
     it('should handle memory pressure gracefully', async () => {
       // Test recovery from memory pressure situations
-      const initialMemory = process.memoryUsage();
+      const _initialMemory = process.memoryUsage();
       let successfulOperations = 0;
       let failedOperations = 0;
 
@@ -748,13 +748,13 @@ describe('Memory System Performance Tests', () => {
             },
           } as ArchitecturalDecisionMemory);
           successfulOperations++;
-        } catch (error) {
+        } catch {
           failedOperations++;
           // In a real system, we'd implement backpressure or batching
         }
       }
 
-      const finalMemory = process.memoryUsage();
+      const _finalMemory = process.memoryUsage();
 
       // Should handle at least some operations successfully
       expect(successfulOperations).toBeGreaterThan(0);

@@ -24,13 +24,13 @@ jest.mock('../../src/utils/adr-discovery.js', () => ({
 
 // Import the components after mocking
 import { MemoryLoadingTool } from '../../src/tools/memory-loading-tool.js';
-import { DiscoveredAdr } from '../../src/utils/adr-discovery.js';
+// import { DiscoveredAdr } from '../../src/utils/adr-discovery.js';
 import {
-  MemoryEntity,
+  // MemoryEntity,
   MemoryRelationship,
   ArchitecturalDecisionMemory,
   MemoryIntelligence,
-  MemorySnapshot,
+  // MemorySnapshot,
 } from '../../src/types/memory-entities.js';
 
 // Mock enhanced logging

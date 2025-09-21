@@ -1,9 +1,9 @@
 /**
  * Release Readiness Detector for Smart Git Push
- * 
+ *
  * Analyzes TODO.md, project state, and commit patterns to determine
  * if a release is ready, preventing endless development cycles
- * 
+ *
  * Supports both TODO.md (standard) and todo.md (legacy) for compatibility
  */
 
@@ -21,7 +21,12 @@ export interface ReleaseReadinessResult {
 }
 
 export interface ReleaseBlocker {
-  type: 'critical-todos' | 'incomplete-features' | 'test-failures' | 'security-issues' | 'unstable-code';
+  type:
+    | 'critical-todos'
+    | 'incomplete-features'
+    | 'test-failures'
+    | 'security-issues'
+    | 'unstable-code';
   severity: 'error' | 'warning' | 'info';
   message: string;
   todoItems?: string[];
@@ -58,7 +63,7 @@ export async function analyzeReleaseReadiness(
     minCompletionRate = 0.8,
     maxCriticalTodos = 0,
     includeAnalysis: _includeAnalysis = true,
-    releaseType = 'minor'
+    releaseType = 'minor',
   } = options;
 
   const result: ReleaseReadinessResult = {
@@ -68,7 +73,7 @@ export async function analyzeReleaseReadiness(
     blockers: [],
     recommendations: [],
     milestones: [],
-    summary: ''
+    summary: '',
   };
 
   try {
@@ -88,11 +93,11 @@ export async function analyzeReleaseReadiness(
     result.blockers.push(...commitAnalysis.blockers);
 
     // 4. Calculate readiness score
-    const scoringResult = calculateReadinessScore(
-      result.milestones,
-      result.blockers,
-      { minCompletionRate, maxCriticalTodos, releaseType }
-    );
+    const scoringResult = calculateReadinessScore(result.milestones, result.blockers, {
+      minCompletionRate,
+      maxCriticalTodos,
+      releaseType,
+    });
 
     result.score = scoringResult.score;
     result.confidence = scoringResult.confidence;
@@ -116,7 +121,7 @@ export async function analyzeReleaseReadiness(
       type: 'unstable-code',
       severity: 'error',
       message: `Analysis failed: ${error instanceof Error ? error.message : String(error)}`,
-      suggestedActions: ['Fix analysis errors before proceeding']
+      suggestedActions: ['Fix analysis errors before proceeding'],
     });
     return result;
   }
@@ -125,7 +130,10 @@ export async function analyzeReleaseReadiness(
 /**
  * Analyze TODO.md file for completion status
  */
-async function analyzeTodoFile(todoPath: string, minCompletionRate: number = 0.7): Promise<{
+async function analyzeTodoFile(
+  todoPath: string,
+  minCompletionRate: number = 0.7
+): Promise<{
   milestones: MilestoneStatus[];
   blockers: ReleaseBlocker[];
 }> {
@@ -135,7 +143,7 @@ async function analyzeTodoFile(todoPath: string, minCompletionRate: number = 0.7
 
   // Parse TODO.md structure
   const sections = parseTodoSections(content);
-  
+
   for (const section of sections) {
     const milestone = analyzeTodoSection(section);
     milestones.push(milestone);
@@ -150,8 +158,8 @@ async function analyzeTodoFile(todoPath: string, minCompletionRate: number = 0.7
         suggestedActions: [
           'Complete critical TODO items before release',
           'Reassess priority of TODO items',
-          'Consider moving non-critical items to next release'
-        ]
+          'Consider moving non-critical items to next release',
+        ],
       });
     }
 
@@ -163,8 +171,8 @@ async function analyzeTodoFile(todoPath: string, minCompletionRate: number = 0.7
         suggestedActions: [
           'Complete remaining tasks in this milestone',
           'Consider deferring incomplete features to next release',
-          'Review milestone scope and priorities'
-        ]
+          'Review milestone scope and priorities',
+        ],
       });
     }
   }
@@ -178,12 +186,12 @@ async function analyzeTodoFile(todoPath: string, minCompletionRate: number = 0.7
 function parseTodoSections(content: string): TodoSection[] {
   const sections: TodoSection[] = [];
   const lines = content.split('\n');
-  
+
   let currentSection: TodoSection | null = null;
-  
+
   for (const line of lines) {
     const trimmed = line.trim();
-    
+
     // Detect section headers (## Header)
     if (trimmed.startsWith('## ')) {
       if (currentSection) {
@@ -191,7 +199,7 @@ function parseTodoSections(content: string): TodoSection[] {
       }
       currentSection = {
         name: trimmed.substring(3).trim(),
-        todos: []
+        todos: [],
       };
     }
     // Detect TODO items
@@ -199,21 +207,24 @@ function parseTodoSections(content: string): TodoSection[] {
       const isCompleted = trimmed.startsWith('- [x]') || trimmed.startsWith('- [X]');
       const text = trimmed.substring(isCompleted ? 6 : 5).trim();
       const priority = extractPriority(text);
-      const isCritical = priority === 'high' || text.toLowerCase().includes('critical') || text.toLowerCase().includes('blocker');
-      
+      const isCritical =
+        priority === 'high' ||
+        text.toLowerCase().includes('critical') ||
+        text.toLowerCase().includes('blocker');
+
       currentSection.todos.push({
         text,
         completed: isCompleted,
         priority,
-        isCritical
+        isCritical,
       });
     }
   }
-  
+
   if (currentSection) {
     sections.push(currentSection);
   }
-  
+
   return sections;
 }
 
@@ -250,9 +261,7 @@ function analyzeTodoSection(section: TodoSection): MilestoneStatus {
   const total = section.todos.length;
   const completed = section.todos.filter(t => t.completed).length;
   const criticalTodos = section.todos.filter(t => t.isCritical && !t.completed).length;
-  const blockers = section.todos
-    .filter(t => t.isCritical && !t.completed)
-    .map(t => t.text);
+  const blockers = section.todos.filter(t => t.isCritical && !t.completed).map(t => t.text);
 
   return {
     name: section.name,
@@ -260,7 +269,7 @@ function analyzeTodoSection(section: TodoSection): MilestoneStatus {
     total,
     completionRate: total > 0 ? completed / total : 1,
     criticalTodos,
-    blockers
+    blockers,
   };
 }
 
@@ -289,31 +298,28 @@ async function analyzeProjectState(projectPath: string): Promise<{
             suggestedActions: [
               'Run test suite: npm test',
               'Ensure all tests pass',
-              'Review test coverage'
-            ]
+              'Review test coverage',
+            ],
           });
         }
-      } catch (parseError) {
+      } catch {
         // Invalid package.json, skip test analysis
       }
     }
 
     // Check for common unstable indicators
-    const unstablePatterns = [
-      'TODO.md', 'FIXME.md', 'debug_*.js', 'temp_*.js', 'test_*.js'
-    ];
+    const unstablePatterns = ['TODO.md', 'FIXME.md', 'debug_*.js', 'temp_*.js', 'test_*.js'];
 
     // This would be expanded to check for actual unstable files
     if (unstablePatterns.length > 0) {
       // Use the patterns for analysis
     }
-    
   } catch (error) {
     blockers.push({
       type: 'unstable-code',
       severity: 'error',
       message: `Project analysis failed: ${error instanceof Error ? error.message : String(error)}`,
-      suggestedActions: ['Fix project structure issues']
+      suggestedActions: ['Fix project structure issues'],
     });
   }
 
@@ -331,18 +337,16 @@ async function analyzeCommitPatterns(projectPath: string): Promise<{
   try {
     // Check recent commit activity
     const { execSync } = await import('child_process');
-    
+
     // Get recent commits
     const recentCommits = execSync('git log --oneline -n 10', {
       cwd: projectPath,
-      encoding: 'utf8'
+      encoding: 'utf8',
     }).trim();
 
     // Look for concerning patterns
     const commitLines = recentCommits.split('\n');
-    const concerningPatterns = [
-      /debug/i, /temp/i, /test/i, /wip/i, /work in progress/i, /fixme/i
-    ];
+    const concerningPatterns = [/debug/i, /temp/i, /test/i, /wip/i, /work in progress/i, /fixme/i];
 
     const concerningCommits = commitLines.filter((line: string) =>
       concerningPatterns.some(pattern => pattern.test(line))
@@ -356,15 +360,15 @@ async function analyzeCommitPatterns(projectPath: string): Promise<{
         suggestedActions: [
           'Review recent commits for temporary/debug code',
           'Clean up any experimental or debug commits',
-          'Ensure commits represent stable, production-ready code'
-        ]
+          'Ensure commits represent stable, production-ready code',
+        ],
       });
     }
 
     // Check for uncommitted changes
     const status = execSync('git status --porcelain', {
       cwd: projectPath,
-      encoding: 'utf8'
+      encoding: 'utf8',
     }).trim();
 
     if (status) {
@@ -374,18 +378,17 @@ async function analyzeCommitPatterns(projectPath: string): Promise<{
         message: 'Uncommitted changes detected',
         suggestedActions: [
           'Commit or stash uncommitted changes',
-          'Ensure working directory is clean before release'
-        ]
+          'Ensure working directory is clean before release',
+        ],
       });
     }
-
-  } catch (error) {
+  } catch {
     // Git commands failed - likely not a git repository
     blockers.push({
       type: 'unstable-code',
       severity: 'info',
       message: 'Could not analyze git history',
-      suggestedActions: ['Ensure project is under version control']
+      suggestedActions: ['Ensure project is under version control'],
     });
   }
 
@@ -413,18 +416,22 @@ function calculateReadinessScore(
 
   // Factor in milestone completion
   if (milestones.length > 0) {
-    const avgCompletion = milestones.reduce((sum, m) => sum + m.completionRate, 0) / milestones.length;
+    const avgCompletion =
+      milestones.reduce((sum, m) => sum + m.completionRate, 0) / milestones.length;
     score *= avgCompletion;
-    
+
     // Reduce confidence if completion rates vary widely
-    const completionVariance = milestones.reduce((sum, m) => 
-      sum + Math.pow(m.completionRate - avgCompletion, 2), 0) / milestones.length;
+    const completionVariance =
+      milestones.reduce((sum, m) => sum + Math.pow(m.completionRate - avgCompletion, 2), 0) /
+      milestones.length;
     confidence *= Math.max(0.5, 1 - completionVariance);
   }
 
   // Factor in blockers (excluding test-failures warnings for base scoring)
   const errorCount = blockers.filter(b => b.severity === 'error').length;
-  const warningCount = blockers.filter(b => b.severity === 'warning' && b.type !== 'test-failures').length;
+  const warningCount = blockers.filter(
+    b => b.severity === 'warning' && b.type !== 'test-failures'
+  ).length;
 
   score *= Math.max(0, 1 - (errorCount * 0.3 + warningCount * 0.1));
 
@@ -435,8 +442,13 @@ function calculateReadinessScore(
   }
 
   // Determine readiness (ignore test-failures warnings for readiness check)
-  const criticalBlockers = blockers.filter(b => b.severity === 'error' || (b.severity === 'warning' && b.type !== 'test-failures'));
-  const isReady = score >= options.minCompletionRate && criticalBlockers.length === 0 && criticalTodos <= options.maxCriticalTodos;
+  const criticalBlockers = blockers.filter(
+    b => b.severity === 'error' || (b.severity === 'warning' && b.type !== 'test-failures')
+  );
+  const isReady =
+    score >= options.minCompletionRate &&
+    criticalBlockers.length === 0 &&
+    criticalTodos <= options.maxCriticalTodos;
 
   return { score, confidence, isReady };
 }
@@ -490,7 +502,9 @@ function generateReleaseRecommendations(
   if (incompleteMilestones.length > 0) {
     recommendations.push('📈 Focus on completing these milestones:');
     incompleteMilestones.forEach(milestone => {
-      recommendations.push(`  - ${milestone.name}: ${(milestone.completionRate * 100).toFixed(1)}% complete`);
+      recommendations.push(
+        `  - ${milestone.name}: ${(milestone.completionRate * 100).toFixed(1)}% complete`
+      );
     });
   }
 
@@ -503,15 +517,15 @@ function generateReleaseRecommendations(
 function generateSummary(result: ReleaseReadinessResult): string {
   const scorePercentage = (result.score * 100).toFixed(1);
   const confidencePercentage = (result.confidence * 100).toFixed(1);
-  
+
   let summary = `## Release Readiness: ${result.isReady ? '✅ READY' : '❌ NOT READY'}\n\n`;
   summary += `**Score**: ${scorePercentage}% (Confidence: ${confidencePercentage}%)\n\n`;
-  
+
   if (result.milestones.length > 0) {
     summary += `### Milestone Status\n`;
     result.milestones.forEach(milestone => {
-      const status = milestone.completionRate >= 0.8 ? '✅' : 
-                    milestone.completionRate >= 0.5 ? '⚠️' : '❌';
+      const status =
+        milestone.completionRate >= 0.8 ? '✅' : milestone.completionRate >= 0.5 ? '⚠️' : '❌';
       summary += `- ${status} **${milestone.name}**: ${milestone.completed}/${milestone.total} (${(milestone.completionRate * 100).toFixed(1)}%)\n`;
     });
     summary += '\n';
@@ -520,8 +534,8 @@ function generateSummary(result: ReleaseReadinessResult): string {
   if (result.blockers.length > 0) {
     summary += `### Release Blockers (${result.blockers.length})\n`;
     result.blockers.forEach(blocker => {
-      const icon = blocker.severity === 'error' ? '🚨' : 
-                   blocker.severity === 'warning' ? '⚠️' : '💡';
+      const icon =
+        blocker.severity === 'error' ? '🚨' : blocker.severity === 'warning' ? '⚠️' : '💡';
       summary += `- ${icon} **${blocker.type}**: ${blocker.message}\n`;
     });
     summary += '\n';
@@ -540,7 +554,7 @@ export async function integrateWithMcpTools(
   try {
     // Use existing manage_todo tool if available
     // const { manageTodo } = await import('../tools/manage-todo-tool.js');
-    
+
     // Get current TODO status
     // const todoStatus = await manageTodo({
     //   action: 'analyze_progress',
@@ -551,18 +565,18 @@ export async function integrateWithMcpTools(
     const enhancedOptions: ReleaseReadinessOptions = {
       projectPath,
       includeAnalysis: true,
-      ...options
+      ...options,
     };
 
     return await analyzeReleaseReadiness(enhancedOptions);
-  } catch (error) {
+  } catch {
     // Silently handle MCP tool integration errors
-    
+
     // Fallback to standalone analysis
     return await analyzeReleaseReadiness({
       projectPath,
       includeAnalysis: true,
-      ...options
+      ...options,
     });
   }
 }

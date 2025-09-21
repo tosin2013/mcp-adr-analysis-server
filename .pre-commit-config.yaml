@@ -41,10 +41,10 @@ repos:
         files: package\.json
         pass_filenames: false
 
-      # TypeScript type checking
-      - id: typescript-check
-        name: TypeScript type check
-        entry: npm run typecheck
+      # ESLint and TypeScript checking
+      - id: eslint-check
+        name: ESLint and TypeScript check
+        entry: npm run lint
         language: system
         files: \.(ts|js)$
         pass_filenames: false

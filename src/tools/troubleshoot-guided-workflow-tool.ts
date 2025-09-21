@@ -699,7 +699,7 @@ Generate specific test commands to diagnose and resolve this failure.`;
 
     const aiPlan = JSON.parse(planContent);
     return formatAITestPlan(aiPlan.testPlan, args.projectPath || '.');
-  } catch (error) {
+  } catch {
     // Fallback to hardcoded templates if AI fails
     return generateFallbackTestPlan(failure, args);
   }

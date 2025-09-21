@@ -68,7 +68,7 @@ describe('TodoFileWatcher (Deprecated)', () => {
     it('should include migration information in warning', () => {
       try {
         new TodoFileWatcher();
-      } catch (error) {
+      } catch {
         // Error is expected
       }
 
