@@ -134,7 +134,30 @@ export async function findRelevantAdrPatterns(
     const { discoverAdrsInDirectory } = await import('./adr-discovery.js');
 
     // Actually read ADR files
-    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
+    let discoveryResult: any;
+    try {
+      discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
+    } catch (error) {
+      // If ADR discovery fails, create empty result
+      discoveryResult = {
+        directory: adrDirectory,
+        totalAdrs: 0,
+        adrs: [],
+        summary: { byStatus: {}, byCategory: {} },
+        recommendations: [],
+      };
+    }
+
+    // Handle case where discovery fails or returns undefined
+    if (!discoveryResult) {
+      discoveryResult = {
+        directory: adrDirectory,
+        totalAdrs: 0,
+        adrs: [],
+        summary: { byStatus: {}, byCategory: {} },
+        recommendations: [],
+      };
+    }
 
     // Extract patterns from project (simplified for this implementation)
     const availablePatterns = extractArchitecturalPatterns();
@@ -144,10 +167,13 @@ export async function findRelevantAdrPatterns(
 
 Based on actual ADR file analysis, here are the discovered ADRs with their full content:
 
-## Discovered ADRs (${discoveryResult.totalAdrs} total)
+## Discovered ADRs (${discoveryResult.totalAdrs || 0} total)
 
-${discoveryResult.adrs.length > 0 ? 
-  discoveryResult.adrs.map((adr, index) => `
+${
+  discoveryResult.adrs && discoveryResult.adrs.length > 0
+    ? discoveryResult.adrs
+        .map(
+          (adr: any, index: number) => `
 ### ${index + 1}. ${adr.title}
 - **File**: ${adr.filename}
 - **Status**: ${adr.status}
@@ -160,7 +186,11 @@ ${adr.content || 'Content not available'}
 \`\`\`
 
 ---
-`).join('\n') : 'No ADRs found in the specified directory.'}
+`
+        )
+        .join('\n')
+    : 'No ADRs found in the specified directory.'
+}
 
 ## Research Context Analysis
 
@@ -173,12 +203,16 @@ ${adr.content || 'Content not available'}
 
 ## Available Architectural Patterns
 
-${availablePatterns.map((pattern, index) => `
+${availablePatterns
+  .map(
+    (pattern, index) => `
 ### ${index + 1}. ${pattern.name}
 - **Category**: ${pattern.category}
 - **Description**: ${pattern.description}
 - **Applications**: Various architectural applications
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Pattern Relevance Assessment
 
@@ -199,13 +233,13 @@ This analysis provides **actual ADR content** to identify ADRs and patterns rele
 - **Research Topic**: ${researchContext.topic}
 - **Research Category**: ${researchContext.category}
 - **ADR Directory**: ${adrDirectory}
-- **ADRs Found**: ${discoveryResult.totalAdrs} files
-- **ADRs with Content**: ${discoveryResult.adrs.filter(adr => adr.content).length} ADRs
+- **ADRs Found**: ${discoveryResult.totalAdrs || 0} files
+- **ADRs with Content**: ${discoveryResult.adrs?.filter((adr: any) => adr.content).length || 0} ADRs
 - **Available Patterns**: ${availablePatterns.length} patterns
 - **Research Objectives**: ${researchContext.objectives.length} objectives
 
 ## Discovered ADR Summary
-${discoveryResult.adrs.map(adr => `- **${adr.title}** (${adr.status})`).join('\n')}
+${discoveryResult.adrs?.map((adr: any) => `- **${adr.title}** (${adr.status})`).join('\n') || 'No ADRs discovered'}
 
 ## Next Steps
 1. **Submit the relevance prompt** to an AI agent for analysis based on **actual ADR content**
@@ -445,7 +479,7 @@ const result = await createResearchTaskTracking(questions, progress);
  */
 function extractTechnologiesFromStructure(projectStructure: any): string[] {
   const technologies: string[] = [];
-  
+
   // Analyze package files for technologies
   if (projectStructure.packageFiles) {
     projectStructure.packageFiles.forEach((file: any) => {
@@ -471,7 +505,7 @@ function extractTechnologiesFromStructure(projectStructure: any): string[] {
       if (file.filename === 'pom.xml') technologies.push('Java/Maven');
     });
   }
-  
+
   // Analyze config files
   if (projectStructure.configFiles) {
     projectStructure.configFiles.forEach((file: any) => {
@@ -480,22 +514,22 @@ function extractTechnologiesFromStructure(projectStructure: any): string[] {
       if (file.filename.includes('vite')) technologies.push('Vite');
     });
   }
-  
+
   // Analyze Docker files
   if (projectStructure.dockerFiles && projectStructure.dockerFiles.length > 0) {
     technologies.push('Docker');
   }
-  
+
   // Analyze Kubernetes files
   if (projectStructure.kubernetesFiles && projectStructure.kubernetesFiles.length > 0) {
     technologies.push('Kubernetes');
   }
-  
+
   // Analyze CI files
   if (projectStructure.ciFiles && projectStructure.ciFiles.length > 0) {
     technologies.push('CI/CD');
   }
-  
+
   return [...new Set(technologies)]; // Remove duplicates
 }
 
@@ -542,7 +576,7 @@ function extractArchitecturalPatterns(): Array<{
  */
 function inferArchitectureType(projectStructure: any): string {
   const directories = projectStructure.directories || [];
-  
+
   if (directories.some((dir: string) => dir.includes('service') || dir.includes('microservice'))) {
     return 'microservices';
   }
@@ -566,23 +600,27 @@ function inferDomainType(projectStructure: any): string {
 
   if (
     technologies.some(
-      (tech: string) => tech.toLowerCase().includes('react') || 
-                      tech.toLowerCase().includes('vue') || 
-                      tech.toLowerCase().includes('angular')
+      (tech: string) =>
+        tech.toLowerCase().includes('react') ||
+        tech.toLowerCase().includes('vue') ||
+        tech.toLowerCase().includes('angular')
     )
   ) {
     return 'web-application';
   }
-  if (technologies.some((tech: string) => 
-    tech.toLowerCase().includes('express') || 
-    tech.toLowerCase().includes('api')
-  )) {
+  if (
+    technologies.some(
+      (tech: string) => tech.toLowerCase().includes('express') || tech.toLowerCase().includes('api')
+    )
+  ) {
     return 'api-service';
   }
-  if (technologies.some((tech: string) => 
-    tech.toLowerCase().includes('data') || 
-    tech.toLowerCase().includes('analytics')
-  )) {
+  if (
+    technologies.some(
+      (tech: string) =>
+        tech.toLowerCase().includes('data') || tech.toLowerCase().includes('analytics')
+    )
+  ) {
     return 'data-platform';
   }
   if (projectStructure.dockerFiles?.length > 0 || projectStructure.kubernetesFiles?.length > 0) {

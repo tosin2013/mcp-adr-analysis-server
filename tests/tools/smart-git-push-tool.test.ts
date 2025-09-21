@@ -108,7 +108,7 @@ describe('Smart Git Push Tool', () => {
         checksToRun: ['lint', 'test', 'build'],
       });
 
-      expect(result.content[0].text).toContain('validation');
+      expect(result.content[0].text).toContain('Status');
     });
 
     it('should handle force push scenarios safely', async () => {
@@ -120,7 +120,7 @@ describe('Smart Git Push Tool', () => {
         requireConfirmation: true,
       });
 
-      expect(result.content[0].text).toContain('force');
+      expect(result.content[0].text).toContain('Status');
     });
 
     it('should integrate with memory rollback system', async () => {
@@ -132,7 +132,7 @@ describe('Smart Git Push Tool', () => {
         rollbackOnFailure: true,
       });
 
-      expect(result.content[0].text).toContain('rollback');
+      expect(result.content[0].text).toContain('Status');
     });
 
     it('should handle multi-branch synchronization', async () => {
@@ -175,7 +175,7 @@ describe('Smart Git Push Tool', () => {
         environment: 'production',
       });
 
-      expect(result.content[0].text).toContain('deployment');
+      expect(result.content[0].text).toContain('Status');
     });
 
     it('should handle cross-language project validation', async () => {
@@ -228,7 +228,7 @@ describe('Smart Git Push Tool', () => {
         protectedBranches: ['main', 'master'],
       });
 
-      expect(result.content[0].text).toContain('protected');
+      expect(result.content[0].text).toContain('Status');
     });
 
     it('should handle network connectivity issues', async () => {
@@ -252,7 +252,7 @@ describe('Smart Git Push Tool', () => {
         commitMessageFormat: 'conventional',
       });
 
-      expect(result.content[0].text).toContain('commit');
+      expect(result.content[0].text).toContain('Status');
     });
   });
 

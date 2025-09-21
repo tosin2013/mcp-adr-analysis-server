@@ -4,13 +4,20 @@
 
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 import { promises as fs } from 'fs';
-import { join } from 'path';
+import { join, basename } from 'path';
+import { tmpdir } from 'os';
 import { McpAdrError } from '../../src/types/index.js';
 import { mcpPlanning } from '../../src/tools/mcp-planning-tool.js';
 
 // Test utilities
 const TEST_PROJECT_PATH = '/tmp/test-project-planning';
 const TEST_CACHE_DIR = join(TEST_PROJECT_PATH, '.mcp-adr-cache');
+
+// Get the actual cache directory used by the tool (matches mcp-planning-tool.ts logic)
+function getActualCacheDir(projectPath: string): string {
+  const projectName = basename(projectPath);
+  return join(tmpdir(), projectName, 'cache');
+}
 
 /**
  * Setup test environment
@@ -25,10 +32,26 @@ async function setupTestEnvironment(): Promise<void> {
  * Cleanup test environment
  */
 async function cleanupTestEnvironment(): Promise<void> {
-  try {
-    await fs.rm(TEST_PROJECT_PATH, { recursive: true, force: true });
-  } catch {
-    // Ignore cleanup errors
+  // Clean up all possible test project paths
+  const pathsToClean = [
+    TEST_PROJECT_PATH,
+    TEST_PROJECT_PATH + '-validation',
+    TEST_PROJECT_PATH + '-manage-phases',
+    TEST_PROJECT_PATH + '-track-progress',
+  ];
+
+  for (const path of pathsToClean) {
+    try {
+      // Clean up project directory
+      await fs.rm(path, { recursive: true, force: true });
+
+      // Clean up cache directory (matches mcp-planning-tool.ts logic)
+      const projectName = basename(path);
+      const cacheDir = join(tmpdir(), projectName, 'cache');
+      await fs.rm(cacheDir, { recursive: true, force: true });
+    } catch {
+      // Ignore cleanup errors
+    }
   }
 }
 
@@ -133,6 +156,8 @@ async function createMockTodoData(): Promise<void> {
 
 describe('MCP Planning Tool', () => {
   beforeEach(async () => {
+    // Force cleanup before setup to ensure clean state
+    await cleanupTestEnvironment();
     await setupTestEnvironment();
   });
 
@@ -142,9 +167,13 @@ describe('MCP Planning Tool', () => {
 
   describe('Schema Validation', () => {
     it('should validate create_project operation input', async () => {
+      // Use a different path for validation tests to avoid conflicts
+      const validationProjectPath = TEST_PROJECT_PATH + '-validation';
+      await fs.mkdir(validationProjectPath, { recursive: true });
+
       const validInput = {
         operation: 'create_project',
-        projectPath: TEST_PROJECT_PATH,
+        projectPath: validationProjectPath,
         projectName: 'Test Project',
         description: 'A test project for planning',
         phases: [
@@ -186,6 +215,9 @@ describe('MCP Planning Tool', () => {
       expect(result.content[0].text).toContain('Test Project');
       expect(result.content[0].text).toContain('Phase 1: Setup');
       expect(result.content[0].text).toContain('Phase 2: Development');
+
+      // Cleanup validation project path
+      await fs.rm(validationProjectPath, { recursive: true, force: true });
       expect(result.content[0].text).toContain('John Doe - Developer');
       expect(result.content[0].text).toContain('Jane Smith - Designer');
     });
@@ -210,10 +242,14 @@ describe('MCP Planning Tool', () => {
     });
 
     it('should validate manage_phases operation input', async () => {
+      // Use separate path for this test
+      const managePhasesProjectPath = TEST_PROJECT_PATH + '-manage-phases';
+      await fs.mkdir(managePhasesProjectPath, { recursive: true });
+
       // First create a project
       await mcpPlanning({
         operation: 'create_project',
-        projectPath: TEST_PROJECT_PATH,
+        projectPath: managePhasesProjectPath,
         projectName: 'Test Project',
         phases: [
           {
@@ -227,7 +263,7 @@ describe('MCP Planning Tool', () => {
 
       const validInput = {
         operation: 'manage_phases',
-        projectPath: TEST_PROJECT_PATH,
+        projectPath: managePhasesProjectPath,
         action: 'list',
       };
 
@@ -235,13 +271,20 @@ describe('MCP Planning Tool', () => {
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Project Phases');
       expect(result.content[0].text).toContain('Phase 1');
+
+      // Cleanup
+      await fs.rm(managePhasesProjectPath, { recursive: true, force: true });
     });
 
     it('should validate track_progress operation input', async () => {
+      // Use separate path for this test
+      const trackProgressProjectPath = TEST_PROJECT_PATH + '-track-progress';
+      await fs.mkdir(trackProgressProjectPath, { recursive: true });
+
       // First create a project
       await mcpPlanning({
         operation: 'create_project',
-        projectPath: TEST_PROJECT_PATH,
+        projectPath: trackProgressProjectPath,
         projectName: 'Test Project',
         phases: [
           {
@@ -255,7 +298,7 @@ describe('MCP Planning Tool', () => {
 
       const validInput = {
         operation: 'track_progress',
-        projectPath: TEST_PROJECT_PATH,
+        projectPath: trackProgressProjectPath,
         reportType: 'summary',
         updateTaskProgress: false,
       };
@@ -263,6 +306,9 @@ describe('MCP Planning Tool', () => {
       const result = await mcpPlanning(validInput);
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Project Progress Summary');
+
+      // Cleanup
+      await fs.rm(trackProgressProjectPath, { recursive: true, force: true });
     });
   });
 
@@ -295,7 +341,7 @@ describe('MCP Planning Tool', () => {
       expect(result.content[0].text).toContain('project-planning.json');
 
       // Verify file was created
-      const planningFile = join(TEST_CACHE_DIR, 'project-planning.json');
+      const planningFile = join(getActualCacheDir(TEST_PROJECT_PATH), 'project-planning.json');
       const fileExists = await fs
         .access(planningFile)
         .then(() => true)
@@ -337,7 +383,7 @@ describe('MCP Planning Tool', () => {
       expect(result.content[0].text).toContain('✅ Linked');
 
       // Verify ADRs were attempted to be imported (may not link if names don't match)
-      const planningFile = join(TEST_CACHE_DIR, 'project-planning.json');
+      const planningFile = join(getActualCacheDir(TEST_PROJECT_PATH), 'project-planning.json');
       const fileContent = await fs.readFile(planningFile, 'utf-8');
       const projectData = JSON.parse(fileContent);
 
@@ -400,6 +446,10 @@ describe('MCP Planning Tool', () => {
 
   describe('Manage Phases Operation', () => {
     beforeEach(async () => {
+      // Clean and recreate test environment
+      await cleanupTestEnvironment();
+      await setupTestEnvironment();
+
       // Create a project for phase management tests
       await mcpPlanning({
         operation: 'create_project',
@@ -457,7 +507,7 @@ describe('MCP Planning Tool', () => {
       });
 
       // Read the project data to get phase ID
-      const planningFile = join(TEST_CACHE_DIR, 'project-planning.json');
+      const planningFile = join(getActualCacheDir(TEST_PROJECT_PATH), 'project-planning.json');
       const fileContent = await fs.readFile(planningFile, 'utf-8');
       const projectData = JSON.parse(fileContent);
       const phaseId = projectData.phases[0].id;
@@ -491,6 +541,10 @@ describe('MCP Planning Tool', () => {
 
   describe('Track Progress Operation', () => {
     beforeEach(async () => {
+      // Clean and recreate test environment
+      await cleanupTestEnvironment();
+      await setupTestEnvironment();
+
       // Create a project with multiple phases
       await mcpPlanning({
         operation: 'create_project',
@@ -515,7 +569,7 @@ describe('MCP Planning Tool', () => {
       });
 
       // Set up different phase statuses
-      const planningFile = join(TEST_CACHE_DIR, 'project-planning.json');
+      const planningFile = join(getActualCacheDir(TEST_PROJECT_PATH), 'project-planning.json');
       const fileContent = await fs.readFile(planningFile, 'utf-8');
       const projectData = JSON.parse(fileContent);
 
@@ -577,6 +631,10 @@ describe('MCP Planning Tool', () => {
 
   describe('Manage Resources Operation', () => {
     beforeEach(async () => {
+      // Clean and recreate test environment
+      await cleanupTestEnvironment();
+      await setupTestEnvironment();
+
       // Create a project with team members
       await mcpPlanning({
         operation: 'create_project',
@@ -635,6 +693,10 @@ describe('MCP Planning Tool', () => {
 
   describe('Risk Analysis Operation', () => {
     beforeEach(async () => {
+      // Clean and recreate test environment
+      await cleanupTestEnvironment();
+      await setupTestEnvironment();
+
       // Create a complex project for risk analysis
       await mcpPlanning({
         operation: 'create_project',
@@ -663,7 +725,7 @@ describe('MCP Planning Tool', () => {
       });
 
       // Simulate high-risk conditions
-      const planningFile = join(TEST_CACHE_DIR, 'project-planning.json');
+      const planningFile = join(getActualCacheDir(TEST_PROJECT_PATH), 'project-planning.json');
       const fileContent = await fs.readFile(planningFile, 'utf-8');
       const projectData = JSON.parse(fileContent);
 
@@ -733,6 +795,10 @@ describe('MCP Planning Tool', () => {
 
   describe('Generate Reports Operation', () => {
     beforeEach(async () => {
+      // Clean and recreate test environment
+      await cleanupTestEnvironment();
+      await setupTestEnvironment();
+
       // Create a project for report generation
       await mcpPlanning({
         operation: 'create_project',
