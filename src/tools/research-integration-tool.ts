@@ -360,13 +360,28 @@ All research integration follows these principles:
  * Create research template file
  */
 export async function createResearchTemplate(args: {
-  title: string;
+  title?: string;
+  projectPath?: string;
+  researchType?: string;
   category?: string;
   researchPath?: string;
+  includeProjectAnalysis?: boolean;
 }): Promise<any> {
-  const { title, category = 'general', researchPath = 'docs/research' } = args;
+  const {
+    title = args.researchType || 'Research Template',
+    projectPath: _projectPath = '/project',
+    researchType = 'general',
+    category = researchType || 'general',
+    researchPath = 'docs/research',
+    includeProjectAnalysis: _includeProjectAnalysis = false,
+  } = args;
 
   try {
+    // Validate title parameter
+    if (!title || typeof title !== 'string') {
+      throw new Error('Title is required and must be a string');
+    }
+
     const { createResearchTemplate } = await import('../utils/research-integration.js');
 
     const template = createResearchTemplate(title, category);

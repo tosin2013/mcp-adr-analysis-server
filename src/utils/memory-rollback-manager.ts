@@ -82,6 +82,45 @@ export class MemoryRollbackManager {
   }
 
   /**
+   * Create a rollback point (wrapper for backup functionality)
+   */
+  async createRollbackPoint(name?: string): Promise<string> {
+    const backupPath = await this.createPreRollbackBackup();
+    this.logger.info(
+      `Created rollback point: ${name || 'unnamed'} at ${backupPath}`,
+      'MemoryRollbackManager'
+    );
+    return backupPath;
+  }
+
+  /**
+   * Execute a rollback (wrapper for performFullRollback)
+   */
+  async executeRollback(backupPath?: string): Promise<RollbackResult> {
+    return await this.performFullRollback(backupPath);
+  }
+
+  /**
+   * List available rollback points
+   */
+  async listRollbackPoints(): Promise<string[]> {
+    try {
+      if (!existsSync(this.config.backupDirectory)) {
+        return [];
+      }
+
+      const files = await fs.readdir(this.config.backupDirectory);
+      return files
+        .filter(f => f.endsWith('.backup.json'))
+        .sort()
+        .reverse();
+    } catch (error) {
+      this.logger.warn(`Failed to list rollback points: ${error}`, 'MemoryRollbackManager');
+      return [];
+    }
+  }
+
+  /**
    * Perform complete rollback to legacy system
    */
   async performFullRollback(backupPath?: string): Promise<RollbackResult> {
@@ -182,7 +221,7 @@ export class MemoryRollbackManager {
       try {
         await this.attemptPartialRecovery();
         result.rollbackType = 'partial';
-      } catch (recoveryError) {
+      } catch {
         this.logger.error('Partial recovery also failed', 'MemoryRollbackManager');
       }
     }
@@ -456,7 +495,7 @@ export class MemoryRollbackManager {
       return migrationBackups.length > 0
         ? path.join(this.config.backupDirectory, migrationBackups[0] || '')
         : null;
-    } catch (error) {
+    } catch {
       this.logger.error('Failed to find latest backup', 'MemoryRollbackManager');
       return null;
     }
@@ -485,7 +524,7 @@ export class MemoryRollbackManager {
           if (!manifest.timestamp || !manifest.projectPath) {
             issues.push('Invalid backup manifest format');
           }
-        } catch (error) {
+        } catch {
           issues.push('Cannot parse backup manifest');
         }
       }

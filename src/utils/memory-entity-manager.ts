@@ -580,7 +580,7 @@ export class MemoryEntityManager {
     try {
       const fsInstance = this.fsOverride || fs;
       await fsInstance.access(this.memoryDir);
-    } catch (error) {
+    } catch {
       // Directory doesn't exist, create it
       const fsInstance = this.fsOverride || fs;
       await fsInstance.mkdir(this.memoryDir, { recursive: true });

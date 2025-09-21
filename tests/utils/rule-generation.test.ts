@@ -3,7 +3,7 @@
  * Comprehensive test coverage for all exported functions and interfaces
  */
 
-import { jest } from '@jest/globals';
+import { jest as _jest } from '@jest/globals';
 import {
   extractRulesFromAdrs,
   generateRulesFromPatterns,
@@ -11,7 +11,7 @@ import {
   generateRuleDeviationReport,
   ArchitecturalRule,
   ValidationResult,
-  RuleViolation,
+  // RuleViolation,
 } from '../../src/utils/rule-generation';
 
 describe('rule-generation', () => {
@@ -227,7 +227,7 @@ describe('rule-generation', () => {
 
       try {
         await validateCodeAgainstRules(mockFilePath, rules);
-      } catch (error) {
+      } catch {
         // Expected error, but test that rules are properly formatted
         expect(rules.length).toBe(2);
         expect(rules[0]).toHaveProperty('id');
@@ -246,7 +246,7 @@ describe('rule-generation', () => {
       for (const testPath of testPaths) {
         try {
           await validateCodeAgainstRules(testPath, []);
-        } catch (error) {
+        } catch {
           // Expected to fail, but filename extraction should work
           const expectedFilename = testPath.split('/').pop() || testPath;
           expect(expectedFilename).toBeTruthy();
@@ -516,7 +516,7 @@ describe('rule-generation', () => {
         { ...mockValidationResult, overallCompliance: 0.5 },
       ];
 
-      edgeCases.forEach((testCase, index) => {
+      edgeCases.forEach((testCase, _index) => {
         expect(testCase.overallCompliance).toBeGreaterThanOrEqual(0);
         expect(testCase.overallCompliance).toBeLessThanOrEqual(1);
         expect(typeof testCase.overallCompliance).toBe('number');

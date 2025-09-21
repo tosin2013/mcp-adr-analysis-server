@@ -170,10 +170,10 @@ async function _smartGitPushInternal(args: SmartGitPushArgs): Promise<any> {
             '⚠️ ProjectHealthScoring is deprecated and was removed in memory-centric transformation'
           );
           // Skip health scoring update - ProjectHealthScoring removed
-        } catch (healthError) {
+        } catch {
           // Silently handle health scoring errors
         }
-      } catch (error) {
+      } catch {
         // Silently handle release readiness analysis errors
       }
     }
@@ -392,7 +392,7 @@ ${kgAnalysis.blockingConditions
         }
       }
 
-      let successText = `# Smart Git Push - Success ✅
+      const successText = `# Smart Git Push - Success ✅
 
 ## Push Details
 - **Branch**: ${branch || 'current'}
@@ -503,7 +503,7 @@ ${kgAnalysis ? '- Review knowledge graph insights for follow-up tasks' : ''}
       };
     } else {
       // Dry run - show what would happen
-      let dryRunText = `# Smart Git Push - Dry Run 🔍
+      const dryRunText = `# Smart Git Push - Dry Run 🔍
 
 ## Analysis Complete
 - **Files to Push**: ${stagedFiles.length}
@@ -649,7 +649,7 @@ async function getStagedFiles(projectPath: string): Promise<GitFile[]> {
           if (size < 100 * 1024) {
             content = readFileSync(fullPath, 'utf8');
           }
-        } catch (err) {
+        } catch {
           // Silently handle file read errors
         }
       }
@@ -749,8 +749,8 @@ async function checkSensitiveContent(
   filePath: string
 ): Promise<ValidationIssue[]> {
   try {
-    // Use enhanced sensitive detector
-    const { analyzeSensitiveContent } = await import('../utils/enhanced-sensitive-detector.js');
+    // Use gitleaks for industry-standard secret detection
+    const { analyzeSensitiveContent } = await import('../utils/gitleaks-detector.js');
 
     const result = await analyzeSensitiveContent(filePath, content);
 
@@ -775,7 +775,7 @@ async function checkSensitiveContent(
     }
 
     return issues;
-  } catch (error) {
+  } catch {
     // Silently handle sensitive content check errors
     return [];
   }
@@ -815,7 +815,7 @@ async function checkLLMArtifacts(filePath: string, content?: string): Promise<Va
     }
 
     return issues;
-  } catch (error) {
+  } catch {
     // Silently handle LLM artifact check errors
     return [];
   }
@@ -841,7 +841,7 @@ async function checkLocationRules(
     let fileContent: string | undefined;
     try {
       fileContent = readFileSync(filePath, 'utf-8');
-    } catch (error) {
+    } catch {
       console.warn(`Could not read file for analysis: ${filePath}`);
     }
 
@@ -914,7 +914,7 @@ async function checkLocationRules(
     }
 
     return [];
-  } catch (error) {
+  } catch {
     // Silently handle location rule check errors
     return [];
   }

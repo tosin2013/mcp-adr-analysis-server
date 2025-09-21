@@ -8,14 +8,14 @@ import { MemoryRelationshipMapper } from '../../src/utils/memory-relationship-ma
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { existsSync } from 'fs';
+// import { existsSync } from 'fs';
 import {
   TroubleshootingSessionMemory,
   EnvironmentSnapshotMemory,
   DeploymentAssessmentMemory,
-  SecurityPatternMemory,
+  // SecurityPatternMemory,
   ArchitecturalDecisionMemory,
-  FailurePatternMemory,
+  // FailurePatternMemory,
 } from '../../src/types/memory-entities.js';
 
 // Mock crypto
@@ -26,7 +26,7 @@ const mockCrypto = {
 jest.mock('crypto', () => mockCrypto);
 
 // Helper functions for creating valid test entities
-function createValidDeploymentAssessmentEntity(overrides: any = {}) {
+function _createValidDeploymentAssessmentEntity(overrides: any = {}) {
   return {
     type: 'deployment_assessment' as const,
     title: 'Test Deployment Assessment',
@@ -116,7 +116,7 @@ function createValidDeploymentAssessmentEntity(overrides: any = {}) {
   };
 }
 
-function createValidADREntity(overrides: any = {}) {
+function _createValidADREntity(overrides: any = {}) {
   return {
     type: 'architectural_decision' as const,
     title: 'Test ADR Entity',
@@ -227,7 +227,7 @@ describe('MemoryRelationshipMapper', () => {
     // Clean up the temporary directory
     try {
       await fs.rm(testTempDir, { recursive: true, force: true });
-    } catch (error) {
+    } catch {
       // Ignore cleanup errors
     }
   });
@@ -667,7 +667,7 @@ describe('MemoryRelationshipMapper', () => {
 
       // Find any conflict involving our specific entities (or any high severity conflict)
       let conflict = result.conflicts.find(
-        c => c.entityIds.includes(savedAdr.id!) && c.entityIds.includes(savedDeployment.id!)
+        c => c.entityIds.includes(adr.id!) && c.entityIds.includes(deployment.id!)
       );
 
       // If not found, look for any high severity conflict (since there should be one)
@@ -868,7 +868,7 @@ describe('MemoryRelationshipMapper', () => {
       // Clean up
       try {
         await fs.rm(cleanTempDir, { recursive: true, force: true });
-      } catch (error) {
+      } catch {
         // Ignore cleanup errors
       }
     });

@@ -1,0 +1,9 @@
+{
+  "timestamp": "2025-09-21T17:45:18Z",
+  "mcp_server_path": "/Users/tosinakinosho/workspaces/mcp-adr-analysis-server/dist/src/index.js",
+  "node_version": "v22.13.0",
+  "total_tests": 6,
+  "passed_tests": 6,
+  "success_rate": 100.00,
+  "status": "PASS"
+}

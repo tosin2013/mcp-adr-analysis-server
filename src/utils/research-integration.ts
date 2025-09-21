@@ -63,43 +63,43 @@ export async function monitorResearchDirectory(
     const projectPath = process.cwd();
     const fullResearchPath = path.resolve(projectPath, researchPath);
 
-    let researchFiles: ResearchFile[] = [];
-    
+    const researchFiles: ResearchFile[] = [];
+
     try {
       // Check if research directory exists
       await fs.access(fullResearchPath);
-      
+
       // Scan for research files
       const scanDirectory = async (dirPath: string): Promise<void> => {
         const entries = await fs.readdir(dirPath, { withFileTypes: true });
-        
+
         for (const entry of entries) {
           const fullPath = path.join(dirPath, entry.name);
-          
+
           if (entry.isDirectory()) {
             await scanDirectory(fullPath);
           } else if (entry.isFile()) {
             const ext = path.extname(entry.name).toLowerCase();
             const supportedExts = ['.md', '.txt', '.pdf', '.doc', '.docx'];
-            
+
             if (supportedExts.includes(ext)) {
               try {
                 const stats = await fs.stat(fullPath);
                 let content = '';
-                
+
                 // Only read text-based files
                 if (['.md', '.txt'].includes(ext)) {
                   content = await fs.readFile(fullPath, 'utf-8');
                 } else {
                   content = `[${ext.toUpperCase()} file - content not readable]`;
                 }
-                
+
                 researchFiles.push({
                   filename: entry.name,
                   content,
                   lastModified: stats.mtime.toISOString(),
                   size: stats.size,
-                  path: path.relative(projectPath, fullPath)
+                  path: path.relative(projectPath, fullPath),
                 });
               } catch {
                 // Skip files that can't be read
@@ -108,7 +108,7 @@ export async function monitorResearchDirectory(
           }
         }
       };
-      
+
       await scanDirectory(fullResearchPath);
     } catch {
       // Research directory doesn't exist or is not accessible
@@ -127,8 +127,11 @@ Based on actual file system analysis, here are the research files found:
 
 ## Discovered Research Files
 
-${researchFiles.length > 0 ? 
-  researchFiles.map((file, index) => `
+${
+  researchFiles.length > 0
+    ? researchFiles
+        .map(
+          (file, index) => `
 ### ${index + 1}. ${file.filename}
 - **Path**: ${file.path}
 - **Size**: ${file.size} bytes
@@ -140,7 +143,11 @@ ${file.content.slice(0, 1000)}${file.content.length > 1000 ? '\n... (truncated)'
 \`\`\`
 
 ---
-`).join('\n') : '**No research files found.** You may need to:\n- Create the research directory: `mkdir -p docs/research`\n- Add research files in supported formats (.md, .txt, .pdf, .doc, .docx)\n- Use the research template tool to create structured research documents'}
+`
+        )
+        .join('\n')
+    : '**No research files found.** You may need to:\n- Create the research directory: `mkdir -p docs/research`\n- Add research files in supported formats (.md, .txt, .pdf, .doc, .docx)\n- Use the research template tool to create structured research documents'
+}
 
 ## Analysis Requirements
 
@@ -190,12 +197,15 @@ ${researchFiles.map(f => `- **${f.filename}** (${f.size} bytes, modified: ${f.la
 - Schedule regular research integration reviews
 
 ## Getting Started
-${researchFiles.length === 0 ? `To begin using research integration:
+${
+  researchFiles.length === 0
+    ? `To begin using research integration:
 1. Create the research directory: \`mkdir -p ${researchPath}\`
 2. Add research files (markdown, text, or documents)
 3. Use the \`incorporate_research\` tool to analyze findings
-4. Review suggested ADR updates and implementations` : 
-`Research files are already available for analysis. Proceed with topic extraction and impact evaluation.`}
+4. Review suggested ADR updates and implementations`
+    : `Research files are already available for analysis. Proceed with topic extraction and impact evaluation.`
+}
 
 ## Expected AI Response Format
 The AI will return a JSON object with:
@@ -219,11 +229,16 @@ const result = await monitorResearchDirectory(researchPath);
         researchFiles,
         summary: {
           totalFiles: researchFiles.length,
-          readableFiles: researchFiles.filter(f => f.content && !f.content.includes('content not readable')).length,
+          readableFiles: researchFiles.filter(
+            f => f.content && !f.content.includes('content not readable')
+          ).length,
           directoryExists: researchFiles.length > 0,
-          lastModified: researchFiles.length > 0 ? Math.max(...researchFiles.map(f => new Date(f.lastModified).getTime())) : null
-        }
-      }
+          lastModified:
+            researchFiles.length > 0
+              ? Math.max(...researchFiles.map(f => new Date(f.lastModified).getTime()))
+              : null,
+        },
+      },
     };
   } catch (error) {
     throw new McpAdrError(
@@ -246,8 +261,8 @@ export async function extractResearchTopics(
     const researchFiles = monitoringResult.actualData?.researchFiles || [];
 
     // Filter to only text-based files for topic extraction
-    const textFiles = researchFiles.filter((f: ResearchFile) => 
-      f.content && !f.content.includes('content not readable')
+    const textFiles = researchFiles.filter(
+      (f: ResearchFile) => f.content && !f.content.includes('content not readable')
     );
 
     const extractionPrompt = `
@@ -257,8 +272,11 @@ Based on actual research file analysis, here are the files with extractable cont
 
 ## Research Files for Topic Extraction
 
-${textFiles.length > 0 ? 
-  textFiles.map((file: ResearchFile, index: number) => `
+${
+  textFiles.length > 0
+    ? textFiles
+        .map(
+          (file: ResearchFile, index: number) => `
 ### ${index + 1}. ${file.filename}
 - **Path**: ${file.path}
 - **Size**: ${file.size} bytes
@@ -270,14 +288,22 @@ ${file.content}
 \`\`\`
 
 ---
-`).join('\n') : '**No text-based research files found for topic extraction.**\n\nTo extract topics, you need:\n- Research files in .md or .txt format\n- Files with readable content\n- Research content that contains architectural insights'}
+`
+        )
+        .join('\n')
+    : '**No text-based research files found for topic extraction.**\n\nTo extract topics, you need:\n- Research files in .md or .txt format\n- Files with readable content\n- Research content that contains architectural insights'
+}
 
 ## Existing Topics Context
 
-${existingTopics ? `
+${
+  existingTopics
+    ? `
 ### Current Topics (${existingTopics.length})
 ${existingTopics.map((topic, index) => `${index + 1}. ${topic}`).join('\n')}
-` : 'No existing topics provided.'}
+`
+    : 'No existing topics provided.'
+}
 
 ## Topic Extraction Requirements
 
@@ -335,9 +361,9 @@ const result = await extractResearchTopics(researchPath, existingTopics);
         summary: {
           totalFiles: researchFiles.length,
           textFiles: textFiles.length,
-          existingTopics: existingTopics?.length || 0
-        }
-      }
+          existingTopics: existingTopics?.length || 0,
+        },
+      },
     };
   } catch (error) {
     throw new McpAdrError(
@@ -368,8 +394,11 @@ Based on actual ADR file analysis and research topics, analyze how research find
 
 ## Discovered ADRs (${discoveryResult.totalAdrs} total)
 
-${discoveryResult.adrs.length > 0 ? 
-  discoveryResult.adrs.map((adr, index) => `
+${
+  discoveryResult.adrs.length > 0
+    ? discoveryResult.adrs
+        .map(
+          (adr, index) => `
 ### ${index + 1}. ${adr.title}
 - **File**: ${adr.filename}
 - **Status**: ${adr.status}
@@ -382,13 +411,19 @@ ${adr.content || 'Content not available'}
 \`\`\`
 
 ---
-`).join('\n') : 'No ADRs found in the specified directory.'}
+`
+        )
+        .join('\n')
+    : 'No ADRs found in the specified directory.'
+}
 
 ## Research Topics Analysis
 
 Please evaluate the following research topics for their impact on the **actual ADR content** above:
 
-${researchTopics.map((topic, index) => `
+${researchTopics
+  .map(
+    (topic, index) => `
 ### ${index + 1}. ${topic.title}
 - **Category**: ${topic.category}
 - **Relevance Score**: ${topic.relevanceScore}
@@ -398,7 +433,9 @@ ${researchTopics.map((topic, index) => `
 - **Source Files**: ${topic.sourceFiles.join(', ')}
 - **Description**: ${topic.description}
 - **Tags**: ${topic.tags.join(', ')}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Impact Assessment Requirements
 
@@ -460,9 +497,9 @@ const result = await evaluateResearchImpact(researchTopics, adrDirectory);
           totalAdrs: discoveryResult.totalAdrs,
           adrsWithContent: discoveryResult.adrs.filter(adr => adr.content).length,
           totalTopics: researchTopics.length,
-          highRelevanceTopics: researchTopics.filter(t => t.relevanceScore > 0.7).length
-        }
-      }
+          highRelevanceTopics: researchTopics.filter(t => t.relevanceScore > 0.7).length,
+        },
+      },
     };
   } catch (error) {
     throw new McpAdrError(
@@ -493,11 +530,12 @@ export async function generateAdrUpdateSuggestions(
     const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
 
     // Try to find the target ADR by ID
-    const targetAdr = discoveryResult.adrs.find(adr => 
-      adr.filename.includes(adrId) || 
-      adr.content?.includes(adrId) ||
-      adr.path.includes(adrId) ||
-      adr.metadata?.number?.toString() === adrId
+    const targetAdr = discoveryResult.adrs.find(
+      adr =>
+        adr.filename.includes(adrId) ||
+        adr.content?.includes(adrId) ||
+        adr.path.includes(adrId) ||
+        adr.metadata?.number?.toString() === adrId
     );
 
     const updatePrompt = `
@@ -507,8 +545,11 @@ Based on actual ADR file analysis, generate updates for the specified ADR based 
 
 ## All Discovered ADRs (${discoveryResult.totalAdrs} total)
 
-${discoveryResult.adrs.length > 0 ? 
-  discoveryResult.adrs.map((adr, index) => `
+${
+  discoveryResult.adrs.length > 0
+    ? discoveryResult.adrs
+        .map(
+          (adr, index) => `
 ### ${index + 1}. ${adr.title}
 - **File**: ${adr.filename}
 - **Status**: ${adr.status}
@@ -522,41 +563,59 @@ ${adr.content || 'Content not available'}
 \`\`\`
 
 ---
-`).join('\n') : 'No ADRs found in the specified directory.'}
+`
+        )
+        .join('\n')
+    : 'No ADRs found in the specified directory.'
+}
 
 ## Target ADR Identification
 
 **Target ADR ID**: ${adrId}
-${targetAdr ? `
+${
+  targetAdr
+    ? `
 **✅ FOUND TARGET ADR**: ${targetAdr.title}
 - **File**: ${targetAdr.filename}
 - **Status**: ${targetAdr.status}
 - **Path**: ${targetAdr.path}
-` : `
+`
+    : `
 **❌ TARGET ADR NOT FOUND**
 Please locate the ADR with ID: **${adrId}** by:
 - Searching by filename containing the ID
 - Searching by content containing the ID
 - Searching by path containing the ID
 - Searching by ADR number matching the ID
-`}
+`
+}
 
 ## Research Findings to Incorporate
 
-${researchFindings.map((finding, index) => `
+${researchFindings
+  .map(
+    (finding, index) => `
 ### ${index + 1}. ${finding.finding}
 - **Evidence**: ${finding.evidence.join(', ')}
 - **Impact**: ${finding.impact}
-`).join('')}
+`
+  )
+  .join('')}
 
 ## Update Requirements
 
 - **Update Type**: ${updateType}
-- **Focus Areas**: ${updateType === 'content' ? 'Decision content and rationale' :
-                   updateType === 'status' ? 'Decision status and lifecycle' :
-                   updateType === 'consequences' ? 'Consequences and outcomes' :
-                   updateType === 'alternatives' ? 'Alternative options and trade-offs' :
-                   'Deprecation and superseding decisions'}
+- **Focus Areas**: ${
+      updateType === 'content'
+        ? 'Decision content and rationale'
+        : updateType === 'status'
+          ? 'Decision status and lifecycle'
+          : updateType === 'consequences'
+            ? 'Consequences and outcomes'
+            : updateType === 'alternatives'
+              ? 'Alternative options and trade-offs'
+              : 'Deprecation and superseding decisions'
+    }
 
 ## Required Output Format
 
@@ -580,16 +639,20 @@ This analysis provides **actual ADR content** to generate specific update sugges
 - **Research Findings**: ${researchFindings.length} findings
 
 ## Target ADR Status
-${targetAdr ? `
+${
+  targetAdr
+    ? `
 **Target Found**: ${targetAdr.title}
 - **File**: ${targetAdr.filename}
 - **Status**: ${targetAdr.status}
 - **Path**: ${targetAdr.path}
 - **Content Length**: ${targetAdr.content?.length || 0} characters
-` : `
+`
+    : `
 **Target Not Found**: ADR with ID "${adrId}" could not be automatically identified.
 The AI agent will need to search through the ${discoveryResult.totalAdrs} available ADRs using the provided content.
-`}
+`
+}
 
 ## Next Steps
 1. **Submit the update prompt** to an AI agent for suggestion generation based on **actual ADR content**
@@ -626,9 +689,9 @@ const result = await generateAdrUpdateSuggestions(adrId, findings, updateType);
           totalAdrs: discoveryResult.totalAdrs,
           targetFound: !!targetAdr,
           updateType,
-          findingsCount: researchFindings.length
-        }
-      }
+          findingsCount: researchFindings.length,
+        },
+      },
     };
   } catch (error) {
     throw new McpAdrError(
@@ -637,8 +700,6 @@ const result = await generateAdrUpdateSuggestions(adrId, findings, updateType);
     );
   }
 }
-
-
 
 /**
  * Create research file template
