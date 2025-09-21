@@ -278,13 +278,35 @@ test_mcp_tool_call() {
     if [ $? -eq 0 ] && [ -n "$tool_output" ]; then
         print_status "SUCCESS" "MCP tool call executed successfully"
 
-        # Check if output contains expected content patterns
-        if echo "$tool_output" | grep -q -E "(content|analysis|project)"; then
-            print_status "SUCCESS" "Tool output contains expected content"
-            return 0
+        # Check if output contains expected content patterns and proper MCP response structure
+        if command -v jq >/dev/null 2>&1; then
+            # Use jq for proper JSON parsing
+            if echo "$tool_output" | jq -e '.content[]? | select(.type == "text")' >/dev/null 2>&1; then
+                local text_content=$(echo "$tool_output" | jq -r '.content[]? | select(.type == "text") | .text' 2>/dev/null)
+                if echo "$text_content" | grep -q -i -E "(analysis|project|ecosystem)"; then
+                    print_status "SUCCESS" "Tool output contains valid MCP content with expected keywords"
+                    return 0
+                else
+                    print_status "SUCCESS" "Tool output contains valid MCP content structure"
+                    return 0
+                fi
+            else
+                print_status "WARNING" "Tool output does not match expected MCP content structure"
+                return 1
+            fi
         else
-            print_status "WARNING" "Tool output may be unexpected"
-            return 1
+            # Fallback to grep-based validation if jq is not available
+            if echo "$tool_output" | grep -q '"content"' && echo "$tool_output" | grep -q '"type":' && echo "$tool_output" | grep -q -i -E "(analysis|project|ecosystem)"; then
+                print_status "SUCCESS" "Tool output contains expected MCP content structure"
+                return 0
+            elif echo "$tool_output" | grep -q -i -E "(content|analysis|project)"; then
+                print_status "SUCCESS" "Tool output contains expected content keywords"
+                return 0
+            else
+                print_status "WARNING" "Tool output may be unexpected"
+                echo "DEBUG: First 200 chars of output: $(echo "$tool_output" | head -c 200)..."
+                return 1
+            fi
         fi
     else
         print_status "ERROR" "Failed to execute MCP tool call"
