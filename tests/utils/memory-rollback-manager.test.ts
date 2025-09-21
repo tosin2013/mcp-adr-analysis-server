@@ -91,7 +91,7 @@ Use multiple programming languages for different services:
         'pom.xml': 'mvn clean install',
       };
 
-      Object.entries(languageCommands).forEach(([file, command]) => {
+      Object.entries(languageCommands).forEach(([_file, command]) => {
         expect(command).toBeTruthy();
         expect(command.length).toBeGreaterThan(0);
       });

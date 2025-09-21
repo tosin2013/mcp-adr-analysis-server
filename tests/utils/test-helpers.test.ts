@@ -5,8 +5,8 @@
 import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
 import {
   unitTest,
-  integrationTest,
-  performanceTest,
+  // integrationTest,
+  // performanceTest,
   createTestFile,
   createTestDirectory,
   createMockTimer,
@@ -47,7 +47,7 @@ describe('Test Helper Utilities', () => {
       let testExecuted = false;
 
       // Create a mock test suite
-      const mockDescribe = (name: string, fn: () => void) => fn();
+      const _mockDescribe = (name: string, fn: () => void) => fn();
       const mockIt = (name: string, testFn: () => Promise<void>) => {
         testFn()
           .then(() => {
@@ -136,9 +136,9 @@ describe('Test Helper Utilities', () => {
     });
 
     it('should create and track mock intervals', () => {
-      let callCount = 0;
+      let _callCount = 0;
       const interval = createMockInterval(() => {
-        callCount++;
+        _callCount++;
       }, 50);
 
       expect(interval).toBeDefined();
@@ -196,7 +196,7 @@ describe('Test Helper Utilities', () => {
 
     it('should detect resource leaks when they occur', async () => {
       // Create many temp directories to simulate a leak
-      const dirs = await Promise.all([
+      const _dirs = await Promise.all([
         createTestFile('test1'),
         createTestFile('test2'),
         createTestFile('test3'),
@@ -268,7 +268,7 @@ describe('Test Helper Utilities', () => {
     });
 
     it('should mock console methods with cleanup', () => {
-      const originalLog = console.log;
+      const _originalLog = console.log;
       const mockLog = mockConsoleMethod('log');
 
       console.log('test message');

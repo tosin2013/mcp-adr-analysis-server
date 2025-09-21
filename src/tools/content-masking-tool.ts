@@ -404,7 +404,7 @@ export async function analyzeContentSecurity(args: {
     }
 
     // Perform tree-sitter analysis for enhanced security detection
-    let treeSitterFindings: any[] = [];
+    const treeSitterFindings: any[] = [];
     let treeSitterContext = '';
     if (enableTreeSitterAnalysis && contentType === 'code') {
       try {
@@ -496,7 +496,7 @@ export async function analyzeContentSecurity(args: {
           // Clean up temp file
           try {
             unlinkSync(tempFile);
-          } catch (error) {
+          } catch {
             // Ignore cleanup errors
           }
         }

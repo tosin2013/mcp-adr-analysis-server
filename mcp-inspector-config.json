@@ -1,0 +1,24 @@
+{
+  "mcpServers": {
+    "adr-analysis-server": {
+      "command": "node",
+      "args": ["dist/src/index.js"],
+      "env": {
+        "NODE_ENV": "development",
+        "PROJECT_PATH": ".",
+        "ADR_DIRECTORY": "docs/adrs",
+        "LOG_LEVEL": "info"
+      }
+    },
+    "adr-analysis-server-test": {
+      "command": "node",
+      "args": ["dist/src/index.js", "--test"],
+      "env": {
+        "NODE_ENV": "test",
+        "PROJECT_PATH": ".",
+        "ADR_DIRECTORY": "docs/adrs",
+        "LOG_LEVEL": "debug"
+      }
+    }
+  }
+}
