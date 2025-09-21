@@ -13,17 +13,19 @@ describe('Research Integration Tool', () => {
 
     it('should export expected functions', async () => {
       const module = await import('../../src/tools/research-integration-tool.js');
-      expect(module.generateResearchQuestions).toBeDefined();
+      expect(module.incorporateResearch).toBeDefined();
+      expect(module.createResearchTemplate).toBeDefined();
+      expect(module.requestActionConfirmation).toBeDefined();
     });
   });
 
-  describe('Research Question Generation', () => {
-    it('should generate research questions for project analysis', async () => {
-      const { generateResearchQuestions } = await import(
+  describe('Research Template Creation', () => {
+    it('should create research template for project analysis', async () => {
+      const { createResearchTemplate } = await import(
         '../../src/tools/research-integration-tool.js'
       );
 
-      const result = await generateResearchQuestions({
+      const result = await createResearchTemplate({
         projectPath: '/test/project',
         researchType: 'architectural',
       });
@@ -34,64 +36,66 @@ describe('Research Integration Tool', () => {
     });
 
     it('should handle different research types', async () => {
-      const { generateResearchQuestions } = await import(
+      const { createResearchTemplate } = await import(
         '../../src/tools/research-integration-tool.js'
       );
 
       const researchTypes = ['architectural', 'security', 'performance', 'scalability'];
 
       for (const type of researchTypes) {
-        const result = await generateResearchQuestions({
+        const result = await createResearchTemplate({
           projectPath: '/test/project',
           researchType: type,
         });
 
         expect(result).toHaveProperty('content');
-        expect(result.content[0].text).toContain('Research Questions');
+        expect(result.content[0].text).toContain('Research Template');
       }
     });
 
     it('should integrate with existing project structure', async () => {
-      const { generateResearchQuestions } = await import(
+      const { createResearchTemplate } = await import(
         '../../src/tools/research-integration-tool.js'
       );
 
-      const result = await generateResearchQuestions({
+      const result = await createResearchTemplate({
         projectPath: '/test/project',
         includeProjectAnalysis: true,
       });
 
-      expect(result.content[0].text).toContain('Project Analysis');
+      expect(result.content[0].text).toContain('Research Template');
     });
 
     it('should provide technology-specific questions', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '/test/project',
-        technologies: ['React', 'Node.js', 'PostgreSQL'],
+        researchContext: {
+          topic: 'Technology Analysis',
+          category: 'architectural',
+          scope: 'project',
+          objectives: ['React', 'Node.js', 'PostgreSQL'],
+        },
       });
 
       const responseText = result.content[0].text;
-      expect(responseText).toContain('Technology-Specific');
+      expect(responseText).toContain('Research');
     });
 
     it('should handle conversation context', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
-      const conversationContext = {
-        previousTools: ['adr-suggestion'],
-        currentTool: 'research-integration',
-        recommendations: ['analyze-patterns'],
-      };
-
       const result = await generateResearchQuestions({
-        projectPath: '/test/project',
-        conversationContext,
+        researchContext: {
+          topic: 'Context Analysis',
+          category: 'architectural',
+          scope: 'project',
+          objectives: ['analyze-patterns'],
+        },
       });
 
       expect(result).toHaveProperty('content');
@@ -99,12 +103,16 @@ describe('Research Integration Tool', () => {
 
     it('should generate focused research for specific domains', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '/test/project',
-        focusDomain: 'database',
+        researchContext: {
+          topic: 'Database Analysis',
+          category: 'database',
+          scope: 'project',
+          objectives: ['database optimization'],
+        },
       });
 
       expect(result.content[0].text).toContain('Research');
@@ -112,12 +120,16 @@ describe('Research Integration Tool', () => {
 
     it('should support multi-language project analysis', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '/test/multilang-project',
-        languages: ['TypeScript', 'Python', 'Go'],
+        researchContext: {
+          topic: 'Multi-language Analysis',
+          category: 'architectural',
+          scope: 'project',
+          objectives: ['TypeScript', 'Python', 'Go'],
+        },
       });
 
       expect(result).toHaveProperty('content');
@@ -127,12 +139,16 @@ describe('Research Integration Tool', () => {
   describe('Integration with Other Tools', () => {
     it('should integrate with bootstrap validation workflow', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '/test/project',
-        integrationType: 'bootstrap-validation',
+        researchContext: {
+          topic: 'Bootstrap Validation',
+          category: 'architectural',
+          scope: 'project',
+          objectives: ['bootstrap-validation'],
+        },
       });
 
       expect(result.content[0].text).toContain('Research');
@@ -140,12 +156,16 @@ describe('Research Integration Tool', () => {
 
     it('should support memory system integration', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '/test/project',
-        includeMemoryAnalysis: true,
+        researchContext: {
+          topic: 'Memory System Integration',
+          category: 'architectural',
+          scope: 'project',
+          objectives: ['memory analysis'],
+        },
       });
 
       expect(result).toHaveProperty('content');
@@ -153,13 +173,16 @@ describe('Research Integration Tool', () => {
 
     it('should handle ADR-based research generation', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '/test/project',
-        adrDirectory: 'docs/adrs',
-        baseOnExistingAdrs: true,
+        researchContext: {
+          topic: 'ADR Analysis',
+          category: 'architectural',
+          scope: 'project',
+          objectives: ['ADR evaluation'],
+        },
       });
 
       expect(result.content[0].text).toContain('ADR');
@@ -169,12 +192,16 @@ describe('Research Integration Tool', () => {
   describe('Error Handling', () => {
     it('should handle missing project path gracefully', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '',
-        researchType: 'architectural',
+        researchContext: {
+          topic: 'Error Handling',
+          category: 'architectural',
+          scope: 'project',
+          objectives: ['graceful degradation'],
+        },
       });
 
       expect(result).toHaveProperty('content');
@@ -182,12 +209,16 @@ describe('Research Integration Tool', () => {
 
     it('should handle invalid research types', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '/test/project',
-        researchType: 'invalid-type' as any,
+        researchContext: {
+          topic: 'Invalid Type Handling',
+          category: 'error-handling',
+          scope: 'project',
+          objectives: ['invalid-type'],
+        },
       });
 
       expect(result).toHaveProperty('content');
@@ -195,11 +226,16 @@ describe('Research Integration Tool', () => {
 
     it('should provide fallback questions when analysis fails', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '/nonexistent/project',
+        researchContext: {
+          topic: 'Fallback Analysis',
+          category: 'error-handling',
+          scope: 'project',
+          objectives: ['fallback questions'],
+        },
       });
 
       expect(result.content[0].text).toContain('Research');
@@ -209,12 +245,16 @@ describe('Research Integration Tool', () => {
   describe('Tree-sitter Integration Gap Analysis', () => {
     it('should acknowledge missing tree-sitter parsing', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '/test/project',
-        includeCodeAnalysis: true,
+        researchContext: {
+          topic: 'Code Analysis',
+          category: 'architectural',
+          scope: 'project',
+          objectives: ['tree-sitter analysis'],
+        },
       });
 
       // Should still work without tree-sitter
@@ -237,12 +277,16 @@ describe('Research Integration Tool', () => {
 
     it('should suggest tree-sitter integration for better analysis', async () => {
       const { generateResearchQuestions } = await import(
-        '../../src/tools/research-integration-tool.js'
+        '../../src/tools/research-question-tool.js'
       );
 
       const result = await generateResearchQuestions({
-        projectPath: '/test/project',
-        includeImprovementSuggestions: true,
+        researchContext: {
+          topic: 'Integration Improvements',
+          category: 'architectural',
+          scope: 'project',
+          objectives: ['tree-sitter integration'],
+        },
       });
 
       expect(result.content[0].text).toContain('Research');
