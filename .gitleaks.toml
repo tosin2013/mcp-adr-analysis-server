@@ -35,6 +35,7 @@ paths = [
     '''package\.json''',
     '''package-lock\.json''',
     '''\.gitleaks\.toml''',
+    '''\.npm-cache/.*''',
 ]
 regexes = [
     '''ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx''',  # Placeholder Twilio SID

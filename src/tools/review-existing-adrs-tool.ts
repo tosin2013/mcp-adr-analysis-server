@@ -691,7 +691,7 @@ async function detectTechnologies(projectPath: string): Promise<string[]> {
           technologies.push('GCP SDK');
         if (dep.includes('azure') || dep.includes('@azure')) technologies.push('Azure SDK');
       });
-    } catch (error) {
+    } catch {
       // package.json not found or invalid
     }
 
@@ -715,7 +715,7 @@ async function detectTechnologies(projectPath: string): Promise<string[]> {
             technologies.push('Kubernetes');
             break;
           }
-        } catch (error) {
+        } catch {
           // Skip unreadable files
         }
       }
@@ -829,12 +829,12 @@ async function checkCloudProviderIndicators(
                   technologies.push('Kubernetes');
                   break;
                 }
-              } catch (error) {
+              } catch {
                 // Skip unreadable files
               }
             }
           }
-        } catch (error) {
+        } catch {
           // Skip unreadable directories
         }
       }

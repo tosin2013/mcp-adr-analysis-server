@@ -3,7 +3,7 @@
  * Provides resource tracking, cleanup, and environment management for tests
  */
 
-import { jest } from '@jest/globals';
+import { jest as _jest } from '@jest/globals';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
@@ -190,7 +190,7 @@ export class TestInfrastructure {
     for (const timer of timers) {
       try {
         clearTimeout(timer);
-      } catch (error) {
+      } catch {
         // Ignore errors when clearing timers
       }
     }
@@ -201,7 +201,7 @@ export class TestInfrastructure {
     for (const interval of intervals) {
       try {
         clearInterval(interval);
-      } catch (error) {
+      } catch {
         // Ignore errors when clearing intervals
       }
     }
@@ -319,7 +319,7 @@ export class TestInfrastructure {
           for (const interval of this.resources.intervals) {
             clearInterval(interval);
           }
-        } catch (error) {
+        } catch {
           // Ignore cleanup errors during exit
         }
       }

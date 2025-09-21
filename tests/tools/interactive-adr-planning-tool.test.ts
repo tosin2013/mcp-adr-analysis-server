@@ -7,7 +7,7 @@
  * Tests focus on core logic validation rather than filesystem integration.
  */
 
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, /* beforeAll, */ beforeEach, afterEach, jest } from '@jest/globals';
 
 // Create filesystem mocks
 const mockFs = {
@@ -28,7 +28,7 @@ jest.mock('path', () => ({
 }));
 
 // Import after mocking
-import * as path from 'path';
+// import * as path from 'path';
 import { interactiveAdrPlanning } from '../../src/tools/interactive-adr-planning-tool.js';
 
 describe('Interactive ADR Planning Tool', () => {
@@ -57,13 +57,13 @@ describe('Interactive ADR Planning Tool', () => {
         // Mock filesystem error
         mockFs.mkdir.mockRejectedValue(new Error('Permission denied'));
 
-        const input = {
+        const _input = {
           operation: 'start_session',
           projectPath: '/test/project',
         };
 
         // The tool should handle filesystem errors gracefully and throw a McpAdrError
-        await expect(interactiveAdrPlanning(input)).rejects.toThrow(
+        await expect(interactiveAdrPlanning(_input)).rejects.toThrow(
           'Interactive ADR planning failed'
         );
       });
@@ -71,7 +71,7 @@ describe('Interactive ADR Planning Tool', () => {
       it.skip('should handle custom ADR directory and project path (filesystem mock issue)', async () => {
         // Skipped due to filesystem mocking issues in Jest ES modules setup
         // This test requires proper fs.mkdir mocking which is not working reliably
-        const input = {
+        const _input = {
           operation: 'start_session',
           projectPath: '/custom/path',
           adrDirectory: 'documentation/decisions',

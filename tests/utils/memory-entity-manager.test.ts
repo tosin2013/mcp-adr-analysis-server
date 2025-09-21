@@ -35,22 +35,22 @@ jest.mock('crypto', () => {
 
 // Import after mocking
 import * as path from 'path';
-import crypto from 'crypto';
+// import crypto from 'crypto';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 
 // Get the mocked crypto
-const mockedCrypto = jest.mocked(crypto);
+// const mockedCrypto = jest.mocked(crypto);
 import {
   MemoryEntity,
-  MemoryRelationship,
+  // MemoryRelationship,
   MemoryQuery,
   ArchitecturalDecisionMemory,
-  CodeComponentMemory,
-  KnowledgeArtifactMemory,
+  // CodeComponentMemory,
+  // KnowledgeArtifactMemory,
 } from '../../src/types/memory-entities.js';
 
 const mockFs = mockFsPromises;
-const mockCrypto = jest.mocked(crypto);
+// const mockCrypto = jest.mocked(crypto);
 
 // Mock config
 jest.mock('../../src/utils/config.js', () => ({

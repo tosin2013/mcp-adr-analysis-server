@@ -1150,7 +1150,7 @@ async function performTreeSitterCodeChangeAnalysis(
       try {
         unlinkSync(beforeFile);
         unlinkSync(afterFile);
-      } catch (error) {
+      } catch {
         // Ignore cleanup errors
       }
     }

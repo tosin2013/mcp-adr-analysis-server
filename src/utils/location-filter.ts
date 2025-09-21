@@ -392,13 +392,47 @@ export function validateFileLocation(
 }
 
 /**
- * Get location suggestions for a file
+ * Get location suggestions for a file (backward compatible overloads)
  */
 export function getLocationSuggestions(
   filePath: string,
-  category: 'development' | 'security' | 'temporary' | 'testing'
-): string[] {
+  categoryOrDescription?: 'development' | 'security' | 'temporary' | 'testing' | string
+): string[] | { suggestions: string[]; category: string } {
   const fileName = basename(filePath);
+
+  // Check if this is the old API (category parameter) or new API (description parameter)
+  // Old API can be valid categories OR any other single-word string that isn't a description
+  const validOldCategories = ['development', 'security', 'temporary', 'testing'];
+  const isOldApi =
+    validOldCategories.includes(categoryOrDescription || '') ||
+    (categoryOrDescription &&
+      categoryOrDescription.length < 20 &&
+      !categoryOrDescription.includes(' '));
+
+  let category: string;
+
+  if (isOldApi) {
+    // Old API: category is provided (might be unknown)
+    category = categoryOrDescription as string;
+  } else {
+    // New API: determine category based on filename patterns
+    category = 'development';
+    if (fileName.startsWith('temp_') || fileName.includes('.tmp') || fileName.includes('.temp')) {
+      category = 'temporary';
+    } else if (
+      fileName.startsWith('test_') ||
+      fileName.includes('.test.') ||
+      fileName.includes('.spec.')
+    ) {
+      category = 'testing';
+    } else if (
+      fileName.includes('config') ||
+      fileName.includes('.env') ||
+      fileName.includes('secret')
+    ) {
+      category = 'security';
+    }
+  }
 
   const categoryMap: Record<string, string[]> = {
     testing: ['tests/', 'test/', '__tests__/'],
@@ -409,8 +443,20 @@ export function getLocationSuggestions(
 
   const baseSuggestions = categoryMap[category] || [];
 
-  // Add file name to suggestions
-  return baseSuggestions.map(dir => `${dir}${fileName}`);
+  if (isOldApi) {
+    // Old API: return array with file names included
+    // For unknown categories, return empty array
+    if (!categoryMap[category]) {
+      return [];
+    }
+    return baseSuggestions.map(dir => `${dir}${fileName}`);
+  } else {
+    // New API: return object with suggestions and category
+    return {
+      suggestions: baseSuggestions,
+      category,
+    };
+  }
 }
 
 /**

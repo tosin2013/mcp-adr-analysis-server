@@ -222,7 +222,7 @@ describe('Memory Migration Integration', () => {
 
       // Mock upsertEntity to sometimes fail
       let callCount = 0;
-      const upsertEntitySpy = jest
+      const _upsertEntitySpy = jest
         .spyOn(memoryManager, 'upsertEntity')
         .mockImplementation(async entity => {
           callCount++;
@@ -447,7 +447,7 @@ describe('Memory Migration Integration', () => {
       await fs.writeFile(deploymentHistoryPath, JSON.stringify(deploymentHistory, null, 2));
 
       // Mock upsertEntity to fail validation
-      const upsertEntitySpy = jest
+      const _upsertEntitySpy = jest
         .spyOn(memoryManager, 'upsertEntity')
         .mockRejectedValue(new Error('Entity validation failed'));
 
