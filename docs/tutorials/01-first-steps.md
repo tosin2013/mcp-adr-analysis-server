@@ -64,7 +64,7 @@ npm install -g mcp-adr-analysis-server
 mcp-adr-analysis-server --version
 ```
 
-You should see output like: `2.0.7`
+You should see output like: `MCP ADR Analysis Server v2.1.0`
 
 ### Configure Your MCP Client
 
