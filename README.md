@@ -46,7 +46,7 @@ npm install -g mcp-adr-analysis-server
 curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/main/scripts/install-rhel.sh | bash
 ```
 
-📖 **[Detailed Installation Guide →](docs/tutorials/installation.md)** | **[RHEL Setup →](docs/how-to-guides/rhel-installation.md)**
+📖 **[Detailed Installation Guide →](docs/tutorials/01-first-steps.md)** | **[RHEL Setup →](scripts/install-rhel.sh)**
 
 ## ⚡ Quick Setup (3 Steps)
 
@@ -69,7 +69,7 @@ curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/ma
 }
 ```
 
-📖 **[Full Configuration Guide →](docs/tutorials/configuration.md)** | **[Client Setup →](docs/how-to-guides/client-configuration.md)**
+📖 **[Full Configuration Guide →](docs/reference/mcp-client-config.md)** | **[Client Setup →](docs/reference/environment-config.md)**
 
 ## 🚀 Usage Examples
 
@@ -106,13 +106,13 @@ const adrs = await generateAdrsFromPrd({
 🤖 **Autonomous Agents** - Continuous analysis and rule enforcement  
 🏢 **Enterprise Teams** - Portfolio analysis and migration planning
 
-📖 **[Detailed Use Cases →](docs/explanation/use-cases.md)**
+📖 **[Detailed Use Cases →](docs/explanation/mcp-concepts.md)**
 
 ## 🛠️ Technology Stack
 
 **Runtime:** Node.js 18+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Jest (>80% coverage)
 
-📖 **[Technical Details →](docs/explanation/architecture.md)**
+📖 **[Technical Details →](docs/explanation/server-architecture.md)**
 
 ## 📁 Project Structure
 
@@ -123,7 +123,7 @@ tests/         # >80% test coverage
 .github/       # CI/CD automation
 ```
 
-📖 **[Full Structure →](docs/reference/project-structure.md)**
+📖 **[Full Structure →](docs/diataxis-index.md)**
 
 ## 🧪 Testing
 
@@ -132,7 +132,7 @@ npm test              # Run all tests (>80% coverage)
 npm run test:coverage # Coverage report
 ```
 
-📖 **[Testing Guide →](docs/how-to-guides/testing.md)**
+📖 **[Testing Guide →](docs/how-to-guides/troubleshooting.md)**
 
 ## 🔧 Development
 
@@ -144,7 +144,7 @@ npm install && npm run build && npm test
 
 **Quality Standards:** TypeScript strict mode • ESLint • >80% test coverage • Pre-commit hooks
 
-📖 **[Development Guide →](docs/how-to-guides/development.md)** | **[Contributing →](CONTRIBUTING.md)**
+📖 **[Development Guide →](docs/how-to-guides/getting-started-workflow-guidance.md)** | **[Contributing →](CONTRIBUTING.md)**
 
 ## 🔧 Troubleshooting
 
@@ -162,7 +162,7 @@ npm install && npm run build && npm test
 **Security:** Automatic secret detection • Content masking • Local processing • Zero trust  
 **Performance:** Multi-level caching • Incremental analysis • Parallel processing • Memory optimization
 
-📖 **[Security Guide →](docs/explanation/security.md)** | **[Performance →](docs/explanation/performance.md)**
+📖 **[Security Guide →](docs/explanation/security-philosophy.md)** | **[Performance →](docs/explanation/performance-design.md)**
 
 ## 🤝 Contributing
 
@@ -176,7 +176,7 @@ We welcome contributions! Fork → Create branch → Add tests → Submit PR
 
 **Official:** [MCP Specification](https://modelcontextprotocol.io/) • [MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk)  
 **Community:** [MCP Registry](https://github.com/modelcontextprotocol/servers) • [Discord](https://discord.gg/modelcontextprotocol)  
-**Project:** [ADRs](./docs/adrs/) • [Progress](./todo.md) • [Publishing Guide](./docs/NPM_PUBLISHING.md)
+**Project:** [ADRs](./docs/adrs/) • [Progress](./docs/release-dashboard.md) • [Publishing Guide](./docs/how-to-guides/NPM_PUBLISHING.md)
 
 ## 📄 License
 
