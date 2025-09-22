@@ -9,9 +9,15 @@ import { z } from 'zod';
 // Base Types
 // ============================================================================
 
+/**
+ * Base prompt object for knowledge generation
+ */
 export interface PromptObject {
+  /** The main prompt text */
   prompt: string;
+  /** Instructions for using the prompt */
   instructions: string;
+  /** Additional context data */
   context: any;
 }
 
@@ -19,9 +25,9 @@ export interface PromptObject {
 // Core Knowledge Generation Types
 // ============================================================================
 
-export type ArchitecturalDomain = 
+export type ArchitecturalDomain =
   | 'web-applications'
-  | 'mobile-applications' 
+  | 'mobile-applications'
   | 'microservices'
   | 'database-design'
   | 'cloud-infrastructure'
@@ -48,26 +54,36 @@ export type CacheStrategy = 'aggressive' | 'moderate' | 'minimal';
 // Knowledge Structure Interfaces
 // ============================================================================
 
+/**
+ * Represents a single piece of architectural knowledge
+ */
 export interface KnowledgeItem {
+  /** Category of knowledge */
   category: KnowledgeCategory;
+  /** Title of the knowledge item */
   title: string;
+  /** Detailed content of the knowledge */
   content: string;
-  relevance: number; // 0-1 scale
+  /** Relevance score (0-1 scale) */
+  relevance: number;
+  /** Evidence supporting this knowledge */
   evidence: string[];
+  /** Tags for categorization */
   tags: string[];
+  /** Optional sources of the knowledge */
   sources?: string[];
 }
 
 export const KnowledgeItemSchema = z.object({
   category: z.enum([
     'best-practices',
-    'design-patterns', 
+    'design-patterns',
     'anti-patterns',
     'technology-specific',
     'performance-considerations',
     'security-guidelines',
     'scalability-patterns',
-    'testing-strategies'
+    'testing-strategies',
   ]),
   title: z.string(),
   content: z.string(),
@@ -77,21 +93,39 @@ export const KnowledgeItemSchema = z.object({
   sources: z.array(z.string()).optional(),
 });
 
+/**
+ * Metadata about knowledge generation process
+ */
 export interface KnowledgeMetadata {
+  /** Timestamp when knowledge was generated */
   generatedAt: string;
-  generationTime: number; // milliseconds
+  /** Time taken to generate knowledge (milliseconds) */
+  generationTime: number;
+  /** Cache key for storing/retrieving knowledge */
   cacheKey: string;
+  /** Architectural domains covered */
   domains: ArchitecturalDomain[];
-  confidence: number; // 0-1 scale
+  /** Confidence level of generated knowledge (0-1 scale) */
+  confidence: number;
+  /** Version of the knowledge generation system */
   version: string;
 }
 
+/**
+ * Knowledge collection for a specific architectural domain
+ */
 export interface DomainKnowledge {
+  /** The architectural domain this knowledge covers */
   domain: ArchitecturalDomain;
+  /** Collection of knowledge items */
   knowledge: KnowledgeItem[];
-  confidence: number; // 0-1 scale
+  /** Overall confidence in the knowledge (0-1 scale) */
+  confidence: number;
+  /** Timestamp when knowledge was collected */
   timestamp: string;
+  /** Sources used to generate the knowledge */
   sources: string[];
+  /** Metadata about the generation process */
   metadata: KnowledgeMetadata;
 }
 
@@ -99,14 +133,14 @@ export const DomainKnowledgeSchema = z.object({
   domain: z.enum([
     'web-applications',
     'mobile-applications',
-    'microservices', 
+    'microservices',
     'database-design',
     'cloud-infrastructure',
     'devops-cicd',
     'security-patterns',
     'performance-optimization',
     'api-design',
-    'data-architecture'
+    'data-architecture',
   ]),
   knowledge: z.array(KnowledgeItemSchema),
   confidence: z.number().min(0).max(1),
@@ -126,16 +160,29 @@ export const DomainKnowledgeSchema = z.object({
 // Configuration Interfaces
 // ============================================================================
 
+/**
+ * Configuration for knowledge generation process
+ */
 export interface KnowledgeGenerationConfig {
+  /** Architectural domains to generate knowledge for */
   domains?: ArchitecturalDomain[];
+  /** Depth of knowledge to generate */
   depth?: KnowledgeDepth;
+  /** Whether to enable caching of generated knowledge */
   cacheEnabled?: boolean;
-  cacheTTL?: number; // seconds
+  /** Cache time-to-live in seconds */
+  cacheTTL?: number;
+  /** Whether to perform security validation on generated knowledge */
   securityValidation?: boolean;
+  /** Custom templates for domain-specific knowledge */
   customTemplates?: DomainTemplate[];
+  /** Maximum number of knowledge items to generate */
   maxKnowledgeItems?: number;
+  /** Maximum tokens to use for generation */
   maxTokens?: number;
-  relevanceThreshold?: number; // 0-1 scale
+  /** Minimum relevance threshold (0-1 scale) */
+  relevanceThreshold?: number;
+  /** Whether to generate knowledge in parallel */
   parallelGeneration?: boolean;
 }
 
@@ -165,25 +212,47 @@ export interface ToolKnowledgeConfig {
 // Context and Input Interfaces
 // ============================================================================
 
+/**
+ * Context about the architectural environment for knowledge generation
+ */
 export interface ArchitecturalContext {
+  /** Path to the project being analyzed */
   projectPath?: string;
+  /** Technologies used in the project */
   technologies?: string[];
+  /** Architectural patterns detected or used */
   patterns?: string[];
+  /** Existing ADRs in the project */
   existingAdrs?: string[];
+  /** Type of project (web app, microservice, etc.) */
   projectType?: string;
+  /** Size of the development team */
   teamSize?: number;
+  /** Known constraints or limitations */
   constraints?: string[];
+  /** Project goals and objectives */
   goals?: string[];
 }
 
+/**
+ * Detailed context about a project for knowledge generation
+ */
 export interface ProjectContext {
+  /** Absolute path to the project */
   path: string;
+  /** Project name */
   name?: string;
+  /** Project description */
   description?: string;
+  /** Technologies detected in the project */
   technologies: string[];
+  /** File types found in the project */
   fileTypes: string[];
+  /** Directory structure of the project */
   directoryStructure: string[];
+  /** Package management files (package.json, requirements.txt, etc.) */
   packageFiles: string[];
+  /** Configuration files found */
   configFiles: string[];
 }
 
@@ -212,12 +281,21 @@ export interface TemplateMetadata {
   tags: string[];
 }
 
+/**
+ * Result of knowledge generation process
+ */
 export interface KnowledgeGenerationResult {
+  /** Generated prompt with knowledge integration */
   knowledgePrompt: PromptObject;
+  /** Enhanced version of the prompt (if applicable) */
   enhancedPrompt?: PromptObject;
+  /** Generated domain-specific knowledge */
   domainKnowledge: DomainKnowledge[];
+  /** Cache key for storing/retrieving this result */
   cacheKey: string;
+  /** Metadata about the generation process */
   metadata: GenerationMetadata;
+  /** Security validation results */
   securityCheck?: KnowledgeSecurityCheck;
 }
 
@@ -370,11 +448,13 @@ export const KnowledgeGenerationResultSchema = z.object({
     instructions: z.string(),
     context: z.any(),
   }),
-  enhancedPrompt: z.object({
-    prompt: z.string(),
-    instructions: z.string(),
-    context: z.any(),
-  }).optional(),
+  enhancedPrompt: z
+    .object({
+      prompt: z.string(),
+      instructions: z.string(),
+      context: z.any(),
+    })
+    .optional(),
   domainKnowledge: z.array(DomainKnowledgeSchema),
   cacheKey: z.string(),
   metadata: z.object({
@@ -386,13 +466,15 @@ export const KnowledgeGenerationResultSchema = z.object({
     averageConfidence: z.number(),
     qualityScore: z.number(),
   }),
-  securityCheck: z.object({
-    contentSafety: z.boolean(),
-    sourceReliability: z.number(),
-    relevanceScore: z.number(),
-    qualityScore: z.number(),
-    warnings: z.array(z.string()),
-    recommendations: z.array(z.string()),
-    validationTime: z.number(),
-  }).optional(),
+  securityCheck: z
+    .object({
+      contentSafety: z.boolean(),
+      sourceReliability: z.number(),
+      relevanceScore: z.number(),
+      qualityScore: z.number(),
+      warnings: z.array(z.string()),
+      recommendations: z.array(z.string()),
+      validationTime: z.number(),
+    })
+    .optional(),
 });
