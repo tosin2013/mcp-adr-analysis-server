@@ -192,21 +192,39 @@ export interface GenerationRequest {
   constraints: GenerationConstraints;
 }
 
+/**
+ * Context information for prompt generation
+ */
 export interface GenerationContext {
+  /** Type of task the prompt will be used for */
   taskType: string;
+  /** Domain or subject area */
   domain: string;
+  /** Intended audience for the prompt */
   targetAudience: string;
+  /** Complexity level of the prompt */
   complexity: 'simple' | 'moderate' | 'complex';
+  /** Writing style to use */
   style: 'formal' | 'conversational' | 'technical';
+  /** Target length of the prompt */
   length: 'short' | 'medium' | 'long';
 }
 
+/**
+ * Constraints to apply during prompt generation
+ */
 export interface GenerationConstraints {
+  /** Maximum length in characters */
   maxLength: number;
+  /** Minimum length in characters */
   minLength: number;
+  /** Keywords that must be included */
   requiredKeywords: string[];
+  /** Terms that must not be included */
   forbiddenTerms: string[];
+  /** Style requirements to follow */
   styleRequirements: string[];
+  /** Format requirements to follow */
   formatRequirements: string[];
 }
 
@@ -214,21 +232,39 @@ export interface GenerationConstraints {
 // Evaluation Interfaces
 // ============================================================================
 
+/**
+ * Result of evaluating a prompt candidate
+ */
 export interface EvaluationResult {
+  /** ID of the candidate that was evaluated */
   candidateId: string;
-  scores: Record<EvaluationCriterion, number>; // Criterion -> Score (0-1)
-  overallScore: number; // Weighted average (0-1)
+  /** Scores for each evaluation criterion (0-1) */
+  scores: Record<EvaluationCriterion, number>;
+  /** Weighted average overall score (0-1) */
+  overallScore: number;
+  /** Detailed feedback for each criterion */
   feedback: EvaluationFeedback[];
-  evaluationTime: number; // milliseconds
+  /** Time taken for evaluation (milliseconds) */
+  evaluationTime: number;
+  /** Version of the evaluator used */
   evaluatorVersion: string;
+  /** Additional evaluation metadata */
   metadata: EvaluationMetadata;
 }
 
+/**
+ * Detailed feedback for a specific evaluation criterion
+ */
 export interface EvaluationFeedback {
+  /** The criterion this feedback relates to */
   criterion: EvaluationCriterion;
+  /** Score for this criterion (0-1) */
   score: number;
+  /** Explanation of why this score was given */
   reasoning: string;
+  /** Suggestions for improvement */
   suggestions: string[];
+  /** Examples to illustrate the feedback */
   examples?: string[];
 }
 
