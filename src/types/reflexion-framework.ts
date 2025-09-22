@@ -19,26 +19,26 @@ export interface PromptObject {
 // Core Reflexion Types
 // ============================================================================
 
-export type MemoryType = 
-  | 'episodic'                      // Specific experiences and attempts
-  | 'semantic'                      // General knowledge and principles
-  | 'procedural'                    // Methods and approaches
-  | 'meta'                          // Learning about learning
-  | 'feedback';                     // External feedback and validation
+export type MemoryType =
+  | 'episodic' // Specific experiences and attempts
+  | 'semantic' // General knowledge and principles
+  | 'procedural' // Methods and approaches
+  | 'meta' // Learning about learning
+  | 'feedback'; // External feedback and validation
 
 export type EvaluationCriterion =
-  | 'task-success'                  // Did the task succeed?
-  | 'quality'                       // How well was it executed?
-  | 'efficiency'                    // Was the approach optimal?
-  | 'accuracy'                      // How accurate were the results?
-  | 'completeness'                  // Was the task fully completed?
-  | 'relevance'                     // How relevant was the output?
-  | 'clarity'                       // How clear was the communication?
-  | 'innovation';                   // Was the approach creative/novel?
+  | 'task-success' // Did the task succeed?
+  | 'quality' // How well was it executed?
+  | 'efficiency' // Was the approach optimal?
+  | 'accuracy' // How accurate were the results?
+  | 'completeness' // Was the task fully completed?
+  | 'relevance' // How relevant was the output?
+  | 'clarity' // How clear was the communication?
+  | 'innovation'; // Was the approach creative/novel?
 
 export type ReflectionDepth = 'basic' | 'detailed' | 'comprehensive';
 
-export type LearningPhase = 
+export type LearningPhase =
   | 'memory-retrieval'
   | 'task-execution'
   | 'performance-evaluation'
@@ -49,33 +49,48 @@ export type LearningPhase =
 // Configuration Interfaces
 // ============================================================================
 
+/**
+ * Configuration for the Reflexion learning framework
+ */
 export interface ReflexionConfig {
+  /** Whether memory system is enabled */
   memoryEnabled: boolean;
-  maxMemoryEntries: number;         // Maximum memories per type
+  /** Maximum memories per type */
+  maxMemoryEntries: number;
+  /** Depth of reflection analysis */
   reflectionDepth: ReflectionDepth;
+  /** Criteria used for evaluating performance */
   evaluationCriteria: EvaluationCriterion[];
-  learningRate: number;             // How quickly to adapt (0-1)
-  memoryRetention: number;          // How long to keep memories (days)
-  feedbackIntegration: boolean;     // Enable external feedback
-  autoCleanup: boolean;             // Automatic memory cleanup
-  relevanceThreshold: number;       // Minimum relevance for memory retrieval (0-1)
-  confidenceThreshold: number;      // Minimum confidence for lesson application (0-1)
+  /** How quickly to adapt from experiences (0-1) */
+  learningRate: number;
+  /** How long to keep memories (days) */
+  memoryRetention: number;
+  /** Enable external feedback integration */
+  feedbackIntegration: boolean;
+  /** Automatic memory cleanup */
+  autoCleanup: boolean;
+  /** Minimum relevance for memory retrieval (0-1) */
+  relevanceThreshold: number;
+  /** Minimum confidence for lesson application (0-1) */
+  confidenceThreshold: number;
 }
 
 export const ReflexionConfigSchema = z.object({
   memoryEnabled: z.boolean(),
   maxMemoryEntries: z.number().min(1).max(1000),
   reflectionDepth: z.enum(['basic', 'detailed', 'comprehensive']),
-  evaluationCriteria: z.array(z.enum([
-    'task-success',
-    'quality',
-    'efficiency',
-    'accuracy',
-    'completeness',
-    'relevance',
-    'clarity',
-    'innovation'
-  ])),
+  evaluationCriteria: z.array(
+    z.enum([
+      'task-success',
+      'quality',
+      'efficiency',
+      'accuracy',
+      'completeness',
+      'relevance',
+      'clarity',
+      'innovation',
+    ])
+  ),
   learningRate: z.number().min(0).max(1),
   memoryRetention: z.number().min(1).max(365),
   feedbackIntegration: z.boolean(),
@@ -97,53 +112,78 @@ export interface ToolReflexionConfig {
 // Task Execution Interfaces
 // ============================================================================
 
+/**
+ * Represents a single task execution attempt in the Reflexion framework
+ */
 export interface TaskAttempt {
+  /** Unique identifier for this attempt */
   attemptId: string;
+  /** Type of task being attempted */
   taskType: string;
+  /** Context information for the task */
   context: any;
+  /** Action taken during the attempt */
   action: string;
+  /** Outcome of the task execution */
   outcome: TaskOutcome;
+  /** Evaluation of the attempt's performance */
   evaluation: EvaluationResult;
+  /** Self-reflection analysis */
   reflection: SelfReflection;
+  /** Timestamp when attempt was made */
   timestamp: string;
+  /** Additional metadata about the attempt */
   metadata: AttemptMetadata;
-  relatedMemories: string[];        // IDs of memories used
-  generatedMemories: string[];      // IDs of memories created
+  /** IDs of memories used during execution */
+  relatedMemories: string[];
+  /** IDs of memories created from this attempt */
+  generatedMemories: string[];
 }
 
+/**
+ * Outcome of a task execution attempt
+ */
 export interface TaskOutcome {
+  /** Whether the task was successful */
   success: boolean;
+  /** Result data from the task execution */
   result: any;
+  /** Errors encountered during execution */
   errors: string[];
+  /** Warnings generated during execution */
   warnings: string[];
-  executionTime: number;            // milliseconds
+  /** Time taken to execute (milliseconds) */
+  executionTime: number;
+  /** Resources consumed during execution */
   resourcesUsed: ResourceUsage;
+  /** Quality metrics for the outcome */
   qualityMetrics: QualityMetrics;
+  /** Optional user feedback on the outcome */
   userFeedback?: UserFeedback;
 }
 
 export interface ResourceUsage {
-  memoryAccessed: number;           // Number of memories accessed
-  memoryCreated: number;            // Number of memories created
-  processingTime: number;           // milliseconds
-  promptTokens: number;             // Approximate token usage
+  memoryAccessed: number; // Number of memories accessed
+  memoryCreated: number; // Number of memories created
+  processingTime: number; // milliseconds
+  promptTokens: number; // Approximate token usage
   cacheHits: number;
   cacheMisses: number;
 }
 
 export interface QualityMetrics {
-  accuracy: number;                 // 0-1 scale
-  completeness: number;             // 0-1 scale
-  relevance: number;                // 0-1 scale
-  clarity: number;                  // 0-1 scale
-  innovation: number;               // 0-1 scale
-  efficiency: number;               // 0-1 scale
+  accuracy: number; // 0-1 scale
+  completeness: number; // 0-1 scale
+  relevance: number; // 0-1 scale
+  clarity: number; // 0-1 scale
+  innovation: number; // 0-1 scale
+  efficiency: number; // 0-1 scale
 }
 
 export interface AttemptMetadata {
-  attemptNumber: number;            // Sequential attempt number for this task type
-  previousAttempts: string[];       // IDs of previous attempts
-  improvementFromPrevious: number;  // -1 to 1 scale
+  attemptNumber: number; // Sequential attempt number for this task type
+  previousAttempts: string[]; // IDs of previous attempts
+  improvementFromPrevious: number; // -1 to 1 scale
   strategiesUsed: string[];
   lessonsApplied: string[];
   challengesFaced: string[];
@@ -154,21 +194,21 @@ export interface AttemptMetadata {
 // ============================================================================
 
 export interface EvaluationResult {
-  overallScore: number;             // 0-1 scale
+  overallScore: number; // 0-1 scale
   criteriaScores: Record<EvaluationCriterion, number>;
   feedback: EvaluationFeedback[];
   strengths: string[];
   weaknesses: string[];
   improvementAreas: string[];
-  confidence: number;               // 0-1 scale
-  evaluationTime: number;           // milliseconds
+  confidence: number; // 0-1 scale
+  evaluationTime: number; // milliseconds
   evaluatorVersion: string;
   metadata: EvaluationMetadata;
 }
 
 export interface EvaluationFeedback {
   criterion: EvaluationCriterion;
-  score: number;                    // 0-1 scale
+  score: number; // 0-1 scale
   reasoning: string;
   suggestions: string[];
   examples?: string[];
@@ -180,7 +220,7 @@ export interface EvaluationMetadata {
   evaluationMethod: string;
   contextFactors: string[];
   biasChecks: BiasCheck[];
-  reliability: number;              // 0-1 scale
+  reliability: number; // 0-1 scale
   comparativeAnalysis?: ComparativeAnalysis;
 }
 
@@ -192,8 +232,8 @@ export interface BiasCheck {
 }
 
 export interface ComparativeAnalysis {
-  comparedTo: string[];             // Previous attempts or benchmarks
-  relativePerformance: number;      // -1 to 1 scale
+  comparedTo: string[]; // Previous attempts or benchmarks
+  relativePerformance: number; // -1 to 1 scale
   improvementAreas: string[];
   regressionAreas: string[];
 }
@@ -201,7 +241,7 @@ export interface ComparativeAnalysis {
 export interface CustomEvaluator {
   name: string;
   criterion: EvaluationCriterion;
-  weight: number;                   // 0-1 scale
+  weight: number; // 0-1 scale
   evaluationPrompt: string;
   expectedOutputFormat: string;
   validationRules: ValidationRule[];
@@ -225,9 +265,9 @@ export interface SelfReflection {
   actionableInsights: ActionableInsight[];
   futureStrategies: Strategy[];
   knowledgeGaps: KnowledgeGap[];
-  confidenceLevel: number;          // 0-1 scale
-  applicability: string[];          // Contexts where lessons apply
-  reflectionTime: number;           // milliseconds
+  confidenceLevel: number; // 0-1 scale
+  applicability: string[]; // Contexts where lessons apply
+  reflectionTime: number; // milliseconds
   metadata: ReflectionMetadata;
 }
 
@@ -237,8 +277,8 @@ export interface LessonLearned {
   importance: 'low' | 'medium' | 'high' | 'critical';
   evidence: string[];
   applicableContexts: string[];
-  confidence: number;               // 0-1 scale
-  generalizability: number;         // 0-1 scale (how broadly applicable)
+  confidence: number; // 0-1 scale
+  generalizability: number; // 0-1 scale (how broadly applicable)
 }
 
 export interface ActionableInsight {
@@ -247,7 +287,7 @@ export interface ActionableInsight {
   priority: 'low' | 'medium' | 'high' | 'critical';
   timeframe: 'immediate' | 'short-term' | 'medium-term' | 'long-term';
   resources: string[];
-  expectedImpact: number;           // 0-1 scale
+  expectedImpact: number; // 0-1 scale
   riskLevel: 'low' | 'medium' | 'high';
 }
 
@@ -265,7 +305,7 @@ export interface KnowledgeGap {
   gap: string;
   category: string;
   impact: 'low' | 'medium' | 'high' | 'critical';
-  learningPriority: number;         // 0-1 scale
+  learningPriority: number; // 0-1 scale
   suggestedResources: string[];
   estimatedLearningTime: string;
 }
@@ -276,8 +316,8 @@ export interface ReflectionMetadata {
   triggerEvent: string;
   contextFactors: string[];
   emotionalState?: string;
-  cognitiveLoad: number;            // 0-1 scale
-  reflectionQuality: number;        // 0-1 scale
+  cognitiveLoad: number; // 0-1 scale
+  reflectionQuality: number; // 0-1 scale
 }
 
 // ============================================================================
@@ -288,7 +328,7 @@ export interface ReflexionMemory {
   memoryId: string;
   memoryType: MemoryType;
   content: MemoryContent;
-  relevanceScore: number;           // 0-1 scale
+  relevanceScore: number; // 0-1 scale
   accessCount: number;
   lastAccessed: string;
   createdAt: string;
@@ -312,10 +352,10 @@ export interface MemoryContent {
 }
 
 export interface MemoryMetadata {
-  source: string;                   // Where this memory came from
-  quality: number;                  // 0-1 scale
-  reliability: number;              // 0-1 scale
-  generalizability: number;         // 0-1 scale
+  source: string; // Where this memory came from
+  quality: number; // 0-1 scale
+  reliability: number; // 0-1 scale
+  generalizability: number; // 0-1 scale
   updateCount: number;
   lastUpdated: string;
   category: string;
@@ -326,7 +366,7 @@ export interface MemoryMetadata {
 export interface MemoryRelationship {
   relatedMemoryId: string;
   relationshipType: 'similar' | 'contradicts' | 'builds-on' | 'prerequisite' | 'outcome';
-  strength: number;                 // 0-1 scale
+  strength: number; // 0-1 scale
   description: string;
 }
 
@@ -347,7 +387,7 @@ export interface MemoryQuery {
 export interface MemorySearchResult {
   memories: ReflexionMemory[];
   totalFound: number;
-  searchTime: number;               // milliseconds
+  searchTime: number; // milliseconds
   relevanceScores: Record<string, number>;
   searchMetadata: SearchMetadata;
 }
@@ -357,7 +397,7 @@ export interface SearchMetadata {
   searchStrategy: string;
   indexesUsed: string[];
   cacheHits: number;
-  searchQuality: number;            // 0-1 scale
+  searchQuality: number; // 0-1 scale
 }
 
 // ============================================================================
@@ -367,22 +407,22 @@ export interface SearchMetadata {
 export interface LearningProgress {
   taskType: string;
   totalAttempts: number;
-  successRate: number;              // 0-1 scale
-  averageScore: number;             // 0-1 scale
-  improvementTrend: number;         // -1 to 1 (declining to improving)
+  successRate: number; // 0-1 scale
+  averageScore: number; // 0-1 scale
+  improvementTrend: number; // -1 to 1 (declining to improving)
   lastImprovement: string;
   keyLessons: string[];
   persistentIssues: string[];
   nextFocusAreas: string[];
-  learningVelocity: number;         // Rate of improvement
+  learningVelocity: number; // Rate of improvement
   plateauDetection: PlateauAnalysis;
   metadata: LearningMetadata;
 }
 
 export interface PlateauAnalysis {
   isOnPlateau: boolean;
-  plateauDuration: number;          // Number of attempts
-  plateauConfidence: number;        // 0-1 scale
+  plateauDuration: number; // Number of attempts
+  plateauConfidence: number; // 0-1 scale
   suggestedInterventions: string[];
   alternativeApproaches: string[];
 }
@@ -390,19 +430,19 @@ export interface PlateauAnalysis {
 export interface LearningMetadata {
   trackingStarted: string;
   lastUpdated: string;
-  dataQuality: number;              // 0-1 scale
+  dataQuality: number; // 0-1 scale
   sampleSize: number;
   confidenceInterval: number;
-  statisticalSignificance: number;  // 0-1 scale
+  statisticalSignificance: number; // 0-1 scale
   trendAnalysis: TrendAnalysis;
 }
 
 export interface TrendAnalysis {
-  shortTermTrend: number;           // -1 to 1 (last 5 attempts)
-  mediumTermTrend: number;          // -1 to 1 (last 20 attempts)
-  longTermTrend: number;            // -1 to 1 (all attempts)
-  volatility: number;               // 0-1 scale
-  predictability: number;           // 0-1 scale
+  shortTermTrend: number; // -1 to 1 (last 5 attempts)
+  mediumTermTrend: number; // -1 to 1 (last 20 attempts)
+  longTermTrend: number; // -1 to 1 (all attempts)
+  volatility: number; // 0-1 scale
+  predictability: number; // 0-1 scale
 }
 
 // ============================================================================
@@ -422,10 +462,10 @@ export interface LearningOutcome {
   lessonsLearned: number;
   memoriesCreated: number;
   memoriesUpdated: number;
-  improvementAchieved: number;      // 0-1 scale
+  improvementAchieved: number; // 0-1 scale
   knowledgeGapsIdentified: number;
   strategiesRefined: number;
-  confidenceChange: number;         // -1 to 1 scale
+  confidenceChange: number; // -1 to 1 scale
 }
 
 export interface MemoryUpdate {
@@ -433,27 +473,27 @@ export interface MemoryUpdate {
   updateType: 'create' | 'update' | 'strengthen' | 'weaken' | 'expire';
   changes: string[];
   reason: string;
-  impact: number;                   // 0-1 scale
+  impact: number; // 0-1 scale
 }
 
 export interface ReflexionPerformanceMetrics {
-  totalReflexionTime: number;       // milliseconds
-  memoryRetrievalTime: number;      // milliseconds
-  evaluationTime: number;           // milliseconds
-  reflectionTime: number;           // milliseconds
-  memoryIntegrationTime: number;    // milliseconds
+  totalReflexionTime: number; // milliseconds
+  memoryRetrievalTime: number; // milliseconds
+  evaluationTime: number; // milliseconds
+  reflectionTime: number; // milliseconds
+  memoryIntegrationTime: number; // milliseconds
   memoriesAccessed: number;
   memoriesCreated: number;
-  learningEfficiency: number;       // 0-1 scale
-  resourceUtilization: number;      // 0-1 scale
+  learningEfficiency: number; // 0-1 scale
+  resourceUtilization: number; // 0-1 scale
 }
 
 export interface UserFeedback {
-  rating: number;                   // 1-5 scale
+  rating: number; // 1-5 scale
   comments: string;
   categories: string[];
-  helpfulness: number;              // 0-1 scale
-  accuracy: number;                 // 0-1 scale
+  helpfulness: number; // 0-1 scale
+  accuracy: number; // 0-1 scale
   suggestions: string[];
   submittedAt: string;
   userId?: string;
@@ -480,7 +520,7 @@ export const TaskAttemptSchema = z.object({
       processingTime: z.number(),
       promptTokens: z.number(),
       cacheHits: z.number(),
-      cacheMisses: z.number()
+      cacheMisses: z.number(),
     }),
     qualityMetrics: z.object({
       accuracy: z.number().min(0).max(1),
@@ -488,8 +528,8 @@ export const TaskAttemptSchema = z.object({
       relevance: z.number().min(0).max(1),
       clarity: z.number().min(0).max(1),
       innovation: z.number().min(0).max(1),
-      efficiency: z.number().min(0).max(1)
-    })
+      efficiency: z.number().min(0).max(1),
+    }),
   }),
   evaluation: z.object({
     overallScore: z.number().min(0).max(1),
@@ -500,7 +540,7 @@ export const TaskAttemptSchema = z.object({
     improvementAreas: z.array(z.string()),
     confidence: z.number().min(0).max(1),
     evaluationTime: z.number(),
-    evaluatorVersion: z.string()
+    evaluatorVersion: z.string(),
   }),
   reflection: z.object({
     reflectionId: z.string(),
@@ -511,10 +551,10 @@ export const TaskAttemptSchema = z.object({
     knowledgeGaps: z.array(z.any()),
     confidenceLevel: z.number().min(0).max(1),
     applicability: z.array(z.string()),
-    reflectionTime: z.number()
+    reflectionTime: z.number(),
   }),
   timestamp: z.string(),
   metadata: z.any(),
   relatedMemories: z.array(z.string()),
-  generatedMemories: z.array(z.string())
+  generatedMemories: z.array(z.string()),
 });
