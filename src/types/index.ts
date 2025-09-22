@@ -223,18 +223,33 @@ export const ArchitecturalKnowledgeGraphSchema = z.object({
 // ADR Task Types
 // ============================================================================
 
+/**
+ * Represents a task derived from an ADR implementation plan
+ */
 export interface AdrTask {
+  /** Unique identifier for the task */
   id: string;
+  /** ID of the ADR this task belongs to */
   adrId: string;
+  /** Title of the task */
   title: string;
+  /** Detailed description of the task */
   description: string;
+  /** Current status of the task */
   status: 'pending' | 'in_progress' | 'completed' | 'blocked';
+  /** Priority level of the task */
   priority: 'low' | 'medium' | 'high' | 'critical';
+  /** Estimated effort required */
   estimatedEffort?: string;
+  /** Person assigned to the task */
   assignee?: string;
+  /** Due date for task completion */
   dueDate?: string;
+  /** Other tasks this task depends on */
   dependencies?: string[];
+  /** Criteria for verifying task completion */
   verificationCriteria?: string;
+  /** Evidence that the task has been completed */
   completionEvidence?: string[];
 }
 
@@ -257,17 +272,31 @@ export const AdrTaskSchema = z.object({
 // Rule Types
 // ============================================================================
 
+/**
+ * Represents a validation or analysis rule
+ */
 export interface Rule {
+  /** Unique identifier for the rule */
   id: string;
+  /** Human-readable name of the rule */
   name: string;
+  /** Description of what the rule validates */
   description: string;
+  /** Category of the rule */
   type: 'architectural' | 'coding' | 'security' | 'performance' | 'documentation';
+  /** Severity level when rule is violated */
   severity: 'info' | 'warning' | 'error' | 'critical';
-  pattern: string; // Regex or glob pattern
+  /** Regex or glob pattern to match against */
+  pattern: string;
+  /** Message to display when rule is violated */
   message: string;
+  /** Source of the rule definition */
   source: 'adr' | 'inferred' | 'user_defined';
-  sourceId?: string; // ADR ID if source is 'adr'
+  /** ID of source ADR if rule comes from an ADR */
+  sourceId?: string;
+  /** Whether the rule is currently enabled */
   enabled: boolean;
+  /** Optional tags for categorization */
   tags?: string[];
 }
 
@@ -289,8 +318,14 @@ export const RuleSchema = z.object({
 // Error Types
 // ============================================================================
 
+/**
+ * Base error class for MCP ADR Analysis Server
+ * Provides structured error handling with error codes and additional details
+ */
 export class McpAdrError extends Error {
+  /** Error code for programmatic handling */
   public readonly code: string;
+  /** Additional error details and context */
   public readonly details?: Record<string, unknown>;
 
   constructor(message: string, code: string, details?: Record<string, unknown>) {
@@ -303,6 +338,9 @@ export class McpAdrError extends Error {
   }
 }
 
+/**
+ * Error thrown when data validation fails
+ */
 export class ValidationError extends McpAdrError {
   constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'VALIDATION_ERROR', details);
@@ -310,6 +348,9 @@ export class ValidationError extends McpAdrError {
   }
 }
 
+/**
+ * Error thrown when file system operations fail
+ */
 export class FileSystemError extends McpAdrError {
   constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'FILESYSTEM_ERROR', details);
@@ -317,6 +358,9 @@ export class FileSystemError extends McpAdrError {
   }
 }
 
+/**
+ * Error thrown when analysis operations fail
+ */
 export class AnalysisError extends McpAdrError {
   constructor(message: string, details?: Record<string, unknown>) {
     super(message, 'ANALYSIS_ERROR', details);
@@ -330,20 +374,37 @@ export class AnalysisError extends McpAdrError {
 
 export type ConfidenceLevel = 'low' | 'medium' | 'high';
 
+/**
+ * Generic wrapper for analysis results with metadata
+ */
 export interface AnalysisResult<T> {
+  /** The actual analysis data */
   data: T;
+  /** Confidence level of the analysis (0-1) */
   confidence: number;
+  /** Timestamp when analysis was performed */
   timestamp: string;
+  /** Source of the analysis */
   source: string;
+  /** Optional warnings from the analysis */
   warnings?: string[];
+  /** Optional errors encountered during analysis */
   errors?: string[];
 }
 
+/**
+ * Generic cache entry with TTL and metadata
+ */
 export interface CacheEntry<T> {
+  /** Cache key for retrieval */
   key: string;
+  /** Cached data */
   data: T;
+  /** Timestamp when entry was created */
   timestamp: string;
+  /** Time to live in seconds */
   ttl: number;
+  /** Optional metadata about the cached entry */
   metadata?: Record<string, unknown>;
 }
 
