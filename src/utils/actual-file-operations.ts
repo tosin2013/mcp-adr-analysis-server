@@ -1,6 +1,6 @@
 /**
  * Actual File Operations Utilities
- * 
+ *
  * Utilities that perform real file system operations instead of returning prompts
  */
 
@@ -44,7 +44,7 @@ export async function scanProjectStructure(
   const {
     readContent = true,
     maxFileSize = 100000, // 100KB max
-    includeHidden = false
+    includeHidden = false,
   } = options;
 
   try {
@@ -63,7 +63,7 @@ export async function scanProjectStructure(
       ciFiles: [],
       scriptFiles: [],
       totalFiles: 0,
-      directories: []
+      directories: [],
     };
 
     // Scan for specific file patterns
@@ -77,7 +77,7 @@ export async function scanProjectStructure(
       { pattern: 'go.mod', category: 'packageFiles' },
       { pattern: 'pom.xml', category: 'packageFiles' },
       { pattern: 'build.gradle', category: 'packageFiles' },
-      
+
       // Environment files
       { pattern: '.env', category: 'environmentFiles' },
       { pattern: '.env.local', category: 'environmentFiles' },
@@ -86,29 +86,29 @@ export async function scanProjectStructure(
       { pattern: 'config.json', category: 'configFiles' },
       { pattern: 'config.yaml', category: 'configFiles' },
       { pattern: 'config.yml', category: 'configFiles' },
-      
+
       // Docker files
       { pattern: 'Dockerfile', category: 'dockerFiles' },
       { pattern: 'docker-compose.yml', category: 'dockerFiles' },
       { pattern: 'docker-compose.yaml', category: 'dockerFiles' },
       { pattern: '.dockerignore', category: 'dockerFiles' },
-      
+
       // Kubernetes files
       { pattern: '*.yaml', category: 'kubernetesFiles', isPattern: true },
       { pattern: '*.yml', category: 'kubernetesFiles', isPattern: true },
-      
+
       // Build files
       { pattern: 'Makefile', category: 'buildFiles' },
       { pattern: 'webpack.config.js', category: 'buildFiles' },
       { pattern: 'vite.config.js', category: 'buildFiles' },
       { pattern: 'tsconfig.json', category: 'configFiles' },
-      
+
       // CI files
       { pattern: '.github/workflows', category: 'ciFiles', isDirectory: true },
       { pattern: '.gitlab-ci.yml', category: 'ciFiles' },
       { pattern: 'Jenkinsfile', category: 'ciFiles' },
       { pattern: '.travis.yml', category: 'ciFiles' },
-      
+
       // Shell scripts and automation
       { pattern: '*.sh', category: 'scriptFiles', isPattern: true },
       { pattern: '*.bash', category: 'scriptFiles', isPattern: true },
@@ -118,7 +118,7 @@ export async function scanProjectStructure(
       { pattern: '*.bat', category: 'scriptFiles', isPattern: true },
       { pattern: '*.cmd', category: 'scriptFiles', isPattern: true },
       { pattern: 'scripts', category: 'scriptFiles', isDirectory: true },
-      { pattern: 'bin', category: 'scriptFiles', isDirectory: true }
+      { pattern: 'bin', category: 'scriptFiles', isDirectory: true },
     ];
 
     // Scan directories
@@ -152,7 +152,7 @@ export async function scanProjectStructure(
         const files = await findFilesWithPattern(projectPath, fileSpec.pattern);
         for (const filePath of files) {
           let shouldInclude = false;
-          
+
           // Special logic for different file types
           if (fileSpec.category === 'kubernetesFiles') {
             shouldInclude = await isKubernetesFile(filePath);
@@ -161,7 +161,7 @@ export async function scanProjectStructure(
           } else {
             shouldInclude = true; // Include all other pattern matches
           }
-          
+
           if (shouldInclude) {
             const fileInfo = await readFileInfo(filePath, projectPath, readContent, maxFileSize);
             if (fileInfo) {
@@ -184,7 +184,6 @@ export async function scanProjectStructure(
     }
 
     return structure;
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to scan project structure: ${error instanceof Error ? error.message : String(error)}`,
@@ -194,7 +193,10 @@ export async function scanProjectStructure(
 }
 
 /**
- * Scan directories in project
+ * Scan directories in project and return their paths
+ * @param projectPath - The root project path to scan
+ * @param includeHidden - Whether to include hidden directories (starting with .)
+ * @returns Promise resolving to array of directory paths
  */
 async function scanDirectories(projectPath: string, includeHidden: boolean): Promise<string[]> {
   const fs = await import('fs/promises');
@@ -202,7 +204,7 @@ async function scanDirectories(projectPath: string, includeHidden: boolean): Pro
 
   try {
     const entries = await fs.readdir(projectPath, { withFileTypes: true });
-    
+
     for (const entry of entries) {
       if (entry.isDirectory()) {
         if (!includeHidden && entry.name.startsWith('.')) {
@@ -220,6 +222,11 @@ async function scanDirectories(projectPath: string, includeHidden: boolean): Pro
 
 /**
  * Read file information and optionally content
+ * @param filePath - Absolute path to the file
+ * @param projectPath - Root project path for calculating relative paths
+ * @param readContent - Whether to read the file content
+ * @param maxFileSize - Maximum file size to read (in bytes)
+ * @returns Promise resolving to ProjectFileInfo object
  */
 async function readFileInfo(
   filePath: string,
@@ -232,7 +239,7 @@ async function readFileInfo(
 
   try {
     const stat = await fs.stat(filePath);
-    
+
     if (!stat.isFile()) {
       return null;
     }
@@ -254,9 +261,8 @@ async function readFileInfo(
       relativePath: path.relative(projectPath, filePath),
       type: 'unknown',
       size: stat.size,
-      exists: true
+      exists: true,
     };
-
   } catch {
     return null; // File doesn't exist or can't be read
   }
@@ -264,6 +270,9 @@ async function readFileInfo(
 
 /**
  * Find files matching a pattern (simplified glob)
+ * @param projectPath - The root project path to search
+ * @param pattern - File pattern to match (simplified glob pattern)
+ * @returns Promise resolving to array of matching file paths
  */
 async function findFilesWithPattern(projectPath: string, pattern: string): Promise<string[]> {
   const fs = await import('fs/promises');
@@ -275,10 +284,10 @@ async function findFilesWithPattern(projectPath: string, pattern: string): Promi
   try {
     const scan = async (dir: string) => {
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
-        
+
         if (entry.isDirectory() && !entry.name.startsWith('.')) {
           await scan(fullPath); // Recursive scan
         } else if (entry.isFile() && entry.name.endsWith(extension)) {
@@ -297,14 +306,16 @@ async function findFilesWithPattern(projectPath: string, pattern: string): Promi
 
 /**
  * Check if a YAML/YML file is likely a Kubernetes manifest
+ * @param filePath - Path to the YAML file to check
+ * @returns Promise resolving to true if the file appears to be a Kubernetes manifest
  */
 async function isKubernetesFile(filePath: string): Promise<boolean> {
   const fs = await import('fs/promises');
-  
+
   try {
     const content = await fs.readFile(filePath, 'utf-8');
     const lowerContent = content.toLowerCase();
-    
+
     // Look for Kubernetes-specific keywords
     const k8sKeywords = [
       'apiversion',
@@ -318,7 +329,7 @@ async function isKubernetesFile(filePath: string): Promise<boolean> {
       'ingress',
       'namespace',
       'pod',
-      'replicaset'
+      'replicaset',
     ];
 
     return k8sKeywords.some(keyword => lowerContent.includes(keyword));
@@ -328,28 +339,35 @@ async function isKubernetesFile(filePath: string): Promise<boolean> {
 }
 
 /**
- * Check if a file is a script file
+ * Check if a file is a script file based on extension and shebang
+ * @param filePath - Path to the file to check
+ * @returns Promise resolving to true if the file is identified as a script
  */
 async function isScriptFile(filePath: string): Promise<boolean> {
   const fs = await import('fs/promises');
   const path = await import('path');
-  
+
   try {
     const filename = path.basename(filePath);
     const extension = path.extname(filePath).toLowerCase();
-    
+
     // Check by file extension
     const scriptExtensions = ['.sh', '.bash', '.zsh', '.fish', '.ps1', '.bat', '.cmd'];
     if (scriptExtensions.includes(extension)) {
       return true;
     }
-    
+
     // Check for shebang in files without extension or common script names
-    if (!extension || ['run', 'start', 'stop', 'deploy', 'build', 'test', 'setup'].some(name => filename.includes(name))) {
+    if (
+      !extension ||
+      ['run', 'start', 'stop', 'deploy', 'build', 'test', 'setup'].some(name =>
+        filename.includes(name)
+      )
+    ) {
       try {
         const content = await fs.readFile(filePath, 'utf-8');
         const firstLine = content.split('\n')[0];
-        
+
         // Look for shebang lines
         if (firstLine && firstLine.startsWith('#!')) {
           const shebangs = ['/bin/sh', '/bin/bash', '/usr/bin/env', '/bin/zsh', '/bin/fish'];
@@ -359,7 +377,7 @@ async function isScriptFile(filePath: string): Promise<boolean> {
         // Can't read file content, rely on extension/filename
       }
     }
-    
+
     return false;
   } catch {
     return false;
@@ -371,12 +389,12 @@ async function isScriptFile(filePath: string): Promise<boolean> {
  */
 export async function findActualEnvironmentFiles(projectPath: string): Promise<ProjectFileInfo[]> {
   const structure = await scanProjectStructure(projectPath, { readContent: true });
-  
+
   return [
     ...structure.environmentFiles,
     ...structure.dockerFiles,
     ...structure.configFiles,
     ...structure.kubernetesFiles,
-    ...structure.scriptFiles
+    ...structure.scriptFiles,
   ];
 }
