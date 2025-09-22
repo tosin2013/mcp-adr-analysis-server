@@ -9,9 +9,15 @@ import { z } from 'zod';
 // Base Types
 // ============================================================================
 
+/**
+ * Base prompt object structure used throughout the APE framework
+ */
 export interface PromptObject {
+  /** The main prompt text */
   prompt: string;
+  /** Instructions for how to use the prompt */
   instructions: string;
+  /** Additional context data */
   context: any;
 }
 
@@ -19,7 +25,7 @@ export interface PromptObject {
 // APE Core Types
 // ============================================================================
 
-export type GenerationStrategy = 
+export type GenerationStrategy =
   | 'template-variation'
   | 'semantic-variation'
   | 'style-variation'
@@ -53,35 +59,49 @@ export type OptimizationPhase =
 // Configuration Interfaces
 // ============================================================================
 
+/**
+ * Configuration interface for APE optimization process
+ */
 export interface APEConfig {
-  candidateCount: number;           // Number of candidates to generate (default: 5)
+  /** Number of candidates to generate (default: 5) */
+  candidateCount: number;
+  /** Criteria used for evaluating prompt candidates */
   evaluationCriteria: EvaluationCriterion[];
-  optimizationRounds: number;       // Number of optimization iterations (default: 3)
+  /** Number of optimization iterations (default: 3) */
+  optimizationRounds: number;
+  /** Strategy for selecting best candidates */
   selectionStrategy: SelectionStrategy;
+  /** Whether to enable caching of results */
   cacheEnabled: boolean;
+  /** Whether to track performance metrics */
   performanceTracking: boolean;
-  maxOptimizationTime: number;      // Maximum time in milliseconds
-  qualityThreshold: number;         // Minimum quality score (0-1)
-  diversityWeight: number;          // Weight for candidate diversity (0-1)
+  /** Maximum time in milliseconds for optimization */
+  maxOptimizationTime: number;
+  /** Minimum quality score (0-1) to accept candidates */
+  qualityThreshold: number;
+  /** Weight for candidate diversity (0-1) */
+  diversityWeight: number;
 }
 
 export const APEConfigSchema = z.object({
   candidateCount: z.number().min(1).max(20),
-  evaluationCriteria: z.array(z.enum([
-    'task-completion',
-    'clarity', 
-    'specificity',
-    'robustness',
-    'efficiency',
-    'context-awareness'
-  ])),
+  evaluationCriteria: z.array(
+    z.enum([
+      'task-completion',
+      'clarity',
+      'specificity',
+      'robustness',
+      'efficiency',
+      'context-awareness',
+    ])
+  ),
   optimizationRounds: z.number().min(1).max(10),
   selectionStrategy: z.enum([
     'highest-score',
     'multi-criteria',
     'ensemble',
     'context-aware',
-    'balanced'
+    'balanced',
   ]),
   cacheEnabled: z.boolean(),
   performanceTracking: z.boolean(),
@@ -90,12 +110,21 @@ export const APEConfigSchema = z.object({
   diversityWeight: z.number().min(0).max(1),
 });
 
+/**
+ * Configuration for optimizing prompts for specific tools
+ */
 export interface ToolOptimizationConfig {
+  /** Name of the tool being optimized */
   toolName: string;
+  /** Type of task the tool performs */
   taskType: string;
+  /** APE configuration to use */
   apeConfig: APEConfig;
+  /** Required context elements for the tool */
   contextRequirements: string[];
+  /** Criteria for determining optimization success */
   successCriteria: string[];
+  /** Custom evaluators for tool-specific metrics */
   customEvaluators?: CustomEvaluator[];
 }
 
@@ -103,33 +132,63 @@ export interface ToolOptimizationConfig {
 // Candidate Generation Interfaces
 // ============================================================================
 
+/**
+ * Represents a generated prompt candidate during optimization
+ */
 export interface PromptCandidate {
+  /** Unique identifier for the candidate */
   id: string;
+  /** The generated prompt text */
   prompt: string;
+  /** Instructions for using the prompt */
   instructions: string;
+  /** Context data for the prompt */
   context: any;
+  /** Strategy used to generate this candidate */
   generationStrategy: GenerationStrategy;
+  /** Metadata about the generation process */
   metadata: CandidateMetadata;
-  parentId?: string;                // For refined candidates
-  generation: number;               // Generation number in optimization
+  /** ID of parent candidate (for refined candidates) */
+  parentId?: string;
+  /** Generation number in optimization process */
+  generation: number;
 }
 
+/**
+ * Metadata about how a prompt candidate was generated
+ */
 export interface CandidateMetadata {
+  /** Timestamp when candidate was generated */
   generatedAt: string;
-  generationTime: number;           // milliseconds
+  /** Time taken to generate candidate (milliseconds) */
+  generationTime: number;
+  /** Strategy used for generation */
   strategy: GenerationStrategy;
+  /** Template used as base (if any) */
   templateUsed?: string;
+  /** Variations applied during generation */
   variationApplied?: string[];
-  complexity: number;               // 0-1 scale
-  estimatedQuality: number;         // 0-1 scale
-  tokens: number;                   // Approximate token count
+  /** Complexity score (0-1 scale) */
+  complexity: number;
+  /** Estimated quality score (0-1 scale) */
+  estimatedQuality: number;
+  /** Approximate token count */
+  tokens: number;
 }
 
+/**
+ * Request for generating prompt candidates
+ */
 export interface GenerationRequest {
+  /** Base prompt to generate variations from */
   basePrompt: PromptObject;
+  /** Strategies to use for generation */
   strategies: GenerationStrategy[];
+  /** Number of candidates to generate */
   candidateCount: number;
+  /** Context for generation */
   context: GenerationContext;
+  /** Constraints to apply during generation */
   constraints: GenerationConstraints;
 }
 
@@ -157,10 +216,10 @@ export interface GenerationConstraints {
 
 export interface EvaluationResult {
   candidateId: string;
-  scores: Record<EvaluationCriterion, number>;  // Criterion -> Score (0-1)
-  overallScore: number;             // Weighted average (0-1)
+  scores: Record<EvaluationCriterion, number>; // Criterion -> Score (0-1)
+  overallScore: number; // Weighted average (0-1)
   feedback: EvaluationFeedback[];
-  evaluationTime: number;           // milliseconds
+  evaluationTime: number; // milliseconds
   evaluatorVersion: string;
   metadata: EvaluationMetadata;
 }
@@ -176,16 +235,16 @@ export interface EvaluationFeedback {
 export interface EvaluationMetadata {
   evaluatedAt: string;
   evaluationMethod: string;
-  confidence: number;               // 0-1 scale
-  reliability: number;              // 0-1 scale
-  contextMatch: number;             // 0-1 scale
-  biasScore: number;                // 0-1 scale (lower is better)
+  confidence: number; // 0-1 scale
+  reliability: number; // 0-1 scale
+  contextMatch: number; // 0-1 scale
+  biasScore: number; // 0-1 scale (lower is better)
 }
 
 export interface CustomEvaluator {
   name: string;
   criterion: EvaluationCriterion;
-  weight: number;                   // 0-1 scale
+  weight: number; // 0-1 scale
   evaluationPrompt: string;
   expectedOutputFormat: string;
   validationRules: ValidationRule[];
@@ -204,9 +263,9 @@ export interface ValidationRule {
 export interface SelectionResult {
   selectedCandidates: PromptCandidate[];
   selectionReasoning: string;
-  diversityScore: number;           // 0-1 scale
-  qualityScore: number;             // 0-1 scale
-  selectionTime: number;            // milliseconds
+  diversityScore: number; // 0-1 scale
+  qualityScore: number; // 0-1 scale
+  selectionTime: number; // milliseconds
   metadata: SelectionMetadata;
 }
 
@@ -222,10 +281,10 @@ export interface SelectionMetadata {
 export interface OptimizationResult {
   optimizedPrompt: PromptObject;
   originalPrompt: PromptObject;
-  improvementScore: number;         // 0-1 scale
+  improvementScore: number; // 0-1 scale
   optimizationRounds: number;
   candidatesEvaluated: number;
-  totalOptimizationTime: number;    // milliseconds
+  totalOptimizationTime: number; // milliseconds
   cacheKey: string;
   metadata: OptimizationMetadata;
   performanceMetrics: PerformanceMetrics;
@@ -238,8 +297,8 @@ export interface OptimizationMetadata {
   strategiesApplied: GenerationStrategy[];
   evaluationCriteria: EvaluationCriterion[];
   selectionStrategy: SelectionStrategy;
-  qualityImprovement: number;       // 0-1 scale
-  convergenceRound: number;         // Round where optimization converged
+  qualityImprovement: number; // 0-1 scale
+  convergenceRound: number; // Round where optimization converged
 }
 
 // ============================================================================
@@ -247,16 +306,16 @@ export interface OptimizationMetadata {
 // ============================================================================
 
 export interface PerformanceMetrics {
-  generationTime: number;           // milliseconds
-  evaluationTime: number;           // milliseconds
-  selectionTime: number;            // milliseconds
-  totalTime: number;                // milliseconds
+  generationTime: number; // milliseconds
+  evaluationTime: number; // milliseconds
+  selectionTime: number; // milliseconds
+  totalTime: number; // milliseconds
   candidatesGenerated: number;
   candidatesEvaluated: number;
   cacheHits: number;
   cacheMisses: number;
-  memoryUsage: number;              // bytes
-  successRate: number;              // 0-1 scale
+  memoryUsage: number; // bytes
+  successRate: number; // 0-1 scale
 }
 
 export interface OptimizationHistory {
@@ -273,11 +332,11 @@ export interface OptimizationHistory {
 }
 
 export interface UserFeedback {
-  rating: number;                   // 1-5 scale
+  rating: number; // 1-5 scale
   comments: string;
-  usefulnessScore: number;          // 0-1 scale
-  clarityScore: number;             // 0-1 scale
-  effectivenessScore: number;       // 0-1 scale
+  usefulnessScore: number; // 0-1 scale
+  clarityScore: number; // 0-1 scale
+  effectivenessScore: number; // 0-1 scale
   wouldRecommend: boolean;
   submittedAt: string;
 }
@@ -291,7 +350,7 @@ export interface APECacheEntry {
   type: 'candidate' | 'evaluation' | 'optimization' | 'performance';
   data: any;
   timestamp: string;
-  ttl: number;                      // seconds
+  ttl: number; // seconds
   accessCount: number;
   lastAccessed: string;
   metadata: CacheEntryMetadata;
@@ -300,7 +359,7 @@ export interface APECacheEntry {
 export interface CacheEntryMetadata {
   version: string;
   compressed: boolean;
-  size: number;                     // bytes
+  size: number; // bytes
   tags: string[];
   priority: 'low' | 'medium' | 'high';
   context: string;
@@ -321,12 +380,19 @@ export interface APEError {
 }
 
 export interface OptimizationStatus {
-  status: 'pending' | 'generating' | 'evaluating' | 'selecting' | 'optimizing' | 'completed' | 'failed';
-  progress: number;                 // 0-1 scale
+  status:
+    | 'pending'
+    | 'generating'
+    | 'evaluating'
+    | 'selecting'
+    | 'optimizing'
+    | 'completed'
+    | 'failed';
+  progress: number; // 0-1 scale
   currentPhase: OptimizationPhase;
   candidatesGenerated: number;
   candidatesEvaluated: number;
-  estimatedTimeRemaining: number;   // milliseconds
+  estimatedTimeRemaining: number; // milliseconds
   errors: APEError[];
   warnings: string[];
 }
@@ -346,7 +412,7 @@ export const PromptCandidateSchema = z.object({
     'style-variation',
     'length-variation',
     'structure-variation',
-    'hybrid-approach'
+    'hybrid-approach',
   ]),
   metadata: z.object({
     generatedAt: z.string(),
@@ -356,22 +422,22 @@ export const PromptCandidateSchema = z.object({
     variationApplied: z.array(z.string()).optional(),
     complexity: z.number().min(0).max(1),
     estimatedQuality: z.number().min(0).max(1),
-    tokens: z.number()
+    tokens: z.number(),
   }),
   parentId: z.string().optional(),
-  generation: z.number()
+  generation: z.number(),
 });
 
 export const OptimizationResultSchema = z.object({
   optimizedPrompt: z.object({
     prompt: z.string(),
     instructions: z.string(),
-    context: z.any()
+    context: z.any(),
   }),
   originalPrompt: z.object({
     prompt: z.string(),
     instructions: z.string(),
-    context: z.any()
+    context: z.any(),
   }),
   improvementScore: z.number().min(0).max(1),
   optimizationRounds: z.number(),
@@ -386,7 +452,7 @@ export const OptimizationResultSchema = z.object({
     evaluationCriteria: z.array(z.string()),
     selectionStrategy: z.string(),
     qualityImprovement: z.number().min(0).max(1),
-    convergenceRound: z.number()
+    convergenceRound: z.number(),
   }),
   performanceMetrics: z.object({
     generationTime: z.number(),
@@ -398,6 +464,6 @@ export const OptimizationResultSchema = z.object({
     cacheHits: z.number(),
     cacheMisses: z.number(),
     memoryUsage: z.number(),
-    successRate: z.number().min(0).max(1)
-  })
+    successRate: z.number().min(0).max(1),
+  }),
 });
