@@ -12,6 +12,7 @@
 
 **Problem**: AI assistant can't find MCP tools  
 **Quick Fix**:
+
 ```bash
 # 1. Verify server is installed
 mcp-adr-analysis-server --version
@@ -26,6 +27,7 @@ mcp-adr-analysis-server --test
 
 **Problem**: Server can't read/write files  
 **Quick Fix**:
+
 ```bash
 # 1. Check directory permissions
 ls -la docs/
@@ -41,6 +43,7 @@ chmod 755 docs/
 
 **Problem**: Context degradation or AI confusion  
 **Quick Fix**:
+
 ```json
 {
   "tool": "troubleshoot_guided_workflow",
@@ -69,8 +72,9 @@ mcp-adr-analysis-server --test
 ```
 
 **Expected outputs**:
+
 - Node.js: `v20.x.x` or higher
-- Server version: `2.0.7` (or current version)
+- Server version: `MCP ADR Analysis Server v2.1.0` (or current version)
 - Test: `✅ Server health check passed`
 
 ### Step 2: Validate Configuration
@@ -96,6 +100,7 @@ Check your MCP client configuration:
 ```
 
 **Common configuration issues**:
+
 - ❌ `"PROJECT_PATH": "."` (relative path)
 - ✅ `"PROJECT_PATH": "/Users/you/project"` (absolute path)
 - ❌ Missing `OPENROUTER_API_KEY` (required for AI features)
@@ -138,11 +143,13 @@ Run this diagnostic sequence:
 ### Analysis Returns Empty or Poor Results
 
 **Symptoms**:
+
 - "No architectural patterns detected"
 - "Project analysis incomplete"
 - Generic or unhelpful recommendations
 
 **Solution 1: Enhanced Analysis Mode**
+
 ```json
 {
   "tool": "analyze_project_ecosystem",
@@ -157,6 +164,7 @@ Run this diagnostic sequence:
 ```
 
 **Solution 2: Check Project Structure**
+
 ```bash
 # Ensure you have a proper project structure
 ls -la
@@ -167,6 +175,7 @@ ls -la | grep -E "\.(git|env|config)"
 ```
 
 **Solution 3: Verify Project Path**
+
 ```json
 {
   "tool": "read_file",
@@ -179,11 +188,13 @@ ls -la | grep -E "\.(git|env|config)"
 ### ADR Generation Fails
 
 **Symptoms**:
+
 - "Cannot generate ADR"
 - "Missing decision data"
 - Generated ADRs are incomplete
 
 **Solution 1: Use Structured Decision Data**
+
 ```json
 {
   "tool": "generate_adr_from_decision",
@@ -200,6 +211,7 @@ ls -la | grep -E "\.(git|env|config)"
 ```
 
 **Solution 2: Get ADR Suggestions First**
+
 ```json
 {
   "tool": "suggest_adrs",
@@ -214,11 +226,13 @@ ls -la | grep -E "\.(git|env|config)"
 ### Tool Execution Hangs or Times Out
 
 **Symptoms**:
+
 - Tools never complete
 - Long delays without responses
 - Timeout errors
 
 **Solution 1: Check AI Service Status**
+
 ```json
 {
   "tool": "check_ai_execution_status"
@@ -226,6 +240,7 @@ ls -la | grep -E "\.(git|env|config)"
 ```
 
 **Solution 2: Use Simpler Operations**
+
 ```json
 // Instead of comprehensive analysis, start with basic
 {
@@ -239,6 +254,7 @@ ls -la | grep -E "\.(git|env|config)"
 ```
 
 **Solution 3: Clear Cache**
+
 ```json
 {
   "tool": "manage_cache",
@@ -251,23 +267,26 @@ ls -la | grep -E "\.(git|env|config)"
 ### Security Analysis Issues
 
 **Symptoms**:
+
 - "No sensitive content detected" (when you know there is some)
 - False positives in security scans
 - Content masking not working
 
 **Solution 1: Specify Content Type**
+
 ```json
 {
   "tool": "analyze_content_security",
   "parameters": {
     "content": "your content here",
-    "contentType": "code",  // or "configuration", "logs", etc.
+    "contentType": "code", // or "configuration", "logs", etc.
     "userDefinedPatterns": ["your-custom-pattern-.*"]
   }
 }
 ```
 
 **Solution 2: Configure Custom Patterns**
+
 ```json
 {
   "tool": "configure_custom_patterns",
@@ -281,11 +300,13 @@ ls -la | grep -E "\.(git|env|config)"
 ### TODO/Progress Tracking Problems
 
 **Symptoms**:
+
 - TODO.md not generated
 - Progress tracking inaccurate
 - Tasks not syncing with ADRs
 
 **Solution 1: Regenerate TODO with Full Options**
+
 ```json
 {
   "tool": "generate_adr_todo",
@@ -299,6 +320,7 @@ ls -la | grep -E "\.(git|env|config)"
 ```
 
 **Solution 2: Verify ADR Directory**
+
 ```bash
 # Check ADR files exist
 ls -la docs/adrs/
@@ -309,6 +331,7 @@ head -20 docs/adrs/001-*.md
 ```
 
 **Solution 3: Manual Progress Sync**
+
 ```json
 {
   "tool": "compare_adr_progress",
@@ -330,29 +353,32 @@ head -20 docs/adrs/001-*.md
 **Solutions**:
 
 1. **Reduce Analysis Scope**
+
 ```json
 {
   "tool": "analyze_project_ecosystem",
   "parameters": {
-    "recursiveDepth": "medium",  // instead of "comprehensive"
-    "enhancedMode": false        // for faster results
+    "recursiveDepth": "medium", // instead of "comprehensive"
+    "enhancedMode": false // for faster results
   }
 }
 ```
 
 2. **Use Targeted Analysis**
+
 ```json
 // Instead of full project analysis, focus on specific areas
 {
   "tool": "suggest_adrs",
   "parameters": {
-    "analysisScope": "technology",  // focus on just technology decisions
+    "analysisScope": "technology", // focus on just technology decisions
     "maxSuggestions": 3
   }
 }
 ```
 
 3. **Cache Management**
+
 ```json
 // Clear old cache if it's causing slowdowns
 {
@@ -369,12 +395,14 @@ head -20 docs/adrs/001-*.md
 **Solutions**:
 
 1. **Process Large Projects in Chunks**
+
 ```bash
 # Instead of analyzing entire project at once
 # Focus on subdirectories
 ```
 
 2. **Increase Node.js Memory Limit**
+
 ```bash
 export NODE_OPTIONS="--max-old-space-size=4096"
 mcp-adr-analysis-server
@@ -425,6 +453,7 @@ mcp-adr-analysis-server
 ### Nuclear Options
 
 1. **Complete Reset**
+
 ```bash
 # Uninstall and reinstall
 npm uninstall -g mcp-adr-analysis-server
@@ -435,6 +464,7 @@ rm -rf .mcp-adr-cache/
 ```
 
 2. **Restart from Scratch**
+
 ```bash
 # Backup your work
 cp -r docs/adrs/ ~/backup-adrs/
@@ -445,6 +475,7 @@ mkdir -p docs/adrs
 ```
 
 3. **Environment Reset**
+
 ```bash
 # Clear environment variables
 unset PROJECT_PATH ADR_DIRECTORY LOG_LEVEL
@@ -457,6 +488,7 @@ export ADR_DIRECTORY="docs/adrs"
 ### Get Help
 
 1. **Check Server Health**
+
 ```json
 {
   "tool": "troubleshoot_guided_workflow",
@@ -467,10 +499,12 @@ export ADR_DIRECTORY="docs/adrs"
 ```
 
 2. **Report Issues**
+
 - **GitHub Issues**: https://github.com/tosin2013/mcp-adr-analysis-server/issues
 - Include: server version, Node.js version, error messages, steps to reproduce
 
 3. **Community Support**
+
 - **Documentation**: [Main README](../README.md)
 - **API Reference**: [Complete Tool Documentation](../reference/api-reference.md)
 
