@@ -263,9 +263,9 @@ describe('MemoryLoadingTool', () => {
   });
 
   describe('load_adrs action', () => {
-    it('should handle case when no ADRs are found (real behavior)', async () => {
+    it('should successfully load existing ADRs (real behavior)', async () => {
       // This test works with the real implementation
-      // The real discovery will find no ADRs in the test directory
+      // The real discovery will find ADRs in the docs/adrs directory
       const result = await memoryLoadingTool.execute({
         action: 'load_adrs',
         forceReload: true,
@@ -275,21 +275,24 @@ describe('MemoryLoadingTool', () => {
       expect(result.content).toHaveLength(1);
 
       const response = JSON.parse(result.content[0].text);
-      expect(response.status).toBe('no_adrs_found');
-      expect(response.directory).toBe('docs/adrs');
-      expect(response.recommendations).toContain("ADR directory 'docs/adrs' does not exist");
+      expect(response.status).toBe('success');
+      expect(response.message).toContain('Successfully loaded');
+      // Should have loaded the 9 existing ADRs
+      expect(response.summary.totalAdrs).toBeGreaterThan(0);
+      expect(response.summary.entitiesCreated).toBeGreaterThan(0);
     });
 
-    it('should handle case when no ADRs are found (with mocked discovery)', async () => {
-      // Since mocking is difficult, let's test the expected behavior based on the real implementation
+    it('should successfully load existing ADRs (with default parameters)', async () => {
+      // Test the expected behavior with existing ADRs
       const result = await memoryLoadingTool.execute({
         action: 'load_adrs',
       });
 
       expect(result.isError).toBeFalsy();
       const response = JSON.parse(result.content[0].text);
-      expect(response.status).toBe('no_adrs_found');
-      expect(response.recommendations).toContain("ADR directory 'docs/adrs' does not exist");
+      expect(response.status).toBe('success');
+      expect(response.summary.totalAdrs).toBeGreaterThan(0);
+      expect(response.summary.entitiesCreated).toBeGreaterThan(0);
     });
 
     it('should handle ADR loading errors', async () => {
