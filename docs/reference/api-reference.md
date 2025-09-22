@@ -2,60 +2,70 @@
 
 **MCP ADR Analysis Server** - All available tools, parameters, and usage examples
 
-> **Version**: 2.0.7 | **Tools**: 37 available | **Updated**: January 2025
+> **Version**: 2.1.0 | **Tools**: 18 core tools | **Updated**: September 2025
 
 ---
 
 ## 🎯 Quick Navigation
 
 ### **Core Analysis Tools**
+
 - [`analyze_project_ecosystem`](#analyze_project_ecosystem) - Comprehensive project analysis
 - [`get_architectural_context`](#get_architectural_context) - Architectural context extraction
 - [`discover_existing_adrs`](#discover_existing_adrs) - ADR discovery and cataloging
 
 ### **ADR Generation & Management**
+
 - [`generate_adrs_from_prd`](#generate_adrs_from_prd) - Generate ADRs from PRD
 - [`generate_adr_from_decision`](#generate_adr_from_decision) - Create ADR from decision data
 - [`suggest_adrs`](#suggest_adrs) - Suggest missing ADRs
 - [`generate_adr_todo`](#generate_adr_todo) - Extract TODO items from ADRs
 
 ### **Security & Content Protection**
+
 - [`analyze_content_security`](#analyze_content_security) - Detect sensitive content
 - [`generate_content_masking`](#generate_content_masking) - Create masking instructions
 - [`apply_basic_content_masking`](#apply_basic_content_masking) - Apply content masking
 - [`validate_content_masking`](#validate_content_masking) - Validate masking results
 
 ### **Project Health & Scoring**
+
 - [`smart_score`](#smart_score) - Project health scoring coordination
 - [`compare_adr_progress`](#compare_adr_progress) - Progress validation
 - [`deployment_readiness`](#deployment_readiness) - Deployment readiness check
 
 ### **Workflow & Development**
+
 - [`troubleshoot_guided_workflow`](#troubleshoot_guided_workflow) - Systematic troubleshooting
 - [`get_workflow_guidance`](#get_workflow_guidance) - Intelligent workflow recommendations
 - [`get_development_guidance`](#get_development_guidance) - Development roadmap guidance
 
 ### **Research & Documentation**
+
 - [`generate_research_questions`](#generate_research_questions) - Research question generation
 - [`create_research_template`](#create_research_template) - Research template creation
 - [`incorporate_research`](#incorporate_research) - Integrate research findings
 
 ### **Rules & Validation**
+
 - [`generate_rules`](#generate_rules) - Generate architectural rules
 - [`validate_rules`](#validate_rules) - Validate code against rules
 - [`create_rule_set`](#create_rule_set) - Create machine-readable rules
 
 ### **Deployment & Operations**
+
 - [`smart_git_push`](#smart_git_push) - Security-focused git operations
 - [`generate_deployment_guidance`](#generate_deployment_guidance) - Deployment instructions
 - [`analyze_deployment_progress`](#analyze_deployment_progress) - Deployment progress analysis
 
 ### **File Operations**
+
 - [`read_file`](#read_file) - Read file contents
 - [`write_file`](#write_file) - Write file contents
 - [`list_directory`](#list_directory) - List directory contents
 
 ### **System Management**
+
 - [`manage_cache`](#manage_cache) - Cache management operations
 - [`configure_output_masking`](#configure_output_masking) - Output masking configuration
 - [`check_ai_execution_status`](#check_ai_execution_status) - AI execution status check
@@ -68,18 +78,20 @@
 
 **Purpose**: Comprehensive recursive project ecosystem analysis with advanced prompting techniques
 
-**Use Cases**: 
+**Use Cases**:
+
 - Initial project understanding
 - Complete architecture analysis
 - Knowledge graph building
 - Context establishment for other tools
 
 **Parameters**:
+
 ```json
 {
   "projectPath": "string (required)",
   "enhancedMode": "boolean (default: false)",
-  "knowledgeEnhancement": "boolean (default: false)", 
+  "knowledgeEnhancement": "boolean (default: false)",
   "learningEnabled": "boolean (default: false)",
   "includeEnvironment": "boolean (default: false)",
   "recursiveDepth": "string (enum: 'shallow'|'medium'|'deep'|'comprehensive', default: 'medium')",
@@ -89,6 +101,7 @@
 ```
 
 **Example Usage**:
+
 ```json
 {
   "projectPath": ".",
@@ -108,6 +121,7 @@
 **Purpose**: Get detailed architectural context for specific files or entire project
 
 **Parameters**:
+
 ```json
 {
   "filePath": "string (optional)",
@@ -117,6 +131,7 @@
 ```
 
 **Example Usage**:
+
 ```json
 {
   "filePath": "src/components/UserService.ts",
@@ -131,6 +146,7 @@
 **Purpose**: Discover and catalog existing ADRs in the project
 
 **Parameters**:
+
 ```json
 {
   "adrDirectory": "string (default: 'docs/adrs')",
@@ -140,6 +156,7 @@
 ```
 
 **Example Usage**:
+
 ```json
 {
   "adrDirectory": "architecture/decisions",
@@ -156,6 +173,7 @@
 **Purpose**: Generate Architectural Decision Records from a Product Requirements Document
 
 **Parameters**:
+
 ```json
 {
   "prdPath": "string (required)",
@@ -167,6 +185,7 @@
 ```
 
 **Example Usage**:
+
 ```json
 {
   "prdPath": "PRD.md",
@@ -182,6 +201,7 @@
 **Purpose**: Generate a complete ADR from decision data
 
 **Parameters**:
+
 ```json
 {
   "decisionData": "object (required)",
@@ -192,6 +212,7 @@
 ```
 
 **Example Usage**:
+
 ```json
 {
   "decisionData": {
@@ -211,6 +232,7 @@
 **Purpose**: Suggest architectural decisions with advanced prompting techniques
 
 **Parameters**:
+
 ```json
 {
   "projectPath": "string (optional)",
@@ -228,6 +250,7 @@
 **Purpose**: Generate TDD-focused todo.md from existing ADRs with JSON-first approach
 
 **Parameters**:
+
 ```json
 {
   "adrDirectory": "string (default: 'docs/adrs')",
@@ -249,6 +272,7 @@
 **Purpose**: Analyze content for sensitive information using AI-powered detection
 
 **Parameters**:
+
 ```json
 {
   "content": "string (required)",
@@ -258,6 +282,7 @@
 ```
 
 **Example Usage**:
+
 ```json
 {
   "content": "const apiKey = 'sk-1234567890abcdef';",
@@ -273,6 +298,7 @@
 **Purpose**: Generate masking instructions for detected sensitive content
 
 **Parameters**:
+
 ```json
 {
   "content": "string (required)",
@@ -288,6 +314,7 @@
 **Purpose**: Apply basic content masking (fallback when AI is not available)
 
 **Parameters**:
+
 ```json
 {
   "content": "string (required)",
@@ -302,6 +329,7 @@
 **Purpose**: Validate that content masking was applied correctly
 
 **Parameters**:
+
 ```json
 {
   "originalContent": "string (required)",
@@ -316,6 +344,7 @@
 **Purpose**: Configure custom sensitive patterns for a project
 
 **Parameters**:
+
 ```json
 {
   "projectPath": "string (required)",
@@ -332,6 +361,7 @@
 **Purpose**: Central coordination for project health scoring system
 
 **Parameters**:
+
 ```json
 {
   "operation": "string (enum: 'recalculate_scores'|'sync_scores'|'diagnose_scores'|'optimize_weights'|'reset_scores'|'get_score_trends'|'get_intent_scores', required)",
@@ -343,6 +373,7 @@
 ```
 
 **Example Usage**:
+
 ```json
 {
   "operation": "recalculate_scores",
@@ -359,6 +390,7 @@
 **Purpose**: Compare TODO.md progress against ADRs and current environment
 
 **Parameters**:
+
 ```json
 {
   "todoPath": "string (default: 'TODO.md')",
@@ -377,6 +409,7 @@
 **Purpose**: Comprehensive deployment readiness analysis with zero-tolerance validation
 
 **Parameters**:
+
 ```json
 {
   "operation": "string (enum: 'check_readiness'|'validate_tests'|'security_scan'|'dependency_audit'|'all', required)",
@@ -395,6 +428,7 @@
 **Purpose**: Systematic failure analysis with test plan generation
 
 **Parameters**:
+
 ```json
 {
   "operation": "string (enum: 'analyze_failure'|'generate_test_plan'|'run_diagnostics'|'create_workflow', required)",
@@ -407,6 +441,7 @@
 ```
 
 **Example Usage**:
+
 ```json
 {
   "operation": "analyze_failure",
@@ -428,6 +463,7 @@
 **Purpose**: Get intelligent workflow guidance and tool recommendations
 
 **Parameters**:
+
 ```json
 {
   "goal": "string (required)",
@@ -446,6 +482,7 @@
 **Purpose**: Get comprehensive development guidance that translates architectural decisions into coding tasks
 
 **Parameters**:
+
 ```json
 {
   "developmentPhase": "string (enum: 'setup'|'implementation'|'testing'|'deployment'|'maintenance', required)",
@@ -466,6 +503,7 @@
 **Purpose**: Generate context-aware research questions and create research tracking system
 
 **Parameters**:
+
 ```json
 {
   "analysisType": "string (enum: 'technology'|'architecture'|'security'|'performance'|'compliance'|'general', required)",
@@ -484,6 +522,7 @@
 **Purpose**: Create a research template file for documenting findings
 
 **Parameters**:
+
 ```json
 {
   "title": "string (required)",
@@ -500,6 +539,7 @@
 **Purpose**: Incorporate research findings into architectural decisions
 
 **Parameters**:
+
 ```json
 {
   "researchPath": "string (required)",
@@ -519,6 +559,7 @@
 **Purpose**: Generate architectural rules from ADRs and code patterns
 
 **Parameters**:
+
 ```json
 {
   "source": "string (enum: 'adrs'|'code'|'both', default: 'both')",
@@ -537,6 +578,7 @@
 **Purpose**: Validate code against architectural rules
 
 **Parameters**:
+
 ```json
 {
   "filePath": "string (optional)",
@@ -555,6 +597,7 @@
 **Purpose**: Create machine-readable rule set in JSON/YAML format
 
 **Parameters**:
+
 ```json
 {
   "name": "string (required)",
@@ -574,6 +617,7 @@
 **Purpose**: AI-driven security-focused git push with credential detection
 
 **Parameters**:
+
 ```json
 {
   "operation": "string (enum: 'push'|'security_check'|'commit_analysis'|'pre_push_validation', required)",
@@ -592,6 +636,7 @@
 **Purpose**: Generate deployment guidance and instructions from ADRs
 
 **Parameters**:
+
 ```json
 {
   "adrDirectory": "string (default: 'docs/adrs')",
@@ -609,6 +654,7 @@
 **Purpose**: Analyze deployment progress and verify completion
 
 **Parameters**:
+
 ```json
 {
   "analysisType": "string (enum: 'pre_deployment'|'deployment_status'|'post_deployment'|'rollback_analysis', required)",
@@ -628,6 +674,7 @@
 **Purpose**: Read contents of a file
 
 **Parameters**:
+
 ```json
 {
   "path": "string (required)"
@@ -641,6 +688,7 @@
 **Purpose**: Write content to a file
 
 **Parameters**:
+
 ```json
 {
   "path": "string (required)",
@@ -655,6 +703,7 @@
 **Purpose**: List contents of a directory
 
 **Parameters**:
+
 ```json
 {
   "path": "string (required)"
@@ -670,6 +719,7 @@
 **Purpose**: Manage MCP resource cache operations
 
 **Parameters**:
+
 ```json
 {
   "action": "string (enum: 'clear'|'stats'|'cleanup'|'invalidate', required)",
@@ -684,6 +734,7 @@
 **Purpose**: Configure content masking for all MCP outputs
 
 **Parameters**:
+
 ```json
 {
   "enabled": "boolean (optional)",
@@ -701,6 +752,7 @@
 **Parameters**: None required
 
 **Example Usage**:
+
 ```json
 {}
 ```
@@ -712,6 +764,7 @@
 **Purpose**: JSON-first TODO management with consistent LLM interactions
 
 **Parameters**:
+
 ```json
 {
   "operation": "string (enum: 'create_task'|'update_task'|'delete_task'|'get_tasks'|'get_analytics'|'sync_to_markdown'|'import_from_markdown'|'get_health_score', required)",
@@ -729,6 +782,7 @@
 **Purpose**: Analyze environment context and provide optimization recommendations
 
 **Parameters**:
+
 ```json
 {
   "projectPath": "string (optional)",
@@ -745,6 +799,7 @@
 **Purpose**: Request confirmation before applying research-based changes
 
 **Parameters**:
+
 ```json
 {
   "action": "string (required)",
@@ -759,6 +814,7 @@
 ## 🎯 Common Usage Patterns
 
 ### **New Project Setup**
+
 ```bash
 1. analyze_project_ecosystem (comprehensive analysis)
 2. generate_adrs_from_prd (if PRD exists)
@@ -767,6 +823,7 @@
 ```
 
 ### **Existing Project Analysis**
+
 ```bash
 1. discover_existing_adrs (catalog current decisions)
 2. analyze_project_ecosystem (understand current state)
@@ -775,6 +832,7 @@
 ```
 
 ### **Security Review**
+
 ```bash
 1. analyze_content_security (scan for sensitive content)
 2. generate_content_masking (create protection)
@@ -783,6 +841,7 @@
 ```
 
 ### **Troubleshooting**
+
 ```bash
 1. troubleshoot_guided_workflow (systematic analysis)
 2. check_ai_execution_status (verify AI setup)
@@ -801,4 +860,4 @@
 
 ---
 
-**Last Updated**: January 2025 | **MCP ADR Analysis Server v2.0.7**
+**Last Updated**: September 2025 | **MCP ADR Analysis Server v2.1.0**
