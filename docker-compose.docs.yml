@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # Documentation builder and validator
+  docs-validator:
+    build:
+      context: .
+      dockerfile: Dockerfile.docs
+    container_name: mcp-docs-validator
+    volumes:
+      - .:/docs
+      - ./reports:/docs/reports
+    ports:
+      - '4173:4173'
+    environment:
+      - NODE_ENV=development
+      - DOCS_DIR=/docs/docs
+      - BUILD_DIR=/docs/build
+      - REPORTS_DIR=/docs/reports
+    command: /scripts/validate-docs.sh
+    networks:
+      - docs-network
+
+  # Link checker service
+  link-checker:
+    build:
+      context: .
+      dockerfile: Dockerfile.docs
+    container_name: mcp-link-checker
+    volumes:
+      - .:/docs
+      - ./reports:/docs/reports
+    environment:
+      - DOCS_DIR=/docs/docs
+      - REPORTS_DIR=/docs/reports
+    command: /scripts/check-docs-links.sh
+    networks:
+      - docs-network
+    depends_on:
+      - docs-validator
+
+  # Link fixer service
+  link-fixer:
+    build:
+      context: .
+      dockerfile: Dockerfile.docs
+    container_name: mcp-link-fixer
+    volumes:
+      - .:/docs
+      - ./reports:/docs/reports
+    environment:
+      - DOCS_DIR=/docs/docs
+      - REPORTS_DIR=/docs/reports
+    command: python3 /scripts/fix-broken-links.py --docs-dir /docs/docs
+    networks:
+      - docs-network
+    profiles:
+      - fix
+
+  # Documentation server for testing
+  docs-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.docs
+    container_name: mcp-docs-server
+    volumes:
+      - .:/docs
+      - ./build:/docs/build
+    ports:
+      - '4173:4173'
+    environment:
+      - BUILD_DIR=/docs/build
+    command: /scripts/validate-docs.sh --serve
+    networks:
+      - docs-network
+    profiles:
+      - serve
+    depends_on:
+      - docs-validator
+
+networks:
+  docs-network:
+    driver: bridge
+
+volumes:
+  docs-reports:
+    driver: local
