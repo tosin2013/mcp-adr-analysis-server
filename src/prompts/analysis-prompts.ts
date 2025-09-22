@@ -351,6 +351,12 @@ Focus on accuracy, evidence-based conclusions, and actionable recommendations.
 }
 
 // Helper functions
+
+/**
+ * Analyze project structure to create a breakdown of file types by extension
+ * @param projectStructure - The project structure containing files and directories
+ * @returns Record mapping file extensions to their counts
+ */
 function getFileTypeBreakdown(projectStructure: ProjectStructure): Record<string, number> {
   const breakdown: Record<string, number> = {};
 
@@ -362,6 +368,11 @@ function getFileTypeBreakdown(projectStructure: ProjectStructure): Record<string
   return breakdown;
 }
 
+/**
+ * Determine if a filename represents a configuration file
+ * @param filename - The filename to check
+ * @returns True if the file is identified as a configuration file
+ */
 function isConfigFile(filename: string): boolean {
   const configPatterns = [
     'package.json',
@@ -384,11 +395,21 @@ function isConfigFile(filename: string): boolean {
   return configPatterns.some(pattern => filename.includes(pattern));
 }
 
+/**
+ * Determine if a filename represents a documentation file
+ * @param filename - The filename to check
+ * @returns True if the file is identified as a documentation file
+ */
 function isDocumentationFile(filename: string): boolean {
   const docPatterns = ['README', '.md', '.rst', '.txt', 'CHANGELOG', 'LICENSE'];
   return docPatterns.some(pattern => filename.includes(pattern));
 }
 
+/**
+ * Determine if a filename represents a build or deployment file
+ * @param filename - The filename to check
+ * @returns True if the file is identified as a build/deployment file
+ */
 function isBuildFile(filename: string): boolean {
   const buildPatterns = [
     'Dockerfile',
@@ -402,6 +423,12 @@ function isBuildFile(filename: string): boolean {
   return buildPatterns.some(pattern => filename.includes(pattern));
 }
 
+/**
+ * Determine if a file is interesting for architectural analysis
+ * @param filename - The filename to check
+ * @param filepath - The full file path for additional context
+ * @returns True if the file is considered interesting for analysis
+ */
 function isInterestingFile(filename: string, filepath: string): boolean {
   // Configuration and infrastructure files
   const interestingPatterns = [
@@ -504,40 +531,43 @@ function isInterestingFile(filename: string, filepath: string): boolean {
     'sbt',
     'leiningen',
 
-    // Testing
-    'test',
-    'spec',
-    'e2e',
-    'integration',
-    'unit',
-    'cypress',
-    'selenium',
-    'playwright',
+    // Cloud platforms
+    'aws',
+    'azure',
+    'gcp',
+    'kubernetes',
+    'k8s',
+    'helm',
 
-    // Documentation
-    'readme',
-    'changelog',
-    'license',
-    'contributing',
-    'docs',
-    'documentation',
-    'wiki',
+    // Databases
+    'postgres',
+    'mysql',
+    'mongodb',
+    'redis',
+    'elasticsearch',
 
-    // Environment and configuration
-    '.env',
-    'config',
-    'settings',
-    'properties',
-    '.ini',
-    '.conf',
-    '.cfg',
-    '.toml',
+    // Message queues
+    'kafka',
+    'rabbitmq',
+    'sqs',
+
+    // Monitoring
+    'prometheus',
+    'grafana',
+    'datadog',
+
+    // Security
+    'vault',
+    'secrets',
+    'ssl',
+    'tls',
   ];
 
-  const lowerFilename = filename.toLowerCase();
-  const lowerFilepath = filepath.toLowerCase();
-
-  return interestingPatterns.some(
-    pattern => lowerFilename.includes(pattern) || lowerFilepath.includes(pattern)
+  return (
+    interestingPatterns.some(pattern => filename.toLowerCase().includes(pattern)) ||
+    filepath.includes('infrastructure') ||
+    filepath.includes('deployment') ||
+    filepath.includes('config') ||
+    filepath.includes('.github')
   );
 }
