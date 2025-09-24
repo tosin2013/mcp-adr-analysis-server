@@ -6,7 +6,10 @@
 import { ProjectStructure } from '../utils/file-system.js';
 
 /**
- * Generate analysis context for AI agent
+ * Generate analysis context for AI agent based on project structure
+ *
+ * @param projectStructure - The analyzed project structure
+ * @returns JSON string containing comprehensive project analysis context
  */
 export function generateAnalysisContext(projectStructure: ProjectStructure): string {
   const context = {
