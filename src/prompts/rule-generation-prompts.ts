@@ -4,7 +4,11 @@
  */
 
 /**
- * AI prompt for extracting actionable rules from ADRs
+ * Generate AI prompt for extracting actionable rules from ADRs
+ *
+ * @param adrFiles - Array of ADR files to analyze for rule extraction
+ * @param existingRules - Optional array of existing rules to avoid duplication
+ * @returns Formatted prompt for AI analysis of ADRs to extract validation rules
  */
 export function generateRuleExtractionPrompt(
   adrFiles: Array<{
