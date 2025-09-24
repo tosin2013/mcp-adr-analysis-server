@@ -5,10 +5,17 @@
 
 import { McpAdrError } from '../types/index.js';
 
+/**
+ * Configuration for output masking behavior
+ */
 export interface MaskingConfig {
+  /** Whether masking is enabled */
   enabled: boolean;
+  /** Masking strategy to apply */
   strategy: 'full' | 'partial' | 'placeholder' | 'environment';
+  /** Custom patterns to mask */
   customPatterns?: string[];
+  /** Patterns to skip during masking */
   skipPatterns?: string[];
 }
 
@@ -30,6 +37,11 @@ const DEFAULT_MASKING_CONFIG: MaskingConfig = {
 
 /**
  * Apply content masking to MCP response content
+ *
+ * @param response - The MCP response to mask
+ * @param config - Masking configuration to use
+ * @returns Promise resolving to the masked response
+ * @throws McpAdrError if masking fails
  */
 export async function maskMcpResponse(
   response: any,
