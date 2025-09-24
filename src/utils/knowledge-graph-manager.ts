@@ -14,12 +14,19 @@ import { loadConfig } from './config.js';
 // Using new MemoryHealthScoring instead of deprecated ProjectHealthScoring
 import { MemoryHealthScoring, MemoryHealthScore } from './memory-health-scoring.js';
 
+/**
+ * Manages knowledge graph snapshots and todo synchronization state
+ * Provides persistent storage and retrieval of architectural knowledge
+ */
 export class KnowledgeGraphManager {
   private cacheDir: string;
   private snapshotsFile: string;
   private syncStateFile: string;
   private memoryScoring: MemoryHealthScoring;
 
+  /**
+   * Initialize the knowledge graph manager with cache directory setup
+   */
   constructor() {
     const config = loadConfig();
     // Use OS temp directory for cache
@@ -30,6 +37,9 @@ export class KnowledgeGraphManager {
     this.memoryScoring = new MemoryHealthScoring();
   }
 
+  /**
+   * Ensure the cache directory exists, creating it if necessary
+   */
   async ensureCacheDirectory(): Promise<void> {
     try {
       await fs.access(this.cacheDir);
@@ -38,6 +48,10 @@ export class KnowledgeGraphManager {
     }
   }
 
+  /**
+   * Load the knowledge graph snapshot from cache
+   * @returns Promise resolving to the knowledge graph snapshot
+   */
   async loadKnowledgeGraph(): Promise<KnowledgeGraphSnapshot> {
     await this.ensureCacheDirectory();
 
