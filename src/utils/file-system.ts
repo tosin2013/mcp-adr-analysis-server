@@ -8,35 +8,65 @@ import { dirname } from 'path';
 import { FileSystemError } from '../types/index.js';
 import { enhancePromptWithCoT, COT_PATTERNS } from './chain-of-thought-template.js';
 
+/**
+ * Information about a file in the project
+ */
 export interface FileInfo {
+  /** Full path to the file */
   path: string;
+  /** Filename with extension */
   name: string;
+  /** File extension */
   extension: string;
+  /** File size in bytes */
   size: number;
+  /** Directory containing the file */
   directory: string;
+  /** File content (optional) */
   content?: string;
 }
 
+/**
+ * Complete project structure information
+ */
 export interface ProjectStructure {
+  /** Root path of the project */
   rootPath: string;
+  /** Array of files in the project */
   files: FileInfo[];
+  /** Array of directory paths */
   directories: string[];
+  /** Total number of files */
   totalFiles: number;
+  /** Total number of directories */
   totalDirectories: number;
 }
 
+/**
+ * AI prompt for project analysis
+ */
 export interface ProjectAnalysisPrompt {
+  /** Generated prompt for AI analysis */
   prompt: string;
+  /** Instructions for the AI agent */
   instructions: string;
+  /** Context information for the analysis */
   context: {
+    /** Original project path */
     projectPath: string;
+    /** Absolute project path */
     absoluteProjectPath: string;
+    /** File patterns to analyze */
     filePatterns: string[];
   };
 }
 
 /**
  * Generate prompt for AI-driven project structure analysis
+ *
+ * @param projectPath - Path to the project to analyze
+ * @returns Promise resolving to AI analysis prompt with context
+ * @throws FileSystemError if prompt generation fails
  */
 export async function analyzeProjectStructure(projectPath: string): Promise<ProjectAnalysisPrompt> {
   try {
@@ -163,10 +193,9 @@ ${filePatterns.map(pattern => `   - ${pattern}`).join('\n')}
       context: {
         projectPath: safeProjectPath,
         absoluteProjectPath: 'resolved-by-ai-agent',
-        filePatterns
-      }
+        filePatterns,
+      },
     };
-
   } catch (error) {
     // If it's already a FileSystemError, re-throw it to preserve the specific error message
     if (error instanceof FileSystemError) {
@@ -183,7 +212,9 @@ ${filePatterns.map(pattern => `   - ${pattern}`).join('\n')}
 /**
  * Generate prompt for AI-driven file content reading
  */
-export async function readFileContent(filePath: string): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function readFileContent(
+  filePath: string
+): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
     console.error(`[DEBUG] Generating file read prompt for: ${filePath}`);
 
@@ -295,10 +326,9 @@ The AI agent must:
         filePath: safeFilePath,
         operation: 'file_read',
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new FileSystemError(
       `Failed to generate file read prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -378,8 +408,8 @@ ${options.includeContent ? '4. Read and include file content' : '4. Skip file co
         projectPath: safeProjectPath,
         absoluteProjectPath: 'resolved-by-ai-agent',
         patterns,
-        includeContent: options.includeContent || false
-      }
+        includeContent: options.includeContent || false,
+      },
     };
   } catch (error) {
     throw new FileSystemError(
@@ -392,7 +422,9 @@ ${options.includeContent ? '4. Read and include file content' : '4. Skip file co
 /**
  * Generate prompt for AI-driven file existence check
  */
-export async function fileExists(filePath: string): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function fileExists(
+  filePath: string
+): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
     console.error(`[DEBUG] Generating file existence check prompt for: ${filePath}`);
 
@@ -532,10 +564,9 @@ The AI agent must:
         operation: 'file_exists_check',
         securityLevel: 'high',
         expectedFormat: 'json',
-        resultType: 'boolean'
-      }
+        resultType: 'boolean',
+      },
     };
-
   } catch (error) {
     throw new FileSystemError(
       `Failed to generate file existence check prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -547,7 +578,9 @@ The AI agent must:
 /**
  * Generate prompt for AI-driven directory creation
  */
-export async function ensureDirectory(dirPath: string): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function ensureDirectory(
+  dirPath: string
+): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
     console.error(`[DEBUG] Generating directory creation prompt for: ${dirPath}`);
 
@@ -704,10 +737,9 @@ Before creating any directories, confirm the action with the user:
         securityLevel: 'high',
         expectedFormat: 'json',
         confirmationRequired: true,
-        recursive: true
-      }
+        recursive: true,
+      },
     };
-
   } catch (error) {
     throw new FileSystemError(
       `Failed to generate directory creation prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -719,14 +751,18 @@ Before creating any directories, confirm the action with the user:
 /**
  * Generate prompt for AI-driven file writing with directory creation
  */
-export async function writeFile(filePath: string, content: string): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function writeFile(
+  filePath: string,
+  content: string
+): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
     console.error(`[DEBUG] Generating file write prompt for: ${filePath}`);
 
     // Pure prompt-driven approach - delegate file writing to AI agent
     const safeFilePath = filePath || '';
     const safeContent = content || '';
-    const contentPreview = safeContent.length > 200 ? safeContent.substring(0, 200) + '...' : safeContent;
+    const contentPreview =
+      safeContent.length > 200 ? safeContent.substring(0, 200) + '...' : safeContent;
 
     const prompt = `
 # File Writing Request
@@ -906,10 +942,9 @@ Before writing any files, confirm the action with the user:
         securityLevel: 'high',
         expectedFormat: 'json',
         confirmationRequired: true,
-        directoryCreation: true
-      }
+        directoryCreation: true,
+      },
     };
-
   } catch (error) {
     throw new FileSystemError(
       `Failed to generate file write prompt: ${error instanceof Error ? error.message : String(error)}`,
