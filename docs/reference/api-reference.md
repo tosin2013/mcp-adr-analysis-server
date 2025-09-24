@@ -2,73 +2,80 @@
 
 **MCP ADR Analysis Server** - All available tools, parameters, and usage examples
 
-> **Version**: 2.1.0 | **Tools**: 18 core tools | **Updated**: September 2025
+> **Version**: 2.1.0 | **Tools**: 39 comprehensive tools | **Updated**: September 2025
 
 ---
 
 ## 🎯 Quick Navigation
 
-### **Core Analysis Tools**
+### **🔍 Core Analysis Tools**
 
-- [`analyze_project_ecosystem`](#analyze_project_ecosystem) - Comprehensive project analysis
-- [`get_architectural_context`](#get_architectural_context) - Architectural context extraction
-- [`discover_existing_adrs`](#discover_existing_adrs) - ADR discovery and cataloging
+- [`analyze_project_ecosystem`](#analyze_project_ecosystem) - Comprehensive project analysis with AI insights
+- [`get_architectural_context`](#get_architectural_context) - Extract architectural context and patterns
+- [`discover_existing_adrs`](#discover_existing_adrs) - Discover and catalog existing ADRs
+- [`review_existing_adrs`](#review_existing_adrs) - Review ADRs with tree-sitter analysis
+- [`analyze_environment`](#analyze_environment) - Environment analysis and containerization detection
 
-### **ADR Generation & Management**
+### **📝 ADR Generation & Management**
 
-- [`generate_adrs_from_prd`](#generate_adrs_from_prd) - Generate ADRs from PRD
+- [`generate_adrs_from_prd`](#generate_adrs_from_prd) - Generate ADRs from Product Requirements Document
 - [`generate_adr_from_decision`](#generate_adr_from_decision) - Create ADR from decision data
-- [`suggest_adrs`](#suggest_adrs) - Suggest missing ADRs
+- [`suggest_adrs`](#suggest_adrs) - Suggest missing ADRs with code analysis
 - [`generate_adr_todo`](#generate_adr_todo) - Extract TODO items from ADRs
+- [`generate_adr_bootstrap`](#generate_adr_bootstrap) - Bootstrap ADR validation scripts
+- [`interactive_adr_planning`](#interactive_adr_planning) - Interactive ADR planning workflow
 
-### **Security & Content Protection**
+### **🔒 Security & Content Protection**
 
-- [`analyze_content_security`](#analyze_content_security) - Detect sensitive content
-- [`generate_content_masking`](#generate_content_masking) - Create masking instructions
-- [`apply_basic_content_masking`](#apply_basic_content_masking) - Apply content masking
-- [`validate_content_masking`](#validate_content_masking) - Validate masking results
+- [`analyze_content_security`](#analyze_content_security) - Detect sensitive content with AI
+- [`generate_content_masking`](#generate_content_masking) - Create intelligent masking instructions
+- [`apply_basic_content_masking`](#apply_basic_content_masking) - Apply content masking patterns
+- [`validate_content_masking`](#validate_content_masking) - Validate masking effectiveness
+- [`configure_custom_patterns`](#configure_custom_patterns) - Configure custom security patterns
 
-### **Project Health & Scoring**
+### **📊 Project Health & Deployment**
 
-- [`smart_score`](#smart_score) - Project health scoring coordination
-- [`compare_adr_progress`](#compare_adr_progress) - Progress validation
-- [`deployment_readiness`](#deployment_readiness) - Deployment readiness check
+- [`smart_score`](#smart_score) - AI-powered project health scoring
+- [`compare_adr_progress`](#compare_adr_progress) - Compare and validate ADR progress
+- [`deployment_readiness`](#deployment_readiness) - Comprehensive deployment readiness analysis
+- [`analyze_deployment_progress`](#analyze_deployment_progress) - Analyze deployment progress and blockers
+- [`generate_deployment_guidance`](#generate_deployment_guidance) - Generate deployment guidance
 
-### **Workflow & Development**
+### **🛠️ Workflow & Development**
 
-- [`troubleshoot_guided_workflow`](#troubleshoot_guided_workflow) - Systematic troubleshooting
+- [`troubleshoot_guided_workflow`](#troubleshoot_guided_workflow) - Systematic troubleshooting workflow
 - [`get_workflow_guidance`](#get_workflow_guidance) - Intelligent workflow recommendations
 - [`get_development_guidance`](#get_development_guidance) - Development roadmap guidance
+- [`tool_chain_orchestrator`](#tool_chain_orchestrator) - Orchestrate multiple tool workflows
+- [`smart_git_push`](#smart_git_push) - Intelligent Git operations with validation
 
-### **Research & Documentation**
+### **🔬 Research & Knowledge**
 
-- [`generate_research_questions`](#generate_research_questions) - Research question generation
-- [`create_research_template`](#create_research_template) - Research template creation
-- [`incorporate_research`](#incorporate_research) - Integrate research findings
+- [`generate_research_questions`](#generate_research_questions) - Generate targeted research questions
+- [`create_research_template`](#create_research_template) - Create research templates
+- [`incorporate_research`](#incorporate_research) - Integrate research findings into ADRs
+- [`memory_loading`](#memory_loading) - Load and manage architectural memory
 
-### **Rules & Validation**
+### **⚙️ Rules & Validation**
 
-- [`generate_rules`](#generate_rules) - Generate architectural rules
-- [`validate_rules`](#validate_rules) - Validate code against rules
-- [`create_rule_set`](#create_rule_set) - Create machine-readable rules
+- [`generate_rules`](#generate_rules) - Generate architectural validation rules
+- [`validate_rules`](#validate_rules) - Validate code against architectural rules
+- [`create_rule_set`](#create_rule_set) - Create machine-readable rule sets
 
-### **Deployment & Operations**
+### **🗂️ File & Cache Management**
 
-- [`smart_git_push`](#smart_git_push) - Security-focused git operations
-- [`generate_deployment_guidance`](#generate_deployment_guidance) - Deployment instructions
-- [`analyze_deployment_progress`](#analyze_deployment_progress) - Deployment progress analysis
+- [`read_file`](#read_file) - Read files with security validation
+- [`write_file`](#write_file) - Write files with safety checks
+- [`list_directory`](#list_directory) - List directory contents securely
+- [`manage_cache`](#manage_cache) - Manage analysis cache
+- [`manage_todo_json`](#manage_todo_json) - Manage TODO JSON files
 
-### **File Operations**
+### **🔧 Configuration & Utilities**
 
-- [`read_file`](#read_file) - Read file contents
-- [`write_file`](#write_file) - Write file contents
-- [`list_directory`](#list_directory) - List directory contents
-
-### **System Management**
-
-- [`manage_cache`](#manage_cache) - Cache management operations
-- [`configure_output_masking`](#configure_output_masking) - Output masking configuration
-- [`check_ai_execution_status`](#check_ai_execution_status) - AI execution status check
+- [`configure_output_masking`](#configure_output_masking) - Configure output masking
+- [`request_action_confirmation`](#request_action_confirmation) - Request user confirmation
+- [`check_ai_execution_status`](#check_ai_execution_status) - Check AI execution status
+- [`mcp_planning`](#mcp_planning) - MCP server planning and coordination
 
 ---
 
@@ -76,27 +83,27 @@
 
 ### `analyze_project_ecosystem`
 
-**Purpose**: Comprehensive recursive project ecosystem analysis with advanced prompting techniques
+**Purpose**: Comprehensive recursive project ecosystem analysis with advanced AI prompting techniques
 
 **Use Cases**:
 
-- Initial project understanding
-- Complete architecture analysis
-- Knowledge graph building
-- Context establishment for other tools
+- Initial project understanding and architecture discovery
+- Complete technology stack analysis
+- Knowledge graph building with architectural insights
+- Context establishment for downstream analysis tools
 
 **Parameters**:
 
 ```json
 {
-  "projectPath": "string (required)",
-  "enhancedMode": "boolean (default: false)",
-  "knowledgeEnhancement": "boolean (default: false)",
-  "learningEnabled": "boolean (default: false)",
-  "includeEnvironment": "boolean (default: false)",
+  "projectPath": "string (required) - Path to project root",
+  "enhancedMode": "boolean (default: false) - Enable enhanced analysis",
+  "knowledgeEnhancement": "boolean (default: false) - Enable knowledge generation",
+  "learningEnabled": "boolean (default: false) - Enable reflexion learning",
+  "includeEnvironment": "boolean (default: false) - Include environment analysis",
   "recursiveDepth": "string (enum: 'shallow'|'medium'|'deep'|'comprehensive', default: 'medium')",
-  "conversationContext": "object (optional)",
-  "strictMode": "boolean (default: true)"
+  "conversationContext": "object (optional) - Conversation context for continuity",
+  "strictMode": "boolean (default: true) - Enable strict validation"
 }
 ```
 
@@ -112,30 +119,41 @@
 }
 ```
 
-**Returns**: Comprehensive project analysis including technology stack, architecture patterns, and recommendations.
+**Response Format**:
+
+```json
+{
+  "status": "success",
+  "analysis": {
+    "projectOverview": "string",
+    "technologies": ["array of detected technologies"],
+    "architecturalPatterns": ["array of patterns"],
+    "recommendations": ["array of recommendations"],
+    "knowledgeGraph": "object (if knowledgeEnhancement enabled)",
+    "environmentAnalysis": "object (if includeEnvironment enabled)"
+  },
+  "metadata": {
+    "analysisTime": "number",
+    "confidence": "number (0-1)",
+    "toolsUsed": ["array of tools"]
+  }
+}
+```
 
 ---
 
 ### `get_architectural_context`
 
-**Purpose**: Get detailed architectural context for specific files or entire project
+**Purpose**: Extract architectural context, patterns, and decision history from project
 
 **Parameters**:
 
 ```json
 {
-  "filePath": "string (optional)",
-  "projectPath": "string (optional)",
-  "conversationContext": "object (optional)"
-}
-```
-
-**Example Usage**:
-
-```json
-{
-  "filePath": "src/components/UserService.ts",
-  "projectPath": "."
+  "projectPath": "string (required)",
+  "includePatterns": "boolean (default: true)",
+  "includeDecisions": "boolean (default: true)",
+  "contextDepth": "string (enum: 'basic'|'detailed'|'comprehensive', default: 'detailed')"
 }
 ```
 
@@ -143,85 +161,72 @@
 
 ### `discover_existing_adrs`
 
-**Purpose**: Discover and catalog existing ADRs in the project
+**Purpose**: Discover, catalog, and analyze existing Architectural Decision Records
 
 **Parameters**:
 
 ```json
 {
+  "projectPath": "string (required)",
   "adrDirectory": "string (default: 'docs/adrs')",
-  "projectPath": "string (optional)",
-  "conversationContext": "object (optional)"
-}
-```
-
-**Example Usage**:
-
-```json
-{
-  "adrDirectory": "architecture/decisions",
-  "projectPath": "."
+  "includeMetadata": "boolean (default: true)",
+  "validateStructure": "boolean (default: true)"
 }
 ```
 
 ---
 
-## 📋 ADR Generation & Management
+### `review_existing_adrs`
+
+**Purpose**: Review existing ADRs with advanced tree-sitter code analysis
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "adrDirectory": "string (default: 'docs/adrs')",
+  "includeTreeSitter": "boolean (default: true)",
+  "analysisDepth": "string (enum: 'basic'|'detailed'|'comprehensive', default: 'detailed')"
+}
+```
+
+---
+
+### `analyze_environment`
+
+**Purpose**: Analyze project environment, containerization, and deployment configuration
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "analysisType": "string (enum: 'specs'|'containerization'|'requirements'|'compliance'|'comprehensive', default: 'comprehensive')",
+  "knowledgeEnhancement": "boolean (default: true)",
+  "enhancedMode": "boolean (default: true)",
+  "currentEnvironment": "string (required for compliance analysis)",
+  "requirements": "array (required for compliance analysis)"
+}
+```
+
+---
+
+## 📝 ADR Generation & Management
 
 ### `generate_adrs_from_prd`
 
-**Purpose**: Generate Architectural Decision Records from a Product Requirements Document
+**Purpose**: Generate comprehensive ADRs from Product Requirements Document
 
 **Parameters**:
 
 ```json
 {
-  "prdPath": "string (required)",
-  "adrDirectory": "string (default: 'docs/adrs')",
-  "templateFormat": "string (enum: 'standard'|'y-statements'|'madr', default: 'standard')",
-  "projectPath": "string (optional)",
-  "conversationContext": "object (optional)"
-}
-```
-
-**Example Usage**:
-
-```json
-{
-  "prdPath": "PRD.md",
-  "adrDirectory": "docs/decisions",
-  "templateFormat": "madr"
-}
-```
-
----
-
-### `generate_adr_from_decision`
-
-**Purpose**: Generate a complete ADR from decision data
-
-**Parameters**:
-
-```json
-{
-  "decisionData": "object (required)",
-  "adrDirectory": "string (default: 'docs/adrs')",
-  "templateFormat": "string (enum: 'standard'|'y-statements'|'madr', default: 'standard')",
-  "conversationContext": "object (optional)"
-}
-```
-
-**Example Usage**:
-
-```json
-{
-  "decisionData": {
-    "title": "Database Selection",
-    "context": "Need to choose primary database",
-    "decision": "PostgreSQL",
-    "rationale": "ACID compliance and JSON support",
-    "consequences": ["Better data integrity", "More complex setup"]
-  }
+  "prdContent": "string (required) - PRD content",
+  "projectPath": "string (default: '.')",
+  "outputDirectory": "string (default: 'docs/adrs')",
+  "adrTemplate": "string (enum: 'nygard'|'madr'|'custom', default: 'nygard')",
+  "includeImplementationPlan": "boolean (default: true)"
 }
 ```
 
@@ -229,65 +234,55 @@
 
 ### `suggest_adrs`
 
-**Purpose**: Suggest architectural decisions with advanced prompting techniques
+**Purpose**: Suggest missing ADRs based on code analysis and architectural gaps
 
 **Parameters**:
 
 ```json
 {
-  "projectPath": "string (optional)",
-  "adrDirectory": "string (default: 'docs/adrs')",
-  "conversationContext": "object (optional)",
-  "analysisScope": "string (enum: 'technology'|'architecture'|'security'|'deployment'|'all', default: 'all')",
-  "maxSuggestions": "number (default: 5)"
+  "projectPath": "string (required)",
+  "existingAdrs": "array (optional) - Existing ADR summaries",
+  "beforeCode": "string (optional) - Code before changes",
+  "afterCode": "string (optional) - Code after changes",
+  "enableTreeSitterAnalysis": "boolean (default: false)",
+  "analysisDepth": "string (enum: 'basic'|'detailed'|'comprehensive', default: 'detailed')"
 }
 ```
 
 ---
 
-### `generate_adr_todo`
+### `generate_adr_bootstrap`
 
-**Purpose**: Generate TDD-focused todo.md from existing ADRs with JSON-first approach
+**Purpose**: Bootstrap ADR validation scripts and compliance checking
 
 **Parameters**:
 
 ```json
 {
+  "projectPath": "string (required)",
   "adrDirectory": "string (default: 'docs/adrs')",
-  "todoPath": "string (default: 'TODO.md')",
-  "todoFormat": "string (enum: 'markdown'|'json'|'both', default: 'both')",
-  "includePriorities": "boolean (default: true)",
-  "includeTimestamps": "boolean (default: true)",
-  "projectPath": "string (optional)",
-  "conversationContext": "object (optional)"
+  "enableTreeSitterAnalysis": "boolean (default: false)",
+  "validationLevel": "string (enum: 'basic'|'standard'|'strict', default: 'standard')"
 }
 ```
 
 ---
 
-## 🛡️ Security & Content Protection
+## 🔒 Security & Content Protection
 
 ### `analyze_content_security`
 
-**Purpose**: Analyze content for sensitive information using AI-powered detection
+**Purpose**: Detect sensitive content, secrets, and security vulnerabilities with AI
 
 **Parameters**:
 
 ```json
 {
-  "content": "string (required)",
-  "contentType": "string (enum: 'code'|'documentation'|'configuration'|'logs'|'general', default: 'general')",
-  "userDefinedPatterns": "array of strings (optional)"
-}
-```
-
-**Example Usage**:
-
-```json
-{
-  "content": "const apiKey = 'sk-1234567890abcdef';",
-  "contentType": "code",
-  "userDefinedPatterns": ["custom-secret-.*"]
+  "content": "string (required) - Content to analyze",
+  "contentType": "string (optional) - Content type hint",
+  "securityLevel": "string (enum: 'basic'|'standard'|'strict', default: 'standard')",
+  "enableTreeSitterAnalysis": "boolean (default: false)",
+  "customPatterns": "array (optional) - Custom security patterns"
 }
 ```
 
@@ -295,110 +290,35 @@
 
 ### `generate_content_masking`
 
-**Purpose**: Generate masking instructions for detected sensitive content
+**Purpose**: Create intelligent masking instructions for sensitive content
 
 **Parameters**:
 
 ```json
 {
   "content": "string (required)",
-  "detectedItems": "array of objects (required)",
-  "maskingStrategy": "string (enum: 'full'|'partial'|'placeholder'|'environment', default: 'full')"
+  "securityFindings": "array (required) - Security analysis results",
+  "maskingStrategy": "string (enum: 'conservative'|'balanced'|'aggressive', default: 'balanced')",
+  "preserveStructure": "boolean (default: true)"
 }
 ```
 
 ---
 
-### `apply_basic_content_masking`
+## 📊 Project Health & Deployment
 
-**Purpose**: Apply basic content masking (fallback when AI is not available)
+### `smart_score`
 
-**Parameters**:
-
-```json
-{
-  "content": "string (required)",
-  "maskingStrategy": "string (enum: 'full'|'partial'|'placeholder', default: 'full')"
-}
-```
-
----
-
-### `validate_content_masking`
-
-**Purpose**: Validate that content masking was applied correctly
-
-**Parameters**:
-
-```json
-{
-  "originalContent": "string (required)",
-  "maskedContent": "string (required)"
-}
-```
-
----
-
-### `configure_custom_patterns`
-
-**Purpose**: Configure custom sensitive patterns for a project
+**Purpose**: AI-powered comprehensive project health scoring
 
 **Parameters**:
 
 ```json
 {
   "projectPath": "string (required)",
-  "existingPatterns": "array of strings (optional)"
-}
-```
-
----
-
-## 📊 Project Health & Scoring
-
-### `smart_score`
-
-**Purpose**: Central coordination for project health scoring system
-
-**Parameters**:
-
-```json
-{
-  "operation": "string (enum: 'recalculate_scores'|'sync_scores'|'diagnose_scores'|'optimize_weights'|'reset_scores'|'get_score_trends'|'get_intent_scores', required)",
-  "projectPath": "string (optional)",
-  "components": "array (enum: 'task_completion'|'deployment_readiness'|'architecture_compliance'|'security_posture'|'code_quality'|'all', default: ['all'])",
-  "forceUpdate": "boolean (default: false)",
-  "updateSources": "boolean (default: true)"
-}
-```
-
-**Example Usage**:
-
-```json
-{
-  "operation": "recalculate_scores",
-  "projectPath": ".",
-  "components": ["deployment_readiness", "security_posture"],
-  "forceUpdate": true
-}
-```
-
----
-
-### `compare_adr_progress`
-
-**Purpose**: Compare TODO.md progress against ADRs and current environment
-
-**Parameters**:
-
-```json
-{
-  "todoPath": "string (default: 'TODO.md')",
-  "adrDirectory": "string (default: 'docs/adrs')",
-  "projectPath": "string (optional)",
-  "includeEnvironmentCheck": "boolean (default: true)",
-  "conversationContext": "object (optional)",
-  "strictMode": "boolean (default: true)"
+  "scoringCriteria": "array (optional) - Custom scoring criteria",
+  "includeRecommendations": "boolean (default: true)",
+  "detailedAnalysis": "boolean (default: false)"
 }
 ```
 
@@ -406,53 +326,36 @@
 
 ### `deployment_readiness`
 
-**Purpose**: Comprehensive deployment readiness analysis with zero-tolerance validation
+**Purpose**: Comprehensive deployment readiness analysis with security validation
 
 **Parameters**:
 
 ```json
 {
-  "operation": "string (enum: 'check_readiness'|'validate_tests'|'security_scan'|'dependency_audit'|'all', required)",
-  "projectPath": "string (optional)",
-  "targetEnvironment": "string (enum: 'development'|'staging'|'production', default: 'production')",
+  "projectPath": "string (required)",
+  "environment": "string (enum: 'development'|'staging'|'production', default: 'production')",
+  "enableTreeSitterAnalysis": "boolean (default: false)",
+  "treeSitterLanguages": "array (optional) - Languages to analyze",
   "strictMode": "boolean (default: true)"
 }
 ```
 
 ---
 
-## 🔧 Workflow & Development
+## 🛠️ Workflow & Development
 
 ### `troubleshoot_guided_workflow`
 
-**Purpose**: Systematic failure analysis with test plan generation
+**Purpose**: Systematic troubleshooting workflow with intelligent guidance
 
 **Parameters**:
 
 ```json
 {
-  "operation": "string (enum: 'analyze_failure'|'generate_test_plan'|'run_diagnostics'|'create_workflow', required)",
-  "failureInfo": "object (required for analyze_failure and generate_test_plan)",
-  "projectPath": "string (optional)",
-  "adrDirectory": "string (default: 'docs/adrs')",
-  "todoPath": "string (default: 'TODO.md')",
-  "conversationContext": "object (optional)"
-}
-```
-
-**Example Usage**:
-
-```json
-{
-  "operation": "analyze_failure",
-  "failureInfo": {
-    "failureType": "build_failure",
-    "failureDetails": "TypeScript compilation errors in authentication module",
-    "context": {
-      "reproducible": true,
-      "impact": "high"
-    }
-  }
+  "projectPath": "string (required)",
+  "issueDescription": "string (required) - Description of the issue",
+  "troubleshootingLevel": "string (enum: 'basic'|'intermediate'|'advanced', default: 'intermediate')",
+  "includeSystemInfo": "boolean (default: true)"
 }
 ```
 
@@ -460,114 +363,87 @@
 
 ### `get_workflow_guidance`
 
-**Purpose**: Get intelligent workflow guidance and tool recommendations
+**Purpose**: Intelligent workflow recommendations based on project state
 
 **Parameters**:
 
 ```json
 {
-  "goal": "string (required)",
-  "currentPhase": "string (enum: 'planning'|'development'|'testing'|'deployment', optional)",
-  "projectPath": "string (optional)",
-  "availableTime": "string (optional)",
-  "constraints": "array of strings (optional)",
-  "conversationContext": "object (optional)"
+  "projectPath": "string (required)",
+  "currentPhase": "string (optional) - Current development phase",
+  "teamSize": "number (optional) - Team size",
+  "preferences": "object (optional) - Workflow preferences"
 }
 ```
 
 ---
 
-### `get_development_guidance`
+### `tool_chain_orchestrator`
 
-**Purpose**: Get comprehensive development guidance that translates architectural decisions into coding tasks
+**Purpose**: Orchestrate multiple tool workflows for complex analysis tasks
 
 **Parameters**:
 
 ```json
 {
-  "developmentPhase": "string (enum: 'setup'|'implementation'|'testing'|'deployment'|'maintenance', required)",
-  "projectPath": "string (optional)",
-  "adrDirectory": "string (default: 'docs/adrs')",
-  "technologyStack": "array of strings (optional)",
-  "constraints": "array of strings (optional)",
-  "conversationContext": "object (optional)"
+  "projectPath": "string (required)",
+  "workflow": "string (enum: 'full_analysis'|'security_audit'|'deployment_prep'|'custom')",
+  "tools": "array (required for custom workflow) - Tools to orchestrate",
+  "parallelExecution": "boolean (default: false)"
 }
 ```
 
 ---
 
-## 🔍 Research & Documentation
+## 🔬 Research & Knowledge
 
 ### `generate_research_questions`
 
-**Purpose**: Generate context-aware research questions and create research tracking system
+**Purpose**: Generate targeted research questions for architectural investigation
 
 **Parameters**:
 
 ```json
 {
-  "analysisType": "string (enum: 'technology'|'architecture'|'security'|'performance'|'compliance'|'general', required)",
-  "context": "string (optional)",
-  "existingKnowledge": "string (optional)",
-  "researchScope": "string (enum: 'narrow'|'medium'|'broad', default: 'medium')",
-  "maxQuestions": "number (default: 5)",
-  "conversationContext": "object (optional)"
+  "projectPath": "string (required)",
+  "researchArea": "string (optional) - Specific area of focus",
+  "questionCount": "number (default: 10) - Number of questions to generate",
+  "complexity": "string (enum: 'basic'|'intermediate'|'advanced', default: 'intermediate')"
 }
 ```
 
 ---
 
-### `create_research_template`
+### `memory_loading`
 
-**Purpose**: Create a research template file for documenting findings
+**Purpose**: Load and manage architectural memory for knowledge persistence
 
 **Parameters**:
 
 ```json
 {
-  "title": "string (required)",
-  "researchType": "string (enum: 'technology'|'architecture'|'security'|'performance'|'compliance'|'general', default: 'general')",
-  "templatePath": "string (optional)",
-  "includeMetadata": "boolean (default: true)"
+  "projectPath": "string (required)",
+  "memoryType": "string (enum: 'architectural'|'decisions'|'patterns'|'all', default: 'all')",
+  "loadStrategy": "string (enum: 'incremental'|'full'|'selective', default: 'incremental')"
 }
 ```
 
 ---
 
-### `incorporate_research`
-
-**Purpose**: Incorporate research findings into architectural decisions
-
-**Parameters**:
-
-```json
-{
-  "researchPath": "string (required)",
-  "targetAdr": "string (optional)",
-  "adrDirectory": "string (default: 'docs/adrs')",
-  "integrationMode": "string (enum: 'update_existing'|'create_new'|'suggest_changes', default: 'suggest_changes')",
-  "conversationContext": "object (optional)"
-}
-```
-
----
-
-## 📏 Rules & Validation
+## ⚙️ Rules & Validation
 
 ### `generate_rules`
 
-**Purpose**: Generate architectural rules from ADRs and code patterns
+**Purpose**: Generate architectural validation rules from ADRs and patterns
 
 **Parameters**:
 
 ```json
 {
-  "source": "string (enum: 'adrs'|'code'|'both', default: 'both')",
+  "projectPath": "string (required)",
   "adrDirectory": "string (default: 'docs/adrs')",
-  "projectPath": "string (optional)",
-  "ruleTypes": "array (enum: 'naming'|'structure'|'dependencies'|'patterns'|'security'|'all', default: ['all'])",
-  "outputFormat": "string (enum: 'markdown'|'json'|'yaml', default: 'markdown')",
-  "conversationContext": "object (optional)"
+  "ruleTypes": "array (optional) - Types of rules to generate",
+  "strictness": "string (enum: 'lenient'|'moderate'|'strict', default: 'moderate')"
 }
 ```
 
@@ -581,283 +457,182 @@
 
 ```json
 {
-  "filePath": "string (optional)",
-  "projectPath": "string (optional)",
-  "rulesPath": "string (optional)",
-  "ruleTypes": "array (enum: 'naming'|'structure'|'dependencies'|'patterns'|'security'|'all', default: ['all'])",
-  "outputFormat": "string (enum: 'detailed'|'summary'|'json', default: 'detailed')",
-  "conversationContext": "object (optional)"
+  "projectPath": "string (required)",
+  "rules": "array (required) - Rules to validate against",
+  "filePatterns": "array (optional) - File patterns to validate",
+  "reportFormat": "string (enum: 'summary'|'detailed'|'json', default: 'detailed')"
 }
 ```
 
 ---
 
-### `create_rule_set`
-
-**Purpose**: Create machine-readable rule set in JSON/YAML format
-
-**Parameters**:
-
-```json
-{
-  "name": "string (required)",
-  "description": "string (optional)",
-  "rules": "array of objects (required)",
-  "outputPath": "string (optional)",
-  "format": "string (enum: 'json'|'yaml', default: 'json')"
-}
-```
-
----
-
-## 🚀 Deployment & Operations
-
-### `smart_git_push`
-
-**Purpose**: AI-driven security-focused git push with credential detection
-
-**Parameters**:
-
-```json
-{
-  "operation": "string (enum: 'push'|'security_check'|'commit_analysis'|'pre_push_validation', required)",
-  "projectPath": "string (optional)",
-  "commitMessage": "string (optional)",
-  "branch": "string (optional)",
-  "forceSecurityCheck": "boolean (default: true)",
-  "conversationContext": "object (optional)"
-}
-```
-
----
-
-### `generate_deployment_guidance`
-
-**Purpose**: Generate deployment guidance and instructions from ADRs
-
-**Parameters**:
-
-```json
-{
-  "adrDirectory": "string (default: 'docs/adrs')",
-  "targetEnvironment": "string (enum: 'development'|'staging'|'production', required)",
-  "deploymentType": "string (enum: 'docker'|'kubernetes'|'serverless'|'traditional'|'auto-detect', default: 'auto-detect')",
-  "includeSecurityChecks": "boolean (default: true)",
-  "conversationContext": "object (optional)"
-}
-```
-
----
-
-### `analyze_deployment_progress`
-
-**Purpose**: Analyze deployment progress and verify completion
-
-**Parameters**:
-
-```json
-{
-  "analysisType": "string (enum: 'pre_deployment'|'deployment_status'|'post_deployment'|'rollback_analysis', required)",
-  "targetEnvironment": "string (enum: 'development'|'staging'|'production', optional)",
-  "deploymentId": "string (optional)",
-  "projectPath": "string (optional)",
-  "conversationContext": "object (optional)"
-}
-```
-
----
-
-## 📁 File Operations
+## 🗂️ File & Cache Management
 
 ### `read_file`
 
-**Purpose**: Read contents of a file
+**Purpose**: Read files with security validation and content analysis
 
 **Parameters**:
 
 ```json
 {
-  "path": "string (required)"
+  "filePath": "string (required) - Path to file",
+  "encoding": "string (default: 'utf8') - File encoding",
+  "securityCheck": "boolean (default: true) - Enable security validation"
 }
 ```
 
 ---
-
-### `write_file`
-
-**Purpose**: Write content to a file
-
-**Parameters**:
-
-```json
-{
-  "path": "string (required)",
-  "content": "string (required)"
-}
-```
-
----
-
-### `list_directory`
-
-**Purpose**: List contents of a directory
-
-**Parameters**:
-
-```json
-{
-  "path": "string (required)"
-}
-```
-
----
-
-## ⚙️ System Management
 
 ### `manage_cache`
 
-**Purpose**: Manage MCP resource cache operations
+**Purpose**: Manage analysis cache for performance optimization
 
 **Parameters**:
 
 ```json
 {
-  "action": "string (enum: 'clear'|'stats'|'cleanup'|'invalidate', required)",
-  "key": "string (required for invalidate action)"
+  "operation": "string (enum: 'clear'|'status'|'optimize'|'configure', required)",
+  "cacheType": "string (optional) - Specific cache type",
+  "maxAge": "number (optional) - Maximum cache age in seconds"
 }
 ```
 
 ---
+
+## 🔧 Configuration & Utilities
 
 ### `configure_output_masking`
 
-**Purpose**: Configure content masking for all MCP outputs
+**Purpose**: Configure output masking for sensitive information protection
 
 **Parameters**:
 
 ```json
 {
-  "enabled": "boolean (optional)",
-  "maskingLevel": "string (enum: 'basic'|'standard'|'strict', optional)",
-  "customPatterns": "array of strings (optional)"
+  "maskingRules": "array (required) - Masking rules configuration",
+  "globalSettings": "object (optional) - Global masking settings",
+  "testMode": "boolean (default: false) - Enable test mode"
 }
 ```
 
 ---
 
-### `check_ai_execution_status`
+### `mcp_planning`
 
-**Purpose**: Check AI execution configuration and status for debugging
-
-**Parameters**: None required
-
-**Example Usage**:
-
-```json
-{}
-```
-
----
-
-### `manage_todo_json`
-
-**Purpose**: JSON-first TODO management with consistent LLM interactions
+**Purpose**: MCP server planning and coordination for complex workflows
 
 **Parameters**:
 
 ```json
 {
-  "operation": "string (enum: 'create_task'|'update_task'|'delete_task'|'get_tasks'|'get_analytics'|'sync_to_markdown'|'import_from_markdown'|'get_health_score', required)",
-  "projectPath": "string (optional)",
-  "todoPath": "string (default: 'TODO.md')",
-  "task": "object (optional, for create/update operations)",
-  "taskId": "string (optional, for update/delete operations)"
+  "projectPath": "string (required)",
+  "planningScope": "string (enum: 'project'|'architecture'|'deployment'|'comprehensive', default: 'comprehensive')",
+  "includeTimeline": "boolean (default: true)",
+  "stakeholders": "array (optional) - Project stakeholders"
 }
 ```
 
 ---
 
-### `analyze_environment`
+## 📋 Response Patterns
 
-**Purpose**: Analyze environment context and provide optimization recommendations
-
-**Parameters**:
+### Standard Success Response
 
 ```json
 {
-  "projectPath": "string (optional)",
-  "environmentType": "string (enum: 'development'|'staging'|'production'|'ci', optional)",
-  "includeOptimizations": "boolean (default: true)",
-  "conversationContext": "object (optional)"
+  "status": "success",
+  "data": {
+    // Tool-specific response data
+  },
+  "metadata": {
+    "executionTime": "number (milliseconds)",
+    "toolVersion": "string",
+    "confidence": "number (0-1)",
+    "warnings": ["array of warnings"],
+    "recommendations": ["array of recommendations"]
+  }
 }
 ```
 
----
-
-### `request_action_confirmation`
-
-**Purpose**: Request confirmation before applying research-based changes
-
-**Parameters**:
+### Error Response
 
 ```json
 {
-  "action": "string (required)",
-  "description": "string (required)",
-  "risks": "array of strings (optional)",
-  "benefits": "array of strings (optional)"
+  "status": "error",
+  "error": {
+    "code": "string - Error code",
+    "message": "string - Human-readable error message",
+    "details": "object - Additional error details",
+    "suggestions": ["array of suggested fixes"]
+  },
+  "metadata": {
+    "executionTime": "number",
+    "toolVersion": "string"
+  }
 }
 ```
 
 ---
 
-## 🎯 Common Usage Patterns
+## 🚀 Getting Started
 
-### **New Project Setup**
+### Basic Project Analysis
 
 ```bash
-1. analyze_project_ecosystem (comprehensive analysis)
-2. generate_adrs_from_prd (if PRD exists)
-3. generate_adr_todo (create implementation tasks)
-4. smart_score (establish baseline metrics)
+# Comprehensive project analysis
+{
+  "tool": "analyze_project_ecosystem",
+  "arguments": {
+    "projectPath": ".",
+    "enhancedMode": true,
+    "knowledgeEnhancement": true,
+    "recursiveDepth": "comprehensive"
+  }
+}
 ```
 
-### **Existing Project Analysis**
+### Security-First Workflow
 
 ```bash
-1. discover_existing_adrs (catalog current decisions)
-2. analyze_project_ecosystem (understand current state)
-3. suggest_adrs (identify gaps)
-4. compare_adr_progress (validate implementation)
-```
+# 1. Analyze content security
+{
+  "tool": "analyze_content_security",
+  "arguments": {
+    "content": "your-code-here",
+    "securityLevel": "strict"
+  }
+}
 
-### **Security Review**
+# 2. Generate masking instructions
+{
+  "tool": "generate_content_masking",
+  "arguments": {
+    "content": "your-code-here",
+    "securityFindings": "results-from-step-1"
+  }
+}
 
-```bash
-1. analyze_content_security (scan for sensitive content)
-2. generate_content_masking (create protection)
-3. smart_git_push (secure deployment)
-4. deployment_readiness (final validation)
-```
-
-### **Troubleshooting**
-
-```bash
-1. troubleshoot_guided_workflow (systematic analysis)
-2. check_ai_execution_status (verify AI setup)
-3. smart_score (check health metrics)
-4. get_workflow_guidance (next steps)
+# 3. Check deployment readiness
+{
+  "tool": "deployment_readiness",
+  "arguments": {
+    "projectPath": ".",
+    "environment": "production",
+    "strictMode": true
+  }
+}
 ```
 
 ---
 
-## 📚 Related Documentation
+## 📚 Additional Resources
 
-- **[Getting Started Guides](../getting-started-prd.md)** - Step-by-step usage scenarios
-- **[Usage Guide](../USAGE_GUIDE.md)** - Practical examples and workflows
-- **[Architecture Overview](../architecture-overview.md)** - Technical architecture details
-- **[Troubleshooting Guide](../how-to-guides/troubleshooting.md)** - Common issues and solutions
+- **[Tutorials](../tutorials/01-first-steps.md)** - Step-by-step guides
+- **[How-To Guides](../how-to-guides/troubleshooting.md)** - Problem-solving guides
+- **[Explanation](../explanation/mcp-concepts.md)** - Conceptual documentation
+- **[GitHub Repository](https://github.com/tosin2013/mcp-adr-analysis-server)** - Source code and issues
 
 ---
 
-**Last Updated**: September 2025 | **MCP ADR Analysis Server v2.1.0**
+_Last updated: September 2025 | Version 2.1.0_
