@@ -6,76 +6,148 @@
 import { McpAdrError } from '../types/index.js';
 import { ConversationContext, formatContextForPrompt } from '../types/conversation-context.js';
 
+/**
+ * Represents an implicit architectural decision detected in code
+ */
 export interface ImplicitDecision {
+  /** Unique identifier for the decision */
   id: string;
+  /** Human-readable title for the decision */
   title: string;
+  /** Category of the architectural decision */
   category: string;
+  /** Confidence score (0-1) in the detection */
   confidence: number;
+  /** Evidence supporting the decision detection */
   evidence: string[];
+  /** File paths where evidence was found */
   filePaths: string[];
+  /** Detailed description of the decision */
   description: string;
+  /** Context in which the decision was made */
   context: string;
+  /** Potential consequences of the decision */
   consequences: string;
+  /** Alternative approaches that were considered */
   alternatives: string[];
+  /** Priority level for documenting this decision */
   priority: 'low' | 'medium' | 'high' | 'critical';
+  /** Complexity level of the decision */
   complexity: 'low' | 'medium' | 'high';
+  /** Risk level associated with the decision */
   riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  /** Suggested title for the ADR */
   suggestedAdrTitle: string;
+  /** Related architectural patterns */
   relatedPatterns: string[];
 }
 
+/**
+ * Represents a cluster of related architectural decisions
+ */
 export interface DecisionCluster {
+  /** Common theme connecting the decisions */
   theme: string;
+  /** Decision IDs that belong to this cluster */
   decisions: string[];
+  /** Suggested title for a combined ADR */
   suggestedCombinedAdr: string;
 }
 
+/**
+ * Result of implicit decision analysis
+ */
 export interface ImplicitDecisionAnalysis {
+  /** List of detected implicit decisions */
   implicitDecisions: ImplicitDecision[];
+  /** Clusters of related decisions */
   decisionClusters: DecisionCluster[];
+  /** Recommendations for ADR creation */
   recommendations: string[];
+  /** Identified gaps in architectural documentation */
   gaps: Array<{
+    /** Area where gap was identified */
     area: string;
+    /** Description of the gap */
     description: string;
+    /** Suggested investigation approach */
     suggestedInvestigation: string;
   }>;
 }
 
+/**
+ * Represents an architectural decision derived from code changes
+ */
 export interface CodeChangeDecision {
+  /** Unique identifier for the decision */
   id: string;
+  /** Human-readable title for the decision */
   title: string;
+  /** Category of the architectural decision */
   category: string;
+  /** Confidence score (0-1) in the decision detection */
   confidence: number;
+  /** Evidence supporting the decision from code changes */
   evidence: string[];
+  /** Context in which the decision was made */
   context: string;
+  /** The actual decision that was made */
   decision: string;
+  /** Consequences of the decision */
   consequences: string;
+  /** Alternative approaches that were considered */
   alternatives: string[];
+  /** Motivation behind the code change */
   changeMotivation: string;
+  /** Future implications of the decision */
   futureImplications: string;
+  /** Suggested title for the ADR */
   suggestedAdrTitle: string;
+  /** Priority level for documenting this decision */
   priority: 'low' | 'medium' | 'high' | 'critical';
 }
 
+/**
+ * Represents a generated ADR document
+ */
 export interface GeneratedAdr {
+  /** Unique identifier for the ADR */
   id: string;
+  /** Title of the ADR */
   title: string;
+  /** Status of the ADR (proposed, accepted, deprecated, etc.) */
   status: string;
+  /** Date when the ADR was created */
   date: string;
+  /** Format of the ADR (nygard, madr, custom) */
   format: string;
+  /** Full content of the ADR */
   content: string;
+  /** Suggested filename for the ADR */
   filename: string;
+  /** Additional metadata about the ADR */
   metadata: {
+    /** Category of the architectural decision */
     category: string;
+    /** Tags for categorization */
     tags: string[];
+    /** Complexity level of the decision */
     complexity: string;
+    /** Impact level of the decision */
     impact: string;
+    /** Stakeholders affected by the decision */
     stakeholders: string[];
   };
 }
 
 /**
  * Generate prompt for AI to analyze project for implicit architectural decisions
+ *
+ * @param projectPath - Path to the project to analyze
+ * @param existingAdrs - Array of existing ADR summaries to avoid duplication
+ * @param conversationContext - Conversation context for continuity
+ * @returns Promise resolving to analysis prompt and instructions
+ * @throws McpAdrError if prompt generation fails
  */
 export async function analyzeImplicitDecisions(
   projectPath: string,
@@ -87,10 +159,7 @@ export async function analyzeImplicitDecisions(
       '../prompts/adr-suggestion-prompts.js'
     );
 
-    let analysisPrompt = generateImplicitDecisionDetectionPrompt(
-      projectPath,
-      existingAdrs
-    );
+    let analysisPrompt = generateImplicitDecisionDetectionPrompt(projectPath, existingAdrs);
 
     // Enhance prompt with conversation context if available
     if (conversationContext) {
@@ -267,7 +336,6 @@ const result = await generateAdrFromDecision(decisionData, 'nygard', existingAdr
     );
   }
 }
-
 
 /**
  * Generate next ADR number based on existing ADRs
