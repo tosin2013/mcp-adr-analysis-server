@@ -17,6 +17,7 @@ import {
   ReadResourceRequestSchema,
   ListPromptsRequestSchema,
   GetPromptRequestSchema,
+  type CallToolResult,
 } from '@modelcontextprotocol/sdk/types.js';
 
 import { readFileSync } from 'fs';
@@ -24,7 +25,11 @@ import { join } from 'path';
 import { getCurrentDirCompat } from './utils/directory-compat.js';
 import { McpAdrError } from './types/index.js';
 import { CONVERSATION_CONTEXT_SCHEMA } from './types/conversation-context.js';
-import { maskMcpResponse, createMaskingConfig } from './utils/output-masking.js';
+import {
+  maskMcpResponse,
+  createMaskingConfig,
+  type MaskingConfig,
+} from './utils/output-masking.js';
 import {
   loadConfig,
   validateProjectPath,
@@ -89,7 +94,7 @@ const SERVER_INFO = {
  */
 export class McpAdrAnalysisServer {
   private server: Server;
-  private maskingConfig: any;
+  private maskingConfig: MaskingConfig;
   private config: ServerConfig;
   private logger: ReturnType<typeof createLogger>;
   private kgManager: KnowledgeGraphManager;
@@ -124,8 +129,9 @@ export class McpAdrAnalysisServer {
     try {
       await validateProjectPath(this.config.projectPath);
       this.logger.info(`Project path validated: ${this.config.projectPath}`);
-    } catch (error: any) {
-      this.logger.error(`Configuration validation failed: ${error.message}`);
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Configuration validation failed: ${errorMessage}`);
       throw error;
     }
   }
@@ -2798,134 +2804,135 @@ export class McpAdrAnalysisServer {
       const { name, arguments: args } = request.params;
 
       try {
-        let response: any;
+        let response: CallToolResult;
+        const safeArgs = args || {};
 
         switch (name) {
           case 'analyze_project_ecosystem':
-            response = await this.analyzeProjectEcosystem(args);
+            response = await this.analyzeProjectEcosystem(safeArgs);
             break;
           case 'get_architectural_context':
-            response = await this.getArchitecturalContext(args);
+            response = await this.getArchitecturalContext(safeArgs);
             break;
           case 'generate_adrs_from_prd':
-            response = await this.generateAdrsFromPrd(args);
+            response = await this.generateAdrsFromPrd(safeArgs);
             break;
           case 'generate_adr_todo':
-            response = await this.generateAdrTodo(args);
+            response = await this.generateAdrTodo(safeArgs);
             break;
           case 'compare_adr_progress':
-            response = await this.compareAdrProgress(args);
+            response = await this.compareAdrProgress(safeArgs);
             break;
           case 'analyze_content_security':
-            response = await this.analyzeContentSecurity(args);
+            response = await this.analyzeContentSecurity(safeArgs);
             break;
           case 'generate_content_masking':
-            response = await this.generateContentMasking(args);
+            response = await this.generateContentMasking(safeArgs);
             break;
           case 'configure_custom_patterns':
-            response = await this.configureCustomPatterns(args);
+            response = await this.configureCustomPatterns(safeArgs);
             break;
           case 'apply_basic_content_masking':
-            response = await this.applyBasicContentMasking(args);
+            response = await this.applyBasicContentMasking(safeArgs);
             break;
           case 'validate_content_masking':
-            response = await this.validateContentMasking(args);
+            response = await this.validateContentMasking(safeArgs);
             break;
           case 'manage_cache':
-            response = await this.manageCache(args);
+            response = await this.manageCache(safeArgs);
             break;
           case 'configure_output_masking':
-            response = await this.configureOutputMasking(args);
+            response = await this.configureOutputMasking(safeArgs);
             break;
           case 'suggest_adrs':
-            response = await this.suggestAdrs(args);
+            response = await this.suggestAdrs(safeArgs);
             break;
           case 'generate_adr_from_decision':
-            response = await this.generateAdrFromDecision(args);
+            response = await this.generateAdrFromDecision(safeArgs);
             break;
           case 'generate_adr_bootstrap':
-            response = await this.generateAdrBootstrap(args);
+            response = await this.generateAdrBootstrap(safeArgs);
             break;
           case 'discover_existing_adrs':
-            response = await this.discoverExistingAdrs(args);
+            response = await this.discoverExistingAdrs(safeArgs);
             break;
           case 'review_existing_adrs':
-            response = await this.reviewExistingAdrs(args);
+            response = await this.reviewExistingAdrs(safeArgs);
             break;
           case 'incorporate_research':
-            response = await this.incorporateResearch(args);
+            response = await this.incorporateResearch(safeArgs);
             break;
           case 'create_research_template':
-            response = await this.createResearchTemplate(args);
+            response = await this.createResearchTemplate(safeArgs);
             break;
           case 'request_action_confirmation':
-            response = await this.requestActionConfirmation(args);
+            response = await this.requestActionConfirmation(safeArgs);
             break;
           case 'generate_rules':
-            response = await this.generateRules(args);
+            response = await this.generateRules(safeArgs);
             break;
           case 'validate_rules':
-            response = await this.validateRules(args);
+            response = await this.validateRules(safeArgs);
             break;
           case 'create_rule_set':
-            response = await this.createRuleSet(args);
+            response = await this.createRuleSet(safeArgs);
             break;
           case 'analyze_environment':
-            response = await this.analyzeEnvironment(args);
+            response = await this.analyzeEnvironment(safeArgs);
             break;
           case 'generate_research_questions':
-            response = await this.generateResearchQuestions(args);
+            response = await this.generateResearchQuestions(safeArgs);
             break;
           case 'analyze_deployment_progress':
-            response = await this.analyzeDeploymentProgress(args);
+            response = await this.analyzeDeploymentProgress(safeArgs);
             break;
           case 'check_ai_execution_status':
-            response = await this.checkAIExecutionStatus(args);
+            response = await this.checkAIExecutionStatus(safeArgs);
             break;
           case 'get_workflow_guidance':
-            response = await this.getWorkflowGuidance(args);
+            response = await this.getWorkflowGuidance(safeArgs);
             break;
           case 'get_development_guidance':
-            response = await this.getDevelopmentGuidance(args);
+            response = await this.getDevelopmentGuidance(safeArgs);
             break;
           case 'read_file':
-            response = await this.readFile(args);
+            response = await this.readFile(safeArgs);
             break;
           case 'write_file':
-            response = await this.writeFile(args);
+            response = await this.writeFile(safeArgs);
             break;
           case 'list_directory':
-            response = await this.listDirectory(args);
+            response = await this.listDirectory(safeArgs);
             break;
           case 'manage_todo_json':
-            response = await this.manageTodoJson(args);
+            response = await this.manageTodoJson(safeArgs);
             break;
           case 'generate_deployment_guidance':
-            response = await this.generateDeploymentGuidance(args);
+            response = await this.generateDeploymentGuidance(safeArgs);
             break;
           case 'smart_git_push':
-            response = await this.smartGitPush(args);
+            response = await this.smartGitPush(safeArgs);
             break;
           case 'deployment_readiness':
-            response = await this.deploymentReadiness(args);
+            response = await this.deploymentReadiness(safeArgs);
             break;
           case 'troubleshoot_guided_workflow':
-            response = await this.troubleshootGuidedWorkflow(args);
+            response = await this.troubleshootGuidedWorkflow(safeArgs);
             break;
           case 'smart_score':
-            response = await this.smartScore(args);
+            response = await this.smartScore(safeArgs);
             break;
           case 'mcp_planning':
-            response = await this.mcpPlanning(args);
+            response = await this.mcpPlanning(safeArgs);
             break;
           case 'memory_loading':
-            response = await this.memoryLoading(args);
+            response = await this.memoryLoading(safeArgs);
             break;
           case 'interactive_adr_planning':
-            response = await this.interactiveAdrPlanning(args);
+            response = await this.interactiveAdrPlanning(safeArgs);
             break;
           case 'tool_chain_orchestrator':
-            response = await this.toolChainOrchestrator(args);
+            response = await this.toolChainOrchestrator(safeArgs);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -3063,7 +3070,7 @@ export class McpAdrAnalysisServer {
   /**
    * Tool implementations
    */
-  private async checkAIExecutionStatus(_args: any): Promise<any> {
+  private async checkAIExecutionStatus(_args: Record<string, unknown>): Promise<CallToolResult> {
     try {
       const { getAIExecutionStatus } = await import('./utils/prompt-execution.js');
       const status = getAIExecutionStatus();
@@ -3169,7 +3176,7 @@ Verify these environment variables are set in your MCP configuration:
     }
   }
 
-  private async getWorkflowGuidance(args: any): Promise<any> {
+  private async getWorkflowGuidance(args: Record<string, unknown>): Promise<CallToolResult> {
     const {
       goal,
       projectContext,
@@ -3368,7 +3375,7 @@ This guidance is tailored to your specific context and goals for maximum effecti
     }
   }
 
-  private async getDevelopmentGuidance(args: any): Promise<any> {
+  private async getDevelopmentGuidance(args: Record<string, unknown>): Promise<CallToolResult> {
     const {
       developmentPhase,
       adrsToImplement = [],
@@ -3638,7 +3645,7 @@ This guidance ensures your development work is **architecturally aligned**, **qu
     }
   }
 
-  private async analyzeProjectEcosystem(args: any): Promise<any> {
+  private async analyzeProjectEcosystem(args: Record<string, unknown>): Promise<CallToolResult> {
     // Use configured project path if not provided in args
     const projectPath = args.projectPath || this.config.projectPath;
     const {
@@ -3672,10 +3679,10 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       );
 
       // Import advanced prompting utilities if enhanced mode is enabled
-      let generateArchitecturalKnowledge: any = null;
-      let executeWithReflexion: any = null;
-      let retrieveRelevantMemories: any = null;
-      let createToolReflexionConfig: any = null;
+      let generateArchitecturalKnowledge: ((...args: unknown[]) => unknown) | null = null;
+      let executeWithReflexion: ((...args: unknown[]) => unknown) | null = null;
+      let retrieveRelevantMemories: ((...args: unknown[]) => unknown) | null = null;
+      let createToolReflexionConfig: ((...args: unknown[]) => unknown) | null = null;
 
       if (enhancedMode) {
         if (knowledgeEnhancement) {
@@ -4020,7 +4027,7 @@ The enhanced analysis should provide:
     }
   }
 
-  private async getArchitecturalContext(args: any): Promise<any> {
+  private async getArchitecturalContext(args: Record<string, unknown>): Promise<CallToolResult> {
     const { filePath, includeCompliance = true } = args;
 
     try {
@@ -4282,7 +4289,7 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
     }
   }
 
-  private async generateAdrsFromPrd(args: any): Promise<any> {
+  private async generateAdrsFromPrd(args: Record<string, unknown>): Promise<CallToolResult> {
     const {
       prdPath,
       enhancedMode = true,
@@ -4303,9 +4310,9 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
       );
 
       // Import advanced prompting utilities if enhanced mode is enabled
-      let generateArchitecturalKnowledge: any = null;
-      let optimizePromptWithAPE: any = null;
-      let createToolAPEConfig: any = null;
+      let generateArchitecturalKnowledge: ((...args: unknown[]) => unknown) | null = null;
+      let optimizePromptWithAPE: ((...args: unknown[]) => unknown) | null = null;
+      let createToolAPEConfig: ((...args: unknown[]) => unknown) | null = null;
 
       if (enhancedMode) {
         if (knowledgeEnhancement) {
@@ -4596,7 +4603,7 @@ The enhanced process maintains full traceability from PRD requirements to genera
     }
   }
 
-  private async generateAdrTodo(args: any): Promise<any> {
+  private async generateAdrTodo(args: Record<string, unknown>): Promise<CallToolResult> {
     const {
       scope = 'all',
       phase = 'both',
@@ -4725,7 +4732,7 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
     }
   }
 
-  private async compareAdrProgress(args: any): Promise<any> {
+  private async compareAdrProgress(args: Record<string, unknown>): Promise<CallToolResult> {
     const {
       todoPath = 'TODO.md',
       adrDirectory = this.config.adrDirectory,
@@ -4810,7 +4817,7 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
       }
 
       // Perform actual analysis locally instead of relying on AI execution
-      let discoveryResult: any = null;
+      let discoveryResult: unknown = null;
       if (validationType === 'full' || validationType === 'adr-only') {
         const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
         discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, projectPath);
@@ -4855,8 +4862,8 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
   private async detectAndValidateEnvironment(
     projectPath: string,
     environment: string,
-    environmentConfig: any
-  ): Promise<{ detectedEnvironment: string; environmentConfig: any }> {
+    environmentConfig: Record<string, unknown>
+  ): Promise<{ detectedEnvironment: string; environmentConfig: Record<string, unknown> }> {
     const path = await import('path');
     const fs = await import('fs/promises');
 
@@ -5648,32 +5655,32 @@ To re-run this validation with strict mode:
   /**
    * Content masking tool implementations
    */
-  private async analyzeContentSecurity(args: any): Promise<any> {
+  private async analyzeContentSecurity(args: Record<string, unknown>): Promise<CallToolResult> {
     const { analyzeContentSecurity } = await import('./tools/content-masking-tool.js');
     return await analyzeContentSecurity(args);
   }
 
-  private async generateContentMasking(args: any): Promise<any> {
+  private async generateContentMasking(args: Record<string, unknown>): Promise<CallToolResult> {
     const { generateContentMasking } = await import('./tools/content-masking-tool.js');
     return await generateContentMasking(args);
   }
 
-  private async configureCustomPatterns(args: any): Promise<any> {
+  private async configureCustomPatterns(args: Record<string, unknown>): Promise<CallToolResult> {
     const { configureCustomPatterns } = await import('./tools/content-masking-tool.js');
     return await configureCustomPatterns(args);
   }
 
-  private async applyBasicContentMasking(args: any): Promise<any> {
+  private async applyBasicContentMasking(args: Record<string, unknown>): Promise<CallToolResult> {
     const { applyBasicContentMasking } = await import('./tools/content-masking-tool.js');
     return await applyBasicContentMasking(args);
   }
 
-  private async validateContentMasking(args: any): Promise<any> {
+  private async validateContentMasking(args: Record<string, unknown>): Promise<CallToolResult> {
     const { validateContentMasking } = await import('./tools/content-masking-tool.js');
     return await validateContentMasking(args);
   }
 
-  private async manageCache(args: any): Promise<any> {
+  private async manageCache(args: Record<string, unknown>): Promise<CallToolResult> {
     const { action, key } = args;
 
     try {
@@ -5821,7 +5828,7 @@ The AI agent will safely remove the specified cache entry.`,
     }
   }
 
-  private async configureOutputMasking(args: any): Promise<any> {
+  private async configureOutputMasking(args: Record<string, unknown>): Promise<CallToolResult> {
     const { action = 'get', enabled, strategy, customPatterns } = args;
 
     try {
@@ -6123,29 +6130,29 @@ Please provide:
   /**
    * ADR suggestion tool implementations
    */
-  private async suggestAdrs(args: any): Promise<any> {
+  private async suggestAdrs(args: Record<string, unknown>): Promise<CallToolResult> {
     const { suggestAdrs } = await import('./tools/adr-suggestion-tool.js');
     return await suggestAdrs(args);
   }
 
-  private async generateAdrFromDecision(args: any): Promise<any> {
+  private async generateAdrFromDecision(args: Record<string, unknown>): Promise<CallToolResult> {
     const { generateAdrFromDecision } = await import('./tools/adr-suggestion-tool.js');
     return await generateAdrFromDecision(args);
   }
 
-  private async generateAdrBootstrap(args: any): Promise<any> {
+  private async generateAdrBootstrap(args: Record<string, unknown>): Promise<CallToolResult> {
     const { default: generateAdrBootstrapScripts } = await import(
       './tools/adr-bootstrap-validation-tool.js'
     );
     return await generateAdrBootstrapScripts(args);
   }
 
-  private async discoverExistingAdrs(args: any): Promise<any> {
+  private async discoverExistingAdrs(args: Record<string, unknown>): Promise<CallToolResult> {
     const { discoverExistingAdrs } = await import('./tools/adr-suggestion-tool.js');
     return await discoverExistingAdrs(args);
   }
 
-  private async reviewExistingAdrs(args: any): Promise<any> {
+  private async reviewExistingAdrs(args: Record<string, unknown>): Promise<CallToolResult> {
     const { reviewExistingAdrs } = await import('./tools/review-existing-adrs-tool.js');
     return await reviewExistingAdrs(args);
   }
@@ -6153,17 +6160,17 @@ Please provide:
   /**
    * Research integration tool implementations
    */
-  private async incorporateResearch(args: any): Promise<any> {
+  private async incorporateResearch(args: Record<string, unknown>): Promise<CallToolResult> {
     const { incorporateResearch } = await import('./tools/research-integration-tool.js');
     return await incorporateResearch(args);
   }
 
-  private async createResearchTemplate(args: any): Promise<any> {
+  private async createResearchTemplate(args: Record<string, unknown>): Promise<CallToolResult> {
     const { createResearchTemplate } = await import('./tools/research-integration-tool.js');
     return await createResearchTemplate(args);
   }
 
-  private async requestActionConfirmation(args: any): Promise<any> {
+  private async requestActionConfirmation(args: Record<string, unknown>): Promise<CallToolResult> {
     const { requestActionConfirmation } = await import('./tools/research-integration-tool.js');
     return await requestActionConfirmation(args);
   }
@@ -6171,17 +6178,17 @@ Please provide:
   /**
    * Rule generation and validation tool implementations
    */
-  private async generateRules(args: any): Promise<any> {
+  private async generateRules(args: Record<string, unknown>): Promise<CallToolResult> {
     const { generateRules } = await import('./tools/rule-generation-tool.js');
     return await generateRules(args);
   }
 
-  private async validateRules(args: any): Promise<any> {
+  private async validateRules(args: Record<string, unknown>): Promise<CallToolResult> {
     const { validateRules } = await import('./tools/rule-generation-tool.js');
     return await validateRules(args);
   }
 
-  private async createRuleSet(args: any): Promise<any> {
+  private async createRuleSet(args: Record<string, unknown>): Promise<CallToolResult> {
     const { createRuleSet } = await import('./tools/rule-generation-tool.js');
     return await createRuleSet(args);
   }
@@ -6189,7 +6196,7 @@ Please provide:
   /**
    * Environment analysis tool implementation
    */
-  private async analyzeEnvironment(args: any): Promise<any> {
+  private async analyzeEnvironment(args: Record<string, unknown>): Promise<CallToolResult> {
     const { analyzeEnvironment } = await import('./tools/environment-analysis-tool.js');
     return await analyzeEnvironment(args);
   }
@@ -6197,7 +6204,7 @@ Please provide:
   /**
    * Research question generation tool implementation
    */
-  private async generateResearchQuestions(args: any): Promise<any> {
+  private async generateResearchQuestions(args: Record<string, unknown>): Promise<CallToolResult> {
     const { generateResearchQuestions } = await import('./tools/research-question-tool.js');
     return await generateResearchQuestions(args);
   }
@@ -6205,7 +6212,7 @@ Please provide:
   /**
    * Deployment analysis tool implementation
    */
-  private async analyzeDeploymentProgress(args: any): Promise<any> {
+  private async analyzeDeploymentProgress(args: Record<string, unknown>): Promise<CallToolResult> {
     const { analyzeDeploymentProgress } = await import('./tools/deployment-analysis-tool.js');
     return await analyzeDeploymentProgress(args);
   }
@@ -6569,7 +6576,7 @@ Please provide:
   /**
    * File system tool implementations
    */
-  private async readFile(args: any): Promise<any> {
+  private async readFile(args: Record<string, unknown>): Promise<CallToolResult> {
     const { path: filePath } = args;
 
     try {
@@ -6602,7 +6609,7 @@ Please provide:
     }
   }
 
-  private async writeFile(args: any): Promise<any> {
+  private async writeFile(args: Record<string, unknown>): Promise<CallToolResult> {
     const { path: filePath, content } = args;
 
     try {
@@ -6639,7 +6646,7 @@ Please provide:
     }
   }
 
-  private async listDirectory(args: any): Promise<any> {
+  private async listDirectory(args: Record<string, unknown>): Promise<CallToolResult> {
     const { path: dirPath } = args;
 
     try {
@@ -6677,7 +6684,7 @@ Please provide:
     }
   }
 
-  private async manageTodoJson(_args: any): Promise<any> {
+  private async manageTodoJson(_args: Record<string, unknown>): Promise<CallToolResult> {
     try {
       // TODO management has been deprecated and moved to mcp-shrimp-task-manager
       this.logger.warn('⚠️ manageTodoJson deprecated - use mcp-shrimp-task-manager instead');
@@ -6716,7 +6723,7 @@ This tool (manageTodoJson) has been deprecated and is no longer functional.
     }
   }
 
-  private async generateDeploymentGuidance(args: any): Promise<any> {
+  private async generateDeploymentGuidance(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
       const { generateDeploymentGuidance } = await import('./tools/deployment-guidance-tool.js');
       return await generateDeploymentGuidance(args);
@@ -6728,7 +6735,7 @@ This tool (manageTodoJson) has been deprecated and is no longer functional.
     }
   }
 
-  private async smartGitPush(args: any): Promise<any> {
+  private async smartGitPush(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
       const { smartGitPush } = await import('./tools/smart-git-push-tool-v2.js');
       return await smartGitPush(args);
@@ -6740,7 +6747,7 @@ This tool (manageTodoJson) has been deprecated and is no longer functional.
     }
   }
 
-  private async deploymentReadiness(args: any): Promise<any> {
+  private async deploymentReadiness(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
       const { deploymentReadiness } = await import('./tools/deployment-readiness-tool.js');
       return await deploymentReadiness(args);
@@ -6752,7 +6759,7 @@ This tool (manageTodoJson) has been deprecated and is no longer functional.
     }
   }
 
-  private async troubleshootGuidedWorkflow(args: any): Promise<any> {
+  private async troubleshootGuidedWorkflow(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
       const { troubleshootGuidedWorkflow } = await import(
         './tools/troubleshoot-guided-workflow-tool.js'
@@ -6766,7 +6773,7 @@ This tool (manageTodoJson) has been deprecated and is no longer functional.
     }
   }
 
-  private async smartScore(_args: any): Promise<any> {
+  private async smartScore(_args: Record<string, unknown>): Promise<CallToolResult> {
     // Smart score tool was removed - return deprecation message
     return {
       content: [
@@ -6790,7 +6797,7 @@ This tool has been deprecated and replaced with memory-centric health scoring.
     };
   }
 
-  private async mcpPlanning(args: any): Promise<any> {
+  private async mcpPlanning(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
       const { mcpPlanning } = await import('./tools/mcp-planning-tool.js');
       return await mcpPlanning(args);
@@ -6802,7 +6809,7 @@ This tool has been deprecated and replaced with memory-centric health scoring.
     }
   }
 
-  private async memoryLoading(args: any): Promise<any> {
+  private async memoryLoading(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
       const { MemoryLoadingTool } = await import('./tools/memory-loading-tool.js');
       const memoryTool = new MemoryLoadingTool();
@@ -6815,7 +6822,7 @@ This tool has been deprecated and replaced with memory-centric health scoring.
     }
   }
 
-  private async interactiveAdrPlanning(args: any): Promise<any> {
+  private async interactiveAdrPlanning(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
       const { interactiveAdrPlanning } = await import('./tools/interactive-adr-planning-tool.js');
       return await interactiveAdrPlanning(args);
@@ -6830,7 +6837,7 @@ This tool has been deprecated and replaced with memory-centric health scoring.
   /**
    * Tool chain orchestrator implementation
    */
-  private async toolChainOrchestrator(args: any): Promise<any> {
+  private async toolChainOrchestrator(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
       const { toolChainOrchestrator } = await import('./tools/tool-chain-orchestrator.js');
       return await toolChainOrchestrator(args);
