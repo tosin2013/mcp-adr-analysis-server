@@ -13,32 +13,32 @@ jobs:
       contents: write
       pull-requests: write
       actions: write
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Configure Git
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-      
+
       - name: Bump version for dependency update
         run: |
           echo "Dependabot PR merged: ${{ github.event.pull_request.title }}"
-          
+
           # Determine version bump type based on PR title
           PR_TITLE="${{ github.event.pull_request.title }}"
-          
+
           if [[ "$PR_TITLE" == *"major"* ]] || [[ "$PR_TITLE" == *"breaking"* ]]; then
             VERSION_TYPE="major"
           elif [[ "$PR_TITLE" == *"minor"* ]] || [[ "$PR_TITLE" == *"feature"* ]]; then
@@ -46,41 +46,175 @@ jobs:
           else
             VERSION_TYPE="patch"
           fi
-          
+
           echo "Version bump type: $VERSION_TYPE"
-          
+
           # Bump version
           npm version $VERSION_TYPE --no-git-tag-version
-          
+
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "New version: $NEW_VERSION"
-      
+
       - name: Commit version bump
         run: |
           git add package.json package-lock.json
           git commit -m "chore: bump version to ${{ env.NEW_VERSION }} after dependabot update
-          
+
           - Automated version bump following dependency updates
           - PR: ${{ github.event.pull_request.title }}
           - Updated by: ${{ github.actor }}"
-      
+
       - name: Push version bump
         run: |
           git push origin main
-      
+
+      - name: Find Release Drafter draft
+        id: find-draft
+        run: |
+          echo "🔍 Looking for Release Drafter draft..."
+
+          # Get the latest draft release
+          DRAFT_RELEASE=$(gh api repos/${{ github.repository }}/releases \
+            --jq '.[] | select(.draft == true) | select(.name | test("v?[0-9]+\\.[0-9]+\\.[0-9]+")) | .[0]' \
+            | head -1)
+
+          if [[ -n "$DRAFT_RELEASE" ]]; then
+            DRAFT_ID=$(echo "$DRAFT_RELEASE" | jq -r '.id')
+            DRAFT_TAG=$(echo "$DRAFT_RELEASE" | jq -r '.tag_name')
+            DRAFT_NAME=$(echo "$DRAFT_RELEASE" | jq -r '.name')
+            DRAFT_BODY=$(echo "$DRAFT_RELEASE" | jq -r '.body')
+
+            echo "draft_found=true" >> $GITHUB_OUTPUT
+            echo "draft_id=$DRAFT_ID" >> $GITHUB_OUTPUT
+            echo "draft_tag=$DRAFT_TAG" >> $GITHUB_OUTPUT
+            echo "draft_name=$DRAFT_NAME" >> $GITHUB_OUTPUT
+
+            # Save draft body for later enhancement
+            echo "$DRAFT_BODY" > draft_body.md
+
+            echo "✅ Found Release Drafter draft: $DRAFT_NAME (ID: $DRAFT_ID)"
+          else
+            echo "draft_found=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No Release Drafter draft found, will create basic release notes"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update draft with dependabot info
+        run: |
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          PR_TITLE="${{ github.event.pull_request.title }}"
+          PR_URL="${{ github.event.pull_request.html_url }}"
+
+          if [[ "${{ steps.find-draft.outputs.draft_found }}" == "true" ]]; then
+            echo "📝 Updating Release Drafter content with Dependabot PR..."
+
+            # Get existing draft body and enhance it
+            DRAFT_BODY=$(cat draft_body.md)
+
+            # Create enhanced release notes combining draft structure with dependabot PR
+            cat > enhanced_release_notes.md << EOF
+          $DRAFT_BODY
+
+          ## 🤖 Dependabot Auto-Release Information
+
+          This release was automatically triggered by Dependabot:
+          - **Dependency Update**: $PR_TITLE (#$PR_NUMBER)
+          - **Updated by**: ${{ github.actor }}
+
+          **Full PR Details**: [View PR]($PR_URL)
+
+          ---
+          🤖 Auto-generated release following dependency updates
+          EOF
+
+            echo "✅ Enhanced release notes prepared with Dependabot information"
+          else
+            # Fallback: create basic release notes
+            cat > enhanced_release_notes.md << EOF
+          # Release v${{ env.NEW_VERSION }}
+
+          ## Dependency Updates
+          - $PR_TITLE (#$PR_NUMBER)
+
+          **Full Changelog**: [View PR]($PR_URL)
+
+          ---
+          🤖 Auto-generated release following dependency updates
+          EOF
+
+            echo "⚠️ Created fallback release notes for Dependabot"
+          fi
+
+          echo "Generated enhanced release notes:"
+          cat enhanced_release_notes.md
+
       - name: Create and push tag
         run: |
           TAG_NAME="v${{ env.NEW_VERSION }}"
           echo "Creating tag: $TAG_NAME"
-          
+
           git tag -a "$TAG_NAME" -m "Release $TAG_NAME - Dependabot auto-release
-          
+
           Automated release following dependency updates:
           - ${{ github.event.pull_request.title }}
           - Merged PR: #${{ github.event.pull_request.number }}"
-          
+
           git push origin "$TAG_NAME"
-          
+
           echo "✅ Tag $TAG_NAME created and pushed"
           echo "🚀 This will trigger AI release notes generation and NPM publishing"
+
+      - name: Publish Release (from Draft or New)
+        run: |
+          if [[ "${{ steps.find-draft.outputs.draft_found }}" == "true" ]]; then
+            echo "📤 Publishing existing Release Drafter draft..."
+
+            # Update and publish the existing draft
+            gh api repos/${{ github.repository }}/releases/${{ steps.find-draft.outputs.draft_id }} \
+              --method PATCH \
+              --field tag_name="v${{ env.NEW_VERSION }}" \
+              --field name="Release v${{ env.NEW_VERSION }}" \
+              --field body="$(cat enhanced_release_notes.md)" \
+              --field draft=false \
+              --field prerelease=false
+
+            echo "✅ Successfully published Release Drafter draft as v${{ env.NEW_VERSION }}"
+          else
+            echo "📤 Creating new release for Dependabot..."
+
+            # Create a new release
+            gh api repos/${{ github.repository }}/releases \
+              --method POST \
+              --field tag_name="v${{ env.NEW_VERSION }}" \
+              --field name="Release v${{ env.NEW_VERSION }}" \
+              --field body="$(cat enhanced_release_notes.md)" \
+              --field draft=false \
+              --field prerelease=false
+
+            echo "✅ Successfully created new release v${{ env.NEW_VERSION }}"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Summary
+        run: |
+          echo "## 🤖 Dependabot Auto-release completed!" >> $GITHUB_STEP_SUMMARY
+          echo "**Version**: v${{ env.NEW_VERSION }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Triggered by**: ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})" >> $GITHUB_STEP_SUMMARY
+          echo "**Updated by**: ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ steps.find-draft.outputs.draft_found }}" == "true" ]]; then
+            echo "**Release Method**: 📝 Published Release Drafter draft" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Release Method**: 🆕 Created new release" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tag v${{ env.NEW_VERSION }} created" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Release published" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔄 AI release notes enhancement will trigger" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 NPM publishing workflow will trigger" >> $GITHUB_STEP_SUMMARY

@@ -110,8 +110,41 @@ jobs:
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
           echo "New version: $NEW_VERSION"
 
-      - name: Generate release notes preview
-        id: release-notes
+      - name: Find Release Drafter draft
+        id: find-draft
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        run: |
+          echo "🔍 Looking for Release Drafter draft..."
+
+          # Get the latest draft release
+          DRAFT_RELEASE=$(gh api repos/${{ github.repository }}/releases \
+            --jq '.[] | select(.draft == true) | select(.name | test("v?[0-9]+\\.[0-9]+\\.[0-9]+")) | .[0]' \
+            | head -1)
+
+          if [[ -n "$DRAFT_RELEASE" ]]; then
+            DRAFT_ID=$(echo "$DRAFT_RELEASE" | jq -r '.id')
+            DRAFT_TAG=$(echo "$DRAFT_RELEASE" | jq -r '.tag_name')
+            DRAFT_NAME=$(echo "$DRAFT_RELEASE" | jq -r '.name')
+            DRAFT_BODY=$(echo "$DRAFT_RELEASE" | jq -r '.body')
+
+            echo "draft_found=true" >> $GITHUB_OUTPUT
+            echo "draft_id=$DRAFT_ID" >> $GITHUB_OUTPUT
+            echo "draft_tag=$DRAFT_TAG" >> $GITHUB_OUTPUT
+            echo "draft_name=$DRAFT_NAME" >> $GITHUB_OUTPUT
+
+            # Save draft body for later enhancement
+            echo "$DRAFT_BODY" > draft_body.md
+
+            echo "✅ Found Release Drafter draft: $DRAFT_NAME (ID: $DRAFT_ID)"
+          else
+            echo "draft_found=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No Release Drafter draft found, will create basic release notes"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update draft with current PR info
+        id: update-draft
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
         run: |
           PR_NUMBER="${{ github.event.pull_request.number }}"
@@ -119,8 +152,39 @@ jobs:
           PR_AUTHOR="${{ github.event.pull_request.user.login }}"
           PR_URL="${{ github.event.pull_request.html_url }}"
 
-          # Create basic release notes
-          cat > release_notes.md << EOF
+          if [[ "${{ steps.find-draft.outputs.draft_found }}" == "true" ]]; then
+            echo "📝 Updating Release Drafter content with current PR..."
+
+            # Update the draft tag to match our new version
+            NEW_TAG="v${{ env.NEW_VERSION }}"
+            NEW_NAME="Release v${{ env.NEW_VERSION }}"
+
+            # Get existing draft body and enhance it
+            DRAFT_BODY=$(cat draft_body.md)
+
+            # Create enhanced release notes combining draft structure with current PR
+            cat > enhanced_release_notes.md << EOF
+          $DRAFT_BODY
+
+          ## 🔄 Auto-Release Information
+
+          This release was automatically triggered by:
+          - **PR**: $PR_TITLE (#$PR_NUMBER)
+          - **Author**: @$PR_AUTHOR
+          - **Type**: ${{ steps.version-type.outputs.version_type }} version bump
+
+          **Full PR Details**: [View PR]($PR_URL)
+
+          ---
+          🤖 Auto-generated release following PR merge
+          EOF
+
+            echo "updated_tag=$NEW_TAG" >> $GITHUB_OUTPUT
+            echo "updated_name=$NEW_NAME" >> $GITHUB_OUTPUT
+            echo "✅ Enhanced release notes prepared"
+          else
+            # Fallback: create basic release notes
+            cat > enhanced_release_notes.md << EOF
           # Release v${{ env.NEW_VERSION }}
 
           ## Changes
@@ -132,8 +196,13 @@ jobs:
           🤖 Auto-generated release following PR merge
           EOF
 
-          echo "Generated release notes preview"
-          cat release_notes.md
+            echo "updated_tag=v${{ env.NEW_VERSION }}" >> $GITHUB_OUTPUT
+            echo "updated_name=Release v${{ env.NEW_VERSION }}" >> $GITHUB_OUTPUT
+            echo "⚠️ Created fallback release notes"
+          fi
+
+          echo "Generated enhanced release notes:"
+          cat enhanced_release_notes.md
 
       - name: Commit version bump
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
@@ -179,17 +248,38 @@ jobs:
           echo "✅ Tag $TAG_NAME created and pushed"
           echo "🚀 This will trigger AI release notes generation and NPM publishing"
 
-      - name: Create GitHub Release (Basic)
+      - name: Publish Release (from Draft or New)
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
-        uses: actions/create-release@v1
+        run: |
+          if [[ "${{ steps.find-draft.outputs.draft_found }}" == "true" ]]; then
+            echo "📤 Publishing existing Release Drafter draft..."
+
+            # Update and publish the existing draft
+            gh api repos/${{ github.repository }}/releases/${{ steps.find-draft.outputs.draft_id }} \
+              --method PATCH \
+              --field tag_name="${{ steps.update-draft.outputs.updated_tag }}" \
+              --field name="${{ steps.update-draft.outputs.updated_name }}" \
+              --field body="$(cat enhanced_release_notes.md)" \
+              --field draft=false \
+              --field prerelease=false
+
+            echo "✅ Successfully published Release Drafter draft as v${{ env.NEW_VERSION }}"
+          else
+            echo "📤 Creating new release..."
+
+            # Create a new release
+            gh api repos/${{ github.repository }}/releases \
+              --method POST \
+              --field tag_name="v${{ env.NEW_VERSION }}" \
+              --field name="Release v${{ env.NEW_VERSION }}" \
+              --field body="$(cat enhanced_release_notes.md)" \
+              --field draft=false \
+              --field prerelease=false
+
+            echo "✅ Successfully created new release v${{ env.NEW_VERSION }}"
+          fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: v${{ env.NEW_VERSION }}
-          release_name: Release v${{ env.NEW_VERSION }}
-          body_path: release_notes.md
-          draft: false
-          prerelease: false
 
       - name: Summary
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
@@ -200,9 +290,18 @@ jobs:
           echo "**Triggered by**: ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})" >> $GITHUB_STEP_SUMMARY
           echo "**Author**: @${{ github.event.pull_request.user.login }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ steps.find-draft.outputs.draft_found }}" == "true" ]]; then
+            echo "**Release Method**: 📝 Published Release Drafter draft" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Release Method**: 🆕 Created new release" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Tag v${{ env.NEW_VERSION }} created" >> $GITHUB_STEP_SUMMARY
-          echo "- 🔄 AI release notes workflow will trigger" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Release published" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔄 AI release notes enhancement will trigger" >> $GITHUB_STEP_SUMMARY
           echo "- 📦 NPM publishing workflow will trigger" >> $GITHUB_STEP_SUMMARY
           echo "- 📚 Documentation will be updated" >> $GITHUB_STEP_SUMMARY
 
