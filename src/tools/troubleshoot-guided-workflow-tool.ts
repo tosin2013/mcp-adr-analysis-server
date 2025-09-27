@@ -10,6 +10,7 @@ import { McpAdrError } from '../types/index.js';
 import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 // Note: Memory entity types are imported implicitly through MemoryEntityManager
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
+import { findFiles, findRelatedCode } from '../utils/file-system.js';
 
 // Structured failure schema
 const FailureInfoSchema = z.object({
@@ -492,7 +493,10 @@ class TroubleshootingMemoryManager {
 /**
  * Analyze structured failure information
  */
-async function analyzeFailure(failure: FailureInfo): Promise<string> {
+async function analyzeFailure(
+  failure: FailureInfo,
+  projectPath: string = process.cwd()
+): Promise<string> {
   const report = [
     '# 🚨 Failure Analysis',
     '',
@@ -502,6 +506,62 @@ async function analyzeFailure(failure: FailureInfo): Promise<string> {
     `**Primary Error**: ${failure.failureDetails.errorMessage}`,
     '',
   ];
+
+  // Smart Code Linking - find files related to the failure
+  let relatedCodeAnalysis = '';
+  try {
+    // Create context from failure information for Smart Code Linking
+    const failureContext = [
+      `Failure Type: ${failure.failureType}`,
+      `Error Message: ${failure.failureDetails.errorMessage}`,
+      failure.failureDetails.command ? `Failed Command: ${failure.failureDetails.command}` : '',
+      failure.failureDetails.environment
+        ? `Environment: ${failure.failureDetails.environment}`
+        : '',
+      failure.context?.recentChanges ? `Recent Changes: ${failure.context.recentChanges}` : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    // Find related code files using Smart Code Linking
+    const relatedCodeResult = await findRelatedCode(
+      'troubleshooting-failure-analysis',
+      failureContext,
+      projectPath,
+      {
+        useAI: true,
+        useRipgrep: true,
+        maxFiles: 15,
+        includeContent: false,
+      }
+    );
+
+    if (relatedCodeResult.relatedFiles.length > 0) {
+      relatedCodeAnalysis = [
+        '',
+        '## 🔗 Smart Code Linking Analysis',
+        '',
+        `Found **${relatedCodeResult.relatedFiles.length}** files potentially related to this failure:`,
+        '',
+        ...relatedCodeResult.relatedFiles
+          .slice(0, 10)
+          .map((file, index) => `${index + 1}. **${file.path}**`),
+        '',
+        relatedCodeResult.relatedFiles.length > 10
+          ? `*Showing top 10 of ${relatedCodeResult.relatedFiles.length} related files*`
+          : '',
+        '',
+        `**Analysis Confidence**: ${(relatedCodeResult.confidence * 100).toFixed(0)}%`,
+        `**Keywords Used**: ${relatedCodeResult.keywords?.slice(0, 8).join(', ') || 'N/A'}`,
+        '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+    }
+  } catch (error) {
+    // Don't fail the analysis if Smart Code Linking fails
+    console.warn('Smart Code Linking failed for failure analysis:', error);
+  }
 
   // Add command and exit code if available
   if (failure.failureDetails.command) {
@@ -603,6 +663,11 @@ async function analyzeFailure(failure: FailureInfo): Promise<string> {
       report.push('4. **Test in isolated environment**');
   }
 
+  // Add Smart Code Linking analysis to the report
+  if (relatedCodeAnalysis) {
+    report.push(relatedCodeAnalysis);
+  }
+
   report.push('');
   report.push(
     '*Use `generate_test_plan` operation to get specific commands and validation steps.*'
@@ -622,6 +687,48 @@ async function generateTestPlan(failure: FailureInfo, args: TroubleshootArgs): P
 
   if (!isAIExecutionEnabled(aiConfig)) {
     return generateFallbackTestPlan(failure, args);
+  }
+
+  // Smart Code Linking - gather project context for better test plan generation
+  let projectContext = '';
+  try {
+    const projectPath = args.projectPath || process.cwd();
+
+    // Find files related to the failure for better context
+    const failureContext = [
+      `Failure Type: ${failure.failureType}`,
+      `Error Message: ${failure.failureDetails.errorMessage}`,
+      failure.failureDetails.command ? `Failed Command: ${failure.failureDetails.command}` : '',
+      failure.failureDetails.environment
+        ? `Environment: ${failure.failureDetails.environment}`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+
+    const relatedCodeResult = await findRelatedCode(
+      'test-plan-generation',
+      failureContext,
+      projectPath,
+      {
+        useAI: true,
+        useRipgrep: true,
+        maxFiles: 8,
+        includeContent: false,
+      }
+    );
+
+    if (relatedCodeResult.relatedFiles.length > 0) {
+      projectContext =
+        `\n\nProject Context (Smart Code Linking found ${relatedCodeResult.relatedFiles.length} related files):\n` +
+        relatedCodeResult.relatedFiles
+          .slice(0, 5)
+          .map(file => `- ${file.path}`)
+          .join('\n');
+    }
+  } catch (error) {
+    // Don't fail test plan generation if Smart Code Linking fails
+    console.warn('Smart Code Linking failed for test plan generation:', error);
   }
 
   const systemPrompt = `You are an expert debugging assistant. Analyze the structured failure information and generate specific, actionable test commands.
@@ -661,9 +768,9 @@ Be specific and contextual based on the actual failure details provided.`;
 - Environment: ${failure.failureDetails.environment || 'N/A'}
 - Project Path: ${args.projectPath || '.'}
 ${failure.failureDetails.stackTrace ? `- Stack Trace: ${failure.failureDetails.stackTrace.substring(0, 500)}...` : ''}
-${failure.context?.recentChanges ? `- Recent Changes: ${failure.context.recentChanges}` : ''}
+${failure.context?.recentChanges ? `- Recent Changes: ${failure.context.recentChanges}` : ''}${projectContext}
 
-Generate specific test commands to diagnose and resolve this failure.`;
+Generate specific test commands to diagnose and resolve this failure. Use the project context above to provide more targeted and relevant test commands.`;
 
   try {
     const response = await fetch(aiConfig.baseURL + '/chat/completions', {
@@ -936,7 +1043,9 @@ function generateFallbackTestPlan(failure: FailureInfo, args: TroubleshootArgs):
 /**
  * Run the full troubleshooting workflow with actual tool integration
  */
-async function runFullWorkflow(_args: TroubleshootArgs): Promise<string> {
+async function runFullWorkflow(args: TroubleshootArgs): Promise<string> {
+  const projectPath = args.projectPath || process.cwd();
+
   const report = [
     '# 🔧 Guided Troubleshooting Workflow',
     '',
@@ -949,6 +1058,79 @@ async function runFullWorkflow(_args: TroubleshootArgs): Promise<string> {
     '6. 🔄 Guided recommendations',
     '',
   ];
+
+  // Smart Code Linking - discover project structure for troubleshooting context
+  try {
+    // Find project files for comprehensive analysis
+    const findResult = await findFiles(projectPath, [
+      '**/*.{ts,js,py,yml,yaml,json,md}',
+      '!**/node_modules/**',
+      '!**/dist/**',
+      '!**/build/**',
+    ]);
+
+    if (findResult.files.length > 0) {
+      report.push('## 📊 Project Discovery');
+      report.push(`Found **${findResult.files.length}** relevant files in project:`);
+
+      // Categorize files by type for troubleshooting context
+      const filesByType = findResult.files.reduce(
+        (acc, file) => {
+          const ext = file.path.split('.').pop()?.toLowerCase() || 'other';
+          acc[ext] = (acc[ext] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
+
+      report.push('');
+      Object.entries(filesByType)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 8)
+        .forEach(([ext, count]) => {
+          report.push(`- **${ext.toUpperCase()}**: ${count} files`);
+        });
+      report.push('');
+
+      // Smart Code Linking for general troubleshooting context
+      const troubleshootingContext = [
+        'troubleshooting workflow',
+        'error handling',
+        'logging',
+        'monitoring',
+        'testing',
+        'deployment',
+        'configuration',
+      ].join(' ');
+
+      const relatedCodeResult = await findRelatedCode(
+        'troubleshooting-workflow-context',
+        troubleshootingContext,
+        projectPath,
+        {
+          useAI: true,
+          useRipgrep: true,
+          maxFiles: 10,
+          includeContent: false,
+        }
+      );
+
+      if (relatedCodeResult.relatedFiles.length > 0) {
+        report.push('## 🔗 Troubleshooting-Relevant Files');
+        report.push('Files that may be relevant for troubleshooting:');
+        report.push('');
+        relatedCodeResult.relatedFiles.slice(0, 8).forEach((file, index) => {
+          report.push(`${index + 1}. **${file.path}**`);
+        });
+        report.push('');
+        report.push(`**Analysis Confidence**: ${(relatedCodeResult.confidence * 100).toFixed(0)}%`);
+        report.push('');
+      }
+    }
+  } catch (error) {
+    // Don't fail the workflow if Smart Code Linking fails
+    console.warn('Smart Code Linking failed for workflow analysis:', error);
+  }
 
   // Legacy workflow - simplified for backwards compatibility
 
@@ -1162,7 +1344,7 @@ export async function troubleshootGuidedWorkflow(args: TroubleshootArgs): Promis
             'INVALID_INPUT'
           );
         }
-        result = await analyzeFailure(validatedArgs.failure);
+        result = await analyzeFailure(validatedArgs.failure, validatedArgs.projectPath);
         break;
 
       case 'generate_test_plan':

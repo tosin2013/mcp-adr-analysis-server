@@ -102,10 +102,14 @@
   },
   "lint-staged": {
     "*.{ts,js}": [
+      "eslint --fix",
       "prettier --write"
     ],
-    "*.{ts,js,json,md,yaml,yml}": [
+    "*.{json,md,yaml,yml}": [
       "prettier --write"
+    ],
+    "*.ts": [
+      "bash -c 'tsc --noEmit --project tsconfig.json || true'"
     ]
   },
   "overrides": {

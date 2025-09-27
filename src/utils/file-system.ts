@@ -1,921 +1,936 @@
 /**
  * File system utilities for MCP ADR Analysis Server
- * Generates prompts for AI-driven file discovery, reading, and analysis operations
- * Enhanced with Chain-of-Thought prompting to reduce LLM confusion
+ * Uses fast-glob for efficient file discovery with .gitignore support
+ * Enhanced with Smart Code Linking capabilities
  */
 
-import { dirname } from 'path';
+import fg from 'fast-glob';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 import { FileSystemError } from '../types/index.js';
-import { enhancePromptWithCoT, COT_PATTERNS } from './chain-of-thought-template.js';
 
+/**
+ * Information about a file in the project
+ */
 export interface FileInfo {
+  /** Full path to the file */
   path: string;
+  /** Filename with extension */
   name: string;
+  /** File extension */
   extension: string;
+  /** File size in bytes */
   size: number;
+  /** Directory containing the file */
   directory: string;
+  /** File content (optional) */
   content?: string;
 }
 
+/**
+ * Complete project structure information
+ */
 export interface ProjectStructure {
+  /** Root path of the project */
   rootPath: string;
+  /** Array of files in the project */
   files: FileInfo[];
+  /** Array of directory paths */
   directories: string[];
+  /** Total number of files */
   totalFiles: number;
+  /** Total number of directories */
   totalDirectories: number;
 }
 
-export interface ProjectAnalysisPrompt {
-  prompt: string;
-  instructions: string;
-  context: {
-    projectPath: string;
-    absoluteProjectPath: string;
-    filePatterns: string[];
-  };
-}
-
 /**
- * Generate prompt for AI-driven project structure analysis
+ * Project analysis result with technologies and patterns
  */
-export async function analyzeProjectStructure(projectPath: string): Promise<ProjectAnalysisPrompt> {
-  try {
-    console.error(`[DEBUG] Starting prompt generation for project path: ${projectPath}`);
-
-    // Pure prompt-driven approach - delegate all path resolution and validation to AI
-    const safeProjectPath = projectPath || '.';
-    console.error(`[DEBUG] Using prompt-driven analysis for path: ${safeProjectPath}`);
-
-    // Note: Path validation is delegated to the AI agent that will perform the actual scanning
-
-    // Define file patterns for analysis
-    const filePatterns = [
-      '**/*',
-      '!node_modules/**',
-      '!.git/**',
-      '!dist/**',
-      '!build/**',
-      '!coverage/**',
-      '!.mcp-adr-cache/**',
-      '!*.log',
-    ];
-
-    console.error(`[DEBUG] Generated prompt for file patterns:`, filePatterns);
-    console.error(`[DEBUG] Target directory: ${safeProjectPath}`);
-
-    // Generate Chain-of-Thought enhanced analysis prompt
-    const basePrompt = `
-# Project Structure Analysis Request
-
-Analyze the project structure at: **${safeProjectPath}**
-
-## Analysis Requirements
-
-**File Discovery**: Scan the directory using the following patterns:
-${filePatterns.map(pattern => `   - ${pattern}`).join('\n')}
-
-**Technology Stack Detection**: Identify:
-- Programming languages (based on file extensions)
-- Frameworks and libraries (from package.json, requirements.txt, etc.)
-- Build tools and configuration files
-- Testing frameworks and tools
-
-**Architectural Patterns**: Analyze:
-- Directory structure and organization
-- Code organization patterns (MVC, microservices, etc.)
-- Configuration management approaches
-- Documentation patterns
-
-**Project Ecosystem**: Examine:
-- Dependencies and package management
-- Development tools and workflows
-- CI/CD configurations
-- Documentation and README files
-
-## Expected Output Format
-
-\`\`\`json
-{
-  "rootPath": "<resolved-absolute-path>",
-  "totalFiles": <number>,
-  "totalDirectories": <number>,
-  "technologies": [
-    {
-      "name": "technology_name",
-      "type": "language|framework|tool",
-      "confidence": 0.95,
-      "evidence": ["file1.ext", "config.json"]
-    }
-  ],
-  "patterns": [
-    {
-      "name": "pattern_name",
-      "type": "architectural|organizational",
-      "description": "pattern description",
-      "evidence": ["directory_structure", "file_patterns"]
-    }
-  ],
-  "files": [
-    {
-      "path": "relative/path/to/file",
-      "name": "filename.ext",
-      "extension": ".ext",
-      "directory": "relative/path/to",
-      "category": "source|config|documentation|test"
-    }
-  ],
-  "directories": ["dir1", "dir2/subdir"],
-  "summary": "Brief project description and key findings"
-}
-\`\`\`
-`;
-
-    // Enhance the base prompt with Chain-of-Thought reasoning
-    const prompt = enhancePromptWithCoT(basePrompt, COT_PATTERNS.PROJECT_ANALYSIS);
-
-    const instructions = `
-## Implementation Steps
-
-1. **Directory Scanning**: Use appropriate file system tools to scan the resolved project path
-2. **Pattern Filtering**: Apply exclusion patterns: ${filePatterns.filter(p => p.startsWith('!')).join(', ')}
-3. **File Analysis**: Examine file extensions, names, and content (for config files)
-4. **Technology Detection**: Look for package.json, requirements.txt, Cargo.toml, etc.
-5. **Pattern Recognition**: Analyze directory structure and file organization
-6. **Result Compilation**: Format findings according to the specified JSON structure
-
-## Safety Checks
-
-- ✅ Path resolution delegated to AI agent with security validation
-- ✅ System directory protection enabled
-- ✅ File patterns defined for efficient scanning
-- ✅ Exclusion patterns prevent scanning large/unnecessary directories
-
-## Context Information
-
-- **Project Path**: ${safeProjectPath}
-- **Analysis Type**: Comprehensive project ecosystem analysis
-- **Output Format**: Structured JSON with technology stack and architectural patterns
-`;
-
-    return {
-      prompt,
-      instructions,
-      context: {
-        projectPath: safeProjectPath,
-        absoluteProjectPath: 'resolved-by-ai-agent',
-        filePatterns
-      }
-    };
-
-  } catch (error) {
-    // If it's already a FileSystemError, re-throw it to preserve the specific error message
-    if (error instanceof FileSystemError) {
-      throw error;
-    }
-
-    throw new FileSystemError(
-      `Failed to generate project analysis prompt: ${error instanceof Error ? error.message : String(error)}`,
-      { projectPath, absoluteProjectPath: 'resolved-by-ai-agent' }
-    );
-  }
+export interface ProjectAnalysis {
+  /** Root path of the project */
+  rootPath: string;
+  /** Array of files analyzed */
+  files: FileInfo[];
+  /** Detected technologies */
+  technologies: string[];
+  /** Detected architectural patterns */
+  patterns: string[];
+  /** Summary of the analysis */
+  summary: string;
+  /** Total files analyzed */
+  totalFiles: number;
+  /** Total directories scanned */
+  totalDirectories: number;
 }
 
 /**
- * Generate prompt for AI-driven file content reading
+ * Result of finding related code for an ADR
  */
-export async function readFileContent(filePath: string): Promise<{ prompt: string; instructions: string; context: any }> {
-  try {
-    console.error(`[DEBUG] Generating file read prompt for: ${filePath}`);
-
-    // Pure prompt-driven approach - delegate file reading to AI agent
-    const safeFilePath = filePath || '';
-
-    const prompt = `
-# File Content Reading Request
-
-Please read the content of the file: **${safeFilePath}**
-
-## Path Security Validation
-
-The AI agent must:
-1. **Validate file path security**: Ensure the path is not a system directory (/, /usr, /bin, /etc, /var, /tmp, etc.)
-2. **Resolve relative paths safely**: Handle relative paths from the current working directory
-3. **Prevent unauthorized access**: Reject attempts to read sensitive system files or directories outside the project scope
-4. **Validate file existence**: Check if the file exists before attempting to read
-
-## File Reading Requirements
-
-1. **Safe File Access**: Read the file content using appropriate file system tools
-2. **Encoding Handling**: Read the file as UTF-8 text content
-3. **Error Handling**: Provide clear error messages for:
-   - File not found
-   - Permission denied
-   - Invalid file path
-   - Binary files or unsupported formats
-
-## Expected Output Format
-
-\`\`\`json
-{
-  "success": true,
-  "filePath": "${safeFilePath}",
-  "content": "file content as string",
-  "metadata": {
-    "size": <file_size_in_bytes>,
-    "encoding": "utf-8",
-    "lastModified": "ISO_timestamp"
-  },
-  "security": {
-    "pathValidated": true,
-    "accessAuthorized": true,
-    "systemDirectoryCheck": "passed"
-  }
-}
-\`\`\`
-
-## Error Response Format (if file cannot be read)
-
-\`\`\`json
-{
-  "success": false,
-  "filePath": "${safeFilePath}",
-  "error": "detailed error message",
-  "errorType": "FILE_NOT_FOUND|PERMISSION_DENIED|INVALID_PATH|SECURITY_VIOLATION",
-  "security": {
-    "pathValidated": boolean,
-    "accessAuthorized": boolean,
-    "systemDirectoryCheck": "passed|failed",
-    "rejectionReason": "specific reason if access denied"
-  }
-}
-\`\`\`
-`;
-
-    const instructions = `
-## Implementation Steps
-
-1. **Security Validation**:
-   - Validate the file path: ${safeFilePath}
-   - Ensure it's not a system directory or sensitive location
-   - Check for path traversal attempts (../, .\\, etc.)
-
-2. **File Access**:
-   - Check if the file exists and is readable
-   - Verify file permissions allow reading
-   - Handle symbolic links safely
-
-3. **Content Reading**:
-   - Read file content as UTF-8 text
-   - Handle large files appropriately
-   - Detect and handle binary files
-
-4. **Response Generation**:
-   - Format response according to the specified JSON structure
-   - Include comprehensive metadata and security validation results
-   - Provide detailed error information if reading fails
-
-## Safety Checks
-
-- ✅ Path security validation delegated to AI agent
-- ✅ System directory protection enabled
-- ✅ File access permission validation required
-- ✅ Comprehensive error handling specified
-
-## Context Information
-
-- **File Path**: ${safeFilePath}
-- **Operation**: Safe file content reading
-- **Security Level**: High (with path validation and access control)
-`;
-
-    return {
-      prompt,
-      instructions,
-      context: {
-        filePath: safeFilePath,
-        operation: 'file_read',
-        securityLevel: 'high',
-        expectedFormat: 'json'
-      }
-    };
-
-  } catch (error) {
-    throw new FileSystemError(
-      `Failed to generate file read prompt: ${error instanceof Error ? error.message : String(error)}`,
-      { filePath }
-    );
-  }
+export interface RelatedCodeResult {
+  /** Path to the ADR */
+  adrPath: string;
+  /** Related source code files */
+  relatedFiles: FileInfo[];
+  /** Keywords extracted from ADR */
+  keywords: string[];
+  /** Search patterns used */
+  searchPatterns: string[];
+  /** Confidence score */
+  confidence: number;
 }
 
 /**
- * Generate prompt for AI-driven file discovery
+ * Find files using fast-glob with .gitignore support
+ *
+ * @param projectPath - Path to the project to search
+ * @param patterns - Glob patterns to match files
+ * @param options - Options for file discovery
+ * @returns Promise resolving to file discovery results
  */
 export async function findFiles(
   projectPath: string,
   patterns: string[],
-  options: { includeContent?: boolean } = {}
-): Promise<{ prompt: string; instructions: string; context: any }> {
+  options: { includeContent?: boolean; limit?: number } = {}
+): Promise<{
+  files: FileInfo[];
+  totalFiles: number;
+  searchPatterns: string[];
+  searchPath: string;
+}> {
   try {
-    // Pure prompt-driven approach - delegate all path resolution and validation to AI
     const safeProjectPath = projectPath || '.';
 
-    const prompt = `
-# File Discovery Request
+    // Ensure patterns are properly formatted
+    const normalizedPatterns = patterns.map(pattern => {
+      // If pattern doesn't start with !, make it relative to the project path
+      if (!pattern.startsWith('!') && !path.isAbsolute(pattern)) {
+        return pattern;
+      }
+      return pattern;
+    });
 
-Please find files matching the specified patterns in: **${safeProjectPath}**
+    // Use fast-glob to find files
+    const entries = await fg(normalizedPatterns, {
+      cwd: safeProjectPath,
+      dot: true,
+      absolute: false,
+      stats: true,
+      followSymbolicLinks: false,
+      onlyFiles: true,
+      // Exclude common non-source directories by default
+      // fast-glob automatically respects .gitignore when these patterns are used
+      ignore: [
+        '**/node_modules/**',
+        '**/.git/**',
+        '**/dist/**',
+        '**/build/**',
+        '**/coverage/**',
+        '**/.mcp-adr-cache/**',
+        '**/*.log',
+        '**/.DS_Store',
+        '**/Thumbs.db',
+      ],
+    });
 
-## Path Resolution Instructions
-1. **Safely resolve the project path**: If path is "." or "./", use the current working directory
-2. **Validate path security**: Ensure the path is not a system directory (/, /usr, /bin, etc.)
-3. **Handle relative paths**: Resolve relative paths from the current working directory
+    // Apply limit if specified
+    const limitedEntries = options.limit ? entries.slice(0, options.limit) : entries;
 
-## Search Patterns
-${patterns.map(pattern => `- ${pattern}`).join('\n')}
+    // Convert glob results to FileInfo format
+    const files: FileInfo[] = await Promise.all(
+      limitedEntries.map(async entry => {
+        const filePath = typeof entry === 'string' ? entry : entry.path;
+        const fullPath = path.join(safeProjectPath, filePath);
 
-## Requirements
-- Search in the resolved directory (safely resolve ${safeProjectPath})
-- Apply patterns to filter files
-- ${options.includeContent ? 'Include file content in results' : 'Return file metadata only'}
+        let stats;
+        if (typeof entry === 'object' && entry.stats) {
+          stats = entry.stats;
+        } else {
+          stats = await fs.stat(fullPath);
+        }
 
-## Expected Output Format
+        const fileInfo: FileInfo = {
+          path: filePath,
+          name: path.basename(filePath),
+          extension: path.extname(filePath),
+          size: stats.size,
+          directory: path.dirname(filePath),
+        };
 
-\`\`\`json
-{
-  "files": [
-    {
-      "path": "relative/path/to/file",
-      "name": "filename.ext",
-      "extension": ".ext",
-      "size": 1234,
-      "directory": "relative/path/to"${options.includeContent ? ',\n      "content": "file content here"' : ''}
-    }
-  ],
-  "totalFiles": <number>,
-  "searchPatterns": ${JSON.stringify(patterns)},
-  "searchPath": "<resolved-absolute-path>"
-}
-\`\`\`
-`;
+        // Include content if requested
+        if (options.includeContent) {
+          try {
+            fileInfo.content = await fs.readFile(fullPath, 'utf-8');
+          } catch (error) {
+            console.warn(`Could not read content of ${fullPath}:`, error);
+          }
+        }
 
-    const instructions = `
-## Implementation Steps
-1. Scan the resolved directory (safely resolve ${safeProjectPath})
-2. Apply patterns: ${patterns.join(', ')}
-3. Collect file metadata (name, size, extension, path)
-${options.includeContent ? '4. Read and include file content' : '4. Skip file content reading'}
-5. Format results as JSON
-
-## Context
-- Base directory: ${safeProjectPath}
-- Include content: ${options.includeContent || false}
-- Pattern count: ${patterns.length}
-`;
+        return fileInfo;
+      })
+    );
 
     return {
-      prompt,
-      instructions,
-      context: {
-        projectPath: safeProjectPath,
-        absoluteProjectPath: 'resolved-by-ai-agent',
-        patterns,
-        includeContent: options.includeContent || false
-      }
+      files,
+      totalFiles: files.length,
+      searchPatterns: patterns,
+      searchPath: safeProjectPath,
     };
   } catch (error) {
     throw new FileSystemError(
-      `Failed to generate file discovery prompt: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to find files: ${error instanceof Error ? error.message : String(error)}`,
       { projectPath, patterns }
     );
   }
 }
 
 /**
- * Generate prompt for AI-driven file existence check
+ * Analyze project structure to detect technologies and patterns
+ * Uses direct file analysis instead of AI prompts
+ *
+ * @param projectPath - Path to the project to analyze
+ * @returns Promise resolving to project analysis results
  */
-export async function fileExists(filePath: string): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function analyzeProjectStructure(projectPath: string): Promise<ProjectAnalysis> {
   try {
-    console.error(`[DEBUG] Generating file existence check prompt for: ${filePath}`);
+    const safeProjectPath = path.resolve(projectPath || '.');
 
-    // Pure prompt-driven approach - delegate file existence check to AI agent
-    const safeFilePath = filePath || '';
+    // Define patterns for different file types
+    const filePatterns = [
+      '**/*.{js,jsx,ts,tsx,py,java,cs,go,rs,rb,php,swift,kt,scala,c,cpp,h,hpp}',
+      '**/package.json',
+      '**/requirements.txt',
+      '**/Gemfile',
+      '**/Cargo.toml',
+      '**/go.mod',
+      '**/pom.xml',
+      '**/*.{yml,yaml}',
+      '**/Dockerfile',
+      '**/*.tf',
+      '**/.env*',
+      '**/README*',
+    ];
 
-    const prompt = `
-# File Existence Check Request
+    // Find all relevant files
+    const { files } = await findFiles(safeProjectPath, filePatterns, {
+      includeContent: false,
+      limit: 1000, // Limit for performance
+    });
 
-Please check if the file exists: **${safeFilePath}**
+    // Analyze technologies based on files found
+    const technologies = await detectTechnologies(safeProjectPath, files);
 
-## Path Security Validation
+    // Detect architectural patterns
+    const patterns = detectArchitecturalPatterns(files);
 
-The AI agent must:
-1. **Validate file path security**: Ensure the path is not a system directory (/, /usr, /bin, /etc, /var, /tmp, etc.)
-2. **Resolve relative paths safely**: Handle relative paths from the current working directory
-3. **Prevent unauthorized access**: Reject attempts to check sensitive system files or directories outside the project scope
-4. **Validate path format**: Check for valid file path format and reject malicious patterns
+    // Count directories
+    const directories = [...new Set(files.map(f => f.directory))];
 
-## File Existence Check Requirements
-
-1. **Safe Path Resolution**: Resolve the file path using appropriate file system tools
-2. **Access Validation**: Check if the file exists and is accessible
-3. **Security Compliance**: Ensure the check doesn't expose sensitive information
-4. **Error Handling**: Handle various scenarios:
-   - File exists and is accessible
-   - File does not exist
-   - Path is invalid or malformed
-   - Permission denied
-   - Path points to a directory instead of a file
-
-## Expected Output Format
-
-\`\`\`json
-{
-  "success": true,
-  "filePath": "${safeFilePath}",
-  "exists": true,
-  "metadata": {
-    "type": "file|directory|symlink",
-    "accessible": true,
-    "lastChecked": "ISO_timestamp"
-  },
-  "security": {
-    "pathValidated": true,
-    "accessAuthorized": true,
-    "systemDirectoryCheck": "passed"
-  }
-}
-\`\`\`
-
-## Response Format for Non-Existent File
-
-\`\`\`json
-{
-  "success": true,
-  "filePath": "${safeFilePath}",
-  "exists": false,
-  "metadata": {
-    "type": null,
-    "accessible": false,
-    "lastChecked": "ISO_timestamp"
-  },
-  "security": {
-    "pathValidated": true,
-    "accessAuthorized": true,
-    "systemDirectoryCheck": "passed"
-  }
-}
-\`\`\`
-
-## Error Response Format (for security violations or invalid paths)
-
-\`\`\`json
-{
-  "success": false,
-  "filePath": "${safeFilePath}",
-  "exists": false,
-  "error": "detailed error message",
-  "errorType": "INVALID_PATH|SECURITY_VIOLATION|PERMISSION_DENIED|MALFORMED_PATH",
-  "security": {
-    "pathValidated": boolean,
-    "accessAuthorized": boolean,
-    "systemDirectoryCheck": "passed|failed",
-    "rejectionReason": "specific reason if access denied"
-  }
-}
-\`\`\`
-`;
-
-    const instructions = `
-## Implementation Steps
-
-1. **Security Validation**:
-   - Validate the file path: ${safeFilePath}
-   - Ensure it's not a system directory or sensitive location
-   - Check for path traversal attempts (../, .\\, etc.)
-   - Validate path format and reject malicious patterns
-
-2. **Path Resolution**:
-   - Resolve relative paths from the current working directory
-   - Handle symbolic links appropriately
-   - Normalize path separators for the operating system
-
-3. **Existence Check**:
-   - Check if the file exists at the resolved path
-   - Determine if it's a file, directory, or symbolic link
-   - Verify accessibility without reading content
-
-4. **Response Generation**:
-   - Format response according to the specified JSON structure
-   - Include comprehensive metadata and security validation results
-   - Provide clear boolean result in the "exists" field
-   - Include detailed error information if check fails
-
-## Safety Checks
-
-- ✅ Path security validation delegated to AI agent
-- ✅ System directory protection enabled
-- ✅ File access permission validation required
-- ✅ Comprehensive error handling specified
-- ✅ Boolean result format clearly defined
-
-## Context Information
-
-- **File Path**: ${safeFilePath}
-- **Operation**: Safe file existence check
-- **Security Level**: High (with path validation and access control)
-- **Expected Result**: Boolean existence status with metadata
-`;
+    // Generate summary
+    const summary = generateProjectSummary(files, technologies, patterns);
 
     return {
-      prompt,
-      instructions,
-      context: {
-        filePath: safeFilePath,
-        operation: 'file_exists_check',
-        securityLevel: 'high',
-        expectedFormat: 'json',
-        resultType: 'boolean'
-      }
+      rootPath: safeProjectPath,
+      files,
+      technologies,
+      patterns,
+      summary,
+      totalFiles: files.length,
+      totalDirectories: directories.length,
     };
-
   } catch (error) {
     throw new FileSystemError(
-      `Failed to generate file existence check prompt: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to analyze project structure: ${error instanceof Error ? error.message : String(error)}`,
+      { projectPath }
+    );
+  }
+}
+
+/**
+ * Read file content safely
+ *
+ * @param filePath - Path to the file to read
+ * @returns Promise resolving to file content and metadata
+ */
+export async function readFileContent(filePath: string): Promise<{
+  success: boolean;
+  filePath: string;
+  content?: string;
+  error?: string;
+  metadata?: {
+    size: number;
+    encoding: string;
+    lastModified: string;
+  };
+}> {
+  try {
+    const resolvedPath = path.resolve(filePath);
+
+    // Check if file exists
+    try {
+      await fs.access(resolvedPath);
+    } catch {
+      return {
+        success: false,
+        filePath,
+        error: 'File not found',
+      };
+    }
+
+    // Read file content
+    const content = await fs.readFile(resolvedPath, 'utf-8');
+    const stats = await fs.stat(resolvedPath);
+
+    return {
+      success: true,
+      filePath,
+      content,
+      metadata: {
+        size: stats.size,
+        encoding: 'utf-8',
+        lastModified: stats.mtime.toISOString(),
+      },
+    };
+  } catch (error) {
+    return {
+      success: false,
+      filePath,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
+/**
+ * Check if a file exists
+ *
+ * @param filePath - Path to check
+ * @returns Promise resolving to existence check result
+ */
+export async function fileExists(filePath: string): Promise<{
+  success: boolean;
+  filePath: string;
+  exists: boolean;
+  metadata?: {
+    type: 'file' | 'directory' | 'symlink' | null;
+    accessible: boolean;
+    lastChecked: string;
+  };
+}> {
+  try {
+    const resolvedPath = path.resolve(filePath);
+
+    try {
+      const stats = await fs.stat(resolvedPath);
+
+      let type: 'file' | 'directory' | 'symlink' = 'file';
+      if (stats.isDirectory()) type = 'directory';
+      else if (stats.isSymbolicLink()) type = 'symlink';
+
+      return {
+        success: true,
+        filePath,
+        exists: true,
+        metadata: {
+          type,
+          accessible: true,
+          lastChecked: new Date().toISOString(),
+        },
+      };
+    } catch {
+      return {
+        success: true,
+        filePath,
+        exists: false,
+        metadata: {
+          type: null,
+          accessible: false,
+          lastChecked: new Date().toISOString(),
+        },
+      };
+    }
+  } catch (error) {
+    throw new FileSystemError(
+      `Failed to check file existence: ${error instanceof Error ? error.message : String(error)}`,
       { filePath }
     );
   }
 }
 
 /**
- * Generate prompt for AI-driven directory creation
+ * Ensure a directory exists, creating it if necessary
+ *
+ * @param dirPath - Path to the directory
+ * @returns Promise resolving when directory is ensured
  */
-export async function ensureDirectory(dirPath: string): Promise<{ prompt: string; instructions: string; context: any }> {
+export async function ensureDirectory(dirPath: string): Promise<{
+  success: boolean;
+  dirPath: string;
+  created: boolean;
+  error?: string;
+}> {
   try {
-    console.error(`[DEBUG] Generating directory creation prompt for: ${dirPath}`);
+    const resolvedPath = path.resolve(dirPath);
 
-    // Pure prompt-driven approach - delegate directory creation to AI agent
-    const safeDirPath = dirPath || '';
-
-    const prompt = `
-# Directory Creation Request
-
-Please ensure the directory exists: **${safeDirPath}**
-
-## Path Security Validation
-
-The AI agent must:
-1. **Validate directory path security**: Ensure the path is not a system directory (/, /usr, /bin, /etc, /var, /tmp, etc.)
-2. **Resolve relative paths safely**: Handle relative paths from the current working directory
-3. **Prevent unauthorized access**: Reject attempts to create directories in sensitive system locations
-4. **Validate path format**: Check for valid directory path format and reject malicious patterns
-
-## Directory Creation Requirements
-
-1. **Safe Path Resolution**: Resolve the directory path using appropriate file system tools
-2. **Recursive Creation**: Create parent directories if they don't exist (recursive: true)
-3. **Permission Handling**: Ensure appropriate permissions for directory creation
-4. **Error Handling**: Handle various scenarios:
-   - Directory already exists (success)
-   - Parent directories don't exist (create them)
-   - Permission denied
-   - Invalid path or malformed directory name
-   - Disk space issues
-
-## Action Confirmation Required
-
-Before creating any directories, confirm the action with the user:
-
-**Action**: Create directory structure
-**Target**: ${safeDirPath}
-**Type**: Directory creation (recursive)
-**Impact**: Creates directory and any missing parent directories
-
-## Expected Output Format
-
-\`\`\`json
-{
-  "success": true,
-  "dirPath": "${safeDirPath}",
-  "created": true,
-  "metadata": {
-    "type": "directory",
-    "recursive": true,
-    "permissions": "755",
-    "createdAt": "ISO_timestamp"
-  },
-  "security": {
-    "pathValidated": true,
-    "accessAuthorized": true,
-    "systemDirectoryCheck": "passed"
-  },
-  "confirmation": {
-    "actionConfirmed": true,
-    "userApproved": true
+    try {
+      await fs.access(resolvedPath);
+      return {
+        success: true,
+        dirPath,
+        created: false,
+      };
+    } catch {
+      // Directory doesn't exist, create it
+      await fs.mkdir(resolvedPath, { recursive: true });
+      return {
+        success: true,
+        dirPath,
+        created: true,
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      dirPath,
+      created: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
   }
 }
-\`\`\`
 
-## Response Format for Existing Directory
+/**
+ * Write content to a file, creating directories as needed
+ *
+ * @param filePath - Path to the file
+ * @param content - Content to write
+ * @returns Promise resolving when file is written
+ */
+export async function writeFile(
+  filePath: string,
+  content: string
+): Promise<{
+  success: boolean;
+  filePath: string;
+  written: boolean;
+  error?: string;
+  metadata?: {
+    size: number;
+    directoryCreated: boolean;
+  };
+}> {
+  try {
+    const resolvedPath = path.resolve(filePath);
+    const dir = path.dirname(resolvedPath);
 
-\`\`\`json
-{
-  "success": true,
-  "dirPath": "${safeDirPath}",
-  "created": false,
-  "metadata": {
-    "type": "directory",
-    "alreadyExists": true,
-    "permissions": "existing_permissions",
-    "lastModified": "ISO_timestamp"
-  },
-  "security": {
-    "pathValidated": true,
-    "accessAuthorized": true,
-    "systemDirectoryCheck": "passed"
-  }
-}
-\`\`\`
+    // Ensure directory exists
+    const dirResult = await ensureDirectory(dir);
 
-## Error Response Format
-
-\`\`\`json
-{
-  "success": false,
-  "dirPath": "${safeDirPath}",
-  "created": false,
-  "error": "detailed error message",
-  "errorType": "PERMISSION_DENIED|INVALID_PATH|SECURITY_VIOLATION|DISK_FULL",
-  "security": {
-    "pathValidated": boolean,
-    "accessAuthorized": boolean,
-    "systemDirectoryCheck": "passed|failed",
-    "rejectionReason": "specific reason if access denied"
-  }
-}
-\`\`\`
-`;
-
-    const instructions = `
-## Implementation Steps
-
-1. **Security Validation**:
-   - Validate the directory path: ${safeDirPath}
-   - Ensure it's not a system directory or sensitive location
-   - Check for path traversal attempts (../, .\\, etc.)
-   - Validate path format and reject malicious patterns
-
-2. **Action Confirmation**:
-   - Present the directory creation action to the user for confirmation
-   - Include details about what directories will be created
-   - Wait for user approval before proceeding
-
-3. **Directory Creation**:
-   - Check if the directory already exists
-   - Create parent directories recursively if needed
-   - Set appropriate permissions (755 or system default)
-   - Handle symbolic links appropriately
-
-4. **Response Generation**:
-   - Format response according to the specified JSON structure
-   - Include comprehensive metadata and security validation results
-   - Provide detailed error information if creation fails
-   - Include confirmation status
-
-## Safety Checks
-
-- ✅ Path security validation delegated to AI agent
-- ✅ System directory protection enabled
-- ✅ Action confirmation required before directory creation
-- ✅ Recursive directory creation with permission handling
-- ✅ Comprehensive error handling specified
-
-## Context Information
-
-- **Directory Path**: ${safeDirPath}
-- **Operation**: Safe directory creation (recursive)
-- **Security Level**: High (with path validation and access control)
-- **Confirmation Required**: Yes (action confirmation pattern)
-`;
+    // Write file
+    await fs.writeFile(resolvedPath, content, 'utf-8');
 
     return {
-      prompt,
-      instructions,
-      context: {
-        dirPath: safeDirPath,
-        operation: 'directory_creation',
-        securityLevel: 'high',
-        expectedFormat: 'json',
-        confirmationRequired: true,
-        recursive: true
-      }
+      success: true,
+      filePath,
+      written: true,
+      metadata: {
+        size: Buffer.byteLength(content, 'utf-8'),
+        directoryCreated: dirResult.created,
+      },
     };
+  } catch (error) {
+    return {
+      success: false,
+      filePath,
+      written: false,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
 
+/**
+ * Find related code files for an ADR using Smart Code Linking
+ * Uses AI for keyword extraction and ripgrep for efficient searching
+ *
+ * @param adrPath - Path to the ADR file
+ * @param adrContent - Content of the ADR
+ * @param projectPath - Root path of the project
+ * @param options - Additional options for search customization
+ * @returns Promise resolving to related code files
+ */
+export async function findRelatedCode(
+  adrPath: string,
+  adrContent: string,
+  projectPath: string,
+  options: {
+    useAI?: boolean;
+    useRipgrep?: boolean;
+    maxFiles?: number;
+    includeContent?: boolean;
+  } = {}
+): Promise<RelatedCodeResult> {
+  const { useAI = true, useRipgrep = true, maxFiles = 50, includeContent = false } = options;
+
+  try {
+    let keywords: string[] = [];
+    let confidence = 0.5;
+
+    // Step 1: Extract keywords using AI if available
+    if (useAI) {
+      try {
+        keywords = await extractKeywordsWithAI(adrContent);
+        confidence = 0.9; // Higher confidence with AI
+      } catch (error) {
+        console.warn('AI keyword extraction failed, falling back to regex:', error);
+        keywords = extractKeywordsFromContent(adrContent);
+        confidence = 0.6;
+      }
+    } else {
+      keywords = extractKeywordsFromContent(adrContent);
+      confidence = 0.6;
+    }
+
+    // Step 2: Search for files using ripgrep or fast-glob
+    let relatedFiles: FileInfo[] = [];
+
+    if (useRipgrep) {
+      try {
+        const ripgrepModule = await import('./ripgrep-wrapper.js');
+        const { searchMultiplePatterns, isRipgrepAvailable } = ripgrepModule;
+
+        if (await isRipgrepAvailable()) {
+          // Use ripgrep for efficient searching
+          const searchResults = await searchMultiplePatterns(
+            keywords.slice(0, 10), // Limit keywords for performance
+            projectPath,
+            {
+              fileType: 'ts,js,py,java,go,rs,cs',
+              maxMatches: 5,
+              caseInsensitive: true,
+            }
+          );
+
+          // Collect unique files from all pattern matches
+          const uniqueFiles = new Set<string>();
+          searchResults.forEach(files => {
+            files.forEach(file => uniqueFiles.add(file));
+          });
+
+          // Convert file paths to FileInfo objects
+          const filePromises = Array.from(uniqueFiles)
+            .slice(0, maxFiles)
+            .map(async filePath => {
+              const fullPath = path.resolve(projectPath, filePath);
+              const stats = await fs.stat(fullPath);
+              const fileInfo: FileInfo = {
+                path: filePath,
+                name: path.basename(filePath),
+                extension: path.extname(filePath),
+                size: stats.size,
+                directory: path.dirname(filePath),
+              };
+
+              if (includeContent) {
+                try {
+                  fileInfo.content = await fs.readFile(fullPath, 'utf-8');
+                } catch {
+                  // Ignore read errors
+                }
+              }
+
+              return fileInfo;
+            });
+
+          relatedFiles = await Promise.all(filePromises);
+          confidence = Math.min(0.95, confidence + 0.1); // Boost confidence with ripgrep
+        } else {
+          throw new Error('Ripgrep not available');
+        }
+      } catch (error) {
+        console.warn('Ripgrep search failed, falling back to fast-glob:', error);
+        // Fall through to fast-glob search
+      }
+    }
+
+    // Fallback to fast-glob if ripgrep didn't work or wasn't used
+    if (relatedFiles.length === 0) {
+      // Build search patterns based on keywords
+      const searchPatterns = keywords.slice(0, 10).map(keyword => `**/*${keyword}*`);
+
+      // Find files matching the patterns
+      const { files } = await findFiles(projectPath, searchPatterns, {
+        includeContent,
+        limit: maxFiles,
+      });
+
+      // Filter to source code files only
+      const sourceExtensions = ['.ts', '.js', '.tsx', '.jsx', '.py', '.java', '.cs', '.go', '.rs'];
+      relatedFiles = files.filter(file => sourceExtensions.includes(file.extension));
+    }
+
+    // Step 3: Score and rank files by relevance
+    const scoredFiles = relatedFiles.map(file => {
+      let score = 0;
+      const fileName = file.name.toLowerCase();
+      const filePath = file.path.toLowerCase();
+
+      // Score based on keyword matches in file name/path
+      keywords.forEach(keyword => {
+        const lowerKeyword = keyword.toLowerCase();
+        if (fileName.includes(lowerKeyword)) score += 3;
+        if (filePath.includes(lowerKeyword)) score += 1;
+      });
+
+      return { file, score };
+    });
+
+    // Sort by score and take top results
+    scoredFiles.sort((a, b) => b.score - a.score);
+    const topFiles = scoredFiles.slice(0, maxFiles).map(item => item.file);
+
+    // Adjust confidence based on results
+    if (topFiles.length === 0) {
+      confidence = 0.2;
+    } else if (topFiles.length < 5) {
+      confidence = Math.min(confidence, 0.5);
+    }
+
+    return {
+      adrPath,
+      relatedFiles: topFiles,
+      keywords,
+      searchPatterns: keywords.map(k => `**/*${k}*`),
+      confidence,
+    };
   } catch (error) {
     throw new FileSystemError(
-      `Failed to generate directory creation prompt: ${error instanceof Error ? error.message : String(error)}`,
-      { dirPath }
+      `Failed to find related code: ${error instanceof Error ? error.message : String(error)}`,
+      { adrPath }
     );
   }
 }
 
 /**
- * Generate prompt for AI-driven file writing with directory creation
+ * Extract keywords from ADR content using AI
  */
-export async function writeFile(filePath: string, content: string): Promise<{ prompt: string; instructions: string; context: any }> {
+async function extractKeywordsWithAI(content: string): Promise<string[]> {
   try {
-    console.error(`[DEBUG] Generating file write prompt for: ${filePath}`);
+    // Dynamic import to avoid circular dependencies
+    const aiModule = await import('./ai-executor.js');
+    const { AIExecutor } = aiModule;
 
-    // Pure prompt-driven approach - delegate file writing to AI agent
-    const safeFilePath = filePath || '';
-    const safeContent = content || '';
-    const contentPreview = safeContent.length > 200 ? safeContent.substring(0, 200) + '...' : safeContent;
+    const executor = new AIExecutor();
 
-    const prompt = `
-# File Writing Request
+    if (!executor.isAvailable()) {
+      throw new Error('AI executor not available');
+    }
 
-Please write content to the file: **${safeFilePath}**
+    const prompt = `Extract the most important technical keywords, class names, function names, and architectural terms from this ADR content. Return only a JSON array of strings with the top 20 most relevant keywords for code searching.
 
-## Path Security Validation
+ADR Content:
+${content.substring(0, 3000)} // Limit content length
 
-The AI agent must:
-1. **Validate file path security**: Ensure the path is not a system directory (/, /usr, /bin, /etc, /var, /tmp, etc.)
-2. **Resolve relative paths safely**: Handle relative paths from the current working directory
-3. **Prevent unauthorized access**: Reject attempts to write to sensitive system files or directories
-4. **Validate path format**: Check for valid file path format and reject malicious patterns
+Example output format:
+["UserService", "authentication", "JWT", "PostgreSQL", "REST_API", "validate_token", "user_repository"]
 
-## Content Security Validation
+Return ONLY the JSON array, no other text.`;
 
-The AI agent must:
-1. **Content sanitization**: Validate content for security issues (no malicious scripts, etc.)
-2. **Encoding validation**: Ensure content is properly encoded as UTF-8
-3. **Size validation**: Check content size is reasonable
-4. **Format validation**: Verify content format matches file extension expectations
+    const result = await executor.executePrompt(prompt, {
+      temperature: 0.3,
+      maxTokens: 500,
+    });
 
-## File Writing Requirements
-
-1. **Directory Creation**: Ensure parent directory exists (create if needed)
-2. **Safe File Writing**: Write content using appropriate file system tools
-3. **Encoding Handling**: Write the file as UTF-8 text content
-4. **Atomic Operations**: Use atomic write operations when possible
-5. **Permission Handling**: Set appropriate file permissions
-6. **Backup Consideration**: Consider backing up existing files if they exist
-
-## Action Confirmation Required
-
-Before writing any files, confirm the action with the user:
-
-**Action**: Write file content
-**Target**: ${safeFilePath}
-**Content Size**: ${safeContent.length} characters
-**Content Preview**: ${contentPreview}
-**Type**: File creation/modification
-**Impact**: Creates file and any missing parent directories
-
-## Expected Output Format
-
-\`\`\`json
-{
-  "success": true,
-  "filePath": "${safeFilePath}",
-  "written": true,
-  "metadata": {
-    "type": "file",
-    "size": ${safeContent.length},
-    "encoding": "utf-8",
-    "permissions": "644",
-    "createdAt": "ISO_timestamp",
-    "directoryCreated": boolean
-  },
-  "security": {
-    "pathValidated": true,
-    "contentValidated": true,
-    "accessAuthorized": true,
-    "systemDirectoryCheck": "passed"
-  },
-  "confirmation": {
-    "actionConfirmed": true,
-    "userApproved": true
-  }
-}
-\`\`\`
-
-## Response Format for File Update
-
-\`\`\`json
-{
-  "success": true,
-  "filePath": "${safeFilePath}",
-  "written": true,
-  "metadata": {
-    "type": "file",
-    "size": ${safeContent.length},
-    "encoding": "utf-8",
-    "permissions": "644",
-    "updatedAt": "ISO_timestamp",
-    "previousSize": <previous_file_size>,
-    "directoryCreated": false
-  },
-  "security": {
-    "pathValidated": true,
-    "contentValidated": true,
-    "accessAuthorized": true,
-    "systemDirectoryCheck": "passed"
-  },
-  "confirmation": {
-    "actionConfirmed": true,
-    "userApproved": true
-  }
-}
-\`\`\`
-
-## Error Response Format
-
-\`\`\`json
-{
-  "success": false,
-  "filePath": "${safeFilePath}",
-  "written": false,
-  "error": "detailed error message",
-  "errorType": "PERMISSION_DENIED|INVALID_PATH|SECURITY_VIOLATION|CONTENT_INVALID|DISK_FULL",
-  "security": {
-    "pathValidated": boolean,
-    "contentValidated": boolean,
-    "accessAuthorized": boolean,
-    "systemDirectoryCheck": "passed|failed",
-    "rejectionReason": "specific reason if access denied"
-  }
-}
-\`\`\`
-`;
-
-    const instructions = `
-## Implementation Steps
-
-1. **Security Validation**:
-   - Validate the file path: ${safeFilePath}
-   - Ensure it's not a system directory or sensitive location
-   - Check for path traversal attempts (../, .\\, etc.)
-   - Validate content for security issues
-
-2. **Action Confirmation**:
-   - Present the file writing action to the user for confirmation
-   - Include details about the file path and content preview
-   - Show content size and any directories that will be created
-   - Wait for user approval before proceeding
-
-3. **Directory Preparation**:
-   - Extract directory path from file path: ${dirname(safeFilePath)}
-   - Ensure parent directory exists (create recursively if needed)
-   - Validate directory permissions
-
-4. **File Writing**:
-   - Check if file already exists (for backup consideration)
-   - Write content to file using UTF-8 encoding
-   - Set appropriate file permissions (644 or system default)
-   - Use atomic write operations when possible
-
-5. **Response Generation**:
-   - Format response according to the specified JSON structure
-   - Include comprehensive metadata and security validation results
-   - Provide detailed error information if writing fails
-   - Include confirmation status and directory creation details
-
-## Safety Checks
-
-- ✅ Path security validation delegated to AI agent
-- ✅ Content security validation required
-- ✅ System directory protection enabled
-- ✅ Action confirmation required before file writing
-- ✅ Directory creation with permission handling
-- ✅ Comprehensive error handling specified
-
-## Context Information
-
-- **File Path**: ${safeFilePath}
-- **Content Size**: ${safeContent.length} characters
-- **Operation**: Safe file writing with directory creation
-- **Security Level**: High (with path and content validation)
-- **Confirmation Required**: Yes (action confirmation pattern)
-`;
-
-    return {
-      prompt,
-      instructions,
-      context: {
-        filePath: safeFilePath,
-        contentSize: safeContent.length,
-        operation: 'file_write',
-        securityLevel: 'high',
-        expectedFormat: 'json',
-        confirmationRequired: true,
-        directoryCreation: true
+    // Parse the AI response
+    const cleanedResponse = result.content.trim();
+    const jsonMatch = cleanedResponse.match(/\[.*\]/s);
+    if (jsonMatch) {
+      const keywords = JSON.parse(jsonMatch[0]);
+      if (Array.isArray(keywords)) {
+        return keywords.filter(k => typeof k === 'string').slice(0, 20);
       }
-    };
+    }
 
+    throw new Error('Invalid AI response format');
   } catch (error) {
-    throw new FileSystemError(
-      `Failed to generate file write prompt: ${error instanceof Error ? error.message : String(error)}`,
-      { filePath }
-    );
+    console.error('AI keyword extraction failed:', error);
+    throw error;
   }
+}
+
+// Helper functions
+
+/**
+ * Detect technologies from project files
+ */
+async function detectTechnologies(projectPath: string, files: FileInfo[]): Promise<string[]> {
+  const technologies = new Set<string>();
+
+  // Check for package.json
+  const packageJsonFile = files.find(f => f.name === 'package.json');
+  if (packageJsonFile) {
+    technologies.add('Node.js');
+    try {
+      const content = await fs.readFile(path.join(projectPath, packageJsonFile.path), 'utf-8');
+      const packageJson = JSON.parse(content);
+
+      const deps = { ...packageJson.dependencies, ...packageJson.devDependencies };
+
+      if (deps.react) technologies.add('React');
+      if (deps.vue) technologies.add('Vue');
+      if (deps.angular) technologies.add('Angular');
+      if (deps.express) technologies.add('Express');
+      if (deps.fastify) technologies.add('Fastify');
+      if (deps['@aws-sdk'] || deps['aws-sdk']) technologies.add('AWS SDK');
+      if (deps['@google-cloud']) technologies.add('GCP SDK');
+      if (deps['@azure']) technologies.add('Azure SDK');
+    } catch {
+      // Ignore parsing errors
+    }
+  }
+
+  // Check for other technology indicators
+  if (files.some(f => f.name === 'requirements.txt')) technologies.add('Python');
+  if (files.some(f => f.name === 'Gemfile')) technologies.add('Ruby');
+  if (files.some(f => f.name === 'pom.xml')) technologies.add('Maven/Java');
+  if (files.some(f => f.name === 'Cargo.toml')) technologies.add('Rust');
+  if (files.some(f => f.name === 'go.mod')) technologies.add('Go');
+  if (files.some(f => f.name === 'Dockerfile')) technologies.add('Docker');
+  if (files.some(f => f.name === 'docker-compose.yml')) technologies.add('Docker Compose');
+  if (files.some(f => f.extension === '.tf')) technologies.add('Terraform');
+
+  // Check for Kubernetes files
+  const k8sFiles = files.filter(f => f.extension === '.yaml' || f.extension === '.yml');
+
+  if (k8sFiles.length > 0) {
+    for (const file of k8sFiles.slice(0, 5)) {
+      // Check first 5 YAML files
+      try {
+        const content = await fs.readFile(path.join(projectPath, file.path), 'utf-8');
+        if (content.includes('apiVersion:') && content.includes('kind:')) {
+          technologies.add('Kubernetes');
+          break;
+        }
+      } catch {
+        // Ignore read errors
+      }
+    }
+  }
+
+  return Array.from(technologies);
+}
+
+/**
+ * Detect architectural patterns from file structure
+ */
+function detectArchitecturalPatterns(files: FileInfo[]): string[] {
+  const patterns = new Set<string>();
+  const fileNames = files.map(f => f.name.toLowerCase());
+  const filePaths = files.map(f => f.path.toLowerCase());
+
+  // Common architectural patterns
+  if (fileNames.some(name => name.includes('controller'))) patterns.add('MVC');
+  if (fileNames.some(name => name.includes('service'))) patterns.add('Service Layer');
+  if (fileNames.some(name => name.includes('repository'))) patterns.add('Repository Pattern');
+  if (fileNames.some(name => name.includes('factory'))) patterns.add('Factory Pattern');
+
+  // Microservices patterns
+  if (filePaths.some(path => path.includes('microservice'))) patterns.add('Microservices');
+
+  // Container patterns
+  if (fileNames.some(name => name === 'dockerfile')) patterns.add('Containerization');
+
+  // Infrastructure as Code
+  if (files.some(f => f.extension === '.tf')) patterns.add('Infrastructure as Code');
+
+  // CI/CD patterns
+  if (filePaths.some(path => path.includes('.github/workflows'))) patterns.add('CI/CD Pipeline');
+
+  return Array.from(patterns);
+}
+
+/**
+ * Generate a summary of the project analysis
+ */
+function generateProjectSummary(
+  files: FileInfo[],
+  technologies: string[],
+  patterns: string[]
+): string {
+  const extensions = [...new Set(files.map(f => f.extension))].filter(ext => ext);
+  const summary =
+    `Project with ${files.length} files. ` +
+    `Technologies: ${technologies.join(', ') || 'Not detected'}. ` +
+    `Patterns: ${patterns.join(', ') || 'Not detected'}. ` +
+    `Main file types: ${extensions.slice(0, 5).join(', ')}.`;
+
+  return summary;
+}
+
+/**
+ * Simple keyword extraction from content
+ * This will be enhanced with LLM integration later
+ */
+function extractKeywordsFromContent(content: string): string[] {
+  const keywords: string[] = [];
+
+  // Extract technology names
+  const techPatterns = [
+    /\b(React|Vue|Angular|Node\.js|Express|FastAPI|Django|Spring|Rails)\b/gi,
+    /\b(PostgreSQL|MySQL|MongoDB|Redis|Elasticsearch)\b/gi,
+    /\b(Docker|Kubernetes|AWS|Azure|GCP)\b/gi,
+  ];
+
+  techPatterns.forEach(pattern => {
+    const matches = content.match(pattern);
+    if (matches) {
+      keywords.push(...matches.map(m => m.toLowerCase()));
+    }
+  });
+
+  // Extract potential class/function names (CamelCase or snake_case)
+  const codePatterns = /\b[A-Z][a-zA-Z]+(?:[A-Z][a-z]+)*\b|\b[a-z]+_[a-z_]+\b/g;
+  const codeMatches = content.match(codePatterns);
+  if (codeMatches) {
+    keywords.push(...codeMatches.slice(0, 10)); // Limit to 10 code patterns
+  }
+
+  return [...new Set(keywords)]; // Remove duplicates
+}
+
+/**
+ * BACKWARD COMPATIBILITY SECTION
+ * These functions and types provide compatibility with the old prompt-based API
+ * They can be removed once all tools are updated to use the new direct API
+ */
+
+/**
+ * AI prompt for project analysis (backward compatibility)
+ */
+export interface ProjectAnalysisPrompt {
+  /** Generated prompt for AI analysis */
+  prompt: string;
+  /** Instructions for the AI agent */
+  instructions: string;
+  /** Context information for the analysis */
+  context: {
+    /** Original project path */
+    projectPath: string;
+    /** Absolute project path */
+    absoluteProjectPath: string;
+    /** File patterns to analyze */
+    filePatterns: string[];
+  };
+}
+
+/**
+ * Generate backward-compatible prompt response for project analysis
+ * This wraps the new analyzeProjectStructure to provide the old interface
+ * @deprecated Use analyzeProjectStructure directly
+ */
+export async function analyzeProjectStructureCompat(
+  projectPath: string
+): Promise<ProjectAnalysisPrompt> {
+  const analysis = await analyzeProjectStructure(projectPath);
+
+  // Generate a descriptive prompt from the actual analysis
+  const prompt = `Project Analysis Results:
+Root Path: ${analysis.rootPath}
+Total Files: ${analysis.totalFiles}
+Total Directories: ${analysis.totalDirectories}
+Technologies: ${analysis.technologies.join(', ')}
+Patterns: ${analysis.patterns.join(', ')}
+Summary: ${analysis.summary}`;
+
+  const instructions = `This analysis was performed using fast-glob file discovery.
+Technologies were detected by examining configuration files and dependencies.
+Architectural patterns were identified from file structure and naming conventions.`;
+
+  return {
+    prompt,
+    instructions,
+    context: {
+      projectPath: analysis.rootPath,
+      absoluteProjectPath: analysis.rootPath,
+      filePatterns: ['**/*'],
+    },
+  };
+}
+
+/**
+ * Backward-compatible file exists wrapper
+ * @deprecated Use fileExists directly
+ */
+export async function fileExistsCompat(filePath: string): Promise<any> {
+  const result = await fileExists(filePath);
+  const prompt = `File existence check: ${filePath}
+Result: ${result.exists ? 'File exists' : 'File does not exist'}
+Type: ${result.metadata?.type || 'unknown'}`;
+
+  const instructions = 'File existence was checked using Node.js fs.stat';
+
+  return {
+    ...result,
+    prompt,
+    instructions,
+    context: { filePath },
+  };
+}
+
+/**
+ * Backward-compatible ensure directory wrapper
+ * @deprecated Use ensureDirectory directly
+ */
+export async function ensureDirectoryCompat(dirPath: string): Promise<any> {
+  const result = await ensureDirectory(dirPath);
+  const prompt = `Directory operation: ${dirPath}
+Result: ${result.created ? 'Directory created' : 'Directory already exists'}
+Success: ${result.success}`;
+
+  const instructions = 'Directory was ensured using Node.js fs.mkdir with recursive option';
+
+  return {
+    ...result,
+    prompt,
+    instructions,
+    context: { dirPath },
+  };
+}
+
+/**
+ * Backward-compatible write file wrapper
+ * @deprecated Use writeFile directly
+ */
+export async function writeFileCompat(filePath: string, content: string): Promise<any> {
+  const result = await writeFile(filePath, content);
+  const prompt = `File write operation: ${filePath}
+Result: ${result.written ? 'File written successfully' : 'File write failed'}
+Size: ${result.metadata?.size || 0} bytes`;
+
+  const instructions = 'File was written using Node.js fs.writeFile';
+
+  return {
+    ...result,
+    prompt,
+    instructions,
+    context: { filePath, contentSize: content.length },
+  };
+}
+
+/**
+ * Backward-compatible read file wrapper
+ * @deprecated Use readFileContent directly
+ */
+export async function readFileContentCompat(filePath: string): Promise<any> {
+  const result = await readFileContent(filePath);
+  const prompt = `File read operation: ${filePath}
+Result: ${result.success ? 'File read successfully' : 'File read failed'}
+Size: ${result.metadata?.size || 0} bytes`;
+
+  const instructions = 'File was read using Node.js fs.readFile';
+
+  return {
+    ...result,
+    prompt,
+    instructions,
+    context: { filePath },
+  };
 }
 
 /**
