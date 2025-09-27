@@ -69,24 +69,24 @@ jobs:
       - name: Determine version bump type
         id: version-type
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ' ') }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
-          echo "Analyzing PR: ${{ github.event.pull_request.title }}"
+          echo "Analyzing PR: ${PR_TITLE}"
           echo "Labels: ${{ join(github.event.pull_request.labels.*.name, ', ') }}"
 
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_LABELS="${{ join(github.event.pull_request.labels.*.name, ' ') }}"
-          PR_BODY="${{ github.event.pull_request.body }}"
-
           # Check for breaking changes or major version indicators
-          if [[ "$PR_TITLE" == *"BREAKING"* ]] || [[ "$PR_TITLE" == *"breaking"* ]] || \
-             [[ "$PR_LABELS" == *"breaking"* ]] || [[ "$PR_LABELS" == *"major"* ]] || \
-             [[ "$PR_BODY" == *"BREAKING CHANGE"* ]]; then
+          if [[ "${PR_TITLE}" == *"BREAKING"* ]] || [[ "${PR_TITLE}" == *"breaking"* ]] || \
+             [[ "${PR_LABELS}" == *"breaking"* ]] || [[ "${PR_LABELS}" == *"major"* ]] || \
+             [[ "${PR_BODY}" == *"BREAKING CHANGE"* ]]; then
             VERSION_TYPE="major"
             echo "🚨 Major version bump detected (breaking changes)"
           # Check for features or minor version indicators
-          elif [[ "$PR_TITLE" == *"feat"* ]] || [[ "$PR_TITLE" == *"feature"* ]] || \
-               [[ "$PR_LABELS" == *"feature"* ]] || [[ "$PR_LABELS" == *"enhancement"* ]] || \
-               [[ "$PR_LABELS" == *"minor"* ]]; then
+          elif [[ "${PR_TITLE}" == *"feat"* ]] || [[ "${PR_TITLE}" == *"feature"* ]] || \
+               [[ "${PR_LABELS}" == *"feature"* ]] || [[ "${PR_LABELS}" == *"enhancement"* ]] || \
+               [[ "${PR_LABELS}" == *"minor"* ]]; then
             VERSION_TYPE="minor"
             echo "✨ Minor version bump detected (new features)"
           # Default to patch for fixes, chores, docs, etc.
