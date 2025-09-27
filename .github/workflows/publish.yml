@@ -1,29 +1,209 @@
 name: Publish to NPM
 
 on:
-  workflow_call:
-    inputs:
-      version:
-        description: 'Version to publish'
-        required: true
-        type: string
+  # Allow manual publishing - will create release via Release Drafter
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to publish (e.g., patch, minor, major, prerelease, or specific version like 2.0.2)'
+      version_bump:
+        description: 'Version bump type'
         required: true
         default: 'patch'
-        type: string
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - prerelease
+      skip_tests:
+        description: 'Skip tests for emergency releases'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Perform a dry run without publishing'
+        required: false
+        default: false
+        type: boolean
+  # Trigger when tags are created (for compatibility with existing auto-release workflows)
+  push:
+    tags:
+      - 'v*'
 
 jobs:
+  # First job: Create or update release via Release Drafter (for manual dispatch)
+  create-release:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      release-id: ${{ steps.release.outputs.id }}
+      release-tag: ${{ steps.release.outputs.tag_name }}
+      release-version: ${{ steps.release.outputs.name }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Release Draft
+        id: drafter
+        uses: release-drafter/release-drafter@v6
+        with:
+          config-name: release-drafter.yml
+          disable-autolabeler: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine next version
+        id: version
+        run: |
+          CURRENT_VERSION="${{ steps.drafter.outputs.resolved_version }}"
+          BUMP_TYPE="${{ github.event.inputs.version_bump }}"
+
+          echo "Current resolved version: $CURRENT_VERSION"
+          echo "Requested bump type: $BUMP_TYPE"
+
+          # If Release Drafter already resolved to a new version, use it
+          if [[ -n "$CURRENT_VERSION" && "$CURRENT_VERSION" != "null" ]]; then
+            NEW_VERSION="$CURRENT_VERSION"
+            echo "Using Release Drafter resolved version: $NEW_VERSION"
+          else
+            # Fallback: determine version from package.json and bump type
+            PACKAGE_VERSION=$(node -p "require('./package.json').version")
+            echo "Package.json version: $PACKAGE_VERSION"
+            
+            # Simple version bumping logic
+            IFS='.' read -ra VERSION_PARTS <<< "$PACKAGE_VERSION"
+            MAJOR=${VERSION_PARTS[0]}
+            MINOR=${VERSION_PARTS[1]}
+            PATCH=${VERSION_PARTS[2]}
+            
+            case "$BUMP_TYPE" in
+              major)
+                NEW_VERSION="$((MAJOR + 1)).0.0"
+                ;;
+              minor)
+                NEW_VERSION="$MAJOR.$((MINOR + 1)).0"
+                ;;
+              patch)
+                NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+                ;;
+              prerelease)
+                NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))-beta.1"
+                ;;
+              *)
+                NEW_VERSION="$MAJOR.$MINOR.$((PATCH + 1))"
+                ;;
+            esac
+            
+            echo "Calculated new version: $NEW_VERSION"
+          fi
+
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Update package.json version
+        run: |
+          NEW_VERSION="${{ steps.version.outputs.version }}"
+          echo "Updating package.json to version: $NEW_VERSION"
+          npm version $NEW_VERSION --no-git-tag-version
+
+      - name: Commit version bump
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add package.json package-lock.json
+          git commit -m "chore: bump version to ${{ steps.version.outputs.version }}"
+          git push origin main
+
+      - name: Create/Update Release
+        id: release
+        run: |
+          TAG_NAME="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          DRAFT_ID="${{ steps.drafter.outputs.id }}"
+
+          echo "Creating release with tag: $TAG_NAME"
+
+          if [[ -n "$DRAFT_ID" && "$DRAFT_ID" != "null" ]]; then
+            echo "Publishing existing draft release: $DRAFT_ID"
+            
+            # Update and publish the draft
+            RELEASE_DATA=$(gh api repos/${{ github.repository }}/releases/$DRAFT_ID \
+              --method PATCH \
+              --field tag_name="$TAG_NAME" \
+              --field name="Release v$VERSION" \
+              --field draft=false \
+              --field prerelease=${{ github.event.inputs.version_bump == 'prerelease' }})
+              
+          else
+            echo "Creating new release"
+            
+            # Create new release
+            RELEASE_DATA=$(gh api repos/${{ github.repository }}/releases \
+              --method POST \
+              --field tag_name="$TAG_NAME" \
+              --field name="Release v$VERSION" \
+              --field body="Release $VERSION" \
+              --field draft=false \
+              --field prerelease=${{ github.event.inputs.version_bump == 'prerelease' }})
+          fi
+
+          RELEASE_ID=$(echo "$RELEASE_DATA" | jq -r '.id')
+          RELEASE_TAG=$(echo "$RELEASE_DATA" | jq -r '.tag_name')
+          RELEASE_NAME=$(echo "$RELEASE_DATA" | jq -r '.name')
+
+          echo "id=$RELEASE_ID" >> $GITHUB_OUTPUT
+          echo "tag_name=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "name=$RELEASE_NAME" >> $GITHUB_OUTPUT
+
+          echo "✅ Release created: $RELEASE_NAME ($RELEASE_TAG)"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Second job: Test and publish to NPM
   test-and-publish:
     runs-on: ubuntu-latest
+    needs: [create-release]
+    # Run if we created a release OR if triggered by tag push
+    if: always() && (needs.create-release.result == 'success' || github.event_name == 'push')
+    permissions:
+      contents: write
+      packages: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine version and source
+        id: version
+        run: |
+          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+            # Triggered by tag push
+            TAG_NAME="${{ github.ref_name }}"
+            VERSION=${TAG_NAME#v}  # Remove 'v' prefix
+            SOURCE="tag_push"
+            echo "🏷️ Publishing from existing tag: ${TAG_NAME} (version: ${VERSION})"
+          elif [[ "${{ needs.create-release.result }}" == "success" ]]; then
+            # From release creation job
+            TAG_NAME="${{ needs.create-release.outputs.release-tag }}"
+            VERSION=${TAG_NAME#v}  # Remove 'v' prefix
+            SOURCE="release_drafter"
+            echo "📝 Publishing from Release Drafter: ${TAG_NAME} (version: ${VERSION})"
+          else
+            echo "❌ Could not determine version source"
+            exit 1
+          fi
+
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "source=${SOURCE}" >> $GITHUB_OUTPUT
+          echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
         uses: actions/setup-node@v5
@@ -36,9 +216,11 @@ jobs:
         run: npm ci
 
       - name: Run linting
+        if: ${{ !inputs.skip_tests && !github.event.inputs.skip_tests }}
         run: npm run lint
 
       - name: Run tests
+        if: ${{ !inputs.skip_tests && !github.event.inputs.skip_tests }}
         run: npm test
 
       - name: Build project
@@ -101,25 +283,16 @@ jobs:
 
           echo "✅ Package.json is valid for publishing"
 
-      - name: Sync version with git tag
+      - name: Sync package.json with release version
         run: |
-          if [[ "${{ inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-            # Extract version from tag (remove 'v' prefix)
-            TAG_VERSION="${{ inputs.version }}"
-            CLEAN_VERSION=${TAG_VERSION#v}
-            echo "Syncing package.json to tag version: $CLEAN_VERSION"
-            
-            # Update package.json to match tag
-            npm version $CLEAN_VERSION --no-git-tag-version
-            
-            echo "NEW_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
-            echo "Publishing version: $CLEAN_VERSION"
-          else
-            # Fallback to package.json version
-            CURRENT_VERSION=$(node -p "require('./package.json').version")
-            echo "NEW_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
-            echo "Publishing version: $CURRENT_VERSION"
-          fi
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "Syncing package.json to release version: $VERSION"
+
+          # Update package.json to match release version
+          npm version $VERSION --no-git-tag-version
+
+          echo "NEW_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "✅ Package.json updated to version: $VERSION"
 
       - name: Verify distribution package
         run: |
@@ -188,21 +361,60 @@ jobs:
           echo "✅ Package is ready for publishing"
 
       - name: Publish to NPM
+        if: ${{ !github.event.inputs.dry_run }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.version }}" = "prerelease" ]; then
-            echo "Publishing prerelease version..."
+          VERSION="${{ steps.version.outputs.version }}"
+
+          if [[ "${{ github.event.inputs.version_bump }}" == "prerelease" ]] || [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"alpha"* ]]; then
+            echo "Publishing prerelease version: $VERSION"
             npm publish --tag beta
+            PUBLISH_TAG="beta"
           else
-            echo "Publishing stable version..."
+            echo "Publishing stable version: $VERSION"
             npm publish
+            PUBLISH_TAG="latest"
           fi
 
-          echo "✅ Successfully published to NPM"
+          echo "✅ Successfully published to NPM with tag: $PUBLISH_TAG"
+          echo "NPM_PUBLISH_TAG=$PUBLISH_TAG" >> $GITHUB_ENV
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: Update GitHub Release with NPM info
+        if: ${{ !github.event.inputs.dry_run && steps.version.outputs.source == 'release_drafter' }}
+        run: |
+          RELEASE_ID="${{ needs.create-release.outputs.release-id }}"
+          VERSION="${{ steps.version.outputs.version }}"
+          PUBLISH_TAG="${{ env.NPM_PUBLISH_TAG }}"
+
+          # Get current release body
+          CURRENT_BODY=$(gh api repos/${{ github.repository }}/releases/$RELEASE_ID --jq '.body')
+
+          # Create NPM publication info using printf to avoid YAML linter issues
+          NPM_INFO=$(printf '\n\n## 📦 NPM Publication\n\nThis release has been published to NPM:\n\n- **Package**: [`mcp-adr-analysis-server@%s`](https://www.npmjs.com/package/mcp-adr-analysis-server/v/%s)\n- **Install**: `npm install -g mcp-adr-analysis-server@%s`\n- **Tag**: `%s`\n\n---\n🤖 NPM publication completed automatically' "$VERSION" "$VERSION" "$VERSION" "$PUBLISH_TAG")
+
+          # Combine current body with NPM info
+          UPDATED_BODY="${CURRENT_BODY}${NPM_INFO}"
+
+          # Update the release
+          gh api repos/${{ github.repository }}/releases/$RELEASE_ID \
+            --method PATCH \
+            --field body="$UPDATED_BODY"
+            
+          echo "✅ Updated GitHub release with NPM publication info"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Notify success
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          SOURCE="${{ steps.version.outputs.source }}"
+
           echo "🎉 Successfully published MCP ADR Analysis Server to NPM!"
           echo "📦 Package: https://www.npmjs.com/package/mcp-adr-analysis-server"
-          echo "🏷️ Version: ${{ env.NEW_VERSION || github.ref_name }}"
+          echo "🏷️ Version: $VERSION"
+          echo "📝 Source: $SOURCE"
+
+          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
+            echo "🧪 This was a dry run - no actual publication occurred"
+          fi
