@@ -3667,7 +3667,9 @@ This guidance ensures your development work is **architecturally aligned**, **qu
 
     try {
       // Import utilities dynamically to avoid circular dependencies
-      const { analyzeProjectStructure } = await import('./utils/file-system.js');
+      const { analyzeProjectStructureCompat: analyzeProjectStructure } = await import(
+        './utils/file-system.js'
+      );
 
       // Import advanced prompting utilities if enhanced mode is enabled
       let generateArchitecturalKnowledge: any = null;
@@ -4022,9 +4024,11 @@ The enhanced analysis should provide:
     const { filePath, includeCompliance = true } = args;
 
     try {
-      const { analyzeProjectStructure, fileExists, ensureDirectory } = await import(
-        './utils/file-system.js'
-      );
+      const {
+        analyzeProjectStructureCompat: analyzeProjectStructure,
+        fileExistsCompat: fileExists,
+        ensureDirectoryCompat: ensureDirectory,
+      } = await import('./utils/file-system.js');
       const path = await import('path');
 
       // Determine project path
@@ -4294,7 +4298,9 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
     );
 
     try {
-      const { readFileContent, fileExists } = await import('./utils/file-system.js');
+      const { readFileContentCompat: readFileContent, fileExistsCompat: fileExists } = await import(
+        './utils/file-system.js'
+      );
 
       // Import advanced prompting utilities if enhanced mode is enabled
       let generateArchitecturalKnowledge: any = null;

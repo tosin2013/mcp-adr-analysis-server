@@ -21,8 +21,10 @@ export async function generateArchitecturalKnowledgeGraph(
   projectPath: string
 ): Promise<ResourceGenerationResult> {
   try {
-    const { analyzeProjectStructure } = await import('../utils/file-system.js');
-    
+    const { analyzeProjectStructureCompat: analyzeProjectStructure } = await import(
+      '../utils/file-system.js'
+    );
+
     // Load knowledge graph data
     const kgManager = new KnowledgeGraphManager();
     const knowledgeGraphSnapshot = await kgManager.loadKnowledgeGraph();
@@ -224,15 +226,18 @@ Submit the prompt to generate the actual knowledge graph data.
               totalTools: intent.toolChain.length,
               completedTools: intent.toolChain.filter(t => t.success).length,
               failedTools: intent.toolChain.filter(t => !t.success).length,
-              lastExecution: intent.toolChain.length > 0 ? intent.toolChain[intent.toolChain.length - 1]?.executionTime || null : null
+              lastExecution:
+                intent.toolChain.length > 0
+                  ? intent.toolChain[intent.toolChain.length - 1]?.executionTime || null
+                  : null,
             },
             todoTasksCreated: intent.toolChain.flatMap(t => t.todoTasksCreated),
             todoTasksModified: intent.toolChain.flatMap(t => t.todoTasksModified),
-            hasSnapshots: !!intent.todoMdSnapshot
+            hasSnapshots: !!intent.todoMdSnapshot,
           })),
           todoSyncState: knowledgeGraphSnapshot.todoSyncState,
-          analytics: knowledgeGraphSnapshot.analytics
-        }
+          analytics: knowledgeGraphSnapshot.analytics,
+        },
       },
       contentType: 'application/json',
       lastModified: new Date().toISOString(),
@@ -255,7 +260,9 @@ export async function generateAnalysisReport(
   focusAreas?: string[]
 ): Promise<ResourceGenerationResult> {
   try {
-    const { analyzeProjectStructure } = await import('../utils/file-system.js');
+    const { analyzeProjectStructureCompat: analyzeProjectStructure } = await import(
+      '../utils/file-system.js'
+    );
 
     // Generate project analysis prompt for AI delegation
     const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
@@ -427,8 +434,8 @@ export async function generateAdrList(
     const basePath = projectPath || process.cwd();
 
     // Use absolute path for ADR directory
-    const absoluteAdrPath = path.isAbsolute(adrDirectory) 
-      ? adrDirectory 
+    const absoluteAdrPath = path.isAbsolute(adrDirectory)
+      ? adrDirectory
       : path.resolve(basePath, adrDirectory);
 
     // Use actual ADR discovery
@@ -577,7 +584,7 @@ Submit the prompt to generate the actual ADR list data.
         discoveredAdrs: discoveryResult.adrs.map(adr => ({
           title: adr.title,
           filename: adr.filename,
-          status: adr.status
+          status: adr.status,
         })),
       },
       contentType: 'application/json',
