@@ -38,6 +38,21 @@ import {
   type ServerConfig,
 } from './utils/config.js';
 import { KnowledgeGraphManager } from './utils/knowledge-graph-manager.js';
+import {
+  type GetWorkflowGuidanceArgs,
+  type GetArchitecturalContextArgs,
+  type GetDevelopmentGuidanceArgs,
+  type GenerateAdrFromDecisionArgs,
+  type ValidateRulesArgs,
+  type CreateRuleSetArgs,
+  type ToolChainOrchestratorArgs,
+  type ReadFileArgs,
+  type WriteFileArgs,
+  type GenerateArchitecturalKnowledgeFunction,
+  type ExecuteWithReflexionFunction,
+  type RetrieveRelevantMemoriesFunction,
+  type CreateToolReflexionConfigFunction,
+} from './types/tool-arguments.js';
 
 /**
  * Get version from package.json
@@ -2812,7 +2827,9 @@ export class McpAdrAnalysisServer {
             response = await this.analyzeProjectEcosystem(safeArgs);
             break;
           case 'get_architectural_context':
-            response = await this.getArchitecturalContext(safeArgs);
+            response = await this.getArchitecturalContext(
+              safeArgs as unknown as GetArchitecturalContextArgs
+            );
             break;
           case 'generate_adrs_from_prd':
             response = await this.generateAdrsFromPrd(safeArgs);
@@ -2848,7 +2865,9 @@ export class McpAdrAnalysisServer {
             response = await this.suggestAdrs(safeArgs);
             break;
           case 'generate_adr_from_decision':
-            response = await this.generateAdrFromDecision(safeArgs);
+            response = await this.generateAdrFromDecision(
+              safeArgs as unknown as GenerateAdrFromDecisionArgs
+            );
             break;
           case 'generate_adr_bootstrap':
             response = await this.generateAdrBootstrap(safeArgs);
@@ -2872,10 +2891,10 @@ export class McpAdrAnalysisServer {
             response = await this.generateRules(safeArgs);
             break;
           case 'validate_rules':
-            response = await this.validateRules(safeArgs);
+            response = await this.validateRules(safeArgs as unknown as ValidateRulesArgs);
             break;
           case 'create_rule_set':
-            response = await this.createRuleSet(safeArgs);
+            response = await this.createRuleSet(safeArgs as unknown as CreateRuleSetArgs);
             break;
           case 'analyze_environment':
             response = await this.analyzeEnvironment(safeArgs);
@@ -2890,16 +2909,20 @@ export class McpAdrAnalysisServer {
             response = await this.checkAIExecutionStatus(safeArgs);
             break;
           case 'get_workflow_guidance':
-            response = await this.getWorkflowGuidance(safeArgs);
+            response = await this.getWorkflowGuidance(
+              safeArgs as unknown as GetWorkflowGuidanceArgs
+            );
             break;
           case 'get_development_guidance':
-            response = await this.getDevelopmentGuidance(safeArgs);
+            response = await this.getDevelopmentGuidance(
+              safeArgs as unknown as GetDevelopmentGuidanceArgs
+            );
             break;
           case 'read_file':
-            response = await this.readFile(safeArgs);
+            response = await this.readFile(safeArgs as unknown as ReadFileArgs);
             break;
           case 'write_file':
-            response = await this.writeFile(safeArgs);
+            response = await this.writeFile(safeArgs as unknown as WriteFileArgs);
             break;
           case 'list_directory':
             response = await this.listDirectory(safeArgs);
@@ -2932,7 +2955,9 @@ export class McpAdrAnalysisServer {
             response = await this.interactiveAdrPlanning(safeArgs);
             break;
           case 'tool_chain_orchestrator':
-            response = await this.toolChainOrchestrator(safeArgs);
+            response = await this.toolChainOrchestrator(
+              safeArgs as unknown as ToolChainOrchestratorArgs
+            );
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -3176,7 +3201,7 @@ Verify these environment variables are set in your MCP configuration:
     }
   }
 
-  private async getWorkflowGuidance(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async getWorkflowGuidance(args: GetWorkflowGuidanceArgs): Promise<CallToolResult> {
     const {
       goal,
       projectContext,
@@ -3375,7 +3400,7 @@ This guidance is tailored to your specific context and goals for maximum effecti
     }
   }
 
-  private async getDevelopmentGuidance(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async getDevelopmentGuidance(args: GetDevelopmentGuidanceArgs): Promise<CallToolResult> {
     const {
       developmentPhase,
       adrsToImplement = [],
@@ -3647,7 +3672,7 @@ This guidance ensures your development work is **architecturally aligned**, **qu
 
   private async analyzeProjectEcosystem(args: Record<string, unknown>): Promise<CallToolResult> {
     // Use configured project path if not provided in args
-    const projectPath = args.projectPath || this.config.projectPath;
+    const projectPath = args['projectPath'] || this.config.projectPath;
     const {
       includePatterns,
       enhancedMode = true,
@@ -3669,7 +3694,7 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       `Enhancement features - Knowledge: ${knowledgeEnhancement}, Learning: ${learningEnabled}`
     );
     this.logger.info(
-      `Analysis scope: ${analysisScope.length > 0 ? analysisScope.join(', ') : 'Full ecosystem analysis'}`
+      `Analysis scope: ${(analysisScope as string[]).length > 0 ? (analysisScope as string[]).join(', ') : 'Full ecosystem analysis'}`
     );
 
     try {
@@ -3679,10 +3704,10 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       );
 
       // Import advanced prompting utilities if enhanced mode is enabled
-      let generateArchitecturalKnowledge: ((...args: unknown[]) => unknown) | null = null;
-      let executeWithReflexion: ((...args: unknown[]) => unknown) | null = null;
-      let retrieveRelevantMemories: ((...args: unknown[]) => unknown) | null = null;
-      let createToolReflexionConfig: ((...args: unknown[]) => unknown) | null = null;
+      let generateArchitecturalKnowledge: GenerateArchitecturalKnowledgeFunction | null = null;
+      let executeWithReflexion: ExecuteWithReflexionFunction | null = null;
+      let retrieveRelevantMemories: RetrieveRelevantMemoriesFunction | null = null;
+      let createToolReflexionConfig: CreateToolReflexionConfigFunction | null = null;
 
       if (enhancedMode) {
         if (knowledgeEnhancement) {
@@ -4027,7 +4052,9 @@ The enhanced analysis should provide:
     }
   }
 
-  private async getArchitecturalContext(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async getArchitecturalContext(
+    args: GetArchitecturalContextArgs
+  ): Promise<CallToolResult> {
     const { filePath, includeCompliance = true } = args;
 
     try {
@@ -6135,7 +6162,9 @@ Please provide:
     return await suggestAdrs(args);
   }
 
-  private async generateAdrFromDecision(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async generateAdrFromDecision(
+    args: GenerateAdrFromDecisionArgs
+  ): Promise<CallToolResult> {
     const { generateAdrFromDecision } = await import('./tools/adr-suggestion-tool.js');
     return await generateAdrFromDecision(args);
   }
@@ -6183,12 +6212,12 @@ Please provide:
     return await generateRules(args);
   }
 
-  private async validateRules(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async validateRules(args: ValidateRulesArgs): Promise<CallToolResult> {
     const { validateRules } = await import('./tools/rule-generation-tool.js');
     return await validateRules(args);
   }
 
-  private async createRuleSet(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async createRuleSet(args: CreateRuleSetArgs): Promise<CallToolResult> {
     const { createRuleSet } = await import('./tools/rule-generation-tool.js');
     return await createRuleSet(args);
   }
@@ -6576,8 +6605,8 @@ Please provide:
   /**
    * File system tool implementations
    */
-  private async readFile(args: Record<string, unknown>): Promise<CallToolResult> {
-    const { path: filePath } = args;
+  private async readFile(args: ReadFileArgs): Promise<CallToolResult> {
+    const { filePath } = args;
 
     try {
       const fs = await import('fs/promises');
@@ -6609,8 +6638,8 @@ Please provide:
     }
   }
 
-  private async writeFile(args: Record<string, unknown>): Promise<CallToolResult> {
-    const { path: filePath, content } = args;
+  private async writeFile(args: WriteFileArgs): Promise<CallToolResult> {
+    const { filePath, content } = args;
 
     try {
       const fs = await import('fs/promises');
@@ -6837,7 +6866,7 @@ This tool has been deprecated and replaced with memory-centric health scoring.
   /**
    * Tool chain orchestrator implementation
    */
-  private async toolChainOrchestrator(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async toolChainOrchestrator(args: ToolChainOrchestratorArgs): Promise<CallToolResult> {
     try {
       const { toolChainOrchestrator } = await import('./tools/tool-chain-orchestrator.js');
       return await toolChainOrchestrator(args);
