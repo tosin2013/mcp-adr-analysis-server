@@ -8,25 +8,47 @@
 import { basename, dirname } from 'path';
 import { TreeSitterAnalyzer, type CodeAnalysisResult } from './tree-sitter-analyzer.js';
 
+/**
+ * Rule for validating file locations based on type and content
+ */
 export interface LocationRule {
+  /** Name of the location rule */
   name: string;
+  /** Description of what the rule validates */
   description: string;
+  /** Pattern to match file names */
   filePattern: RegExp;
+  /** Optional pattern to match file content */
   contentPattern?: RegExp;
+  /** Paths where files matching this rule are allowed */
   allowedPaths: string[];
+  /** Paths where files matching this rule are blocked */
   blockedPaths: string[];
+  /** Severity level of violations */
   severity: 'error' | 'warning' | 'info';
+  /** Category of the rule */
   category: 'development' | 'security' | 'temporary' | 'testing';
 }
 
+/**
+ * Result of location validation for a file
+ */
 export interface LocationValidationResult {
+  /** Whether the file location is valid */
   isValid: boolean;
+  /** Rule that was matched (if any) */
   rule?: LocationRule;
+  /** Current path of the file */
   currentPath: string;
+  /** Suggested alternative paths */
   suggestedPaths: string[];
+  /** Severity of the validation result */
   severity: 'error' | 'warning' | 'info';
+  /** Human-readable validation message */
   message: string;
+  /** Tree-sitter analysis results (if available) */
   treeSitterAnalysis?: CodeAnalysisResult;
+  /** AI-powered intelligent reasons for the validation */
   intelligentReasons?: string[];
 }
 

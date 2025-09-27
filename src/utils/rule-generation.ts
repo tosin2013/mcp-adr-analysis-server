@@ -83,8 +83,11 @@ Based on actual ADR file analysis, here are the discovered ADRs with their full 
 
 ## Discovered ADRs (${discoveryResult.totalAdrs} total)
 
-${discoveryResult.adrs.length > 0 ? 
-  discoveryResult.adrs.map((adr, index) => `
+${
+  discoveryResult.adrs.length > 0
+    ? discoveryResult.adrs
+        .map(
+          (adr, index) => `
 ### ${index + 1}. ${adr.title}
 - **File**: ${adr.filename}
 - **Status**: ${adr.status}
@@ -97,13 +100,21 @@ ${adr.content || 'Content not available'}
 \`\`\`
 
 ---
-`).join('\n') : 'No ADRs found in the specified directory.'}
+`
+        )
+        .join('\n')
+    : 'No ADRs found in the specified directory.'
+}
 
 ## Existing Rules Context
 
-${existingRules && existingRules.length > 0 ? `
+${
+  existingRules && existingRules.length > 0
+    ? `
 ### Current Rules (${existingRules.length})
-${existingRules.map((rule, index) => `
+${existingRules
+  .map(
+    (rule, index) => `
 #### ${index + 1}. ${rule.name}
 - **ID**: ${rule.id}
 - **Description**: ${rule.description}
@@ -111,8 +122,12 @@ ${existingRules.map((rule, index) => `
 - **Severity**: ${rule.severity}
 - **Type**: ${rule.type}
 - **Scope**: ${rule.scope}
-`).join('')}
-` : 'No existing rules provided.'}
+`
+  )
+  .join('')}
+`
+    : 'No existing rules provided.'
+}
 
 ## Rule Extraction Requirements
 
@@ -184,9 +199,9 @@ Each extracted rule should be:
         summary: {
           totalAdrs: discoveryResult.totalAdrs,
           byStatus: discoveryResult.summary.byStatus,
-          byCategory: discoveryResult.summary.byCategory
-        }
-      }
+          byCategory: discoveryResult.summary.byCategory,
+        },
+      },
     };
   } catch (error) {
     throw new McpAdrError(
@@ -204,7 +219,9 @@ export async function generateRulesFromPatterns(
   existingRules?: string[]
 ): Promise<{ generationPrompt: string; instructions: string }> {
   try {
-    const { analyzeProjectStructure } = await import('./file-system.js');
+    const { analyzeProjectStructureCompat: analyzeProjectStructure } = await import(
+      './file-system.js'
+    );
 
     // Generate project analysis prompt for AI delegation
     const projectAnalysisPrompt = await analyzeProjectStructure(projectPath);
@@ -224,12 +241,20 @@ ${projectAnalysisPrompt.instructions}
 
 ## Existing Rules Context
 
-${existingRules ? `
+${
+  existingRules
+    ? `
 ### Current Rules (${existingRules.length})
-${existingRules.map((rule, index) => `
+${existingRules
+  .map(
+    (rule, index) => `
 #### ${index + 1}. ${rule}
-`).join('')}
-` : 'No existing rules provided.'}
+`
+  )
+  .join('')}
+`
+    : 'No existing rules provided.'
+}
 
 ## Pattern Analysis Requirements
 

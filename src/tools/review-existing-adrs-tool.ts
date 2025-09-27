@@ -351,6 +351,7 @@ ${
 
 /**
  * Analyze code structure to understand current implementation
+ * Enhanced with fast-glob for efficient file discovery
  */
 async function analyzeCodeStructure(
   projectPath: string,
@@ -369,37 +370,59 @@ async function analyzeCodeStructure(
   };
 
   try {
-    // Basic file system analysis
-    const files = await findSourceFiles(projectPath);
-    result.files = files;
+    // Enhanced file system analysis using fast-glob
+    const { analyzeProjectStructure } = await import('../utils/file-system.js');
 
-    // Technology detection
-    result.technologies = await detectTechnologies(projectPath);
+    // Use the new analyzeProjectStructure function for comprehensive analysis
+    const projectAnalysis = await analyzeProjectStructure(projectPath);
 
-    // Pattern detection
-    result.patterns = await detectArchitecturalPatterns(files);
+    // Extract file paths from the analysis
+    result.files = projectAnalysis.files.map(f => f.path);
+    result.technologies = projectAnalysis.technologies;
+    result.patterns = projectAnalysis.patterns;
+
+    // Legacy pattern detection for backward compatibility
+    const legacyPatterns = await detectArchitecturalPatterns(result.files);
+    result.patterns = [...new Set([...result.patterns, ...legacyPatterns])];
 
     // If tree-sitter is enabled, perform detailed analysis
     if (useTreeSitter) {
-      const detailedAnalysis = await performTreeSitterAnalysis(files);
+      const detailedAnalysis = await performTreeSitterAnalysis(result.files);
       result.architecturalElements = detailedAnalysis;
     }
 
     return result;
   } catch (error) {
-    console.warn('Code analysis warning:', error);
+    console.warn('Enhanced code analysis failed, falling back to legacy:', error);
+
+    // Fallback to legacy implementation
+    try {
+      const files = await findSourceFiles(projectPath);
+      result.files = files;
+      result.technologies = await detectTechnologies(projectPath);
+      result.patterns = await detectArchitecturalPatterns(files);
+
+      if (useTreeSitter) {
+        const detailedAnalysis = await performTreeSitterAnalysis(files);
+        result.architecturalElements = detailedAnalysis;
+      }
+    } catch (fallbackError) {
+      console.warn('Legacy code analysis also failed:', fallbackError);
+    }
+
     return result;
   }
 }
 
 /**
  * Review a single ADR against code implementation
+ * Enhanced with Smart Code Linking to find related files
  */
 async function reviewSingleAdr(
   adr: any,
   codeAnalysis: CodeAnalysisResult,
   depth: string,
-  _projectPath: string
+  projectPath: string
 ): Promise<AdrReviewResult> {
   const result: AdrReviewResult = {
     adrPath: adr.path,
@@ -426,17 +449,67 @@ async function reviewSingleAdr(
     // Parse ADR content for key architectural elements
     const adrElements = extractAdrElements(adr.content || '');
 
-    // Compare ADR elements with code implementation
-    const complianceAnalysis = await analyzeCompliance(adrElements, codeAnalysis);
+    // SMART CODE LINKING: Find related code files for this specific ADR
+    let relatedFiles: any[] = [];
+    try {
+      const { findRelatedCode } = await import('../utils/file-system.js');
+      const relatedCodeResult = await findRelatedCode(adr.path, adr.content || '', projectPath, {
+        useAI: true,
+        useRipgrep: true,
+        maxFiles: 25,
+        includeContent: false,
+      });
 
-    result.codeCompliance = complianceAnalysis;
-    result.complianceScore = calculateComplianceScore(complianceAnalysis);
+      relatedFiles = relatedCodeResult.relatedFiles;
 
-    // Generate recommendations
-    result.recommendations = generateRecommendations(complianceAnalysis, result.complianceScore);
+      // Add Smart Code Linking results to evidence
+      if (relatedFiles.length > 0) {
+        result.codeCompliance.evidence.push(
+          `Smart Code Linking found ${relatedFiles.length} related files (confidence: ${(relatedCodeResult.confidence * 100).toFixed(0)}%)`
+        );
 
-    // Generate detailed analysis
-    result.analysis = generateDetailedAnalysis(adrElements, complianceAnalysis, depth);
+        // Add top related files as evidence
+        const topFiles = relatedFiles.slice(0, 5);
+        topFiles.forEach(file => {
+          result.codeCompliance.evidence.push(`Related: ${file.path}`);
+        });
+      } else {
+        result.codeCompliance.gaps.push('No related code files found using Smart Code Linking');
+      }
+    } catch (error) {
+      console.warn('Smart Code Linking failed:', error);
+      result.codeCompliance.gaps.push('Smart Code Linking unavailable - manual review required');
+    }
+
+    // Compare ADR elements with code implementation (enhanced with related files)
+    const complianceAnalysis = await analyzeCompliance(adrElements, codeAnalysis, relatedFiles);
+
+    // Merge Smart Code Linking evidence with compliance analysis
+    result.codeCompliance.evidence.push(...complianceAnalysis.evidence);
+    result.codeCompliance.gaps.push(...complianceAnalysis.gaps);
+    result.codeCompliance.implemented = complianceAnalysis.implemented || relatedFiles.length > 0;
+    result.codeCompliance.partiallyImplemented =
+      complianceAnalysis.partiallyImplemented ||
+      (relatedFiles.length > 0 && relatedFiles.length < 5);
+    result.codeCompliance.notImplemented =
+      complianceAnalysis.notImplemented && relatedFiles.length === 0;
+
+    result.complianceScore = calculateComplianceScore(result.codeCompliance);
+
+    // Generate recommendations (enhanced with Smart Code Linking insights)
+    result.recommendations = generateRecommendations(
+      result.codeCompliance,
+      result.complianceScore,
+      relatedFiles
+    );
+
+    // Generate detailed analysis (include Smart Code Linking results)
+    result.analysis = generateDetailedAnalysis(
+      adrElements,
+      result.codeCompliance,
+      depth,
+      relatedFiles
+    );
 
     return result;
   } catch (error) {
@@ -517,7 +590,11 @@ function extractMatches(content: string, patterns: RegExp[]): string[] {
 /**
  * Analyze compliance between ADR and code
  */
-async function analyzeCompliance(adrElements: any, codeAnalysis: CodeAnalysisResult): Promise<any> {
+async function analyzeCompliance(
+  adrElements: any,
+  codeAnalysis: CodeAnalysisResult,
+  relatedFiles: any[] = []
+): Promise<any> {
   const compliance: any = {
     implemented: false,
     partiallyImplemented: false,
@@ -545,6 +622,48 @@ async function analyzeCompliance(adrElements: any, codeAnalysis: CodeAnalysisRes
   const missingTechs = adrTechs.filter((tech: string) => !techMatches.includes(tech));
   if (missingTechs.length > 0) {
     compliance.gaps.push(`Missing technologies: ${missingTechs.join(', ')}`);
+  }
+
+  // Smart Code Linking analysis: check if related files provide additional evidence
+  if (relatedFiles.length > 0) {
+    compliance.evidence.push(
+      `Smart Code Linking identified ${relatedFiles.length} potentially related files`
+    );
+
+    // Analyze file extensions to infer technologies used in related files
+    const relatedExtensions = [...new Set(relatedFiles.map((f: any) => f.extension))];
+    const relatedTechHints = relatedExtensions
+      .map(ext => {
+        switch (ext) {
+          case '.ts':
+          case '.tsx':
+            return 'TypeScript';
+          case '.js':
+          case '.jsx':
+            return 'JavaScript';
+          case '.py':
+            return 'Python';
+          case '.java':
+            return 'Java';
+          case '.cs':
+            return 'C#';
+          case '.go':
+            return 'Go';
+          case '.rs':
+            return 'Rust';
+          default:
+            return null;
+        }
+      })
+      .filter(Boolean);
+
+    if (relatedTechHints.length > 0) {
+      compliance.evidence.push(
+        `Related files suggest technologies: ${relatedTechHints.join(', ')}`
+      );
+    }
+  } else {
+    compliance.gaps.push('No related files found - implementation may not exist');
   }
 
   // Check API implementation
@@ -587,7 +706,7 @@ function calculateComplianceScore(compliance: any): number {
 /**
  * Generate recommendations based on compliance analysis
  */
-function generateRecommendations(compliance: any, score: number): any {
+function generateRecommendations(compliance: any, score: number, relatedFiles: any[] = []): any {
   const recommendations: any = {
     updateAdr: false,
     updateCode: false,
@@ -611,13 +730,33 @@ function generateRecommendations(compliance: any, score: number): any {
     recommendations.actions.push('Update ADR to reflect current implementation');
   }
 
+  // Smart Code Linking enhancements
+  if (relatedFiles.length > 0) {
+    recommendations.actions.push(
+      `Review ${relatedFiles.length} related files identified by Smart Code Linking`
+    );
+
+    if (relatedFiles.length > 10) {
+      recommendations.actions.push(
+        'Consider refactoring - many files may indicate coupling issues'
+      );
+    }
+  } else {
+    recommendations.actions.push('Use Smart Code Linking to identify implementation files');
+  }
+
   return recommendations;
 }
 
 /**
  * Generate detailed analysis text
  */
-function generateDetailedAnalysis(adrElements: any, compliance: any, depth: string): string {
+function generateDetailedAnalysis(
+  adrElements: any,
+  compliance: any,
+  depth: string,
+  relatedFiles: any[] = []
+): string {
   let analysis = '';
 
   if (depth === 'comprehensive') {
@@ -627,6 +766,17 @@ function generateDetailedAnalysis(adrElements: any, compliance: any, depth: stri
 - APIs referenced: ${adrElements.apis?.length || 0}
 - Implementation evidence: ${compliance.evidence.length}
 - Identified gaps: ${compliance.gaps.length}
+
+**Smart Code Linking Results:**
+- Related files found: ${relatedFiles.length}
+${
+  relatedFiles.length > 0
+    ? `- Top related files:\n${relatedFiles
+        .slice(0, 3)
+        .map((f: any) => `  • ${f.path} (${f.name})`)
+        .join('\n')}`
+    : '- No related files identified'
+}
 
 **Compliance Details:**
 ${compliance.evidence.map((e: string) => `✅ ${e}`).join('\n')}
@@ -639,7 +789,7 @@ ${compliance.gaps.map((g: string) => `❌ ${g}`).join('\n')}
         : compliance.partiallyImplemented
           ? 'Partially implemented'
           : 'Not implemented'
-    }`;
+    }. Smart Code Linking found ${relatedFiles.length} related files.`;
   }
 
   return analysis;
