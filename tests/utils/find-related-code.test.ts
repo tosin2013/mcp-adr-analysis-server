@@ -3,8 +3,6 @@
  * Simplified integration-style tests to avoid complex mocking issues
  */
 
-import { jest } from '@jest/globals';
-
 describe('Smart Code Linking - findRelatedCode', () => {
   // Simple importability test to start
   it('should be importable without errors', async () => {
