@@ -3,8 +3,6 @@
  * Tests the refactored findFiles function using fast-glob
  */
 
-import { jest } from '@jest/globals';
-
 describe('File System Utilities', () => {
   // Simple importability test to start
   it('should be importable without errors', async () => {
