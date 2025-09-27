@@ -9,52 +9,83 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@j
 const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
 
+// Mock Smart Code Linking to eliminate complex async operations
+jest.mock('../../src/utils/file-system.js', () => ({
+  findFiles: jest.fn().mockResolvedValue([]),
+  findRelatedCode: jest.fn().mockResolvedValue({
+    relatedFiles: [],
+    analysis: '',
+    metadata: {
+      searchTerms: [],
+      includePatterns: [],
+      totalFilesScanned: 0,
+      matchingFiles: 0,
+    },
+  }),
+}));
+
+// Mock tree-sitter analyzer to eliminate native binary loading issues
+jest.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
+  TreeSitterAnalyzer: jest.fn().mockImplementation(() => ({
+    initializeParsers: jest.fn().mockResolvedValue(undefined),
+    analyzeCode: jest.fn().mockResolvedValue({
+      functions: [],
+      classes: [],
+      imports: [],
+      exports: [],
+      errors: [],
+    }),
+  })),
+}));
+
 describe('Troubleshoot Guided Workflow Tool', () => {
   let troubleshootGuidedWorkflow: any;
-  
+
   beforeAll(async () => {
     // Import after all mocks are set up
     const module = await import('../../src/tools/troubleshoot-guided-workflow-tool.js');
     troubleshootGuidedWorkflow = module.troubleshootGuidedWorkflow;
   });
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Set environment variables for AI config
     process.env['OPENROUTER_API_KEY'] = 'test-key';
     process.env['EXECUTION_MODE'] = 'prompt-only'; // Default to prompt-only to avoid AI calls
-    
+
     // Default fetch mock for successful AI responses (when needed)
     mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
       json: async () => ({
-        choices: [{
-          message: {
-            content: JSON.stringify({
-              testPlan: {
-                summary: 'AI analysis of the failure',
-                priority: 'high',
-                testSections: [
-                  {
-                    title: 'Test Section',
-                    description: 'Test description',
-                    commands: [
-                      {
-                        command: 'npm test',
-                        description: 'Run tests',
-                        expected: 'All tests pass'
-                      }
-                    ]
-                  }
-                ],
-                followupInstructions: ['Run tests', 'Report results']
-              }
-            })
-          }
-        }]
-      })
+        choices: [
+          {
+            message: {
+              content: JSON.stringify({
+                testPlan: {
+                  summary: 'AI analysis of the failure',
+                  priority: 'high',
+                  testSections: [
+                    {
+                      title: 'Test Section',
+                      description: 'Test description',
+                      commands: [
+                        {
+                          command: 'npm test',
+                          description: 'Run tests',
+                          expected: 'All tests pass',
+                        },
+                      ],
+                    },
+                  ],
+                  followupInstructions: ['Run tests', 'Report results'],
+                },
+              }),
+            },
+          },
+        ],
+      }),
     } as Response);
   });
 
@@ -74,9 +105,9 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           failureDetails: {
             errorMessage: 'Test failed with assertion error',
             command: 'npm test',
-            exitCode: 1
-          }
-        }
+            exitCode: 1,
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(validInput);
@@ -94,10 +125,10 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           failureType: 'deployment_failure',
           failureDetails: {
             errorMessage: 'Deployment failed due to missing environment variables',
-            environment: 'production'
-          }
+            environment: 'production',
+          },
         },
-        projectPath: '/tmp/test-project'
+        projectPath: '/tmp/test-project',
       };
 
       const result = await troubleshootGuidedWorkflow(validInput);
@@ -110,7 +141,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         operation: 'full_workflow',
         projectPath: '/tmp/test-project',
         adrDirectory: 'docs/adrs',
-        todoPath: 'TODO.md'
+        todoPath: 'TODO.md',
       };
 
       const result = await troubleshootGuidedWorkflow(validInput);
@@ -121,7 +152,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
     it('should reject invalid operation', async () => {
       const invalidInput = {
         operation: 'invalid_operation',
-        projectPath: '/tmp/test-project'
+        projectPath: '/tmp/test-project',
       };
 
       await expect(troubleshootGuidedWorkflow(invalidInput)).rejects.toThrow('Invalid input');
@@ -130,24 +161,28 @@ describe('Troubleshoot Guided Workflow Tool', () => {
     it('should reject analyze_failure without failure info', async () => {
       const invalidInput = {
         operation: 'analyze_failure',
-        projectPath: '/tmp/test-project'
+        projectPath: '/tmp/test-project',
       };
 
-      await expect(troubleshootGuidedWorkflow(invalidInput)).rejects.toThrow('Failure information is required');
+      await expect(troubleshootGuidedWorkflow(invalidInput)).rejects.toThrow(
+        'Failure information is required'
+      );
     });
 
     it('should reject generate_test_plan without failure info', async () => {
       const invalidInput = {
         operation: 'generate_test_plan',
-        projectPath: '/tmp/test-project'
+        projectPath: '/tmp/test-project',
       };
 
-      await expect(troubleshootGuidedWorkflow(invalidInput)).rejects.toThrow('Failure information is required');
+      await expect(troubleshootGuidedWorkflow(invalidInput)).rejects.toThrow(
+        'Failure information is required'
+      );
     });
 
     it('should use default values for optional parameters', async () => {
       const minimalInput = {
-        operation: 'full_workflow'
+        operation: 'full_workflow',
       };
 
       const result = await troubleshootGuidedWorkflow(minimalInput);
@@ -161,9 +196,9 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'invalid_failure_type',
           failureDetails: {
-            errorMessage: 'Some error'
-          }
-        }
+            errorMessage: 'Some error',
+          },
+        },
       };
 
       await expect(troubleshootGuidedWorkflow(invalidInput)).rejects.toThrow('Invalid input');
@@ -184,20 +219,20 @@ describe('Troubleshoot Guided Workflow Tool', () => {
             logOutput: 'FAIL src/example.test.js\n  ✗ should return hello',
             environment: 'CI',
             timestamp: '2024-01-15T10:30:00Z',
-            affectedFiles: ['src/example.js', 'src/example.test.js']
+            affectedFiles: ['src/example.js', 'src/example.test.js'],
           },
           context: {
             recentChanges: 'Updated string return value in example.js',
             reproducible: true,
             frequency: 'always',
-            impact: 'high'
-          }
-        }
+            impact: 'high',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('🚨 Failure Analysis');
       expect(text).toContain('TEST_FAILURE');
       expect(text).toContain('Expected "hello" but got "world"');
@@ -228,17 +263,17 @@ describe('Troubleshoot Guided Workflow Tool', () => {
             command: 'kubectl apply -f deployment.yaml',
             exitCode: 1,
             environment: 'production',
-            timestamp: '2024-01-15T10:30:00Z'
+            timestamp: '2024-01-15T10:30:00Z',
           },
           context: {
-            impact: 'critical'
-          }
-        }
+            impact: 'critical',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('DEPLOYMENT_FAILURE');
       expect(text).toContain('Database connection timeout');
       expect(text).toContain('Verify deployment configuration');
@@ -254,14 +289,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           failureDetails: {
             errorMessage: 'TypeScript compilation error: Property does not exist',
             command: 'npm run build',
-            exitCode: 2
-          }
-        }
+            exitCode: 2,
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('BUILD_FAILURE');
       expect(text).toContain('TypeScript compilation error');
       expect(text).toContain('Check build dependencies');
@@ -275,14 +310,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           failureType: 'runtime_error',
           failureDetails: {
             errorMessage: 'Uncaught ReferenceError: variable is not defined',
-            stackTrace: 'ReferenceError: variable is not defined\n    at app.js:25:10'
-          }
-        }
+            stackTrace: 'ReferenceError: variable is not defined\n    at app.js:25:10',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('RUNTIME_ERROR');
       expect(text).toContain('Uncaught ReferenceError');
       expect(text).toContain('Reproduce the error');
@@ -296,14 +331,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           failureType: 'performance_issue',
           failureDetails: {
             errorMessage: 'Page load time exceeds 5 seconds',
-            environment: 'production'
-          }
-        }
+            environment: 'production',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('PERFORMANCE_ISSUE');
       expect(text).toContain('Page load time exceeds 5 seconds');
       expect(text).toContain('Gather additional diagnostic information');
@@ -315,14 +350,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'security_issue',
           failureDetails: {
-            errorMessage: 'Vulnerable dependency detected: lodash@4.0.0'
-          }
-        }
+            errorMessage: 'Vulnerable dependency detected: lodash@4.0.0',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('SECURITY_ISSUE');
       expect(text).toContain('Vulnerable dependency detected');
     });
@@ -333,14 +368,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'other',
           failureDetails: {
-            errorMessage: 'Something went wrong'
-          }
-        }
+            errorMessage: 'Something went wrong',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('OTHER');
       expect(text).toContain('Something went wrong');
       expect(text).toContain('Gather additional diagnostic information');
@@ -352,14 +387,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'test_failure',
           failureDetails: {
-            errorMessage: 'Test failed'
-          }
-        }
+            errorMessage: 'Test failed',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('Test failed');
       expect(text).not.toContain('Recent Changes');
       expect(text).not.toContain('Impact Level');
@@ -370,7 +405,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
     it('should generate AI-powered test plan successfully', async () => {
       // Enable AI execution for this test
       process.env['EXECUTION_MODE'] = 'full';
-      
+
       const input = {
         operation: 'generate_test_plan',
         failure: {
@@ -378,15 +413,15 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           failureDetails: {
             errorMessage: 'Jest test suite failed',
             command: 'npm test',
-            exitCode: 1
-          }
+            exitCode: 1,
+          },
         },
-        projectPath: '/tmp/test-project'
+        projectPath: '/tmp/test-project',
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('🧪 AI-Generated Test Plan');
       expect(text).toContain('Analysis Summary');
       expect(text).toContain('AI analysis of the failure');
@@ -399,20 +434,23 @@ describe('Troubleshoot Guided Workflow Tool', () => {
       expect(text).toContain('Report results');
       expect(text).toContain('/tmp/test-project');
       expect(text).toContain('This test plan was generated by AI');
-      
+
       expect(mockFetch).toHaveBeenCalledWith(
         'https://openrouter.ai/api/v1/chat/completions',
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
-            'Authorization': 'Bearer test-key',
-            'Content-Type': 'application/json'
-          })
+            Authorization: 'Bearer test-key',
+            'Content-Type': 'application/json',
+          }),
         })
       );
     });
 
     it('should handle AI API errors and fallback to template', async () => {
+      // Increase timeout for this specific test to prevent CI timeouts
+      jest.setTimeout(30000);
+
       // Enable AI execution but make it fail
       process.env['EXECUTION_MODE'] = 'full';
       mockFetch.mockRejectedValue(new Error('Network error'));
@@ -423,15 +461,15 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           failureType: 'build_failure',
           failureDetails: {
             errorMessage: 'Build compilation failed',
-            command: 'npm run build'
-          }
+            command: 'npm run build',
+          },
         },
-        projectPath: '/tmp/test-project'
+        projectPath: '/tmp/test-project',
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('🧪 Test Plan Generation (Fallback)');
       expect(text).toContain('BUILD_FAILURE');
       expect(text).toContain('Clean and Rebuild');
@@ -446,14 +484,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'deployment_failure',
           failureDetails: {
-            errorMessage: 'Deployment failed'
-          }
-        }
+            errorMessage: 'Deployment failed',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('Test Plan Generation (Fallback)');
       expect(text).toContain('DEPLOYMENT_FAILURE');
       expect(mockFetch).not.toHaveBeenCalled();
@@ -465,12 +503,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         ok: true,
         status: 200,
         json: async () => ({
-          choices: [{
-            message: {
-              content: 'invalid json{'
-            }
-          }]
-        })
+          choices: [
+            {
+              message: {
+                content: 'invalid json{',
+              },
+            },
+          ],
+        }),
       } as Response);
 
       const input = {
@@ -478,14 +518,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'test_failure',
           failureDetails: {
-            errorMessage: 'Test failed'
-          }
-        }
+            errorMessage: 'Test failed',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('Test Plan Generation (Fallback)');
     });
 
@@ -494,7 +534,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
       mockFetch.mockResolvedValue({
         ok: false,
         status: 500,
-        json: async () => ({ error: 'Server error' })
+        json: async () => ({ error: 'Server error' }),
       } as Response);
 
       const input = {
@@ -502,14 +542,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'runtime_error',
           failureDetails: {
-            errorMessage: 'Runtime error occurred'
-          }
-        }
+            errorMessage: 'Runtime error occurred',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('Test Plan Generation (Fallback)');
       expect(text).toContain('RUNTIME_ERROR');
     });
@@ -520,8 +560,8 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         ok: true,
         status: 200,
         json: async () => ({
-          choices: []
-        })
+          choices: [],
+        }),
       } as Response);
 
       const input = {
@@ -529,14 +569,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'test_failure',
           failureDetails: {
-            errorMessage: 'Test failed'
-          }
-        }
+            errorMessage: 'Test failed',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('Test Plan Generation (Fallback)');
     });
   });
@@ -551,15 +591,15 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           failureType: 'test_failure',
           failureDetails: {
             errorMessage: 'Test assertion failed',
-            command: 'jest src/test.js'
-          }
+            command: 'jest src/test.js',
+          },
         },
-        projectPath: '/project'
+        projectPath: '/project',
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('1. Run Failing Tests');
       expect(text).toContain('jest src/test.js');
       expect(text).toContain('2. Check Test Environment');
@@ -574,14 +614,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           failureType: 'deployment_failure',
           failureDetails: {
             errorMessage: 'Deployment error',
-            command: 'docker deploy'
-          }
-        }
+            command: 'docker deploy',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('1. Verify Deployment Environment');
       expect(text).toContain('df -h');
       expect(text).toContain('free -m');
@@ -595,14 +635,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'build_failure',
           failureDetails: {
-            errorMessage: 'Build failed'
-          }
-        }
+            errorMessage: 'Build failed',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('1. Clean and Rebuild');
       expect(text).toContain('npm run clean');
       expect(text).toContain('rm -rf node_modules');
@@ -616,14 +656,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'runtime_error',
           failureDetails: {
-            errorMessage: 'Runtime error'
-          }
-        }
+            errorMessage: 'Runtime error',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('1. Reproduce in Debug Mode');
       expect(text).toContain('NODE_ENV=development npm start');
       expect(text).toContain('DEBUG=* npm start');
@@ -637,15 +677,15 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'other',
           failureDetails: {
-            errorMessage: 'Unknown error'
-          }
+            errorMessage: 'Unknown error',
+          },
         },
-        projectPath: '/custom/path'
+        projectPath: '/custom/path',
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('1. General Diagnostic Commands');
       expect(text).toContain('ls -la /custom/path');
       expect(text).toContain('cat package.json | jq .scripts');
@@ -659,12 +699,12 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         operation: 'full_workflow',
         projectPath: '/tmp/project',
         adrDirectory: 'docs/adrs',
-        todoPath: 'TODO.md'
+        todoPath: 'TODO.md',
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('🔧 Guided Troubleshooting Workflow');
       expect(text).toContain('Workflow Overview');
       expect(text).toContain('✅ Issue collected and understood');
@@ -673,7 +713,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
       expect(text).toContain('🔄 Generate targeted questions');
       expect(text).toContain('🔄 ADR validation');
       expect(text).toContain('🔄 Guided recommendations');
-      
+
       expect(text).toContain('Step 2: Baseline Reality Check');
       expect(text).toContain('compare_adr_progress');
       expect(text).toContain('Step 3: TODO Alignment Analysis');
@@ -681,7 +721,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
       expect(text).toContain('Step 4: Targeted Analysis');
       expect(text).toContain('generate_research_questions');
       expect(text).toContain('Step 5: Resolution Planning');
-      
+
       expect(text).toContain('Integration Notes');
       expect(text).toContain('This workflow is designed to integrate with existing MCP tools');
       expect(text).toContain('alignment with documented architectural decisions');
@@ -689,12 +729,12 @@ describe('Troubleshoot Guided Workflow Tool', () => {
 
     it('should handle full workflow with minimal input', async () => {
       const input = {
-        operation: 'full_workflow'
+        operation: 'full_workflow',
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('Guided Troubleshooting Workflow');
       expect(text).toContain('Integration Notes');
     });
@@ -706,8 +746,8 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         operation: 'analyze_failure',
         failure: {
           failureType: 'invalid_type',
-          failureDetails: 'invalid structure'
-        }
+          failureDetails: 'invalid structure',
+        },
       };
 
       await expect(troubleshootGuidedWorkflow(invalidInput)).rejects.toThrow('Invalid input');
@@ -716,7 +756,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
     it('should handle unknown operation gracefully', async () => {
       const invalidInput = {
         operation: 'unknown_operation',
-        projectPath: '/tmp/test'
+        projectPath: '/tmp/test',
       };
 
       await expect(troubleshootGuidedWorkflow(invalidInput)).rejects.toThrow('Invalid input');
@@ -724,10 +764,12 @@ describe('Troubleshoot Guided Workflow Tool', () => {
 
     it('should handle missing required failure info', async () => {
       const invalidInput = {
-        operation: 'analyze_failure'
+        operation: 'analyze_failure',
       };
 
-      await expect(troubleshootGuidedWorkflow(invalidInput)).rejects.toThrow('Failure information is required');
+      await expect(troubleshootGuidedWorkflow(invalidInput)).rejects.toThrow(
+        'Failure information is required'
+      );
     });
 
     it('should handle general errors in analysis', async () => {
@@ -741,16 +783,16 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'test_failure',
           failureDetails: {
-            errorMessage: 'Test failed'
-          }
-        }
+            errorMessage: 'Test failed',
+          },
+        },
       };
 
       // Should fall back to prompt-only mode and work
       const result = await troubleshootGuidedWorkflow(input);
       expect(result).toBeDefined();
       expect(result.content[0].text).toContain('Test Plan Generation (Fallback)');
-      
+
       // Restore environment
       if (originalEnv) {
         process.env['OPENROUTER_API_KEY'] = originalEnv;
@@ -761,7 +803,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
   describe('AI Test Plan Formatting', () => {
     it('should format complex AI test plan correctly', async () => {
       process.env['EXECUTION_MODE'] = 'full';
-      
+
       const complexTestPlan = {
         testPlan: {
           summary: 'Complex failure analysis with multiple issues',
@@ -774,14 +816,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
                 {
                   command: 'kubectl get pods',
                   description: 'Check pod status',
-                  expected: 'All pods running'
+                  expected: 'All pods running',
                 },
                 {
                   command: 'kubectl logs deployment/app',
                   description: 'Check application logs',
-                  expected: 'No error messages'
-                }
-              ]
+                  expected: 'No error messages',
+                },
+              ],
             },
             {
               title: 'Database Connectivity',
@@ -790,29 +832,31 @@ describe('Troubleshoot Guided Workflow Tool', () => {
                 {
                   command: 'psql -h localhost -U user -c "SELECT 1"',
                   description: 'Test database connection',
-                  expected: 'Returns 1'
-                }
-              ]
-            }
+                  expected: 'Returns 1',
+                },
+              ],
+            },
           ],
           followupInstructions: [
             'Document all test results in detail',
             'Contact DevOps if infrastructure issues found',
-            'Escalate to security team if authentication issues detected'
-          ]
-        }
+            'Escalate to security team if authentication issues detected',
+          ],
+        },
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
         status: 200,
         json: async () => ({
-          choices: [{
-            message: {
-              content: JSON.stringify(complexTestPlan)
-            }
-          }]
-        })
+          choices: [
+            {
+              message: {
+                content: JSON.stringify(complexTestPlan),
+              },
+            },
+          ],
+        }),
       } as Response);
 
       const input = {
@@ -820,15 +864,15 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'deployment_failure',
           failureDetails: {
-            errorMessage: 'Complex deployment failure'
-          }
+            errorMessage: 'Complex deployment failure',
+          },
         },
-        projectPath: '/complex/project'
+        projectPath: '/complex/project',
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('Complex failure analysis with multiple issues');
       expect(text).toContain('Priority**: CRITICAL');
       expect(text).toContain('1. Environment Validation');
@@ -847,23 +891,25 @@ describe('Troubleshoot Guided Workflow Tool', () => {
 
     it('should handle AI test plan with missing sections', async () => {
       process.env['EXECUTION_MODE'] = 'full';
-      
+
       const incompleteTestPlan = {
         testPlan: {
-          summary: 'Basic analysis'
-        }
+          summary: 'Basic analysis',
+        },
       };
 
       mockFetch.mockResolvedValue({
         ok: true,
         status: 200,
         json: async () => ({
-          choices: [{
-            message: {
-              content: JSON.stringify(incompleteTestPlan)
-            }
-          }]
-        })
+          choices: [
+            {
+              message: {
+                content: JSON.stringify(incompleteTestPlan),
+              },
+            },
+          ],
+        }),
       } as Response);
 
       const input = {
@@ -871,14 +917,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'test_failure',
           failureDetails: {
-            errorMessage: 'Simple test failure'
-          }
-        }
+            errorMessage: 'Simple test failure',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('Basic analysis');
       expect(text).toContain('Priority**: MEDIUM'); // Default value
       expect(text).toContain('Execute each command in sequence'); // Default instructions
@@ -894,31 +940,28 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           exitCode: 1,
           errorMessage: 'Test suite failed with 3 failing tests',
           stackTrace: 'Error: Expected true but got false\n    at test.js:45:10\n    at Runner.run',
-          logOutput: 'FAIL src/auth.test.js\n  ✗ should authenticate user\n  ✗ should handle invalid credentials',
+          logOutput:
+            'FAIL src/auth.test.js\n  ✗ should authenticate user\n  ✗ should handle invalid credentials',
           environment: 'CI/CD Pipeline - Ubuntu 20.04',
           timestamp: '2024-01-15T14:22:30.123Z',
-          affectedFiles: [
-            'src/auth.js',
-            'src/auth.test.js',
-            'src/utils/validation.js'
-          ]
+          affectedFiles: ['src/auth.js', 'src/auth.test.js', 'src/utils/validation.js'],
         },
         context: {
           recentChanges: 'Updated authentication logic to use new JWT library v2.0.0',
           reproducible: true,
           frequency: 'always since last deploy',
-          impact: 'critical'
-        }
+          impact: 'critical',
+        },
       };
 
       const input = {
         operation: 'analyze_failure',
-        failure: comprehensiveFailure
+        failure: comprehensiveFailure,
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('npm test -- --coverage');
       expect(text).toContain('Exit Code**: 1');
       expect(text).toContain('Test suite failed with 3 failing tests');
@@ -938,19 +981,19 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         failure: {
           failureType: 'runtime_error',
           failureDetails: {
-            errorMessage: 'Intermittent memory leak detected'
+            errorMessage: 'Intermittent memory leak detected',
           },
           context: {
             reproducible: false,
             frequency: 'random',
-            impact: 'medium'
-          }
-        }
+            impact: 'medium',
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('Reproducible**: No');
       expect(text).toContain('Frequency**: random');
       expect(text).toContain('Impact Level**: MEDIUM');
@@ -961,7 +1004,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
         operation: 'full_workflow',
         projectPath: '/custom/project/path',
         adrDirectory: 'documentation/decisions',
-        todoPath: 'docs/TODO.md'
+        todoPath: 'docs/TODO.md',
       };
 
       const result = await troubleshootGuidedWorkflow(input);
@@ -971,20 +1014,20 @@ describe('Troubleshoot Guided Workflow Tool', () => {
 
     it('should handle very long error messages', async () => {
       const longErrorMessage = 'A'.repeat(2000); // Very long error message
-      
+
       const input = {
         operation: 'analyze_failure',
         failure: {
           failureType: 'build_failure',
           failureDetails: {
-            errorMessage: longErrorMessage
-          }
-        }
+            errorMessage: longErrorMessage,
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('A'.repeat(100)); // Should contain part of the long message
       expect(result).toBeDefined();
     });
@@ -996,14 +1039,14 @@ describe('Troubleshoot Guided Workflow Tool', () => {
           failureType: 'test_failure',
           failureDetails: {
             errorMessage: 'Test failed',
-            affectedFiles: [] // Empty array
-          }
-        }
+            affectedFiles: [], // Empty array
+          },
+        },
       };
 
       const result = await troubleshootGuidedWorkflow(input);
       const text = result.content[0].text;
-      
+
       expect(text).toContain('Test failed');
       expect(text).not.toContain('Affected Files'); // Should not show empty section
     });
