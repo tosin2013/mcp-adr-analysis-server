@@ -448,9 +448,6 @@ describe('Troubleshoot Guided Workflow Tool', () => {
     });
 
     it('should handle AI API errors and fallback to template', async () => {
-      // Increase timeout for this specific test to prevent CI timeouts
-      jest.setTimeout(30000);
-
       // Enable AI execution but make it fail
       process.env['EXECUTION_MODE'] = 'full';
       mockFetch.mockRejectedValue(new Error('Network error'));
@@ -475,7 +472,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
       expect(text).toContain('Clean and Rebuild');
       expect(text).toContain('npm run clean');
       expect(text).toContain('AI-powered analysis unavailable');
-    });
+    }, 30000); // 30 second timeout for this slow test
 
     it('should use fallback when AI is disabled', async () => {
       // AI is disabled by default with prompt-only mode
