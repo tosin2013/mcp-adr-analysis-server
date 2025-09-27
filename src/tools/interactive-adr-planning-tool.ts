@@ -732,7 +732,7 @@ async function requestResearch(args: InteractiveAdrPlanningInput): Promise<any> 
     },
     {
       source: 'Project Structure Analysis',
-      insight: `Project contains ${projectFilesResult.files.length} documentation/config files. Architecture appears to use ${detectArchitecturalPatterns(projectFilesResult.files)}`,
+      insight: `Project contains ${projectFilesResult.files.length} documentation/config files. Architecture appears to use ${detectArchitecturalPatterns(projectFilesResult.files.map(f => f.path))}`,
       relevance: 'High - Indicates current architectural style',
     },
     {
@@ -762,7 +762,7 @@ async function requestResearch(args: InteractiveAdrPlanningInput): Promise<any> 
     researchFindings,
     codeContext: {
       relatedFiles: relatedCodeResult.relatedFiles.length,
-      projectFiles: projectFiles.length,
+      projectFiles: projectFilesResult.files.length,
       keyFiles: relatedCodeResult.relatedFiles.slice(0, 5).map(f => f.path),
     },
     guidance: `Research complete with actual code context analysis. Found ${relatedCodeResult.relatedFiles.length} related files. Moving to option exploration phase.`,
@@ -864,7 +864,7 @@ async function evaluateOptions(args: InteractiveAdrPlanningInput): Promise<any> 
       feasibilityNotes: generateFeasibilityNotes(
         option,
         patternFiles.relatedFiles,
-        configFilesResult.files
+        configFilesResult.files.map(f => f.path)
       ),
     },
   }));
