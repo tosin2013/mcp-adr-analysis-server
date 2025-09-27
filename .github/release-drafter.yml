@@ -1,0 +1,165 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+      - 'minor'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+      - 'patch'
+  - title: '🧪 Tests'
+    labels:
+      - 'test'
+      - 'tests'
+  - title: '📚 Documentation'
+    labels:
+      - 'documentation'
+      - 'docs'
+  - title: '🔧 Maintenance'
+    labels:
+      - 'chore'
+      - 'maintenance'
+      - 'refactor'
+      - 'dependencies'
+  - title: '💥 Breaking Changes'
+    labels:
+      - 'breaking'
+      - 'breaking-change'
+      - 'major'
+  - title: '🏗️ Architecture'
+    labels:
+      - 'architecture'
+      - 'adr'
+  - title: '🔗 Smart Code Linking'
+    labels:
+      - 'smart-code-linking'
+      - 'code-linking'
+  - title: '🛡️ Security'
+    labels:
+      - 'security'
+      - 'vulnerability'
+
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  major:
+    labels:
+      - 'major'
+      - 'breaking'
+      - 'breaking-change'
+  minor:
+    labels:
+      - 'minor'
+      - 'feature'
+      - 'enhancement'
+  patch:
+    labels:
+      - 'patch'
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+      - 'chore'
+      - 'maintenance'
+      - 'documentation'
+      - 'test'
+      - 'tests'
+      - 'refactor'
+      - 'dependencies'
+  default: patch
+
+autolabeler:
+  - label: 'breaking'
+    title:
+      - '/(?i)breaking/gi'
+    body:
+      - '/(?i)breaking change/gi'
+  - label: 'feature'
+    title:
+      - '/(?i)feat/gi'
+      - '/(?i)feature/gi'
+    files:
+      - 'src/tools/*'
+      - 'src/utils/*'
+  - label: 'bug'
+    title:
+      - '/(?i)fix/gi'
+      - '/(?i)bug/gi'
+  - label: 'test'
+    title:
+      - '/(?i)test/gi'
+    files:
+      - 'tests/**/*'
+      - '**/*.test.ts'
+      - '**/*.spec.ts'
+  - label: 'documentation'
+    title:
+      - '/(?i)docs/gi'
+      - '/(?i)documentation/gi'
+    files:
+      - 'docs/**/*'
+      - 'README.md'
+      - '*.md'
+  - label: 'maintenance'
+    title:
+      - '/(?i)chore/gi'
+      - '/(?i)maintenance/gi'
+      - '/(?i)refactor/gi'
+  - label: 'dependencies'
+    title:
+      - '/(?i)bump/gi'
+      - '/(?i)update.*dependencies/gi'
+    files:
+      - 'package*.json'
+      - 'yarn.lock'
+  - label: 'smart-code-linking'
+    title:
+      - '/(?i)smart.*code.*linking/gi'
+      - '/(?i)code.*linking/gi'
+    files:
+      - 'src/utils/file-system.ts'
+      - 'src/utils/find-related-code.ts'
+      - 'tests/**/*smart-code-linking*'
+  - label: 'architecture'
+    title:
+      - '/(?i)adr/gi'
+      - '/(?i)architecture/gi'
+    files:
+      - 'docs/adrs/**/*'
+      - 'src/tools/*adr*'
+
+template: |
+  ## 🎉 What's Changed
+
+  $CHANGES
+
+  ## 📊 Release Statistics
+
+  - **Total Changes**: $CHANGE_COUNT changes
+  - **Contributors**: Thanks to all contributors who made this release possible! 🙌
+
+  ## 🔗 Smart Code Linking
+
+  This release includes enhancements to our Smart Code Linking feature, which uses AI-powered analysis to discover code files related to architectural decisions.
+
+  ## 🚀 Installation
+
+  ```bash
+  npm install -g mcp-adr-analysis-server@$RESOLVED_VERSION
+  ```
+
+  ## 📝 Full Changelog
+
+  **Full Changelog**: https://github.com/tosin2013/mcp-adr-analysis-server/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+exclude-labels:
+  - 'skip-changelog'
+  - 'no-release'
+
+include-pre-releases: false
