@@ -14,7 +14,9 @@ export interface GetWorkflowGuidanceArgs {
 
 // Architectural Context Tool Arguments
 export interface GetArchitecturalContextArgs {
-  projectPath: string;
+  projectPath?: string;
+  filePath?: string;
+  includeCompliance?: boolean;
   analysisDepth?: string;
   recursiveDepth?: string;
   technologyFocus?: string[];
@@ -115,22 +117,28 @@ export interface ProjectContext {
 // Failure Details for Todo Management
 export interface FailureDetails {
   failureType:
-    | 'dependency_issue'
     | 'build_failure'
     | 'test_failure'
     | 'deployment_failure'
+    | 'runtime_error'
+    | 'performance_issue'
     | 'security_issue'
     | 'other';
   failureDetails: {
-    errorMessage?: string;
+    errorMessage: string;
+    timestamp?: string;
+    environment?: string;
+    command?: string;
+    exitCode?: number;
     stackTrace?: string;
+    logOutput?: string;
     affectedFiles?: string[];
-    suggestedActions?: string[];
   };
   context?: {
-    buildEnvironment?: string;
-    dependencies?: string[];
-    lastWorkingCommit?: string;
+    impact?: 'low' | 'medium' | 'high' | 'critical';
+    frequency?: string;
+    recentChanges?: string;
+    reproducible?: boolean;
   };
 }
 
@@ -145,10 +153,10 @@ export interface TodoManagementV2Args {
 
 // Constraints for Tool Chain Orchestrator
 export interface Constraints {
-  maxExecutionTime?: number;
-  allowedTools?: string[];
-  outputFormat?: string;
-  analysisDepth?: string;
+  maxSteps?: number;
+  timeLimit?: string;
+  excludeTools?: string[];
+  prioritizeSpeed?: boolean;
 }
 
 // Tool Chain Orchestrator Arguments
@@ -156,9 +164,10 @@ export interface ToolChainOrchestratorArgs {
   projectContext: ProjectContext;
   operation:
     | 'generate_plan'
-    | 'execute_workflow'
-    | 'validate_results'
-    | 'optimize_execution'
+    | 'analyze_intent'
+    | 'suggest_tools'
+    | 'validate_plan'
+    | 'reality_check'
     | 'session_guidance';
   userRequest: string;
   constraints?: Constraints;
@@ -199,9 +208,68 @@ export interface EmptyArgs {
   // For methods that take no meaningful arguments
 }
 
+// Content Masking Tool Arguments
+export interface AnalyzeContentSecurityArgs {
+  content: string;
+  contentType?: 'code' | 'documentation' | 'configuration' | 'logs' | 'general';
+  userDefinedPatterns?: string[];
+  knowledgeEnhancement?: boolean;
+  enhancedMode?: boolean;
+  enableMemoryIntegration?: boolean;
+  enableTreeSitterAnalysis?: boolean;
+}
+
+export interface DetectedItem {
+  type: string;
+  category?: string;
+  content: string;
+  startPosition: number;
+  endPosition: number;
+  confidence?: number;
+  reasoning?: string;
+  severity: string;
+  suggestedMask?: string;
+}
+
+export interface GenerateContentMaskingArgs {
+  content: string;
+  detectedItems: DetectedItem[];
+  contentType?: 'code' | 'documentation' | 'configuration' | 'general';
+}
+
+export interface ConfigureCustomPatternsArgs {
+  projectPath: string;
+  existingPatterns?: string[];
+}
+
+export interface ApplyBasicContentMaskingArgs {
+  content: string;
+  maskingStrategy?: 'full' | 'partial' | 'placeholder';
+}
+
+export interface ValidateContentMaskingArgs {
+  originalContent: string;
+  maskedContent: string;
+}
+
+// Analyze Project Ecosystem Arguments
+export interface AnalyzeProjectEcosystemArgs {
+  projectPath?: string;
+  includePatterns?: string[];
+  enhancedMode?: boolean;
+  knowledgeEnhancement?: boolean;
+  learningEnabled?: boolean;
+  technologyFocus?: string[];
+  analysisDepth?: string;
+  includeEnvironment?: boolean;
+  recursiveDepth?: string;
+  analysisScope?: string[];
+}
+
 // Import existing types from specialized modules
 export type {
   ArchitecturalContext,
+  ArchitecturalDomain,
   KnowledgeGenerationConfig,
   PromptObject,
 } from './knowledge-generation.js';

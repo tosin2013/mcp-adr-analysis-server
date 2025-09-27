@@ -48,6 +48,15 @@ import {
   type ToolChainOrchestratorArgs,
   type ReadFileArgs,
   type WriteFileArgs,
+  type AnalyzeProjectEcosystemArgs,
+  type ArchitecturalDomain,
+  type AnalyzeContentSecurityArgs,
+  type GenerateContentMaskingArgs,
+  type ConfigureCustomPatternsArgs,
+  type ApplyBasicContentMaskingArgs,
+  type ValidateContentMaskingArgs,
+  type ActionArgs,
+  type TodoManagementV2Args,
   type GenerateArchitecturalKnowledgeFunction,
   type ExecuteWithReflexionFunction,
   type RetrieveRelevantMemoriesFunction,
@@ -2824,7 +2833,9 @@ export class McpAdrAnalysisServer {
 
         switch (name) {
           case 'analyze_project_ecosystem':
-            response = await this.analyzeProjectEcosystem(safeArgs);
+            response = await this.analyzeProjectEcosystem(
+              safeArgs as unknown as AnalyzeProjectEcosystemArgs
+            );
             break;
           case 'get_architectural_context':
             response = await this.getArchitecturalContext(
@@ -2841,19 +2852,29 @@ export class McpAdrAnalysisServer {
             response = await this.compareAdrProgress(safeArgs);
             break;
           case 'analyze_content_security':
-            response = await this.analyzeContentSecurity(safeArgs);
+            response = await this.analyzeContentSecurity(
+              safeArgs as unknown as AnalyzeContentSecurityArgs
+            );
             break;
           case 'generate_content_masking':
-            response = await this.generateContentMasking(safeArgs);
+            response = await this.generateContentMasking(
+              safeArgs as unknown as GenerateContentMaskingArgs
+            );
             break;
           case 'configure_custom_patterns':
-            response = await this.configureCustomPatterns(safeArgs);
+            response = await this.configureCustomPatterns(
+              safeArgs as unknown as ConfigureCustomPatternsArgs
+            );
             break;
           case 'apply_basic_content_masking':
-            response = await this.applyBasicContentMasking(safeArgs);
+            response = await this.applyBasicContentMasking(
+              safeArgs as unknown as ApplyBasicContentMaskingArgs
+            );
             break;
           case 'validate_content_masking':
-            response = await this.validateContentMasking(safeArgs);
+            response = await this.validateContentMasking(
+              safeArgs as unknown as ValidateContentMaskingArgs
+            );
             break;
           case 'manage_cache':
             response = await this.manageCache(safeArgs);
@@ -3670,9 +3691,11 @@ This guidance ensures your development work is **architecturally aligned**, **qu
     }
   }
 
-  private async analyzeProjectEcosystem(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async analyzeProjectEcosystem(
+    args: AnalyzeProjectEcosystemArgs
+  ): Promise<CallToolResult> {
     // Use configured project path if not provided in args
-    const projectPath = args['projectPath'] || this.config.projectPath;
+    const projectPath = args.projectPath || this.config.projectPath;
     const {
       includePatterns,
       enhancedMode = true,
@@ -3694,7 +3717,7 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       `Enhancement features - Knowledge: ${knowledgeEnhancement}, Learning: ${learningEnabled}`
     );
     this.logger.info(
-      `Analysis scope: ${(analysisScope as string[]).length > 0 ? (analysisScope as string[]).join(', ') : 'Full ecosystem analysis'}`
+      `Analysis scope: ${analysisScope.length > 0 ? analysisScope.join(', ') : 'Full ecosystem analysis'}`
     );
 
     try {
@@ -3736,7 +3759,7 @@ This guidance ensures your development work is **architecturally aligned**, **qu
               existingAdrs: [],
             },
             {
-              domains: this.getEcosystemAnalysisDomains(technologyFocus),
+              domains: this.getEcosystemAnalysisDomains(technologyFocus) as ArchitecturalDomain[],
               depth: analysisDepth === 'basic' ? 'basic' : 'intermediate',
               cacheEnabled: true,
             }
@@ -4324,7 +4347,7 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
       knowledgeEnhancement = true,
       prdType = 'general',
     } = args;
-    const outputDirectory = args.outputDirectory || this.config.adrDirectory;
+    const outputDirectory = args['outputDirectory'] || this.config.adrDirectory;
 
     this.logger.info(`Generating enhanced ADRs from PRD: ${prdPath} to ${outputDirectory}`);
     this.logger.info(
@@ -4337,9 +4360,9 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
       );
 
       // Import advanced prompting utilities if enhanced mode is enabled
-      let generateArchitecturalKnowledge: ((...args: unknown[]) => unknown) | null = null;
-      let optimizePromptWithAPE: ((...args: unknown[]) => unknown) | null = null;
-      let createToolAPEConfig: ((...args: unknown[]) => unknown) | null = null;
+      let generateArchitecturalKnowledge: any = null;
+      let optimizePromptWithAPE: any = null;
+      let createToolAPEConfig: any = null;
 
       if (enhancedMode) {
         if (knowledgeEnhancement) {
@@ -4355,10 +4378,10 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
       }
 
       // Generate file existence check prompt
-      const fileExistsPrompt = await fileExists(prdPath);
+      const fileExistsPrompt = await fileExists(prdPath as string);
 
       // Generate file content reading prompt
-      const fileContentPrompt = await readFileContent(prdPath);
+      const fileContentPrompt = await readFileContent(prdPath as string);
 
       // Step 1: Generate domain-specific knowledge if enabled
       let knowledgeContext = '';
@@ -4373,7 +4396,7 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
               existingAdrs: [],
             },
             {
-              domains: this.getPrdTypeDomains(prdType),
+              domains: this.getPrdTypeDomains(prdType as string),
               depth: 'intermediate',
               cacheEnabled: true,
             }
@@ -4395,7 +4418,11 @@ ${knowledgeResult.prompt}
       }
 
       // Step 2: Create base ADR generation prompt
-      const baseAdrPrompt = this.createBaseAdrPrompt(prdPath, outputDirectory, knowledgeContext);
+      const baseAdrPrompt = this.createBaseAdrPrompt(
+        prdPath as string,
+        outputDirectory as string,
+        knowledgeContext
+      );
 
       // Step 3: Apply APE optimization if enabled
       let finalAdrPrompt = baseAdrPrompt;
@@ -4646,12 +4673,12 @@ The enhanced process maintains full traceability from PRD requirements to genera
     const path = await import('path');
 
     // Use absolute ADR path relative to project
-    const absoluteAdrPath = args.adrDirectory
-      ? path.resolve(this.config.projectPath, args.adrDirectory)
+    const absoluteAdrPath = args['adrDirectory']
+      ? path.resolve(this.config.projectPath, args['adrDirectory'] as string)
       : getAdrDirectoryPath(this.config);
 
     // Keep relative path for display purposes
-    const adrDirectory = args.adrDirectory || this.config.adrDirectory;
+    const adrDirectory = args['adrDirectory'] || this.config.adrDirectory;
 
     this.logger.info(
       `Generating JSON-first TODO for ADRs in: ${absoluteAdrPath} (phase: ${phase})`
@@ -4779,9 +4806,9 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
     const path = await import('path');
 
     // Resolve paths
-    const absoluteTodoPath = path.resolve(projectPath, todoPath);
+    const absoluteTodoPath = path.resolve(projectPath as string, todoPath as string);
     const absoluteAdrPath = adrDirectory
-      ? path.resolve(projectPath, adrDirectory)
+      ? path.resolve(projectPath as string, adrDirectory as string)
       : getAdrDirectoryPath(this.config);
 
     this.logger.info(
@@ -4790,7 +4817,7 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
 
     // Environment validation and auto-detection
     let detectedEnvironment = environment;
-    let finalEnvironmentConfig = { ...environmentConfig };
+    let finalEnvironmentConfig = { ...(environmentConfig as Record<string, any>) };
 
     if (
       environmentValidation &&
@@ -4798,9 +4825,9 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
     ) {
       try {
         const envResult = await this.detectAndValidateEnvironment(
-          projectPath,
-          environment,
-          environmentConfig
+          projectPath as string,
+          environment as string,
+          environmentConfig as Record<string, unknown>
         );
         detectedEnvironment = envResult.detectedEnvironment;
         finalEnvironmentConfig = { ...finalEnvironmentConfig, ...envResult.environmentConfig };
@@ -4831,8 +4858,8 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
       if (validationType === 'full' || validationType === 'environment-only') {
         try {
           const { scanProjectStructure } = await import('./utils/actual-file-operations.js');
-          const includeContent = deepCodeAnalysis || functionalValidation;
-          projectStructure = await scanProjectStructure(projectPath, {
+          const includeContent = (deepCodeAnalysis as boolean) || (functionalValidation as boolean);
+          projectStructure = await scanProjectStructure(projectPath as string, {
             readContent: includeContent,
             maxFileSize: includeContent ? 10000 : 0,
           });
@@ -4847,24 +4874,28 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
       let discoveryResult: unknown = null;
       if (validationType === 'full' || validationType === 'adr-only') {
         const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
-        discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, projectPath);
+        discoveryResult = await discoverAdrsInDirectory(
+          absoluteAdrPath as string,
+          true,
+          projectPath as string
+        );
       }
       const analysis = await this.performLocalAdrProgressAnalysis({
         todoContent,
         todoPath: absoluteTodoPath,
-        discoveredAdrs: discoveryResult?.adrs || [],
+        discoveredAdrs: (discoveryResult as any)?.adrs || [],
         adrDirectory: absoluteAdrPath,
         projectStructure: projectStructure || null,
-        projectPath,
-        validationType,
-        includeFileChecks,
-        includeRuleValidation,
-        deepCodeAnalysis,
-        functionalValidation,
-        strictMode,
-        environment: detectedEnvironment,
+        projectPath: projectPath as string,
+        validationType: validationType as string,
+        includeFileChecks: includeFileChecks as boolean,
+        includeRuleValidation: includeRuleValidation as boolean,
+        deepCodeAnalysis: deepCodeAnalysis as boolean,
+        functionalValidation: functionalValidation as boolean,
+        strictMode: strictMode as boolean,
+        environment: detectedEnvironment as string,
         environmentConfig: finalEnvironmentConfig,
-        environmentValidation,
+        environmentValidation: environmentValidation as boolean,
       });
 
       return {
@@ -5682,27 +5713,31 @@ To re-run this validation with strict mode:
   /**
    * Content masking tool implementations
    */
-  private async analyzeContentSecurity(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async analyzeContentSecurity(args: AnalyzeContentSecurityArgs): Promise<CallToolResult> {
     const { analyzeContentSecurity } = await import('./tools/content-masking-tool.js');
     return await analyzeContentSecurity(args);
   }
 
-  private async generateContentMasking(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async generateContentMasking(args: GenerateContentMaskingArgs): Promise<CallToolResult> {
     const { generateContentMasking } = await import('./tools/content-masking-tool.js');
     return await generateContentMasking(args);
   }
 
-  private async configureCustomPatterns(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async configureCustomPatterns(
+    args: ConfigureCustomPatternsArgs
+  ): Promise<CallToolResult> {
     const { configureCustomPatterns } = await import('./tools/content-masking-tool.js');
     return await configureCustomPatterns(args);
   }
 
-  private async applyBasicContentMasking(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async applyBasicContentMasking(
+    args: ApplyBasicContentMaskingArgs
+  ): Promise<CallToolResult> {
     const { applyBasicContentMasking } = await import('./tools/content-masking-tool.js');
     return await applyBasicContentMasking(args);
   }
 
-  private async validateContentMasking(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async validateContentMasking(args: ValidateContentMaskingArgs): Promise<CallToolResult> {
     const { validateContentMasking } = await import('./tools/content-masking-tool.js');
     return await validateContentMasking(args);
   }
@@ -5817,7 +5852,7 @@ The AI agent will remove expired cache entries and provide a count of cleaned fi
             throw new McpAdrError('Cache key is required for invalidate action', 'INVALID_INPUT');
           }
 
-          const invalidatePrompt = await invalidateCache(key);
+          const invalidatePrompt = await invalidateCache(key as string);
           return {
             content: [
               {
@@ -5901,8 +5936,11 @@ ${this.maskingConfig.enabled ? '✅ Output masking is ACTIVE' : '⚠️ Output m
             newConfig.enabled = enabled;
           }
 
-          if (strategy && ['full', 'partial', 'placeholder', 'environment'].includes(strategy)) {
-            newConfig.strategy = strategy;
+          if (
+            strategy &&
+            ['full', 'partial', 'placeholder', 'environment'].includes(strategy as string)
+          ) {
+            newConfig.strategy = strategy as 'full' | 'partial' | 'placeholder' | 'environment';
           }
 
           if (Array.isArray(customPatterns)) {
@@ -6201,7 +6239,7 @@ Please provide:
 
   private async requestActionConfirmation(args: Record<string, unknown>): Promise<CallToolResult> {
     const { requestActionConfirmation } = await import('./tools/research-integration-tool.js');
-    return await requestActionConfirmation(args);
+    return await requestActionConfirmation(args as unknown as ActionArgs);
   }
 
   /**
@@ -6683,7 +6721,7 @@ Please provide:
       const path = await import('path');
 
       // Resolve path relative to project path for security
-      const safePath = path.resolve(this.config.projectPath, dirPath);
+      const safePath = path.resolve(this.config.projectPath, dirPath as string);
 
       // Security check: ensure path is within project directory
       if (!safePath.startsWith(this.config.projectPath)) {
@@ -6694,7 +6732,7 @@ Please provide:
       const fileList = entries.map(entry => ({
         name: entry.name,
         type: entry.isDirectory() ? 'directory' : 'file',
-        path: path.join(dirPath, entry.name),
+        path: path.join(dirPath as string, entry.name),
       }));
 
       return {
@@ -6793,7 +6831,7 @@ This tool (manageTodoJson) has been deprecated and is no longer functional.
       const { troubleshootGuidedWorkflow } = await import(
         './tools/troubleshoot-guided-workflow-tool.js'
       );
-      return await troubleshootGuidedWorkflow(args);
+      return await troubleshootGuidedWorkflow(args as unknown as TodoManagementV2Args);
     } catch (error) {
       throw new McpAdrError(
         `Troubleshoot guided workflow failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -6869,7 +6907,7 @@ This tool has been deprecated and replaced with memory-centric health scoring.
   private async toolChainOrchestrator(args: ToolChainOrchestratorArgs): Promise<CallToolResult> {
     try {
       const { toolChainOrchestrator } = await import('./tools/tool-chain-orchestrator.js');
-      return await toolChainOrchestrator(args);
+      return await toolChainOrchestrator(args as any);
     } catch (error) {
       throw new McpAdrError(
         `Tool chain orchestration failed: ${error instanceof Error ? error.message : String(error)}`,
