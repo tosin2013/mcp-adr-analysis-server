@@ -27,11 +27,12 @@ The Model Context Protocol enables seamless integration between AI assistants an
 
 ## ✨ Core Capabilities
 
-🤖 **AI-Powered Analysis** - Immediate architectural insights with OpenRouter.ai integration  
-🏗️ **Technology Detection** - Identify any tech stack and architectural patterns  
-📋 **ADR Management** - Generate, suggest, and maintain Architectural Decision Records  
-🛡️ **Security & Compliance** - Detect and mask sensitive content automatically  
-🧪 **TDD Integration** - Two-phase Test-Driven Development with validation  
+🤖 **AI-Powered Analysis** - Immediate architectural insights with OpenRouter.ai integration
+🏗️ **Technology Detection** - Identify any tech stack and architectural patterns
+📋 **ADR Management** - Generate, suggest, and maintain Architectural Decision Records
+🔗 **Smart Code Linking** - AI-powered discovery of code files related to ADRs and decisions
+🛡️ **Security & Compliance** - Detect and mask sensitive content automatically
+🧪 **TDD Integration** - Two-phase Test-Driven Development with validation
 🚀 **Deployment Readiness** - Zero-tolerance test validation with hard blocking
 
 📖 **[View Full Capabilities →](docs/explanation/)**
@@ -95,6 +96,19 @@ const adrs = await generateAdrsFromPrd({
   prdPath: 'docs/PRD.md',
   outputDirectory: 'docs/adrs',
 });
+
+// Smart Code Linking - Find code related to ADR decisions
+const relatedCode = await findRelatedCode(
+  'docs/adrs/001-auth-system.md',
+  'We will implement JWT authentication with Express middleware',
+  '/path/to/project',
+  {
+    useAI: true, // AI-powered keyword extraction
+    useRipgrep: true, // Fast text search
+    maxFiles: 10, // Limit results
+    includeContent: true, // Include file contents
+  }
+);
 ```
 
 📖 **[Complete Usage Guide →](docs/tutorials/)** | **[API Reference →](docs/reference/)**
@@ -111,6 +125,7 @@ const adrs = await generateAdrsFromPrd({
 ## 🛠️ Technology Stack
 
 **Runtime:** Node.js 18+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Jest (>80% coverage)
+**Search:** ripgrep + fast-glob • **AI Integration:** OpenRouter.ai • **Code Analysis:** Smart Code Linking
 
 📖 **[Technical Details →](docs/explanation/server-architecture.md)**
 
