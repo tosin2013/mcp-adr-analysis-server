@@ -2,116 +2,102 @@ name: Build and Package
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*' ]
+    branches: [main]
+    tags: ['v*']
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v5
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v5
-      with:
-        node-version: '20'
-        cache: 'npm'
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-    - name: Debug environment
-      run: |
-        echo "Node.js version: $(node --version)"
-        echo "NPM version: $(npm --version)"
-        echo "Working directory: $(pwd)"
-        echo "Package.json exists: $(test -f package.json && echo 'yes' || echo 'no')"
-        echo "Lock file exists: $(test -f package-lock.json && echo 'yes' || echo 'no')"
-        echo "TypeScript config exists: $(test -f tsconfig.json && echo 'yes' || echo 'no')"
+      - name: Debug environment
+        run: |
+          echo "Node.js version: $(node --version)"
+          echo "NPM version: $(npm --version)"
+          echo "Working directory: $(pwd)"
+          echo "Package.json exists: $(test -f package.json && echo 'yes' || echo 'no')"
+          echo "Lock file exists: $(test -f package-lock.json && echo 'yes' || echo 'no')"
+          echo "TypeScript config exists: $(test -f tsconfig.json && echo 'yes' || echo 'no')"
 
-    - name: Install dependencies and build
-      run: |
-        # Try make build first
-        if ! make build; then
-          echo "❌ Make build failed, trying manual approach..."
+      - name: Install dependencies and build
+        run: |
+          # Try make build first
+          if ! make build; then
+            echo "❌ Make build failed, trying manual approach..."
 
-          # Clear any partial state
-          rm -rf node_modules dist
+            # Clear any partial state
+            rm -rf node_modules dist
 
-          # Manual dependency installation
-          npm install
+            # Manual dependency installation
+            npm install
 
-          # Manual build
-          npm run build
-        fi
-
-    - name: Verify build output
-      run: |
-        # Use validation script if available, otherwise basic check
-        if [ -f "scripts/validate-build.js" ]; then
-          node scripts/validate-build.js
-        else
-          if [ ! -f "dist/src/index.js" ]; then
-            echo "❌ Build failed - dist/src/index.js not found"
-            exit 1
+            # Manual build
+            npm run build
           fi
-          echo "✅ Build successful - dist/src/index.js created"
-        fi
 
-    - name: Test built MCP server
-      run: |
-        echo "Testing built MCP server..."
-        
-        # Test that the built server can start and pass health check
-        echo "Testing server health check..."
-        if node dist/src/index.js --test; then
-          echo "✅ Server health check passed"
-        else
-          echo "❌ Server health check failed"
-          exit 1
-        fi
-        
-        # Verify the built server has all expected tools
-        if [ -f "scripts/validate-build.js" ]; then
-          echo "Using comprehensive build validation..."
-          node scripts/validate-build.js
-        else
-          echo "Using basic build validation..."
-          # Basic file existence check
-          if [ ! -f "dist/src/index.js" ]; then
-            echo "❌ Main entry point missing: dist/src/index.js"
-            exit 1
+      - name: Verify build output
+        run: |
+          # Use validation script if available, otherwise basic check
+          if [ -f "scripts/validate-build.js" ]; then
+            node scripts/validate-build.js
+          else
+            if [ ! -f "dist/src/index.js" ]; then
+              echo "❌ Build failed - dist/src/index.js not found"
+              exit 1
+            fi
+            echo "✅ Build successful - dist/src/index.js created"
           fi
-          echo "✅ Basic build validation passed"
-        fi
 
-    - name: Package for distribution
-      if: startsWith(github.ref, 'refs/tags/')
-      run: |
-        # Create distribution package
-        mkdir -p package
-        cp -r dist package/
-        cp package.json package/
-        cp README.md package/
-        cp LICENSE package/ || echo "No LICENSE file found"
-        
-        # Create tarball
-        tar -czf mcp-adr-analysis-server-${{ github.ref_name }}.tar.gz -C package .
+      - name: Test built MCP server
+        run: |
+          echo "Testing built MCP server with comprehensive validation..."
 
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: build-artifacts
-        path: |
-          dist/
-          package.json
-        retention-days: 30
+          # Use our comprehensive MCP server test script
+          ./scripts/test-mcp-server.sh
 
-    - name: Upload distribution package
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-artifact@v4
-      with:
-        name: distribution-package
-        path: mcp-adr-analysis-server-*.tar.gz
-        retention-days: 90
+          # Also run build validation if available
+          if [ -f "scripts/validate-build.js" ]; then
+            echo "Running additional build validation..."
+            node scripts/validate-build.js
+          fi
+
+      - name: Package for distribution
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          # Create distribution package
+          mkdir -p package
+          cp -r dist package/
+          cp package.json package/
+          cp README.md package/
+          cp LICENSE package/ || echo "No LICENSE file found"
+
+          # Create tarball
+          tar -czf mcp-adr-analysis-server-${{ github.ref_name }}.tar.gz -C package .
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            dist/
+            package.json
+          retention-days: 30
+
+      - name: Upload distribution package
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/upload-artifact@v4
+        with:
+          name: distribution-package
+          path: mcp-adr-analysis-server-*.tar.gz
+          retention-days: 90
