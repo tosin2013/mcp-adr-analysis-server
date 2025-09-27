@@ -5,6 +5,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import { findFiles, findRelatedCode } from '../utils/file-system.js';
 
 /**
  * Generate architectural rules from ADRs and code patterns
@@ -42,21 +43,26 @@ export async function generateRules(args: {
       case 'adrs': {
         let enhancedPrompt = '';
         let knowledgeContext = '';
-        
+
         // Generate domain-specific knowledge for rule extraction if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
-            const knowledgeResult = await generateArchitecturalKnowledge({
-              projectPath,
-              technologies: [],
-              patterns: [],
-              projectType: 'architectural-governance'
-            }, {
-              domains: ['api-design', 'security-patterns'],
-              depth: 'intermediate',
-              cacheEnabled: true
-            });
+            const { generateArchitecturalKnowledge } = await import(
+              '../utils/knowledge-generation.js'
+            );
+            const knowledgeResult = await generateArchitecturalKnowledge(
+              {
+                projectPath,
+                technologies: [],
+                patterns: [],
+                projectType: 'architectural-governance',
+              },
+              {
+                domains: ['api-design', 'security-patterns'],
+                depth: 'intermediate',
+                cacheEnabled: true,
+              }
+            );
 
             knowledgeContext = `\n## Architectural Governance Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
           } catch (error) {
@@ -64,12 +70,14 @@ export async function generateRules(args: {
             knowledgeContext = '<!-- Governance knowledge generation unavailable -->\n';
           }
         }
-        
+
         const result = await extractRulesFromAdrs(adrDirectory, existingRules as any, projectPath);
         enhancedPrompt = knowledgeContext + result.extractionPrompt;
 
         // Execute the rule extraction with AI if enabled, otherwise return prompt
-        const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
+        const { executePromptWithFallback, formatMCPResponse } = await import(
+          '../utils/prompt-execution.js'
+        );
         const executionResult = await executePromptWithFallback(
           enhancedPrompt,
           result.instructions,
@@ -82,7 +90,7 @@ Leverage the provided architectural governance knowledge to create comprehensive
 Focus on creating specific, measurable rules that can be validated automatically.
 Provide clear reasoning for each rule and practical implementation guidance.
 Consider compliance standards, governance frameworks, and architectural best practices.`,
-            responseFormat: 'text'
+            responseFormat: 'text',
           }
         );
 
@@ -102,10 +110,14 @@ Consider compliance standards, governance frameworks, and architectural best pra
 - **Existing Rules**: ${existingRules?.length || 0} rules
 - **Output Format**: ${outputFormat.toUpperCase()}
 
-${knowledgeContext ? `## Applied Governance Knowledge
+${
+  knowledgeContext
+    ? `## Applied Governance Knowledge
 
 ${knowledgeContext}
-` : ''}
+`
+    : ''
+}
 
 ## AI Rule Extraction Results
 
@@ -159,10 +171,14 @@ To create a machine-readable rule set:
 - **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Applied' : '❌ Disabled'}
 
-${knowledgeContext ? `## Governance Knowledge Context
+${
+  knowledgeContext
+    ? `## Governance Knowledge Context
 
 ${knowledgeContext}
-` : ''}
+`
+    : ''
+}
 
 ${result.instructions}
 
@@ -187,21 +203,106 @@ ${enhancedPrompt}
       case 'patterns': {
         let enhancedPrompt = '';
         let knowledgeContext = '';
-        
+        let patternImplementationContext = '';
+
+        // Smart Code Linking - discover pattern implementations in the codebase
+        try {
+          // Find code files for pattern analysis
+          const findResult = await findFiles(projectPath, [
+            '**/*.{ts,js,jsx,tsx,py,java,cs,go,rs,rb,php,swift,kt,scala,c,cpp}',
+            '!**/node_modules/**',
+            '!**/dist/**',
+            '!**/build/**',
+            '!**/target/**',
+          ]);
+
+          if (findResult.files.length > 0) {
+            // Use Smart Code Linking to find examples of architectural patterns
+            const patternContext = [
+              'architectural patterns',
+              'design patterns',
+              'factory pattern',
+              'singleton pattern',
+              'observer pattern',
+              'repository pattern',
+              'service layer',
+              'dependency injection',
+              'model view controller',
+              'layered architecture',
+              'microservices',
+              'event driven',
+              'command query separation',
+            ].join(' ');
+
+            const relatedCodeResult = await findRelatedCode(
+              'pattern-implementation-analysis',
+              patternContext,
+              projectPath,
+              {
+                useAI: true,
+                useRipgrep: true,
+                maxFiles: 20,
+                includeContent: false,
+              }
+            );
+
+            if (relatedCodeResult.relatedFiles.length > 0) {
+              patternImplementationContext = [
+                '',
+                '## 🔗 Pattern Implementation Discovery',
+                '',
+                `Found **${relatedCodeResult.relatedFiles.length}** files with potential pattern implementations:`,
+                '',
+                ...relatedCodeResult.relatedFiles
+                  .slice(0, 15)
+                  .map((file, index) => `${index + 1}. **${file.path}**`),
+                relatedCodeResult.relatedFiles.length > 15
+                  ? `*Showing top 15 of ${relatedCodeResult.relatedFiles.length} pattern-related files*`
+                  : '',
+                '',
+                `**Pattern Detection Confidence**: ${(relatedCodeResult.confidence * 100).toFixed(0)}%`,
+                `**Pattern Keywords**: ${relatedCodeResult.keywords?.slice(0, 10).join(', ') || 'N/A'}`,
+                '',
+                '## File Type Distribution',
+                ...Object.entries(
+                  relatedCodeResult.relatedFiles.reduce(
+                    (acc, file) => {
+                      const ext = file.extension || 'unknown';
+                      acc[ext] = (acc[ext] || 0) + 1;
+                      return acc;
+                    },
+                    {} as Record<string, number>
+                  )
+                ).map(([ext, count]) => `- **${ext.toUpperCase()}**: ${count} files`),
+                '',
+              ]
+                .filter(Boolean)
+                .join('\n');
+            }
+          }
+        } catch (error) {
+          console.warn('Smart Code Linking failed for pattern analysis:', error);
+        }
+
         // Generate domain-specific knowledge for pattern analysis if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
-            const knowledgeResult = await generateArchitecturalKnowledge({
-              projectPath,
-              technologies: [],
-              patterns: [],
-              projectType: 'code-pattern-analysis'
-            }, {
-              domains: ['api-design', 'performance-optimization'],
-              depth: 'intermediate',
-              cacheEnabled: true
-            });
+            const { generateArchitecturalKnowledge } = await import(
+              '../utils/knowledge-generation.js'
+            );
+            const knowledgeResult = await generateArchitecturalKnowledge(
+              {
+                projectPath,
+                technologies: [],
+                patterns: [],
+                projectType: 'code-pattern-analysis',
+              },
+              {
+                domains: ['api-design', 'performance-optimization'],
+                depth: 'intermediate',
+                cacheEnabled: true,
+              }
+            );
 
             knowledgeContext = `\n## Code Pattern Analysis Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
           } catch (error) {
@@ -209,13 +310,15 @@ ${enhancedPrompt}
             knowledgeContext = '<!-- Pattern analysis knowledge generation unavailable -->\n';
           }
         }
-        
+
         const existingRuleNames = existingRules?.map(r => r.name);
         const result = await generateRulesFromPatterns(projectPath, existingRuleNames);
-        enhancedPrompt = knowledgeContext + result.generationPrompt;
+        enhancedPrompt = knowledgeContext + patternImplementationContext + result.generationPrompt;
 
         // Execute the pattern-based rule generation with AI if enabled, otherwise return prompt
-        const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
+        const { executePromptWithFallback, formatMCPResponse } = await import(
+          '../utils/prompt-execution.js'
+        );
         const executionResult = await executePromptWithFallback(
           enhancedPrompt,
           result.instructions,
@@ -228,7 +331,7 @@ Leverage the provided design pattern and code quality knowledge to create compre
 Focus on creating rules that enforce consistency, quality, and maintainability based on observed patterns.
 Consider established design patterns, code quality metrics, and architectural best practices.
 Provide confidence scores and practical implementation guidance for each rule.`,
-            responseFormat: 'text'
+            responseFormat: 'text',
           }
         );
 
@@ -236,9 +339,10 @@ Provide confidence scores and practical implementation guidance for each rule.`,
           // AI execution successful - return actual pattern-based rule generation results
           return formatMCPResponse({
             ...executionResult,
-            content: `# Pattern-Based Rule Generation Results (GKP Enhanced)
+            content: `# Pattern-Based Rule Generation Results (Enhanced with Smart Code Linking)
 
 ## Enhancement Features
+- **Smart Code Linking**: ${patternImplementationContext ? '✅ Active' : '❌ No patterns found'}
 - **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 - **Knowledge Domains**: Design patterns, code quality, software architecture
@@ -248,10 +352,16 @@ Provide confidence scores and practical implementation guidance for each rule.`,
 - **Existing Rules**: ${existingRules?.length || 0} rules
 - **Output Format**: ${outputFormat.toUpperCase()}
 
-${knowledgeContext ? `## Applied Pattern Knowledge
+${patternImplementationContext ? `${patternImplementationContext}` : ''}
+
+${
+  knowledgeContext
+    ? `## Applied Pattern Knowledge
 
 ${knowledgeContext}
-` : ''}
+`
+    : ''
+}
 
 ## AI Pattern Analysis Results
 
@@ -297,21 +407,49 @@ To create a comprehensive rule set combining patterns and ADRs:
             content: [
               {
                 type: 'text',
-                text: `# Rule Generation: Pattern-Based Rules
+                text: `# Rule Generation: Pattern-Based Rules (Enhanced with Smart Code Linking)
+
+## Enhancement Status
+- **Smart Code Linking**: ${patternImplementationContext ? '✅ Pattern implementations discovered' : '❌ No patterns found'}
+- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Applied' : '❌ Disabled'}
+
+${
+  patternImplementationContext
+    ? `${patternImplementationContext}
+
+`
+    : ''
+}${
+                  knowledgeContext
+                    ? `## Governance Knowledge Context
+
+${knowledgeContext}
+`
+                    : ''
+                }
 
 ${result.instructions}
 
-## AI Analysis Prompt
+## Enhanced AI Analysis Prompt
 
-${result.generationPrompt}
+${enhancedPrompt}
 
 ## Next Steps
 
-1. **Submit the prompt** to an AI agent for pattern analysis
-2. **Parse the JSON response** to get generated rules and metrics
-3. **Review pattern-based rules** for relevance and accuracy
+1. **Submit the enhanced prompt** to an AI agent for comprehensive pattern analysis
+2. **Parse the JSON response** to get generated rules and pattern metrics
+3. **Review pattern-based rules** using the discovered implementation context
 4. **Combine with ADR-extracted rules** for comprehensive rule set
-5. **Implement validation** for high-confidence rules
+5. **Implement validation** for high-confidence pattern rules
+
+## Pattern Implementation Benefits
+
+The Smart Code Linking enhancement provides:
+- **Real Examples**: Rules based on actual pattern implementations found in your codebase
+- **Context-Aware**: Better understanding of how patterns are actually used
+- **Higher Confidence**: Rules validated against existing code patterns
+- **Team Alignment**: Rules that reflect current team practices and implementations
 `,
               },
             ],
@@ -321,38 +459,155 @@ ${result.generationPrompt}
 
       case 'both': {
         let comprehensiveKnowledgeContext = '';
-        
+        let comprehensivePatternContext = '';
+
+        // Smart Code Linking - comprehensive pattern and ADR implementation discovery
+        try {
+          // Find all code and documentation files
+          const findResult = await findFiles(projectPath, [
+            '**/*.{ts,js,jsx,tsx,py,java,cs,go,rs,rb,php,swift,kt,scala,c,cpp}',
+            '**/*.{md,adoc,rst}',
+            '!**/node_modules/**',
+            '!**/dist/**',
+            '!**/build/**',
+            '!**/target/**',
+          ]);
+
+          if (findResult.files.length > 0) {
+            // Use Smart Code Linking to find comprehensive architectural patterns and ADR implementations
+            const comprehensiveContext = [
+              'architectural decisions',
+              'design patterns',
+              'architectural patterns',
+              'software architecture',
+              'architectural governance',
+              'code standards',
+              'best practices',
+              'quality attributes',
+              'security patterns',
+              'performance patterns',
+              'scalability patterns',
+              'maintainability',
+              'testability',
+              'deployment patterns',
+              'integration patterns',
+            ].join(' ');
+
+            const relatedCodeResult = await findRelatedCode(
+              'comprehensive-architecture-analysis',
+              comprehensiveContext,
+              projectPath,
+              {
+                useAI: true,
+                useRipgrep: true,
+                maxFiles: 30,
+                includeContent: false,
+              }
+            );
+
+            if (relatedCodeResult.relatedFiles.length > 0) {
+              // Categorize files by type for better analysis
+              const codeFiles = relatedCodeResult.relatedFiles.filter(f =>
+                f.extension?.match(
+                  /\.(ts|js|jsx|tsx|py|java|cs|go|rs|rb|php|swift|kt|scala|c|cpp)$/
+                )
+              );
+              const docFiles = relatedCodeResult.relatedFiles.filter(f =>
+                f.extension?.match(/\.(md|adoc|rst)$/)
+              );
+
+              comprehensivePatternContext = [
+                '',
+                '## 🔗 Comprehensive Architecture Discovery',
+                '',
+                `Found **${relatedCodeResult.relatedFiles.length}** files relevant to architectural rule generation:`,
+                '',
+                `### Code Implementation Files (${codeFiles.length})`,
+                ...codeFiles.slice(0, 12).map((file, index) => `${index + 1}. **${file.path}**`),
+                codeFiles.length > 12 ? `*Showing top 12 of ${codeFiles.length} code files*` : '',
+                '',
+                docFiles.length > 0
+                  ? [
+                      `### Documentation Files (${docFiles.length})`,
+                      ...docFiles
+                        .slice(0, 8)
+                        .map((file, index) => `${index + 1}. **${file.path}**`),
+                      docFiles.length > 8
+                        ? `*Showing top 8 of ${docFiles.length} documentation files*`
+                        : '',
+                      '',
+                    ].join('\n')
+                  : '',
+                `**Overall Analysis Confidence**: ${(relatedCodeResult.confidence * 100).toFixed(0)}%`,
+                `**Architectural Keywords**: ${relatedCodeResult.keywords?.slice(0, 12).join(', ') || 'N/A'}`,
+                '',
+                '## Technology Stack Analysis',
+                ...Object.entries(
+                  relatedCodeResult.relatedFiles.reduce(
+                    (acc, file) => {
+                      const ext = file.extension || 'unknown';
+                      acc[ext] = (acc[ext] || 0) + 1;
+                      return acc;
+                    },
+                    {} as Record<string, number>
+                  )
+                )
+                  .slice(0, 8)
+                  .map(([ext, count]) => `- **${ext.toUpperCase()}**: ${count} files`),
+                '',
+              ]
+                .filter(Boolean)
+                .join('\n');
+            }
+          }
+        } catch (error) {
+          console.warn('Smart Code Linking failed for comprehensive analysis:', error);
+        }
+
         // Generate comprehensive domain knowledge if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
-            const knowledgeResult = await generateArchitecturalKnowledge({
-              projectPath,
-              technologies: [],
-              patterns: [],
-              projectType: 'comprehensive-rule-generation'
-            }, {
-              domains: ['api-design', 'security-patterns', 'performance-optimization'],
-              depth: 'advanced',
-              cacheEnabled: true
-            });
+            const { generateArchitecturalKnowledge } = await import(
+              '../utils/knowledge-generation.js'
+            );
+            const knowledgeResult = await generateArchitecturalKnowledge(
+              {
+                projectPath,
+                technologies: [],
+                patterns: [],
+                projectType: 'comprehensive-rule-generation',
+              },
+              {
+                domains: ['api-design', 'security-patterns', 'performance-optimization'],
+                depth: 'advanced',
+                cacheEnabled: true,
+              }
+            );
 
             comprehensiveKnowledgeContext = `\n## Comprehensive Architectural Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
           } catch (error) {
-            console.error('[WARNING] GKP knowledge generation failed for comprehensive analysis:', error);
-            comprehensiveKnowledgeContext = '<!-- Comprehensive knowledge generation unavailable -->\n';
+            console.error(
+              '[WARNING] GKP knowledge generation failed for comprehensive analysis:',
+              error
+            );
+            comprehensiveKnowledgeContext =
+              '<!-- Comprehensive knowledge generation unavailable -->\n';
           }
         }
-        
-        const adrResult = await extractRulesFromAdrs(adrDirectory, existingRules as any, projectPath);
+
+        const adrResult = await extractRulesFromAdrs(
+          adrDirectory,
+          existingRules as any,
+          projectPath
+        );
         const existingRuleNames = existingRules?.map(r => r.name);
         const patternResult = await generateRulesFromPatterns(projectPath, existingRuleNames);
 
         // Create comprehensive prompt combining both ADR and pattern analysis with knowledge enhancement
-        const comprehensivePrompt = `${comprehensiveKnowledgeContext}
+        const comprehensivePrompt = `${comprehensiveKnowledgeContext}${comprehensivePatternContext}
 # Comprehensive Architectural Rule Generation
 
-Generate a complete set of architectural rules by analyzing both ADRs and code patterns.
+Generate a complete set of architectural rules by analyzing both ADRs and code patterns with Smart Code Linking context.
 
 ## ADR-Based Rule Extraction
 
@@ -384,7 +639,9 @@ Provide a unified rule set with:
 `;
 
         // Execute the comprehensive rule generation with AI if enabled, otherwise return prompt
-        const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
+        const { executePromptWithFallback, formatMCPResponse } = await import(
+          '../utils/prompt-execution.js'
+        );
         const executionResult = await executePromptWithFallback(
           comprehensivePrompt,
           `${adrResult.instructions}\n\n${patternResult.instructions}`,
@@ -397,7 +654,7 @@ Leverage the provided comprehensive architectural knowledge including governance
 Focus on creating rules that are specific, measurable, and can be validated automatically.
 Prioritize explicit architectural decisions (ADRs) over implicit patterns when conflicts arise.
 Consider industry best practices, compliance requirements, and established architectural principles.`,
-            responseFormat: 'text'
+            responseFormat: 'text',
           }
         );
 
@@ -405,9 +662,10 @@ Consider industry best practices, compliance requirements, and established archi
           // AI execution successful - return actual comprehensive rule generation results
           return formatMCPResponse({
             ...executionResult,
-            content: `# Comprehensive Rule Generation Results (GKP Enhanced)
+            content: `# Comprehensive Rule Generation Results (Enhanced with Smart Code Linking & GKP)
 
 ## Enhancement Features
+- **Smart Code Linking**: ${comprehensivePatternContext ? '✅ Active' : '❌ No patterns found'}
 - **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 - **Knowledge Domains**: Governance frameworks, software architecture, design patterns, compliance standards, code quality
@@ -419,10 +677,16 @@ Consider industry best practices, compliance requirements, and established archi
 - **Existing Rules**: ${existingRules?.length || 0} rules
 - **Output Format**: ${outputFormat.toUpperCase()}
 
-${comprehensiveKnowledgeContext ? `## Applied Comprehensive Knowledge
+${comprehensivePatternContext ? `${comprehensivePatternContext}` : ''}
+
+${
+  comprehensiveKnowledgeContext
+    ? `## Applied Comprehensive Knowledge
 
 ${comprehensiveKnowledgeContext}
-` : ''}
+`
+    : ''
+}
 
 ## AI Comprehensive Analysis Results
 
@@ -548,6 +812,8 @@ export async function validateRules(args: {
   }>;
   validationType?: 'file' | 'function' | 'component' | 'module';
   reportFormat?: 'summary' | 'detailed' | 'json';
+  projectPath?: string;
+  findRelatedFiles?: boolean;
 }): Promise<any> {
   const {
     filePath,
@@ -556,6 +822,8 @@ export async function validateRules(args: {
     rules,
     validationType = 'file',
     reportFormat = 'detailed',
+    projectPath = process.cwd(),
+    findRelatedFiles = false,
   } = args;
 
   try {
@@ -567,6 +835,63 @@ export async function validateRules(args: {
 
     if (!rules || rules.length === 0) {
       throw new McpAdrError('Rules array is required and cannot be empty', 'INVALID_INPUT');
+    }
+
+    // Smart Code Linking - find related files for comprehensive validation context
+    let relatedFilesContext = '';
+    if (findRelatedFiles && filePath) {
+      try {
+        // Create context from the file being validated and the rules
+        const validationContext = [
+          `File being validated: ${filePath}`,
+          'Architectural rules validation',
+          ...rules.slice(0, 5).map(rule => `Rule: ${rule.name} - ${rule.description}`),
+        ].join('\n');
+
+        const relatedCodeResult = await findRelatedCode(
+          'rule-validation-context',
+          validationContext,
+          projectPath,
+          {
+            useAI: true,
+            useRipgrep: true,
+            maxFiles: 12,
+            includeContent: false,
+          }
+        );
+
+        if (relatedCodeResult.relatedFiles.length > 0) {
+          // Filter out the file being validated itself
+          const otherRelatedFiles = relatedCodeResult.relatedFiles.filter(
+            f => f.path !== filePath && !filePath.endsWith(f.path)
+          );
+
+          if (otherRelatedFiles.length > 0) {
+            relatedFilesContext = [
+              '',
+              '## 🔗 Related Files for Validation Context',
+              '',
+              `Found **${otherRelatedFiles.length}** related files that may need similar validation:`,
+              '',
+              ...otherRelatedFiles
+                .slice(0, 8)
+                .map((file, index) => `${index + 1}. **${file.path}**`),
+              otherRelatedFiles.length > 8
+                ? `*Showing top 8 of ${otherRelatedFiles.length} related files*`
+                : '',
+              '',
+              `**Context Confidence**: ${(relatedCodeResult.confidence * 100).toFixed(0)}%`,
+              '',
+              '💡 **Recommendation**: Consider validating these related files against the same rules for comprehensive compliance.',
+              '',
+            ]
+              .filter(Boolean)
+              .join('\n');
+          }
+        }
+      } catch (error) {
+        console.warn('Smart Code Linking failed for validation context:', error);
+      }
     }
 
     // Convert rules to ArchitecturalRule format
@@ -601,7 +926,9 @@ export async function validateRules(args: {
     }
 
     // Execute the rule validation with AI if enabled, otherwise return prompt
-    const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
+    const { executePromptWithFallback, formatMCPResponse } = await import(
+      '../utils/prompt-execution.js'
+    );
     const executionResult = await executePromptWithFallback(
       result.validationPrompt,
       result.instructions,
@@ -612,7 +939,7 @@ export async function validateRules(args: {
 Analyze the provided code against architectural rules to identify violations and provide improvement recommendations.
 Focus on providing specific, actionable feedback with clear explanations and fix suggestions.
 Prioritize violations by severity and impact on system architecture.`,
-        responseFormat: 'text'
+        responseFormat: 'text',
       }
     );
 
@@ -620,13 +947,16 @@ Prioritize violations by severity and impact on system architecture.`,
       // AI execution successful - return actual rule validation results
       return formatMCPResponse({
         ...executionResult,
-        content: `# Code Validation Results
+        content: `# Code Validation Results (Enhanced with Smart Code Linking)
 
 ## Validation Information
 - **File**: ${fileName || filePath || 'Content provided'}
 - **Validation Type**: ${validationType}
 - **Rules Applied**: ${rules.length} rules
 - **Report Format**: ${reportFormat}
+- **Smart Code Linking**: ${relatedFilesContext ? '✅ Related files discovered' : findRelatedFiles ? '❌ No related files found' : '⚪ Not requested'}
+
+${relatedFilesContext ? `${relatedFilesContext}` : ''}
 
 ## AI Validation Results
 

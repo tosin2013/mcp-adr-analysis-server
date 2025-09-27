@@ -4,7 +4,12 @@
  */
 
 /**
- * AI prompt for detecting sensitive information patterns in content
+ * Generate AI prompt for detecting sensitive information patterns in content
+ *
+ * @param content - Content to analyze for sensitive information
+ * @param contentType - Type of content being analyzed
+ * @param userDefinedPatterns - Optional user-defined sensitive patterns
+ * @returns Formatted prompt for AI analysis of sensitive content
  */
 export function generateSensitiveContentDetectionPrompt(
   content: string,

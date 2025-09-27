@@ -9,9 +9,15 @@ import { z } from 'zod';
 // Base Types
 // ============================================================================
 
+/**
+ * Base prompt object for reflexion framework
+ */
 export interface PromptObject {
+  /** The main prompt text */
   prompt: string;
+  /** Instructions for using the prompt */
   instructions: string;
+  /** Additional context data */
   context: any;
 }
 
