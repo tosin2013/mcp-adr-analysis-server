@@ -33,15 +33,15 @@ jobs:
           git config --local user.name "GitHub Action"
 
       - name: Bump version for dependency update
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          echo "Dependabot PR merged: ${{ github.event.pull_request.title }}"
+          echo "Dependabot PR merged: ${PR_TITLE}"
 
-          # Determine version bump type based on PR title
-          PR_TITLE="${{ github.event.pull_request.title }}"
-
-          if [[ "$PR_TITLE" == *"major"* ]] || [[ "$PR_TITLE" == *"breaking"* ]]; then
+          # Determine version bump type based on PR title (safely handled via env var)
+          if [[ "${PR_TITLE}" == *"major"* ]] || [[ "${PR_TITLE}" == *"breaking"* ]]; then
             VERSION_TYPE="major"
-          elif [[ "$PR_TITLE" == *"minor"* ]] || [[ "$PR_TITLE" == *"feature"* ]]; then
+          elif [[ "${PR_TITLE}" == *"minor"* ]] || [[ "${PR_TITLE}" == *"feature"* ]]; then
             VERSION_TYPE="minor"  
           else
             VERSION_TYPE="patch"
@@ -57,13 +57,16 @@ jobs:
           echo "New version: $NEW_VERSION"
 
       - name: Commit version bump
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          ACTOR: ${{ github.actor }}
         run: |
           git add package.json package-lock.json
           git commit -m "chore: bump version to ${{ env.NEW_VERSION }} after dependabot update
 
           - Automated version bump following dependency updates
-          - PR: ${{ github.event.pull_request.title }}
-          - Updated by: ${{ github.actor }}"
+          - PR: ${PR_TITLE}
+          - Updated by: ${ACTOR}"
 
       - name: Push version bump
         run: |
@@ -102,10 +105,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Update draft with dependabot info
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          ACTOR: ${{ github.actor }}
         run: |
-          PR_NUMBER="${{ github.event.pull_request.number }}"
-          PR_TITLE="${{ github.event.pull_request.title }}"
-          PR_URL="${{ github.event.pull_request.html_url }}"
 
           if [[ "${{ steps.find-draft.outputs.draft_found }}" == "true" ]]; then
             echo "📝 Updating Release Drafter content with Dependabot PR..."
@@ -120,10 +125,10 @@ jobs:
           ## 🤖 Dependabot Auto-Release Information
 
           This release was automatically triggered by Dependabot:
-          - **Dependency Update**: $PR_TITLE (#$PR_NUMBER)
-          - **Updated by**: ${{ github.actor }}
+          - **Dependency Update**: ${PR_TITLE} (#${PR_NUMBER})
+          - **Updated by**: ${ACTOR}
 
-          **Full PR Details**: [View PR]($PR_URL)
+          **Full PR Details**: [View PR](${PR_URL})
 
           ---
           🤖 Auto-generated release following dependency updates
@@ -136,9 +141,9 @@ jobs:
           # Release v${{ env.NEW_VERSION }}
 
           ## Dependency Updates
-          - $PR_TITLE (#$PR_NUMBER)
+          - ${PR_TITLE} (#${PR_NUMBER})
 
-          **Full Changelog**: [View PR]($PR_URL)
+          **Full Changelog**: [View PR](${PR_URL})
 
           ---
           🤖 Auto-generated release following dependency updates
