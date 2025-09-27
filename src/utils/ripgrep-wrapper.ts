@@ -144,13 +144,14 @@ export async function searchWithRipgrep(options: RipgrepOptions): Promise<string
       .map(line => line.trim());
 
     return files;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Exit code 1 means no matches found (not an error)
-    if (error.code === 1) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 1) {
       return [];
     }
 
-    throw new FileSystemError(`Ripgrep search failed: ${error.message || String(error)}`, {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new FileSystemError(`Ripgrep search failed: ${errorMessage}`, {
       pattern,
       path: searchPath,
     });
@@ -270,13 +271,14 @@ export async function searchWithRipgrepDetailed(options: RipgrepOptions): Promis
     }
 
     return results;
-  } catch (error: any) {
+  } catch (error: unknown) {
     // Exit code 1 means no matches found (not an error)
-    if (error.code === 1) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 1) {
       return [];
     }
 
-    throw new FileSystemError(`Ripgrep detailed search failed: ${error.message || String(error)}`, {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    throw new FileSystemError(`Ripgrep detailed search failed: ${errorMessage}`, {
       pattern,
       path: searchPath,
     });

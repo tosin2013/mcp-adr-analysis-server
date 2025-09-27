@@ -7,6 +7,7 @@
 import { McpAdrError } from '../types/index.js';
 import { ConversationContext } from '../types/conversation-context.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
+import { findRelatedCode } from '../utils/file-system.js';
 
 /**
  * Interface for bootstrap script generation
@@ -66,8 +67,87 @@ export async function generateAdrBootstrapScripts(args: {
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
     const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
 
+    // Smart Code Linking - Find related implementation files
+    let relatedCodeAnalysis = '';
+    let relatedFiles: any[] = [];
+
+    if (discoveryResult.adrs.length > 0) {
+      try {
+        // Combine all ADR content for comprehensive analysis
+        const combinedAdrContent = discoveryResult.adrs
+          .map(adr => `# ${adr.title}\n${adr.content || ''}`)
+          .join('\n\n');
+
+        const relatedCodeResult = await findRelatedCode(
+          'bootstrap-validation-analysis',
+          combinedAdrContent,
+          projectPath,
+          {
+            useAI: true,
+            useRipgrep: true,
+            maxFiles: 20,
+            includeContent: false,
+          }
+        );
+
+        relatedFiles = relatedCodeResult.relatedFiles;
+
+        if (relatedFiles.length > 0) {
+          relatedCodeAnalysis = `
+## 🔗 Smart Code Linking Analysis
+
+Found ${relatedFiles.length} code files related to ADR implementations that should be included in validation:
+
+### Critical Implementation Files
+${relatedFiles
+  .slice(0, 8)
+  .map(
+    (file, index) => `
+${index + 1}. **${file.path}**
+   - Type: ${file.extension} file
+   - Size: ${file.size} bytes
+   - Directory: ${file.directory}
+`
+  )
+  .join('')}
+
+### Validation Targets
+- **Keywords Found**: ${relatedCodeResult.keywords.join(', ')}
+- **Search Patterns**: ${relatedCodeResult.searchPatterns.join(', ')}
+- **Implementation Confidence**: ${(relatedCodeResult.confidence * 100).toFixed(1)}%
+
+**Bootstrap Integration**: These files will be included in validation scripts to ensure ADR compliance during deployment.
+
+---
+`;
+        } else {
+          relatedCodeAnalysis = `
+## 🔗 Smart Code Linking Analysis
+
+**Status**: No related implementation files found for ADRs
+**Keywords Searched**: ${relatedCodeResult.keywords.join(', ')}
+**Analysis**: ADRs may be high-level decisions not yet implemented in code
+
+**Recommendation**: Focus validation on configuration files, deployment scripts, and architectural constraints rather than implementation details.
+
+---
+`;
+        }
+      } catch (error) {
+        console.warn('[WARNING] Smart Code Linking for bootstrap validation failed:', error);
+        relatedCodeAnalysis = `
+## 🔗 Smart Code Linking Analysis
+
+**Status**: ⚠️ Analysis failed - continuing with standard validation
+**Error**: ${error instanceof Error ? error.message : 'Unknown error'}
+
+---
+`;
+      }
+    }
+
     // Extract validation requirements from ADRs
-    const complianceChecks = await extractComplianceChecks(discoveryResult.adrs);
+    const complianceChecks = await extractComplianceChecks(discoveryResult.adrs, relatedFiles);
 
     // Perform tree-sitter analysis for ADR compliance validation
     let codeAnalysisResults: any = null;
@@ -155,6 +235,8 @@ The bootstrap script deploys the code while the validation script verifies ADR c
 
 ## Discovered ADRs (${discoveryResult.totalAdrs} total)
 ${discoveryResult.adrs.map(adr => `- ${adr.title} (${adr.status})`).join('\n')}
+
+${relatedCodeAnalysis}
 
 ${complianceValidation}
 
@@ -248,6 +330,18 @@ ${complianceChecks.length > 5 ? `... and ${complianceChecks.length - 5} more che
             adr.content?.includes('TODO') ||
             adr.content?.includes('Tasks')
         ).length,
+        smartCodeLinking: {
+          enabled: relatedFiles.length > 0,
+          relatedFilesCount: relatedFiles.length,
+          fileTypes:
+            relatedFiles.length > 0
+              ? [...new Set(relatedFiles.map(f => f.extension))].join(', ')
+              : 'none',
+          validationEnhancements:
+            relatedFiles.length > 0
+              ? 'File-specific validation commands generated'
+              : 'Standard validation only',
+        },
       },
     };
 
@@ -269,8 +363,12 @@ ${complianceChecks.length > 5 ? `... and ${complianceChecks.length - 5} more che
 
 /**
  * Extract compliance checks from ADR content
+ * Enhanced with Smart Code Linking for related file validation
  */
-async function extractComplianceChecks(adrs: any[]): Promise<AdrComplianceCheck[]> {
+async function extractComplianceChecks(
+  adrs: any[],
+  relatedFiles: any[] = []
+): Promise<AdrComplianceCheck[]> {
   const checks: AdrComplianceCheck[] = [];
 
   for (const adr of adrs) {
@@ -291,7 +389,125 @@ async function extractComplianceChecks(adrs: any[]): Promise<AdrComplianceCheck[
     });
   }
 
+  // Add Smart Code Linking validation checks
+  if (relatedFiles.length > 0) {
+    // Group related files by type for validation
+    const filesByType = relatedFiles.reduce(
+      (acc, file) => {
+        const type = file.extension || 'unknown';
+        if (!acc[type]) acc[type] = [];
+        acc[type].push(file);
+        return acc;
+      },
+      {} as Record<string, any[]>
+    );
+
+    // Add file-specific validation checks
+    Object.entries(filesByType).forEach(([fileType, files]) => {
+      const typedFiles = files as any[]; // Type assertion for files array
+      const fileCount = typedFiles.length;
+
+      // Configuration file validation
+      if (['json', 'yml', 'yaml', 'env'].includes(fileType)) {
+        checks.push({
+          adrId: 'smart-code-linking',
+          adrTitle: 'Configuration File Validation',
+          requirement: `Validate ${fileCount} ${fileType.toUpperCase()} configuration file(s) comply with ADR requirements`,
+          validationCommand: generateConfigValidationCommand(typedFiles),
+          expectedOutcome: 'Configuration files are valid and ADR-compliant',
+          severity: 'error',
+        });
+      }
+
+      // Source code validation
+      if (['ts', 'js', 'py', 'java', 'go'].includes(fileType)) {
+        checks.push({
+          adrId: 'smart-code-linking',
+          adrTitle: 'Implementation File Validation',
+          requirement: `Validate ${fileCount} ${fileType.toUpperCase()} implementation file(s) follow architectural patterns`,
+          validationCommand: generateImplementationValidationCommand(typedFiles, fileType),
+          expectedOutcome: 'Implementation files follow ADR architectural decisions',
+          severity: 'warning',
+        });
+      }
+
+      // Infrastructure as Code validation
+      if (['tf', 'hcl', 'dockerfile'].includes(fileType)) {
+        checks.push({
+          adrId: 'smart-code-linking',
+          adrTitle: 'Infrastructure Validation',
+          requirement: `Validate ${fileCount} infrastructure file(s) match deployment requirements`,
+          validationCommand: generateInfrastructureValidationCommand(typedFiles, fileType),
+          expectedOutcome: 'Infrastructure configurations comply with ADR deployment decisions',
+          severity: 'critical',
+        });
+      }
+    });
+
+    // Add overall integration check
+    checks.push({
+      adrId: 'smart-code-linking',
+      adrTitle: 'Smart Code Linking Integration',
+      requirement: `Verify ${relatedFiles.length} ADR-related files are properly integrated`,
+      validationCommand: `echo "Checking integration of ADR-related files..." && find . -type f \\( ${relatedFiles.map(f => `-name "${f.name}"`).join(' -o ')} \\) | wc -l`,
+      expectedOutcome: `${relatedFiles.length} files found and accessible`,
+      severity: 'info',
+    });
+  }
+
   return checks;
+}
+
+/**
+ * Generate validation command for configuration files
+ */
+function generateConfigValidationCommand(files: any[]): string {
+  const filePaths = files.map(f => f.path).slice(0, 5); // Limit to first 5 files
+  const fileType = files[0]?.extension || 'unknown';
+
+  if (fileType === 'json') {
+    return `echo "Validating JSON configuration files..." && for file in ${filePaths.join(' ')}; do echo "Checking $file" && cat "$file" | jq . > /dev/null || echo "Invalid JSON: $file"; done`;
+  } else if (['yml', 'yaml'].includes(fileType)) {
+    return `echo "Validating YAML configuration files..." && for file in ${filePaths.join(' ')}; do echo "Checking $file" && python -c "import yaml; yaml.safe_load(open('$file'))" || echo "Invalid YAML: $file"; done`;
+  } else if (fileType === 'env') {
+    return `echo "Validating environment files..." && for file in ${filePaths.join(' ')}; do echo "Checking $file" && grep -E '^[A-Z_]+=.*$' "$file" > /dev/null || echo "Invalid ENV format: $file"; done`;
+  } else {
+    return `echo "Checking configuration files exist..." && ls -la ${filePaths.join(' ')}`;
+  }
+}
+
+/**
+ * Generate validation command for implementation files
+ */
+function generateImplementationValidationCommand(files: any[], fileType: string): string {
+  const filePaths = files.map(f => f.path).slice(0, 3); // Limit to first 3 files
+
+  if (['ts', 'js'].includes(fileType)) {
+    return `echo "Validating TypeScript/JavaScript files..." && for file in ${filePaths.join(' ')}; do echo "Checking $file" && node -c "$file" > /dev/null 2>&1 || echo "Syntax error: $file"; done`;
+  } else if (fileType === 'py') {
+    return `echo "Validating Python files..." && for file in ${filePaths.join(' ')}; do echo "Checking $file" && python -m py_compile "$file" > /dev/null 2>&1 || echo "Syntax error: $file"; done`;
+  } else if (fileType === 'java') {
+    return `echo "Validating Java files..." && for file in ${filePaths.join(' ')}; do echo "Checking $file" && javac -cp . "$file" > /dev/null 2>&1 || echo "Compilation error: $file"; done`;
+  } else if (fileType === 'go') {
+    return `echo "Validating Go files..." && for file in ${filePaths.join(' ')}; do echo "Checking $file" && go fmt "$file" > /dev/null || echo "Format error: $file"; done`;
+  } else {
+    return `echo "Checking implementation files exist..." && ls -la ${filePaths.join(' ')}`;
+  }
+}
+
+/**
+ * Generate validation command for infrastructure files
+ */
+function generateInfrastructureValidationCommand(files: any[], fileType: string): string {
+  const filePaths = files.map(f => f.path).slice(0, 3); // Limit to first 3 files
+
+  if (['tf', 'hcl'].includes(fileType)) {
+    return `echo "Validating Terraform files..." && for file in ${filePaths.join(' ')}; do echo "Checking $file" && terraform validate "$file" > /dev/null 2>&1 || echo "Terraform validation failed: $file"; done`;
+  } else if (fileType === 'dockerfile') {
+    return `echo "Validating Dockerfile..." && for file in ${filePaths.join(' ')}; do echo "Checking $file" && docker build -f "$file" --dry-run . > /dev/null 2>&1 || echo "Dockerfile validation failed: $file"; done`;
+  } else {
+    return `echo "Checking infrastructure files exist..." && ls -la ${filePaths.join(' ')}`;
+  }
 }
 
 /**

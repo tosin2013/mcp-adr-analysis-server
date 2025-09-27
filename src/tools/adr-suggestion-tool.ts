@@ -14,6 +14,7 @@ import {
 } from '../utils/reflexion.js';
 import { executeADRSuggestionPrompt, formatMCPResponse } from '../utils/prompt-execution.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
+import { findRelatedCode } from '../utils/file-system.js';
 
 /**
  * Suggest ADRs based on project analysis with advanced prompting techniques
@@ -57,6 +58,36 @@ export async function suggestAdrs(args: {
       case 'implicit_decisions': {
         let enhancedPrompt = '';
         let enhancementInfo = '';
+        let codeContext = '';
+
+        // Smart Code Linking for implicit decisions
+        if (existingAdrs && existingAdrs.length > 0) {
+          try {
+            const mockAdrContent = existingAdrs.join('\n\n');
+            const relatedCodeResult = await findRelatedCode(
+              'implicit-decisions-analysis',
+              mockAdrContent,
+              projectPath,
+              {
+                useAI: true,
+                useRipgrep: true,
+                maxFiles: 10,
+                includeContent: false,
+              }
+            );
+
+            if (relatedCodeResult.relatedFiles.length > 0) {
+              codeContext = `\n## Smart Code Linking - Implicit Decision Context\n\nAnalyzing related code for implicit architectural decisions:\n\n${relatedCodeResult.relatedFiles
+                .slice(0, 5)
+                .map((file, index) => `${index + 1}. **${file.path}** - ${file.extension} file`)
+                .join(
+                  '\n'
+                )}\n\n**Code Analysis**: Found ${relatedCodeResult.relatedFiles.length} related files that may contain implicit decisions\n**Keywords Used**: ${relatedCodeResult.keywords.join(', ')}\n**Confidence**: ${(relatedCodeResult.confidence * 100).toFixed(1)}%\n`;
+            }
+          } catch (error) {
+            console.warn('[WARNING] Smart Code Linking for implicit decisions failed:', error);
+          }
+        }
 
         // Apply enhancements if enabled
         if (enhancedMode && (knowledgeEnhancement || learningEnabled)) {
@@ -109,6 +140,7 @@ export async function suggestAdrs(args: {
 ## Enhancement Status
 - **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
 - **Reflexion Learning**: ✅ Applied
+- **Smart Code Linking**: ${codeContext ? '✅ Applied' : '❌ No existing ADRs'}
 - **Learning from**: Past implicit decision detection tasks
 
 `;
@@ -132,6 +164,7 @@ export async function suggestAdrs(args: {
 ## Enhancement Status
 - **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
 - **Reflexion Learning**: ❌ Disabled
+- **Smart Code Linking**: ${codeContext ? '✅ Applied' : '❌ No existing ADRs'}
 
 `;
           }
@@ -145,6 +178,7 @@ export async function suggestAdrs(args: {
           enhancementInfo = `
 ## Enhancement Status
 - **Enhanced Mode**: ❌ Disabled
+- **Smart Code Linking**: ${codeContext ? '✅ Applied' : '❌ No existing ADRs'}
 - All advanced features are disabled for this analysis
 
 `;
@@ -163,6 +197,7 @@ export async function suggestAdrs(args: {
               text: `# ADR Suggestions: Enhanced Implicit Decisions Analysis
 
 ${enhancementInfo}
+${codeContext}
 
 ${baseResult.instructions}
 
@@ -200,6 +235,39 @@ The enhanced AI analysis will identify implicit architectural decisions and prov
 
         let enhancedPrompt = '';
         let enhancementInfo = '';
+        let codeContext = '';
+
+        // Smart Code Linking for code changes
+        if (existingAdrs && existingAdrs.length > 0) {
+          try {
+            const mockAdrContent = `${existingAdrs.join('\n\n')}\n\nCODE CHANGE:\n${changeDescription}`;
+            const relatedCodeResult = await findRelatedCode(
+              'code-changes-analysis',
+              mockAdrContent,
+              projectPath || process.cwd(),
+              {
+                useAI: true,
+                useRipgrep: true,
+                maxFiles: 8,
+                includeContent: false,
+              }
+            );
+
+            if (relatedCodeResult.relatedFiles.length > 0) {
+              codeContext = `\n## Smart Code Linking - Code Change Context\n\nFound related code files that may be affected by this change:\n\n${relatedCodeResult.relatedFiles
+                .slice(0, 3)
+                .map(
+                  (file, index) =>
+                    `${index + 1}. **${file.path}** - ${file.extension} file (${file.size} bytes)`
+                )
+                .join(
+                  '\n'
+                )}\n\n**Impact Analysis**: ${relatedCodeResult.relatedFiles.length} files may be affected by this architectural change\n**Keywords Used**: ${relatedCodeResult.keywords.join(', ')}\n**Confidence**: ${(relatedCodeResult.confidence * 100).toFixed(1)}%\n`;
+            }
+          } catch (error) {
+            console.warn('[WARNING] Smart Code Linking for code changes failed:', error);
+          }
+        }
 
         // Apply enhancements if enabled
         let treeSitterAnalysis = '';
@@ -328,6 +396,7 @@ ${codeChangeAnalysis.newDependencies.map(dep => `- **${dep.name}**: ${dep.reason
 ## Enhancement Status
 - **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
 - **Reflexion Learning**: ✅ Applied
+- **Smart Code Linking**: ${codeContext ? '✅ Applied' : '❌ No existing ADRs'}
 - **Learning from**: Past code change analysis tasks
 
 `;
@@ -353,6 +422,7 @@ ${codeChangeAnalysis.newDependencies.map(dep => `- **${dep.name}**: ${dep.reason
 ## Enhancement Status
 - **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
 - **Reflexion Learning**: ❌ Disabled
+- **Smart Code Linking**: ${codeContext ? '✅ Applied' : '❌ No existing ADRs'}
 
 `;
           }
@@ -367,6 +437,7 @@ ${codeChangeAnalysis.newDependencies.map(dep => `- **${dep.name}**: ${dep.reason
           enhancementInfo = `
 ## Enhancement Status
 - **Enhanced Mode**: ❌ Disabled
+- **Smart Code Linking**: ${codeContext ? '✅ Applied' : '❌ No existing ADRs'}
 - All advanced features are disabled for this analysis
 
 `;
@@ -386,6 +457,7 @@ ${codeChangeAnalysis.newDependencies.map(dep => `- **${dep.name}**: ${dep.reason
               text: `# ADR Suggestions: Enhanced Code Change Analysis
 
 ${enhancementInfo}
+${codeContext}
 ${treeSitterAnalysis}
 ${baseResult.instructions}
 
@@ -417,6 +489,7 @@ The enhanced AI analysis will provide:
         let enhancedPrompt = '';
         let knowledgeContext = '';
         let reflexionContext = '';
+        let codeContext = '';
 
         // Step 1: Generate domain-specific knowledge if enabled
         if (knowledgeEnhancement) {
@@ -448,6 +521,79 @@ ${knowledgeResult.prompt}
           } catch (error) {
             console.error('[WARNING] Knowledge generation failed:', error);
             knowledgeContext = '<!-- Knowledge generation unavailable -->\n';
+          }
+        }
+
+        // Step 1a: Smart Code Linking - Analyze existing ADRs for related code
+        if (existingAdrs && existingAdrs.length > 0) {
+          try {
+            // For comprehensive analysis, we'll simulate ADR content analysis
+            // In a real scenario, this would read actual ADR files
+            const mockAdrContent = existingAdrs.join('\n\n');
+            const relatedCodeResult = await findRelatedCode(
+              'comprehensive-analysis',
+              mockAdrContent,
+              projectPath,
+              {
+                useAI: true,
+                useRipgrep: true,
+                maxFiles: 15,
+                includeContent: false,
+              }
+            );
+
+            if (relatedCodeResult.relatedFiles.length > 0) {
+              codeContext = `
+## Smart Code Linking Analysis
+
+Found ${relatedCodeResult.relatedFiles.length} code files related to existing ADRs:
+
+### Related Code Files
+${relatedCodeResult.relatedFiles
+  .map(
+    (file, index) => `
+${index + 1}. **${file.path}** (${file.extension} file)
+   - Size: ${file.size} bytes
+   - Directory: ${file.directory}
+`
+  )
+  .join('')}
+
+### Search Information
+- **Keywords Used**: ${relatedCodeResult.keywords.join(', ')}
+- **Search Patterns**: ${relatedCodeResult.searchPatterns.join(', ')}
+- **Confidence**: ${(relatedCodeResult.confidence * 100).toFixed(1)}%
+
+**Analysis Summary**: ${relatedCodeResult.relatedFiles.length} related files found
+
+---
+`;
+            } else {
+              codeContext = `
+## Smart Code Linking Analysis
+
+**Status**: No related code files found for existing ADRs
+**Keywords Searched**: ${relatedCodeResult.keywords.join(', ')}
+**Patterns Used**: ${relatedCodeResult.searchPatterns.join(', ')}
+
+This suggests either:
+- ADRs are high-level architectural decisions not yet implemented
+- Code patterns don't match ADR terminology
+- Additional implementation work may be needed
+
+---
+`;
+            }
+          } catch (error) {
+            console.warn('[WARNING] Smart Code Linking failed:', error);
+            codeContext = `
+## Smart Code Linking Analysis
+
+**Status**: ⚠️ Analysis failed - continuing without code context
+**Error**: ${error instanceof Error ? error.message : 'Unknown error'}
+
+---
+`;
           }
         }
 
@@ -542,11 +688,14 @@ ${reflexionResult.prompt}
 - **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
 - **Reflexion Learning**: ${learningEnabled ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Smart Code Linking**: ${existingAdrs && existingAdrs.length > 0 ? '✅ Enabled' : '❌ No existing ADRs'}
 
 ## Project Analysis
 - **Project Path**: ${projectPath}
 - **Existing ADRs**: ${existingAdrs?.length || 0} ADRs provided
 - **Analysis Type**: Comprehensive (AI-driven with enhancements)
+
+${codeContext}
 
 ${knowledgeContext}
 
@@ -598,11 +747,14 @@ This enhanced analysis uses advanced prompting techniques to provide superior AD
 - **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
 - **Reflexion Learning**: ${learningEnabled ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Smart Code Linking**: ${existingAdrs && existingAdrs.length > 0 ? '✅ Enabled' : '❌ No existing ADRs'}
 
 ## Project Analysis
 - **Project Path**: ${projectPath}
 - **Existing ADRs**: ${existingAdrs?.length || 0} ADRs provided
 - **Analysis Type**: Comprehensive (AI-driven with enhancements)
+
+${codeContext}
 
 ${knowledgeContext}
 
@@ -768,7 +920,9 @@ To save this ADR to your project:
       });
     } else {
       // Fallback to prompt-only mode
-      const { ensureDirectory, writeFile } = await import('../utils/file-system.js');
+      const { ensureDirectoryCompat: ensureDirectory, writeFileCompat: writeFile } = await import(
+        '../utils/file-system.js'
+      );
       const ensureDirPrompt = await ensureDirectory(adrDirectory);
       const writeFilePrompt = await writeFile(fullPath, '[ADR_CONTENT_PLACEHOLDER]');
 

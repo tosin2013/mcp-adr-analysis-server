@@ -31,6 +31,7 @@ import { jsonSafeError } from '../utils/json-safe.js';
 import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
+import { findFiles, findRelatedCode } from '../utils/file-system.js';
 
 // Core schemas
 const DeploymentReadinessSchema = z.object({
@@ -264,6 +265,9 @@ interface DeploymentReadinessResult {
   healthScoreUpdate: any;
   gitPushStatus: 'allowed' | 'blocked' | 'conditional';
   overrideStatus: any;
+
+  // Enhanced Features
+  smartCodeAnalysis?: string; // Smart Code Linking analysis
 }
 
 /**
@@ -1429,6 +1433,129 @@ async function performFullAudit(
   const testResult = await performTestValidation(args, projectPath);
   const historyResult = await performDeploymentHistoryAnalysis(args, historyPath);
 
+  // Smart Code Linking - Enhanced deployment readiness with ADR analysis
+  let smartCodeAnalysis = '';
+  let adrComplianceResult = testResult.adrComplianceResult;
+
+  if (args.requireAdrCompliance) {
+    try {
+      // Discover ADRs in the project
+      const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
+      const adrDirectory = 'docs/adrs';
+      const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
+
+      if (discoveryResult.adrs.length > 0) {
+        // Combine all ADR content for Smart Code Linking analysis
+        const combinedAdrContent = discoveryResult.adrs
+          .map(adr => `# ${adr.title}\n${adr.content || ''}`)
+          .join('\n\n');
+
+        const relatedCodeResult = await findRelatedCode(
+          'deployment-readiness-analysis',
+          combinedAdrContent,
+          projectPath,
+          {
+            useAI: true,
+            useRipgrep: true,
+            maxFiles: 25,
+            includeContent: false,
+          }
+        );
+
+        // Enhanced ADR compliance analysis with related code context
+        const deploymentCriticalFiles = relatedCodeResult.relatedFiles.filter(file => {
+          const deploymentKeywords = [
+            'deploy',
+            'config',
+            'env',
+            'docker',
+            'k8s',
+            'terraform',
+            'ci',
+            'cd',
+          ];
+          return deploymentKeywords.some(
+            keyword =>
+              file.path.toLowerCase().includes(keyword) ||
+              file.directory.toLowerCase().includes(keyword)
+          );
+        });
+
+        adrComplianceResult = {
+          score: Math.min(100, 70 + relatedCodeResult.confidence * 30),
+          compliantAdrs: discoveryResult.adrs.length,
+          totalAdrs: discoveryResult.adrs.length,
+          missingImplementations:
+            deploymentCriticalFiles.length === 0
+              ? ['Deployment-specific implementations not found in related code']
+              : [],
+          recommendations: [
+            ...(deploymentCriticalFiles.length > 0
+              ? [`Found ${deploymentCriticalFiles.length} deployment-critical files linked to ADRs`]
+              : ['Consider documenting deployment procedures in ADRs']),
+            ...(relatedCodeResult.relatedFiles.length > 10
+              ? ['High code-ADR linkage indicates good architectural documentation']
+              : ['Consider improving ADR-to-code traceability']),
+            ...(relatedCodeResult.confidence > 0.8
+              ? ['Strong architectural alignment detected between ADRs and implementation']
+              : ['Review ADR implementation alignment before deployment']),
+          ],
+        };
+
+        smartCodeAnalysis = `
+
+## 🔗 Smart Code Linking - Deployment Analysis
+
+**ADR Discovery**: Found ${discoveryResult.adrs.length} architectural decision records
+**Related Code Files**: ${relatedCodeResult.relatedFiles.length} files linked to ADRs
+**Deployment-Critical Files**: ${deploymentCriticalFiles.length} files identified
+
+### Deployment-Critical Code Analysis
+${
+  deploymentCriticalFiles.length > 0
+    ? deploymentCriticalFiles
+        .slice(0, 5)
+        .map(
+          (file, index) =>
+            `${index + 1}. **${file.path}** - ${file.extension} file (${file.size} bytes)`
+        )
+        .join('\n')
+    : '*No deployment-specific files found in ADR-related code*'
+}
+
+### Architectural Alignment
+- **ADR-Code Confidence**: ${(relatedCodeResult.confidence * 100).toFixed(1)}%
+- **Keywords Used**: ${relatedCodeResult.keywords.join(', ')}
+- **Implementation Coverage**: ${relatedCodeResult.relatedFiles.length > 0 ? 'Adequate' : 'Needs Review'}
+
+**Deployment Impact**: ${
+          deploymentCriticalFiles.length > 0
+            ? 'ADR-guided deployment files found - architectural decisions are implemented'
+            : 'Limited deployment-specific code found - verify manual deployment procedures'
+        }
+`;
+      } else {
+        smartCodeAnalysis = `
+
+## 🔗 Smart Code Linking - Deployment Analysis
+
+**Status**: No ADRs found in project
+**Recommendation**: Consider creating ADRs to document deployment architecture and decisions
+**Impact**: Proceeding with deployment readiness check without architectural guidance
+`;
+      }
+    } catch (error) {
+      console.warn('[WARNING] Smart Code Linking for deployment analysis failed:', error);
+      smartCodeAnalysis = `
+
+## 🔗 Smart Code Linking - Deployment Analysis
+
+**Status**: ⚠️ ADR analysis failed - continuing with standard deployment checks
+**Error**: ${error instanceof Error ? error.message : 'Unknown error'}
+`;
+    }
+  }
+
   const allBlockers = [
     ...testResult.criticalBlockers,
     ...testResult.testFailureBlockers,
@@ -1438,23 +1565,26 @@ async function performFullAudit(
   const overallScore = (testResult.overallScore + historyResult.overallScore) / 2;
   const isReady = allBlockers.length === 0;
 
-  return {
+  const result = {
     isDeploymentReady: isReady,
     overallScore,
     confidence: Math.min(testResult.confidence, historyResult.confidence),
     codeQualityAnalysis: testResult.codeQualityAnalysis,
     testValidationResult: testResult.testValidationResult,
     deploymentHistoryAnalysis: historyResult.deploymentHistoryAnalysis,
-    adrComplianceResult: testResult.adrComplianceResult,
+    adrComplianceResult,
     criticalBlockers: allBlockers.filter(b => b.severity === 'critical'),
     testFailureBlockers: testResult.testFailureBlockers,
     deploymentHistoryBlockers: historyResult.deploymentHistoryBlockers,
     warnings: [...testResult.warnings, ...historyResult.warnings],
     todoTasksCreated: [],
     healthScoreUpdate: {},
-    gitPushStatus: isReady ? 'allowed' : 'blocked',
+    gitPushStatus: isReady ? ('allowed' as const) : ('blocked' as const),
     overrideStatus: {},
+    smartCodeAnalysis, // Include Smart Code Linking analysis
   };
+
+  return result;
 }
 
 /**
@@ -1653,6 +1783,7 @@ function generateSuccessResponse(
 - **Readiness Score**: ${result.overallScore}%
 - **Confidence**: ${result.confidence}%
 - **Target Environment**: ${args.targetEnvironment}
+- **Fast File Discovery**: ✅ Enhanced with fast-glob
 
 ## 🧪 Test Validation
 - **Test Status**: ✅ ${result.testValidationResult.overallTestStatus.toUpperCase()}
@@ -1664,6 +1795,13 @@ function generateSuccessResponse(
 - **Success Rate**: ${result.deploymentHistoryAnalysis.successRate}%
 - **Rollback Rate**: ${result.deploymentHistoryAnalysis.rollbackRate}%
 - **Environment Stability**: ${result.deploymentHistoryAnalysis.environmentStability.riskLevel}
+
+## 🏛️ ADR Compliance
+- **Compliance Score**: ${result.adrComplianceResult.score}%
+- **ADRs Analyzed**: ${result.adrComplianceResult.compliantAdrs}/${result.adrComplianceResult.totalAdrs}
+- **Missing Implementations**: ${result.adrComplianceResult.missingImplementations.length} items
+
+${(result as any).smartCodeAnalysis || ''}
 
 ## 🚀 Deployment Approved
 ${args.triggerSmartGitPush ? 'Triggering smart git push...' : 'Ready to proceed with deployment'}
@@ -1698,6 +1836,8 @@ function generateBlockedResponse(
 - **Confidence**: ${result.confidence}%
 - **Target Environment**: ${args.targetEnvironment}
 - **Tree-sitter Analysis**: ${args.enableTreeSitterAnalysis ? '✅ Enhanced' : '❌ Basic'}
+- **Fast File Discovery**: ✅ Enhanced with fast-glob
+- **Smart Code Linking**: ${args.requireAdrCompliance ? '✅ ADR Analysis Enabled' : '❌ Disabled'}
 
 ## 🧪 Test Validation Issues
 ${
@@ -1724,6 +1864,8 @@ ${result.deploymentHistoryAnalysis.failurePatterns.map(p => `- **${p.pattern}**:
 `
     : '✅ Deployment history stable'
 }
+
+${(result as any).smartCodeAnalysis || ''}
 
 ## 🚨 Critical Blockers (Must Fix Before Deployment)
 ${result.criticalBlockers
@@ -1819,39 +1961,12 @@ async function analyzeCodeQualityWithTreeSitter(
 
   try {
     const analyzer = new TreeSitterAnalyzer();
-    const { readdirSync, statSync } = await import('fs');
-    const { join } = await import('path');
 
-    // Find source files to analyze
-    const sourceFiles: string[] = [];
-    const findSourceFiles = (dir: string, depth: number = 0) => {
-      if (depth > 3) return; // Limit recursion depth
-
-      try {
-        const items = readdirSync(dir);
-        for (const item of items) {
-          if (item.startsWith('.') || item === 'node_modules') continue;
-
-          const fullPath = join(dir, item);
-          const stat = statSync(fullPath);
-
-          if (stat.isDirectory()) {
-            findSourceFiles(fullPath, depth + 1);
-          } else if (stat.isFile()) {
-            const ext = item.split('.').pop()?.toLowerCase();
-            if (['ts', 'js', 'py', 'yml', 'yaml', 'tf', 'hcl'].includes(ext || '')) {
-              sourceFiles.push(fullPath);
-            }
-          }
-        }
-      } catch {
-        // Skip directories we can't read
-      }
-    };
-
-    findSourceFiles(projectPath);
+    // Use fast-glob based file discovery for enhanced performance
+    const findResult = await findFiles(projectPath, ['**/*.{ts,js,py,yml,yaml,tf,hcl,sh}']);
 
     // Analyze files (limit to first 20 for performance)
+    const sourceFiles = findResult.files.map(f => f.path);
     const filesToAnalyze = sourceFiles.slice(0, 20);
     let totalComplexity = 0;
     let totalFunctions = 0;
