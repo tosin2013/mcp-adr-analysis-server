@@ -43,19 +43,19 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: |
           npm ci
           # Install OpenAI SDK if not in dependencies
           npm install openai@latest --save-dev || true
-      
+
       - name: Determine version
         id: version
         run: |
@@ -72,7 +72,7 @@ jobs:
           fi
           echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
           echo "Using version: ${VERSION}"
-      
+
       - name: Update package.json version
         run: |
           VERSION="${{ steps.version.outputs.VERSION }}"
@@ -168,13 +168,13 @@ jobs:
         run: |
           VERSION_NO_V="${{ steps.version.outputs.VERSION }}"
           VERSION_NO_V="${VERSION_NO_V#v}"
-          
+
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          
+
           # Stage changes
           git add package.json package-lock.json CHANGELOG.md
-          
+
           # Check if there are changes to commit
           if git diff --staged --quiet; then
             echo "No changes to commit"
@@ -190,36 +190,92 @@ jobs:
             # Push changes
             git push origin HEAD:main || echo "Push failed (may be protected branch)"
           fi
-      
-      
+
       - name: Extract release body
         id: release_body
         run: |
           # Extract just the current version's release notes from CHANGELOG.md
           VERSION="${{ steps.version.outputs.VERSION }}"
-          
+
           # Use awk to extract content between version headers
           awk "/^# Release ${VERSION//./\\.}/{flag=1; next} /^# Release/{flag=0} flag" CHANGELOG.md > release-body.md
-          
+
           # If extraction failed, use the whole CHANGELOG
           if [ ! -s release-body.md ]; then
             cp CHANGELOG.md release-body.md
           fi
-          
+
           echo "Release notes extracted to release-body.md"
-      
-      - name: Create or Update Release
+
+      - name: Check for existing release
+        id: check-release
+        run: |
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          echo "🔍 Checking for existing release $VERSION..."
+
+          # Check if release already exists
+          EXISTING_RELEASE=$(gh api repos/${{ github.repository }}/releases/tags/$VERSION 2>/dev/null || echo "")
+
+          if [[ -n "$EXISTING_RELEASE" ]]; then
+            EXISTING_BODY=$(echo "$EXISTING_RELEASE" | jq -r '.body')
+            echo "existing_release=true" >> $GITHUB_OUTPUT
+            echo "✅ Found existing release $VERSION"
+
+            # Save existing body to preserve Release Drafter structure
+            echo "$EXISTING_BODY" > existing-body.md
+          else
+            echo "existing_release=false" >> $GITHUB_OUTPUT
+            echo "⚠️ No existing release found for $VERSION"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enhance release body with AI content
+        if: steps.check-release.outputs.existing_release == 'true'
+        run: |
+          echo "📝 Enhancing existing release with AI-generated content..."
+
+          # Combine existing body with AI-enhanced content
+          EXISTING_BODY=$(cat existing-body.md)
+          AI_CONTENT=$(cat release-body.md)
+
+          cat > final-release-body.md << EOF
+          $EXISTING_BODY
+
+          ## 🤖 AI-Enhanced Release Notes
+
+          $AI_CONTENT
+
+          ---
+          *Enhanced with AI-generated content*
+          EOF
+
+          echo "✅ Enhanced release body prepared"
+
+      - name: Prepare final release body
+        run: |
+          if [[ "${{ steps.check-release.outputs.existing_release }}" == "true" ]]; then
+            # Use enhanced body for existing releases
+            cp final-release-body.md final-body.md
+            echo "📝 Using enhanced body for existing release"
+          else
+            # Use AI-generated body for new releases
+            cp release-body.md final-body.md
+            echo "📝 Using AI-generated body for new release"
+          fi
+
+      - name: Create or Update Release with AI Enhancement
         uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ steps.version.outputs.VERSION }}
           name: Release ${{ steps.version.outputs.VERSION }}
-          body_path: ./release-body.md
+          body_path: ./final-body.md
           draft: false
           prerelease: ${{ contains(steps.version.outputs.VERSION, '-') }}
-          generate_release_notes: false  # We're using our own AI-generated notes
-      
+          generate_release_notes: false # We're using our own AI-generated notes
+
   publish:
     needs: generate-notes
     uses: ./.github/workflows/publish.yml
