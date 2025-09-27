@@ -21,226 +21,200 @@ jobs:
     strategy:
       matrix:
         node-version: ['20', '22', 'latest']
-    
+
     steps:
-    - name: Checkout PR code
-      uses: actions/checkout@v5
-      with:
-        ref: ${{ github.head_ref }}
-        token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout PR code
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v5
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Extract MCP SDK version
-      id: mcp-version
-      run: |
-        NEW_VERSION=$(npm list @modelcontextprotocol/sdk --depth=0 --json | jq -r '.dependencies."@modelcontextprotocol/sdk".version')
-        echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
-        echo "🔍 Testing MCP SDK version: $NEW_VERSION"
+      - name: Extract MCP SDK version
+        id: mcp-version
+        run: |
+          NEW_VERSION=$(npm list @modelcontextprotocol/sdk --depth=0 --json | jq -r '.dependencies."@modelcontextprotocol/sdk".version')
+          echo "new-version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          echo "🔍 Testing MCP SDK version: $NEW_VERSION"
 
-    - name: Enhanced MCP SDK Testing
-      run: |
-        echo "🧪 Running enhanced MCP SDK compatibility tests..."
-        
-        # Build first to catch TypeScript issues
-        npm run build
-        
-        # Run comprehensive test suite
-        npm test
-        
-        # Test MCP server startup and basic functionality
-        echo "🚀 Testing MCP server startup..."
-        timeout 30s npm start &
-        SERVER_PID=$!
-        sleep 10
-        
-        if kill -0 $SERVER_PID 2>/dev/null; then
-          echo "✅ MCP server started successfully with SDK ${{ steps.mcp-version.outputs.new-version }}"
-          
-          # Test basic MCP protocol functionality
-          echo "🔌 Testing MCP protocol endpoints..."
-          # Add more sophisticated MCP testing here
-          
-          kill $SERVER_PID
-          echo "✅ MCP server shutdown cleanly"
-        else
-          echo "❌ MCP server failed to start with SDK ${{ steps.mcp-version.outputs.new-version }}"
-          exit 1
-        fi
+      - name: Enhanced MCP SDK Testing
+        run: |
+          echo "🧪 Running enhanced MCP SDK compatibility tests..."
 
-    - name: Compatibility Matrix Report
-      if: always()
-      run: |
-        echo "## MCP SDK Compatibility Report" >> $GITHUB_STEP_SUMMARY
-        echo "**Node.js Version:** ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
-        echo "**MCP SDK Version:** ${{ steps.mcp-version.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          # Build first to catch TypeScript issues
+          npm run build
+
+          # Run comprehensive test suite
+          npm test
+
+          # Test MCP server functionality with new SDK version
+          echo "🚀 Testing MCP server with SDK ${{ steps.mcp-version.outputs.new-version }}..."
+          ./scripts/test-mcp-server.sh
+
+      - name: Compatibility Matrix Report
+        if: always()
+        run: |
+          echo "## MCP SDK Compatibility Report" >> $GITHUB_STEP_SUMMARY
+          echo "**Node.js Version:** ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**MCP SDK Version:** ${{ steps.mcp-version.outputs.new-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
 
   # Regular dependency updates
   update-dependencies:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Setup Node.js (Latest LTS)
-      uses: actions/setup-node@v5
-      with:
-        node-version: '20'
-        cache: 'npm'
+      - name: Setup Node.js (Latest LTS)
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Check for outdated dependencies
-      run: |
-        echo "Checking for outdated dependencies..."
-        npm outdated || true
+      - name: Check for outdated dependencies
+        run: |
+          echo "Checking for outdated dependencies..."
+          npm outdated || true
 
-    - name: Update patch and minor versions (excluding MCP SDK)
-      run: |
-        echo "Updating patch and minor versions (MCP SDK handled separately)..."
-        # Update all except MCP SDK which gets special handling
-        npm update --save-exact=false
-        
-        # Restore MCP SDK to current version if it was updated
-        CURRENT_MCP_VERSION=$(npm list @modelcontextprotocol/sdk --depth=0 --json | jq -r '.dependencies."@modelcontextprotocol/sdk".version')
-        echo "Maintaining MCP SDK at version: $CURRENT_MCP_VERSION"
+      - name: Update patch and minor versions (excluding MCP SDK)
+        run: |
+          echo "Updating patch and minor versions (MCP SDK handled separately)..."
+          # Update all except MCP SDK which gets special handling
+          npm update --save-exact=false
 
-    - name: Run tests after update
-      run: |
-        npm test
-        npm run build
+          # Restore MCP SDK to current version if it was updated
+          CURRENT_MCP_VERSION=$(npm list @modelcontextprotocol/sdk --depth=0 --json | jq -r '.dependencies."@modelcontextprotocol/sdk".version')
+          echo "Maintaining MCP SDK at version: $CURRENT_MCP_VERSION"
 
-    - name: Test MCP server after dependency update
-      run: |
-        echo "Testing MCP server functionality after dependency update..."
-        
-        # Enhanced smoke test
-        timeout 30s npm start &
-        SERVER_PID=$!
-        sleep 10
-        
-        if kill -0 $SERVER_PID 2>/dev/null; then
-          echo "✅ MCP server works after dependency update"
-          kill $SERVER_PID
-        else
-          echo "❌ MCP server broken after dependency update"
-          exit 1
-        fi
+      - name: Run tests after update
+        run: |
+          npm test
+          npm run build
 
-    - name: Check for security vulnerabilities
-      run: |
-        echo "Checking for security vulnerabilities..."
-        npm audit --audit-level=moderate || echo "Security audit completed with warnings"
+      - name: Test MCP server after dependency update
+        run: |
+          echo "Testing MCP server functionality after dependency update..."
 
-    - name: Generate dependency report
-      run: |
-        echo "## Dependency Update Report" > dependency-report.md
-        echo "Generated on: $(date)" >> dependency-report.md
-        echo "" >> dependency-report.md
-        echo "### Updated Dependencies" >> dependency-report.md
-        npm outdated --json > outdated.json || true
-        if [ -s outdated.json ]; then
-          echo "Dependencies were updated. See package.json for details." >> dependency-report.md
-        else
-          echo "No dependencies needed updating." >> dependency-report.md
-        fi
-        echo "" >> dependency-report.md
-        echo "### MCP SDK Status" >> dependency-report.md
-        MCP_VERSION=$(npm list @modelcontextprotocol/sdk --depth=0 --json | jq -r '.dependencies."@modelcontextprotocol/sdk".version')
-        echo "Current MCP SDK version: $MCP_VERSION" >> dependency-report.md
-        echo "Note: MCP SDK updates are handled separately with enhanced testing." >> dependency-report.md
+          # Use proper MCP testing script
+          ./scripts/test-mcp-server.sh
 
-    - name: Create Pull Request
-      uses: peter-evans/create-pull-request@v7
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        commit-message: 'chore: update dependencies (excluding MCP SDK)'
-        title: 'Automated dependency updates (non-critical)'
-        body: |
-          ## Automated Dependency Updates
-          
-          This PR contains automated dependency updates for non-critical dependencies:
-          
-          - Updated patch and minor versions (excluding MCP SDK)
-          - Verified tests still pass
-          - Verified MCP server functionality
-          - Security audit completed
-          
-          **Note:** MCP SDK updates are handled separately with enhanced testing in dedicated PRs.
-          
-          ### Changes
-          - Updated npm dependencies to latest compatible versions
-          - All tests passing ✅
-          - MCP server functionality verified ✅
-          - Security audit completed ✅
-          
-          ### MCP SDK Status
-          MCP SDK updates are handled separately to ensure thorough compatibility testing across multiple Node.js versions.
-        branch: automated-dependency-updates
-        delete-branch: true
-        labels: |
-          dependencies
-          automated
+      - name: Check for security vulnerabilities
+        run: |
+          echo "Checking for security vulnerabilities..."
+          npm audit --audit-level=moderate || echo "Security audit completed with warnings"
+
+      - name: Generate dependency report
+        run: |
+          echo "## Dependency Update Report" > dependency-report.md
+          echo "Generated on: $(date)" >> dependency-report.md
+          echo "" >> dependency-report.md
+          echo "### Updated Dependencies" >> dependency-report.md
+          npm outdated --json > outdated.json || true
+          if [ -s outdated.json ]; then
+            echo "Dependencies were updated. See package.json for details." >> dependency-report.md
+          else
+            echo "No dependencies needed updating." >> dependency-report.md
+          fi
+          echo "" >> dependency-report.md
+          echo "### MCP SDK Status" >> dependency-report.md
+          MCP_VERSION=$(npm list @modelcontextprotocol/sdk --depth=0 --json | jq -r '.dependencies."@modelcontextprotocol/sdk".version')
+          echo "Current MCP SDK version: $MCP_VERSION" >> dependency-report.md
+          echo "Note: MCP SDK updates are handled separately with enhanced testing." >> dependency-report.md
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update dependencies (excluding MCP SDK)'
+          title: 'Automated dependency updates (non-critical)'
+          body: |
+            ## Automated Dependency Updates
+
+            This PR contains automated dependency updates for non-critical dependencies:
+
+            - Updated patch and minor versions (excluding MCP SDK)
+            - Verified tests still pass
+            - Verified MCP server functionality
+            - Security audit completed
+
+            **Note:** MCP SDK updates are handled separately with enhanced testing in dedicated PRs.
+
+            ### Changes
+            - Updated npm dependencies to latest compatible versions
+            - All tests passing ✅
+            - MCP server functionality verified ✅
+            - Security audit completed ✅
+
+            ### MCP SDK Status
+            MCP SDK updates are handled separately to ensure thorough compatibility testing across multiple Node.js versions.
+          branch: automated-dependency-updates
+          delete-branch: true
+          labels: |
+            dependencies
+            automated
 
   security-audit:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
+      - name: Checkout code
+        uses: actions/checkout@v5
 
-    - name: Setup Node.js (LTS)
-      uses: actions/setup-node@v5
-      with:
-        node-version: '20'
-        cache: 'npm'
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Run security audit
-      run: |
-        echo "Running security audit..."
-        npm audit --audit-level=high
-        
-    - name: Check for known vulnerabilities
-      run: |
-        echo "Checking for known vulnerabilities in dependencies..."
-        npx audit-ci --config audit-ci.json || echo "Audit CI not configured, skipping"
+      - name: Run security audit
+        run: |
+          echo "Running security audit..."
+          npm audit --audit-level=high
 
-    - name: Generate security report
-      run: |
-        echo "Generating security report..."
-        npm audit --json > security-audit.json || true
-        
-        # Create human-readable summary
-        echo "## Security Audit Summary" > security-summary.md
-        echo "Generated on: $(date)" >> security-summary.md
-        echo "" >> security-summary.md
-        
-        if [ -s security-audit.json ]; then
-          echo "Security audit completed. Check security-audit.json for details." >> security-summary.md
-        else
-          echo "✅ No security issues found." >> security-summary.md
-        fi
+      - name: Check for known vulnerabilities
+        run: |
+          echo "Checking for known vulnerabilities in dependencies..."
+          npx audit-ci --config audit-ci.json || echo "Audit CI not configured, skipping"
 
-    - name: Upload security artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: security-audit
-        path: |
-          security-audit.json
-          security-summary.md
-        retention-days: 30
+      - name: Generate security report
+        run: |
+          echo "Generating security report..."
+          npm audit --json > security-audit.json || true
+
+          # Create human-readable summary
+          echo "## Security Audit Summary" > security-summary.md
+          echo "Generated on: $(date)" >> security-summary.md
+          echo "" >> security-summary.md
+
+          if [ -s security-audit.json ]; then
+            echo "Security audit completed. Check security-audit.json for details." >> security-summary.md
+          else
+            echo "✅ No security issues found." >> security-summary.md
+          fi
+
+      - name: Upload security artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit
+          path: |
+            security-audit.json
+            security-summary.md
+          retention-days: 30

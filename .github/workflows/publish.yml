@@ -18,197 +18,191 @@ on:
 jobs:
   test-and-publish:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v5
-      with:
-        fetch-depth: 0
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v5
-      with:
-        node-version: '20'
-        cache: 'npm'
-        registry-url: 'https://registry.npmjs.org'
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
 
-    - name: Install dependencies
-      run: npm ci
+      - name: Install dependencies
+        run: npm ci
 
-    - name: Run linting
-      run: npm run lint
+      - name: Run linting
+        run: npm run lint
 
-    - name: Run tests
-      run: npm test
+      - name: Run tests
+        run: npm test
 
-    - name: Build project
-      run: |
-        echo "Building project..."
-        npm run build
+      - name: Build project
+        run: |
+          echo "Building project..."
+          npm run build
 
-        # Verify build completed successfully
-        echo "=== Build Verification ==="
-        if [ -d "dist" ]; then
-          echo "✅ dist directory created"
-          if [ -f "dist/src/index.js" ]; then
-            echo "✅ Main entry point built successfully"
-            echo "File size: $(ls -lh dist/src/index.js | awk '{print $5}')"
-          else
-            echo "❌ Main entry point not built"
-            echo "Contents of dist:"
-            ls -la dist/ || echo "dist directory empty"
-            exit 1
-          fi
-        else
-          echo "❌ Build failed - no dist directory created"
-          exit 1
-        fi
-
-    - name: Test MCP server functionality
-      run: |
-        echo "Testing MCP server functionality before publish..."
-
-        # Use health check instead of trying to start full server
-        if npm run health; then
-          echo "✅ MCP server health check passed"
-        else
-          echo "❌ MCP server health check failed - aborting publish"
-          exit 1
-        fi
-
-        # Also verify the built server can be syntax-checked
-        if node --check dist/src/index.js; then
-          echo "✅ Built server syntax is valid"
-        else
-          echo "❌ Built server has syntax errors - aborting publish"
-          exit 1
-        fi
-
-    - name: Verify package.json
-      run: |
-        echo "Verifying package.json for npm publish..."
-        
-        # Check required fields
-        if ! grep -q '"name"' package.json; then
-          echo "❌ Missing package name"
-          exit 1
-        fi
-        
-        if ! grep -q '"version"' package.json; then
-          echo "❌ Missing package version"
-          exit 1
-        fi
-        
-        if ! grep -q '"description"' package.json; then
-          echo "❌ Missing package description"
-          exit 1
-        fi
-        
-        echo "✅ Package.json is valid for publishing"
-
-    - name: Sync version with git tag
-      run: |
-        if [[ "${{ inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
-          # Extract version from tag (remove 'v' prefix)
-          TAG_VERSION="${{ inputs.version }}"
-          CLEAN_VERSION=${TAG_VERSION#v}
-          echo "Syncing package.json to tag version: $CLEAN_VERSION"
-          
-          # Update package.json to match tag
-          npm version $CLEAN_VERSION --no-git-tag-version
-          
-          echo "NEW_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
-          echo "Publishing version: $CLEAN_VERSION"
-        else
-          # Fallback to package.json version
-          CURRENT_VERSION=$(node -p "require('./package.json').version")
-          echo "NEW_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
-          echo "Publishing version: $CURRENT_VERSION"
-        fi
-
-    - name: Verify distribution package
-      run: |
-        echo "Verifying distribution package..."
-
-        # Debug: Check what files exist
-        echo "=== Build Output Debug ==="
-        echo "Current directory: $(pwd)"
-        echo "Files in current directory:"
-        ls -la
-        echo "Checking for dist directory:"
-        if [ -d "dist" ]; then
-          echo "✅ dist directory exists"
-          echo "Contents of dist:"
-          ls -la dist/
-          if [ -d "dist/src" ]; then
-            echo "✅ dist/src directory exists"
-            echo "Contents of dist/src:"
-            ls -la dist/src/
+          # Verify build completed successfully
+          echo "=== Build Verification ==="
+          if [ -d "dist" ]; then
+            echo "✅ dist directory created"
             if [ -f "dist/src/index.js" ]; then
-              echo "✅ dist/src/index.js exists"
+              echo "✅ Main entry point built successfully"
+              echo "File size: $(ls -lh dist/src/index.js | awk '{print $5}')"
             else
-              echo "❌ dist/src/index.js missing"
+              echo "❌ Main entry point not built"
+              echo "Contents of dist:"
+              ls -la dist/ || echo "dist directory empty"
               exit 1
             fi
           else
-            echo "❌ dist/src directory missing"
+            echo "❌ Build failed - no dist directory created"
             exit 1
           fi
-        else
-          echo "❌ dist directory missing - build failed"
-          exit 1
-        fi
 
-        echo "✅ Distribution package verification complete"
+      - name: Test MCP server functionality
+        run: |
+          echo "Testing MCP server functionality before publish..."
 
-    - name: Test package installation
-      run: |
-        echo "Testing package installation..."
+          # Use comprehensive MCP server test script
+          ./scripts/test-mcp-server.sh
 
-        # Test package creation directly from main directory (not npm-package)
-        echo "=== Testing Package Creation ==="
-        npm pack --dry-run
+          # Also verify the built server can be syntax-checked
+          if node --check dist/src/index.js; then
+            echo "✅ Built server syntax is valid"
+          else
+            echo "❌ Built server has syntax errors - aborting publish"
+            exit 1
+          fi
 
-        # Verify main entry point exists
-        MAIN_ENTRY=$(node -p "require('./package.json').main")
-        echo "Checking for main entry point: $MAIN_ENTRY"
-        if [ ! -f "$MAIN_ENTRY" ]; then
-          echo "❌ Main entry point not found: $MAIN_ENTRY"
-          echo "Available files:"
-          find . -name "*.js" -type f | head -10
-          exit 1
-        else
-          echo "✅ Main entry point found: $MAIN_ENTRY"
-          echo "File size: $(ls -lh "$MAIN_ENTRY" | awk '{print $5}')"
-        fi
+      - name: Verify package.json
+        run: |
+          echo "Verifying package.json for npm publish..."
 
-        # Test that the entry point is valid JavaScript
-        if node --check "$MAIN_ENTRY"; then
-          echo "✅ Main entry point has valid syntax"
-        else
-          echo "❌ Main entry point has syntax errors"
-          exit 1
-        fi
+          # Check required fields
+          if ! grep -q '"name"' package.json; then
+            echo "❌ Missing package name"
+            exit 1
+          fi
 
-        echo "✅ Package is ready for publishing"
+          if ! grep -q '"version"' package.json; then
+            echo "❌ Missing package version"
+            exit 1
+          fi
 
-    - name: Publish to NPM
-      run: |
-        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.version }}" = "prerelease" ]; then
-          echo "Publishing prerelease version..."
-          npm publish --tag beta
-        else
-          echo "Publishing stable version..."
-          npm publish
-        fi
+          if ! grep -q '"description"' package.json; then
+            echo "❌ Missing package description"
+            exit 1
+          fi
 
-        echo "✅ Successfully published to NPM"
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          echo "✅ Package.json is valid for publishing"
 
+      - name: Sync version with git tag
+        run: |
+          if [[ "${{ inputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+.*$ ]]; then
+            # Extract version from tag (remove 'v' prefix)
+            TAG_VERSION="${{ inputs.version }}"
+            CLEAN_VERSION=${TAG_VERSION#v}
+            echo "Syncing package.json to tag version: $CLEAN_VERSION"
+            
+            # Update package.json to match tag
+            npm version $CLEAN_VERSION --no-git-tag-version
+            
+            echo "NEW_VERSION=$CLEAN_VERSION" >> $GITHUB_ENV
+            echo "Publishing version: $CLEAN_VERSION"
+          else
+            # Fallback to package.json version
+            CURRENT_VERSION=$(node -p "require('./package.json').version")
+            echo "NEW_VERSION=$CURRENT_VERSION" >> $GITHUB_ENV
+            echo "Publishing version: $CURRENT_VERSION"
+          fi
 
-    - name: Notify success
-      run: |
-        echo "🎉 Successfully published MCP ADR Analysis Server to NPM!"
-        echo "📦 Package: https://www.npmjs.com/package/mcp-adr-analysis-server"
-        echo "🏷️ Version: ${{ env.NEW_VERSION || github.ref_name }}"
+      - name: Verify distribution package
+        run: |
+          echo "Verifying distribution package..."
+
+          # Debug: Check what files exist
+          echo "=== Build Output Debug ==="
+          echo "Current directory: $(pwd)"
+          echo "Files in current directory:"
+          ls -la
+          echo "Checking for dist directory:"
+          if [ -d "dist" ]; then
+            echo "✅ dist directory exists"
+            echo "Contents of dist:"
+            ls -la dist/
+            if [ -d "dist/src" ]; then
+              echo "✅ dist/src directory exists"
+              echo "Contents of dist/src:"
+              ls -la dist/src/
+              if [ -f "dist/src/index.js" ]; then
+                echo "✅ dist/src/index.js exists"
+              else
+                echo "❌ dist/src/index.js missing"
+                exit 1
+              fi
+            else
+              echo "❌ dist/src directory missing"
+              exit 1
+            fi
+          else
+            echo "❌ dist directory missing - build failed"
+            exit 1
+          fi
+
+          echo "✅ Distribution package verification complete"
+
+      - name: Test package installation
+        run: |
+          echo "Testing package installation..."
+
+          # Test package creation directly from main directory (not npm-package)
+          echo "=== Testing Package Creation ==="
+          npm pack --dry-run
+
+          # Verify main entry point exists
+          MAIN_ENTRY=$(node -p "require('./package.json').main")
+          echo "Checking for main entry point: $MAIN_ENTRY"
+          if [ ! -f "$MAIN_ENTRY" ]; then
+            echo "❌ Main entry point not found: $MAIN_ENTRY"
+            echo "Available files:"
+            find . -name "*.js" -type f | head -10
+            exit 1
+          else
+            echo "✅ Main entry point found: $MAIN_ENTRY"
+            echo "File size: $(ls -lh "$MAIN_ENTRY" | awk '{print $5}')"
+          fi
+
+          # Test that the entry point is valid JavaScript
+          if node --check "$MAIN_ENTRY"; then
+            echo "✅ Main entry point has valid syntax"
+          else
+            echo "❌ Main entry point has syntax errors"
+            exit 1
+          fi
+
+          echo "✅ Package is ready for publishing"
+
+      - name: Publish to NPM
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ github.event.inputs.version }}" = "prerelease" ]; then
+            echo "Publishing prerelease version..."
+            npm publish --tag beta
+          else
+            echo "Publishing stable version..."
+            npm publish
+          fi
+
+          echo "✅ Successfully published to NPM"
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Notify success
+        run: |
+          echo "🎉 Successfully published MCP ADR Analysis Server to NPM!"
+          echo "📦 Package: https://www.npmjs.com/package/mcp-adr-analysis-server"
+          echo "🏷️ Version: ${{ env.NEW_VERSION || github.ref_name }}"
