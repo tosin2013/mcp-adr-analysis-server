@@ -3,7 +3,6 @@
  * Tests the complete workflow from ADR analysis to related code discovery
  */
 
-import { jest } from '@jest/globals';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
