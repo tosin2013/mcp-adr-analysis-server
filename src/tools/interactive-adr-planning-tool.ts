@@ -38,6 +38,7 @@ import { promises as fs } from 'fs';
 import { join, basename } from 'path';
 import * as os from 'os';
 import { McpAdrError } from '../types/index.js';
+import { findFiles, findRelatedCode } from '../utils/file-system.js';
 
 // Planning session schema
 const PlanningSessionSchema = z.object({
@@ -691,22 +692,62 @@ async function requestResearch(args: InteractiveAdrPlanningInput): Promise<any> 
     throw new McpAdrError(`Session ${args.sessionId} not found`, 'SESSION_NOT_FOUND');
   }
 
-  // Simulate research integration (would integrate with actual research tools)
+  // Smart Code Linking - discover relevant code and architecture files for the problem
+  const problemContext = session.context.problemStatement || 'architectural decision';
+  const relatedCodeResult = await findRelatedCode(
+    'adr-problem-research',
+    problemContext,
+    session.context.projectPath,
+    {
+      useAI: true,
+      useRipgrep: true,
+      maxFiles: 20,
+      includeContent: false,
+    }
+  );
+
+  // Smart Code Linking - discover project structure and documentation
+  const projectFilesResult = await findFiles(
+    session.context.projectPath,
+    ['*.md', '*.json', '*.yaml', '*.yml', '*.txt', '*.rst'],
+    {
+      limit: 100,
+    }
+  );
+
+  // Enhanced research findings with actual code context
   const researchFindings = [
     {
       source: 'Industry Best Practices',
-      insight: `For ${session.context.problemStatement}, microservices architecture is commonly used for scalability`,
-      relevance: 'High - Addresses core scalability concerns',
+      insight: `For architectural decisions like "${problemContext}", common patterns include layered architecture, microservices, and domain-driven design`,
+      relevance: 'High - Provides proven solution patterns',
     },
     {
       source: 'Current Codebase Analysis',
-      insight: 'Existing monolithic structure with clear domain boundaries',
-      relevance: 'High - Shows feasibility of decomposition',
+      insight: `Found ${relatedCodeResult.relatedFiles.length} files potentially related to the problem. Key areas: ${relatedCodeResult.relatedFiles
+        .slice(0, 5)
+        .map(f => f.path.split('/').pop())
+        .join(', ')}`,
+      relevance: 'High - Shows current implementation context',
     },
     {
-      source: 'Team Experience',
-      insight: 'Team has limited microservices experience but strong domain knowledge',
-      relevance: 'Medium - Impacts implementation approach',
+      source: 'Project Structure Analysis',
+      insight: `Project contains ${projectFilesResult.files.length} documentation/config files. Architecture appears to use ${detectArchitecturalPatterns(projectFilesResult.files)}`,
+      relevance: 'High - Indicates current architectural style',
+    },
+    {
+      source: 'Related Code Context',
+      insight:
+        relatedCodeResult.relatedFiles.length > 0
+          ? `Found relevant code in: ${relatedCodeResult.relatedFiles
+              .slice(0, 3)
+              .map(f => f.path)
+              .join(', ')}`
+          : 'No directly related code files found - this may be a greenfield decision',
+      relevance:
+        relatedCodeResult.relatedFiles.length > 0
+          ? 'High - Direct code impact'
+          : 'Medium - New implementation area',
     },
   ];
 
@@ -719,7 +760,12 @@ async function requestResearch(args: InteractiveAdrPlanningInput): Promise<any> 
     success: true,
     sessionId: args.sessionId,
     researchFindings,
-    guidance: 'Research complete. Moving to option exploration phase.',
+    codeContext: {
+      relatedFiles: relatedCodeResult.relatedFiles.length,
+      projectFiles: projectFiles.length,
+      keyFiles: relatedCodeResult.relatedFiles.slice(0, 5).map(f => f.path),
+    },
+    guidance: `Research complete with actual code context analysis. Found ${relatedCodeResult.relatedFiles.length} related files. Moving to option exploration phase.`,
     nextAction: 'evaluate_options',
   };
 }
@@ -737,38 +783,93 @@ async function evaluateOptions(args: InteractiveAdrPlanningInput): Promise<any> 
     throw new McpAdrError(`Session ${args.sessionId} not found`, 'SESSION_NOT_FOUND');
   }
 
-  // Generate options based on problem and research
-  const options = [
+  // Smart Code Linking - find implementation examples and patterns in the codebase
+  const problemContext = session.context.problemStatement || 'architectural decision';
+  const patternContext = [
+    'architectural patterns',
+    'design patterns',
+    'implementation examples',
+    problemContext,
+    'configuration',
+    'setup',
+    'structure',
+  ].join(' ');
+
+  const patternFiles = await findRelatedCode(
+    'adr-pattern-analysis',
+    patternContext,
+    session.context.projectPath,
     {
-      name: 'Full Microservices Migration',
-      description: 'Complete decomposition into microservices',
-      pros: ['Maximum scalability', 'Independent deployment', 'Technology flexibility'],
-      cons: ['High complexity', 'Significant refactoring', 'Operational overhead'],
-      risks: ['Team learning curve', 'Integration complexity', 'Data consistency'],
-      effort: 'high' as const,
-      confidence: 60,
+      useAI: true,
+      useRipgrep: true,
+      maxFiles: 15,
+      includeContent: false,
+    }
+  );
+
+  // Smart Code Linking - find similar architectural decisions or configurations
+  const configFilesResult = await findFiles(
+    session.context.projectPath,
+    [
+      '*.config.*',
+      'package.json',
+      'tsconfig.json',
+      '*.dockerfile',
+      'docker-compose.*',
+      '*.yaml',
+      '*.yml',
+    ],
+    {
+      limit: 50,
+    }
+  );
+
+  // Generate contextual options based on actual codebase analysis
+  const baseOptions = [
+    {
+      name: 'Incremental Refactoring',
+      description: 'Gradually improve the existing architecture with minimal disruption',
+      pros: ['Low risk', 'Continuous delivery', 'Builds on existing patterns'],
+      cons: ['Slower progress', 'Technical debt accumulation', 'May not address root issues'],
+      risks: ['Incomplete transformation', 'Legacy constraints'],
+      effort: 'low' as const,
+      confidence: 90,
     },
     {
-      name: 'Modular Monolith',
-      description: 'Keep monolithic deployment but enforce module boundaries',
-      pros: ['Simpler operations', 'Easier data consistency', 'Gradual evolution path'],
-      cons: ['Limited scalability', 'Shared deployment', 'Technology constraints'],
-      risks: ['Module boundary violations', 'Scaling limitations'],
-      effort: 'medium' as const,
-      confidence: 80,
-    },
-    {
-      name: 'Selective Service Extraction',
-      description: 'Extract only high-traffic components as services',
-      pros: ['Targeted scalability', 'Lower complexity', 'Pragmatic approach'],
-      cons: ['Partial benefits', 'Mixed architecture'],
-      risks: ['Service boundary decisions', 'Integration points'],
+      name: 'Targeted Modernization',
+      description: 'Focus on specific components or areas identified through code analysis',
+      pros: ['Focused impact', 'Measurable improvements', 'Leverages existing structure'],
+      cons: ['Partial solution', 'Integration complexity'],
+      risks: ['Component boundaries', 'Data consistency'],
       effort: 'medium' as const,
       confidence: 85,
     },
+    {
+      name: 'Comprehensive Redesign',
+      description: 'Complete architectural overhaul based on modern patterns',
+      pros: ['Clean slate approach', 'Modern best practices', 'Long-term maintainability'],
+      cons: ['High risk', 'Significant effort', 'Team learning curve'],
+      risks: ['Project timeline', 'Resource requirements', 'Knowledge transfer'],
+      effort: 'high' as const,
+      confidence: 60,
+    },
   ];
 
-  session.context.options = options;
+  // Enhance options with code context insights
+  const enhancedOptions = baseOptions.map(option => ({
+    ...option,
+    codeContext: {
+      relatedFiles: patternFiles.relatedFiles.slice(0, 3).map(f => f.path),
+      configFiles: configFilesResult.files.slice(0, 3).map(f => f.path),
+      feasibilityNotes: generateFeasibilityNotes(
+        option,
+        patternFiles.relatedFiles,
+        configFilesResult.files
+      ),
+    },
+  }));
+
+  session.context.options = enhancedOptions;
   session.phase = 'decision_making';
   session.metadata.updatedAt = new Date().toISOString();
   await saveSession(session);
@@ -776,8 +877,13 @@ async function evaluateOptions(args: InteractiveAdrPlanningInput): Promise<any> 
   return {
     success: true,
     sessionId: args.sessionId,
-    options,
-    guidance: 'Options evaluated. Ready for decision making.',
+    options: enhancedOptions,
+    codeAnalysis: {
+      patternFiles: patternFiles.relatedFiles.length,
+      configFiles: configFilesResult.files.length,
+      keyPatterns: patternFiles.relatedFiles.slice(0, 5).map(f => f.path),
+    },
+    guidance: `Options evaluated with codebase context. Found ${patternFiles.relatedFiles.length} pattern-related files and ${configFilesResult.files.length} configuration files. Ready for decision making.`,
     nextAction: 'make_decision',
   };
 }
@@ -1091,6 +1197,71 @@ function calculateDuration(start: string, end: string): string {
     return `${hours}h ${minutes}m`;
   }
   return `${minutes}m`;
+}
+
+/**
+ * Helper function to detect architectural patterns from project files
+ */
+function detectArchitecturalPatterns(projectFiles: string[]): string {
+  const patterns: string[] = [];
+
+  const filenames = projectFiles.map(f => f.toLowerCase());
+
+  // Check for common architectural patterns
+  if (filenames.some(f => f.includes('microservice') || f.includes('service'))) {
+    patterns.push('microservices');
+  }
+  if (filenames.some(f => f.includes('docker') || f.includes('container'))) {
+    patterns.push('containerization');
+  }
+  if (filenames.some(f => f.includes('api') || f.includes('rest') || f.includes('graphql'))) {
+    patterns.push('API-driven');
+  }
+  if (filenames.some(f => f.includes('module') || f.includes('component'))) {
+    patterns.push('modular architecture');
+  }
+  if (filenames.some(f => f.includes('config') || f.includes('env'))) {
+    patterns.push('configuration management');
+  }
+  if (filenames.some(f => f.includes('test') || f.includes('spec'))) {
+    patterns.push('test-driven development');
+  }
+
+  return patterns.length > 0 ? patterns.join(', ') : 'standard architecture';
+}
+
+/**
+ * Helper function to generate feasibility notes based on code context
+ */
+function generateFeasibilityNotes(option: any, relatedFiles: any[], configFiles: string[]): string {
+  const notes: string[] = [];
+
+  // Analyze based on option effort level
+  if (option.effort === 'low') {
+    if (relatedFiles.length > 0) {
+      notes.push(`Existing code patterns can be leveraged for gradual improvements`);
+    }
+    if (configFiles.length > 0) {
+      notes.push(`Current configuration structure supports incremental changes`);
+    }
+  } else if (option.effort === 'medium') {
+    if (relatedFiles.length > 5) {
+      notes.push(`Substantial existing code base provides good foundation for targeted changes`);
+    } else {
+      notes.push(`Limited existing code may require more new development than expected`);
+    }
+  } else if (option.effort === 'high') {
+    if (configFiles.length > 3) {
+      notes.push(`Complex configuration setup indicates significant integration work`);
+    }
+    if (relatedFiles.length > 10) {
+      notes.push(`Large codebase will require careful migration planning and phased approach`);
+    } else {
+      notes.push(`Smaller codebase may allow for more rapid comprehensive changes`);
+    }
+  }
+
+  return notes.length > 0 ? notes.join('. ') : 'Standard implementation approach recommended';
 }
 
 /**
