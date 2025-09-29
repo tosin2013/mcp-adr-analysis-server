@@ -445,7 +445,7 @@ ${autoFindings.length > 0 ? `### Research Findings:\n${autoFindings.map(f => `- 
 
 ## Next Phase: Research & Analysis
 
-${autoFindings.length > 0 ? 'I\'ve performed initial research. You can:' : 'Please provide research findings:'}
+${autoFindings.length > 0 ? "I've performed initial research. You can:" : 'Please provide research findings:'}
 1. Review and add to the automated findings
 2. Provide additional context or constraints
 3. Move to option exploration when ready

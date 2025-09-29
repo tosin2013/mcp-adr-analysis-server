@@ -11,10 +11,11 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { EnhancedLogger } from './enhanced-logging.js';
-import { KnowledgeGraphManager } from './knowledge-graph-manager.js';
+// import { KnowledgeGraphManager } from './knowledge-graph-manager.js'; // TODO: Implement KG query
 
 export interface ResearchSource {
   type: 'project_files' | 'knowledge_graph' | 'environment' | 'web_search';
+  found?: boolean;
   data: any;
   confidence: number;
   timestamp: string;
@@ -153,9 +154,8 @@ export class ResearchOrchestrator {
       );
 
       return answer;
-
     } catch (_error) {
-      this.logger.error('Research orchestration failed', 'ResearchOrchestrator', error as Error);
+      this.logger.error('Research orchestration failed', 'ResearchOrchestrator', _error as Error);
       throw _error;
     }
   }
@@ -263,19 +263,18 @@ export class ResearchOrchestrator {
             results.content[file] = content;
             results.relevance[file] = relevance;
           }
-        } catch (_error) {
+        } catch {
           this.logger.warn(`Failed to read file: ${file}`, 'ResearchOrchestrator');
         }
       }
 
       // Sort files by relevance
       results.files = results.files
-        .filter(f => results.relevance[f] > 0.3)
+        .filter(f => (results.relevance[f] ?? 0) > 0.3)
         .sort((a, b) => (results.relevance[b] || 0) - (results.relevance[a] || 0));
 
       return results;
-
-    } catch (_error) {
+    } catch (error) {
       this.logger.error('Project file search failed', 'ResearchOrchestrator', error as Error);
       return results;
     }
@@ -284,12 +283,11 @@ export class ResearchOrchestrator {
   /**
    * SOURCE 2: Query knowledge graph
    */
-  private async queryKnowledgeGraph(question: string): Promise<any> {
+  private async queryKnowledgeGraph(_question: string): Promise<any> {
     try {
-      const _kgManager = new KnowledgeGraphManager();
-
-      // Extract keywords from question
-      const _keywords = this.extractKeywords(question);
+      // TODO: Implement actual knowledge graph query using KnowledgeGraphManager
+      // const kgManager = new KnowledgeGraphManager();
+      // const keywords = this.extractKeywords(question);
 
       // Query knowledge graph (placeholder - implement based on your KG structure)
       const results = {
@@ -302,9 +300,8 @@ export class ResearchOrchestrator {
       // For now, return empty results
 
       return results;
-
     } catch (_error) {
-      this.logger.error('Knowledge graph query failed', 'ResearchOrchestrator', error as Error);
+      this.logger.error('Knowledge graph query failed', 'ResearchOrchestrator', _error as Error);
       return { found: false, nodes: [], relationships: [] };
     }
   }
@@ -332,9 +329,11 @@ export class ResearchOrchestrator {
         capabilities: envRegistry.listCapabilities(),
         data: results,
       };
-
-    } catch (_error) {
-      this.logger.warn('Environment query failed (capability registry not available)', 'ResearchOrchestrator');
+    } catch {
+      this.logger.warn(
+        'Environment query failed (capability registry not available)',
+        'ResearchOrchestrator'
+      );
       return { found: false, capabilities: [], data: [] };
     }
   }
@@ -374,7 +373,9 @@ export class ResearchOrchestrator {
     // Add knowledge graph findings
     const knowledgeGraph = research.sources.find(s => s.type === 'knowledge_graph');
     if (knowledgeGraph && knowledgeGraph.data.nodes?.length > 0) {
-      parts.push(`Identified ${knowledgeGraph.data.nodes.length} related architectural decision(s).`);
+      parts.push(
+        `Identified ${knowledgeGraph.data.nodes.length} related architectural decision(s).`
+      );
     }
 
     // Add environment findings
@@ -410,9 +411,7 @@ export class ResearchOrchestrator {
     }
 
     // Search in specific directories if provided
-    const searchPaths = directories
-      ? directories.map(d => path.join(basePath, d))
-      : [basePath];
+    const searchPaths = directories ? directories.map(d => path.join(basePath, d)) : [basePath];
 
     for (const searchPath of searchPaths) {
       try {
@@ -462,15 +461,13 @@ export class ResearchOrchestrator {
           }
         } else if (entry.isFile()) {
           // Check if file matches pattern
-          const regex = new RegExp(
-            '^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$'
-          );
+          const regex = new RegExp('^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
           if (regex.test(entry.name)) {
             results.push(fullPath);
           }
         }
       }
-    } catch (_error) {
+    } catch {
       // Directory access error, skip
     }
 
@@ -488,11 +485,9 @@ export class ResearchOrchestrator {
     const keywords = this.extractKeywords(question);
 
     let score = 0;
-    let matches = 0;
 
     for (const keyword of keywords) {
       if (contentLower.includes(keyword.toLowerCase())) {
-        matches++;
         score += 0.2;
       }
     }
@@ -514,10 +509,47 @@ export class ResearchOrchestrator {
   private extractKeywords(question: string): string[] {
     // Remove common words
     const stopWords = new Set([
-      'the', 'is', 'are', 'was', 'were', 'what', 'when', 'where', 'why', 'how',
-      'which', 'who', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to',
-      'for', 'with', 'about', 'as', 'by', 'from', 'of', 'can', 'could', 'should',
-      'would', 'do', 'does', 'did', 'have', 'has', 'had', 'we', 'our', 'us',
+      'the',
+      'is',
+      'are',
+      'was',
+      'were',
+      'what',
+      'when',
+      'where',
+      'why',
+      'how',
+      'which',
+      'who',
+      'a',
+      'an',
+      'and',
+      'or',
+      'but',
+      'in',
+      'on',
+      'at',
+      'to',
+      'for',
+      'with',
+      'about',
+      'as',
+      'by',
+      'from',
+      'of',
+      'can',
+      'could',
+      'should',
+      'would',
+      'do',
+      'does',
+      'did',
+      'have',
+      'has',
+      'had',
+      'we',
+      'our',
+      'us',
     ]);
 
     const words = question

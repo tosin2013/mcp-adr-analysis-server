@@ -1,6 +1,6 @@
 /**
  * Prompt Composition Utilities for 100% Prompt-Driven Architecture
- * 
+ *
  * This module provides standardized utilities for composing prompts and implementing
  * AI delegation patterns across the MCP ADR Analysis Server.
  */
@@ -63,7 +63,7 @@ export function combinePrompts(...prompts: PromptObject[]): CombinedPrompt {
 
   const combinedPrompt = prompts.map(p => p.prompt).join('\n\n---\n\n');
   const combinedInstructions = prompts.map(p => p.instructions).join('\n\n');
-  
+
   // Merge context objects
   const combinedContext = prompts.reduce((acc, p) => ({ ...acc, ...p.context }), {});
 
@@ -177,16 +177,18 @@ export function validatePromptResponse(
         JSON.parse(response);
       } catch (error) {
         result.isValid = false;
-        result.errors.push(`Invalid JSON format: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        result.errors.push(
+          `Invalid JSON format: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
       break;
-    
+
     case 'markdown':
       if (!response.includes('#') && !response.includes('*') && !response.includes('-')) {
         result.warnings.push('Response may not be properly formatted Markdown');
       }
       break;
-    
+
     case 'text':
       if (response.length < 10) {
         result.warnings.push('Response seems unusually short for text format');
@@ -196,10 +198,10 @@ export function validatePromptResponse(
 
   // Requirements validation
   if (requirements) {
-    const missingRequirements = requirements.filter(req => 
-      !response.toLowerCase().includes(req.toLowerCase())
+    const missingRequirements = requirements.filter(
+      req => !response.toLowerCase().includes(req.toLowerCase())
     );
-    
+
     if (missingRequirements.length > 0) {
       result.warnings.push(`Response may not address: ${missingRequirements.join(', ')}`);
     }
@@ -209,7 +211,7 @@ export function validatePromptResponse(
   if (response.length > 10000) {
     result.suggestions.push('Consider breaking down the response into smaller sections');
   }
-  
+
   if (response.split('\n').length < 3) {
     result.suggestions.push('Consider adding more structure with line breaks and sections');
   }
@@ -302,10 +304,7 @@ Please provide thorough analysis with actionable insights.
  * Escape special characters in prompts for safe processing
  */
 export function escapePromptContent(content: string): string {
-  return content
-    .replace(/\\/g, '\\\\')
-    .replace(/`/g, '\\`')
-    .replace(/\${/g, '\\${');
+  return content.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\${/g, '\\${');
 }
 
 /**
@@ -318,11 +317,11 @@ export function truncatePrompt(prompt: string, maxLength: number): string {
 
   const truncated = prompt.substring(0, maxLength - 3);
   const lastNewline = truncated.lastIndexOf('\n');
-  
+
   if (lastNewline > maxLength * 0.8) {
     return truncated.substring(0, lastNewline) + '\n...';
   }
-  
+
   return truncated + '...';
 }
 

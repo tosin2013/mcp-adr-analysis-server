@@ -8,7 +8,7 @@ import { McpAdrError } from '../../src/types/index.js';
 
 // Pragmatic mocking approach to avoid TypeScript complexity
 jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
-  discoverAdrsInDirectory: jest.fn()
+  discoverAdrsInDirectory: jest.fn(),
 }));
 
 const { generateDeploymentGuidance } = await import('../../src/tools/deployment-guidance-tool.js');
@@ -29,18 +29,19 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'We will use Docker containers for consistent deployment across environments.',
             date: '2024-01-01',
-            path: '/test/ADR-001-docker.md'
-          }
+            path: '/test/ADR-001-docker.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({});
 
@@ -62,25 +63,30 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'We will use PostgreSQL as our primary database.',
             date: '2024-01-01',
-            path: '/test/ADR-002-database.md'
-          }
+            path: '/test/ADR-002-database.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'custom/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'custom/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({
           adrDirectory: 'custom/adrs',
-          projectPath: '/custom/project'
+          projectPath: '/custom/project',
         });
 
-        expect(discoverAdrsInDirectory).toHaveBeenCalledWith('custom/adrs', true, '/custom/project');
+        expect(discoverAdrsInDirectory).toHaveBeenCalledWith(
+          'custom/adrs',
+          true,
+          '/custom/project'
+        );
         expect(result.content[0].text).toContain('**ADR Directory**: custom/adrs');
         expect(result.content[0].text).toContain('Database Selection');
       });
@@ -93,21 +99,22 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'We will use Nginx as our load balancer for high availability.',
             date: '2024-01-01',
-            path: '/test/ADR-003-loadbalancer.md'
-          }
+            path: '/test/ADR-003-loadbalancer.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({
-          environment: 'staging'
+          environment: 'staging',
         });
 
         expect(result.content[0].text).toContain('**Target Environment**: staging');
@@ -123,25 +130,28 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'Development environment will use hot-reload and local services.',
             date: '2024-01-01',
-            path: '/test/ADR-004-dev.md'
-          }
+            path: '/test/ADR-004-dev.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({
-          environment: 'development'
+          environment: 'development',
         });
 
         expect(result.content[0].text).toContain('**Target Environment**: development');
-        expect(result.content[0].text).toContain('Development**: Hot-reload, debugging, local services');
+        expect(result.content[0].text).toContain(
+          'Development**: Hot-reload, debugging, local services'
+        );
         expect(result.content[0].text).toContain('Development Setup');
       });
     });
@@ -153,27 +163,29 @@ describe('deployment-guidance-tool', () => {
             title: 'Complete Infrastructure',
             filename: 'ADR-005-infra.md',
             status: 'Accepted',
-            content: 'Complete infrastructure setup with monitoring, security, and rollback procedures.',
+            content:
+              'Complete infrastructure setup with monitoring, security, and rollback procedures.',
             date: '2024-01-01',
-            path: '/test/ADR-005-infra.md'
-          }
+            path: '/test/ADR-005-infra.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({
           includeScripts: true,
           includeConfigs: true,
           includeValidation: true,
           includeRollback: true,
-          generateFiles: true
+          generateFiles: true,
         });
 
         expect(result.content[0].text).toContain('**Include Scripts**: true');
@@ -194,25 +206,26 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'Minimal deployment setup without additional scripts or validation.',
             date: '2024-01-01',
-            path: '/test/ADR-006-minimal.md'
-          }
+            path: '/test/ADR-006-minimal.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({
           includeScripts: false,
           includeConfigs: false,
           includeValidation: false,
           includeRollback: false,
-          generateFiles: false
+          generateFiles: false,
         });
 
         expect(result.content[0].text).toContain('**Include Scripts**: false');
@@ -233,25 +246,28 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'Using Node.js, PostgreSQL, and Docker for our technology stack.',
             date: '2024-01-01',
-            path: '/test/ADR-007-tech.md'
-          }
+            path: '/test/ADR-007-tech.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({
-          technologyFilter: ['Node.js', 'PostgreSQL', 'Docker']
+          technologyFilter: ['Node.js', 'PostgreSQL', 'Docker'],
         });
 
         expect(result.content[0].text).toContain('Technology Filter');
-        expect(result.content[0].text).toContain('Focus only on these technologies: Node.js, PostgreSQL, Docker');
+        expect(result.content[0].text).toContain(
+          'Focus only on these technologies: Node.js, PostgreSQL, Docker'
+        );
         expect(result.content[0].text).toContain('Technology Stack');
       });
 
@@ -263,21 +279,22 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'Security requirements including TLS, authentication, and monitoring.',
             date: '2024-01-01',
-            path: '/test/ADR-008-security.md'
-          }
+            path: '/test/ADR-008-security.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({
-          customRequirements: ['GDPR compliance', 'High availability', 'Automated backups']
+          customRequirements: ['GDPR compliance', 'High availability', 'Automated backups'],
         });
 
         expect(result.content[0].text).toContain('Custom Requirements');
@@ -290,18 +307,19 @@ describe('deployment-guidance-tool', () => {
 
     describe('no ADRs found scenario', () => {
       it('should provide helpful guidance when no ADRs are found', async () => {
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: [],
-            summary: { byStatus: {}, byCategory: {} },
-            directory: 'custom/adrs',
-            totalAdrs: 0,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: [],
+          summary: { byStatus: {}, byCategory: {} },
+          directory: 'custom/adrs',
+          totalAdrs: 0,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({
           adrDirectory: 'custom/adrs',
-          projectPath: '/test/project'
+          projectPath: '/test/project',
         });
 
         expect(result.content[0].text).toContain('No ADRs Found for Deployment Guidance');
@@ -314,14 +332,15 @@ describe('deployment-guidance-tool', () => {
       });
 
       it('should use default paths when no ADRs found', async () => {
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: [],
-            summary: { byStatus: {}, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 0,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: [],
+          summary: { byStatus: {}, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 0,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({});
 
@@ -333,27 +352,36 @@ describe('deployment-guidance-tool', () => {
     describe('error handling', () => {
       it('should throw McpAdrError when ADR discovery fails', async () => {
         const discoveryError = new Error('Failed to access directory');
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockRejectedValue(discoveryError);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockRejectedValue(discoveryError);
 
         await expect(generateDeploymentGuidance({})).rejects.toThrow(McpAdrError);
-        await expect(generateDeploymentGuidance({})).rejects.toThrow('Deployment guidance generation failed: Failed to access directory');
+        await expect(generateDeploymentGuidance({})).rejects.toThrow(
+          'Deployment guidance generation failed: Failed to access directory'
+        );
       });
 
       it('should handle non-Error exceptions', async () => {
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockRejectedValue('String error');
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockRejectedValue('String error');
 
         await expect(generateDeploymentGuidance({})).rejects.toThrow(McpAdrError);
-        await expect(generateDeploymentGuidance({})).rejects.toThrow('Deployment guidance generation failed: String error');
+        await expect(generateDeploymentGuidance({})).rejects.toThrow(
+          'Deployment guidance generation failed: String error'
+        );
       });
 
       it('should handle undefined error', async () => {
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockRejectedValue(undefined);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockRejectedValue(undefined);
 
         await expect(generateDeploymentGuidance({})).rejects.toThrow(McpAdrError);
-        await expect(generateDeploymentGuidance({})).rejects.toThrow('Deployment guidance generation failed: undefined');
+        await expect(generateDeploymentGuidance({})).rejects.toThrow(
+          'Deployment guidance generation failed: undefined'
+        );
       });
     });
 
@@ -366,18 +394,19 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'Production setup with Docker, PostgreSQL, Redis, Nginx, and monitoring.',
             date: '2024-01-01',
-            path: '/test/ADR-016-prod.md'
-          }
+            path: '/test/ADR-016-prod.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({
           environment: 'production',
@@ -388,11 +417,11 @@ describe('deployment-guidance-tool', () => {
           includeRollback: true,
           generateFiles: true,
           technologyFilter: ['Docker', 'PostgreSQL', 'Nginx'],
-          customRequirements: ['High availability', 'Security compliance']
+          customRequirements: ['High availability', 'Security compliance'],
         });
 
         const content = result.content[0].text;
-        
+
         // Verify all production-specific elements
         expect(content).toContain('**Target Environment**: production');
         expect(content).toContain('Security**: TLS certificates, secure connections');
@@ -415,7 +444,7 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'Adopting microservices architecture with service mesh and API gateway.',
             date: '2024-01-01',
-            path: '/test/ADR-017-microservices.md'
+            path: '/test/ADR-017-microservices.md',
           },
           {
             title: 'Database Per Service',
@@ -423,22 +452,23 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'Each microservice will have its own database for data isolation.',
             date: '2024-01-01',
-            path: '/test/ADR-018-db-per-service.md'
-          }
+            path: '/test/ADR-018-db-per-service.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 2 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 2,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 2 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 2,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({
           projectPath: '/complex/microservices/project',
-          environment: 'staging'
+          environment: 'staging',
         });
 
         expect(result.content[0].text).toContain('Found 2 ADRs');
@@ -457,18 +487,19 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'Testing output structure consistency.',
             date: '2024-01-01',
-            path: '/test/ADR-019-structure.md'
-          }
+            path: '/test/ADR-019-structure.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({});
 
@@ -490,18 +521,19 @@ describe('deployment-guidance-tool', () => {
             status: 'Accepted',
             content: 'Testing that all required sections are included in the guidance.',
             date: '2024-01-01',
-            path: '/test/ADR-020-complete.md'
-          }
+            path: '/test/ADR-020-complete.md',
+          },
         ];
 
-        (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-          .mockResolvedValue({
-            adrs: mockAdrs,
-            summary: { byStatus: { Accepted: 1 }, byCategory: {} },
-            directory: 'docs/adrs',
-            totalAdrs: 1,
-            recommendations: []
-          } as any);
+        (
+          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+        ).mockResolvedValue({
+          adrs: mockAdrs,
+          summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+          directory: 'docs/adrs',
+          totalAdrs: 1,
+          recommendations: [],
+        } as any);
 
         const result = await generateDeploymentGuidance({});
         const content = result.content[0].text;

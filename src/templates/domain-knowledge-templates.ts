@@ -3,7 +3,11 @@
  * Provides structured architectural knowledge for different domains
  */
 
-import { DomainTemplate, ArchitecturalDomain, KnowledgeCategory } from '../types/knowledge-generation.js';
+import {
+  DomainTemplate,
+  ArchitecturalDomain,
+  KnowledgeCategory,
+} from '../types/knowledge-generation.js';
 
 // ============================================================================
 // Web Applications Domain Template
@@ -22,10 +26,10 @@ export const webApplicationsTemplate: DomainTemplate = {
         'SEO optimization with meta tags and structured data',
         'Progressive Web App (PWA) capabilities for offline functionality',
         'Responsive design principles for multi-device support',
-        'Security best practices including CSP and XSS prevention'
+        'Security best practices including CSP and XSS prevention',
       ],
       priority: 9,
-      applicability: ['React', 'Vue', 'Angular', 'Svelte', 'web-framework']
+      applicability: ['React', 'Vue', 'Angular', 'Svelte', 'web-framework'],
     },
     {
       category: 'design-patterns',
@@ -37,10 +41,10 @@ export const webApplicationsTemplate: DomainTemplate = {
         'Custom hooks pattern for reusable stateful logic',
         'Observer pattern for reactive state management',
         'Factory pattern for component creation',
-        'Singleton pattern for global state management'
+        'Singleton pattern for global state management',
       ],
       priority: 8,
-      applicability: ['component-based', 'state-management']
+      applicability: ['component-based', 'state-management'],
     },
     {
       category: 'anti-patterns',
@@ -51,10 +55,10 @@ export const webApplicationsTemplate: DomainTemplate = {
         'Inline styles without CSS-in-JS or CSS modules',
         'Uncontrolled state mutations in Redux',
         'Memory leaks from unremoved event listeners',
-        'Blocking the main thread with heavy computations'
+        'Blocking the main thread with heavy computations',
       ],
       priority: 7,
-      applicability: ['React', 'Vue', 'Angular']
+      applicability: ['React', 'Vue', 'Angular'],
     },
     {
       category: 'performance-considerations',
@@ -65,19 +69,19 @@ export const webApplicationsTemplate: DomainTemplate = {
         'Service worker implementation for caching',
         'Database query optimization for API endpoints',
         'CDN usage for static asset delivery',
-        'Compression (gzip/brotli) for reduced payload sizes'
+        'Compression (gzip/brotli) for reduced payload sizes',
       ],
       priority: 8,
-      applicability: ['performance', 'optimization']
-    }
+      applicability: ['performance', 'optimization'],
+    },
   ],
   metadata: {
     version: '1.0.0',
     author: 'MCP ADR Analysis Server',
     lastUpdated: '2024-01-01',
     description: 'Comprehensive web application architectural knowledge',
-    tags: ['web', 'frontend', 'spa', 'pwa']
-  }
+    tags: ['web', 'frontend', 'spa', 'pwa'],
+  },
 };
 
 // ============================================================================
@@ -97,10 +101,10 @@ export const microservicesTemplate: DomainTemplate = {
         'Distributed tracing for observability',
         'Service mesh for inter-service communication',
         'Database per service pattern',
-        'Saga pattern for distributed transactions'
+        'Saga pattern for distributed transactions',
       ],
       priority: 10,
-      applicability: ['distributed-systems', 'microservices']
+      applicability: ['distributed-systems', 'microservices'],
     },
     {
       category: 'design-patterns',
@@ -111,10 +115,10 @@ export const microservicesTemplate: DomainTemplate = {
         'Strangler Fig pattern for legacy migration',
         'Event sourcing for audit trails',
         'CQRS for read/write separation',
-        'Sidecar pattern for cross-cutting concerns'
+        'Sidecar pattern for cross-cutting concerns',
       ],
       priority: 9,
-      applicability: ['microservices', 'distributed-patterns']
+      applicability: ['microservices', 'distributed-patterns'],
     },
     {
       category: 'anti-patterns',
@@ -125,10 +129,10 @@ export const microservicesTemplate: DomainTemplate = {
         'Synchronous communication for all interactions',
         'Lack of proper service boundaries',
         'Missing distributed tracing and monitoring',
-        'Inadequate error handling and retries'
+        'Inadequate error handling and retries',
       ],
       priority: 8,
-      applicability: ['microservices', 'distributed-systems']
+      applicability: ['microservices', 'distributed-systems'],
     },
     {
       category: 'security-guidelines',
@@ -139,19 +143,19 @@ export const microservicesTemplate: DomainTemplate = {
         'Input validation at service boundaries',
         'Secrets management with dedicated tools',
         'Network segmentation and firewalls',
-        'Regular security audits and penetration testing'
+        'Regular security audits and penetration testing',
       ],
       priority: 9,
-      applicability: ['security', 'microservices']
-    }
+      applicability: ['security', 'microservices'],
+    },
   ],
   metadata: {
     version: '1.0.0',
     author: 'MCP ADR Analysis Server',
     lastUpdated: '2024-01-01',
     description: 'Microservices architecture patterns and practices',
-    tags: ['microservices', 'distributed-systems', 'scalability']
-  }
+    tags: ['microservices', 'distributed-systems', 'scalability'],
+  },
 };
 
 // ============================================================================
@@ -171,10 +175,10 @@ export const databaseDesignTemplate: DomainTemplate = {
         'Database sharding for horizontal scaling',
         'Read replicas for improved read performance',
         'Regular backup and disaster recovery planning',
-        'Data encryption at rest and in transit'
+        'Data encryption at rest and in transit',
       ],
       priority: 9,
-      applicability: ['relational-database', 'sql']
+      applicability: ['relational-database', 'sql'],
     },
     {
       category: 'design-patterns',
@@ -185,10 +189,10 @@ export const databaseDesignTemplate: DomainTemplate = {
         'Data Mapper pattern for domain isolation',
         'Command Query Responsibility Segregation (CQRS)',
         'Event sourcing for audit and replay capabilities',
-        'Polyglot persistence for different data needs'
+        'Polyglot persistence for different data needs',
       ],
       priority: 8,
-      applicability: ['data-access', 'orm']
+      applicability: ['data-access', 'orm'],
     },
     {
       category: 'performance-considerations',
@@ -199,19 +203,19 @@ export const databaseDesignTemplate: DomainTemplate = {
         'Caching layers (Redis, Memcached)',
         'Database connection optimization',
         'Batch processing for bulk operations',
-        'Monitoring and alerting for performance metrics'
+        'Monitoring and alerting for performance metrics',
       ],
       priority: 9,
-      applicability: ['performance', 'optimization']
-    }
+      applicability: ['performance', 'optimization'],
+    },
   ],
   metadata: {
     version: '1.0.0',
     author: 'MCP ADR Analysis Server',
     lastUpdated: '2024-01-01',
     description: 'Database design patterns and optimization strategies',
-    tags: ['database', 'sql', 'nosql', 'performance']
-  }
+    tags: ['database', 'sql', 'nosql', 'performance'],
+  },
 };
 
 // ============================================================================
@@ -231,10 +235,10 @@ export const apiDesignTemplate: DomainTemplate = {
         'Comprehensive API documentation with OpenAPI',
         'Input validation and sanitization',
         'Rate limiting and throttling mechanisms',
-        'CORS configuration for cross-origin requests'
+        'CORS configuration for cross-origin requests',
       ],
       priority: 10,
-      applicability: ['rest-api', 'web-api']
+      applicability: ['rest-api', 'web-api'],
     },
     {
       category: 'design-patterns',
@@ -246,10 +250,10 @@ export const apiDesignTemplate: DomainTemplate = {
         'Bulk operations for efficiency',
         'Webhook patterns for event notifications',
         'GraphQL for flexible data fetching',
-        'API Gateway pattern for centralized management'
+        'API Gateway pattern for centralized management',
       ],
       priority: 9,
-      applicability: ['api-design', 'rest', 'graphql']
+      applicability: ['api-design', 'rest', 'graphql'],
     },
     {
       category: 'security-guidelines',
@@ -260,19 +264,19 @@ export const apiDesignTemplate: DomainTemplate = {
         'HTTPS enforcement for all endpoints',
         'CORS policy configuration',
         'Rate limiting to prevent abuse',
-        'API security testing and vulnerability scanning'
+        'API security testing and vulnerability scanning',
       ],
       priority: 9,
-      applicability: ['api-security', 'authentication']
-    }
+      applicability: ['api-security', 'authentication'],
+    },
   ],
   metadata: {
     version: '1.0.0',
     author: 'MCP ADR Analysis Server',
     lastUpdated: '2024-01-01',
     description: 'API design patterns and security best practices',
-    tags: ['api', 'rest', 'graphql', 'security']
-  }
+    tags: ['api', 'rest', 'graphql', 'security'],
+  },
 };
 
 // ============================================================================
@@ -292,10 +296,10 @@ export const cloudInfrastructureTemplate: DomainTemplate = {
         'Security groups and network access controls',
         'Regular backup and disaster recovery testing',
         'Monitoring and alerting for all resources',
-        'Tagging strategy for resource management'
+        'Tagging strategy for resource management',
       ],
       priority: 9,
-      applicability: ['aws', 'azure', 'gcp', 'cloud']
+      applicability: ['aws', 'azure', 'gcp', 'cloud'],
     },
     {
       category: 'design-patterns',
@@ -307,10 +311,10 @@ export const cloudInfrastructureTemplate: DomainTemplate = {
         'Load balancing for traffic distribution',
         'Content Delivery Network (CDN) usage',
         'Serverless architecture with Functions as a Service',
-        'Container orchestration with Kubernetes'
+        'Container orchestration with Kubernetes',
       ],
       priority: 8,
-      applicability: ['deployment', 'scalability']
+      applicability: ['deployment', 'scalability'],
     },
     {
       category: 'security-guidelines',
@@ -321,19 +325,19 @@ export const cloudInfrastructureTemplate: DomainTemplate = {
         'Security scanning and compliance monitoring',
         'Secrets management with dedicated services',
         'Regular security audits and penetration testing',
-        'Incident response and security playbooks'
+        'Incident response and security playbooks',
       ],
       priority: 10,
-      applicability: ['cloud-security', 'compliance']
-    }
+      applicability: ['cloud-security', 'compliance'],
+    },
   ],
   metadata: {
     version: '1.0.0',
     author: 'MCP ADR Analysis Server',
     lastUpdated: '2024-01-01',
     description: 'Cloud infrastructure patterns and security practices',
-    tags: ['cloud', 'infrastructure', 'aws', 'azure', 'gcp']
-  }
+    tags: ['cloud', 'infrastructure', 'aws', 'azure', 'gcp'],
+  },
 };
 
 // ============================================================================

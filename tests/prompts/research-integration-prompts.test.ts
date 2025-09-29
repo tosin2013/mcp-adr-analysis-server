@@ -14,13 +14,15 @@ describe('Research Integration Prompts', () => {
     const mockResearchFiles = [
       {
         filename: 'kubernetes-performance-study.md',
-        content: 'This study evaluates Kubernetes performance under high load conditions. Our findings show that horizontal pod autoscaling provides significant benefits for CPU-intensive workloads...',
+        content:
+          'This study evaluates Kubernetes performance under high load conditions. Our findings show that horizontal pod autoscaling provides significant benefits for CPU-intensive workloads...',
         lastModified: '2024-01-15T10:30:00Z',
         size: 15420,
       },
       {
         filename: 'microservices-security-analysis.pdf',
-        content: 'Security analysis of microservices architecture reveals several key vulnerabilities in service-to-service communication. OAuth 2.0 implementation shows promise but requires careful configuration...',
+        content:
+          'Security analysis of microservices architecture reveals several key vulnerabilities in service-to-service communication. OAuth 2.0 implementation shows promise but requires careful configuration...',
         lastModified: '2024-01-10T14:22:00Z',
         size: 8750,
       },
@@ -91,7 +93,8 @@ describe('Research Integration Prompts', () => {
       const specialFiles = [
         {
           filename: 'api-rate-limiting & security (v2.0).md',
-          content: 'Analysis of API rate limiting with >10K req/s & JWT tokens. OAuth 2.0 "bearer" tokens provide security...',
+          content:
+            'Analysis of API rate limiting with >10K req/s & JWT tokens. OAuth 2.0 "bearer" tokens provide security...',
           lastModified: '2024-01-25T16:45:00Z',
           size: 5200,
         },
@@ -186,14 +189,16 @@ describe('Research Integration Prompts', () => {
         id: 'adr-001',
         title: 'Container Orchestration Platform Selection',
         status: 'accepted',
-        content: 'We have decided to use Kubernetes for container orchestration due to its scalability and ecosystem support. The decision was made based on initial performance benchmarks...',
+        content:
+          'We have decided to use Kubernetes for container orchestration due to its scalability and ecosystem support. The decision was made based on initial performance benchmarks...',
         category: 'infrastructure',
       },
       {
         id: 'adr-002',
         title: 'API Authentication Strategy',
         status: 'proposed',
-        content: 'We propose using OAuth 2.0 with JWT tokens for API authentication. Token expiration will be set to 1 hour to balance security and user experience...',
+        content:
+          'We propose using OAuth 2.0 with JWT tokens for API authentication. Token expiration will be set to 1 hour to balance security and user experience...',
         category: 'security',
       },
     ];
@@ -236,7 +241,10 @@ describe('Research Integration Prompts', () => {
         },
       ];
 
-      const result = generateResearchImpactEvaluationPrompt(mockResearchTopics, adrsWithoutCategory);
+      const result = generateResearchImpactEvaluationPrompt(
+        mockResearchTopics,
+        adrsWithoutCategory
+      );
 
       expect(result).toContain('Database Selection');
       expect(result).toContain('**Category**: Unknown');
@@ -321,7 +329,10 @@ describe('Research Integration Prompts', () => {
         },
       ];
 
-      const result = generateResearchImpactEvaluationPrompt(topicsWithEmptyFindings, mockExistingAdrs);
+      const result = generateResearchImpactEvaluationPrompt(
+        topicsWithEmptyFindings,
+        mockExistingAdrs
+      );
 
       expect(result).toContain('Empty Topic');
       expect(result).toContain('Container Orchestration Platform Selection');
@@ -356,13 +367,15 @@ describe('Research Integration Prompts', () => {
     const mockAdrToUpdate = {
       id: 'adr-001',
       title: 'Container Orchestration Platform Selection',
-      content: '# Container Orchestration Platform Selection\n\n## Status\nAccepted\n\n## Context\nWe need a container orchestration platform...\n\n## Decision\nWe will use Kubernetes...',
+      content:
+        '# Container Orchestration Platform Selection\n\n## Status\nAccepted\n\n## Context\nWe need a container orchestration platform...\n\n## Decision\nWe will use Kubernetes...',
       status: 'accepted',
     };
 
     const mockResearchFindings = [
       {
-        finding: 'Kubernetes performance can be improved by 40% with proper autoscaling configuration',
+        finding:
+          'Kubernetes performance can be improved by 40% with proper autoscaling configuration',
         evidence: [
           'Benchmark study shows 40% improvement in response time',
           'Memory utilization reduced by 25%',
@@ -477,7 +490,8 @@ describe('Research Integration Prompts', () => {
       const specialAdr = {
         id: 'adr-special',
         title: 'API Rate Limiting & Security (OAuth 2.0)',
-        content: '# API Rate Limiting & Security\n\nHandle >10K req/s with OAuth 2.0 "bearer" tokens...',
+        content:
+          '# API Rate Limiting & Security\n\nHandle >10K req/s with OAuth 2.0 "bearer" tokens...',
         status: 'accepted',
       };
 

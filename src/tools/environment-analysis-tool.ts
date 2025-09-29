@@ -501,7 +501,6 @@ export async function analyzeEnvironment(args: {
 
   // Research live environment state using research-orchestrator
   let liveEnvironmentData = '';
-  let researchConfidence = 0;
   try {
     const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
     const research = await orchestrator.answerResearchQuestion(
@@ -512,8 +511,6 @@ export async function analyzeEnvironment(args: {
 4. Are there any environment-related ADRs or documentation?
 5. What are the current resource utilization and health metrics?`
     );
-
-    researchConfidence = research.confidence;
     const envSource = research.sources.find(s => s.type === 'environment');
     const capabilities = envSource?.data?.capabilities || [];
 

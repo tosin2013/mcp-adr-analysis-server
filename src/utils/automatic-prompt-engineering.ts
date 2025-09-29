@@ -11,7 +11,7 @@ import {
   EvaluationCriterion,
   SelectionStrategy,
   PromptCandidate,
-  ToolOptimizationConfig
+  ToolOptimizationConfig,
 } from '../types/ape-framework.js';
 import { PromptObject } from './prompt-composition.js';
 
@@ -28,7 +28,7 @@ const DEFAULT_APE_CONFIG: Required<APEConfig> = {
   performanceTracking: true,
   maxOptimizationTime: 180000, // 3 minutes
   qualityThreshold: 0.7,
-  diversityWeight: 0.3
+  diversityWeight: 0.3,
 };
 
 const APE_VERSION = '1.0.0';
@@ -58,8 +58,12 @@ export async function optimizePromptWithAPE(
     console.error(`[DEBUG] Generating APE optimization prompt for prompt optimization`);
 
     // Generate cache key for this optimization request
-    const contextHash = Buffer.from(JSON.stringify(originalPrompt)).toString('base64').substring(0, 16);
-    const configHash = Buffer.from(JSON.stringify(mergedConfig)).toString('base64').substring(0, 16);
+    const contextHash = Buffer.from(JSON.stringify(originalPrompt))
+      .toString('base64')
+      .substring(0, 16);
+    const configHash = Buffer.from(JSON.stringify(mergedConfig))
+      .toString('base64')
+      .substring(0, 16);
     const cacheKey = `ape:optimization:${contextHash}-${configHash}`;
 
     // Create comprehensive APE optimization prompt
@@ -123,17 +127,19 @@ Create ${mergedConfig.candidateCount} prompt variations using these strategies:
 ### Step 2: Evaluate Prompt Candidates
 Evaluate each candidate on these criteria (0-1 scale):
 
-${mergedConfig.evaluationCriteria.map(criterion => {
-  const descriptions = {
-    'task-completion': 'How well the prompt achieves the intended task outcome',
-    'clarity': 'How clear, unambiguous, and easy to understand the prompt is',
-    'specificity': 'How specific, actionable, and detailed the prompt is',
-    'robustness': 'How well the prompt handles edge cases and variations',
-    'efficiency': 'How concise yet comprehensive the prompt is',
-    'context-awareness': 'How well the prompt fits the specific context and domain'
-  };
-  return `- **${criterion}**: ${descriptions[criterion] || 'Evaluate based on this criterion'}`;
-}).join('\n')}
+${mergedConfig.evaluationCriteria
+  .map(criterion => {
+    const descriptions = {
+      'task-completion': 'How well the prompt achieves the intended task outcome',
+      clarity: 'How clear, unambiguous, and easy to understand the prompt is',
+      specificity: 'How specific, actionable, and detailed the prompt is',
+      robustness: 'How well the prompt handles edge cases and variations',
+      efficiency: 'How concise yet comprehensive the prompt is',
+      'context-awareness': 'How well the prompt fits the specific context and domain',
+    };
+    return `- **${criterion}**: ${descriptions[criterion] || 'Evaluate based on this criterion'}`;
+  })
+  .join('\n')}
 
 ### Step 3: Apply Selection Strategy (${mergedConfig.selectionStrategy})
 ${getSelectionStrategyDescription(mergedConfig.selectionStrategy)}
@@ -254,10 +260,9 @@ You must:
         version: APE_VERSION,
         timestamp: Date.now(),
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate APE optimization prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -276,7 +281,9 @@ export async function generatePromptCandidates(
   candidateCount: number
 ): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
-    console.error(`[DEBUG] Generating prompt candidate generation request for ${candidateCount} candidates`);
+    console.error(
+      `[DEBUG] Generating prompt candidate generation request for ${candidateCount} candidates`
+    );
 
     const prompt = `
 # Prompt Candidate Generation Request
@@ -385,10 +392,9 @@ You must:
         version: APE_VERSION,
         timestamp: Date.now(),
         securityLevel: 'medium',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate candidate generation prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -407,7 +413,9 @@ export async function evaluatePromptPerformance(
   context: any = {}
 ): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
-    console.error(`[DEBUG] Generating prompt evaluation request for ${candidates.length} candidates`);
+    console.error(
+      `[DEBUG] Generating prompt evaluation request for ${candidates.length} candidates`
+    );
 
     const prompt = `
 # Prompt Performance Evaluation Request
@@ -415,7 +423,9 @@ export async function evaluatePromptPerformance(
 Please evaluate the following ${candidates.length} candidates using the specified criteria.
 
 ## Candidates to Evaluate
-${candidates.map((candidate, index) => `
+${candidates
+  .map(
+    (candidate, index) => `
 ### Candidate ${index + 1}: ${candidate.id}
 **Strategy**: ${candidate.generationStrategy}
 **Prompt**:
@@ -427,7 +437,9 @@ ${candidate.prompt}
 ${candidate.instructions}
 \`\`\`
 **Metadata**: ${JSON.stringify(candidate.metadata, null, 2)}
-`).join('\n')}
+`
+  )
+  .join('\n')}
 
 ## Evaluation Criteria
 ${evaluationCriteria.map((criterion, index) => `${index + 1}. **${criterion}**: ${getCriterionDescription(criterion)}`).join('\n')}
@@ -536,15 +548,14 @@ You must:
         candidates: candidates.map(c => c.id),
         evaluationCriteria,
         evaluationContext: context,
-        improvementScore: 0.80, // Default improvement score for evaluation
+        improvementScore: 0.8, // Default improvement score for evaluation
         candidateCount: candidates.length,
         version: APE_VERSION,
         timestamp: Date.now(),
         securityLevel: 'medium',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate evaluation prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -680,14 +691,16 @@ You must:
         improvementScore: 0.85, // Default improvement score for tool optimization
         toolOptimized: true,
         candidateCount: toolConfig.apeConfig?.candidateCount || 5,
-        evaluationCriteria: toolConfig.apeConfig?.evaluationCriteria || ['task-completion', 'clarity'],
+        evaluationCriteria: toolConfig.apeConfig?.evaluationCriteria || [
+          'task-completion',
+          'clarity',
+        ],
         version: APE_VERSION,
         timestamp: Date.now(),
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate tool optimization prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -710,7 +723,7 @@ function getStrategyDescription(strategy: GenerationStrategy): string {
     'style-variation': 'Adjust tone, formality, and communication style',
     'length-variation': 'Create concise, detailed, and balanced versions',
     'structure-variation': 'Reorganize content with different patterns',
-    'hybrid-approach': 'Combine multiple strategies for optimal results'
+    'hybrid-approach': 'Combine multiple strategies for optimal results',
   };
   return descriptions[strategy] || 'Apply the specified generation strategy';
 }
@@ -721,11 +734,11 @@ function getStrategyDescription(strategy: GenerationStrategy): string {
 function getCriterionDescription(criterion: EvaluationCriterion): string {
   const descriptions = {
     'task-completion': 'How well the prompt achieves the intended task outcome',
-    'clarity': 'How clear, unambiguous, and easy to understand the prompt is',
-    'specificity': 'How specific, actionable, and detailed the prompt is',
-    'robustness': 'How well the prompt handles edge cases and variations',
-    'efficiency': 'How concise yet comprehensive the prompt is',
-    'context-awareness': 'How well the prompt fits the specific context and domain'
+    clarity: 'How clear, unambiguous, and easy to understand the prompt is',
+    specificity: 'How specific, actionable, and detailed the prompt is',
+    robustness: 'How well the prompt handles edge cases and variations',
+    efficiency: 'How concise yet comprehensive the prompt is',
+    'context-awareness': 'How well the prompt fits the specific context and domain',
   };
   return descriptions[criterion] || 'Evaluate based on this criterion';
 }
@@ -737,9 +750,9 @@ function getSelectionStrategyDescription(strategy: SelectionStrategy): string {
   const descriptions = {
     'highest-score': 'Select the candidate with the highest overall evaluation score',
     'multi-criteria': 'Balance multiple evaluation criteria with appropriate weights',
-    'ensemble': 'Combine strengths of multiple high-performing candidates',
+    ensemble: 'Combine strengths of multiple high-performing candidates',
     'context-aware': 'Choose based on context-specific suitability and requirements',
-    'balanced': 'Balance quality, diversity, and context appropriateness'
+    balanced: 'Balance quality, diversity, and context appropriateness',
   };
   return descriptions[strategy] || 'Apply the specified selection strategy';
 }
@@ -749,51 +762,51 @@ function getSelectionStrategyDescription(strategy: SelectionStrategy): string {
  */
 function getToolOptimizationPriorities(toolName: string): string {
   const priorities: Record<string, string> = {
-    'generate_adrs_from_prd': `
+    generate_adrs_from_prd: `
 - **Context Analysis**: Better understanding of PRD requirements and constraints
 - **Decision Quality**: Clearer architectural decision rationale and justification
 - **Stakeholder Alignment**: Improved ADR clarity and relevance for stakeholders
 - **Technical Depth**: Appropriate level of technical detail for the context`,
 
-    'suggest_adrs': `
+    suggest_adrs: `
 - **Relevance**: Highly relevant ADR suggestions based on project context
 - **Prioritization**: Clear prioritization of suggested ADRs by importance
 - **Feasibility**: Realistic and implementable architectural decisions
 - **Impact Assessment**: Clear understanding of decision impacts and trade-offs`,
 
-    'analyze_project_ecosystem': `
+    analyze_project_ecosystem: `
 - **Technology Detection**: Accurate identification of technologies and frameworks
 - **Pattern Recognition**: Better identification of architectural patterns
 - **Context Understanding**: Comprehensive project context analysis
 - **Insight Generation**: Valuable and actionable architectural insights`,
 
-    'generate_research_questions': `
+    generate_research_questions: `
 - **Question Quality**: High-quality, targeted research questions
 - **Relevance**: Questions directly relevant to project needs
 - **Depth**: Appropriate depth and scope for research objectives
 - **Actionability**: Questions that lead to actionable insights`,
 
-    'incorporate_research': `
+    incorporate_research: `
 - **Integration Quality**: Effective integration of research findings
 - **Synthesis**: Good synthesis of multiple research sources
 - **Relevance**: Focus on most relevant research findings
-- **Actionability**: Clear actionable recommendations from research`
+- **Actionability**: Clear actionable recommendations from research`,
   };
 
-  return priorities[toolName] || `
+  return (
+    priorities[toolName] ||
+    `
 - **Task Effectiveness**: Optimize for the tool's primary task objectives
 - **Context Awareness**: Improve understanding of tool-specific context
 - **Output Quality**: Enhance the quality and relevance of tool outputs
-- **User Experience**: Improve clarity and usability of tool interactions`;
+- **User Experience**: Improve clarity and usability of tool interactions`
+  );
 }
 
 /**
  * Generate cache key for APE optimization requests
  */
-export function generateAPECacheKey(
-  promptHash: string,
-  config: APEConfig
-): string {
+export function generateAPECacheKey(promptHash: string, config: APEConfig): string {
   const configHash = Buffer.from(JSON.stringify(config)).toString('base64').substring(0, 16);
   return `ape:optimization:${promptHash}-${configHash}`;
 }
@@ -809,15 +822,24 @@ export function getDefaultAPEConfig(): Required<APEConfig> {
  * Validate APE configuration
  */
 export function validateAPEConfig(config: Partial<APEConfig>): void {
-  if (config.candidateCount !== undefined && (config.candidateCount < 1 || config.candidateCount > 10)) {
+  if (
+    config.candidateCount !== undefined &&
+    (config.candidateCount < 1 || config.candidateCount > 10)
+  ) {
     throw new McpAdrError('Candidate count must be between 1 and 10', 'INVALID_CONFIG');
   }
 
-  if (config.optimizationRounds !== undefined && (config.optimizationRounds < 1 || config.optimizationRounds > 5)) {
+  if (
+    config.optimizationRounds !== undefined &&
+    (config.optimizationRounds < 1 || config.optimizationRounds > 5)
+  ) {
     throw new McpAdrError('Optimization rounds must be between 1 and 5', 'INVALID_CONFIG');
   }
 
-  if (config.qualityThreshold !== undefined && (config.qualityThreshold < 0 || config.qualityThreshold > 1)) {
+  if (
+    config.qualityThreshold !== undefined &&
+    (config.qualityThreshold < 0 || config.qualityThreshold > 1)
+  ) {
     throw new McpAdrError('Quality threshold must be between 0 and 1', 'INVALID_CONFIG');
   }
 
@@ -825,7 +847,10 @@ export function validateAPEConfig(config: Partial<APEConfig>): void {
     throw new McpAdrError('Max optimization time must be positive', 'INVALID_CONFIG');
   }
 
-  if (config.diversityWeight !== undefined && (config.diversityWeight < 0 || config.diversityWeight > 1)) {
+  if (
+    config.diversityWeight !== undefined &&
+    (config.diversityWeight < 0 || config.diversityWeight > 1)
+  ) {
     throw new McpAdrError('Diversity weight must be between 0 and 1', 'INVALID_CONFIG');
   }
 }
@@ -840,7 +865,7 @@ export function getSupportedGenerationStrategies(): GenerationStrategy[] {
     'style-variation',
     'length-variation',
     'structure-variation',
-    'hybrid-approach'
+    'hybrid-approach',
   ];
 }
 
@@ -854,7 +879,7 @@ export function getSupportedEvaluationCriteria(): EvaluationCriterion[] {
     'specificity',
     'robustness',
     'efficiency',
-    'context-awareness'
+    'context-awareness',
   ];
 }
 
@@ -862,13 +887,7 @@ export function getSupportedEvaluationCriteria(): EvaluationCriterion[] {
  * Get supported selection strategies
  */
 export function getSupportedSelectionStrategies(): SelectionStrategy[] {
-  return [
-    'highest-score',
-    'multi-criteria',
-    'ensemble',
-    'context-aware',
-    'balanced'
-  ];
+  return ['highest-score', 'multi-criteria', 'ensemble', 'context-aware', 'balanced'];
 }
 
 /**
@@ -879,31 +898,29 @@ export function createToolAPEConfig(
   customConfig: Partial<APEConfig> = {}
 ): APEConfig {
   const toolConfigs: Record<string, Partial<APEConfig>> = {
-    'generate_adrs_from_prd': {
+    generate_adrs_from_prd: {
       candidateCount: 7,
       evaluationCriteria: ['task-completion', 'specificity', 'clarity', 'robustness'],
       optimizationRounds: 3,
       selectionStrategy: 'multi-criteria',
-      qualityThreshold: 0.75
+      qualityThreshold: 0.75,
     },
-    'suggest_adrs': {
+    suggest_adrs: {
       candidateCount: 6,
       evaluationCriteria: ['task-completion', 'context-awareness', 'clarity'],
       optimizationRounds: 2,
       selectionStrategy: 'context-aware',
-      qualityThreshold: 0.7
+      qualityThreshold: 0.7,
     },
-    'analyze_project_ecosystem': {
+    analyze_project_ecosystem: {
       candidateCount: 5,
       evaluationCriteria: ['task-completion', 'specificity', 'efficiency'],
       optimizationRounds: 2,
       selectionStrategy: 'balanced',
-      qualityThreshold: 0.65
-    }
+      qualityThreshold: 0.65,
+    },
   };
 
   const toolSpecificConfig = toolConfigs[toolName] || {};
   return { ...DEFAULT_APE_CONFIG, ...toolSpecificConfig, ...customConfig };
 }
-
-

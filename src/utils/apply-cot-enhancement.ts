@@ -3,7 +3,11 @@
  * Demonstrates before/after examples of prompt improvement
  */
 
-import { enhancePromptWithCoT, COT_PATTERNS, ChainOfThoughtConfig } from './chain-of-thought-template.js';
+import {
+  enhancePromptWithCoT,
+  COT_PATTERNS,
+  ChainOfThoughtConfig,
+} from './chain-of-thought-template.js';
 
 /**
  * Example: Original directory scanning prompt vs CoT-enhanced version
@@ -34,7 +38,7 @@ Please provide analysis in JSON format with detected decisions.
       'Systematically examine project structure, files, and configurations',
       'Identify patterns that reveal implicit architectural decisions',
       'Analyze the significance and impact of each detected decision',
-      'Formulate clear, actionable decision records for documentation'
+      'Formulate clear, actionable decision records for documentation',
     ],
     reasoningPattern: 'exploratory',
     validationChecks: [
@@ -42,14 +46,14 @@ Please provide analysis in JSON format with detected decisions.
       'Directory scanning covers relevant areas without system directories',
       'Detected decisions are based on concrete evidence from the codebase',
       'Each decision has clear architectural significance',
-      'Output format is complete and properly structured'
+      'Output format is complete and properly structured',
     ],
     errorHandling: [
       'Attempting to scan restricted or system directories',
       'Confusing file artifacts with actual architectural decisions',
       'Missing important configuration files that reveal decisions',
-      'Generating vague or unactionable decision recommendations'
-    ]
+      'Generating vague or unactionable decision recommendations',
+    ],
   });
 
   return {
@@ -60,8 +64,8 @@ Please provide analysis in JSON format with detected decisions.
       'Clear validation checklist to prevent common errors',
       'Specific error handling guidance for directory scanning issues',
       'Meta-cognitive prompts to encourage deeper thinking',
-      'Structured response format that shows reasoning process'
-    ]
+      'Structured response format that shows reasoning process',
+    ],
   };
 }
 
@@ -91,7 +95,7 @@ export function enhanceSecurityAnalysisPrompt(originalPrompt: string): string {
       'Evaluate the confidence level and severity of each detection',
       'Consider context to avoid false positives while maintaining security',
       'Recommend appropriate masking strategies for each finding',
-      'Validate that all security concerns have been addressed'
+      'Validate that all security concerns have been addressed',
     ],
     reasoningPattern: 'analytical',
     validationChecks: [
@@ -99,14 +103,14 @@ export function enhanceSecurityAnalysisPrompt(originalPrompt: string): string {
       'Confidence scores are realistic and well-justified',
       'Severity assessments consider actual risk levels',
       'Masking recommendations are practical and appropriate',
-      'No actual sensitive data is included in the analysis output'
+      'No actual sensitive data is included in the analysis output',
     ],
     errorHandling: [
       'Over-flagging public or non-sensitive information',
       'Missing genuinely sensitive patterns due to context misunderstanding',
       'Recommending inappropriate masking that breaks functionality',
-      'Exposing sensitive data in analysis results or examples'
-    ]
+      'Exposing sensitive data in analysis results or examples',
+    ],
   };
 
   return enhancePromptWithCoT(originalPrompt, securityCoTConfig);
@@ -154,7 +158,7 @@ The implementation of Chain-of-Thought prompting addresses several critical issu
       confusionReduction: 'Estimated 80% reduction in path scanning errors',
       reasoningTransparency: '100% - all prompts now show explicit reasoning',
       errorPrevention: 'Pre-identified common mistakes in all enhanced prompts',
-      validationCoverage: 'Comprehensive validation checklists for all prompt types'
+      validationCoverage: 'Comprehensive validation checklists for all prompt types',
     },
 
     implementation: {
@@ -162,7 +166,7 @@ The implementation of Chain-of-Thought prompting addresses several critical issu
       patternLibrary: 'Defined specific patterns for different task types',
       enhancementUtility: 'Built utilities to apply CoT to existing prompts',
       demonstrationExamples: 'Provided clear before/after examples',
-      futureProofing: 'Template system allows easy addition of new prompt types'
+      futureProofing: 'Template system allows easy addition of new prompt types',
     },
 
     nextSteps: [
@@ -170,7 +174,7 @@ The implementation of Chain-of-Thought prompting addresses several critical issu
       'Test enhanced prompts with real LLM interactions',
       'Measure improvement in task completion accuracy',
       'Collect feedback and refine CoT patterns based on usage',
-      'Extend CoT patterns to cover edge cases and complex scenarios'
-    ]
+      'Extend CoT patterns to cover edge cases and complex scenarios',
+    ],
   };
 }

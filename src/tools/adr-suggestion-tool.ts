@@ -759,14 +759,18 @@ ${enhancedPrompt}`,
               {
                 temperature: 0.3,
                 maxTokens: 4000,
-                systemPrompt: 'You are an architecture expert. Generate ADR recommendations based on ACTUAL infrastructure data from research, not assumptions. Reference specific files, environment data, and existing ADRs found in the research.'
+                systemPrompt:
+                  'You are an architecture expert. Generate ADR recommendations based on ACTUAL infrastructure data from research, not assumptions. Reference specific files, environment data, and existing ADRs found in the research.',
               }
             );
 
             executionResult = {
               isAIGenerated: true,
-              content: typeof aiResult.data === 'string' ? aiResult.data : JSON.stringify(aiResult.data, null, 2),
-              metadata: aiResult.raw.metadata
+              content:
+                typeof aiResult.data === 'string'
+                  ? aiResult.data
+                  : JSON.stringify(aiResult.data, null, 2),
+              metadata: aiResult.raw.metadata,
             };
           } catch (error) {
             console.warn('[WARNING] AI execution failed, falling back to prompt-only mode:', error);
