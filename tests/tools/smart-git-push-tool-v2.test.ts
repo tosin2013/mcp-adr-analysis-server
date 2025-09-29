@@ -19,6 +19,41 @@ jest.unstable_mockModule('fs', () => ({
   statSync: mockStatSync,
   writeFileSync: mockWriteFileSync,
   mkdirSync: mockMkdirSync,
+  // Add promises export for code that uses: import { promises as fs } from 'fs'
+  promises: {
+    readFile: jest.fn().mockResolvedValue(''),
+    writeFile: jest.fn().mockResolvedValue(undefined),
+    mkdir: jest.fn().mockResolvedValue(undefined),
+    access: jest.fn().mockResolvedValue(undefined),
+    readdir: jest.fn().mockResolvedValue([]),
+    stat: jest.fn().mockResolvedValue({ size: 1024, isDirectory: () => false, isFile: () => true }),
+  },
+}));
+
+// Mock fs/promises to prevent actual async file system operations
+// Required because deployment-readiness-tool and its dependencies use fs/promises
+const mockPromisesReadFile = jest.fn();
+const mockPromisesWriteFile = jest.fn();
+const mockPromisesMkdir = jest.fn();
+const mockPromisesAccess = jest.fn();
+const mockPromisesReaddir = jest.fn();
+const mockPromisesStat = jest.fn();
+
+jest.unstable_mockModule('fs/promises', () => ({
+  readFile: mockPromisesReadFile,
+  writeFile: mockPromisesWriteFile,
+  mkdir: mockPromisesMkdir,
+  access: mockPromisesAccess,
+  readdir: mockPromisesReaddir,
+  stat: mockPromisesStat,
+  default: {
+    readFile: mockPromisesReadFile,
+    writeFile: mockPromisesWriteFile,
+    mkdir: mockPromisesMkdir,
+    access: mockPromisesAccess,
+    readdir: mockPromisesReaddir,
+    stat: mockPromisesStat,
+  },
 }));
 
 describe('Smart Git Push Tool V2', () => {
@@ -72,6 +107,18 @@ describe('Smart Git Push Tool V2', () => {
     });
 
     mockStatSync.mockReturnValue({ size: 1024 } as any);
+
+    // Mock fs/promises async operations
+    mockPromisesReadFile.mockResolvedValue('');
+    mockPromisesWriteFile.mockResolvedValue(undefined);
+    mockPromisesMkdir.mockResolvedValue(undefined);
+    mockPromisesAccess.mockResolvedValue(undefined);
+    mockPromisesReaddir.mockResolvedValue([]);
+    mockPromisesStat.mockResolvedValue({
+      size: 1024,
+      isDirectory: () => false,
+      isFile: () => true,
+    } as any);
   });
 
   describe('Module Loading', () => {
