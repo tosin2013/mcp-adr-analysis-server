@@ -12,6 +12,10 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import { EnhancedLogger } from './enhanced-logging.js';
 // import { KnowledgeGraphManager } from './knowledge-graph-manager.js'; // TODO: Implement KG query
+import { findFiles } from './file-system.js';
+import { scanProjectStructure } from './actual-file-operations.js';
+import { searchWithRipgrep, isRipgrepAvailable } from './ripgrep-wrapper.js';
+import { TreeSitterAnalyzer } from './tree-sitter-analyzer.js';
 
 export interface ResearchSource {
   type: 'project_files' | 'knowledge_graph' | 'environment' | 'web_search';
@@ -161,7 +165,7 @@ export class ResearchOrchestrator {
   }
 
   /**
-   * SOURCE 1: Search project files
+   * SOURCE 1: Search project files (Enhanced with tree-sitter, ripgrep, and actual file ops)
    */
   private async searchProjectFiles(question: string): Promise<any> {
     const results = {
@@ -169,99 +173,173 @@ export class ResearchOrchestrator {
       files: [] as string[],
       content: {} as Record<string, string>,
       relevance: {} as Record<string, number>,
+      parseAnalysis: {} as Record<string, any>,
     };
 
     try {
       const questionLower = question.toLowerCase();
+      const keywords = this.extractKeywords(question);
 
-      // Detect question intent and search relevant files
-      const searchPatterns: Array<{
-        keywords: string[];
-        files: string[];
-        directories?: string[];
-      }> = [
-        {
-          keywords: ['docker', 'container', 'containerize'],
-          files: ['Dockerfile', 'docker-compose.yml', '.dockerignore', 'Containerfile'],
-        },
-        {
-          keywords: ['kubernetes', 'k8s', 'kubectl', 'pod', 'deployment'],
-          files: ['*.yaml', '*.yml'],
-          directories: ['k8s/', 'kubernetes/', 'manifests/', '.kube/'],
-        },
-        {
-          keywords: ['openshift', 'oc', 'route', 'buildconfig'],
-          files: ['*.yaml', '*.yml'],
-          directories: ['openshift/', 'ocp/', '.openshift/'],
-        },
-        {
-          keywords: ['ansible', 'playbook', 'role', 'inventory'],
-          files: ['*.yml', '*.yaml', 'ansible.cfg', 'hosts'],
-          directories: ['ansible/', 'playbooks/', 'roles/'],
-        },
-        {
-          keywords: ['dependency', 'package', 'dependencies', 'library'],
-          files: [
-            'package.json',
-            'requirements.txt',
-            'Pipfile',
-            'go.mod',
-            'pom.xml',
-            'build.gradle',
-            'Cargo.toml',
-          ],
-        },
-        {
-          keywords: ['test', 'testing', 'spec', 'unit test'],
-          files: ['*.test.ts', '*.spec.ts', '*.test.js', '*.spec.js'],
-          directories: ['tests/', 'test/', '__tests__/'],
-        },
-        {
-          keywords: ['config', 'configuration', 'settings'],
-          files: ['*.config.js', '*.config.ts', '.env', 'config.yml', 'settings.json'],
-          directories: ['config/', 'configs/'],
-        },
-      ];
+      this.logger.info(
+        `Searching project files with keywords: ${keywords.join(', ')}`,
+        'ResearchOrchestrator'
+      );
 
-      // Search based on question keywords
-      for (const pattern of searchPatterns) {
-        const matches = pattern.keywords.some(keyword => questionLower.includes(keyword));
+      // PHASE 1: Use actual-file-operations for structured project scan
+      const projectStructure = await scanProjectStructure(this.projectPath, {
+        readContent: false,
+        maxFileSize: 100000,
+        includeHidden: false,
+      });
 
-        if (matches) {
-          const foundFiles = await this.findFiles(
-            this.projectPath,
-            pattern.files,
-            pattern.directories
+      // PHASE 2: Match relevant file categories based on question intent
+      const relevantFiles: string[] = [];
+
+      if (questionLower.match(/docker|container/i)) {
+        relevantFiles.push(...projectStructure.dockerFiles.map(f => f.path));
+      }
+
+      if (questionLower.match(/kubernetes|k8s|pod|deployment/i)) {
+        relevantFiles.push(...projectStructure.kubernetesFiles.map(f => f.path));
+      }
+
+      if (questionLower.match(/dependency|package|library/i)) {
+        relevantFiles.push(...projectStructure.packageFiles.map(f => f.path));
+      }
+
+      if (questionLower.match(/config|configuration|environment|env/i)) {
+        relevantFiles.push(...projectStructure.configFiles.map(f => f.path));
+        relevantFiles.push(...projectStructure.environmentFiles.map(f => f.path));
+      }
+
+      if (questionLower.match(/build|ci|cd|pipeline/i)) {
+        relevantFiles.push(...projectStructure.buildFiles.map(f => f.path));
+        relevantFiles.push(...projectStructure.ciFiles.map(f => f.path));
+      }
+
+      if (questionLower.match(/test|testing|spec/i)) {
+        // Use fast-glob to find test files
+        const testResults = await findFiles(this.projectPath, [
+          '**/*.test.ts',
+          '**/*.spec.ts',
+          '**/*.test.js',
+          '**/*.spec.js',
+          '**/tests/**',
+          '**/test/**',
+        ]);
+        relevantFiles.push(...testResults.files.map(f => f.path));
+      }
+
+      // PHASE 3: Always include ADRs
+      const adrPath = path.join(this.projectPath, this.adrDirectory);
+      try {
+        const adrResults = await findFiles(adrPath, ['**/*.md']);
+        relevantFiles.push(...adrResults.files.map(f => f.path));
+      } catch {
+        this.logger.warn(`ADR directory not found: ${adrPath}`, 'ResearchOrchestrator');
+      }
+
+      // PHASE 4: Use ripgrep for keyword search (if available)
+      const hasRipgrep = await isRipgrepAvailable();
+      if (hasRipgrep && keywords.length > 0) {
+        this.logger.info('Using ripgrep for fast keyword search', 'ResearchOrchestrator');
+
+        try {
+          const ripgrepFiles = await searchWithRipgrep({
+            pattern: keywords.join('|'),
+            path: this.projectPath,
+            caseInsensitive: true,
+          });
+
+          relevantFiles.push(...ripgrepFiles);
+        } catch {
+          this.logger.warn(
+            'Ripgrep search failed, continuing with other methods',
+            'ResearchOrchestrator'
           );
-
-          if (foundFiles.length > 0) {
-            results.files.push(...foundFiles);
-            results.found = true;
-          }
         }
       }
 
-      // Always check ADRs
-      const adrPath = path.join(this.projectPath, this.adrDirectory);
-      const adrFiles = await this.findFiles(adrPath, ['*.md']);
+      // Remove duplicates
+      results.files = [...new Set(relevantFiles)];
 
-      if (adrFiles.length > 0) {
-        results.files.push(...adrFiles);
-        results.found = true;
+      if (results.files.length === 0) {
+        this.logger.info('No relevant files found', 'ResearchOrchestrator');
+        return results;
       }
 
-      // Remove duplicates
-      results.files = [...new Set(results.files)];
+      results.found = true;
 
-      // Read and analyze relevant files
-      for (const file of results.files) {
+      // PHASE 5: Read and analyze files with tree-sitter
+      const analyzer = new TreeSitterAnalyzer();
+
+      for (const file of results.files.slice(0, 50)) {
+        // Limit to 50 files for performance
         try {
           const content = await fs.readFile(file, 'utf-8');
+
+          // Calculate text-based relevance
           const relevance = this.calculateRelevance(content, question);
 
-          if (relevance > 0.3) {
+          if (relevance > 0.2) {
+            // Lower threshold for tree-sitter analysis
             results.content[file] = content;
             results.relevance[file] = relevance;
+
+            // PHASE 6: Use tree-sitter for AST-based analysis
+            if (this.shouldParse(file)) {
+              try {
+                const analysis = await analyzer.analyzeFile(file, content);
+
+                // Enhance relevance based on AST analysis
+                let astRelevance = relevance;
+
+                // Check for infrastructure references
+                if (analysis.infraStructure && analysis.infraStructure.length > 0) {
+                  // Extract provider types and resource names from infrastructure analysis
+                  const infraProviders = analysis.infraStructure.map(i => i.provider);
+                  const infraResources = analysis.infraStructure.map(i => i.name);
+
+                  // Check if question keywords match infrastructure providers or resources
+                  const matchingProviders = keywords.filter(k =>
+                    infraProviders.some(p => p.toLowerCase().includes(k.toLowerCase()))
+                  );
+
+                  const matchingResources = keywords.filter(k =>
+                    infraResources.some(r => r.toLowerCase().includes(k.toLowerCase()))
+                  );
+
+                  const totalMatches = matchingProviders.length + matchingResources.length;
+                  if (totalMatches > 0) {
+                    astRelevance += 0.2 * Math.min(totalMatches, 3); // Cap bonus at 0.6
+                  }
+                }
+
+                // Check for imports/dependencies
+                if (analysis.imports && keywords.some(k => k.match(/import|require|dependency/i))) {
+                  astRelevance += 0.1;
+                }
+
+                // Update relevance
+                results.relevance[file] = Math.min(astRelevance, 1.0);
+                results.parseAnalysis[file] = {
+                  language: analysis.language,
+                  hasInfrastructure: !!analysis.infraStructure,
+                  functionCount: analysis.functions?.length || 0,
+                  importCount: analysis.imports?.length || 0,
+                };
+
+                this.logger.debug(
+                  `Tree-sitter analysis for ${file}: ${analysis.language}, relevance: ${results.relevance[file]}`,
+                  'ResearchOrchestrator'
+                );
+              } catch {
+                this.logger.debug(
+                  `Tree-sitter parsing failed for ${file}, using text-based analysis`,
+                  'ResearchOrchestrator'
+                );
+              }
+            }
           }
         } catch {
           this.logger.warn(`Failed to read file: ${file}`, 'ResearchOrchestrator');
@@ -270,14 +348,42 @@ export class ResearchOrchestrator {
 
       // Sort files by relevance
       results.files = results.files
-        .filter(f => (results.relevance[f] ?? 0) > 0.3)
-        .sort((a, b) => (results.relevance[b] || 0) - (results.relevance[a] || 0));
+        .filter(f => (results.relevance[f] ?? 0) > 0.2)
+        .sort((a, b) => (results.relevance[b] || 0) - (results.relevance[a] || 0))
+        .slice(0, 20); // Top 20 most relevant files
+
+      this.logger.info(
+        `Found ${results.files.length} relevant files (analyzed with tree-sitter)`,
+        'ResearchOrchestrator'
+      );
 
       return results;
     } catch (error) {
       this.logger.error('Project file search failed', 'ResearchOrchestrator', error as Error);
       return results;
     }
+  }
+
+  /**
+   * Check if file should be parsed with tree-sitter
+   */
+  private shouldParse(filePath: string): boolean {
+    const parsableExtensions = [
+      '.ts',
+      '.tsx',
+      '.js',
+      '.jsx',
+      '.py',
+      '.yaml',
+      '.yml',
+      '.json',
+      '.sh',
+      '.bash',
+      '.tf',
+      '.hcl',
+    ];
+
+    return parsableExtensions.some(ext => filePath.endsWith(ext));
   }
 
   /**
@@ -394,86 +500,6 @@ export class ResearchOrchestrator {
   }
 
   /**
-   * Find files matching patterns
-   */
-  private async findFiles(
-    basePath: string,
-    patterns: string[],
-    directories?: string[]
-  ): Promise<string[]> {
-    const foundFiles: string[] = [];
-
-    try {
-      // Check if base path exists
-      await fs.access(basePath);
-    } catch {
-      return foundFiles;
-    }
-
-    // Search in specific directories if provided
-    const searchPaths = directories ? directories.map(d => path.join(basePath, d)) : [basePath];
-
-    for (const searchPath of searchPaths) {
-      try {
-        await fs.access(searchPath);
-
-        for (const pattern of patterns) {
-          if (pattern.includes('*')) {
-            // Glob pattern - use recursive search
-            const files = await this.recursiveFileSearch(searchPath, pattern);
-            foundFiles.push(...files);
-          } else {
-            // Exact file name
-            const filePath = path.join(searchPath, pattern);
-            try {
-              await fs.access(filePath);
-              foundFiles.push(filePath);
-            } catch {
-              // File doesn't exist, skip
-            }
-          }
-        }
-      } catch {
-        // Directory doesn't exist, skip
-      }
-    }
-
-    return foundFiles;
-  }
-
-  /**
-   * Recursive file search with glob pattern
-   */
-  private async recursiveFileSearch(dir: string, pattern: string): Promise<string[]> {
-    const results: string[] = [];
-
-    try {
-      const entries = await fs.readdir(dir, { withFileTypes: true });
-
-      for (const entry of entries) {
-        const fullPath = path.join(dir, entry.name);
-
-        if (entry.isDirectory()) {
-          // Skip node_modules and other common ignore dirs
-          if (!['node_modules', '.git', 'dist', 'build'].includes(entry.name)) {
-            const subResults = await this.recursiveFileSearch(fullPath, pattern);
-            results.push(...subResults);
-          }
-        } else if (entry.isFile()) {
-          // Check if file matches pattern
-          const regex = new RegExp('^' + pattern.replace(/\*/g, '.*').replace(/\?/g, '.') + '$');
-          if (regex.test(entry.name)) {
-            results.push(fullPath);
-          }
-        }
-      }
-    } catch {
-      // Directory access error, skip
-    }
-
-    return results;
-  }
-
   /**
    * Calculate relevance score for content
    */
