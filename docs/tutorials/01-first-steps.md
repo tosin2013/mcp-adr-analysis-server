@@ -141,7 +141,23 @@ For the full learning experience, we recommend using "full" mode with an OpenRou
 
 ## 🔍 Step 3: Your First Project Analysis
 
-Let's analyze a project to understand what the server can do.
+Let's analyze a project to understand what the server can do. The MCP ADR Analysis Server uses **research-driven architecture** to query your live environment instead of relying on static analysis alone.
+
+### What is Research-Driven Analysis?
+
+Research-driven analysis works by:
+
+1. **Cascading through multiple sources** in order of reliability:
+   - Your project files and code
+   - Existing knowledge graph of ADRs and decisions
+   - Live environment resources (Docker, Kubernetes, OpenShift, Ansible)
+   - Web search (fallback for external context)
+
+2. **Confidence scoring** (0-1 scale) determines result reliability
+3. **Live environment detection** automatically discovers available tools
+4. **Red Hat ecosystem support** for OpenShift (`oc`), Podman, and Ansible
+
+**Why Research-Driven?** This approach helps LLMs with less domain knowledge by providing real-time context from your actual infrastructure instead of guessing or hallucinating.
 
 ### First: Load ADRs into Memory (If You Have Any)
 
@@ -206,6 +222,53 @@ The analysis will show you:
 - What programming language(s) were detected?
 - What project structure pattern was identified?
 - What recommendations were made?
+
+### Research-Driven Analysis in Action
+
+Now let's explore the **`perform_research`** tool, which uses the research-orchestrator to answer questions about your project:
+
+```json
+{
+  "tool": "perform_research",
+  "parameters": {
+    "question": "What deployment infrastructure is currently available in this project?",
+    "projectPath": ".",
+    "adrDirectory": "docs/adrs"
+  }
+}
+```
+
+**What You'll See:**
+
+```markdown
+## Research Results
+**Confidence**: 85.0% ✓
+
+### Answer
+The project has Docker and Kubernetes available. Found docker-compose.yml
+configuration for local development and Kubernetes manifests in k8s/ directory.
+
+### Sources Consulted
+✓ Project Files: Analyzed 45 files
+✓ Knowledge Graph: Found 2 related ADRs
+✓ Environment: Detected docker, kubectl
+✗ Web Search: Not needed (confidence above threshold)
+
+### Key Findings
+- Docker: Container orchestration available
+- Kubernetes: kubectl configured and accessible
+- Infrastructure decisions documented in ADR-003
+```
+
+**Understanding Confidence Scores:**
+- **≥70%**: High confidence, results are reliable
+- **60-69%**: Medium confidence, consider web search fallback
+- **<60%**: Low confidence, automatic web search triggered
+
+**Exercise**: Try asking research questions about:
+1. "What database technology is used in this project?"
+2. "Are there any container orchestration tools configured?"
+3. "What testing frameworks are available?"
 
 ---
 
@@ -277,6 +340,62 @@ Now that you've created an ADR, load it into the memory system to enable intelli
 ```
 
 This will process your new ADR and start building the knowledge graph that powers the intelligent features.
+
+### Validate ADR Against Reality
+
+Use the new **research-driven ADR validation** to check if your documented decision matches actual implementation:
+
+```json
+{
+  "tool": "validate_adr",
+  "parameters": {
+    "adrPath": "docs/adrs/001-web-framework-selection.md",
+    "projectPath": ".",
+    "includeEnvironmentCheck": true,
+    "confidenceThreshold": 0.6
+  }
+}
+```
+
+**What This Does:**
+1. **Reads your ADR** to understand the documented decision
+2. **Researches live environment** to check actual implementation
+3. **Compares documentation vs reality** with confidence scoring
+4. **Reports gaps or drift** between decision and implementation
+
+**Example Result:**
+
+```markdown
+## ADR Validation: Web Framework Selection
+
+**Research Confidence**: 78.0% ✓
+
+### Implementation Status: ✓ MATCHES
+- Express.js detected in package.json (v4.18.2)
+- Express routes found in src/routes/
+- Middleware patterns consistent with documented decision
+
+### Environment Check: ✓ PASSED
+- Node.js v20.0.0 (meets requirements)
+- npm packages installed correctly
+- No conflicting frameworks detected
+
+### Validation Result: ADR accurately reflects current implementation
+```
+
+**Exercise**: Validate all your ADRs at once:
+
+```json
+{
+  "tool": "validate_all_adrs",
+  "parameters": {
+    "projectPath": ".",
+    "adrDirectory": "docs/adrs",
+    "includeEnvironmentCheck": true,
+    "minConfidence": 0.6
+  }
+}
+```
 
 ---
 

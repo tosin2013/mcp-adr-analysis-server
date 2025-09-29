@@ -11,6 +11,7 @@ import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 // Note: Memory entity types are imported implicitly through MemoryEntityManager
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
 import { findFiles, findRelatedCode } from '../utils/file-system.js';
+import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 // Structured failure schema
 const FailureInfoSchema = z.object({
@@ -491,12 +492,101 @@ class TroubleshootingMemoryManager {
 }
 
 /**
+ * Research environment context for troubleshooting
+ */
+async function researchTroubleshootingContext(
+  failure: FailureInfo,
+  projectPath: string
+): Promise<{
+  answer: string;
+  confidence: number;
+  sources: Array<{ type: string; found: boolean }>;
+  environmentInsights: string[];
+}> {
+  try {
+    const orchestrator = new ResearchOrchestrator(projectPath, 'docs/adrs');
+
+    // Build research question based on failure type
+    let researchQuestion = `Troubleshoot ${failure.failureType} issue:
+Error: ${failure.failureDetails.errorMessage}`;
+
+    if (failure.failureDetails.command) {
+      researchQuestion += `\nFailed Command: ${failure.failureDetails.command}`;
+    }
+
+    if (failure.failureDetails.environment) {
+      researchQuestion += `\nEnvironment: ${failure.failureDetails.environment}`;
+    }
+
+    researchQuestion += `\n\nProvide:
+1. Similar past issues and resolutions
+2. Environment state and configuration issues
+3. Related ADR decisions that may affect this
+4. Known deployment/infrastructure issues`;
+
+    const research = await orchestrator.answerResearchQuestion(researchQuestion);
+
+    const environmentInsights: string[] = [];
+
+    // Analyze environment sources for insights
+    const envSource = research.sources.find(s => s.type === 'environment');
+    if (envSource) {
+      const capabilities = envSource.data?.capabilities || [];
+      environmentInsights.push(`Environment tools available: ${capabilities.join(', ')}`);
+
+      // Check for specific tools related to failure
+      if (failure.failureType === 'deployment_failure') {
+        const hasK8s = capabilities.includes('kubernetes');
+        const hasDocker = capabilities.includes('docker');
+        const hasPodman = capabilities.includes('podman');
+
+        if (!hasK8s && !hasDocker && !hasPodman) {
+          environmentInsights.push('⚠️ No container orchestration tools detected');
+        }
+      }
+    }
+
+    // Check project files for configuration issues
+    const projectSource = research.sources.find(s => s.type === 'project_files');
+    if (projectSource) {
+      environmentInsights.push(`Project files analyzed: ${research.metadata.filesAnalyzed}`);
+    }
+
+    // Check ADRs for relevant decisions (knowledge_graph type)
+    const adrSource = research.sources.find(s => s.type === 'knowledge_graph');
+    if (adrSource) {
+      environmentInsights.push('Found related architectural decisions');
+    }
+
+    return {
+      answer: research.answer || 'No research results available',
+      confidence: research.confidence,
+      sources: research.sources.map(s => ({
+        type: s.type,
+        found: true, // Sources in array are already found
+      })),
+      environmentInsights,
+    };
+  } catch (error) {
+    return {
+      answer: `Research failed: ${error instanceof Error ? error.message : String(error)}`,
+      confidence: 0,
+      sources: [],
+      environmentInsights: ['Research unavailable - proceeding with basic analysis'],
+    };
+  }
+}
+
+/**
  * Analyze structured failure information
  */
 async function analyzeFailure(
   failure: FailureInfo,
   projectPath: string = process.cwd()
 ): Promise<string> {
+  // Step 0: Research environment and historical context
+  const researchContext = await researchTroubleshootingContext(failure, projectPath);
+
   const report = [
     '# 🚨 Failure Analysis',
     '',
@@ -661,6 +751,30 @@ async function analyzeFailure(
       report.push('2. **Check system logs and monitoring**');
       report.push('3. **Verify configuration and dependencies**');
       report.push('4. **Test in isolated environment**');
+  }
+
+  // Add research-driven context analysis
+  report.push('## 🔍 Research-Driven Context Analysis');
+  report.push('');
+  report.push(`**Research Confidence**: ${(researchContext.confidence * 100).toFixed(1)}%`);
+  report.push('');
+
+  report.push('### Environment & Historical Context');
+  report.push(researchContext.answer);
+  report.push('');
+
+  report.push('### Sources Consulted');
+  researchContext.sources.forEach(s => {
+    report.push(`- ${s.type}: ${s.found ? '✅ Available' : '❌ Not found'}`);
+  });
+  report.push('');
+
+  if (researchContext.environmentInsights.length > 0) {
+    report.push('### Environment Insights');
+    researchContext.environmentInsights.forEach(insight => {
+      report.push(`- ${insight}`);
+    });
+    report.push('');
   }
 
   // Add Smart Code Linking analysis to the report

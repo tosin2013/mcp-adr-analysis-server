@@ -39,6 +39,7 @@ import { join, basename } from 'path';
 import * as os from 'os';
 import { McpAdrError } from '../types/index.js';
 import { findFiles, findRelatedCode } from '../utils/file-system.js';
+import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 // Planning session schema
 const PlanningSessionSchema = z.object({
@@ -333,6 +334,85 @@ async function provideInput(args: InteractiveAdrPlanningInput): Promise<any> {
 }
 
 /**
+ * Perform automated research using research-orchestrator
+ */
+async function performAutomatedResearch(
+  session: PlanningSession
+): Promise<Array<{ source: string; insight: string; relevance: string }>> {
+  if (!session.context.problemStatement) {
+    return [];
+  }
+
+  try {
+    const orchestrator = new ResearchOrchestrator(
+      session.context.projectPath,
+      session.context.adrDirectory
+    );
+
+    const researchQuestion = `ADR Planning Research for: ${session.context.problemStatement}
+
+Please provide:
+1. Existing architectural patterns or solutions related to this problem
+2. Current project files and configurations that are relevant
+3. Related ADR decisions already documented
+4. Environment capabilities that might influence the decision
+5. Industry best practices and common approaches`;
+
+    const research = await orchestrator.answerResearchQuestion(researchQuestion);
+
+    const findings: Array<{ source: string; insight: string; relevance: string }> = [];
+
+    // Add project files findings
+    const projectSource = research.sources.find(s => s.type === 'project_files');
+    if (projectSource) {
+      findings.push({
+        source: 'Project Files',
+        insight: `Analyzed ${research.metadata.filesAnalyzed} files. ${(research.answer || '').substring(0, 200)}...`,
+        relevance: 'Understanding current codebase structure',
+      });
+    }
+
+    // Add knowledge graph findings
+    const kgSource = research.sources.find(s => s.type === 'knowledge_graph');
+    if (kgSource) {
+      findings.push({
+        source: 'ADR Knowledge Graph',
+        insight: 'Found related architectural decisions that may influence this choice',
+        relevance: 'Maintaining architectural consistency',
+      });
+    }
+
+    // Add environment findings
+    const envSource = research.sources.find(s => s.type === 'environment');
+    if (envSource) {
+      const capabilities = envSource.data?.capabilities || [];
+      findings.push({
+        source: 'Environment Analysis',
+        insight: `Available infrastructure: ${capabilities.join(', ')}`,
+        relevance: 'Deployment and runtime constraints',
+      });
+    }
+
+    // Add general research insight
+    findings.push({
+      source: 'Research Analysis',
+      insight: research.answer || 'No specific insights found',
+      relevance: `Confidence: ${(research.confidence * 100).toFixed(1)}%`,
+    });
+
+    return findings;
+  } catch (error) {
+    return [
+      {
+        source: 'Research Error',
+        insight: `Failed to perform automated research: ${error instanceof Error ? error.message : String(error)}`,
+        relevance: 'Manual research may be needed',
+      },
+    ];
+  }
+}
+
+/**
  * Handle problem definition phase
  */
 async function handleProblemDefinition(session: PlanningSession, input: any): Promise<any> {
@@ -345,6 +425,12 @@ async function handleProblemDefinition(session: PlanningSession, input: any): Pr
     'Identify relevant patterns and practices',
   ];
 
+  // Automatically perform research
+  const autoFindings = await performAutomatedResearch(session);
+  if (autoFindings.length > 0) {
+    session.context.researchFindings = autoFindings;
+  }
+
   return {
     success: true,
     sessionId: session.sessionId,
@@ -353,19 +439,21 @@ async function handleProblemDefinition(session: PlanningSession, input: any): Pr
 
 **Problem Statement:** ${session.context.problemStatement}
 
+## Automated Research Complete
+
+${autoFindings.length > 0 ? `### Research Findings:\n${autoFindings.map(f => `- **${f.source}**: ${f.insight}\n  *Relevance: ${f.relevance}*`).join('\n')}` : 'No automated research findings available'}
+
 ## Next Phase: Research & Analysis
 
-I'll help you research this topic. We can:
-1. Search for existing solutions and patterns
-2. Analyze your current codebase for context
-3. Research industry best practices
-4. Identify relevant architectural patterns
+${autoFindings.length > 0 ? 'I\'ve performed initial research. You can:' : 'Please provide research findings:'}
+1. Review and add to the automated findings
+2. Provide additional context or constraints
+3. Move to option exploration when ready
 
-Would you like me to:
-- Automatically research this topic? (use \`request_research\`)
-- Or provide your own research findings? (use \`provide_input\` with findings)`,
-    nextAction: 'request_research',
+Use \`provide_input\` to add more findings, or proceed to option exploration.`,
+    nextAction: 'provide_input',
     autoResearch: true,
+    researchFindings: autoFindings,
   };
 }
 

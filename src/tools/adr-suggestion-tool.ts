@@ -1,7 +1,7 @@
 /**
  * MCP Tool for ADR suggestions and implicit decision detection
- * Enhanced with Knowledge Generation and Reflexion capabilities
- * Implements prompt-driven ADR recommendation system with learning
+ * Enhanced with Knowledge Generation, Reflexion capabilities, and Research-Driven Architecture
+ * Implements AI-powered ADR recommendation system with environment-aware research
  */
 
 import { McpAdrError } from '../types/index.js';
@@ -15,6 +15,8 @@ import {
 import { executeADRSuggestionPrompt, formatMCPResponse } from '../utils/prompt-execution.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 import { findRelatedCode } from '../utils/file-system.js';
+import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import { getAIExecutor } from '../utils/ai-executor.js';
 
 /**
  * Suggest ADRs based on project analysis with advanced prompting techniques
@@ -490,6 +492,68 @@ The enhanced AI analysis will provide:
         let knowledgeContext = '';
         let reflexionContext = '';
         let codeContext = '';
+        let researchContext = '';
+
+        // Step 0: Research current infrastructure state (NEW - Research-Driven Architecture)
+        try {
+          const orchestrator = new ResearchOrchestrator(projectPath, 'docs/adrs');
+
+          // Research questions about current architecture
+          const infrastructureResearch = await orchestrator.answerResearchQuestion(
+            'What is our current infrastructure and deployment architecture? Include container technology, orchestration, databases, and key architectural patterns.'
+          );
+
+          if (infrastructureResearch.confidence >= 0.5) {
+            researchContext = `
+## 🔬 Research-Driven Architecture Analysis
+
+**Live Infrastructure Research Results:**
+
+### Current State
+${infrastructureResearch.answer}
+
+### Data Sources Consulted
+${infrastructureResearch.sources.map(s => `- **${s.type}** (confidence: ${(s.confidence * 100).toFixed(1)}%)`).join('\n')}
+
+### Research Metadata
+- **Overall Confidence**: ${(infrastructureResearch.confidence * 100).toFixed(1)}%
+- **Files Analyzed**: ${infrastructureResearch.metadata.filesAnalyzed}
+- **Sources Queried**: ${infrastructureResearch.metadata.sourcesQueried.join(', ')}
+- **Research Duration**: ${infrastructureResearch.metadata.duration}ms
+${infrastructureResearch.needsWebSearch ? '- **Recommendation**: Consider web search for additional context\n' : ''}
+
+### Infrastructure Evidence
+${infrastructureResearch.sources
+  .filter(s => s.found && s.data)
+  .map(s => {
+    if (s.type === 'project_files') {
+      return `**Project Files**: ${s.data.files?.length || 0} relevant files found`;
+    } else if (s.type === 'environment') {
+      return `**Environment Data**: ${JSON.stringify(s.data).substring(0, 200)}...`;
+    } else if (s.type === 'knowledge_graph') {
+      return `**Knowledge Graph**: ${s.data.relatedAdrs?.length || 0} related ADRs`;
+    }
+    return '';
+  })
+  .filter(Boolean)
+  .join('\n')}
+
+---
+`;
+          }
+        } catch (error) {
+          console.warn('[WARNING] Research-driven infrastructure analysis failed:', error);
+          researchContext = `
+## 🔬 Research-Driven Architecture Analysis
+
+**Status**: ⚠️ Research analysis unavailable
+**Error**: ${error instanceof Error ? error.message : 'Unknown error'}
+
+Proceeding with traditional analysis methods...
+
+---
+`;
+        }
 
         // Step 1: Generate domain-specific knowledge if enabled
         if (knowledgeEnhancement) {
@@ -669,31 +733,85 @@ ${reflexionResult.prompt}
         }
 
         // Execute the analysis with AI if enabled, otherwise return prompt
-        const executionResult = await executeADRSuggestionPrompt(
-          enhancedPrompt,
-          implicitResult.instructions,
-          {
-            temperature: 0.1,
-            maxTokens: 4000,
+        const aiExecutor = getAIExecutor();
+        let executionResult: any;
+
+        // Try AI-powered analysis with research context
+        if (aiExecutor.isAvailable()) {
+          try {
+            const aiResult = await aiExecutor.executeStructuredPrompt(
+              `You are an expert software architect analyzing a project for ADR recommendations.
+
+${researchContext}
+
+${knowledgeContext}
+
+${reflexionContext}
+
+${codeContext}
+
+Based on the research data above, generate comprehensive ADR suggestions.
+
+${implicitResult.instructions}
+
+${enhancedPrompt}`,
+              null,
+              {
+                temperature: 0.3,
+                maxTokens: 4000,
+                systemPrompt: 'You are an architecture expert. Generate ADR recommendations based on ACTUAL infrastructure data from research, not assumptions. Reference specific files, environment data, and existing ADRs found in the research.'
+              }
+            );
+
+            executionResult = {
+              isAIGenerated: true,
+              content: typeof aiResult.data === 'string' ? aiResult.data : JSON.stringify(aiResult.data, null, 2),
+              metadata: aiResult.raw.metadata
+            };
+          } catch (error) {
+            console.warn('[WARNING] AI execution failed, falling back to prompt-only mode:', error);
+            executionResult = await executeADRSuggestionPrompt(
+              enhancedPrompt,
+              implicitResult.instructions,
+              {
+                temperature: 0.1,
+                maxTokens: 4000,
+              }
+            );
           }
-        );
+        } else {
+          executionResult = await executeADRSuggestionPrompt(
+            enhancedPrompt,
+            implicitResult.instructions,
+            {
+              temperature: 0.1,
+              maxTokens: 4000,
+            }
+          );
+        }
 
         if (executionResult.isAIGenerated) {
           // AI execution successful - return actual analysis results
           return formatMCPResponse({
             ...executionResult,
-            content: `# ADR Suggestions: AI Analysis Results
+            content: `# ADR Suggestions: AI Analysis Results (Research-Driven)
 
 ## Enhancement Features
+- **Research-Driven Analysis**: ✅ Enabled (Live infrastructure data)
 - **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
 - **Reflexion Learning**: ${learningEnabled ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 - **Smart Code Linking**: ${existingAdrs && existingAdrs.length > 0 ? '✅ Enabled' : '❌ No existing ADRs'}
+- **AI Execution**: ✅ OpenRouter.ai ${executionResult.metadata?.model || 'enabled'}
 
 ## Project Analysis
 - **Project Path**: ${projectPath}
 - **Existing ADRs**: ${existingAdrs?.length || 0} ADRs provided
-- **Analysis Type**: Comprehensive (AI-driven with enhancements)
+- **Analysis Type**: Comprehensive (Research + AI-driven)
+- **AI Response Time**: ${executionResult.metadata?.executionTime || 'N/A'}ms
+- **Tokens Used**: ${executionResult.metadata?.usage?.totalTokens || 'N/A'}
+
+${researchContext}
 
 ${codeContext}
 
@@ -739,20 +857,24 @@ For each suggested decision, use:
             content: [
               {
                 type: 'text',
-                text: `# ADR Suggestions: Enhanced Comprehensive Analysis
+                text: `# ADR Suggestions: Enhanced Comprehensive Analysis (Research-Driven)
 
-This enhanced analysis uses advanced prompting techniques to provide superior ADR suggestions.
+This enhanced analysis uses research-driven architecture with live infrastructure data and advanced prompting techniques.
 
 ## Enhancement Features
+- **Research-Driven Analysis**: ✅ Enabled (Live infrastructure data)
 - **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
 - **Reflexion Learning**: ${learningEnabled ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 - **Smart Code Linking**: ${existingAdrs && existingAdrs.length > 0 ? '✅ Enabled' : '❌ No existing ADRs'}
+- **AI Execution**: ❌ Disabled (configure OPENROUTER_API_KEY for AI execution)
 
 ## Project Analysis
 - **Project Path**: ${projectPath}
 - **Existing ADRs**: ${existingAdrs?.length || 0} ADRs provided
-- **Analysis Type**: Comprehensive (AI-driven with enhancements)
+- **Analysis Type**: Comprehensive (Research-driven + Enhanced prompting)
+
+${researchContext}
 
 ${codeContext}
 
