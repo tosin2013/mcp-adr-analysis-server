@@ -18,6 +18,39 @@ This section contains tutorials documentation following the Diataxis framework.
 - Ensure the reader succeeds in accomplishing something
 - Build confidence through success
 
+## 🔍 Research-Driven Architecture
+
+All tutorials now feature **research-driven workflows** that query your live environment instead of relying on static analysis alone:
+
+- **Cascading Source Hierarchy**: Project Files → Knowledge Graph → Environment Resources → Web Search
+- **Confidence Scoring**: Every result includes a 0-1 confidence score
+- **Live Infrastructure Detection**: Automatically discovers Docker, Kubernetes, OpenShift, Podman, Ansible
+- **Red Hat Ecosystem Support**: First-class support for OpenShift (`oc`), Podman, and Ansible
+- **ADR Validation**: Check if documented decisions match actual implementation
+
+### Key Research-Driven Tools
+
+- **`perform_research`**: Ask questions about your project and get confidence-scored answers
+- **`validate_adr`**: Validate a single ADR against live infrastructure
+- **`validate_all_adrs`**: Batch validate all ADRs with environment checks
+- **`analyze_deployment_progress`**: Research-enhanced deployment readiness analysis
+- **`generate_deployment_guidance`**: Infrastructure-aware deployment recommendations
+
 ## Contents
 
-- [Example: getting-started.md](./getting-started.md)
+### Getting Started
+
+- [Tutorial 1: Your First MCP Analysis](./01-first-steps.md) - Learn MCP basics and create your first ADR with research-driven workflows
+- [Tutorial 2: Working with Existing Projects](./02-existing-projects.md) - Analyze existing codebases with live infrastructure validation
+- [Tutorial 3: Advanced Analysis Techniques](./03-advanced-analysis.md) - Security scanning, deployment readiness, and performance analysis
+
+### Specialized Workflows
+
+- [Example: getting-started.md](./getting-started.md) - Simple template for new guides
+- [Security-Focused Workflow](./security-focused-workflow.md) - Security analysis and content masking
+- [Team Collaboration](./team-collaboration.md) - Collaborative ADR processes
+
+### Example ADRs
+
+- [001: Database Architecture](./001-database-architecture.md)
+- [002: API Gateway Strategy](./002-api-gateway-strategy.md)

@@ -4,6 +4,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 /**
  * Analyze deployment progress and verify completion
@@ -320,6 +321,41 @@ Use the verification results to:
       }
 
       case 'comprehensive': {
+        // Step 0: Research environment state
+        let environmentResearch = '';
+        try {
+          const orchestrator = new ResearchOrchestrator(process.cwd(), adrDirectory);
+          const research = await orchestrator.answerResearchQuestion(
+            `Analyze current deployment environment state:
+1. What deployment tools and infrastructure are available?
+2. What is the current deployment pipeline status?
+3. Are there any deployment blockers or issues?
+4. What deployment-related ADRs are documented?`
+          );
+
+          const envSource = research.sources.find(s => s.type === 'environment');
+          const capabilities = envSource?.data?.capabilities || [];
+
+          environmentResearch = `
+## 🔍 Environment Research Analysis
+
+**Research Confidence**: ${(research.confidence * 100).toFixed(1)}%
+
+### Current Environment State
+${research.answer || 'No environment data available'}
+
+### Available Infrastructure
+${capabilities.length > 0 ? capabilities.map((c: string) => `- ${c}`).join('\n') : '- No infrastructure tools detected'}
+
+### Sources Consulted
+${research.sources.map(s => `- ${s.type}: ✅ Available`).join('\n')}
+
+${research.needsWebSearch ? '⚠️ **Note**: Local data may be insufficient - external verification recommended\n' : ''}
+`;
+        } catch (error) {
+          environmentResearch = `\n## ⚠️ Environment Research\nFailed to analyze environment: ${error instanceof Error ? error.message : String(error)}\n`;
+        }
+
         const taskResult = await identifyDeploymentTasks(adrDirectory, todoPath);
 
         return {
@@ -329,6 +365,8 @@ Use the verification results to:
               text: `# Comprehensive Deployment Analysis
 
 This comprehensive analysis will provide end-to-end deployment progress tracking and completion verification.
+
+${environmentResearch}
 
 ## Deployment Analysis Workflow
 
