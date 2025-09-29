@@ -326,7 +326,7 @@ jobs:
   # Trigger NPM publishing
   publish-npm:
     needs: auto-release
-    if: github.event.pull_request.merged == true && github.actor != 'dependabot[bot]' && needs.auto-release.outputs.should-publish == 'true'
+    if: github.event.pull_request.merged == true && github.event.pull_request.user.login != 'dependabot[bot]' && needs.auto-release.outputs.should-publish == 'true'
     uses: ./.github/workflows/publish.yml
     with:
       version: v${{ needs.auto-release.outputs.new-version }}
