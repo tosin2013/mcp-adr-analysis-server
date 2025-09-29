@@ -7,6 +7,7 @@
 import { McpAdrError } from '../types/index.js';
 import { ConversationContext } from '../types/conversation-context.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
+import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -118,10 +119,46 @@ export async function reviewExistingAdrs(args: {
       throw new McpAdrError(`No ADRs found matching: ${specificAdr}`, 'ADR_NOT_FOUND');
     }
 
-    // Step 3: Analyze code structure
+    // Step 3: Research environment and implementation state
+    let environmentContext = '';
+    let researchConfidence = 0;
+    try {
+      const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
+      const research = await orchestrator.answerResearchQuestion(
+        `Analyze ADR implementation status:
+1. What architectural decisions are documented in ADRs?
+2. How are these decisions reflected in the current codebase?
+3. What is the current infrastructure and deployment state?
+4. Are there any gaps between documented decisions and actual implementation?`
+      );
+
+      researchConfidence = research.confidence;
+      const envSource = research.sources.find(s => s.type === 'environment');
+      const capabilities = envSource?.data?.capabilities || [];
+
+      environmentContext = `
+
+## 🔍 Research-Driven Analysis
+
+**Research Confidence**: ${(research.confidence * 100).toFixed(1)}%
+
+### Implementation Context
+${research.answer || 'No specific implementation context found'}
+
+### Environment Infrastructure
+${capabilities.length > 0 ? capabilities.map((c: string) => `- ${c}`).join('\n') : '- No infrastructure tools detected'}
+
+### Sources Analyzed
+${research.sources.map(s => `- ${s.type}: Consulted`).join('\n')}
+`;
+    } catch (error) {
+      environmentContext = `\n## ⚠️ Research Analysis\nFailed to analyze environment: ${error instanceof Error ? error.message : String(error)}\n`;
+    }
+
+    // Step 4: Analyze code structure
     const codeAnalysis = await analyzeCodeStructure(projectPath, includeTreeSitter);
 
-    // Step 4: Review each ADR
+    // Step 5: Review each ADR
     const reviewResults: AdrReviewResult[] = [];
 
     for (const adr of adrsToReview) {
@@ -156,8 +193,11 @@ export async function reviewExistingAdrs(args: {
 - **Project**: ${path.basename(projectPath)}
 - **ADRs Reviewed**: ${reviewResults.length}
 - **Overall Compliance Score**: ${overallScore.toFixed(1)}/10
+- **Research Confidence**: ${(researchConfidence * 100).toFixed(1)}%
 - **Analysis Depth**: ${analysisDepth}
 - **Tree-sitter Analysis**: ${includeTreeSitter ? '✅ Enabled' : '❌ Disabled'}
+
+${environmentContext}
 
 ## Summary Statistics
 - **Total Gaps Identified**: ${totalGaps}
