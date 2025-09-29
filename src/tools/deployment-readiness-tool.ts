@@ -32,6 +32,7 @@ import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 import { findFiles, findRelatedCode } from '../utils/file-system.js';
+import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 // Core schemas
 const DeploymentReadinessSchema = z.object({
@@ -116,6 +117,16 @@ const DeploymentReadinessSchema = z.object({
     .array(z.string())
     .default(['typescript', 'javascript', 'python', 'yaml', 'hcl'])
     .describe('Languages to analyze with tree-sitter'),
+
+  // Research-Driven Integration
+  enableResearchIntegration: z
+    .boolean()
+    .default(true)
+    .describe('Use research-orchestrator to verify environment readiness'),
+  researchConfidenceThreshold: z
+    .number()
+    .default(0.7)
+    .describe('Minimum confidence for environment research (0-1)'),
 });
 
 // Result interfaces
@@ -268,6 +279,13 @@ interface DeploymentReadinessResult {
 
   // Enhanced Features
   smartCodeAnalysis?: string; // Smart Code Linking analysis
+  environmentResearch?: {
+    answer: string;
+    confidence: number;
+    sources: Array<{ type: string; found: boolean }>;
+    needsWebSearch: boolean;
+    warnings: string[];
+  };
 }
 
 /**
@@ -1422,6 +1440,98 @@ function analyzeFailurePatterns(failedDeployments: DeploymentRecord[]): FailureP
 }
 
 /**
+ * Research environment readiness using research-orchestrator
+ */
+async function performEnvironmentResearch(
+  args: z.infer<typeof DeploymentReadinessSchema>,
+  projectPath: string
+): Promise<{
+  answer: string;
+  confidence: number;
+  sources: Array<{ type: string; found: boolean }>;
+  needsWebSearch: boolean;
+  warnings: string[];
+}> {
+  if (!args.enableResearchIntegration) {
+    return {
+      answer: 'Environment research disabled',
+      confidence: 1.0,
+      sources: [],
+      needsWebSearch: false,
+      warnings: [],
+    };
+  }
+
+  try {
+    const orchestrator = new ResearchOrchestrator(projectPath, 'docs/adrs');
+
+    const researchQuestion = `Verify deployment readiness for ${args.targetEnvironment} environment:
+1. Are required deployment tools available (Docker/Podman, Kubernetes/OpenShift)?
+2. What is the current infrastructure state and health?
+3. Are environment configurations present and valid?
+4. What deployment patterns are documented in ADRs?
+5. Are there any known deployment blockers or issues?`;
+
+    const research = await orchestrator.answerResearchQuestion(researchQuestion);
+
+    const warnings: string[] = [];
+
+    // Check confidence level
+    if (research.confidence < args.researchConfidenceThreshold) {
+      warnings.push(
+        `Research confidence (${(research.confidence * 100).toFixed(1)}%) below threshold (${(args.researchConfidenceThreshold * 100).toFixed(1)}%)`
+      );
+    }
+
+    // Check if web search is needed
+    if (research.needsWebSearch) {
+      warnings.push(
+        'Local environment data insufficient - external research may be needed'
+      );
+    }
+
+    // Check for environment capability availability
+    const hasKubernetes = research.sources.some(
+      s => s.type === 'environment' && s.data?.capabilities?.includes('kubernetes')
+    );
+    const hasDocker = research.sources.some(
+      s => s.type === 'environment' && s.data?.capabilities?.includes('docker')
+    );
+    const hasOpenShift = research.sources.some(
+      s => s.type === 'environment' && s.data?.capabilities?.includes('openshift')
+    );
+    const hasPodman = research.sources.some(
+      s => s.type === 'environment' && s.data?.capabilities?.includes('podman')
+    );
+
+    if (!hasKubernetes && !hasOpenShift && !hasDocker && !hasPodman) {
+      warnings.push(
+        'No container orchestration tools detected - manual deployment verification required'
+      );
+    }
+
+    return {
+      answer: research.answer || 'No environment research results available',
+      confidence: research.confidence,
+      sources: research.sources.map(s => ({
+        type: s.type,
+        found: true, // Sources in array are already found
+      })),
+      needsWebSearch: research.needsWebSearch,
+      warnings,
+    };
+  } catch (error) {
+    return {
+      answer: `Environment research failed: ${error instanceof Error ? error.message : String(error)}`,
+      confidence: 0,
+      sources: [],
+      needsWebSearch: true,
+      warnings: ['Failed to perform environment research - proceeding without environment validation'],
+    };
+  }
+}
+
+/**
  * Perform full audit (all checks)
  */
 async function performFullAudit(
@@ -1429,6 +1539,9 @@ async function performFullAudit(
   projectPath: string,
   historyPath: string
 ): Promise<DeploymentReadinessResult> {
+  // Step 0: Research environment readiness
+  const environmentResearch = await performEnvironmentResearch(args, projectPath);
+
   // Combine all validations
   const testResult = await performTestValidation(args, projectPath);
   const historyResult = await performDeploymentHistoryAnalysis(args, historyPath);
@@ -1556,19 +1669,51 @@ ${
     }
   }
 
+  // Create environment blockers based on research findings
+  const environmentBlockers: DeploymentBlocker[] = [];
+
+  if (environmentResearch.warnings.length > 0) {
+    environmentResearch.warnings.forEach(warning => {
+      if (warning.includes('threshold') || warning.includes('No container orchestration')) {
+        environmentBlockers.push({
+          category: 'environment',
+          title: 'Environment Readiness Concern',
+          description: warning,
+          severity: warning.includes('No container orchestration') ? 'high' : 'medium',
+          impact: 'May affect deployment execution',
+          resolutionSteps: [
+            'Verify environment tools are installed',
+            'Check environment configurations',
+            'Consult deployment documentation',
+          ],
+          estimatedResolutionTime: '30 minutes - 1 hour',
+          blocksDeployment: args.strictMode && warning.includes('No container orchestration'),
+        });
+      }
+    });
+  }
+
   const allBlockers = [
     ...testResult.criticalBlockers,
     ...testResult.testFailureBlockers,
     ...historyResult.deploymentHistoryBlockers,
+    ...environmentBlockers,
   ];
 
-  const overallScore = (testResult.overallScore + historyResult.overallScore) / 2;
-  const isReady = allBlockers.length === 0;
+  // Adjust overall score based on environment research confidence
+  const baseScore = (testResult.overallScore + historyResult.overallScore) / 2;
+  const environmentScore = environmentResearch.confidence * 100;
+  const overallScore = (baseScore * 0.7 + environmentScore * 0.3);
+  const isReady = allBlockers.filter(b => b.blocksDeployment).length === 0;
 
   const result = {
     isDeploymentReady: isReady,
     overallScore,
-    confidence: Math.min(testResult.confidence, historyResult.confidence),
+    confidence: Math.min(
+      testResult.confidence,
+      historyResult.confidence,
+      environmentResearch.confidence * 100
+    ),
     codeQualityAnalysis: testResult.codeQualityAnalysis,
     testValidationResult: testResult.testValidationResult,
     deploymentHistoryAnalysis: historyResult.deploymentHistoryAnalysis,
@@ -1576,12 +1721,17 @@ ${
     criticalBlockers: allBlockers.filter(b => b.severity === 'critical'),
     testFailureBlockers: testResult.testFailureBlockers,
     deploymentHistoryBlockers: historyResult.deploymentHistoryBlockers,
-    warnings: [...testResult.warnings, ...historyResult.warnings],
+    warnings: [
+      ...testResult.warnings,
+      ...historyResult.warnings,
+      ...environmentResearch.warnings,
+    ],
     todoTasksCreated: [],
     healthScoreUpdate: {},
     gitPushStatus: isReady ? ('allowed' as const) : ('blocked' as const),
     overrideStatus: {},
     smartCodeAnalysis, // Include Smart Code Linking analysis
+    environmentResearch, // Include environment research results
   };
 
   return result;
@@ -1801,6 +1951,35 @@ function generateSuccessResponse(
 - **ADRs Analyzed**: ${result.adrComplianceResult.compliantAdrs}/${result.adrComplianceResult.totalAdrs}
 - **Missing Implementations**: ${result.adrComplianceResult.missingImplementations.length} items
 
+${
+  result.environmentResearch
+    ? `
+## 🔍 Environment Research Analysis
+
+**Research Confidence**: ${(result.environmentResearch.confidence * 100).toFixed(1)}%
+
+### Infrastructure State
+${result.environmentResearch.answer}
+
+### Sources Consulted
+${result.environmentResearch.sources.map(s => `- ${s.type}: ${s.found ? '✅ Available' : '❌ Not found'}`).join('\n')}
+
+${
+  result.environmentResearch.warnings.length > 0
+    ? `### Environment Warnings
+${result.environmentResearch.warnings.map(w => `- ⚠️ ${w}`).join('\n')}`
+    : '### Environment Status\n✅ All environment checks passed'
+}
+
+${
+  result.environmentResearch.needsWebSearch
+    ? '⚠️ **Note**: Local environment data may be insufficient - consider external verification'
+    : ''
+}
+`
+    : ''
+}
+
 ${(result as any).smartCodeAnalysis || ''}
 
 ## 🚀 Deployment Approved
@@ -1863,6 +2042,35 @@ ${
 ${result.deploymentHistoryAnalysis.failurePatterns.map(p => `- **${p.pattern}**: ${p.frequency} occurrences`).join('\n')}
 `
     : '✅ Deployment history stable'
+}
+
+${
+  result.environmentResearch
+    ? `
+## 🔍 Environment Research Analysis
+
+**Research Confidence**: ${(result.environmentResearch.confidence * 100).toFixed(1)}%
+
+### Infrastructure State
+${result.environmentResearch.answer}
+
+### Sources Consulted
+${result.environmentResearch.sources.map(s => `- ${s.type}: ${s.found ? '✅ Available' : '❌ Not found'}`).join('\n')}
+
+${
+  result.environmentResearch.warnings.length > 0
+    ? `### Environment Warnings
+${result.environmentResearch.warnings.map(w => `- ⚠️ ${w}`).join('\n')}`
+    : '### Environment Status\n✅ All environment checks passed'
+}
+
+${
+  result.environmentResearch.needsWebSearch
+    ? '⚠️ **Note**: Local environment data may be insufficient - consider external verification'
+    : ''
+}
+`
+    : ''
 }
 
 ${(result as any).smartCodeAnalysis || ''}

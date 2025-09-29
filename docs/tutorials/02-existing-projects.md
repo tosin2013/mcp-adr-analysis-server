@@ -30,6 +30,57 @@ When analyzing an existing project, you need to understand:
 - **Architectural patterns and design choices**
 - **Existing documentation and standards**
 - **Team conventions and practices**
+- **Live infrastructure and deployment state** (using research-driven analysis)
+
+### Research-Driven Discovery
+
+Before running deep analysis, use **research-driven tools** to query your live environment:
+
+```json
+{
+  "tool": "perform_research",
+  "parameters": {
+    "question": "What is the complete technology stack, deployment infrastructure, and architectural patterns in this existing project?",
+    "projectPath": ".",
+    "adrDirectory": "docs/adrs"
+  }
+}
+```
+
+**What the Research-Orchestrator Does:**
+
+1. **Scans Project Files**: Analyzes package.json, requirements.txt, go.mod, etc.
+2. **Queries Knowledge Graph**: Checks existing ADRs for documented decisions
+3. **Probes Live Environment**: Detects Docker, Podman, kubectl, oc (OpenShift), ansible
+4. **Assigns Confidence Score**: Tells you how reliable the findings are
+5. **Falls Back to Web Search**: If confidence < 60%, searches for best practices
+
+**Example Output:**
+
+```markdown
+## Research Results
+**Confidence**: 92.0% ✓ (High confidence, no web search needed)
+
+### Technology Stack
+- **Backend**: Node.js 20.x with Express.js 4.18.x
+- **Database**: PostgreSQL 15.x (found in docker-compose.yml)
+- **Frontend**: React 18.x with TypeScript
+- **Container Orchestration**: Docker Compose (local), Kubernetes (production)
+
+### Infrastructure Capabilities Detected
+✓ docker - Container runtime available
+✓ docker-compose - Multi-container orchestration
+✓ kubectl - Kubernetes CLI configured
+✓ oc - OpenShift CLI detected (Red Hat ecosystem)
+✗ podman - Not installed
+✓ ansible - Configuration management available
+
+### Architectural Insights
+- Microservices architecture with 3 services
+- Event-driven communication via message queue
+- RESTful API design with versioning
+- Documented in ADR-001, ADR-003, ADR-007
+```
 
 ### Run Deep Analysis
 
@@ -220,9 +271,71 @@ If your analysis revealed PostgreSQL usage, create an ADR:
 
 ## 🔄 Step 5: Validate Against Current Implementation
 
-### Check Implementation Status
+### Research-Driven ADR Validation
 
-Once you have ADRs, validate they match the current implementation:
+Use the new **research-driven validation** to check if documented decisions match actual infrastructure:
+
+```json
+{
+  "tool": "validate_all_adrs",
+  "parameters": {
+    "projectPath": ".",
+    "adrDirectory": "docs/adrs",
+    "includeEnvironmentCheck": true,
+    "minConfidence": 0.6
+  }
+}
+```
+
+**Research-Driven Validation Process:**
+
+1. **Reads each ADR** to extract the documented decision
+2. **Researches live environment** using research-orchestrator:
+   - Scans project files for actual implementation
+   - Queries knowledge graph for related decisions
+   - Checks live infrastructure (Docker, Kubernetes, OpenShift, etc.)
+3. **Compares with confidence scoring**
+4. **Reports gaps, drift, or confirmation**
+
+**Example Validation Report:**
+
+```markdown
+## ADR Validation Report - Research Confidence: 85.0% ✓
+
+### ADR-001: PostgreSQL Database Selection
+**Status**: ✓ VALIDATED
+- PostgreSQL 15.x running in Docker container
+- Connection string found in .env.example
+- Migration scripts present in db/migrations/
+- Research Confidence: 95.0% ✓
+
+### ADR-003: Kubernetes Deployment
+**Status**: ⚠️ DRIFT DETECTED
+- ADR specifies Kubernetes, but OpenShift (oc) is primary tool
+- Kubernetes manifests exist but unused
+- OpenShift templates in openshift/ directory are actively used
+- **Recommendation**: Update ADR or create ADR-008 for OpenShift migration
+- Research Confidence: 88.0% ✓
+
+### ADR-007: Redis Caching
+**Status**: ✗ NOT IMPLEMENTED
+- No Redis container in docker-compose.yml
+- No Redis client in package.json
+- Caching code commented out in src/cache/
+- Research Confidence: 92.0% ✓
+
+### Environment Infrastructure Detected
+✓ docker, kubectl, oc, ansible
+```
+
+**Why This Matters:**
+- **Prevents documentation rot** - Keep ADRs aligned with reality
+- **Discovers undocumented changes** - Find OpenShift adoption without ADR
+- **Identifies incomplete implementations** - Redis decision never executed
+
+### Check Implementation Status (Traditional)
+
+For comparison tracking over time:
 
 ```json
 {
@@ -245,7 +358,7 @@ Once you have ADRs, validate they match the current implementation:
 If you find drift:
 1. **Determine if the implementation is correct** - Should the code change?
 2. **Or if the decision evolved** - Should the ADR be updated?
-3. **Create new ADRs** for evolved decisions
+3. **Create new ADRs** for evolved decisions (e.g., ADR-008: Migration from Kubernetes to OpenShift)
 
 ---
 
@@ -350,21 +463,63 @@ Create ADRs for security-related decisions:
 
 ## 🚀 Step 9: Deployment and Operations Documentation
 
-### Analyze Deployment Decisions
+### Research-Driven Deployment Analysis
 
-Existing projects have deployment patterns that should be documented:
+Use research-driven tools to analyze actual deployment infrastructure:
 
 ```json
 {
   "tool": "analyze_deployment_progress",
   "parameters": {
-    "analysisType": "deployment_status",
-    "targetEnvironment": "production"
+    "analysisType": "comprehensive",
+    "targetEnvironment": "production",
+    "adrDirectory": "docs/adrs"
   }
 }
 ```
 
-### Generate Deployment Guidance
+**Research-Driven Deployment Analysis:**
+
+1. **Queries live environment** for deployment capabilities:
+   - Docker/Podman container runtimes
+   - Kubernetes/OpenShift orchestration
+   - Ansible automation
+2. **Scans project files** for deployment configurations
+3. **Checks ADRs** for documented deployment decisions
+4. **Provides confidence-scored recommendations**
+
+**Example Output:**
+
+```markdown
+## 🔍 Environment Research Analysis
+**Research Confidence**: 91.0% ✓
+
+### Current Environment State
+- **Container Runtime**: Docker 24.x + Podman 4.x (hybrid setup)
+- **Orchestration**: OpenShift 4.14 (oc CLI detected and configured)
+- **Automation**: Ansible 2.15 with 12 playbooks
+- **CI/CD**: GitHub Actions + Tekton pipelines on OpenShift
+
+### Available Infrastructure
+✓ docker - Container builds and local testing
+✓ podman - Rootless containers for development
+✓ oc - OpenShift CLI (primary deployment target)
+✓ kubectl - Kubernetes API access (via OpenShift)
+✓ ansible - Infrastructure automation
+✗ helm - Not installed (consider for package management)
+
+### Deployment Patterns from ADRs
+- ADR-003: Kubernetes deployment (OUTDATED - migrated to OpenShift)
+- ADR-009: Continuous deployment via Tekton
+- ADR-011: Infrastructure as Code with Ansible
+
+### Recommendations
+1. Update ADR-003 or create ADR-015 for OpenShift migration
+2. Document Tekton pipeline decisions in new ADR
+3. Consider Helm charts for easier OpenShift deployments
+```
+
+### Generate Infrastructure-Aware Deployment Guidance
 
 ```json
 {
@@ -372,16 +527,26 @@ Existing projects have deployment patterns that should be documented:
   "parameters": {
     "adrDirectory": "docs/adrs",
     "targetEnvironment": "production",
-    "includeSecurityChecks": true
+    "includeSecurityChecks": true,
+    "includeScripts": true,
+    "includeRollback": true
   }
 }
 ```
 
+**Research-Enhanced Guidance Includes:**
+
+- **Actual infrastructure commands** based on detected tools (oc vs kubectl)
+- **Environment-specific configurations** from live system
+- **Red Hat ecosystem integration** (OpenShift, Podman, Ansible)
+- **Security checks** for production readiness
+- **Rollback procedures** for safe deployments
+
 **Document decisions about:**
-- **Infrastructure choices** (cloud provider, containerization)
-- **CI/CD pipeline design**
-- **Environment configuration management**
-- **Monitoring and alerting strategies**
+- **Infrastructure choices** (cloud provider, containerization, Red Hat vs upstream)
+- **CI/CD pipeline design** (Tekton, GitHub Actions, Jenkins)
+- **Environment configuration management** (Ansible, ConfigMaps, Secrets)
+- **Monitoring and alerting strategies** (Prometheus, Grafana, OpenShift monitoring)
 - **Backup and disaster recovery**
 
 ---

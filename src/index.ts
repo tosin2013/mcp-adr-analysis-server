@@ -876,6 +876,71 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'validate_adr',
+            description:
+              'Validate an existing ADR against actual infrastructure reality using research-driven analysis',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                adrPath: {
+                  type: 'string',
+                  description: 'Path to the ADR file to validate (relative or absolute)',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to the project directory',
+                  default: '.',
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory containing ADR files',
+                  default: 'docs/adrs',
+                },
+                includeEnvironmentCheck: {
+                  type: 'boolean',
+                  description: 'Include live environment verification in validation',
+                  default: true,
+                },
+                confidenceThreshold: {
+                  type: 'number',
+                  description: 'Minimum research confidence threshold (0-1)',
+                  default: 0.6,
+                },
+              },
+              required: ['adrPath'],
+            },
+          },
+          {
+            name: 'validate_all_adrs',
+            description:
+              'Validate all ADRs in a directory against actual infrastructure reality',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to the project directory',
+                  default: '.',
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory containing ADR files',
+                  default: 'docs/adrs',
+                },
+                includeEnvironmentCheck: {
+                  type: 'boolean',
+                  description: 'Include live environment verification in validation',
+                  default: true,
+                },
+                minConfidence: {
+                  type: 'number',
+                  description: 'Minimum research confidence for validation (0-1)',
+                  default: 0.6,
+                },
+              },
+            },
+          },
+          {
             name: 'incorporate_research',
             description: 'Incorporate research findings into architectural decisions',
             inputSchema: {
@@ -1288,6 +1353,43 @@ export class McpAdrAnalysisServer {
                   default: 'docs/adrs',
                 },
               },
+            },
+          },
+          {
+            name: 'perform_research',
+            description:
+              'Perform research using cascading sources: project files → knowledge graph → environment resources → web search (fallback)',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                question: {
+                  type: 'string',
+                  description: 'The research question to answer',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project directory',
+                  default: '.',
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory containing ADR files',
+                  default: 'docs/adrs',
+                },
+                confidenceThreshold: {
+                  type: 'number',
+                  description: 'Minimum confidence threshold (0-1) before suggesting web search',
+                  default: 0.6,
+                  minimum: 0,
+                  maximum: 1,
+                },
+                performWebSearch: {
+                  type: 'boolean',
+                  description: 'Enable web search recommendations when confidence is low',
+                  default: true,
+                },
+              },
+              required: ['question'],
             },
           },
           {
@@ -2899,6 +3001,12 @@ export class McpAdrAnalysisServer {
           case 'review_existing_adrs':
             response = await this.reviewExistingAdrs(safeArgs);
             break;
+          case 'validate_adr':
+            response = await this.validateAdr(safeArgs);
+            break;
+          case 'validate_all_adrs':
+            response = await this.validateAllAdrs(safeArgs);
+            break;
           case 'incorporate_research':
             response = await this.incorporateResearch(safeArgs);
             break;
@@ -2922,6 +3030,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'generate_research_questions':
             response = await this.generateResearchQuestions(safeArgs);
+            break;
+          case 'perform_research':
+            response = await this.performResearch(safeArgs);
             break;
           case 'analyze_deployment_progress':
             response = await this.analyzeDeploymentProgress(safeArgs);
@@ -6225,6 +6336,19 @@ Please provide:
   }
 
   /**
+   * ADR validation tool implementations
+   */
+  private async validateAdr(args: Record<string, unknown>): Promise<CallToolResult> {
+    const { validateAdr } = await import('./tools/adr-validation-tool.js');
+    return await validateAdr(args as any);
+  }
+
+  private async validateAllAdrs(args: Record<string, unknown>): Promise<CallToolResult> {
+    const { validateAllAdrs } = await import('./tools/adr-validation-tool.js');
+    return await validateAllAdrs(args as any);
+  }
+
+  /**
    * Research integration tool implementations
    */
   private async incorporateResearch(args: Record<string, unknown>): Promise<CallToolResult> {
@@ -6274,6 +6398,14 @@ Please provide:
   private async generateResearchQuestions(args: Record<string, unknown>): Promise<CallToolResult> {
     const { generateResearchQuestions } = await import('./tools/research-question-tool.js');
     return await generateResearchQuestions(args);
+  }
+
+  /**
+   * Perform research tool implementation
+   */
+  private async performResearch(args: Record<string, unknown>): Promise<CallToolResult> {
+    const { performResearch } = await import('./tools/perform-research-tool.js');
+    return await performResearch(args);
   }
 
   /**
