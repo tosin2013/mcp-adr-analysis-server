@@ -116,7 +116,9 @@ describe('ResearchOrchestrator', () => {
       vi.mocked(fs.readdir).mockResolvedValue([
         { name: 'adr-0001-use-kubernetes.md', isFile: () => true, isDirectory: () => false } as any,
       ]);
-      vi.mocked(fs.readFile).mockResolvedValue('# ADR: Use Kubernetes\n\nWe decided to use Kubernetes...');
+      vi.mocked(fs.readFile).mockResolvedValue(
+        '# ADR: Use Kubernetes\n\nWe decided to use Kubernetes...'
+      );
 
       const _result = await orchestrator.answerResearchQuestion('Any question');
 

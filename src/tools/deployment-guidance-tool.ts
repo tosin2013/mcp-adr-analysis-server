@@ -33,7 +33,7 @@ export async function generateDeploymentGuidance(args: {
     technologyFilter,
     customRequirements,
     includeRollback = true,
-    generateFiles = false
+    generateFiles = false,
   } = args;
 
   try {
@@ -43,9 +43,10 @@ export async function generateDeploymentGuidance(args: {
 
     if (discoveryResult.adrs.length === 0) {
       return {
-        content: [{
-          type: 'text',
-          text: `# No ADRs Found for Deployment Guidance
+        content: [
+          {
+            type: 'text',
+            text: `# No ADRs Found for Deployment Guidance
 
 ## Searched Location
 - **ADR Directory**: ${adrDirectory}
@@ -75,8 +76,9 @@ Use Docker containers with docker-compose for orchestration.
 - Requires container registry and orchestration setup
 - Port 3000 for application, 5432 for PostgreSQL
 \`\`\`
-`
-        }]
+`,
+          },
+        ],
       };
     }
 
@@ -128,14 +130,18 @@ You are an expert DevOps engineer tasked with creating comprehensive deployment 
 ${environmentContext}
 
 ## ADR Content
-${discoveryResult.adrs.map(adr => `
+${discoveryResult.adrs
+  .map(
+    adr => `
 ### ${adr.title} (${adr.filename})
 **Status**: ${adr.status}
 **Content**:
 \`\`\`markdown
 ${adr.content?.slice(0, 1000) || 'No content available'}${adr.content && adr.content.length > 1000 ? '...' : ''}
 \`\`\`
-`).join('\n')}
+`
+  )
+  .join('\n')}
 
 ## Deployment Analysis Instructions
 
@@ -159,19 +165,25 @@ Extract specific configuration details:
 
 ### 3. **Environment-Specific Considerations**
 For **${environment}** environment:
-${environment === 'production' ? `
+${
+  environment === 'production'
+    ? `
 - **Security**: TLS certificates, secure connections, secrets management
 - **Performance**: Load balancing, caching, optimization
 - **Reliability**: Backup procedures, monitoring, alerting
 - **Scalability**: Auto-scaling, resource allocation
-` : environment === 'staging' ? `
+`
+    : environment === 'staging'
+      ? `
 - **Testing**: Staging-specific configurations
 - **Data**: Test data setup, database seeding
 - **Integration**: External service connections
-` : `
+`
+      : `
 - **Development**: Hot-reload, debugging, local services
 - **Convenience**: Simplified setup, development tools
-`}
+`
+}
 
 ### 4. **Deployment Steps Generation**
 Create step-by-step deployment instructions:
@@ -182,30 +194,42 @@ Create step-by-step deployment instructions:
 5. **Service Configuration**: Web server, load balancer, SSL
 6. **Verification**: Health checks, smoke tests, monitoring
 
-${includeScripts ? `
+${
+  includeScripts
+    ? `
 ### 5. **Script Generation**
 Generate deployment scripts:
 - **Shell scripts** for automated deployment
 - **Docker commands** for containerized deployment
 - **Configuration files** (nginx.conf, docker-compose.yml, .env)
-` : ''}
+`
+    : ''
+}
 
-${includeValidation ? `
+${
+  includeValidation
+    ? `
 ### 6. **Validation & Health Checks**
 Create verification procedures:
 - **Health check endpoints** and commands
 - **Service connectivity tests**
 - **Performance validation**
 - **Security verification**
-` : ''}
+`
+    : ''
+}
 
-${includeRollback ? `
+${
+  includeRollback
+    ? `
 ### 7. **Rollback Procedures**
 Document rollback steps:
 - **Rollback commands** in reverse order
 - **Data migration rollback** if applicable
 - **Service restoration** procedures
-` : ''}
+`
+    : ''
+}
 
 ## Output Format
 
@@ -284,25 +308,34 @@ KEY=value
 - **Complete**: Cover entire deployment lifecycle
 - **Evidence-based**: Base all recommendations on ADR content
 
-${technologyFilter && technologyFilter.length > 0 ? `
+${
+  technologyFilter && technologyFilter.length > 0
+    ? `
 ## Technology Filter
 Focus only on these technologies: ${technologyFilter.join(', ')}
-` : ''}
+`
+    : ''
+}
 
-${customRequirements && customRequirements.length > 0 ? `
+${
+  customRequirements && customRequirements.length > 0
+    ? `
 ## Custom Requirements
 Additionally address these requirements:
 ${customRequirements.map(req => `- ${req}`).join('\n')}
-` : ''}
+`
+    : ''
+}
 
 Begin deployment guidance generation now.
 `;
 
     // Return the prompt for AI execution
     return {
-      content: [{
-        type: 'text',
-        text: `# Deployment Guidance Generation
+      content: [
+        {
+          type: 'text',
+          text: `# Deployment Guidance Generation
 
 ## Analysis Complete
 - **Found ${discoveryResult.adrs.length} ADRs** for deployment analysis
@@ -337,17 +370,21 @@ The AI will generate:
 
 All based on the architectural decisions documented in your ADRs.
 
-${generateFiles ? `
+${
+  generateFiles
+    ? `
 ## File Generation Mode
 **Note**: File generation is enabled. The AI guidance will include instructions for creating actual deployment files in your project.
-` : ''}
+`
+    : ''
+}
 
 ## ADR Sources
 ${discoveryResult.adrs.map(adr => `- **${adr.title}** (${adr.filename})`).join('\n')}
-`
-      }]
+`,
+        },
+      ],
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Deployment guidance generation failed: ${error instanceof Error ? error.message : String(error)}`,

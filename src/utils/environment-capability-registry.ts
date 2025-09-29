@@ -283,9 +283,7 @@ export class EnvironmentCapabilityRegistry {
           result.currentContext = context.trim();
 
           if (queryLower.includes('pod')) {
-            const { stdout: pods } = await execAsync(
-              'kubectl get pods --all-namespaces -o json'
-            );
+            const { stdout: pods } = await execAsync('kubectl get pods --all-namespaces -o json');
             result.pods = JSON.parse(pods);
           }
 

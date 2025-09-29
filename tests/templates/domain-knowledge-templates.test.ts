@@ -1,7 +1,7 @@
 /**
  * Unit Tests for domain-knowledge-templates.ts
  * Target Coverage: 43.75% → 80%
- * 
+ *
  * Following methodological pragmatism principles:
  * - Systematic Verification: Structured test cases with clear assertions
  * - Explicit Fallibilism: Testing both success and failure scenarios
@@ -20,21 +20,17 @@ import {
   getDomainTemplates,
   getDomainCategories,
   hasDomainTemplate,
-  getDomainTemplateMetadata
+  getDomainTemplateMetadata,
 } from '../../src/templates/domain-knowledge-templates.js';
 
-import { 
-  ArchitecturalDomain
-} from '../../src/types/knowledge-generation.js';
+import { ArchitecturalDomain } from '../../src/types/knowledge-generation.js';
 
 describe('Domain Knowledge Templates', () => {
-  
   // ============================================================================
   // Template Structure Validation Tests
   // ============================================================================
-  
+
   describe('Template Structure Validation', () => {
-    
     test('webApplicationsTemplate has correct structure', () => {
       expect(webApplicationsTemplate).toBeDefined();
       expect(webApplicationsTemplate.domain).toBe('web-applications');
@@ -72,22 +68,20 @@ describe('Domain Knowledge Templates', () => {
       expect(cloudInfrastructureTemplate.categories).toHaveLength(3);
       expect(cloudInfrastructureTemplate.metadata.tags).toContain('cloud');
     });
-
   });
 
   // ============================================================================
   // Template Content Validation Tests
   // ============================================================================
-  
+
   describe('Template Content Validation', () => {
-    
     test('all templates have required categories with valid priorities', () => {
       const templates = [
         webApplicationsTemplate,
         microservicesTemplate,
         databaseDesignTemplate,
         apiDesignTemplate,
-        cloudInfrastructureTemplate
+        cloudInfrastructureTemplate,
       ];
 
       templates.forEach(template => {
@@ -106,7 +100,7 @@ describe('Domain Knowledge Templates', () => {
       const bestPractices = webApplicationsTemplate.categories.find(
         cat => cat.category === 'best-practices'
       );
-      
+
       expect(bestPractices).toBeDefined();
       expect(bestPractices?.items).toContain(
         'Component-based architecture with clear separation of concerns'
@@ -121,24 +115,18 @@ describe('Domain Knowledge Templates', () => {
       const designPatterns = microservicesTemplate.categories.find(
         cat => cat.category === 'design-patterns'
       );
-      
-      expect(designPatterns).toBeDefined();
-      expect(designPatterns?.items).toContain(
-        'API Gateway pattern for unified entry point'
-      );
-      expect(designPatterns?.items).toContain(
-        'Service registry and discovery patterns'
-      );
-    });
 
+      expect(designPatterns).toBeDefined();
+      expect(designPatterns?.items).toContain('API Gateway pattern for unified entry point');
+      expect(designPatterns?.items).toContain('Service registry and discovery patterns');
+    });
   });
 
   // ============================================================================
   // Registry and Utility Function Tests
   // ============================================================================
-  
+
   describe('Domain Template Registry', () => {
-    
     test('domainTemplateRegistry contains all expected templates', () => {
       expect(domainTemplateRegistry.size).toBe(5);
       expect(domainTemplateRegistry.has('web-applications')).toBe(true);
@@ -155,11 +143,9 @@ describe('Domain Knowledge Templates', () => {
       expect(domainTemplateRegistry.get('api-design')).toBe(apiDesignTemplate);
       expect(domainTemplateRegistry.get('cloud-infrastructure')).toBe(cloudInfrastructureTemplate);
     });
-
   });
 
   describe('getDomainTemplate function', () => {
-    
     test('returns correct template for valid domain', () => {
       const template = getDomainTemplate('web-applications');
       expect(template).toBe(webApplicationsTemplate);
@@ -174,10 +160,10 @@ describe('Domain Knowledge Templates', () => {
     test('returns correct template for all valid domains', () => {
       const validDomains: ArchitecturalDomain[] = [
         'web-applications',
-        'microservices', 
+        'microservices',
         'database-design',
         'api-design',
-        'cloud-infrastructure'
+        'cloud-infrastructure',
       ];
 
       validDomains.forEach(domain => {
@@ -186,15 +172,13 @@ describe('Domain Knowledge Templates', () => {
         expect(template!.domain).toBe(domain);
       });
     });
-
   });
 
   describe('getAllDomainTemplates function', () => {
-    
     test('returns all available templates', () => {
       const allTemplates = getAllDomainTemplates();
       expect(allTemplates).toHaveLength(5);
-      
+
       const domains = allTemplates.map(t => t.domain);
       expect(domains).toContain('web-applications');
       expect(domains).toContain('microservices');
@@ -205,7 +189,7 @@ describe('Domain Knowledge Templates', () => {
 
     test('returned templates are valid DomainTemplate objects', () => {
       const allTemplates = getAllDomainTemplates();
-      
+
       allTemplates.forEach(template => {
         expect(template.domain).toBeDefined();
         expect(template.categories).toBeInstanceOf(Array);
@@ -214,15 +198,13 @@ describe('Domain Knowledge Templates', () => {
         expect(template.metadata.author).toBeDefined();
       });
     });
-
   });
 
   describe('getDomainTemplates function', () => {
-    
     test('returns templates for valid domains array', () => {
       const domains: ArchitecturalDomain[] = ['web-applications', 'microservices'];
       const templates = getDomainTemplates(domains);
-      
+
       expect(templates).toHaveLength(2);
       expect(templates[0]?.domain).toBe('web-applications');
       expect(templates[1]?.domain).toBe('microservices');
@@ -230,12 +212,12 @@ describe('Domain Knowledge Templates', () => {
 
     test('filters out invalid domains', () => {
       const domains: (ArchitecturalDomain | string)[] = [
-        'web-applications', 
-        'invalid-domain', 
-        'microservices'
+        'web-applications',
+        'invalid-domain',
+        'microservices',
       ];
       const templates = getDomainTemplates(domains as ArchitecturalDomain[]);
-      
+
       expect(templates).toHaveLength(2);
       expect(templates.map(t => t.domain)).not.toContain('invalid-domain');
     });
@@ -250,11 +232,9 @@ describe('Domain Knowledge Templates', () => {
       const templates = getDomainTemplates(invalidDomains);
       expect(templates).toHaveLength(0);
     });
-
   });
 
   describe('getDomainCategories function', () => {
-    
     test('returns correct categories for web-applications domain', () => {
       const categories = getDomainCategories('web-applications');
       expect(categories).toHaveLength(4);
@@ -277,11 +257,9 @@ describe('Domain Knowledge Templates', () => {
       const categories = getDomainCategories('invalid-domain' as ArchitecturalDomain);
       expect(categories).toHaveLength(0);
     });
-
   });
 
   describe('hasDomainTemplate function', () => {
-    
     test('returns true for valid domains', () => {
       expect(hasDomainTemplate('web-applications')).toBe(true);
       expect(hasDomainTemplate('microservices')).toBe(true);
@@ -294,11 +272,9 @@ describe('Domain Knowledge Templates', () => {
       expect(hasDomainTemplate('invalid-domain' as ArchitecturalDomain)).toBe(false);
       expect(hasDomainTemplate('non-existent' as ArchitecturalDomain)).toBe(false);
     });
-
   });
 
   describe('getDomainTemplateMetadata function', () => {
-    
     test('returns correct metadata for valid domain', () => {
       const metadata = getDomainTemplateMetadata('web-applications');
       expect(metadata).toBeDefined();
@@ -317,9 +293,9 @@ describe('Domain Knowledge Templates', () => {
       const validDomains: ArchitecturalDomain[] = [
         'web-applications',
         'microservices',
-        'database-design', 
+        'database-design',
         'api-design',
-        'cloud-infrastructure'
+        'cloud-infrastructure',
       ];
 
       validDomains.forEach(domain => {
@@ -333,15 +309,13 @@ describe('Domain Knowledge Templates', () => {
         expect(metadata?.tags.length).toBeGreaterThan(0);
       });
     });
-
   });
 
   // ============================================================================
   // Edge Cases and Error Handling Tests
   // ============================================================================
-  
+
   describe('Edge Cases and Error Handling', () => {
-    
     test('handles undefined and null inputs gracefully', () => {
       expect(() => getDomainTemplate(undefined as any)).not.toThrow();
       expect(() => getDomainTemplate(null as any)).not.toThrow();
@@ -355,7 +329,7 @@ describe('Domain Knowledge Templates', () => {
 
     test('template categories have non-empty items arrays', () => {
       const allTemplates = getAllDomainTemplates();
-      
+
       allTemplates.forEach(template => {
         template.categories.forEach(category => {
           expect(category.items.length).toBeGreaterThan(0);
@@ -369,34 +343,32 @@ describe('Domain Knowledge Templates', () => {
 
     test('template metadata dates are valid format', () => {
       const allTemplates = getAllDomainTemplates();
-      
+
       allTemplates.forEach(template => {
         expect(template.metadata.lastUpdated).toMatch(/^\d{4}-\d{2}-\d{2}$/);
         expect(template.metadata.version).toMatch(/^\d+\.\d+\.\d+$/);
       });
     });
-
   });
 
   // ============================================================================
   // Integration and Performance Tests
   // ============================================================================
-  
+
   describe('Integration and Performance', () => {
-    
     test('registry operations are performant', () => {
       const startTime = performance.now();
-      
+
       // Perform multiple registry operations
       for (let i = 0; i < 1000; i++) {
         getDomainTemplate('web-applications');
         hasDomainTemplate('microservices');
         getAllDomainTemplates();
       }
-      
+
       const endTime = performance.now();
       const executionTime = endTime - startTime;
-      
+
       // Should complete within reasonable time (adjust threshold as needed)
       expect(executionTime).toBeLessThan(100); // 100ms threshold
     });
@@ -404,15 +376,13 @@ describe('Domain Knowledge Templates', () => {
     test('template data integrity across multiple accesses', () => {
       const template1 = getDomainTemplate('web-applications');
       const template2 = getDomainTemplate('web-applications');
-      
+
       // Should return the same object reference (not a copy)
       expect(template1).toBe(template2);
-      
+
       // Verify data hasn't been mutated
       expect(template1?.domain).toBe('web-applications');
       expect(template1?.categories.length).toBe(4);
     });
-
   });
-
 });

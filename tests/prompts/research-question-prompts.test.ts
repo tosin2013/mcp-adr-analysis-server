@@ -165,7 +165,8 @@ describe('Research Question Prompts', () => {
       {
         id: 'adr-001',
         title: 'Service Decomposition Strategy',
-        content: 'We will decompose the monolith into microservices based on business capabilities...',
+        content:
+          'We will decompose the monolith into microservices based on business capabilities...',
         status: 'accepted',
       },
       {
@@ -224,7 +225,11 @@ describe('Research Question Prompts', () => {
         status: 'accepted',
       };
 
-      const result = generateRelevantAdrPatternPrompt(mockResearchContext, [longContentAdr], mockPatterns);
+      const result = generateRelevantAdrPatternPrompt(
+        mockResearchContext,
+        [longContentAdr],
+        mockPatterns
+      );
 
       expect(result).toContain('A'.repeat(500));
       expect(result).toContain('...');
@@ -237,7 +242,11 @@ describe('Research Question Prompts', () => {
         objectives: ['Improve performance'],
       };
 
-      const result = generateRelevantAdrPatternPrompt(singleObjectiveContext, mockAdrs, mockPatterns);
+      const result = generateRelevantAdrPatternPrompt(
+        singleObjectiveContext,
+        mockAdrs,
+        mockPatterns
+      );
 
       expect(result).toContain('Improve performance');
     });
@@ -260,7 +269,11 @@ describe('Research Question Prompts', () => {
         status: 'accepted',
       };
 
-      const result = generateRelevantAdrPatternPrompt(mockResearchContext, [specialAdr], mockPatterns);
+      const result = generateRelevantAdrPatternPrompt(
+        mockResearchContext,
+        [specialAdr],
+        mockPatterns
+      );
 
       expect(result).toContain('API Design & Security');
       expect(result).toContain('OAuth 2.0 & JWT tokens');
@@ -288,7 +301,10 @@ describe('Research Question Prompts', () => {
 
     const mockRelevantKnowledge = {
       adrs: [
-        { title: 'Container Platform Selection', relevanceReason: 'Directly related to orchestration' },
+        {
+          title: 'Container Platform Selection',
+          relevanceReason: 'Directly related to orchestration',
+        },
         { title: 'Security Baseline', relevanceReason: 'Defines security constraints' },
       ],
       patterns: [
