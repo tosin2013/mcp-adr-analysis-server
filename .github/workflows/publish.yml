@@ -19,11 +19,6 @@ on:
         required: false
         default: false
         type: boolean
-      dry_run:
-        description: 'Perform a dry run without publishing'
-        required: false
-        default: true
-        type: boolean
   # Trigger when tags are created (for compatibility with existing auto-release workflows)
   push:
     tags:
@@ -39,11 +34,6 @@ on:
         description: 'Skip tests for emergency releases'
         required: false
         default: false
-        type: boolean
-      dry_run:
-        description: 'Perform a dry run without publishing'
-        required: false
-        default: true
         type: boolean
     secrets:
       NPM_TOKEN:
@@ -413,7 +403,6 @@ jobs:
           echo "✅ Package is ready for publishing"
 
       - name: Publish to NPM
-        if: ${{ !github.event.inputs.dry_run }}
         run: |
           VERSION="${{ steps.version.outputs.version }}"
 
@@ -433,7 +422,7 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Update GitHub Release with NPM info
-        if: ${{ !github.event.inputs.dry_run && steps.version.outputs.source == 'release_drafter' }}
+        if: ${{ steps.version.outputs.source == 'release_drafter' }}
         run: |
           RELEASE_ID="${{ needs.create-release.outputs.release-id }}"
           VERSION="${{ steps.version.outputs.version }}"
@@ -466,7 +455,3 @@ jobs:
           echo "📦 Package: https://www.npmjs.com/package/mcp-adr-analysis-server"
           echo "🏷️ Version: $VERSION"
           echo "📝 Source: $SOURCE"
-
-          if [[ "${{ github.event.inputs.dry_run }}" == "true" ]]; then
-            echo "🧪 This was a dry run - no actual publication occurred"
-          fi
