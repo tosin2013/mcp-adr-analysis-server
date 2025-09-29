@@ -312,13 +312,20 @@ jobs:
       - name: Sync package.json with release version
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          echo "Syncing package.json to release version: $VERSION"
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
 
-          # Update package.json to match release version
-          npm version $VERSION --no-git-tag-version
+          echo "Target version: $VERSION"
+          echo "Current package.json version: $CURRENT_VERSION"
+
+          if [[ "$VERSION" != "$CURRENT_VERSION" ]]; then
+            echo "Updating package.json to version: $VERSION"
+            npm version $VERSION --no-git-tag-version
+            echo "✅ Package.json updated from $CURRENT_VERSION to $VERSION"
+          else
+            echo "✅ Package.json already at correct version: $VERSION"
+          fi
 
           echo "NEW_VERSION=$VERSION" >> $GITHUB_ENV
-          echo "✅ Package.json updated to version: $VERSION"
 
       - name: Verify distribution package
         run: |
