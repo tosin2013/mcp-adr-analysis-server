@@ -639,6 +639,15 @@ export class KnowledgeGraphManager {
   }
 
   /**
+   * Get relationships from knowledge graph
+   */
+  getRelationships(_nodeType: string, _relationType: string): Array<any> {
+    // Placeholder implementation - returns empty array
+    // Future: Query knowledge graph for actual relationships
+    return [];
+  }
+
+  /**
    * Calculate memory-based health score from knowledge graph
    */
   private async calculateMemoryScore(kg: KnowledgeGraphSnapshot): Promise<MemoryHealthScore> {

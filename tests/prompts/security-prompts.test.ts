@@ -41,7 +41,11 @@ describe('Security Prompts', () => {
 
     it('should generate prompt with user-defined patterns', () => {
       const userPatterns = ['CUSTOM_API_KEY_.*', 'INTERNAL_TOKEN_.*', 'SECRET_.*'];
-      const result = generateSensitiveContentDetectionPrompt(mockContent, 'configuration', userPatterns);
+      const result = generateSensitiveContentDetectionPrompt(
+        mockContent,
+        'configuration',
+        userPatterns
+      );
 
       expect(result).toContain('configuration');
       expect(result).toContain('User-Defined Sensitive Patterns');
@@ -328,11 +332,7 @@ describe('Security Prompts', () => {
       - AWS for cloud deployment
     `;
 
-    const mockExistingPatterns = [
-      'AWS_.*_KEY',
-      'MONGODB_.*_URI',
-      'JWT_.*_SECRET',
-    ];
+    const mockExistingPatterns = ['AWS_.*_KEY', 'MONGODB_.*_URI', 'JWT_.*_SECRET'];
 
     it('should generate prompt with project context only', () => {
       const result = generateCustomPatternConfigurationPrompt(mockProjectContext);
@@ -346,7 +346,10 @@ describe('Security Prompts', () => {
     });
 
     it('should generate prompt with project context and existing patterns', () => {
-      const result = generateCustomPatternConfigurationPrompt(mockProjectContext, mockExistingPatterns);
+      const result = generateCustomPatternConfigurationPrompt(
+        mockProjectContext,
+        mockExistingPatterns
+      );
 
       expect(result).toContain('Custom Sensitive Pattern Configuration');
       expect(result).toContain('Node.js microservices project');

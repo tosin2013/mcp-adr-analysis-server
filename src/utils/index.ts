@@ -16,7 +16,7 @@ export {
   getSupportedDepths,
   validateKnowledgeConfig,
   createDomainKnowledgeConfig,
-  generateDomainKnowledge
+  generateDomainKnowledge,
 } from './knowledge-generation.js';
 
 // Automatic Prompt Engineering exports
@@ -31,7 +31,7 @@ export {
   getSupportedGenerationStrategies,
   getSupportedEvaluationCriteria,
   getSupportedSelectionStrategies,
-  createToolAPEConfig
+  createToolAPEConfig,
 } from './automatic-prompt-engineering.js';
 
 // Reflexion exports
@@ -50,10 +50,8 @@ export {
   createToolReflexionConfig,
   generateMemoryId,
   calculateMemoryExpiration,
-  createMemoryQuery
+  createMemoryQuery,
 } from './reflexion.js';
 
 // Configuration and error handling exports
-export {
-  McpAdrError
-} from '../types/index.js';
+export { McpAdrError } from '../types/index.js';

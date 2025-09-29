@@ -6404,8 +6404,11 @@ Please provide:
    * Perform research tool implementation
    */
   private async performResearch(args: Record<string, unknown>): Promise<CallToolResult> {
+    if (!('question' in args) || typeof args['question'] !== 'string') {
+      throw new McpAdrError('Missing required parameter: question', 'INVALID_ARGUMENTS');
+    }
     const { performResearch } = await import('./tools/perform-research-tool.js');
-    return await performResearch(args);
+    return await performResearch(args as { question: string; projectPath?: string; adrDirectory?: string; confidenceThreshold?: number; performWebSearch?: boolean });
   }
 
   /**

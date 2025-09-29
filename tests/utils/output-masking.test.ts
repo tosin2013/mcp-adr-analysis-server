@@ -8,11 +8,11 @@ import { McpAdrError } from '../../src/types/index.js';
 
 // Pragmatic mocking approach to avoid TypeScript complexity
 jest.unstable_mockModule('../../src/utils/content-masking.js', () => ({
-  applyBasicMasking: jest.fn()
+  applyBasicMasking: jest.fn(),
 }));
 
 jest.unstable_mockModule('../../src/prompts/security-prompts.js', () => ({
-  generateSensitiveContentDetectionPrompt: jest.fn()
+  generateSensitiveContentDetectionPrompt: jest.fn(),
 }));
 
 const {
@@ -22,11 +22,13 @@ const {
   validateMaskingConfig,
   withContentMasking,
   applyProgressiveMasking,
-  detectContentSensitivity
+  detectContentSensitivity,
 } = await import('../../src/utils/output-masking.js');
 
 const { applyBasicMasking } = await import('../../src/utils/content-masking.js');
-const { generateSensitiveContentDetectionPrompt } = await import('../../src/prompts/security-prompts.js');
+const { generateSensitiveContentDetectionPrompt } = await import(
+  '../../src/prompts/security-prompts.js'
+);
 
 describe('output-masking', () => {
   beforeEach(() => {
@@ -41,12 +43,13 @@ describe('output-masking', () => {
       const mockResponse = {
         content: [
           { type: 'text', text: 'API key: abc123' },
-          { type: 'text', text: 'Password: secret123' }
-        ]
+          { type: 'text', text: 'Password: secret123' },
+        ],
       };
 
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockImplementation((content) => content.replace(/abc123|secret123/g, '[REDACTED]'));
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockImplementation(
+        content => content.replace(/abc123|secret123/g, '[REDACTED]')
+      );
 
       const result = await maskMcpResponse(mockResponse);
 
@@ -57,14 +60,12 @@ describe('output-masking', () => {
 
     it('should mask resource response with contents array', async () => {
       const mockResponse = {
-        contents: [
-          { text: 'Email: user@example.com' },
-          { text: 'Token: xyz789' }
-        ]
+        contents: [{ text: 'Email: user@example.com' }, { text: 'Token: xyz789' }],
       };
 
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockImplementation((content) => content.replace(/user@example\.com|xyz789/g, '[REDACTED]'));
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockImplementation(
+        content => content.replace(/user@example\.com|xyz789/g, '[REDACTED]')
+      );
 
       const result = await maskMcpResponse(mockResponse);
 
@@ -77,12 +78,13 @@ describe('output-masking', () => {
       const mockResponse = {
         messages: [
           { content: { text: 'Private key: rsa-key-123' } },
-          { content: { text: 'Database password: db-pass-456' } }
-        ]
+          { content: { text: 'Database password: db-pass-456' } },
+        ],
       };
 
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockImplementation((content) => content.replace(/rsa-key-123|db-pass-456/g, '[REDACTED]'));
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockImplementation(
+        content => content.replace(/rsa-key-123|db-pass-456/g, '[REDACTED]')
+      );
 
       const result = await maskMcpResponse(mockResponse);
 
@@ -105,8 +107,8 @@ describe('output-masking', () => {
       const mockResponse = {
         content: [
           { type: 'text', text: 'Already masked: [REDACTED]' },
-          { type: 'text', text: 'API key redacted: [API_KEY_REDACTED]' }
-        ]
+          { type: 'text', text: 'API key redacted: [API_KEY_REDACTED]' },
+        ],
       };
 
       const result = await maskMcpResponse(mockResponse);
@@ -122,11 +124,12 @@ describe('output-masking', () => {
         enabled: true,
         strategy: 'full' as const,
         customPatterns: ['custom'],
-        skipPatterns: ['[CUSTOM_REDACTED]']
+        skipPatterns: ['[CUSTOM_REDACTED]'],
       };
 
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockReturnValue('masked content');
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockReturnValue(
+        'masked content'
+      );
 
       const result = await maskMcpResponse(mockResponse, customConfig);
 
@@ -138,8 +141,9 @@ describe('output-masking', () => {
       const mockResponse = { content: [{ type: 'text', text: 'test content' }] };
       const envConfig = { enabled: true, strategy: 'environment' as const };
 
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockReturnValue('placeholder content');
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockReturnValue(
+        'placeholder content'
+      );
 
       await maskMcpResponse(mockResponse, envConfig);
 
@@ -149,11 +153,14 @@ describe('output-masking', () => {
     it('should throw McpAdrError on masking failure', async () => {
       const mockResponse = { content: [{ type: 'text', text: 'test' }] };
 
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockRejectedValue(new Error('Masking failed'));
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockRejectedValue(
+        new Error('Masking failed')
+      );
 
       await expect(maskMcpResponse(mockResponse)).rejects.toThrow(McpAdrError);
-      await expect(maskMcpResponse(mockResponse)).rejects.toThrow('Failed to mask MCP response: Masking failed');
+      await expect(maskMcpResponse(mockResponse)).rejects.toThrow(
+        'Failed to mask MCP response: Masking failed'
+      );
     });
 
     it('should handle malformed JSON gracefully', async () => {
@@ -170,10 +177,14 @@ describe('output-masking', () => {
       const mockContent = 'API key: abc123, password: secret';
       const mockPrompt = 'Generated security analysis prompt';
 
-      (generateSensitiveContentDetectionPrompt as jest.MockedFunction<typeof generateSensitiveContentDetectionPrompt>)
-        .mockReturnValue(mockPrompt);
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockReturnValue('API key: [REDACTED], password: [REDACTED]');
+      (
+        generateSensitiveContentDetectionPrompt as jest.MockedFunction<
+          typeof generateSensitiveContentDetectionPrompt
+        >
+      ).mockReturnValue(mockPrompt);
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockReturnValue(
+        'API key: [REDACTED], password: [REDACTED]'
+      );
 
       const result = await generateAiMasking(mockContent, 'code');
 
@@ -189,34 +200,55 @@ describe('output-masking', () => {
     it('should handle different content types', async () => {
       const contentTypes = ['code', 'documentation', 'configuration', 'logs', 'general'] as const;
 
-      (generateSensitiveContentDetectionPrompt as jest.MockedFunction<typeof generateSensitiveContentDetectionPrompt>)
-        .mockReturnValue('test prompt');
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockReturnValue('masked');
+      (
+        generateSensitiveContentDetectionPrompt as jest.MockedFunction<
+          typeof generateSensitiveContentDetectionPrompt
+        >
+      ).mockReturnValue('test prompt');
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockReturnValue(
+        'masked'
+      );
 
       for (const contentType of contentTypes) {
         await generateAiMasking('test content', contentType);
-        expect(generateSensitiveContentDetectionPrompt).toHaveBeenCalledWith('test content', contentType);
+        expect(generateSensitiveContentDetectionPrompt).toHaveBeenCalledWith(
+          'test content',
+          contentType
+        );
       }
     });
 
     it('should use default content type when not specified', async () => {
-      (generateSensitiveContentDetectionPrompt as jest.MockedFunction<typeof generateSensitiveContentDetectionPrompt>)
-        .mockReturnValue('test prompt');
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockReturnValue('masked');
+      (
+        generateSensitiveContentDetectionPrompt as jest.MockedFunction<
+          typeof generateSensitiveContentDetectionPrompt
+        >
+      ).mockReturnValue('test prompt');
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockReturnValue(
+        'masked'
+      );
 
       await generateAiMasking('test content');
 
-      expect(generateSensitiveContentDetectionPrompt).toHaveBeenCalledWith('test content', 'general');
+      expect(generateSensitiveContentDetectionPrompt).toHaveBeenCalledWith(
+        'test content',
+        'general'
+      );
     });
 
     it('should throw McpAdrError on AI masking failure', async () => {
-      (generateSensitiveContentDetectionPrompt as jest.MockedFunction<typeof generateSensitiveContentDetectionPrompt>)
-        .mockImplementation(() => { throw new Error('Prompt generation failed'); });
+      (
+        generateSensitiveContentDetectionPrompt as jest.MockedFunction<
+          typeof generateSensitiveContentDetectionPrompt
+        >
+      ).mockImplementation(() => {
+        throw new Error('Prompt generation failed');
+      });
 
       await expect(generateAiMasking('test')).rejects.toThrow(McpAdrError);
-      await expect(generateAiMasking('test')).rejects.toThrow('Failed to generate AI masking: Prompt generation failed');
+      await expect(generateAiMasking('test')).rejects.toThrow(
+        'Failed to generate AI masking: Prompt generation failed'
+      );
     });
   });
 
@@ -244,7 +276,7 @@ describe('output-masking', () => {
       const overrides = {
         enabled: false,
         strategy: 'placeholder' as const,
-        customPatterns: ['custom1', 'custom2']
+        customPatterns: ['custom1', 'custom2'],
       };
 
       const config = createMaskingConfig(overrides);
@@ -271,7 +303,7 @@ describe('output-masking', () => {
         enabled: true,
         strategy: 'partial' as const,
         customPatterns: ['pattern1'],
-        skipPatterns: ['skip1']
+        skipPatterns: ['skip1'],
       };
 
       const result = validateMaskingConfig(config);
@@ -283,7 +315,7 @@ describe('output-masking', () => {
     it('should detect invalid enabled field', () => {
       const config = {
         enabled: 'true' as any,
-        strategy: 'partial' as const
+        strategy: 'partial' as const,
       };
 
       const result = validateMaskingConfig(config);
@@ -295,20 +327,22 @@ describe('output-masking', () => {
     it('should detect invalid strategy', () => {
       const config = {
         enabled: true,
-        strategy: 'invalid' as any
+        strategy: 'invalid' as any,
       };
 
       const result = validateMaskingConfig(config);
 
       expect(result.isValid).toBe(false);
-      expect(result.errors).toContain('strategy must be one of: full, partial, placeholder, environment');
+      expect(result.errors).toContain(
+        'strategy must be one of: full, partial, placeholder, environment'
+      );
     });
 
     it('should detect invalid customPatterns', () => {
       const config = {
         enabled: true,
         strategy: 'partial' as const,
-        customPatterns: 'not-array' as any
+        customPatterns: 'not-array' as any,
       };
 
       const result = validateMaskingConfig(config);
@@ -321,7 +355,7 @@ describe('output-masking', () => {
       const config = {
         enabled: true,
         strategy: 'partial' as const,
-        skipPatterns: 123 as any
+        skipPatterns: 123 as any,
       };
 
       const result = validateMaskingConfig(config);
@@ -335,7 +369,7 @@ describe('output-masking', () => {
         enabled: 'invalid' as any,
         strategy: 'invalid' as any,
         customPatterns: 'invalid' as any,
-        skipPatterns: 'invalid' as any
+        skipPatterns: 'invalid' as any,
       };
 
       const result = validateMaskingConfig(config);
@@ -347,10 +381,13 @@ describe('output-masking', () => {
 
   describe('withContentMasking', () => {
     it('should wrap tool function with masking', async () => {
-      const mockTool = jest.fn().mockResolvedValue({ content: [{ type: 'text', text: 'sensitive' }] });
-      
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockReturnValue('masked');
+      const mockTool = jest
+        .fn()
+        .mockResolvedValue({ content: [{ type: 'text', text: 'sensitive' }] });
+
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockReturnValue(
+        'masked'
+      );
 
       const wrappedTool = withContentMasking(mockTool);
       const result = await wrappedTool('arg1', 'arg2');
@@ -364,8 +401,9 @@ describe('output-masking', () => {
       const mockTool = jest.fn().mockResolvedValue({ content: [{ type: 'text', text: 'test' }] });
       const customConfig = { enabled: true, strategy: 'full' as const };
 
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockReturnValue('fully masked');
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockReturnValue(
+        'fully masked'
+      );
 
       const wrappedTool = withContentMasking(mockTool, customConfig);
       await wrappedTool();
@@ -380,8 +418,9 @@ describe('output-masking', () => {
       const levels = ['low', 'medium', 'high', 'critical'] as const;
       const expectedStrategies = ['placeholder', 'partial', 'full', 'full'];
 
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockImplementation((content, strategy) => `${content}-${strategy}`);
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockImplementation(
+        (content, strategy) => `${content}-${strategy}`
+      );
 
       for (let i = 0; i < levels.length; i++) {
         const result = await applyProgressiveMasking(content, levels[i]);
@@ -391,8 +430,9 @@ describe('output-masking', () => {
     });
 
     it('should use medium sensitivity as default', async () => {
-      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>)
-        .mockReturnValue('masked');
+      (applyBasicMasking as jest.MockedFunction<typeof applyBasicMasking>).mockReturnValue(
+        'masked'
+      );
 
       await applyProgressiveMasking('test content');
 
@@ -407,7 +447,7 @@ describe('output-masking', () => {
         'API_SECRET=abc123',
         'private key: rsa-key',
         'api key: xyz789',
-        'auth token: bearer123'
+        'auth token: bearer123',
       ];
 
       for (const content of criticalContents) {
@@ -416,10 +456,7 @@ describe('output-masking', () => {
     });
 
     it('should detect high sensitivity patterns', () => {
-      const highContents = [
-        'email: user@example.com',
-        'IP address: 192.168.1.1'
-      ];
+      const highContents = ['email: user@example.com', 'IP address: 192.168.1.1'];
 
       for (const content of highContents) {
         expect(detectContentSensitivity(content)).toBe('high');
@@ -430,10 +467,7 @@ describe('output-masking', () => {
     });
 
     it('should detect medium sensitivity patterns', () => {
-      const mediumContents = [
-        'config file loaded',
-        'env variable set'
-      ];
+      const mediumContents = ['config file loaded', 'env variable set'];
 
       for (const content of mediumContents) {
         expect(detectContentSensitivity(content)).toBe('medium');
@@ -449,7 +483,7 @@ describe('output-masking', () => {
         'Hello world',
         'This is a test',
         'Documentation content',
-        'Regular text'
+        'Regular text',
       ];
 
       for (const content of lowContents) {

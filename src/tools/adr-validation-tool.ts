@@ -47,8 +47,8 @@ export async function validateAdr(args: {
     adrPath,
     projectPath = process.cwd(),
     adrDirectory = 'docs/adrs',
-    includeEnvironmentCheck = true,
-    confidenceThreshold = 0.6,
+    includeEnvironmentCheck: _includeEnvironmentCheck = true,
+    confidenceThreshold: _confidenceThreshold = 0.6,
   } = args;
 
   try {
@@ -149,12 +149,7 @@ Return JSON with:
       };
     } else {
       // Fallback: Rule-based validation
-      validationResult = performRuleBasedValidation(
-        fullAdrPath,
-        adrTitle,
-        adrDecision,
-        research
-      );
+      validationResult = performRuleBasedValidation(fullAdrPath, adrTitle, adrDecision, research);
     }
 
     // Step 5: Check knowledge graph for related ADRs
@@ -166,7 +161,12 @@ Return JSON with:
       content: [
         {
           type: 'text',
-          text: formatValidationResponse(validationResult, research, relatedAdrs, aiExecutor.isAvailable()),
+          text: formatValidationResponse(
+            validationResult,
+            research,
+            relatedAdrs,
+            aiExecutor.isAvailable()
+          ),
         },
       ],
     };
@@ -285,12 +285,13 @@ ${results
 
 function extractAdrTitle(content: string): string {
   const titleMatch = content.match(/^#\s+(.+)$/m);
-  return titleMatch ? titleMatch[1].trim() : 'Untitled ADR';
+  return titleMatch?.[1]?.trim() || 'Untitled ADR';
 }
 
 function extractAdrDecision(content: string): string {
   const decisionMatch = content.match(/##\s+Decision\s*\n\n([\s\S]+?)(?=\n##|$)/i);
-  return decisionMatch?.[1]?.trim().substring(0, 500) ?? 'No decision section found';
+  const decisionText = decisionMatch?.[1]?.trim();
+  return decisionText ? decisionText.substring(0, 500) : 'No decision section found';
 }
 
 function extractAdrContext(content: string): string {
@@ -301,7 +302,7 @@ function extractAdrContext(content: string): string {
 function performRuleBasedValidation(
   adrPath: string,
   adrTitle: string,
-  adrDecision: string,
+  _adrDecision: string,
   research: any
 ): ADRValidationResult {
   const findings: ADRValidationResult['findings'] = [];
@@ -415,7 +416,8 @@ ${research.answer}
 ### Sources Detail
 ${research.sources
   .map(
-    (s: any) => `- **${s.type}**: ${s.found ? `✅ Found (confidence: ${(s.confidence * 100).toFixed(1)}%)` : '❌ Not found'}`
+    (s: any) =>
+      `- **${s.type}**: ${s.found ? `✅ Found (confidence: ${(s.confidence * 100).toFixed(1)}%)` : '❌ Not found'}`
   )
   .join('\n')}
 `;

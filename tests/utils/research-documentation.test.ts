@@ -2,19 +2,19 @@ import { jest } from '@jest/globals';
 import {
   createResearchDocument,
   createResearchIndex,
-  ResearchDocument
+  ResearchDocument,
 } from '../../src/utils/research-documentation.js';
 
 // Mock fs and path modules
 jest.mock('fs', () => ({
   promises: {
     mkdir: jest.fn().mockResolvedValue(undefined),
-    writeFile: jest.fn().mockResolvedValue(undefined)
-  }
+    writeFile: jest.fn().mockResolvedValue(undefined),
+  },
 }));
 
 jest.mock('path', () => ({
-  join: jest.fn().mockImplementation((...args: string[]) => args.join('/'))
+  join: jest.fn().mockImplementation((...args: string[]) => args.join('/')),
 }));
 
 describe('Research Documentation Utilities', () => {
@@ -29,14 +29,14 @@ describe('Research Documentation Utilities', () => {
         id: 'q-001',
         question: 'How can we improve system performance?',
         type: 'exploratory',
-        methodology: 'analysis'
+        methodology: 'analysis',
       },
       {
         id: 'q-002',
         question: 'What are the scalability constraints?',
         type: 'investigative',
-        methodology: 'testing'
-      }
+        methodology: 'testing',
+      },
     ],
     timeline: {
       startDate: '2024-01-01',
@@ -45,43 +45,43 @@ describe('Research Documentation Utilities', () => {
         {
           name: 'Research Planning Complete',
           date: '2024-01-15',
-          description: 'All research questions and methodology defined'
+          description: 'All research questions and methodology defined',
         },
         {
           name: 'Data Collection Complete',
           date: '2024-02-28',
-          description: 'All required data collected and validated'
-        }
-      ]
+          description: 'All required data collected and validated',
+        },
+      ],
     },
     resources: [
       {
         type: 'personnel',
         description: 'Senior architect for analysis',
-        status: 'available'
+        status: 'available',
       },
       {
         type: 'tools',
         description: 'Performance monitoring tools',
-        status: 'requested'
-      }
+        status: 'requested',
+      },
     ],
     findings: [
       {
         date: '2024-01-20',
         finding: 'Database queries are the primary bottleneck',
         confidence: 0.85,
-        impact: 'high'
-      }
+        impact: 'high',
+      },
     ],
     recommendations: [
       {
         recommendation: 'Implement database query optimization',
         rationale: 'Queries account for 70% of response time',
         implementation: 'Add indexes and optimize slow queries',
-        priority: 'high'
-      }
-    ]
+        priority: 'high',
+      },
+    ],
   };
 
   describe('createResearchDocument', () => {
@@ -124,8 +124,12 @@ describe('Research Documentation Utilities', () => {
       const result = await createResearchDocument(mockResearchData);
 
       expect(result.content).toContain('## Resources Required');
-      expect(result.content).toContain('**personnel**: Senior architect for analysis (Status: available)');
-      expect(result.content).toContain('**tools**: Performance monitoring tools (Status: requested)');
+      expect(result.content).toContain(
+        '**personnel**: Senior architect for analysis (Status: available)'
+      );
+      expect(result.content).toContain(
+        '**tools**: Performance monitoring tools (Status: requested)'
+      );
     });
 
     it('should include findings when present', async () => {
@@ -142,7 +146,9 @@ describe('Research Documentation Utilities', () => {
       const result = await createResearchDocument(mockResearchData);
 
       expect(result.content).toContain('## Recommendations');
-      expect(result.content).toContain('### Recommendation 1: Implement database query optimization');
+      expect(result.content).toContain(
+        '### Recommendation 1: Implement database query optimization'
+      );
       expect(result.content).toContain('**Priority**: high');
       expect(result.content).toContain('**Rationale**: Queries account for 70% of response time');
       expect(result.content).toContain('**Implementation**: Add indexes and optimize slow queries');
@@ -151,33 +157,37 @@ describe('Research Documentation Utilities', () => {
     it('should handle research data with no findings', async () => {
       const dataWithoutFindings: ResearchDocument = {
         ...mockResearchData,
-        findings: []
+        findings: [],
       };
 
       const result = await createResearchDocument(dataWithoutFindings);
 
       expect(result.content).toContain('## Findings');
-      expect(result.content).toContain('<!-- Findings will be documented here as research progresses -->');
+      expect(result.content).toContain(
+        '<!-- Findings will be documented here as research progresses -->'
+      );
       expect(result.content).toContain('### Template for Findings');
     });
 
     it('should handle research data with no recommendations', async () => {
       const dataWithoutRecommendations: ResearchDocument = {
         ...mockResearchData,
-        recommendations: []
+        recommendations: [],
       };
 
       const result = await createResearchDocument(dataWithoutRecommendations);
 
       expect(result.content).toContain('## Recommendations');
-      expect(result.content).toContain('<!-- Recommendations will be documented here based on research findings -->');
+      expect(result.content).toContain(
+        '<!-- Recommendations will be documented here based on research findings -->'
+      );
       expect(result.content).toContain('### Template for Recommendations');
     });
 
     it('should sanitize filename from research ID', async () => {
       const dataWithSpecialChars: ResearchDocument = {
         ...mockResearchData,
-        id: 'Test-Research@#$%^&*()_001'
+        id: 'Test-Research@#$%^&*()_001',
       };
 
       const result = await createResearchDocument(dataWithSpecialChars);
@@ -187,7 +197,7 @@ describe('Research Documentation Utilities', () => {
     it('should handle empty questions array', async () => {
       const dataWithoutQuestions: ResearchDocument = {
         ...mockResearchData,
-        questions: []
+        questions: [],
       };
 
       const result = await createResearchDocument(dataWithoutQuestions);
@@ -201,8 +211,8 @@ describe('Research Documentation Utilities', () => {
         ...mockResearchData,
         timeline: {
           ...mockResearchData.timeline,
-          milestones: []
-        }
+          milestones: [],
+        },
       };
 
       const result = await createResearchDocument(dataWithoutMilestones);
@@ -214,7 +224,7 @@ describe('Research Documentation Utilities', () => {
     it('should handle empty resources array', async () => {
       const dataWithoutResources: ResearchDocument = {
         ...mockResearchData,
-        resources: []
+        resources: [],
       };
 
       const result = await createResearchDocument(dataWithoutResources);
@@ -227,7 +237,9 @@ describe('Research Documentation Utilities', () => {
       const customDir = 'custom/research/dir';
       const result = await createResearchDocument(mockResearchData, customDir);
 
-      expect(result.filePath).toContain('custom/research/dir/perform_research_test_research_001.md');
+      expect(result.filePath).toContain(
+        'custom/research/dir/perform_research_test_research_001.md'
+      );
     });
   });
 
@@ -243,7 +255,7 @@ describe('Research Documentation Utilities', () => {
         timeline: { startDate: '2024-01-01', endDate: '2024-03-31', milestones: [] },
         resources: [],
         findings: [],
-        recommendations: []
+        recommendations: [],
       },
       {
         id: 'research-002',
@@ -255,7 +267,7 @@ describe('Research Documentation Utilities', () => {
         timeline: { startDate: '2024-02-01', endDate: '2024-04-30', milestones: [] },
         resources: [],
         findings: [],
-        recommendations: []
+        recommendations: [],
       },
       {
         id: 'research-003',
@@ -267,7 +279,7 @@ describe('Research Documentation Utilities', () => {
         timeline: { startDate: '2023-10-01', endDate: '2023-12-31', milestones: [] },
         resources: [],
         findings: [],
-        recommendations: []
+        recommendations: [],
       },
       {
         id: 'research-004',
@@ -279,8 +291,8 @@ describe('Research Documentation Utilities', () => {
         timeline: { startDate: '2024-01-01', endDate: '2024-02-28', milestones: [] },
         resources: [],
         findings: [],
-        recommendations: []
-      }
+        recommendations: [],
+      },
     ];
 
     it('should create research index with proper structure', async () => {
@@ -306,16 +318,24 @@ describe('Research Documentation Utilities', () => {
       const result = await createResearchIndex(mockResearchDocuments);
 
       expect(result.content).toContain('### 🔄 In Progress');
-      expect(result.content).toContain('[Performance Analysis](./perform_research_research_001.md) (high priority)');
-      
+      expect(result.content).toContain(
+        '[Performance Analysis](./perform_research_research_001.md) (high priority)'
+      );
+
       expect(result.content).toContain('### 📋 Planned');
-      expect(result.content).toContain('[Security Assessment](./perform_research_research_002.md) (critical priority)');
-      
+      expect(result.content).toContain(
+        '[Security Assessment](./perform_research_research_002.md) (critical priority)'
+      );
+
       expect(result.content).toContain('### ✅ Completed');
-      expect(result.content).toContain('[Architecture Review](./perform_research_research_003.md) (medium priority)');
-      
+      expect(result.content).toContain(
+        '[Architecture Review](./perform_research_research_003.md) (medium priority)'
+      );
+
       expect(result.content).toContain('### ❌ Cancelled');
-      expect(result.content).toContain('[Cancelled Research](./perform_research_research_004.md) (low priority)');
+      expect(result.content).toContain(
+        '[Cancelled Research](./perform_research_research_004.md) (low priority)'
+      );
     });
 
     it('should group research by category correctly', async () => {
@@ -353,8 +373,8 @@ describe('Research Documentation Utilities', () => {
           timeline: { startDate: '2024-01-01', endDate: '2024-03-31', milestones: [] },
           resources: [],
           findings: [],
-          recommendations: []
-        }
+          recommendations: [],
+        },
       ];
 
       const result = await createResearchIndex(singleStatusDocs);
@@ -389,13 +409,15 @@ describe('Research Documentation Utilities', () => {
           timeline: { startDate: '2024-01-01', endDate: '2024-03-31', milestones: [] },
           resources: [],
           findings: [],
-          recommendations: []
-        }
+          recommendations: [],
+        },
       ];
 
       const result = await createResearchIndex(docsWithSpecialChars);
 
-      expect(result.content).toContain('[Special Chars Research](./perform_research_research__________001.md)');
+      expect(result.content).toContain(
+        '[Special Chars Research](./perform_research_research__________001.md)'
+      );
     });
 
     it('should create index with custom directory', async () => {
@@ -419,8 +441,8 @@ describe('Research Documentation Utilities', () => {
             id: 'q-1',
             question: 'Test question?',
             type: 'exploratory',
-            methodology: 'analysis'
-          }
+            methodology: 'analysis',
+          },
         ],
         timeline: {
           startDate: '2024-01-01',
@@ -429,33 +451,33 @@ describe('Research Documentation Utilities', () => {
             {
               name: 'Test Milestone',
               date: '2024-06-01',
-              description: 'Test milestone description'
-            }
-          ]
+              description: 'Test milestone description',
+            },
+          ],
         },
         resources: [
           {
             type: 'personnel',
             description: 'Test resource',
-            status: 'available'
-          }
+            status: 'available',
+          },
         ],
         findings: [
           {
             date: '2024-01-15',
             finding: 'Test finding',
             confidence: 0.8,
-            impact: 'medium'
-          }
+            impact: 'medium',
+          },
         ],
         recommendations: [
           {
             recommendation: 'Test recommendation',
             rationale: 'Test rationale',
             implementation: 'Test implementation',
-            priority: 'high'
-          }
-        ]
+            priority: 'high',
+          },
+        ],
       };
 
       expect(document.id).toBe('test-id');
@@ -469,8 +491,13 @@ describe('Research Documentation Utilities', () => {
     });
 
     it('should validate status enum values', () => {
-      const validStatuses: ResearchDocument['status'][] = ['planned', 'in_progress', 'completed', 'cancelled'];
-      
+      const validStatuses: ResearchDocument['status'][] = [
+        'planned',
+        'in_progress',
+        'completed',
+        'cancelled',
+      ];
+
       validStatuses.forEach(status => {
         const document: ResearchDocument = {
           id: 'test',
@@ -482,16 +509,16 @@ describe('Research Documentation Utilities', () => {
           timeline: { startDate: '2024-01-01', endDate: '2024-12-31', milestones: [] },
           resources: [],
           findings: [],
-          recommendations: []
+          recommendations: [],
         };
-        
+
         expect(document.status).toBe(status);
       });
     });
 
     it('should validate priority enum values', () => {
       const validPriorities: ResearchDocument['priority'][] = ['critical', 'high', 'medium', 'low'];
-      
+
       validPriorities.forEach(priority => {
         const document: ResearchDocument = {
           id: 'test',
@@ -503,9 +530,9 @@ describe('Research Documentation Utilities', () => {
           timeline: { startDate: '2024-01-01', endDate: '2024-12-31', milestones: [] },
           resources: [],
           findings: [],
-          recommendations: []
+          recommendations: [],
         };
-        
+
         expect(document.priority).toBe(priority);
       });
     });
@@ -515,7 +542,7 @@ describe('Research Documentation Utilities', () => {
     it('should handle very long research titles', async () => {
       const longTitleData: ResearchDocument = {
         ...mockResearchData,
-        title: 'A'.repeat(200)
+        title: 'A'.repeat(200),
       };
 
       const result = await createResearchDocument(longTitleData);
@@ -534,13 +561,13 @@ describe('Research Documentation Utilities', () => {
             id: 'q-unicode',
             question: 'How do we handle ünïcödé characters?',
             type: 'exploratory',
-            methodology: 'tëstïng'
-          }
+            methodology: 'tëstïng',
+          },
         ],
         timeline: { startDate: '2024-01-01', endDate: '2024-12-31', milestones: [] },
         resources: [],
         findings: [],
-        recommendations: []
+        recommendations: [],
       };
 
       const result = await createResearchDocument(specialCharsData);
@@ -553,13 +580,15 @@ describe('Research Documentation Utilities', () => {
         id: `research-${i.toString().padStart(3, '0')}`,
         title: `Research Topic ${i}`,
         category: `category-${i % 5}`,
-        status: ['planned', 'in_progress', 'completed', 'cancelled'][i % 4] as ResearchDocument['status'],
+        status: ['planned', 'in_progress', 'completed', 'cancelled'][
+          i % 4
+        ] as ResearchDocument['status'],
         priority: ['critical', 'high', 'medium', 'low'][i % 4] as ResearchDocument['priority'],
         questions: [],
         timeline: { startDate: '2024-01-01', endDate: '2024-12-31', milestones: [] },
         resources: [],
         findings: [],
-        recommendations: []
+        recommendations: [],
       }));
 
       const result = await createResearchIndex(largeDocs);

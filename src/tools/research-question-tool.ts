@@ -92,25 +92,33 @@ export async function generateResearchQuestions(args: {
 
         let enhancedPrompt = '';
         let knowledgeContext = '';
-        
+
         // Generate research methodology knowledge if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import('../utils/knowledge-generation.js');
-            const knowledgeResult = await generateArchitecturalKnowledge({
-              projectPath,
-              technologies: [],
-              patterns: [],
-              projectType: 'research-methodology'
-            }, {
-              domains: ['data-architecture'],
-              depth: 'intermediate',
-              cacheEnabled: true
-            });
+            const { generateArchitecturalKnowledge } = await import(
+              '../utils/knowledge-generation.js'
+            );
+            const knowledgeResult = await generateArchitecturalKnowledge(
+              {
+                projectPath,
+                technologies: [],
+                patterns: [],
+                projectType: 'research-methodology',
+              },
+              {
+                domains: ['data-architecture'],
+                depth: 'intermediate',
+                cacheEnabled: true,
+              }
+            );
 
             knowledgeContext = `\n## Research Methodology Knowledge Enhancement\n\n${knowledgeResult.prompt}\n\n---\n`;
           } catch (error) {
-            console.error('[WARNING] GKP knowledge generation failed for research correlation analysis:', error);
+            console.error(
+              '[WARNING] GKP knowledge generation failed for research correlation analysis:',
+              error
+            );
             knowledgeContext = '<!-- Research methodology knowledge generation unavailable -->\n';
           }
         }
@@ -129,10 +137,14 @@ export async function generateResearchQuestions(args: {
 - **Enhanced Mode**: ${enhancedMode ? '✅ Applied' : '❌ Disabled'}
 - **Knowledge Domains**: Research methods, statistical analysis, knowledge mapping, scientific inquiry
 
-${knowledgeContext ? `## Research Methodology Context
+${
+  knowledgeContext
+    ? `## Research Methodology Context
 
 ${knowledgeContext}
-` : ''}
+`
+    : ''
+}
 
 ${result.instructions}
 
@@ -178,13 +190,15 @@ This correlation analysis enables:
           scope: 'project',
           objectives: ['Identify relevant architectural patterns and decisions'],
           constraints: [],
-          timeline: 'Not specified'
+          timeline: 'Not specified',
         };
 
         const effectiveResearchContext = researchContext || defaultResearchContext;
 
         if (!researchContext) {
-          console.warn('[WARN] No researchContext provided for relevance analysis. Using intelligent defaults.');
+          console.warn(
+            '[WARN] No researchContext provided for relevance analysis. Using intelligent defaults.'
+          );
         }
 
         const result = await findRelevantAdrPatterns(
@@ -246,13 +260,15 @@ This relevance analysis provides:
           scope: 'project',
           objectives: ['Generate relevant research questions for architectural analysis'],
           constraints: [],
-          timeline: 'Not specified'
+          timeline: 'Not specified',
         };
 
         const effectiveResearchContext = researchContext || defaultResearchContext;
 
         if (!researchContext) {
-          console.warn('[WARN] No researchContext provided for question generation. Using intelligent defaults.');
+          console.warn(
+            '[WARN] No researchContext provided for question generation. Using intelligent defaults.'
+          );
         }
 
         if (!relevantKnowledge) {
@@ -273,7 +289,9 @@ This relevance analysis provides:
         );
 
         // Execute the research question generation with AI if enabled, otherwise return prompt
-        const { executeResearchPrompt, formatMCPResponse } = await import('../utils/prompt-execution.js');
+        const { executeResearchPrompt, formatMCPResponse } = await import(
+          '../utils/prompt-execution.js'
+        );
         const executionResult = await executeResearchPrompt(
           result.questionPrompt,
           result.instructions,
@@ -285,7 +303,7 @@ Create detailed research plans that help teams investigate architectural decisio
 Focus on practical research approaches that can be executed by development teams.
 Provide clear guidance on research methods, success criteria, and expected outcomes.
 IMPORTANT: Save the generated research questions to the docs/research directory as specified in the instructions.`,
-            responseFormat: 'text'
+            responseFormat: 'text',
           }
         );
 
@@ -446,17 +464,19 @@ This tracking system enables:
             'Identify architectural patterns and best practices',
             'Analyze current system design decisions',
             'Discover improvement opportunities',
-            'Evaluate technology choices and alternatives'
+            'Evaluate technology choices and alternatives',
           ],
           constraints: ['Time and resource limitations'],
-          timeline: 'Not specified'
+          timeline: 'Not specified',
         };
 
         const effectiveResearchContext = researchContext || defaultResearchContext;
 
         // Log warning if using defaults
         if (!researchContext) {
-          console.warn('[WARN] No researchContext provided for comprehensive analysis. Using intelligent defaults.');
+          console.warn(
+            '[WARN] No researchContext provided for comprehensive analysis. Using intelligent defaults.'
+          );
         }
 
         // Generate all components for comprehensive research planning

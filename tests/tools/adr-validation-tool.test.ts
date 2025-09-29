@@ -37,18 +37,26 @@ We will use Kubernetes for container orchestration.
 
       // Mock research orchestrator
       const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      vi.mocked(ResearchOrchestrator).mockImplementation(() => ({
-        answerResearchQuestion: vi.fn().mockResolvedValue({
-          answer: 'Kubernetes is deployed and running. Found kubectl config and deployment manifests.',
-          confidence: 0.9,
-          sources: [
-            { type: 'project_files', found: true, confidence: 0.8, data: {} },
-            { type: 'environment', found: true, confidence: 0.95, data: {} },
-          ],
-          metadata: { filesAnalyzed: 5, duration: 200, sourcesQueried: ['project_files', 'environment'] },
-          needsWebSearch: false,
-        }),
-      } as any));
+      vi.mocked(ResearchOrchestrator).mockImplementation(
+        () =>
+          ({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
+              answer:
+                'Kubernetes is deployed and running. Found kubectl config and deployment manifests.',
+              confidence: 0.9,
+              sources: [
+                { type: 'project_files', found: true, confidence: 0.8, data: {} },
+                { type: 'environment', found: true, confidence: 0.95, data: {} },
+              ],
+              metadata: {
+                filesAnalyzed: 5,
+                duration: 200,
+                sourcesQueried: ['project_files', 'environment'],
+              },
+              needsWebSearch: false,
+            }),
+          }) as any
+      );
 
       // Mock AI executor
       const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
@@ -84,15 +92,18 @@ We will use Docker Swarm for container orchestration.
       vi.mocked(fs.readFile).mockResolvedValue(mockAdrContent);
 
       const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      vi.mocked(ResearchOrchestrator).mockImplementation(() => ({
-        answerResearchQuestion: vi.fn().mockResolvedValue({
-          answer: 'Found Kubernetes cluster running, no Docker Swarm detected.',
-          confidence: 0.85,
-          sources: [{ type: 'environment', found: true, confidence: 0.9, data: {} }],
-          metadata: { filesAnalyzed: 3, duration: 150, sourcesQueried: ['environment'] },
-          needsWebSearch: false,
-        }),
-      } as any));
+      vi.mocked(ResearchOrchestrator).mockImplementation(
+        () =>
+          ({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
+              answer: 'Found Kubernetes cluster running, no Docker Swarm detected.',
+              confidence: 0.85,
+              sources: [{ type: 'environment', found: true, confidence: 0.9, data: {} }],
+              metadata: { filesAnalyzed: 3, duration: 150, sourcesQueried: ['environment'] },
+              needsWebSearch: false,
+            }),
+          }) as any
+      );
 
       const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
       vi.mocked(getAIExecutor).mockReturnValue({
@@ -109,7 +120,10 @@ We will use Docker Swarm for container orchestration.
                 evidence: 'Found kubectl and K8s manifests, no Swarm evidence',
               },
             ],
-            recommendations: ['Update ADR to reflect Kubernetes deployment', 'Document migration from Swarm to K8s'],
+            recommendations: [
+              'Update ADR to reflect Kubernetes deployment',
+              'Document migration from Swarm to K8s',
+            ],
           },
           raw: { metadata: {} },
         }),
@@ -134,15 +148,18 @@ We will use Redis for caching.
       vi.mocked(fs.readFile).mockResolvedValue(mockAdrContent);
 
       const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      vi.mocked(ResearchOrchestrator).mockImplementation(() => ({
-        answerResearchQuestion: vi.fn().mockResolvedValue({
-          answer: 'No evidence of Redis found in project files or environment.',
-          confidence: 0.3,
-          sources: [{ type: 'project_files', found: false, confidence: 0.2, data: {} }],
-          metadata: { filesAnalyzed: 2, duration: 100, sourcesQueried: ['project_files'] },
-          needsWebSearch: true,
-        }),
-      } as any));
+      vi.mocked(ResearchOrchestrator).mockImplementation(
+        () =>
+          ({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
+              answer: 'No evidence of Redis found in project files or environment.',
+              confidence: 0.3,
+              sources: [{ type: 'project_files', found: false, confidence: 0.2, data: {} }],
+              metadata: { filesAnalyzed: 2, duration: 100, sourcesQueried: ['project_files'] },
+              needsWebSearch: true,
+            }),
+          }) as any
+      );
 
       const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
       vi.mocked(getAIExecutor).mockReturnValue({
@@ -159,7 +176,11 @@ We will use Redis for caching.
                 evidence: 'No config files, no environment variables, no running processes',
               },
             ],
-            recommendations: ['Verify Redis is deployed', 'Check if ADR was implemented', 'Consider updating ADR status'],
+            recommendations: [
+              'Verify Redis is deployed',
+              'Check if ADR was implemented',
+              'Consider updating ADR status',
+            ],
           },
           raw: { metadata: {} },
         }),
@@ -184,15 +205,18 @@ We will use PostgreSQL as our primary database.
       vi.mocked(fs.readFile).mockResolvedValue(mockAdrContent);
 
       const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      vi.mocked(ResearchOrchestrator).mockImplementation(() => ({
-        answerResearchQuestion: vi.fn().mockResolvedValue({
-          answer: 'Found PostgreSQL in docker-compose.yml and connection strings in config.',
-          confidence: 0.8,
-          sources: [{ type: 'project_files', found: true, confidence: 0.8, data: {} }],
-          metadata: { filesAnalyzed: 4, duration: 120, sourcesQueried: ['project_files'] },
-          needsWebSearch: false,
-        }),
-      } as any));
+      vi.mocked(ResearchOrchestrator).mockImplementation(
+        () =>
+          ({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
+              answer: 'Found PostgreSQL in docker-compose.yml and connection strings in config.',
+              confidence: 0.8,
+              sources: [{ type: 'project_files', found: true, confidence: 0.8, data: {} }],
+              metadata: { filesAnalyzed: 4, duration: 120, sourcesQueried: ['project_files'] },
+              needsWebSearch: false,
+            }),
+          }) as any
+      );
 
       const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
       vi.mocked(getAIExecutor).mockReturnValue({
@@ -236,15 +260,18 @@ Test decision
 `);
 
       const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      vi.mocked(ResearchOrchestrator).mockImplementation(() => ({
-        answerResearchQuestion: vi.fn().mockResolvedValue({
-          answer: 'Test answer',
-          confidence: 0.8,
-          sources: [],
-          metadata: { filesAnalyzed: 1, duration: 100, sourcesQueried: [] },
-          needsWebSearch: false,
-        }),
-      } as any));
+      vi.mocked(ResearchOrchestrator).mockImplementation(
+        () =>
+          ({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
+              answer: 'Test answer',
+              confidence: 0.8,
+              sources: [],
+              metadata: { filesAnalyzed: 1, duration: 100, sourcesQueried: [] },
+              needsWebSearch: false,
+            }),
+          }) as any
+      );
 
       const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
       vi.mocked(getAIExecutor).mockReturnValue({
@@ -265,15 +292,18 @@ Test decision
       vi.mocked(fs.readFile).mockResolvedValue('# Test\n## Decision\nTest');
 
       const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      vi.mocked(ResearchOrchestrator).mockImplementation(() => ({
-        answerResearchQuestion: vi.fn().mockResolvedValue({
-          answer: 'Test',
-          confidence: 0.9,
-          sources: [],
-          metadata: { filesAnalyzed: 1, duration: 50, sourcesQueried: [] },
-          needsWebSearch: false,
-        }),
-      } as any));
+      vi.mocked(ResearchOrchestrator).mockImplementation(
+        () =>
+          ({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
+              answer: 'Test',
+              confidence: 0.9,
+              sources: [],
+              metadata: { filesAnalyzed: 1, duration: 50, sourcesQueried: [] },
+              needsWebSearch: false,
+            }),
+          }) as any
+      );
 
       const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
       vi.mocked(getAIExecutor).mockReturnValue({

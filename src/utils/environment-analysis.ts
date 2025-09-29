@@ -11,23 +11,23 @@ import { McpAdrError } from '../types/index.js';
 function getFileExtension(filename: string): string {
   const ext = filename.split('.').pop()?.toLowerCase();
   const mapping: Record<string, string> = {
-    'json': 'json',
-    'yml': 'yaml',
-    'yaml': 'yaml',
-    'js': 'javascript',
-    'ts': 'typescript',
-    'py': 'python',
-    'md': 'markdown',
-    'dockerfile': 'dockerfile',
-    'toml': 'toml',
-    'xml': 'xml',
-    'sh': 'bash',
-    'bash': 'bash',
-    'zsh': 'bash',
-    'fish': 'fish',
-    'ps1': 'powershell',
-    'bat': 'batch',
-    'cmd': 'batch'
+    json: 'json',
+    yml: 'yaml',
+    yaml: 'yaml',
+    js: 'javascript',
+    ts: 'typescript',
+    py: 'python',
+    md: 'markdown',
+    dockerfile: 'dockerfile',
+    toml: 'toml',
+    xml: 'xml',
+    sh: 'bash',
+    bash: 'bash',
+    zsh: 'bash',
+    fish: 'fish',
+    ps1: 'powershell',
+    bat: 'batch',
+    cmd: 'batch',
   };
   return mapping[ext || ''] || 'bash'; // Default to bash for script files
 }
@@ -87,7 +87,9 @@ export async function analyzeEnvironmentSpecs(
 ): Promise<{ analysisPrompt: string; instructions: string; actualData?: any }> {
   try {
     // Use actual file operations to scan project structure
-    const { scanProjectStructure, findActualEnvironmentFiles } = await import('./actual-file-operations.js');
+    const { scanProjectStructure, findActualEnvironmentFiles } = await import(
+      './actual-file-operations.js'
+    );
 
     // Actually read environment files
     const environmentFiles = await findActualEnvironmentFiles(projectPath);
@@ -104,58 +106,101 @@ Based on actual file system analysis, here are the findings:
 - **Directories**: ${projectStructure.directories.join(', ')}
 
 ## Package Management
-${projectStructure.packageFiles.length > 0 ? 
-  projectStructure.packageFiles.map(f => `
+${
+  projectStructure.packageFiles.length > 0
+    ? projectStructure.packageFiles
+        .map(
+          f => `
 ### ${f.filename}
 \`\`\`${getFileExtension(f.filename)}
 ${f.content.slice(0, 1000)}${f.content.length > 1000 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('\n') : '- No package files found'}
+`
+        )
+        .join('\n')
+    : '- No package files found'
+}
 
 ## Docker Configuration
-${projectStructure.dockerFiles.length > 0 ? 
-  projectStructure.dockerFiles.map(f => `
+${
+  projectStructure.dockerFiles.length > 0
+    ? projectStructure.dockerFiles
+        .map(
+          f => `
 ### ${f.filename}
 \`\`\`${getFileExtension(f.filename)}
 ${f.content.slice(0, 1000)}${f.content.length > 1000 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('\n') : '- No Docker files found'}
+`
+        )
+        .join('\n')
+    : '- No Docker files found'
+}
 
 ## Environment Configuration
-${environmentFiles.filter(f => f.filename.includes('.env')).length > 0 ? 
-  environmentFiles.filter(f => f.filename.includes('.env')).map(f => `
+${
+  environmentFiles.filter(f => f.filename.includes('.env')).length > 0
+    ? environmentFiles
+        .filter(f => f.filename.includes('.env'))
+        .map(
+          f => `
 ### ${f.filename}
 \`\`\`bash
 ${f.content.slice(0, 500)}${f.content.length > 500 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('\n') : '- No environment files found'}
+`
+        )
+        .join('\n')
+    : '- No environment files found'
+}
 
 ## Kubernetes Manifests
-${projectStructure.kubernetesFiles.length > 0 ? 
-  projectStructure.kubernetesFiles.map(f => `
+${
+  projectStructure.kubernetesFiles.length > 0
+    ? projectStructure.kubernetesFiles
+        .map(
+          f => `
 ### ${f.filename}
 \`\`\`yaml
 ${f.content.slice(0, 800)}${f.content.length > 800 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('\n') : '- No Kubernetes manifests found'}
+`
+        )
+        .join('\n')
+    : '- No Kubernetes manifests found'
+}
 
 ## CI/CD Configuration
-${projectStructure.ciFiles.length > 0 ? 
-  projectStructure.ciFiles.map(f => `
+${
+  projectStructure.ciFiles.length > 0
+    ? projectStructure.ciFiles
+        .map(
+          f => `
 ### ${f.filename}
 \`\`\`yaml
 ${f.content.slice(0, 600)}${f.content.length > 600 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('\n') : '- No CI/CD files found'}
+`
+        )
+        .join('\n')
+    : '- No CI/CD files found'
+}
 
 ## Shell Scripts & Automation
-${projectStructure.scriptFiles.length > 0 ? 
-  projectStructure.scriptFiles.map(f => `
+${
+  projectStructure.scriptFiles.length > 0
+    ? projectStructure.scriptFiles
+        .map(
+          f => `
 ### ${f.filename}
 \`\`\`${getFileExtension(f.filename)}
 ${f.content.slice(0, 800)}${f.content.length > 800 ? '\n... (truncated)' : ''}
 \`\`\`
-`).join('\n') : '- No shell scripts found'}
+`
+        )
+        .join('\n')
+    : '- No shell scripts found'
+}
 
 ## Analysis Requirements
 
@@ -226,9 +271,9 @@ const result = await analyzeEnvironmentSpecs(projectPath);
           kubernetesFiles: projectStructure.kubernetesFiles.length,
           ciFiles: projectStructure.ciFiles.length,
           scriptFiles: projectStructure.scriptFiles.length,
-          environmentFiles: environmentFiles.length
-        }
-      }
+          environmentFiles: environmentFiles.length,
+        },
+      },
     };
   } catch (error) {
     throw new McpAdrError(
@@ -248,16 +293,13 @@ export async function detectContainerization(
     const { scanProjectStructure } = await import('./actual-file-operations.js');
 
     // Use actual project structure scanning
-    const projectStructure = await scanProjectStructure(projectPath, { 
+    const projectStructure = await scanProjectStructure(projectPath, {
       readContent: true,
-      includeHidden: false
+      includeHidden: false,
     });
 
     // Get container-related files
-    const containerFiles = [
-      ...projectStructure.dockerFiles,
-      ...projectStructure.kubernetesFiles
-    ];
+    const containerFiles = [...projectStructure.dockerFiles, ...projectStructure.kubernetesFiles];
 
     let containerAnalysis = '';
     if (containerFiles.length > 0) {
@@ -355,8 +397,8 @@ export async function determineEnvironmentRequirements(
     const path = await import('path');
 
     // Use absolute path for ADR directory
-    const absoluteAdrPath = path.isAbsolute(adrDirectory) 
-      ? adrDirectory 
+    const absoluteAdrPath = path.isAbsolute(adrDirectory)
+      ? adrDirectory
       : path.resolve(projectPath, adrDirectory);
 
     // Use actual ADR discovery
