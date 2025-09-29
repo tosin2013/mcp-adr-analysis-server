@@ -2,12 +2,12 @@
  * Tests for ResearchOrchestrator
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { jest } from '@jest/globals';
 import { ResearchOrchestrator } from '../../src/utils/research-orchestrator.js';
 import * as fs from 'fs/promises';
 
 // Mock file system
-vi.mock('fs/promises');
+jest.mock('fs/promises');
 
 describe('ResearchOrchestrator', () => {
   let orchestrator: ResearchOrchestrator;
@@ -16,14 +16,14 @@ describe('ResearchOrchestrator', () => {
 
   beforeEach(() => {
     orchestrator = new ResearchOrchestrator(mockProjectPath, mockAdrDirectory);
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('answerResearchQuestion', () => {
     it('should return answer with sources and confidence', async () => {
       // Mock file access to succeed
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([]);
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await orchestrator.answerResearchQuestion('What is Docker?');
 
@@ -42,11 +42,13 @@ describe('ResearchOrchestrator', () => {
 
     it('should have high confidence when project files are found', async () => {
       // Mock finding a Dockerfile
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'Dockerfile', isFile: () => true, isDirectory: () => false } as any,
-      ]);
-      vi.mocked(fs.readFile).mockResolvedValue('FROM node:18\nRUN npm install');
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          { name: 'Dockerfile', isFile: () => true, isDirectory: () => false } as any,
+        ]);
+      jest.mocked(fs.readFile).mockResolvedValue('FROM node:18\nRUN npm install');
 
       const result = await orchestrator.answerResearchQuestion(
         'What container technology are we using?'
@@ -58,8 +60,8 @@ describe('ResearchOrchestrator', () => {
 
     it('should recommend web search when confidence is low', async () => {
       // Mock no files found
-      vi.mocked(fs.access).mockRejectedValue(new Error('Not found'));
-      vi.mocked(fs.readdir).mockResolvedValue([]);
+      jest.mocked(fs.access).mockRejectedValue(new Error('Not found'));
+      jest.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await orchestrator.answerResearchQuestion(
         'What is quantum computing architecture?'
@@ -70,8 +72,8 @@ describe('ResearchOrchestrator', () => {
     });
 
     it('should include metadata about search duration', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([]);
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await orchestrator.answerResearchQuestion('Test question');
 
@@ -82,12 +84,14 @@ describe('ResearchOrchestrator', () => {
 
   describe('searchProjectFiles', () => {
     it('should search for Docker-related files when question mentions Docker', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'Dockerfile', isFile: () => true, isDirectory: () => false } as any,
-        { name: 'docker-compose.yml', isFile: () => true, isDirectory: () => false } as any,
-      ]);
-      vi.mocked(fs.readFile).mockResolvedValue('mock content');
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          { name: 'Dockerfile', isFile: () => true, isDirectory: () => false } as any,
+          { name: 'docker-compose.yml', isFile: () => true, isDirectory: () => false } as any,
+        ]);
+      jest.mocked(fs.readFile).mockResolvedValue('mock content');
 
       const result = await orchestrator.answerResearchQuestion('What Docker images do we use?');
 
@@ -97,11 +101,13 @@ describe('ResearchOrchestrator', () => {
     });
 
     it('should search for Kubernetes files when question mentions k8s', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'deployment.yaml', isFile: () => true, isDirectory: () => false } as any,
-      ]);
-      vi.mocked(fs.readFile).mockResolvedValue('apiVersion: apps/v1\nkind: Deployment');
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          { name: 'deployment.yaml', isFile: () => true, isDirectory: () => false } as any,
+        ]);
+      jest.mocked(fs.readFile).mockResolvedValue('apiVersion: apps/v1\nkind: Deployment');
 
       const result = await orchestrator.answerResearchQuestion(
         'What Kubernetes deployments do we have?'
@@ -112,13 +118,19 @@ describe('ResearchOrchestrator', () => {
     });
 
     it('should always check ADR directory', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'adr-0001-use-kubernetes.md', isFile: () => true, isDirectory: () => false } as any,
-      ]);
-      vi.mocked(fs.readFile).mockResolvedValue(
-        '# ADR: Use Kubernetes\n\nWe decided to use Kubernetes...'
-      );
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          {
+            name: 'adr-0001-use-kubernetes.md',
+            isFile: () => true,
+            isDirectory: () => false,
+          } as any,
+        ]);
+      jest
+        .mocked(fs.readFile)
+        .mockResolvedValue('# ADR: Use Kubernetes\n\nWe decided to use Kubernetes...');
 
       const _result = await orchestrator.answerResearchQuestion('Any question');
 
@@ -126,11 +138,13 @@ describe('ResearchOrchestrator', () => {
     });
 
     it('should calculate relevance scores for files', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'docker-file', isFile: () => true, isDirectory: () => false } as any,
-      ]);
-      vi.mocked(fs.readFile).mockResolvedValue('Docker container configuration');
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          { name: 'docker-file', isFile: () => true, isDirectory: () => false } as any,
+        ]);
+      jest.mocked(fs.readFile).mockResolvedValue('Docker container configuration');
 
       const result = await orchestrator.answerResearchQuestion('Docker configuration');
 
@@ -141,8 +155,8 @@ describe('ResearchOrchestrator', () => {
 
   describe('calculateConfidence', () => {
     it('should return 0 for no sources', async () => {
-      vi.mocked(fs.access).mockRejectedValue(new Error('No files'));
-      vi.mocked(fs.readdir).mockResolvedValue([]);
+      jest.mocked(fs.access).mockRejectedValue(new Error('No files'));
+      jest.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await orchestrator.answerResearchQuestion('Random question');
 
@@ -151,11 +165,13 @@ describe('ResearchOrchestrator', () => {
     });
 
     it('should increase confidence with multiple sources', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'test.md', isFile: () => true, isDirectory: () => false } as any,
-      ]);
-      vi.mocked(fs.readFile).mockResolvedValue('Docker and Kubernetes content');
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          { name: 'test.md', isFile: () => true, isDirectory: () => false } as any,
+        ]);
+      jest.mocked(fs.readFile).mockResolvedValue('Docker and Kubernetes content');
 
       const result = await orchestrator.answerResearchQuestion('Docker and Kubernetes');
 
@@ -168,8 +184,8 @@ describe('ResearchOrchestrator', () => {
     it('should update confidence threshold', async () => {
       orchestrator.setConfidenceThreshold(0.8);
 
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([]);
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await orchestrator.answerResearchQuestion('Test');
 
@@ -189,8 +205,8 @@ describe('ResearchOrchestrator', () => {
 
   describe('extractKeywords', () => {
     it('should extract meaningful keywords from questions', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([]);
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest.mocked(fs.readdir).mockResolvedValue([]);
 
       // Test with question containing stop words
       const result = await orchestrator.answerResearchQuestion(
@@ -204,11 +220,13 @@ describe('ResearchOrchestrator', () => {
 
   describe('synthesizeAnswer', () => {
     it('should synthesize answer from multiple sources', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'Dockerfile', isFile: () => true, isDirectory: () => false } as any,
-      ]);
-      vi.mocked(fs.readFile).mockResolvedValue('Docker content');
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          { name: 'Dockerfile', isFile: () => true, isDirectory: () => false } as any,
+        ]);
+      jest.mocked(fs.readFile).mockResolvedValue('Docker content');
 
       const result = await orchestrator.answerResearchQuestion('Docker question');
 
@@ -217,8 +235,8 @@ describe('ResearchOrchestrator', () => {
     });
 
     it('should mention web search in answer when needed', async () => {
-      vi.mocked(fs.access).mockRejectedValue(new Error('No files'));
-      vi.mocked(fs.readdir).mockResolvedValue([]);
+      jest.mocked(fs.access).mockRejectedValue(new Error('No files'));
+      jest.mocked(fs.readdir).mockResolvedValue([]);
 
       const result = await orchestrator.answerResearchQuestion('Obscure topic');
 
@@ -230,11 +248,13 @@ describe('ResearchOrchestrator', () => {
 
   describe('file pattern matching', () => {
     it('should match package.json for dependency questions', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'package.json', isFile: () => true, isDirectory: () => false } as any,
-      ]);
-      vi.mocked(fs.readFile).mockResolvedValue('{"dependencies": {"express": "4.18.0"}}');
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          { name: 'package.json', isFile: () => true, isDirectory: () => false } as any,
+        ]);
+      jest.mocked(fs.readFile).mockResolvedValue('{"dependencies": {"express": "4.18.0"}}');
 
       const result = await orchestrator.answerResearchQuestion('What dependencies do we use?');
 
@@ -243,11 +263,13 @@ describe('ResearchOrchestrator', () => {
     });
 
     it('should match test files for testing questions', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'app.test.ts', isFile: () => true, isDirectory: () => false } as any,
-      ]);
-      vi.mocked(fs.readFile).mockResolvedValue('test content');
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          { name: 'app.test.ts', isFile: () => true, isDirectory: () => false } as any,
+        ]);
+      jest.mocked(fs.readFile).mockResolvedValue('test content');
 
       const result = await orchestrator.answerResearchQuestion('What testing framework do we use?');
 
@@ -255,11 +277,13 @@ describe('ResearchOrchestrator', () => {
     });
 
     it('should skip node_modules directory', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'node_modules', isFile: () => false, isDirectory: () => true } as any,
-        { name: 'src', isFile: () => false, isDirectory: () => true } as any,
-      ]);
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          { name: 'node_modules', isFile: () => false, isDirectory: () => true } as any,
+          { name: 'src', isFile: () => false, isDirectory: () => true } as any,
+        ]);
 
       await orchestrator.answerResearchQuestion('Test');
 
@@ -270,11 +294,13 @@ describe('ResearchOrchestrator', () => {
 
   describe('error handling', () => {
     it('should handle file read errors gracefully', async () => {
-      vi.mocked(fs.access).mockResolvedValue(undefined);
-      vi.mocked(fs.readdir).mockResolvedValue([
-        { name: 'test.md', isFile: () => true, isDirectory: () => false } as any,
-      ]);
-      vi.mocked(fs.readFile).mockRejectedValue(new Error('Permission denied'));
+      jest.mocked(fs.access).mockResolvedValue(undefined);
+      jest
+        .mocked(fs.readdir)
+        .mockResolvedValue([
+          { name: 'test.md', isFile: () => true, isDirectory: () => false } as any,
+        ]);
+      jest.mocked(fs.readFile).mockRejectedValue(new Error('Permission denied'));
 
       const result = await orchestrator.answerResearchQuestion('Test');
 
@@ -283,7 +309,7 @@ describe('ResearchOrchestrator', () => {
     });
 
     it('should handle directory access errors', async () => {
-      vi.mocked(fs.access).mockRejectedValue(new Error('Directory not found'));
+      jest.mocked(fs.access).mockRejectedValue(new Error('Directory not found'));
 
       const result = await orchestrator.answerResearchQuestion('Test');
 
