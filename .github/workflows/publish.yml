@@ -143,11 +143,20 @@ jobs:
 
       - name: Commit version bump
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git add package.json package-lock.json
-          git commit -m "chore: bump version to ${{ steps.version.outputs.version }}"
-          git push origin main
+          NEW_VERSION="${{ steps.version.outputs.version }}"
+
+          # Check if there are changes to commit
+          if git diff --exit-code package.json package-lock.json; then
+            echo "✅ No version changes to commit - package.json already at correct version"
+          else
+            echo "📝 Committing version bump changes..."
+            git config --local user.email "action@github.com"
+            git config --local user.name "GitHub Action"
+            git add package.json package-lock.json
+            git commit -m "chore: bump version to $NEW_VERSION"
+            git push origin main
+            echo "✅ Version bump committed and pushed"
+          fi
 
       - name: Create/Update Release
         id: release
