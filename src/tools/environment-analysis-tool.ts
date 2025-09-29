@@ -8,6 +8,7 @@
 import { McpAdrError } from '../types/index.js';
 import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
+import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 /**
  * Environment Memory Manager for tracking environment snapshots and evolution
@@ -498,6 +499,46 @@ export async function analyzeEnvironment(args: {
     await memoryManager.initialize();
   }
 
+  // Research live environment state using research-orchestrator
+  let liveEnvironmentData = '';
+  let researchConfidence = 0;
+  try {
+    const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
+    const research = await orchestrator.answerResearchQuestion(
+      `Analyze ${environmentType} environment state and configuration:
+1. What infrastructure tools are currently available and running?
+2. What deployment and containerization technologies are in use?
+3. What is the current environment configuration?
+4. Are there any environment-related ADRs or documentation?
+5. What are the current resource utilization and health metrics?`
+    );
+
+    researchConfidence = research.confidence;
+    const envSource = research.sources.find(s => s.type === 'environment');
+    const capabilities = envSource?.data?.capabilities || [];
+
+    liveEnvironmentData = `
+
+## 🔍 Live Environment Research
+
+**Research Confidence**: ${(research.confidence * 100).toFixed(1)}%
+**Environment Type**: ${environmentType}
+
+### Current Infrastructure State
+${research.answer || 'No live environment data available'}
+
+### Detected Capabilities
+${capabilities.length > 0 ? capabilities.map((c: string) => `- ${c}`).join('\n') : '- No infrastructure tools detected'}
+
+### Research Sources
+${research.sources.map(s => `- ${s.type}: Consulted`).join('\n')}
+
+${research.needsWebSearch ? '⚠️ **Note**: Local environment data may be incomplete - external verification recommended\n' : ''}
+`;
+  } catch (error) {
+    liveEnvironmentData = `\n## ⚠️ Live Environment Research\nUnavailable: ${error instanceof Error ? error.message : String(error)}\n`;
+  }
+
   try {
     const {
       analyzeEnvironmentSpecs,
@@ -542,7 +583,7 @@ export async function analyzeEnvironment(args: {
         }
 
         const result = await analyzeEnvironmentSpecs(projectPath);
-        enhancedPrompt = knowledgeContext + result.analysisPrompt;
+        enhancedPrompt = liveEnvironmentData + knowledgeContext + result.analysisPrompt;
 
         // Execute the environment analysis with AI if enabled, otherwise return prompt
         const { executePromptWithFallback, formatMCPResponse } = await import(

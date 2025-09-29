@@ -4,6 +4,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 /**
  * Generate deployment guidance from ADRs using AI-driven analysis
@@ -79,6 +80,40 @@ Use Docker containers with docker-compose for orchestration.
       };
     }
 
+    // Research current deployment environment
+    let environmentContext = '';
+    try {
+      const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
+      const research = await orchestrator.answerResearchQuestion(
+        `Analyze deployment requirements for ${environment} environment:
+1. What deployment infrastructure is currently available?
+2. What deployment patterns are documented in ADRs?
+3. Are there existing deployment scripts or configurations?
+4. What are the deployment constraints or requirements?`
+      );
+
+      const envSource = research.sources.find(s => s.type === 'environment');
+      const capabilities = envSource?.data?.capabilities || [];
+
+      environmentContext = `
+
+## 🔍 Current Environment Analysis
+
+**Research Confidence**: ${(research.confidence * 100).toFixed(1)}%
+
+### Available Infrastructure
+${capabilities.length > 0 ? capabilities.map((c: string) => `- ${c}`).join('\n') : '- No infrastructure tools detected'}
+
+### Deployment Context
+${research.answer || 'No specific deployment context found'}
+
+### Key Findings
+${research.sources.map(s => `- ${s.type}: Consulted`).join('\n')}
+`;
+    } catch (error) {
+      environmentContext = `\n## ⚠️ Environment Analysis Failed\n${error instanceof Error ? error.message : String(error)}\n`;
+    }
+
     // Create comprehensive deployment guidance prompt
     const deploymentPrompt = `
 # Deployment Guidance Generation
@@ -90,6 +125,7 @@ You are an expert DevOps engineer tasked with creating comprehensive deployment 
 - **Target Environment**: ${environment}
 - **ADR Directory**: ${adrDirectory}
 - **Total ADRs**: ${discoveryResult.adrs.length}
+${environmentContext}
 
 ## ADR Content
 ${discoveryResult.adrs.map(adr => `
