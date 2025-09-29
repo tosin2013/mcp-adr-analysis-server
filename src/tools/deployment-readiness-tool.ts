@@ -1485,9 +1485,7 @@ async function performEnvironmentResearch(
 
     // Check if web search is needed
     if (research.needsWebSearch) {
-      warnings.push(
-        'Local environment data insufficient - external research may be needed'
-      );
+      warnings.push('Local environment data insufficient - external research may be needed');
     }
 
     // Check for environment capability availability
@@ -1526,7 +1524,9 @@ async function performEnvironmentResearch(
       confidence: 0,
       sources: [],
       needsWebSearch: true,
-      warnings: ['Failed to perform environment research - proceeding without environment validation'],
+      warnings: [
+        'Failed to perform environment research - proceeding without environment validation',
+      ],
     };
   }
 }
@@ -1703,7 +1703,7 @@ ${
   // Adjust overall score based on environment research confidence
   const baseScore = (testResult.overallScore + historyResult.overallScore) / 2;
   const environmentScore = environmentResearch.confidence * 100;
-  const overallScore = (baseScore * 0.7 + environmentScore * 0.3);
+  const overallScore = baseScore * 0.7 + environmentScore * 0.3;
   const isReady = allBlockers.filter(b => b.blocksDeployment).length === 0;
 
   const result = {
@@ -1721,11 +1721,7 @@ ${
     criticalBlockers: allBlockers.filter(b => b.severity === 'critical'),
     testFailureBlockers: testResult.testFailureBlockers,
     deploymentHistoryBlockers: historyResult.deploymentHistoryBlockers,
-    warnings: [
-      ...testResult.warnings,
-      ...historyResult.warnings,
-      ...environmentResearch.warnings,
-    ],
+    warnings: [...testResult.warnings, ...historyResult.warnings, ...environmentResearch.warnings],
     todoTasksCreated: [],
     healthScoreUpdate: {},
     gitPushStatus: isReady ? ('allowed' as const) : ('blocked' as const),

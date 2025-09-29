@@ -8,7 +8,7 @@ import {
   ConversationContext,
   CONVERSATION_CONTEXT_SCHEMA,
   formatContextForPrompt,
-  hasMeaningfulContext
+  hasMeaningfulContext,
 } from '../../src/types/conversation-context';
 
 describe('Conversation Context Types', () => {
@@ -30,7 +30,7 @@ describe('Conversation Context Types', () => {
         userRole: 'architect',
         requirements: ['GDPR compliance', 'high availability'],
         timeline: '3 months',
-        budget: 'limited'
+        budget: 'limited',
       };
 
       expect(context.humanRequest).toBe('Help me migrate to microservices');
@@ -51,7 +51,7 @@ describe('Conversation Context Types', () => {
         'development',
         'migration',
         'production',
-        'maintenance'
+        'maintenance',
       ];
 
       phases.forEach(phase => {
@@ -71,7 +71,7 @@ describe('Conversation Context Types', () => {
         'developer',
         'manager',
         'ops',
-        'security'
+        'security',
       ];
 
       roles.forEach(role => {
@@ -90,7 +90,7 @@ describe('Conversation Context Types', () => {
         userGoals: [],
         focusAreas: [],
         constraints: [],
-        requirements: []
+        requirements: [],
       };
 
       expect(context.userGoals).toEqual([]);
@@ -104,7 +104,7 @@ describe('Conversation Context Types', () => {
         humanRequest: 'Help with API rate limiting & OAuth 2.0 "bearer" tokens',
         previousContext: 'User mentioned >10K req/s requirements',
         timeline: '2-3 months (Q4 2024)',
-        budget: '$50K-$100K range'
+        budget: '$50K-$100K range',
       };
 
       expect(context.humanRequest).toBe('Help with API rate limiting & OAuth 2.0 "bearer" tokens');
@@ -117,7 +117,9 @@ describe('Conversation Context Types', () => {
   describe('CONVERSATION_CONTEXT_SCHEMA', () => {
     it('should have correct schema structure', () => {
       expect(CONVERSATION_CONTEXT_SCHEMA.type).toBe('object');
-      expect(CONVERSATION_CONTEXT_SCHEMA.description).toBe('Rich context from the calling LLM about user goals and discussion history');
+      expect(CONVERSATION_CONTEXT_SCHEMA.description).toBe(
+        'Rich context from the calling LLM about user goals and discussion history'
+      );
       expect(CONVERSATION_CONTEXT_SCHEMA.additionalProperties).toBe(false);
       expect(CONVERSATION_CONTEXT_SCHEMA.properties).toBeDefined();
     });
@@ -133,7 +135,7 @@ describe('Conversation Context Types', () => {
         'userRole',
         'requirements',
         'timeline',
-        'budget'
+        'budget',
       ];
 
       expectedProperties.forEach(prop => {
@@ -175,9 +177,15 @@ describe('Conversation Context Types', () => {
     it('should include examples in descriptions', () => {
       const { properties } = CONVERSATION_CONTEXT_SCHEMA;
 
-      expect(properties.userGoals.description).toContain('["microservices migration", "improve security"]');
-      expect(properties.focusAreas.description).toContain('["security", "performance", "maintainability"]');
-      expect(properties.constraints.description).toContain('["GDPR compliance", "budget under $50k", "minimal downtime"]');
+      expect(properties.userGoals.description).toContain(
+        '["microservices migration", "improve security"]'
+      );
+      expect(properties.focusAreas.description).toContain(
+        '["security", "performance", "maintainability"]'
+      );
+      expect(properties.constraints.description).toContain(
+        '["GDPR compliance", "budget under $50k", "minimal downtime"]'
+      );
     });
   });
 
@@ -194,75 +202,77 @@ describe('Conversation Context Types', () => {
 
     it('should format human request', () => {
       const context: ConversationContext = {
-        humanRequest: 'Help me migrate to microservices'
+        humanRequest: 'Help me migrate to microservices',
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toContain('## User Context');
       expect(result).toContain('Human Request: "Help me migrate to microservices"');
     });
 
     it('should format user goals', () => {
       const context: ConversationContext = {
-        userGoals: ['improve scalability', 'reduce coupling']
+        userGoals: ['improve scalability', 'reduce coupling'],
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toContain('User Goals: improve scalability, reduce coupling');
     });
 
     it('should format focus areas', () => {
       const context: ConversationContext = {
-        focusAreas: ['security', 'performance']
+        focusAreas: ['security', 'performance'],
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toContain('Focus Areas: security, performance');
     });
 
     it('should format constraints', () => {
       const context: ConversationContext = {
-        constraints: ['budget under $50k', 'minimal downtime']
+        constraints: ['budget under $50k', 'minimal downtime'],
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toContain('Constraints: budget under $50k, minimal downtime');
     });
 
     it('should format project phase', () => {
       const context: ConversationContext = {
-        projectPhase: 'planning'
+        projectPhase: 'planning',
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toContain('Project Phase: planning');
     });
 
     it('should format user role', () => {
       const context: ConversationContext = {
-        userRole: 'architect'
+        userRole: 'architect',
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toContain('User Role: architect');
     });
 
     it('should format timeline', () => {
       const context: ConversationContext = {
-        timeline: '3 months'
+        timeline: '3 months',
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toContain('Timeline: 3 months');
     });
 
     it('should format previous context', () => {
       const context: ConversationContext = {
-        previousContext: 'User mentioned concerns about database splitting'
+        previousContext: 'User mentioned concerns about database splitting',
       };
       const result = formatContextForPrompt(context);
-      
-      expect(result).toContain('Previous Context: User mentioned concerns about database splitting');
+
+      expect(result).toContain(
+        'Previous Context: User mentioned concerns about database splitting'
+      );
     });
 
     it('should format all fields together', () => {
@@ -274,10 +284,10 @@ describe('Conversation Context Types', () => {
         projectPhase: 'planning',
         userRole: 'architect',
         timeline: '3 months',
-        previousContext: 'User mentioned concerns about database splitting'
+        previousContext: 'User mentioned concerns about database splitting',
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toContain('## User Context');
       expect(result).toContain('Human Request: "Help me migrate to microservices"');
       expect(result).toContain('User Goals: improve scalability, reduce coupling');
@@ -286,17 +296,19 @@ describe('Conversation Context Types', () => {
       expect(result).toContain('Project Phase: planning');
       expect(result).toContain('User Role: architect');
       expect(result).toContain('Timeline: 3 months');
-      expect(result).toContain('Previous Context: User mentioned concerns about database splitting');
+      expect(result).toContain(
+        'Previous Context: User mentioned concerns about database splitting'
+      );
     });
 
     it('should handle empty arrays gracefully', () => {
       const context: ConversationContext = {
         userGoals: [],
         focusAreas: [],
-        constraints: []
+        constraints: [],
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toBe('');
     });
 
@@ -304,10 +316,10 @@ describe('Conversation Context Types', () => {
       const context: ConversationContext = {
         humanRequest: 'Help with API rate limiting & OAuth 2.0 "bearer" tokens',
         constraints: ['Handle >10K req/s', 'PCI-DSS compliance'],
-        timeline: '2-3 months (Q4 2024)'
+        timeline: '2-3 months (Q4 2024)',
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toContain('API rate limiting & OAuth 2.0 "bearer" tokens');
       expect(result).toContain('Handle >10K req/s, PCI-DSS compliance');
       expect(result).toContain('2-3 months (Q4 2024)');
@@ -316,10 +328,10 @@ describe('Conversation Context Types', () => {
     it('should maintain proper formatting structure', () => {
       const context: ConversationContext = {
         humanRequest: 'Test request',
-        userRole: 'developer'
+        userRole: 'developer',
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).toContain('## User Context');
       expect(result).toContain('Human Request: "Test request"');
       expect(result).toContain('User Role: developer');
@@ -329,10 +341,10 @@ describe('Conversation Context Types', () => {
     it('should not include requirements field in formatting', () => {
       const context: ConversationContext = {
         requirements: ['GDPR compliance', 'high availability'],
-        userRole: 'architect'
+        userRole: 'architect',
       };
       const result = formatContextForPrompt(context);
-      
+
       expect(result).not.toContain('Requirements:');
       expect(result).toContain('User Role: architect');
     });
@@ -351,7 +363,7 @@ describe('Conversation Context Types', () => {
 
     it('should return true for context with humanRequest', () => {
       const context: ConversationContext = {
-        humanRequest: 'Help me migrate to microservices'
+        humanRequest: 'Help me migrate to microservices',
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(true);
@@ -359,7 +371,7 @@ describe('Conversation Context Types', () => {
 
     it('should return true for context with userGoals', () => {
       const context: ConversationContext = {
-        userGoals: ['improve scalability']
+        userGoals: ['improve scalability'],
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(true);
@@ -367,7 +379,7 @@ describe('Conversation Context Types', () => {
 
     it('should return true for context with focusAreas', () => {
       const context: ConversationContext = {
-        focusAreas: ['security']
+        focusAreas: ['security'],
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(true);
@@ -375,7 +387,7 @@ describe('Conversation Context Types', () => {
 
     it('should return true for context with constraints', () => {
       const context: ConversationContext = {
-        constraints: ['budget under $50k']
+        constraints: ['budget under $50k'],
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(true);
@@ -383,7 +395,7 @@ describe('Conversation Context Types', () => {
 
     it('should return true for context with previousContext', () => {
       const context: ConversationContext = {
-        previousContext: 'User mentioned concerns'
+        previousContext: 'User mentioned concerns',
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(true);
@@ -391,7 +403,7 @@ describe('Conversation Context Types', () => {
 
     it('should return true for context with projectPhase', () => {
       const context: ConversationContext = {
-        projectPhase: 'planning'
+        projectPhase: 'planning',
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(true);
@@ -399,7 +411,7 @@ describe('Conversation Context Types', () => {
 
     it('should return true for context with userRole', () => {
       const context: ConversationContext = {
-        userRole: 'architect'
+        userRole: 'architect',
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(true);
@@ -407,7 +419,7 @@ describe('Conversation Context Types', () => {
 
     it('should return true for context with requirements', () => {
       const context: ConversationContext = {
-        requirements: ['GDPR compliance']
+        requirements: ['GDPR compliance'],
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(true);
@@ -416,7 +428,7 @@ describe('Conversation Context Types', () => {
     it('should return false for context with only timeline and budget', () => {
       const context: ConversationContext = {
         timeline: '3 months',
-        budget: 'limited'
+        budget: 'limited',
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(false);
@@ -427,7 +439,7 @@ describe('Conversation Context Types', () => {
         userGoals: [],
         focusAreas: [],
         constraints: [],
-        requirements: []
+        requirements: [],
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(false);
@@ -437,7 +449,7 @@ describe('Conversation Context Types', () => {
       const context: ConversationContext = {
         timeline: '3 months',
         budget: 'limited',
-        userRole: 'developer' // This makes it meaningful
+        userRole: 'developer', // This makes it meaningful
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(true);
@@ -449,7 +461,7 @@ describe('Conversation Context Types', () => {
         userGoals: [], // Empty array should not count
         focusAreas: ['security'], // This makes it meaningful
         timeline: '3 months',
-        budget: 'limited'
+        budget: 'limited',
       };
       const result = hasMeaningfulContext(context);
       expect(result).toBe(true);
@@ -462,7 +474,7 @@ describe('Conversation Context Types', () => {
       const context = {
         humanRequest: null,
         userGoals: null,
-        focusAreas: null
+        focusAreas: null,
       } as any;
 
       expect(() => formatContextForPrompt(context)).not.toThrow();
@@ -473,7 +485,7 @@ describe('Conversation Context Types', () => {
       const longString = 'A'.repeat(10000);
       const context: ConversationContext = {
         humanRequest: longString,
-        previousContext: longString
+        previousContext: longString,
       };
 
       const formatted = formatContextForPrompt(context);
@@ -487,7 +499,7 @@ describe('Conversation Context Types', () => {
         userGoals: manyItems,
         focusAreas: manyItems,
         constraints: manyItems,
-        requirements: manyItems
+        requirements: manyItems,
       };
 
       const formatted = formatContextForPrompt(context);
@@ -501,7 +513,7 @@ describe('Conversation Context Types', () => {
         humanRequest: '🚀 Help with microservices migration 中文 العربية',
         userGoals: ['Improve 性能', 'Enhance أمان'],
         focusAreas: ['🔒 Security', '⚡ Performance'],
-        projectPhase: 'планирование'
+        projectPhase: 'планирование',
       };
 
       const formatted = formatContextForPrompt(context);
@@ -519,7 +531,7 @@ describe('Conversation Context Types', () => {
         { userRole: 'architect' },
         { userGoals: [] },
         { userGoals: ['goal1'] },
-        { humanRequest: 'test' }
+        { humanRequest: 'test' },
       ];
 
       testCases.forEach(context => {

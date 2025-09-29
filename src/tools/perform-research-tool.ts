@@ -54,7 +54,7 @@ ${research.answer || 'No conclusive answer found from available sources.'}
       response += '\n*No relevant sources found*\n';
     } else {
       for (const source of research.sources) {
-        response += `\n### ${this.formatSourceName(source.type)}
+        response += `\n### ${formatSourceName(source.type)}
 - **Confidence**: ${(source.confidence * 100).toFixed(1)}%
 - **Timestamp**: ${source.timestamp}
 `;
@@ -106,7 +106,9 @@ Confidence is below threshold (${(confidenceThreshold * 100).toFixed(0)}%).
 Consider performing a web search for additional information:
 
 **Suggested search queries**:
-${this.generateSearchQueries(question).map(q => `- "${q}"`).join('\n')}
+${generateSearchQueries(question)
+  .map(q => `- "${q}"`)
+  .join('\n')}
 `;
     }
 
@@ -161,7 +163,6 @@ ${this.generateSearchQueries(question).map(q => `- "${q}"`).join('\n')}
         },
       ],
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to perform research: ${error instanceof Error ? error.message : String(error)}`,

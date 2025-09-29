@@ -8,7 +8,7 @@ import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@j
 // Mock child_process execSync
 const mockExecSync = jest.fn();
 jest.unstable_mockModule('child_process', () => ({
-  execSync: mockExecSync
+  execSync: mockExecSync,
 }));
 
 // Mock file system operations
@@ -21,27 +21,27 @@ jest.unstable_mockModule('fs', () => ({
   readFileSync: mockReadFileSync,
   writeFileSync: mockWriteFileSync,
   existsSync: mockExistsSync,
-  mkdirSync: mockMkdirSync
+  mkdirSync: mockMkdirSync,
 }));
 
 describe('Deployment Readiness Tool', () => {
   const testProjectPath = '/tmp/test-project';
   let deploymentReadiness: any;
-  
+
   beforeAll(async () => {
     // Import after all mocks are set up
     const module = await import('../../src/tools/deployment-readiness-tool.js');
     deploymentReadiness = module.deploymentReadiness;
   });
-  
+
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Default mock implementations
     mockExistsSync.mockReturnValue(true);
     mockMkdirSync.mockReturnValue(undefined);
     mockWriteFileSync.mockReturnValue(undefined);
-    
+
     // Mock test execution with successful Jest output
     mockExecSync.mockReturnValue(`
 PASS tests/example.test.ts
@@ -53,7 +53,7 @@ Tests:       2 passed, 2 total
 Snapshots:   0 total
 Time:        0.123 s
 `);
-    
+
     // Mock coverage file with good coverage
     mockReadFileSync.mockImplementation((...args: unknown[]) => {
       const path = args[0] as string;
@@ -71,14 +71,14 @@ Time:        0.123 s
               duration: 300000,
               rollbackRequired: false,
               gitCommit: 'abc123',
-              deployedBy: 'test-user'
-            }
-          ]
+              deployedBy: 'test-user',
+            },
+          ],
         });
       }
       return '{}';
     });
-    
+
     // Mock process.env.USER for override tests
     process.env['USER'] = 'test-user';
   });
@@ -92,7 +92,7 @@ Time:        0.123 s
       // Use deployment_history operation which we know works
       const validInput = {
         operation: 'deployment_history',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await deploymentReadiness(validInput);
@@ -106,7 +106,7 @@ Time:        0.123 s
         operation: 'test_validation',
         projectPath: testProjectPath,
         maxTestFailures: 0,
-        requireTestCoverage: 80
+        requireTestCoverage: 80,
       };
 
       const result = await deploymentReadiness(validInput);
@@ -114,14 +114,16 @@ Time:        0.123 s
     });
 
     it('should validate deployment_history operation', async () => {
-      mockReadFileSync.mockReturnValue(JSON.stringify({
-        deployments: []
-      }));
+      mockReadFileSync.mockReturnValue(
+        JSON.stringify({
+          deployments: [],
+        })
+      );
 
       const validInput = {
         operation: 'deployment_history',
         projectPath: testProjectPath,
-        targetEnvironment: 'production'
+        targetEnvironment: 'production',
       };
 
       const result = await deploymentReadiness(validInput);
@@ -139,7 +141,7 @@ Time:        0.123 s
       const validInput = {
         operation: 'emergency_override',
         projectPath: testProjectPath,
-        businessJustification: 'Critical security fix required immediately'
+        businessJustification: 'Critical security fix required immediately',
       };
 
       const result = await deploymentReadiness(validInput);
@@ -149,7 +151,7 @@ Time:        0.123 s
     it('should reject invalid operation', async () => {
       const invalidInput = {
         operation: 'invalid_operation',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       await expect(deploymentReadiness(invalidInput)).rejects.toThrow();
@@ -157,7 +159,7 @@ Time:        0.123 s
 
     it('should use default values for optional parameters', async () => {
       const minimalInput = {
-        operation: 'deployment_history'
+        operation: 'deployment_history',
       };
 
       // Should not throw with minimal input
@@ -186,7 +188,7 @@ Time:        0.123 s
         if (path.includes('coverage/coverage-summary.json')) return true;
         return true;
       });
-      
+
       mockReadFileSync.mockImplementation((...args: unknown[]) => {
         const path = args[0] as string;
         if (path.includes('coverage/coverage-summary.json')) {
@@ -200,7 +202,7 @@ Time:        0.123 s
         operation: 'test_validation',
         projectPath: testProjectPath,
         maxTestFailures: 0,
-        requireTestCoverage: 80
+        requireTestCoverage: 80,
       };
 
       const result = await deploymentReadiness(input);
@@ -230,7 +232,7 @@ Time:        0.123 s
         operation: 'test_validation',
         projectPath: testProjectPath,
         maxTestFailures: 0,
-        blockOnFailingTests: true
+        blockOnFailingTests: true,
       };
 
       const result = await deploymentReadiness(input);
@@ -245,7 +247,7 @@ Time:        0.123 s
         if (path.includes('coverage/coverage-summary.json')) return true;
         return true; // default for other paths
       });
-      
+
       mockReadFileSync.mockImplementation((...args: unknown[]) => {
         const path = args[0] as string;
         if (path.includes('coverage/coverage-summary.json')) {
@@ -258,7 +260,7 @@ Time:        0.123 s
         operation: 'test_validation',
         projectPath: testProjectPath,
         requireTestCoverage: 80,
-        strictMode: true
+        strictMode: true,
       };
 
       const result = await deploymentReadiness(input);
@@ -273,7 +275,7 @@ Time:        0.123 s
 
       const input = {
         operation: 'test_validation',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await deploymentReadiness(input);
@@ -296,7 +298,7 @@ Time:        0.123 s
 
       const input = {
         operation: 'test_validation',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       await deploymentReadiness(input);
@@ -317,7 +319,7 @@ Time:        0.123 s
             duration: 300000,
             rollbackRequired: false,
             gitCommit: 'abc123',
-            deployedBy: 'user1'
+            deployedBy: 'user1',
           },
           {
             deploymentId: '2',
@@ -327,9 +329,9 @@ Time:        0.123 s
             duration: 250000,
             rollbackRequired: false,
             gitCommit: 'def456',
-            deployedBy: 'user2'
-          }
-        ]
+            deployedBy: 'user2',
+          },
+        ],
       };
 
       mockReadFileSync.mockReturnValue(JSON.stringify(mockHistory));
@@ -338,7 +340,7 @@ Time:        0.123 s
         operation: 'deployment_history',
         projectPath: testProjectPath,
         targetEnvironment: 'production',
-        deploymentSuccessThreshold: 80
+        deploymentSuccessThreshold: 80,
       };
 
       const result = await deploymentReadiness(input);
@@ -358,7 +360,7 @@ Time:        0.123 s
             rollbackRequired: true,
             failureReason: 'Database connection timeout',
             gitCommit: 'abc123',
-            deployedBy: 'user1'
+            deployedBy: 'user1',
           },
           {
             deploymentId: '2',
@@ -369,9 +371,9 @@ Time:        0.123 s
             rollbackRequired: true,
             failureReason: 'Test failures detected',
             gitCommit: 'def456',
-            deployedBy: 'user2'
-          }
-        ]
+            deployedBy: 'user2',
+          },
+        ],
       };
 
       mockReadFileSync.mockReturnValue(JSON.stringify(mockHistory));
@@ -381,7 +383,7 @@ Time:        0.123 s
         projectPath: testProjectPath,
         targetEnvironment: 'production',
         deploymentSuccessThreshold: 80,
-        blockOnRecentFailures: true
+        blockOnRecentFailures: true,
       };
 
       const result = await deploymentReadiness(input);
@@ -395,7 +397,7 @@ Time:        0.123 s
       const input = {
         operation: 'deployment_history',
         projectPath: testProjectPath,
-        targetEnvironment: 'production'
+        targetEnvironment: 'production',
       };
 
       const result = await deploymentReadiness(input);
@@ -410,7 +412,7 @@ Time:        0.123 s
       const input = {
         operation: 'deployment_history',
         projectPath: testProjectPath,
-        targetEnvironment: 'production'
+        targetEnvironment: 'production',
       };
 
       const result = await deploymentReadiness(input);
@@ -430,7 +432,7 @@ Time:        0.123 s
             rollbackRequired: true,
             failureReason: 'Test failures in authentication module',
             gitCommit: 'abc123',
-            deployedBy: 'user1'
+            deployedBy: 'user1',
           },
           {
             deploymentId: '2',
@@ -441,9 +443,9 @@ Time:        0.123 s
             rollbackRequired: true,
             failureReason: 'Test failures in user management',
             gitCommit: 'def456',
-            deployedBy: 'user2'
-          }
-        ]
+            deployedBy: 'user2',
+          },
+        ],
       };
 
       mockReadFileSync.mockReturnValue(JSON.stringify(mockHistory));
@@ -451,7 +453,7 @@ Time:        0.123 s
       const input = {
         operation: 'deployment_history',
         projectPath: testProjectPath,
-        targetEnvironment: 'production'
+        targetEnvironment: 'production',
       };
 
       const result = await deploymentReadiness(input);
@@ -463,14 +465,14 @@ Time:        0.123 s
     it('should combine test validation and deployment history', async () => {
       // Mock successful test execution with good coverage
       mockExecSync.mockReturnValue('PASS all tests passed');
-      
+
       // Mock coverage to meet requirements
       mockExistsSync.mockImplementation((...args: unknown[]) => {
         const path = args[0] as string;
         if (path.includes('coverage/coverage-summary.json')) return true;
         return true;
       });
-      
+
       mockReadFileSync.mockImplementation((...args: unknown[]) => {
         const path = args[0] as string;
         if (path.includes('coverage/coverage-summary.json')) {
@@ -487,9 +489,9 @@ Time:        0.123 s
                 duration: 300000,
                 rollbackRequired: false,
                 gitCommit: 'abc123',
-                deployedBy: 'user1'
-              }
-            ]
+                deployedBy: 'user1',
+              },
+            ],
           });
         }
         return '{}';
@@ -499,7 +501,7 @@ Time:        0.123 s
         operation: 'full_audit',
         projectPath: testProjectPath,
         targetEnvironment: 'production',
-        requireTestCoverage: 80
+        requireTestCoverage: 80,
       };
 
       const result = await deploymentReadiness(input);
@@ -529,9 +531,9 @@ Time:        0.123 s
             duration: 300000,
             rollbackRequired: false,
             gitCommit: 'abc123',
-            deployedBy: 'user1'
-          }
-        ]
+            deployedBy: 'user1',
+          },
+        ],
       };
       mockReadFileSync.mockReturnValue(JSON.stringify(mockHistory));
 
@@ -539,7 +541,7 @@ Time:        0.123 s
         operation: 'full_audit',
         projectPath: testProjectPath,
         targetEnvironment: 'production',
-        blockOnFailingTests: true
+        blockOnFailingTests: true,
       };
 
       const result = await deploymentReadiness(input);
@@ -560,15 +562,15 @@ Time:        0.123 s
         operation: 'emergency_override',
         projectPath: testProjectPath,
         businessJustification: 'Critical security vulnerability needs immediate patch',
-        targetEnvironment: 'production'
+        targetEnvironment: 'production',
       };
 
       const result = await deploymentReadiness(input);
       expect(result.content[0].text).toContain('DEPLOYMENT READY');
       expect(result.content[0].text).toContain('Emergency override active');
-      
+
       // Verify override was logged - check the emergency-overrides.json write call specifically
-      const overrideWriteCall = mockWriteFileSync.mock.calls.find((call: unknown[]) => 
+      const overrideWriteCall = mockWriteFileSync.mock.calls.find((call: unknown[]) =>
         String(call[0]).includes('emergency-overrides.json')
       );
       expect(overrideWriteCall).toBeDefined();
@@ -580,7 +582,7 @@ Time:        0.123 s
     it('should reject emergency override without justification', async () => {
       const input = {
         operation: 'emergency_override',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
         // Missing businessJustification
       };
 
@@ -593,24 +595,24 @@ Time:        0.123 s
           timestamp: '2024-01-01T00:00:00Z',
           justification: 'Previous emergency fix',
           environment: 'production',
-          overriddenBy: 'user1'
-        }
+          overriddenBy: 'user1',
+        },
       ];
-      
+
       mockReadFileSync.mockReturnValue(JSON.stringify(existingOverrides));
 
       const input = {
         operation: 'emergency_override',
         projectPath: testProjectPath,
         businessJustification: 'New critical fix',
-        targetEnvironment: 'production'
+        targetEnvironment: 'production',
       };
 
       const result = await deploymentReadiness(input);
       expect(result).toBeDefined();
-      
+
       // Should append to existing overrides
-      const writeCall = mockWriteFileSync.mock.calls.find((call: unknown[]) => 
+      const writeCall = mockWriteFileSync.mock.calls.find((call: unknown[]) =>
         String(call[0]).includes('emergency-overrides.json')
       );
       expect(writeCall).toBeDefined();
@@ -627,25 +629,24 @@ Time:        0.123 s
 
       const input = {
         operation: 'check_readiness',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       await deploymentReadiness(input);
-      
-      expect(mockMkdirSync).toHaveBeenCalledWith(
-        expect.stringContaining('.mcp-adr-cache'),
-        { recursive: true }
-      );
+
+      expect(mockMkdirSync).toHaveBeenCalledWith(expect.stringContaining('.mcp-adr-cache'), {
+        recursive: true,
+      });
     });
 
     it('should cache results after analysis', async () => {
       const input = {
         operation: 'check_readiness',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       await deploymentReadiness(input);
-      
+
       // Should write cache file
       expect(mockWriteFileSync).toHaveBeenCalledWith(
         expect.stringContaining('deployment-readiness-cache.json'),
@@ -658,7 +659,7 @@ Time:        0.123 s
     it('should handle invalid project path gracefully', async () => {
       const input = {
         operation: 'check_readiness',
-        projectPath: '/nonexistent/path'
+        projectPath: '/nonexistent/path',
       };
 
       // Should not throw but handle gracefully
@@ -669,7 +670,7 @@ Time:        0.123 s
     it('should handle file system errors gracefully', async () => {
       // Test with invalid operation to trigger schema validation error
       const input = {
-        operation: 'invalid_operation_that_does_not_exist'
+        operation: 'invalid_operation_that_does_not_exist',
       };
 
       await expect(deploymentReadiness(input)).rejects.toThrow('DEPLOYMENT_READINESS_ERROR');
@@ -686,7 +687,7 @@ Time:        0.123 s
 
       const input = {
         operation: 'deployment_history',
-        projectPath: testProjectPath
+        projectPath: testProjectPath,
       };
 
       const result = await deploymentReadiness(input);
@@ -708,7 +709,7 @@ Time:        0.123 s
         operation: 'test_validation',
         projectPath: testProjectPath,
         maxTestFailures: 0,
-        requireTestCoverage: 90
+        requireTestCoverage: 90,
       };
 
       const result = await deploymentReadiness(input);
@@ -727,7 +728,7 @@ Time:        0.123 s
             rollbackRequired: true,
             failureReason: 'Database connection timeout occurred',
             gitCommit: 'abc123',
-            deployedBy: 'user1'
+            deployedBy: 'user1',
           },
           {
             deploymentId: '2',
@@ -738,9 +739,9 @@ Time:        0.123 s
             rollbackRequired: true,
             failureReason: 'Build failed due to compilation errors',
             gitCommit: 'def456',
-            deployedBy: 'user2'
-          }
-        ]
+            deployedBy: 'user2',
+          },
+        ],
       };
 
       mockReadFileSync.mockReturnValue(JSON.stringify(mockHistory));
@@ -748,7 +749,7 @@ Time:        0.123 s
       const input = {
         operation: 'deployment_history',
         projectPath: testProjectPath,
-        targetEnvironment: 'production'
+        targetEnvironment: 'production',
       };
 
       const result = await deploymentReadiness(input);
@@ -766,8 +767,8 @@ Time:        0.123 s
           duration: 300000,
           rollbackRequired: i >= 8,
           gitCommit: `commit${i}`,
-          deployedBy: 'user1'
-        }))
+          deployedBy: 'user1',
+        })),
       };
 
       mockReadFileSync.mockReturnValue(JSON.stringify(mockHistory));
@@ -775,7 +776,7 @@ Time:        0.123 s
       const input = {
         operation: 'deployment_history',
         projectPath: testProjectPath,
-        targetEnvironment: 'production'
+        targetEnvironment: 'production',
       };
 
       const result = await deploymentReadiness(input);

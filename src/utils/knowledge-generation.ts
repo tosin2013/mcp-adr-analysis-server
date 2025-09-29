@@ -9,7 +9,7 @@ import {
   ArchitecturalDomain,
   KnowledgeGenerationConfig,
   ArchitecturalContext,
-  ProjectContext
+  ProjectContext,
 } from '../types/knowledge-generation.js';
 import { PromptObject } from './prompt-composition.js';
 import { getDomainTemplate } from '../templates/domain-knowledge-templates.js';
@@ -28,7 +28,7 @@ const DEFAULT_CONFIG: Required<KnowledgeGenerationConfig> = {
   maxKnowledgeItems: 50,
   maxTokens: 5000,
   relevanceThreshold: 0.6,
-  parallelGeneration: true
+  parallelGeneration: true,
 };
 
 const KNOWLEDGE_VERSION = '1.0.0';
@@ -52,7 +52,9 @@ export async function generateArchitecturalKnowledge(
     }
 
     const mergedConfig = { ...DEFAULT_CONFIG, ...config };
-    console.error(`[DEBUG] Generating knowledge generation prompt for domains: ${mergedConfig.domains.join(', ')}`);
+    console.error(
+      `[DEBUG] Generating knowledge generation prompt for domains: ${mergedConfig.domains.join(', ')}`
+    );
 
     // Determine target domains
     let targetDomains = mergedConfig.domains;
@@ -69,13 +71,15 @@ export async function generateArchitecturalKnowledge(
         hasTemplate: !!template,
         categoryCount: template?.categories.length || 0,
         // Only include detailed categories for small technology lists to avoid exponential growth
-        categories: (context.technologies?.length || 0) <= 5 ?
-          template?.categories.map(cat => ({
-            category: cat.category,
-            itemCount: cat.items.length,
-            priority: cat.priority,
-            applicability: cat.applicability
-          })) || [] : []
+        categories:
+          (context.technologies?.length || 0) <= 5
+            ? template?.categories.map(cat => ({
+                category: cat.category,
+                itemCount: cat.items.length,
+                priority: cat.priority,
+                applicability: cat.applicability,
+              })) || []
+            : [],
       };
     });
 
@@ -95,11 +99,13 @@ ${targetDomains.map((domain, index) => `${index + 1}. **${domain}**`).join('\n')
 
 ## Project Context
 - **Project Path**: ${context.projectPath || 'Not specified'}
-- **Technologies**: ${context.technologies?.length ?
-    (context.technologies.length <= 5 ?
-      context.technologies.join(', ') :
-      `${context.technologies.slice(0, 5).join(', ')} and ${context.technologies.length - 5} more`
-    ) : 'auto-detect from project context'}
+- **Technologies**: ${
+      context.technologies?.length
+        ? context.technologies.length <= 5
+          ? context.technologies.join(', ')
+          : `${context.technologies.slice(0, 5).join(', ')} and ${context.technologies.length - 5} more`
+        : 'auto-detect from project context'
+    }
 - **Patterns**: ${context.patterns?.join(', ') || 'Not specified'}
 - **Existing ADRs**: ${context.existingAdrs?.length || 0} ADRs
 - **Project Type**: ${context.projectType || 'Not specified'}
@@ -114,14 +120,19 @@ ${targetDomains.map((domain, index) => `${index + 1}. **${domain}**`).join('\n')
 - **Security Validation**: ${mergedConfig.securityValidation ? 'Enabled' : 'Disabled'}
 
 ## Domain Templates Available
-${domainTemplatesInfo.map(info => `
+${domainTemplatesInfo
+  .map(
+    info => `
 ### ${info.domain}
 - **Template Available**: ${info.hasTemplate ? 'Yes' : 'No'}
-- **Categories**: ${info.categoryCount}${info.categories.length > 0 ?
-  `\n${info.categories.map(cat => `  - ${cat.category} (${cat.itemCount} items, priority: ${cat.priority})`).join('\n')}` :
-  ' (details omitted for performance)'
-}
-`).join('\n')}
+- **Categories**: ${info.categoryCount}${
+      info.categories.length > 0
+        ? `\n${info.categories.map(cat => `  - ${cat.category} (${cat.itemCount} items, priority: ${cat.priority})`).join('\n')}`
+        : ' (details omitted for performance)'
+    }
+`
+  )
+  .join('\n')}
 
 ## Required Knowledge Generation Tasks
 
@@ -255,10 +266,9 @@ This is a comprehensive architectural knowledge generation task. You must:
         depth: mergedConfig.depth,
         cacheKey,
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate knowledge generation prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -278,7 +288,9 @@ export async function enhancePromptWithKnowledge(
   config: KnowledgeGenerationConfig = {}
 ): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
-    console.error(`[DEBUG] Generating prompt enhancement request for domains: ${domains.join(', ')}`);
+    console.error(
+      `[DEBUG] Generating prompt enhancement request for domains: ${domains.join(', ')}`
+    );
 
     const mergedConfig = { ...DEFAULT_CONFIG, ...config, domains };
 
@@ -286,7 +298,7 @@ export async function enhancePromptWithKnowledge(
     const enhancedContext = {
       projectPath: './default-project', // Fallback project path
       ...originalPrompt.context,
-      ...context
+      ...context,
     };
 
     // Generate knowledge generation prompt first
@@ -375,10 +387,9 @@ You must:
         config: mergedConfig,
         knowledgeEnhanced: true,
         securityLevel: 'high',
-        expectedFormat: 'enhanced_prompt'
-      }
+        expectedFormat: 'enhanced_prompt',
+      },
     };
-
   } catch (error) {
     console.error('[ERROR] Prompt enhancement generation failed:', error);
     throw new McpAdrError(
@@ -409,33 +420,38 @@ Please analyze the project context and detect the most relevant architectural do
 - **Description**: ${projectContext.description || 'Not specified'}
 
 ## Technology Stack
-${projectContext.technologies.length > 0
-  ? projectContext.technologies.map((tech, index) => `${index + 1}. ${tech}`).join('\n')
-  : 'No technologies specified'
+${
+  projectContext.technologies.length > 0
+    ? projectContext.technologies.map((tech, index) => `${index + 1}. ${tech}`).join('\n')
+    : 'No technologies specified'
 }
 
 ## File Types Present
-${projectContext.fileTypes.length > 0
-  ? projectContext.fileTypes.map((type, index) => `${index + 1}. ${type}`).join('\n')
-  : 'No file types specified'
+${
+  projectContext.fileTypes.length > 0
+    ? projectContext.fileTypes.map((type, index) => `${index + 1}. ${type}`).join('\n')
+    : 'No file types specified'
 }
 
 ## Directory Structure
-${projectContext.directoryStructure.length > 0
-  ? projectContext.directoryStructure.map((dir, index) => `${index + 1}. ${dir}`).join('\n')
-  : 'No directory structure provided'
+${
+  projectContext.directoryStructure.length > 0
+    ? projectContext.directoryStructure.map((dir, index) => `${index + 1}. ${dir}`).join('\n')
+    : 'No directory structure provided'
 }
 
 ## Package Files
-${projectContext.packageFiles.length > 0
-  ? projectContext.packageFiles.map((file, index) => `${index + 1}. ${file}`).join('\n')
-  : 'No package files found'
+${
+  projectContext.packageFiles.length > 0
+    ? projectContext.packageFiles.map((file, index) => `${index + 1}. ${file}`).join('\n')
+    : 'No package files found'
 }
 
 ## Configuration Files
-${projectContext.configFiles.length > 0
-  ? projectContext.configFiles.map((file, index) => `${index + 1}. ${file}`).join('\n')
-  : 'No configuration files found'
+${
+  projectContext.configFiles.length > 0
+    ? projectContext.configFiles.map((file, index) => `${index + 1}. ${file}`).join('\n')
+    : 'No configuration files found'
 }
 
 ## Available Architectural Domains
@@ -559,15 +575,21 @@ You must:
         operation: 'domain_detection',
         projectContext,
         availableDomains: [
-          'web-applications', 'mobile-applications', 'microservices',
-          'database-design', 'cloud-infrastructure', 'devops-cicd',
-          'security-patterns', 'performance-optimization', 'api-design', 'data-architecture'
+          'web-applications',
+          'mobile-applications',
+          'microservices',
+          'database-design',
+          'cloud-infrastructure',
+          'devops-cicd',
+          'security-patterns',
+          'performance-optimization',
+          'api-design',
+          'data-architecture',
         ],
         securityLevel: 'medium',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     console.error('[ERROR] Domain detection prompt generation failed:', error);
     throw new McpAdrError(
@@ -603,9 +625,16 @@ export function getAvailableDomainsInfo(): Array<{
   categoryCount: number;
 }> {
   const availableDomains: ArchitecturalDomain[] = [
-    'web-applications', 'mobile-applications', 'microservices',
-    'database-design', 'cloud-infrastructure', 'devops-cicd',
-    'security-patterns', 'performance-optimization', 'api-design', 'data-architecture'
+    'web-applications',
+    'mobile-applications',
+    'microservices',
+    'database-design',
+    'cloud-infrastructure',
+    'devops-cicd',
+    'security-patterns',
+    'performance-optimization',
+    'api-design',
+    'data-architecture',
   ];
 
   return availableDomains.map(domain => {
@@ -613,7 +642,7 @@ export function getAvailableDomainsInfo(): Array<{
     return {
       domain,
       hasTemplate: !!template,
-      categoryCount: template?.categories.length || 0
+      categoryCount: template?.categories.length || 0,
     };
   });
 }
@@ -637,7 +666,10 @@ export function validateKnowledgeGenerationInputs(
     throw new McpAdrError('Maximum knowledge items limit exceeded (maximum 200)', 'INVALID_INPUT');
   }
 
-  if (config.relevanceThreshold && (config.relevanceThreshold < 0 || config.relevanceThreshold > 1)) {
+  if (
+    config.relevanceThreshold &&
+    (config.relevanceThreshold < 0 || config.relevanceThreshold > 1)
+  ) {
     throw new McpAdrError('Relevance threshold must be between 0 and 1', 'INVALID_INPUT');
   }
 }
@@ -665,9 +697,16 @@ export function isDomainSupported(domain: ArchitecturalDomain): boolean {
  */
 export function getSupportedDomains(): ArchitecturalDomain[] {
   return [
-    'web-applications', 'mobile-applications', 'microservices',
-    'database-design', 'cloud-infrastructure', 'devops-cicd',
-    'security-patterns', 'performance-optimization', 'api-design', 'data-architecture'
+    'web-applications',
+    'mobile-applications',
+    'microservices',
+    'database-design',
+    'cloud-infrastructure',
+    'devops-cicd',
+    'security-patterns',
+    'performance-optimization',
+    'api-design',
+    'data-architecture',
   ];
 }
 
@@ -702,12 +741,14 @@ export function validateKnowledgeConfig(config: Partial<KnowledgeGenerationConfi
 /**
  * Create domain-specific knowledge configuration
  */
-export function createDomainKnowledgeConfig(domain: ArchitecturalDomain): KnowledgeGenerationConfig {
+export function createDomainKnowledgeConfig(
+  domain: ArchitecturalDomain
+): KnowledgeGenerationConfig {
   return {
     domains: [domain],
     depth: 'intermediate',
     cacheEnabled: true,
-    maxKnowledgeItems: 50
+    maxKnowledgeItems: 50,
   };
 }
 
@@ -730,7 +771,7 @@ export async function generateDomainKnowledge(
       operation: 'knowledge_generation',
       domain,
       depth,
-      knowledgeGenerated: true
-    }
+      knowledgeGenerated: true,
+    },
   };
 }
