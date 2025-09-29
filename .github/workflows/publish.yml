@@ -22,7 +22,7 @@ on:
       dry_run:
         description: 'Perform a dry run without publishing'
         required: false
-        default: false
+        default: true
         type: boolean
   # Trigger when tags are created (for compatibility with existing auto-release workflows)
   push:
@@ -43,7 +43,7 @@ on:
       dry_run:
         description: 'Perform a dry run without publishing'
         required: false
-        default: false
+        default: true
         type: boolean
     secrets:
       NPM_TOKEN:
