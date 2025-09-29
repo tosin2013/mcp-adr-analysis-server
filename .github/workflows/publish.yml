@@ -28,9 +28,29 @@ on:
   push:
     tags:
       - 'v*'
+  # Allow this workflow to be called from other workflows
+  workflow_call:
+    inputs:
+      version:
+        description: 'Version to publish (e.g., v1.2.3)'
+        required: false
+        type: string
+      skip_tests:
+        description: 'Skip tests for emergency releases'
+        required: false
+        default: false
+        type: boolean
+      dry_run:
+        description: 'Perform a dry run without publishing'
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      NPM_TOKEN:
+        required: true
 
 jobs:
-  # First job: Create or update release via Release Drafter (for manual dispatch)
+  # First job: Create or update release via Release Drafter (for manual dispatch only)
   create-release:
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
@@ -168,8 +188,8 @@ jobs:
   test-and-publish:
     runs-on: ubuntu-latest
     needs: [create-release]
-    # Run if we created a release OR if triggered by tag push
-    if: always() && (needs.create-release.result == 'success' || github.event_name == 'push')
+    # Run if we created a release OR if triggered by tag push OR called from another workflow
+    if: always() && (needs.create-release.result == 'success' || github.event_name == 'push' || github.event_name == 'workflow_call')
     permissions:
       contents: write
       packages: write
@@ -184,7 +204,13 @@ jobs:
       - name: Determine version and source
         id: version
         run: |
-          if [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
+          if [[ "${{ github.event_name }}" == "workflow_call" && -n "${{ inputs.version }}" ]]; then
+            # Called from another workflow with version
+            TAG_NAME="${{ inputs.version }}"
+            VERSION=${TAG_NAME#v}  # Remove 'v' prefix
+            SOURCE="workflow_call"
+            echo "🔄 Publishing from workflow call: ${TAG_NAME} (version: ${VERSION})"
+          elif [[ "${{ github.event_name }}" == "push" && "${{ github.ref }}" == refs/tags/* ]]; then
             # Triggered by tag push
             TAG_NAME="${{ github.ref_name }}"
             VERSION=${TAG_NAME#v}  # Remove 'v' prefix

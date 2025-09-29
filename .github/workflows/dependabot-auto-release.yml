@@ -9,6 +9,8 @@ jobs:
   auto-release:
     if: github.event.pull_request.merged == true && github.actor == 'dependabot[bot]'
     runs-on: ubuntu-latest
+    outputs:
+      new-version: ${{ steps.bump-version.outputs.version }}
     permissions:
       contents: write
       pull-requests: write
@@ -33,6 +35,7 @@ jobs:
           git config --local user.name "GitHub Action"
 
       - name: Bump version for dependency update
+        id: bump-version
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
@@ -42,7 +45,7 @@ jobs:
           if [[ "${PR_TITLE}" == *"major"* ]] || [[ "${PR_TITLE}" == *"breaking"* ]]; then
             VERSION_TYPE="major"
           elif [[ "${PR_TITLE}" == *"minor"* ]] || [[ "${PR_TITLE}" == *"feature"* ]]; then
-            VERSION_TYPE="minor"  
+            VERSION_TYPE="minor"
           else
             VERSION_TYPE="patch"
           fi
@@ -54,6 +57,7 @@ jobs:
 
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
 
       - name: Commit version bump
@@ -223,3 +227,15 @@ jobs:
           echo "- ✅ Release published" >> $GITHUB_STEP_SUMMARY
           echo "- 🔄 AI release notes enhancement will trigger" >> $GITHUB_STEP_SUMMARY
           echo "- 📦 NPM publishing workflow will trigger" >> $GITHUB_STEP_SUMMARY
+
+  # Trigger NPM publishing
+  publish-npm:
+    needs: auto-release
+    if: github.event.pull_request.merged == true && github.actor == 'dependabot[bot]'
+    uses: ./.github/workflows/publish.yml
+    with:
+      version: v${{ needs.auto-release.outputs.new-version }}
+      skip_tests: false
+      dry_run: false
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
