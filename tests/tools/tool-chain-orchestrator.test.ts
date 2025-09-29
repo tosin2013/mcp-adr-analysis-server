@@ -21,14 +21,14 @@ const mockAddToolExecution = jest.fn() as jest.MockedFunction<any>;
 jest.mock('../../src/config/ai-config.js', () => ({
   loadAIConfig: mockLoadAIConfig,
   isAIExecutionEnabled: mockIsAIExecutionEnabled,
-  getRecommendedModel: mockGetRecommendedModel
+  getRecommendedModel: mockGetRecommendedModel,
 }));
 
 jest.mock('../../src/utils/knowledge-graph-manager.js', () => ({
   KnowledgeGraphManager: jest.fn().mockImplementation(() => ({
     createIntent: mockCreateIntent,
-    addToolExecution: mockAddToolExecution
-  }))
+    addToolExecution: mockAddToolExecution,
+  })),
 }));
 
 describe('toolChainOrchestrator', () => {
@@ -37,7 +37,7 @@ describe('toolChainOrchestrator', () => {
     apiKey: 'test-api-key',
     maxTokens: 4000,
     siteUrl: 'https://test.com',
-    siteName: 'Test Site'
+    siteName: 'Test Site',
   };
 
   const baseArgs = {
@@ -48,8 +48,8 @@ describe('toolChainOrchestrator', () => {
       adrDirectory: 'docs/adrs',
       todoPath: 'TODO.md',
       hasADRs: true,
-      projectType: 'web-app'
-    }
+      projectType: 'web-app',
+    },
   };
 
   beforeEach(() => {
@@ -59,7 +59,7 @@ describe('toolChainOrchestrator', () => {
     mockGetRecommendedModel.mockReturnValue('anthropic/claude-3-sonnet');
     mockCreateIntent.mockResolvedValue('intent-123');
     mockAddToolExecution.mockResolvedValue(undefined);
-    
+
     // Reset environment variables
     delete process.env.OPENROUTER_API_KEY;
     delete process.env.AI_EXECUTION_MODE;
@@ -69,7 +69,7 @@ describe('toolChainOrchestrator', () => {
     it('should handle AI execution disabled for generate_plan', async () => {
       // Test that plan generation properly handles AI being disabled
       mockIsAIExecutionEnabled.mockReturnValue(false);
-      
+
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(McpAdrError);
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow('AI execution not enabled');
     });
@@ -93,11 +93,13 @@ describe('toolChainOrchestrator', () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         status: 401,
-        statusText: 'Unauthorized'
+        statusText: 'Unauthorized',
       } as Response);
 
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(McpAdrError);
-      await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow('Tool chain orchestration failed');
+      await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(
+        'Tool chain orchestration failed'
+      );
     });
 
     it('should handle empty AI response', async () => {
@@ -106,16 +108,20 @@ describe('toolChainOrchestrator', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{
-            message: {
-              content: null
-            }
-          }]
-        })
+          choices: [
+            {
+              message: {
+                content: null,
+              },
+            },
+          ],
+        }),
       } as Response);
 
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(McpAdrError);
-      await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow('Tool chain orchestration failed');
+      await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(
+        'Tool chain orchestration failed'
+      );
     });
 
     it('should validate plan safety - max steps constraint', async () => {
@@ -127,15 +133,17 @@ describe('toolChainOrchestrator', () => {
           maxSteps: 0, // Invalid constraint to trigger validation
           timeLimit: '5 minutes',
           excludeTools: [],
-          prioritizeSpeed: false
-        }
+          prioritizeSpeed: false,
+        },
       };
 
       // Test with AI disabled to focus on input validation
       mockIsAIExecutionEnabled.mockReturnValue(false);
-      
+
       await expect(toolChainOrchestrator(argsWithConstraints)).rejects.toThrow(McpAdrError);
-      await expect(toolChainOrchestrator(argsWithConstraints)).rejects.toThrow('AI execution not enabled');
+      await expect(toolChainOrchestrator(argsWithConstraints)).rejects.toThrow(
+        'AI execution not enabled'
+      );
     });
 
     it('should validate plan safety - excluded tools', async () => {
@@ -145,21 +153,23 @@ describe('toolChainOrchestrator', () => {
         constraints: {
           maxSteps: 10,
           excludeTools: ['security_audit'],
-          prioritizeSpeed: false
-        }
+          prioritizeSpeed: false,
+        },
       };
 
       // Test with AI disabled to focus on constraint handling
       mockIsAIExecutionEnabled.mockReturnValue(false);
-      
+
       await expect(toolChainOrchestrator(argsWithConstraints)).rejects.toThrow(McpAdrError);
-      await expect(toolChainOrchestrator(argsWithConstraints)).rejects.toThrow('AI execution not enabled');
+      await expect(toolChainOrchestrator(argsWithConstraints)).rejects.toThrow(
+        'AI execution not enabled'
+      );
     });
 
     it('should validate plan safety - unknown tools', async () => {
       // Test that the function properly handles tool validation
       mockIsAIExecutionEnabled.mockReturnValue(false);
-      
+
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(McpAdrError);
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow('AI execution not enabled');
     });
@@ -167,7 +177,7 @@ describe('toolChainOrchestrator', () => {
     it('should validate plan safety - invalid dependencies', async () => {
       // Test dependency validation handling
       mockIsAIExecutionEnabled.mockReturnValue(false);
-      
+
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(McpAdrError);
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow('AI execution not enabled');
     });
@@ -175,7 +185,7 @@ describe('toolChainOrchestrator', () => {
     it('should validate plan safety - low confidence', async () => {
       // Test confidence validation handling
       mockIsAIExecutionEnabled.mockReturnValue(false);
-      
+
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(McpAdrError);
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow('AI execution not enabled');
     });
@@ -188,18 +198,20 @@ describe('toolChainOrchestrator', () => {
         category: 'analysis',
         complexity: 'moderate',
         suggestedTools: ['analyze_project_ecosystem', 'suggest_adrs'],
-        confidence: 0.85
+        confidence: 0.85,
       };
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{
-            message: {
-              content: JSON.stringify(mockAnalysis)
-            }
-          }]
-        })
+          choices: [
+            {
+              message: {
+                content: JSON.stringify(mockAnalysis),
+              },
+            },
+          ],
+        }),
       } as Response);
 
       const args = { ...baseArgs, operation: 'analyze_intent' as const };
@@ -239,18 +251,20 @@ describe('toolChainOrchestrator', () => {
         category: 'generation',
         complexity: 'moderate',
         suggestedTools: ['analyze_project_ecosystem', 'suggest_adrs', 'generate_adrs_from_prd'],
-        confidence: 0.9
+        confidence: 0.9,
       };
 
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{
-            message: {
-              content: JSON.stringify(mockAnalysis)
-            }
-          }]
-        })
+          choices: [
+            {
+              message: {
+                content: JSON.stringify(mockAnalysis),
+              },
+            },
+          ],
+        }),
       } as Response);
 
       const args = { ...baseArgs, operation: 'suggest_tools' as const };
@@ -281,8 +295,8 @@ describe('toolChainOrchestrator', () => {
           conversationLength: 5,
           previousActions: ['analyze_project_ecosystem'],
           confusionIndicators: [],
-          lastSuccessfulAction: 'analyze_project_ecosystem'
-        }
+          lastSuccessfulAction: 'analyze_project_ecosystem',
+        },
       };
 
       const result = await toolChainOrchestrator(args);
@@ -299,10 +313,15 @@ describe('toolChainOrchestrator', () => {
         userRequest: 'I am confused and stuck, nothing is working, help me',
         sessionContext: {
           conversationLength: 25,
-          previousActions: ['analyze_project_ecosystem', 'analyze_project_ecosystem', 'analyze_project_ecosystem', 'analyze_project_ecosystem'],
+          previousActions: [
+            'analyze_project_ecosystem',
+            'analyze_project_ecosystem',
+            'analyze_project_ecosystem',
+            'analyze_project_ecosystem',
+          ],
           confusionIndicators: ['repeated failures'],
-          stuckOnTask: 'generating ADRs'
-        }
+          stuckOnTask: 'generating ADRs',
+        },
       };
 
       const result = await toolChainOrchestrator(args);
@@ -324,8 +343,8 @@ describe('toolChainOrchestrator', () => {
         sessionContext: {
           conversationLength: 22, // Above 20 threshold
           previousActions: ['analyze_project_ecosystem', 'analyze_project_ecosystem'],
-          confusionIndicators: []
-        }
+          confusionIndicators: [],
+        },
       };
 
       const result = await toolChainOrchestrator(args);
@@ -344,8 +363,8 @@ describe('toolChainOrchestrator', () => {
         sessionContext: {
           conversationLength: 8,
           previousActions: ['analyze_project_ecosystem', 'suggest_adrs'],
-          lastSuccessfulAction: 'suggest_adrs'
-        }
+          lastSuccessfulAction: 'suggest_adrs',
+        },
       };
 
       const result = await toolChainOrchestrator(args);
@@ -366,8 +385,8 @@ describe('toolChainOrchestrator', () => {
         sessionContext: {
           conversationLength: 30,
           previousActions: Array(10).fill('analyze_project_ecosystem'),
-          stuckOnTask: 'generating ADRs'
-        }
+          stuckOnTask: 'generating ADRs',
+        },
       };
 
       const result = await toolChainOrchestrator(args);
@@ -387,8 +406,8 @@ describe('toolChainOrchestrator', () => {
         sessionContext: {
           conversationLength: 18,
           previousActions: ['analyze_project_ecosystem'],
-          lastSuccessfulAction: 'analyze_project_ecosystem'
-        }
+          lastSuccessfulAction: 'analyze_project_ecosystem',
+        },
       };
 
       const result = await toolChainOrchestrator(args);
@@ -405,7 +424,7 @@ describe('toolChainOrchestrator', () => {
       const args = {
         ...baseArgs,
         operation: 'analyze_intent' as const,
-        userRequest: 'generate ADRs and create documentation'
+        userRequest: 'generate ADRs and create documentation',
       };
 
       const result = await toolChainOrchestrator(args);
@@ -420,7 +439,7 @@ describe('toolChainOrchestrator', () => {
       const args = {
         ...baseArgs,
         operation: 'analyze_intent' as const,
-        userRequest: 'troubleshoot deployment issues and debug problems'
+        userRequest: 'troubleshoot deployment issues and debug problems',
       };
 
       const result = await toolChainOrchestrator(args);
@@ -435,7 +454,7 @@ describe('toolChainOrchestrator', () => {
       const args = {
         ...baseArgs,
         operation: 'analyze_intent' as const,
-        userRequest: 'analyze security vulnerabilities and audit code'
+        userRequest: 'analyze security vulnerabilities and audit code',
       };
 
       const result = await toolChainOrchestrator(args);
@@ -450,7 +469,7 @@ describe('toolChainOrchestrator', () => {
       const args = {
         ...baseArgs,
         operation: 'analyze_intent' as const,
-        userRequest: 'random unrelated request'
+        userRequest: 'random unrelated request',
       };
 
       const result = await toolChainOrchestrator(args);
@@ -463,7 +482,7 @@ describe('toolChainOrchestrator', () => {
     it('should handle invalid operation', async () => {
       const args = {
         ...baseArgs,
-        operation: 'invalid_operation' as any
+        operation: 'invalid_operation' as any,
       };
 
       await expect(toolChainOrchestrator(args)).rejects.toThrow(McpAdrError);
@@ -484,23 +503,29 @@ describe('toolChainOrchestrator', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          choices: [{
-            message: {
-              content: 'invalid json content'
-            }
-          }]
-        })
+          choices: [
+            {
+              message: {
+                content: 'invalid json content',
+              },
+            },
+          ],
+        }),
       } as Response);
 
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(McpAdrError);
-      await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow('Tool chain orchestration failed');
+      await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(
+        'Tool chain orchestration failed'
+      );
     });
 
     it('should handle network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network connection failed'));
 
       await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(McpAdrError);
-      await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow('Tool chain orchestration failed');
+      await expect(toolChainOrchestrator(baseArgs)).rejects.toThrow(
+        'Tool chain orchestration failed'
+      );
     });
   });
 
@@ -508,7 +533,7 @@ describe('toolChainOrchestrator', () => {
     it('should handle empty user request', async () => {
       const args = {
         ...baseArgs,
-        userRequest: ''
+        userRequest: '',
       };
 
       mockIsAIExecutionEnabled.mockReturnValue(false);
@@ -521,7 +546,7 @@ describe('toolChainOrchestrator', () => {
       const args = {
         ...baseArgs,
         operation: 'reality_check' as const,
-        sessionContext: undefined
+        sessionContext: undefined,
       };
 
       const result = await toolChainOrchestrator(args);
@@ -533,7 +558,7 @@ describe('toolChainOrchestrator', () => {
     it('should handle custom instructions with AI disabled', async () => {
       const args = {
         ...baseArgs,
-        customInstructions: 'Focus on performance optimization'
+        customInstructions: 'Focus on performance optimization',
       };
 
       await expect(toolChainOrchestrator(args)).rejects.toThrow(McpAdrError);

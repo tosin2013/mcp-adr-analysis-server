@@ -66,7 +66,9 @@ export async function analyzeDeploymentProgress(args: {
         const result = await identifyDeploymentTasks(adrDirectory, todoPath);
 
         // Execute the deployment task identification with AI if enabled, otherwise return prompt
-        const { executePromptWithFallback, formatMCPResponse } = await import('../utils/prompt-execution.js');
+        const { executePromptWithFallback, formatMCPResponse } = await import(
+          '../utils/prompt-execution.js'
+        );
         const executionResult = await executePromptWithFallback(
           result.identificationPrompt,
           result.instructions,
@@ -77,7 +79,7 @@ export async function analyzeDeploymentProgress(args: {
 Analyze the provided ADRs and project context to identify comprehensive deployment tasks.
 Focus on creating actionable tasks with clear verification criteria and proper sequencing.
 Provide detailed risk assessment and practical implementation guidance.`,
-            responseFormat: 'text'
+            responseFormat: 'text',
           }
         );
 

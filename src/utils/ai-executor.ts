@@ -1,12 +1,17 @@
 /**
  * AI Executor Service for OpenRouter.ai Integration
- * 
+ *
  * This service handles the execution of prompts using OpenRouter.ai,
  * transforming the MCP server from returning prompts to returning actual results.
  */
 
 import OpenAI from 'openai';
-import { AIConfig, loadAIConfig, validateAIConfig, isAIExecutionEnabled } from '../config/ai-config.js';
+import {
+  AIConfig,
+  loadAIConfig,
+  validateAIConfig,
+  isAIExecutionEnabled,
+} from '../config/ai-config.js';
 
 export interface AIExecutionResult {
   /** The AI-generated response content */
@@ -58,7 +63,7 @@ export class AIExecutor {
 
     try {
       validateAIConfig(this.config);
-      
+
       this.client = new OpenAI({
         baseURL: this.config.baseURL,
         apiKey: this.config.apiKey,
@@ -146,11 +151,11 @@ export class AIExecutor {
     while (retryCount <= maxRetries) {
       try {
         const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
-        
+
         if (options.systemPrompt) {
           messages.push({ role: 'system', content: options.systemPrompt });
         }
-        
+
         messages.push({ role: 'user', content: prompt });
 
         const completion = await this.client!.chat.completions.create({
@@ -185,10 +190,9 @@ export class AIExecutor {
         }
 
         return result;
-
       } catch (error) {
         retryCount++;
-        
+
         if (retryCount > maxRetries) {
           throw this.createError(
             `AI execution failed after ${maxRetries} retries: ${error}`,
@@ -220,7 +224,8 @@ export class AIExecutor {
       systemPrompt?: string;
     } = {}
   ): Promise<{ data: T; raw: AIExecutionResult }> {
-    const systemPrompt = options.systemPrompt ||
+    const systemPrompt =
+      options.systemPrompt ||
       'You are a helpful assistant that responds with valid JSON. Always return properly formatted JSON that matches the requested schema. Do not wrap the JSON in markdown code blocks.';
 
     const result = await this.executePrompt(prompt, {
@@ -282,11 +287,7 @@ export class AIExecutor {
   /**
    * Generate cache key for a prompt execution
    */
-  private generateCacheKey(
-    prompt: string,
-    model: string,
-    options: any
-  ): string {
+  private generateCacheKey(prompt: string, model: string, options: any): string {
     const key = JSON.stringify({ prompt, model, options });
     return Buffer.from(key).toString('base64').slice(0, 32);
   }
@@ -313,7 +314,7 @@ export class AIExecutor {
    * Cache a result
    */
   private setCachedResult(cacheKey: string, result: AIExecutionResult): void {
-    const expiry = Date.now() + (this.config.cacheTTL * 1000);
+    const expiry = Date.now() + this.config.cacheTTL * 1000;
     this.cache.set(cacheKey, { result, expiry });
 
     // Clean up expired entries periodically
@@ -379,7 +380,7 @@ export class AIExecutor {
     // This is a simplified implementation
     return {
       size: this.cache.size,
-      hitRate: 0 // Would need to track hits/misses for accurate calculation
+      hitRate: 0, // Would need to track hits/misses for accurate calculation
     };
   }
 }

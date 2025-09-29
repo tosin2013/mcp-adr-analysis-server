@@ -7,7 +7,7 @@ import { EnvironmentCapabilityRegistry } from '../../src/utils/environment-capab
 import { exec } from 'child_process';
 import { promisify } from 'util';
 
-const execAsync = promisify(exec);
+const _execAsync = promisify(exec);
 
 // Mock child_process
 vi.mock('child_process', () => ({
@@ -15,7 +15,7 @@ vi.mock('child_process', () => ({
 }));
 
 vi.mock('util', () => ({
-  promisify: vi.fn((fn) => fn),
+  promisify: vi.fn(fn => fn),
 }));
 
 describe('EnvironmentCapabilityRegistry', () => {

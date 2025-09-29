@@ -1,6 +1,6 @@
 /**
  * Conversation Context Types
- * 
+ *
  * Defines the structure for passing conversation context from calling LLMs
  * to the MCP server for context-aware analysis.
  */
@@ -8,31 +8,31 @@
 export interface ConversationContext {
   /** Original human request text for context restoration */
   humanRequest?: string;
-  
+
   /** User's primary objectives from the conversation */
   userGoals?: string[];
-  
+
   /** Specific areas of concern or interest */
   focusAreas?: string[];
-  
+
   /** Limitations, compliance requirements, or restrictions */
   constraints?: string[];
-  
+
   /** Relevant context from previous conversation */
   previousContext?: string;
-  
+
   /** Current project phase or stage */
   projectPhase?: 'planning' | 'development' | 'migration' | 'production' | 'maintenance' | string;
-  
+
   /** User's role or expertise level */
   userRole?: 'architect' | 'developer' | 'manager' | 'ops' | 'security' | string;
-  
+
   /** Specific requirements or preferences mentioned */
   requirements?: string[];
-  
+
   /** Timeline or urgency information */
   timeline?: string;
-  
+
   /** Budget or resource constraints */
   budget?: string;
 }
@@ -46,50 +46,58 @@ export const CONVERSATION_CONTEXT_SCHEMA = {
   properties: {
     humanRequest: {
       type: 'string' as const,
-      description: 'Original human request text for context restoration and knowledge graph storage'
+      description:
+        'Original human request text for context restoration and knowledge graph storage',
     },
     userGoals: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Primary objectives the user wants to achieve (e.g., ["microservices migration", "improve security"])'
+      description:
+        'Primary objectives the user wants to achieve (e.g., ["microservices migration", "improve security"])',
     },
     focusAreas: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Specific areas of concern or interest (e.g., ["security", "performance", "maintainability"])'
+      description:
+        'Specific areas of concern or interest (e.g., ["security", "performance", "maintainability"])',
     },
     constraints: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Limitations, compliance requirements, or restrictions (e.g., ["GDPR compliance", "budget under $50k", "minimal downtime"])'
+      description:
+        'Limitations, compliance requirements, or restrictions (e.g., ["GDPR compliance", "budget under $50k", "minimal downtime"])',
     },
     previousContext: {
       type: 'string' as const,
-      description: 'Relevant context from previous conversation (e.g., "User mentioned concerns about database splitting")'
+      description:
+        'Relevant context from previous conversation (e.g., "User mentioned concerns about database splitting")',
     },
     projectPhase: {
       type: 'string' as const,
-      description: 'Current project phase (e.g., "planning", "development", "migration", "production")'
+      description:
+        'Current project phase (e.g., "planning", "development", "migration", "production")',
     },
     userRole: {
       type: 'string' as const,
-      description: 'User\'s role or expertise level (e.g., "senior architect", "developer", "project manager")'
+      description:
+        'User\'s role or expertise level (e.g., "senior architect", "developer", "project manager")',
     },
     requirements: {
       type: 'array' as const,
       items: { type: 'string' as const },
-      description: 'Specific requirements or preferences mentioned'
+      description: 'Specific requirements or preferences mentioned',
     },
     timeline: {
       type: 'string' as const,
-      description: 'Timeline or urgency information (e.g., "launch in 3 months", "urgent migration")'
+      description:
+        'Timeline or urgency information (e.g., "launch in 3 months", "urgent migration")',
     },
     budget: {
       type: 'string' as const,
-      description: 'Budget or resource constraints (e.g., "limited budget", "enterprise scale")'
-    }
+      description: 'Budget or resource constraints (e.g., "limited budget", "enterprise scale")',
+    },
   },
-  additionalProperties: false
+  additionalProperties: false,
 };
 
 /**
@@ -140,7 +148,7 @@ export function formatContextForPrompt(context?: ConversationContext): string {
  */
 export function hasMeaningfulContext(context?: ConversationContext): boolean {
   if (!context) return false;
-  
+
   return !!(
     context.humanRequest ||
     context.userGoals?.length ||

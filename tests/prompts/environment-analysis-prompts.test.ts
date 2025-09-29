@@ -31,7 +31,10 @@ project/
     `;
 
     it('should generate a comprehensive analysis prompt with environment files', () => {
-      const result = generateEnvironmentSpecAnalysisPrompt(mockEnvironmentFiles, mockProjectStructure);
+      const result = generateEnvironmentSpecAnalysisPrompt(
+        mockEnvironmentFiles,
+        mockProjectStructure
+      );
 
       expect(result).toContain('System Environment Specification Analysis Guide');
       expect(result).toContain('Environment Files');
@@ -64,7 +67,11 @@ project/
       const allFileTypes = [
         { filename: 'Dockerfile', content: 'FROM alpine', type: 'dockerfile' as const },
         { filename: 'docker-compose.yml', content: 'version: "3"', type: 'compose' as const },
-        { filename: 'deployment.yaml', content: 'apiVersion: apps/v1', type: 'kubernetes' as const },
+        {
+          filename: 'deployment.yaml',
+          content: 'apiVersion: apps/v1',
+          type: 'kubernetes' as const,
+        },
         { filename: 'main.tf', content: 'resource "aws_instance"', type: 'terraform' as const },
         { filename: '.env', content: 'NODE_ENV=production', type: 'config' as const },
         { filename: 'setup.sh', content: '#!/bin/bash', type: 'other' as const },
@@ -81,7 +88,10 @@ project/
     });
 
     it('should include JSON output format specification', () => {
-      const result = generateEnvironmentSpecAnalysisPrompt(mockEnvironmentFiles, mockProjectStructure);
+      const result = generateEnvironmentSpecAnalysisPrompt(
+        mockEnvironmentFiles,
+        mockProjectStructure
+      );
 
       expect(result).toContain('JSON');
       expect(result).toContain('analysis');
@@ -181,7 +191,11 @@ project/
       const containerFiles = [
         { filename: 'Dockerfile', content: 'FROM alpine', path: 'Dockerfile' },
         { filename: 'docker-compose.yml', content: 'version: "3"', path: 'docker-compose.yml' },
-        { filename: 'deployment.yaml', content: 'apiVersion: apps/v1', path: 'k8s/deployment.yaml' },
+        {
+          filename: 'deployment.yaml',
+          content: 'apiVersion: apps/v1',
+          path: 'k8s/deployment.yaml',
+        },
         { filename: '.dockerignore', content: 'node_modules', path: '.dockerignore' },
       ];
 
@@ -195,8 +209,16 @@ project/
 
     it('should handle special characters in file paths and content', () => {
       const specialFiles = [
-        { filename: 'special-file@2.0.dockerfile', content: 'FROM node:18-alpine', path: 'special-file@2.0.dockerfile' },
-        { filename: 'app.env', content: 'DB_URL=postgres://user:pass@host:5432/db', path: 'config/app.env' },
+        {
+          filename: 'special-file@2.0.dockerfile',
+          content: 'FROM node:18-alpine',
+          path: 'special-file@2.0.dockerfile',
+        },
+        {
+          filename: 'app.env',
+          content: 'DB_URL=postgres://user:pass@host:5432/db',
+          path: 'config/app.env',
+        },
       ];
 
       const result = generateContainerizationDetectionPrompt(specialFiles);
@@ -362,7 +384,10 @@ We will adopt a microservices architecture using Docker containers and Kubernete
     ];
 
     it('should generate environment compliance analysis prompt', () => {
-      const result = generateEnvironmentCompliancePrompt(mockEnvironmentConfig, mockComplianceStandards);
+      const result = generateEnvironmentCompliancePrompt(
+        mockEnvironmentConfig,
+        mockComplianceStandards
+      );
 
       expect(result).toContain('Environment Compliance Assessment');
       expect(result).toContain('Current Environment');
@@ -390,7 +415,10 @@ We will adopt a microservices architecture using Docker containers and Kubernete
     });
 
     it('should include compliance assessment guidelines', () => {
-      const result = generateEnvironmentCompliancePrompt(mockEnvironmentConfig, mockComplianceStandards);
+      const result = generateEnvironmentCompliancePrompt(
+        mockEnvironmentConfig,
+        mockComplianceStandards
+      );
 
       expect(result).toContain('compliance');
       expect(result).toContain('assessment');
@@ -399,7 +427,10 @@ We will adopt a microservices architecture using Docker containers and Kubernete
     });
 
     it('should include JSON output format specification', () => {
-      const result = generateEnvironmentCompliancePrompt(mockEnvironmentConfig, mockComplianceStandards);
+      const result = generateEnvironmentCompliancePrompt(
+        mockEnvironmentConfig,
+        mockComplianceStandards
+      );
 
       expect(result).toContain('JSON');
       expect(result).toContain('complianceAssessment');
@@ -491,28 +522,44 @@ We will adopt a microservices architecture using Docker containers and Kubernete
     it('should handle null and undefined inputs appropriately', () => {
       // Functions that use .map() on arrays should throw with null/undefined
       expect(() => generateEnvironmentSpecAnalysisPrompt(null as any, null as any)).toThrow();
-      expect(() => generateEnvironmentSpecAnalysisPrompt(undefined as any, undefined as any)).toThrow();
+      expect(() =>
+        generateEnvironmentSpecAnalysisPrompt(undefined as any, undefined as any)
+      ).toThrow();
       expect(() => generateContainerizationDetectionPrompt(null as any)).toThrow();
       expect(() => generateContainerizationDetectionPrompt(undefined as any)).toThrow();
       expect(() => generateAdrEnvironmentRequirementsPrompt(null as any)).toThrow();
       expect(() => generateAdrEnvironmentRequirementsPrompt(undefined as any)).toThrow();
-      
+
       // Function that uses JSON.stringify() should handle null/undefined gracefully
       expect(() => generateEnvironmentCompliancePrompt(null as any, null as any)).not.toThrow();
-      expect(() => generateEnvironmentCompliancePrompt(undefined as any, undefined as any)).not.toThrow();
+      expect(() =>
+        generateEnvironmentCompliancePrompt(undefined as any, undefined as any)
+      ).not.toThrow();
     });
 
     it('should handle extremely large inputs', () => {
       const largeString = 'A'.repeat(100000);
-      const largeArray = Array(1000).fill({ filename: 'test.txt', content: largeString, type: 'other' });
+      const largeArray = Array(1000).fill({
+        filename: 'test.txt',
+        content: largeString,
+        type: 'other',
+      });
 
       expect(() => generateEnvironmentSpecAnalysisPrompt(largeArray, largeString)).not.toThrow();
-      expect(() => generateContainerizationDetectionPrompt(Array(1000).fill({ filename: 'test.js', content: largeString, path: 'test.js' }))).not.toThrow();
+      expect(() =>
+        generateContainerizationDetectionPrompt(
+          Array(1000).fill({ filename: 'test.js', content: largeString, path: 'test.js' })
+        )
+      ).not.toThrow();
     });
 
     it('should handle unicode and special encoding characters', () => {
       const unicodeFiles = [
-        { filename: '测试.dockerfile', content: 'FROM alpine # 中文注释', type: 'dockerfile' as const },
+        {
+          filename: '测试.dockerfile',
+          content: 'FROM alpine # 中文注释',
+          type: 'dockerfile' as const,
+        },
         { filename: 'файл.yml', content: 'ключ: значение', type: 'config' as const },
       ];
 
@@ -536,10 +583,10 @@ We will adopt a microservices architecture using Docker containers and Kubernete
         expect(typeof result).toBe('string');
         expect(result.length).toBeGreaterThan(0);
         expect(
-          result.includes('Environment') || 
-          result.includes('Containerization') || 
-          result.includes('Requirements') || 
-          result.includes('Compliance')
+          result.includes('Environment') ||
+            result.includes('Containerization') ||
+            result.includes('Requirements') ||
+            result.includes('Compliance')
         ).toBe(true);
       });
     });

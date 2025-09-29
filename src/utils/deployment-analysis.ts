@@ -73,8 +73,11 @@ Based on actual ADR file analysis and TODO content, identify deployment-related 
 
 ## Discovered ADRs (${discoveryResult.totalAdrs} total)
 
-${discoveryResult.adrs.length > 0 ? 
-  discoveryResult.adrs.map((adr, index) => `
+${
+  discoveryResult.adrs.length > 0
+    ? discoveryResult.adrs
+        .map(
+          (adr, index) => `
 ### ${index + 1}. ${adr.title}
 - **File**: ${adr.filename}
 - **Status**: ${adr.status}
@@ -87,18 +90,26 @@ ${adr.content || 'Content not available'}
 \`\`\`
 
 ---
-`).join('\n') : 'No ADRs found in the specified directory.'}
+`
+        )
+        .join('\n')
+    : 'No ADRs found in the specified directory.'
+}
 
 ## TODO Content Analysis
 
-${todoPath ? `
+${
+  todoPath
+    ? `
 ### TODO File: ${todoPath}
 \`\`\`
 ${todoContent}
 \`\`\`
 
 Extract any deployment-related tasks, infrastructure requirements, or operational concerns from the actual TODO content above.
-` : '**No TODO file provided.** Only ADR content will be analyzed for deployment tasks.'}
+`
+    : '**No TODO file provided.** Only ADR content will be analyzed for deployment tasks.'
+}
 
 ## Task Identification Criteria
 
@@ -176,9 +187,9 @@ const result = await identifyDeploymentTasks(adrDirectory, todoPath);
           totalAdrs: discoveryResult.totalAdrs,
           adrsWithContent: discoveryResult.adrs.filter(adr => adr.content).length,
           todoProvided: !!todoPath,
-          todoLength: todoContent.length
-        }
-      }
+          todoLength: todoContent.length,
+        },
+      },
     };
   } catch (error) {
     throw new McpAdrError(

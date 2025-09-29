@@ -8,35 +8,35 @@ import { McpAdrError } from '../../src/types/index.js';
 
 // Pragmatic mocking approach to avoid TypeScript complexity
 jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
-  discoverAdrsInDirectory: jest.fn()
+  discoverAdrsInDirectory: jest.fn(),
 }));
 
 jest.unstable_mockModule('../../src/prompts/deployment-analysis-prompts.js', () => ({
   generateCiCdAnalysisPrompt: jest.fn(),
   generateDeploymentProgressCalculationPrompt: jest.fn(),
-  generateCompletionVerificationPrompt: jest.fn()
+  generateCompletionVerificationPrompt: jest.fn(),
 }));
 
 jest.unstable_mockModule('fs/promises', () => ({
-  readFile: jest.fn()
+  readFile: jest.fn(),
 }));
 
 jest.unstable_mockModule('path', () => ({
-  resolve: jest.fn()
+  resolve: jest.fn(),
 }));
 
 const {
   identifyDeploymentTasks,
   analyzeCiCdStatus,
   calculateDeploymentProgress,
-  verifyDeploymentCompletion
+  verifyDeploymentCompletion,
 } = await import('../../src/utils/deployment-analysis.js');
 
 const { discoverAdrsInDirectory } = await import('../../src/utils/adr-discovery.js');
 const {
   generateCiCdAnalysisPrompt,
   generateDeploymentProgressCalculationPrompt,
-  generateCompletionVerificationPrompt
+  generateCompletionVerificationPrompt,
 } = await import('../../src/prompts/deployment-analysis-prompts.js');
 
 describe('deployment-analysis', () => {
@@ -54,24 +54,25 @@ describe('deployment-analysis', () => {
             status: 'Accepted',
             content: 'We will use Docker containers for deployment consistency.',
             path: '/test/ADR-001-docker.md',
-            metadata: { number: 1 }
+            metadata: { number: 1 },
           },
           {
             title: 'Database Selection',
             filename: 'ADR-002-database.md',
             status: 'Accepted',
             content: 'We will use PostgreSQL as our primary database.',
-            path: '/test/ADR-002-database.md'
-          }
+            path: '/test/ADR-002-database.md',
+          },
         ],
         totalAdrs: 2,
         summary: { byStatus: { Accepted: 2 }, byCategory: {} },
         directory: 'docs/adrs',
-        recommendations: []
+        recommendations: [],
       };
 
-      (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-        .mockResolvedValue(mockDiscoveryResult as any);
+      (
+        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+      ).mockResolvedValue(mockDiscoveryResult as any);
 
       const result = await identifyDeploymentTasks('docs/adrs');
 
@@ -109,13 +110,13 @@ describe('deployment-analysis', () => {
             filename: 'ADR-003-infra.md',
             status: 'Accepted',
             content: 'Set up AWS infrastructure with ECS and RDS.',
-            path: '/test/ADR-003-infra.md'
-          }
+            path: '/test/ADR-003-infra.md',
+          },
         ],
         totalAdrs: 1,
         summary: { byStatus: { Accepted: 1 }, byCategory: {} },
         directory: 'docs/adrs',
-        recommendations: []
+        recommendations: [],
       };
 
       const mockTodoContent = `# TODO
@@ -123,16 +124,17 @@ describe('deployment-analysis', () => {
 - [ ] Configure monitoring
 - [ ] Deploy to staging environment`;
 
-      (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-        .mockResolvedValue(mockDiscoveryResult as any);
+      (
+        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+      ).mockResolvedValue(mockDiscoveryResult as any);
 
       // Mock fs and path modules
       const fs = await import('fs/promises');
       const path = await import('path');
-      (fs.readFile as jest.MockedFunction<typeof fs.readFile>)
-        .mockResolvedValue(mockTodoContent);
-      (path.resolve as jest.MockedFunction<typeof path.resolve>)
-        .mockReturnValue('/full/path/TODO.md');
+      (fs.readFile as jest.MockedFunction<typeof fs.readFile>).mockResolvedValue(mockTodoContent);
+      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockReturnValue(
+        '/full/path/TODO.md'
+      );
 
       const result = await identifyDeploymentTasks('docs/adrs', 'TODO.md');
 
@@ -154,18 +156,21 @@ describe('deployment-analysis', () => {
         totalAdrs: 0,
         summary: { byStatus: {}, byCategory: {} },
         directory: 'docs/adrs',
-        recommendations: []
+        recommendations: [],
       };
 
-      (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-        .mockResolvedValue(mockDiscoveryResult as any);
+      (
+        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+      ).mockResolvedValue(mockDiscoveryResult as any);
 
       const fs = await import('fs/promises');
       const path = await import('path');
-      (fs.readFile as jest.MockedFunction<typeof fs.readFile>)
-        .mockRejectedValue(new Error('File not found'));
-      (path.resolve as jest.MockedFunction<typeof path.resolve>)
-        .mockReturnValue('/full/path/TODO.md');
+      (fs.readFile as jest.MockedFunction<typeof fs.readFile>).mockRejectedValue(
+        new Error('File not found')
+      );
+      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockReturnValue(
+        '/full/path/TODO.md'
+      );
 
       const result = await identifyDeploymentTasks('docs/adrs', 'TODO.md');
 
@@ -179,11 +184,12 @@ describe('deployment-analysis', () => {
         totalAdrs: 0,
         summary: { byStatus: {}, byCategory: {} },
         directory: 'empty/adrs',
-        recommendations: []
+        recommendations: [],
       };
 
-      (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-        .mockResolvedValue(mockDiscoveryResult as any);
+      (
+        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+      ).mockResolvedValue(mockDiscoveryResult as any);
 
       const result = await identifyDeploymentTasks('empty/adrs');
 
@@ -200,11 +206,12 @@ describe('deployment-analysis', () => {
         totalAdrs: 0,
         summary: { byStatus: {}, byCategory: {} },
         directory: 'docs/adrs',
-        recommendations: []
+        recommendations: [],
       };
 
-      (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-        .mockResolvedValue(mockDiscoveryResult as any);
+      (
+        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+      ).mockResolvedValue(mockDiscoveryResult as any);
 
       await identifyDeploymentTasks();
 
@@ -213,19 +220,25 @@ describe('deployment-analysis', () => {
 
     it('should throw McpAdrError on ADR discovery failure', async () => {
       const discoveryError = new Error('Failed to access ADR directory');
-      (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-        .mockRejectedValue(discoveryError);
+      (
+        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+      ).mockRejectedValue(discoveryError);
 
       await expect(identifyDeploymentTasks()).rejects.toThrow(McpAdrError);
-      await expect(identifyDeploymentTasks()).rejects.toThrow('Failed to identify deployment tasks: Failed to access ADR directory');
+      await expect(identifyDeploymentTasks()).rejects.toThrow(
+        'Failed to identify deployment tasks: Failed to access ADR directory'
+      );
     });
 
     it('should handle non-Error exceptions', async () => {
-      (discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>)
-        .mockRejectedValue('String error');
+      (
+        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+      ).mockRejectedValue('String error');
 
       await expect(identifyDeploymentTasks()).rejects.toThrow(McpAdrError);
-      await expect(identifyDeploymentTasks()).rejects.toThrow('Failed to identify deployment tasks: String error');
+      await expect(identifyDeploymentTasks()).rejects.toThrow(
+        'Failed to identify deployment tasks: String error'
+      );
     });
   });
 
@@ -239,25 +252,28 @@ describe('deployment-analysis', () => {
           taskId: 'task-1',
           taskName: 'Build Application',
           category: 'cicd' as const,
-          verificationCriteria: ['Build succeeds', 'No compilation errors']
-        }
+          verificationCriteria: ['Build succeeds', 'No compilation errors'],
+        },
       ];
 
-      (generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>)
-        .mockReturnValue(mockAnalysisPrompt);
+      (
+        generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>
+      ).mockReturnValue(mockAnalysisPrompt);
 
-      const result = await analyzeCiCdStatus(mockCicdLogs, mockPipelineConfig, mockDeploymentTasks as any);
-
-      expect(generateCiCdAnalysisPrompt).toHaveBeenCalledWith(
+      const result = await analyzeCiCdStatus(
         mockCicdLogs,
         mockPipelineConfig,
-        [{
+        mockDeploymentTasks as any
+      );
+
+      expect(generateCiCdAnalysisPrompt).toHaveBeenCalledWith(mockCicdLogs, mockPipelineConfig, [
+        {
           taskId: 'task-1',
           taskName: 'Build Application',
           category: 'cicd',
-          verificationCriteria: ['Build succeeds', 'No compilation errors']
-        }]
-      );
+          verificationCriteria: ['Build succeeds', 'No compilation errors'],
+        },
+      ]);
 
       expect(result).toHaveProperty('analysisPrompt', mockAnalysisPrompt);
       expect(result).toHaveProperty('instructions');
@@ -270,8 +286,9 @@ describe('deployment-analysis', () => {
       const mockAnalysisPrompt = 'Basic CI/CD analysis prompt';
       const mockCicdLogs = 'Basic build log';
 
-      (generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>)
-        .mockReturnValue(mockAnalysisPrompt);
+      (
+        generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>
+      ).mockReturnValue(mockAnalysisPrompt);
 
       const result = await analyzeCiCdStatus(mockCicdLogs);
 
@@ -284,8 +301,9 @@ describe('deployment-analysis', () => {
       const mockAnalysisPrompt = 'Empty tasks analysis prompt';
       const mockCicdLogs = 'Log content';
 
-      (generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>)
-        .mockReturnValue(mockAnalysisPrompt);
+      (
+        generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>
+      ).mockReturnValue(mockAnalysisPrompt);
 
       const result = await analyzeCiCdStatus(mockCicdLogs, undefined, []);
 
@@ -295,11 +313,16 @@ describe('deployment-analysis', () => {
 
     it('should throw McpAdrError on prompt generation failure', async () => {
       const promptError = new Error('Failed to generate prompt');
-      (generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>)
-        .mockImplementation(() => { throw promptError; });
+      (
+        generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>
+      ).mockImplementation(() => {
+        throw promptError;
+      });
 
       await expect(analyzeCiCdStatus('logs')).rejects.toThrow(McpAdrError);
-      await expect(analyzeCiCdStatus('logs')).rejects.toThrow('Failed to analyze CI/CD status: Failed to generate prompt');
+      await expect(analyzeCiCdStatus('logs')).rejects.toThrow(
+        'Failed to analyze CI/CD status: Failed to generate prompt'
+      );
     });
   });
 
@@ -316,7 +339,7 @@ describe('deployment-analysis', () => {
           priority: 'high' as const,
           description: 'Set up database',
           verificationCriteria: ['DB accessible'],
-          expectedOutcome: 'Database ready'
+          expectedOutcome: 'Database ready',
         },
         {
           taskId: 'task-2',
@@ -327,16 +350,23 @@ describe('deployment-analysis', () => {
           priority: 'critical' as const,
           description: 'Deploy application',
           verificationCriteria: ['App running'],
-          expectedOutcome: 'App deployed'
-        }
+          expectedOutcome: 'App deployed',
+        },
       ];
       const mockCicdStatus = { status: 'success', stage: 'deploy' };
       const mockEnvironmentStatus = { health: 'healthy' };
 
-      (generateDeploymentProgressCalculationPrompt as jest.MockedFunction<typeof generateDeploymentProgressCalculationPrompt>)
-        .mockReturnValue(mockProgressPrompt);
+      (
+        generateDeploymentProgressCalculationPrompt as jest.MockedFunction<
+          typeof generateDeploymentProgressCalculationPrompt
+        >
+      ).mockReturnValue(mockProgressPrompt);
 
-      const result = await calculateDeploymentProgress(mockDeploymentTasks, mockCicdStatus, mockEnvironmentStatus);
+      const result = await calculateDeploymentProgress(
+        mockDeploymentTasks,
+        mockCicdStatus,
+        mockEnvironmentStatus
+      );
 
       expect(generateDeploymentProgressCalculationPrompt).toHaveBeenCalledWith(
         [
@@ -346,7 +376,7 @@ describe('deployment-analysis', () => {
             status: 'completed',
             progress: 100,
             category: 'infrastructure',
-            priority: 'high'
+            priority: 'high',
           },
           {
             taskId: 'task-2',
@@ -354,8 +384,8 @@ describe('deployment-analysis', () => {
             status: 'in_progress',
             progress: 50,
             category: 'application',
-            priority: 'critical'
-          }
+            priority: 'critical',
+          },
         ],
         mockCicdStatus,
         mockEnvironmentStatus
@@ -381,24 +411,29 @@ describe('deployment-analysis', () => {
           priority: 'low' as const,
           description: 'Basic task',
           verificationCriteria: ['Task done'],
-          expectedOutcome: 'Task complete'
-        }
+          expectedOutcome: 'Task complete',
+        },
       ];
 
-      (generateDeploymentProgressCalculationPrompt as jest.MockedFunction<typeof generateDeploymentProgressCalculationPrompt>)
-        .mockReturnValue(mockProgressPrompt);
+      (
+        generateDeploymentProgressCalculationPrompt as jest.MockedFunction<
+          typeof generateDeploymentProgressCalculationPrompt
+        >
+      ).mockReturnValue(mockProgressPrompt);
 
       const result = await calculateDeploymentProgress(mockDeploymentTasks);
 
       expect(generateDeploymentProgressCalculationPrompt).toHaveBeenCalledWith(
-        [{
-          taskId: 'task-1',
-          taskName: 'Basic Task',
-          status: 'not_started',
-          progress: 0,
-          category: 'operational',
-          priority: 'low'
-        }],
+        [
+          {
+            taskId: 'task-1',
+            taskName: 'Basic Task',
+            status: 'not_started',
+            progress: 0,
+            category: 'operational',
+            priority: 'low',
+          },
+        ],
         undefined,
         undefined
       );
@@ -410,8 +445,11 @@ describe('deployment-analysis', () => {
     it('should handle empty deployment tasks', async () => {
       const mockProgressPrompt = 'Empty tasks progress prompt';
 
-      (generateDeploymentProgressCalculationPrompt as jest.MockedFunction<typeof generateDeploymentProgressCalculationPrompt>)
-        .mockReturnValue(mockProgressPrompt);
+      (
+        generateDeploymentProgressCalculationPrompt as jest.MockedFunction<
+          typeof generateDeploymentProgressCalculationPrompt
+        >
+      ).mockReturnValue(mockProgressPrompt);
 
       const result = await calculateDeploymentProgress([]);
 
@@ -421,8 +459,13 @@ describe('deployment-analysis', () => {
 
     it('should throw McpAdrError on progress calculation failure', async () => {
       const calculationError = new Error('Progress calculation failed');
-      (generateDeploymentProgressCalculationPrompt as jest.MockedFunction<typeof generateDeploymentProgressCalculationPrompt>)
-        .mockImplementation(() => { throw calculationError; });
+      (
+        generateDeploymentProgressCalculationPrompt as jest.MockedFunction<
+          typeof generateDeploymentProgressCalculationPrompt
+        >
+      ).mockImplementation(() => {
+        throw calculationError;
+      });
 
       const mockTasks = [
         {
@@ -434,12 +477,14 @@ describe('deployment-analysis', () => {
           priority: 'medium' as const,
           description: 'Test',
           verificationCriteria: ['Test'],
-          expectedOutcome: 'Test'
-        }
+          expectedOutcome: 'Test',
+        },
       ];
 
       await expect(calculateDeploymentProgress(mockTasks)).rejects.toThrow(McpAdrError);
-      await expect(calculateDeploymentProgress(mockTasks)).rejects.toThrow('Failed to calculate deployment progress: Progress calculation failed');
+      await expect(calculateDeploymentProgress(mockTasks)).rejects.toThrow(
+        'Failed to calculate deployment progress: Progress calculation failed'
+      );
     });
   });
 
@@ -456,39 +501,48 @@ describe('deployment-analysis', () => {
           priority: 'critical' as const,
           description: 'Final checks',
           verificationCriteria: ['All systems operational', 'Health checks pass'],
-          expectedOutcome: 'System fully operational'
-        }
+          expectedOutcome: 'System fully operational',
+        },
       ];
       const mockOutcomeRules = [
         {
           ruleId: 'rule-1',
           description: 'All critical tasks must be completed',
           criteria: ['status === completed', 'progress === 100'],
-          verificationMethod: 'automated'
-        }
+          verificationMethod: 'automated',
+        },
       ];
       const mockActualOutcomes = [
         {
           taskId: 'task-1',
           outcome: 'Task completed successfully',
           evidence: ['Health check logs', 'System metrics'],
-          timestamp: '2024-01-01T12:00:00Z'
-        }
+          timestamp: '2024-01-01T12:00:00Z',
+        },
       ];
 
-      (generateCompletionVerificationPrompt as jest.MockedFunction<typeof generateCompletionVerificationPrompt>)
-        .mockReturnValue(mockVerificationPrompt);
+      (
+        generateCompletionVerificationPrompt as jest.MockedFunction<
+          typeof generateCompletionVerificationPrompt
+        >
+      ).mockReturnValue(mockVerificationPrompt);
 
-      const result = await verifyDeploymentCompletion(mockDeploymentTasks, mockOutcomeRules, mockActualOutcomes);
+      const result = await verifyDeploymentCompletion(
+        mockDeploymentTasks,
+        mockOutcomeRules,
+        mockActualOutcomes
+      );
 
       expect(generateCompletionVerificationPrompt).toHaveBeenCalledWith(
-        [{
-          taskId: 'task-1',
-          taskName: 'Final Verification',
-          verificationCriteria: ['All systems operational', 'Health checks pass'],
-          expectedOutcome: 'System fully operational',
-          status: 'completed'
-        }],
+        [
+          {
+            taskId: 'task-1',
+            taskName: 'Final Verification',
+            verificationCriteria: ['All systems operational', 'Health checks pass'],
+            expectedOutcome: 'System fully operational',
+            status: 'completed',
+          },
+        ],
         mockOutcomeRules,
         mockActualOutcomes
       );
@@ -512,31 +566,36 @@ describe('deployment-analysis', () => {
           priority: 'medium' as const,
           description: 'Basic task',
           verificationCriteria: ['Task done'],
-          expectedOutcome: 'Task complete'
-        }
+          expectedOutcome: 'Task complete',
+        },
       ];
       const mockOutcomeRules = [
         {
           ruleId: 'rule-1',
           description: 'Basic completion rule',
           criteria: ['status === completed'],
-          verificationMethod: 'manual'
-        }
+          verificationMethod: 'manual',
+        },
       ];
 
-      (generateCompletionVerificationPrompt as jest.MockedFunction<typeof generateCompletionVerificationPrompt>)
-        .mockReturnValue(mockVerificationPrompt);
+      (
+        generateCompletionVerificationPrompt as jest.MockedFunction<
+          typeof generateCompletionVerificationPrompt
+        >
+      ).mockReturnValue(mockVerificationPrompt);
 
       const result = await verifyDeploymentCompletion(mockDeploymentTasks, mockOutcomeRules);
 
       expect(generateCompletionVerificationPrompt).toHaveBeenCalledWith(
-        [{
-          taskId: 'task-1',
-          taskName: 'Basic Task',
-          verificationCriteria: ['Task done'],
-          expectedOutcome: 'Task complete',
-          status: 'completed'
-        }],
+        [
+          {
+            taskId: 'task-1',
+            taskName: 'Basic Task',
+            verificationCriteria: ['Task done'],
+            expectedOutcome: 'Task complete',
+            status: 'completed',
+          },
+        ],
         mockOutcomeRules,
         undefined
       );
@@ -556,7 +615,7 @@ describe('deployment-analysis', () => {
           priority: 'high' as const,
           description: 'Task 1',
           verificationCriteria: ['Criteria 1'],
-          expectedOutcome: 'Outcome 1'
+          expectedOutcome: 'Outcome 1',
         },
         {
           taskId: 'task-2',
@@ -567,26 +626,29 @@ describe('deployment-analysis', () => {
           priority: 'medium' as const,
           description: 'Task 2',
           verificationCriteria: ['Criteria 2'],
-          expectedOutcome: 'Outcome 2'
-        }
+          expectedOutcome: 'Outcome 2',
+        },
       ];
       const mockOutcomeRules = [
         {
           ruleId: 'rule-1',
           description: 'Rule 1',
           criteria: ['Criteria 1'],
-          verificationMethod: 'automated'
+          verificationMethod: 'automated',
         },
         {
           ruleId: 'rule-2',
           description: 'Rule 2',
           criteria: ['Criteria 2'],
-          verificationMethod: 'manual'
-        }
+          verificationMethod: 'manual',
+        },
       ];
 
-      (generateCompletionVerificationPrompt as jest.MockedFunction<typeof generateCompletionVerificationPrompt>)
-        .mockReturnValue(mockVerificationPrompt);
+      (
+        generateCompletionVerificationPrompt as jest.MockedFunction<
+          typeof generateCompletionVerificationPrompt
+        >
+      ).mockReturnValue(mockVerificationPrompt);
 
       const result = await verifyDeploymentCompletion(mockDeploymentTasks, mockOutcomeRules);
 
@@ -596,8 +658,13 @@ describe('deployment-analysis', () => {
 
     it('should throw McpAdrError on verification failure', async () => {
       const verificationError = new Error('Verification failed');
-      (generateCompletionVerificationPrompt as jest.MockedFunction<typeof generateCompletionVerificationPrompt>)
-        .mockImplementation(() => { throw verificationError; });
+      (
+        generateCompletionVerificationPrompt as jest.MockedFunction<
+          typeof generateCompletionVerificationPrompt
+        >
+      ).mockImplementation(() => {
+        throw verificationError;
+      });
 
       const mockTasks = [
         {
@@ -609,20 +676,22 @@ describe('deployment-analysis', () => {
           priority: 'medium' as const,
           description: 'Test',
           verificationCriteria: ['Test'],
-          expectedOutcome: 'Test'
-        }
+          expectedOutcome: 'Test',
+        },
       ];
       const mockRules = [
         {
           ruleId: 'rule-1',
           description: 'Test rule',
           criteria: ['Test'],
-          verificationMethod: 'test'
-        }
+          verificationMethod: 'test',
+        },
       ];
 
       await expect(verifyDeploymentCompletion(mockTasks, mockRules)).rejects.toThrow(McpAdrError);
-      await expect(verifyDeploymentCompletion(mockTasks, mockRules)).rejects.toThrow('Failed to verify deployment completion: Verification failed');
+      await expect(verifyDeploymentCompletion(mockTasks, mockRules)).rejects.toThrow(
+        'Failed to verify deployment completion: Verification failed'
+      );
     });
   });
 });

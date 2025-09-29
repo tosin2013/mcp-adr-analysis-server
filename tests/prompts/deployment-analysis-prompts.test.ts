@@ -7,7 +7,7 @@ import {
   generateDeploymentTaskIdentificationPrompt,
   generateCiCdAnalysisPrompt,
   generateDeploymentProgressCalculationPrompt,
-  generateCompletionVerificationPrompt
+  generateCompletionVerificationPrompt,
 } from '../../src/prompts/deployment-analysis-prompts';
 
 describe('Deployment Analysis Prompts', () => {
@@ -16,15 +16,16 @@ describe('Deployment Analysis Prompts', () => {
       {
         id: 'adr-001',
         title: 'Use Microservices Architecture',
-        content: 'We will adopt microservices architecture for better scalability and maintainability.',
-        status: 'accepted'
+        content:
+          'We will adopt microservices architecture for better scalability and maintainability.',
+        status: 'accepted',
       },
       {
         id: 'adr-002',
         title: 'Database Migration Strategy',
         content: 'We will use blue-green deployment for database migrations to minimize downtime.',
-        status: 'proposed'
-      }
+        status: 'proposed',
+      },
     ];
 
     describe('basic functionality', () => {
@@ -45,7 +46,8 @@ describe('Deployment Analysis Prompts', () => {
       });
 
       it('should generate prompt with ADR files and todo content', () => {
-        const todoContent = '- Deploy to staging environment\n- Set up monitoring\n- Configure load balancer';
+        const todoContent =
+          '- Deploy to staging environment\n- Set up monitoring\n- Configure load balancer';
         const result = generateDeploymentTaskIdentificationPrompt(mockAdrFiles, todoContent);
 
         expect(result).toContain('Todo Content');
@@ -69,12 +71,14 @@ describe('Deployment Analysis Prompts', () => {
     describe('content truncation', () => {
       it('should truncate long ADR content', () => {
         const longContent = 'A'.repeat(1500);
-        const adrWithLongContent = [{
-          id: 'adr-long',
-          title: 'Long ADR',
-          content: longContent,
-          status: 'accepted'
-        }];
+        const adrWithLongContent = [
+          {
+            id: 'adr-long',
+            title: 'Long ADR',
+            content: longContent,
+            status: 'accepted',
+          },
+        ];
 
         const result = generateDeploymentTaskIdentificationPrompt(adrWithLongContent);
 
@@ -92,12 +96,14 @@ describe('Deployment Analysis Prompts', () => {
 
       it('should not truncate short content', () => {
         const shortContent = 'Short content';
-        const adrWithShortContent = [{
-          id: 'adr-short',
-          title: 'Short ADR',
-          content: shortContent,
-          status: 'accepted'
-        }];
+        const adrWithShortContent = [
+          {
+            id: 'adr-short',
+            title: 'Short ADR',
+            content: shortContent,
+            status: 'accepted',
+          },
+        ];
 
         const result = generateDeploymentTaskIdentificationPrompt(adrWithShortContent);
 
@@ -116,12 +122,14 @@ describe('Deployment Analysis Prompts', () => {
       });
 
       it('should handle ADR with empty content', () => {
-        const emptyAdr = [{
-          id: 'adr-empty',
-          title: 'Empty ADR',
-          content: '',
-          status: 'draft'
-        }];
+        const emptyAdr = [
+          {
+            id: 'adr-empty',
+            title: 'Empty ADR',
+            content: '',
+            status: 'draft',
+          },
+        ];
 
         const result = generateDeploymentTaskIdentificationPrompt(emptyAdr);
 
@@ -131,12 +139,14 @@ describe('Deployment Analysis Prompts', () => {
       });
 
       it('should handle special characters in content', () => {
-        const specialCharsAdr = [{
-          id: 'adr-special',
-          title: 'Special Characters & Symbols',
-          content: 'Content with special chars: @#$%^&*(){}[]|\\:";\'<>?,./',
-          status: 'accepted'
-        }];
+        const specialCharsAdr = [
+          {
+            id: 'adr-special',
+            title: 'Special Characters & Symbols',
+            content: 'Content with special chars: @#$%^&*(){}[]|\\:";\'<>?,./',
+            status: 'accepted',
+          },
+        ];
 
         const result = generateDeploymentTaskIdentificationPrompt(specialCharsAdr);
 
@@ -170,14 +180,14 @@ describe('Deployment Analysis Prompts', () => {
         taskId: 'task-001',
         taskName: 'Deploy to staging',
         category: 'deployment',
-        verificationCriteria: ['Health check passes', 'All services running']
+        verificationCriteria: ['Health check passes', 'All services running'],
       },
       {
         taskId: 'task-002',
         taskName: 'Run integration tests',
         category: 'testing',
-        verificationCriteria: ['All tests pass', 'Coverage > 80%']
-      }
+        verificationCriteria: ['All tests pass', 'Coverage > 80%'],
+      },
     ];
 
     describe('basic functionality', () => {
@@ -194,7 +204,11 @@ describe('Deployment Analysis Prompts', () => {
       });
 
       it('should generate prompt with all parameters', () => {
-        const result = generateCiCdAnalysisPrompt(mockCicdLogs, mockPipelineConfig, mockDeploymentTasks);
+        const result = generateCiCdAnalysisPrompt(
+          mockCicdLogs,
+          mockPipelineConfig,
+          mockDeploymentTasks
+        );
 
         expect(result).toContain('Pipeline Configuration');
         expect(result).toContain('npm run build');
@@ -268,7 +282,7 @@ describe('Deployment Analysis Prompts', () => {
         status: 'completed',
         progress: 100,
         category: 'infrastructure',
-        priority: 'high'
+        priority: 'high',
       },
       {
         taskId: 'task-002',
@@ -276,19 +290,19 @@ describe('Deployment Analysis Prompts', () => {
         status: 'in_progress',
         progress: 60,
         category: 'application',
-        priority: 'critical'
-      }
+        priority: 'critical',
+      },
     ];
 
     const mockCicdStatus = {
       pipelineStatus: 'in_progress',
       overallProgress: 75,
-      currentStage: 'deployment'
+      currentStage: 'deployment',
     };
 
     const mockEnvironmentStatus = {
       staging: { status: 'healthy', version: '1.2.0' },
-      production: { status: 'pending', version: '1.1.0' }
+      production: { status: 'pending', version: '1.1.0' },
     };
 
     describe('basic functionality', () => {
@@ -357,7 +371,11 @@ describe('Deployment Analysis Prompts', () => {
       });
 
       it('should handle undefined optional parameters', () => {
-        const result = generateDeploymentProgressCalculationPrompt(mockDeploymentTasks, undefined, undefined);
+        const result = generateDeploymentProgressCalculationPrompt(
+          mockDeploymentTasks,
+          undefined,
+          undefined
+        );
 
         expect(result).toContain('Deployment Progress Calculation');
         expect(result).toContain('Task 1: Setup infrastructure');
@@ -366,14 +384,16 @@ describe('Deployment Analysis Prompts', () => {
       });
 
       it('should handle tasks with zero progress', () => {
-        const zeroProgressTasks = [{
-          taskId: 'task-zero',
-          taskName: 'Not started task',
-          status: 'not_started',
-          progress: 0,
-          category: 'planning',
-          priority: 'low'
-        }];
+        const zeroProgressTasks = [
+          {
+            taskId: 'task-zero',
+            taskName: 'Not started task',
+            status: 'not_started',
+            progress: 0,
+            category: 'planning',
+            priority: 'low',
+          },
+        ];
 
         const result = generateDeploymentProgressCalculationPrompt(zeroProgressTasks);
 
@@ -391,15 +411,15 @@ describe('Deployment Analysis Prompts', () => {
         taskName: 'Database migration',
         verificationCriteria: ['Schema updated', 'Data migrated successfully', 'No data loss'],
         expectedOutcome: 'Database schema updated to v2.0 with all data migrated',
-        status: 'completed'
+        status: 'completed',
       },
       {
         taskId: 'task-002',
         taskName: 'Load balancer setup',
         verificationCriteria: ['Health checks configured', 'SSL termination working'],
         expectedOutcome: 'Load balancer distributing traffic across all instances',
-        status: 'in_progress'
-      }
+        status: 'in_progress',
+      },
     ];
 
     const mockOutcomeRules = [
@@ -407,23 +427,27 @@ describe('Deployment Analysis Prompts', () => {
         ruleId: 'rule-001',
         description: 'Database integrity verification',
         criteria: ['No data corruption', 'All constraints maintained', 'Performance within SLA'],
-        verificationMethod: 'automated_testing'
+        verificationMethod: 'automated_testing',
       },
       {
         ruleId: 'rule-002',
         description: 'Load balancer functionality',
         criteria: ['Traffic distribution working', 'Failover mechanism tested'],
-        verificationMethod: 'manual_testing'
-      }
+        verificationMethod: 'manual_testing',
+      },
     ];
 
     const mockActualOutcomes = [
       {
         taskId: 'task-001',
         outcome: 'Database successfully migrated with zero downtime',
-        evidence: ['Migration logs clean', 'Data integrity checks passed', 'Performance tests passed'],
-        timestamp: '2023-01-01T12:00:00Z'
-      }
+        evidence: [
+          'Migration logs clean',
+          'Data integrity checks passed',
+          'Performance tests passed',
+        ],
+        timestamp: '2023-01-01T12:00:00Z',
+      },
     ];
 
     describe('basic functionality', () => {
@@ -519,15 +543,20 @@ describe('Deployment Analysis Prompts', () => {
       });
 
       it('should handle tasks with empty verification criteria', () => {
-        const taskWithEmptyCriteria = [{
-          taskId: 'task-empty',
-          taskName: 'Empty criteria task',
-          verificationCriteria: [],
-          expectedOutcome: 'Some outcome',
-          status: 'completed'
-        }];
+        const taskWithEmptyCriteria = [
+          {
+            taskId: 'task-empty',
+            taskName: 'Empty criteria task',
+            verificationCriteria: [],
+            expectedOutcome: 'Some outcome',
+            status: 'completed',
+          },
+        ];
 
-        const result = generateCompletionVerificationPrompt(taskWithEmptyCriteria, mockOutcomeRules);
+        const result = generateCompletionVerificationPrompt(
+          taskWithEmptyCriteria,
+          mockOutcomeRules
+        );
 
         expect(result).toContain('Empty criteria task');
         expect(result).toContain('Some outcome');
@@ -545,12 +574,14 @@ describe('Deployment Analysis Prompts', () => {
 
     it('should handle special characters and unicode in all functions', () => {
       const unicodeContent = 'Content with unicode: 🚀 ✅ 🔧 📊 中文 العربية';
-      const unicodeAdr = [{
-        id: 'unicode-test',
-        title: 'Unicode Test',
-        content: unicodeContent,
-        status: 'accepted'
-      }];
+      const unicodeAdr = [
+        {
+          id: 'unicode-test',
+          title: 'Unicode Test',
+          content: unicodeContent,
+          status: 'accepted',
+        },
+      ];
 
       const result = generateDeploymentTaskIdentificationPrompt(unicodeAdr);
       expect(result).toContain(unicodeContent);
@@ -561,7 +592,7 @@ describe('Deployment Analysis Prompts', () => {
         generateDeploymentTaskIdentificationPrompt([]),
         generateCiCdAnalysisPrompt(''),
         generateDeploymentProgressCalculationPrompt([]),
-        generateCompletionVerificationPrompt([], [])
+        generateCompletionVerificationPrompt([], []),
       ];
 
       results.forEach(result => {

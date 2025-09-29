@@ -11,7 +11,7 @@ import {
   MemoryType,
   EvaluationCriterion,
   ReflectionDepth,
-  MemoryQuery
+  MemoryQuery,
 } from '../types/reflexion-framework.js';
 import { PromptObject } from './prompt-composition.js';
 
@@ -29,7 +29,7 @@ const DEFAULT_REFLEXION_CONFIG: Required<ReflexionConfig> = {
   feedbackIntegration: true,
   autoCleanup: true,
   relevanceThreshold: 0.6,
-  confidenceThreshold: 0.7
+  confidenceThreshold: 0.7,
 };
 
 const REFLEXION_VERSION = '1.0.0';
@@ -60,7 +60,9 @@ export async function executeWithReflexion(
 
     // Generate cache key for this reflexion request
     const contextHash = Buffer.from(JSON.stringify(basePrompt)).toString('base64').substring(0, 16);
-    const configHash = Buffer.from(JSON.stringify(mergedConfig)).toString('base64').substring(0, 16);
+    const configHash = Buffer.from(JSON.stringify(mergedConfig))
+      .toString('base64')
+      .substring(0, 16);
     const cacheKey = `reflexion:execution:${contextHash}-${configHash}`;
 
     // Create comprehensive reflexion execution prompt
@@ -111,19 +113,21 @@ ${JSON.stringify(basePrompt.context, null, 2)}
 ### Step 3: Performance Evaluation
 Evaluate the task execution on these criteria (0-1 scale):
 
-${mergedConfig.evaluationCriteria.map(criterion => {
-  const descriptions = {
-    'task-success': 'Did the task achieve its intended outcome successfully?',
-    'quality': 'How well was the task executed in terms of accuracy and completeness?',
-    'efficiency': 'Was the approach optimal in terms of time and resource usage?',
-    'accuracy': 'How accurate and correct were the results produced?',
-    'completeness': 'Was the task fully completed with all requirements met?',
-    'relevance': 'How relevant and appropriate was the output for the context?',
-    'clarity': 'How clear and understandable was the communication and output?',
-    'innovation': 'Was the approach creative or novel in addressing the task?'
-  };
-  return `- **${criterion}**: ${descriptions[criterion] || 'Evaluate based on this criterion'}`;
-}).join('\n')}
+${mergedConfig.evaluationCriteria
+  .map(criterion => {
+    const descriptions = {
+      'task-success': 'Did the task achieve its intended outcome successfully?',
+      quality: 'How well was the task executed in terms of accuracy and completeness?',
+      efficiency: 'Was the approach optimal in terms of time and resource usage?',
+      accuracy: 'How accurate and correct were the results produced?',
+      completeness: 'Was the task fully completed with all requirements met?',
+      relevance: 'How relevant and appropriate was the output for the context?',
+      clarity: 'How clear and understandable was the communication and output?',
+      innovation: 'Was the approach creative or novel in addressing the task?',
+    };
+    return `- **${criterion}**: ${descriptions[criterion] || 'Evaluate based on this criterion'}`;
+  })
+  .join('\n')}
 
 ### Step 4: Self-Reflection and Lesson Extraction
 Generate ${mergedConfig.reflectionDepth} self-reflection including:
@@ -373,10 +377,9 @@ You must:
         version: REFLEXION_VERSION,
         timestamp: Date.now(),
         securityLevel: 'high',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate reflexion execution prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -553,10 +556,9 @@ You must:
         version: REFLEXION_VERSION,
         timestamp: Date.now(),
         securityLevel: 'medium',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate memory retrieval prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -706,10 +708,9 @@ You must:
         memoryType: memory.memoryType,
         filePath: `docs/reflexion-memory/${memory.memoryType}/${memory.metadata.category}/${memory.memoryId}.json`,
         securityLevel: 'medium',
-        expectedFormat: 'confirmation'
-      }
+        expectedFormat: 'confirmation',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate memory persistence prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -726,7 +727,9 @@ export async function getLearningProgress(
   taskType: string
 ): Promise<{ prompt: string; instructions: string; context: any }> {
   try {
-    console.error(`[DEBUG] Generating learning progress analysis prompt for task type: ${taskType}`);
+    console.error(
+      `[DEBUG] Generating learning progress analysis prompt for task type: ${taskType}`
+    );
 
     const prompt = `
 # Learning Progress Analysis Request
@@ -899,10 +902,9 @@ You must:
         taskType,
         analysisScope: 'comprehensive',
         securityLevel: 'low',
-        expectedFormat: 'json'
-      }
+        expectedFormat: 'json',
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate learning progress prompt: ${error instanceof Error ? error.message : String(error)}`,
@@ -918,10 +920,7 @@ You must:
 /**
  * Generate cache key for reflexion requests
  */
-export function generateReflexionCacheKey(
-  promptHash: string,
-  config: ReflexionConfig
-): string {
+export function generateReflexionCacheKey(promptHash: string, config: ReflexionConfig): string {
   const configHash = Buffer.from(JSON.stringify(config)).toString('base64').substring(0, 16);
   return `reflexion:execution:${promptHash}-${configHash}`;
 }
@@ -937,7 +936,10 @@ export function getDefaultReflexionConfig(): Required<ReflexionConfig> {
  * Validate reflexion configuration
  */
 export function validateReflexionConfig(config: Partial<ReflexionConfig>): void {
-  if (config.maxMemoryEntries !== undefined && (config.maxMemoryEntries < 1 || config.maxMemoryEntries > 1000)) {
+  if (
+    config.maxMemoryEntries !== undefined &&
+    (config.maxMemoryEntries < 1 || config.maxMemoryEntries > 1000)
+  ) {
     throw new McpAdrError('Max memory entries must be between 1 and 1000', 'INVALID_CONFIG');
   }
 
@@ -949,11 +951,17 @@ export function validateReflexionConfig(config: Partial<ReflexionConfig>): void 
     throw new McpAdrError('Memory retention must be between 1 and 365 days', 'INVALID_CONFIG');
   }
 
-  if (config.relevanceThreshold && (config.relevanceThreshold < 0 || config.relevanceThreshold > 1)) {
+  if (
+    config.relevanceThreshold &&
+    (config.relevanceThreshold < 0 || config.relevanceThreshold > 1)
+  ) {
     throw new McpAdrError('Relevance threshold must be between 0 and 1', 'INVALID_CONFIG');
   }
 
-  if (config.confidenceThreshold && (config.confidenceThreshold < 0 || config.confidenceThreshold > 1)) {
+  if (
+    config.confidenceThreshold &&
+    (config.confidenceThreshold < 0 || config.confidenceThreshold > 1)
+  ) {
     throw new McpAdrError('Confidence threshold must be between 0 and 1', 'INVALID_CONFIG');
   }
 }
@@ -977,7 +985,7 @@ export function getSupportedEvaluationCriteria(): EvaluationCriterion[] {
     'completeness',
     'relevance',
     'clarity',
-    'innovation'
+    'innovation',
   ];
 }
 
@@ -996,42 +1004,42 @@ export function createToolReflexionConfig(
   customConfig: Partial<ReflexionConfig> = {}
 ): ReflexionConfig {
   const toolConfigs: Record<string, Partial<ReflexionConfig>> = {
-    'generate_adrs_from_prd': {
+    generate_adrs_from_prd: {
       maxMemoryEntries: 100,
       reflectionDepth: 'comprehensive',
       evaluationCriteria: ['task-success', 'relevance', 'clarity', 'completeness'],
       learningRate: 0.8,
       memoryRetention: 90,
       relevanceThreshold: 0.7,
-      confidenceThreshold: 0.75
+      confidenceThreshold: 0.75,
     },
-    'suggest_adrs': {
+    suggest_adrs: {
       maxMemoryEntries: 75,
       reflectionDepth: 'detailed',
       evaluationCriteria: ['task-success', 'relevance', 'efficiency'],
       learningRate: 0.7,
       memoryRetention: 60,
       relevanceThreshold: 0.6,
-      confidenceThreshold: 0.7
+      confidenceThreshold: 0.7,
     },
-    'analyze_project_ecosystem': {
+    analyze_project_ecosystem: {
       maxMemoryEntries: 60,
       reflectionDepth: 'detailed',
       evaluationCriteria: ['accuracy', 'completeness', 'efficiency'],
       learningRate: 0.7,
       memoryRetention: 60,
       relevanceThreshold: 0.6,
-      confidenceThreshold: 0.65
+      confidenceThreshold: 0.65,
     },
-    'generate_research_questions': {
+    generate_research_questions: {
       maxMemoryEntries: 50,
       reflectionDepth: 'detailed',
       evaluationCriteria: ['quality', 'relevance', 'innovation'],
       learningRate: 0.75,
       memoryRetention: 120,
       relevanceThreshold: 0.65,
-      confidenceThreshold: 0.7
-    }
+      confidenceThreshold: 0.7,
+    },
   };
 
   const toolSpecificConfig = toolConfigs[toolName] || {};
@@ -1055,10 +1063,10 @@ export function calculateMemoryExpiration(
   importance: 'low' | 'medium' | 'high' | 'critical' = 'medium'
 ): string {
   const multipliers = {
-    'low': 0.5,
-    'medium': 1.0,
-    'high': 2.0,
-    'critical': 5.0
+    low: 0.5,
+    medium: 1.0,
+    high: 2.0,
+    critical: 5.0,
   };
 
   const adjustedDays = retentionDays * multipliers[importance];
@@ -1087,7 +1095,7 @@ export function createMemoryQuery(
     relevanceThreshold: options.relevanceThreshold || 0.6,
     maxResults: options.maxResults || 10,
     includeExpired: options.includeExpired || false,
-    ...options
+    ...options,
   };
 }
 
@@ -1143,7 +1151,7 @@ export async function enhancePromptWithMemories(
       strategies: memory.content.strategies,
       applicableScenarios: memory.content.applicableScenarios,
       relevance: memory.relevanceScore,
-      quality: memory.metadata.quality
+      quality: memory.metadata.quality,
     }));
 
     const enhancedPrompt = `
@@ -1153,13 +1161,17 @@ export async function enhancePromptWithMemories(
 ${basePrompt.prompt}
 
 ## Relevant Past Experiences
-${memoryContext.map((mem, index) => `
+${memoryContext
+  .map(
+    (mem, index) => `
 ### Memory ${index + 1}: ${mem.type} (Relevance: ${mem.relevance})
 **Summary**: ${mem.summary}
 **Key Lessons**: ${mem.lessons.join('; ')}
 **Successful Strategies**: ${mem.strategies.join('; ')}
 **Applicable to**: ${mem.applicableScenarios.join(', ')}
-`).join('\n')}
+`
+  )
+  .join('\n')}
 
 ## Memory-Informed Approach
 Based on past experiences, please:
@@ -1190,10 +1202,9 @@ Execute the task with memory-informed decision making and document how past expe
         memoryEnhanced: true,
         memoryCount: memories.length,
         version: REFLEXION_VERSION,
-        timestamp: Date.now()
-      }
+        timestamp: Date.now(),
+      },
     };
-
   } catch (error) {
     throw new McpAdrError(
       `Failed to enhance prompt with memories: ${error instanceof Error ? error.message : String(error)}`,
