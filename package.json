@@ -1,6 +1,6 @@
 {
   "name": "mcp-adr-analysis-server",
-  "version": "2.1.5",
+  "version": "2.1.8",
   "description": "MCP server for analyzing Architectural Decision Records and project architecture",
   "main": "dist/src/index.js",
   "type": "module",
