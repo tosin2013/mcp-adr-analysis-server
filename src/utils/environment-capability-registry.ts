@@ -491,7 +491,7 @@ export class EnvironmentCapabilityRegistry {
           'EnvironmentCapabilityRegistry'
         );
       }
-    } catch (_error) {
+    } catch {
       this.logger.warn(
         `Failed to register capability: ${capability.name}`,
         'EnvironmentCapabilityRegistry'
@@ -519,7 +519,7 @@ export class EnvironmentCapabilityRegistry {
           confidence: this.calculateCapabilityConfidence(data),
           timestamp: new Date().toISOString(),
         });
-      } catch (_error) {
+      } catch {
         this.logger.warn(
           `Failed to query capability: ${capability.name}`,
           'EnvironmentCapabilityRegistry'
