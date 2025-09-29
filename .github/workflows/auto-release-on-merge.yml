@@ -10,6 +10,9 @@ jobs:
     # Only run if PR was merged (not just closed) and not already handled by dependabot workflow
     if: github.event.pull_request.merged == true && github.actor != 'dependabot[bot]'
     runs-on: ubuntu-latest
+    outputs:
+      new-version: ${{ steps.bump-version.outputs.version }}
+      should-publish: ${{ steps.should-skip.outputs.should_skip != 'true' }}
     permissions:
       contents: write
       pull-requests: write
@@ -99,6 +102,7 @@ jobs:
           echo "Version bump type: $VERSION_TYPE"
 
       - name: Bump version
+        id: bump-version
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
         run: |
           echo "Bumping version with type: ${{ steps.version-type.outputs.version_type }}"
@@ -108,6 +112,7 @@ jobs:
 
           NEW_VERSION=$(node -p "require('./package.json').version")
           echo "NEW_VERSION=$NEW_VERSION" >> $GITHUB_ENV
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
           echo "New version: $NEW_VERSION"
 
       - name: Find Release Drafter draft
@@ -317,3 +322,15 @@ jobs:
           echo "**PR**: ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "To enable auto-release, update `.github/auto-release.config.json` or remove skip labels." >> $GITHUB_STEP_SUMMARY
+
+  # Trigger NPM publishing
+  publish-npm:
+    needs: auto-release
+    if: github.event.pull_request.merged == true && github.actor != 'dependabot[bot]' && needs.auto-release.outputs.should-publish == 'true'
+    uses: ./.github/workflows/publish.yml
+    with:
+      version: v${{ needs.auto-release.outputs.new-version }}
+      skip_tests: false
+      dry_run: false
+    secrets:
+      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
