@@ -3,14 +3,39 @@
  */
 
 import { jest } from '@jest/globals';
-import { validateAdr, validateAllAdrs } from '../../src/tools/adr-validation-tool.js';
-import * as fs from 'fs/promises';
+import type * as fsType from 'fs/promises';
 
-// Mock dependencies
-jest.mock('fs/promises');
-jest.mock('../../src/utils/research-orchestrator.js');
-jest.mock('../../src/utils/ai-executor.js');
+// Create mock functions BEFORE any imports
+const mockReadFile = jest.fn<typeof fsType.readFile>();
+const mockReaddir = jest.fn<typeof fsType.readdir>();
+
+// Create mock constructors that can be reconfigured per test
+const MockResearchOrchestrator = jest.fn();
+const mockGetAIExecutor = jest.fn();
+
+// Mock dependencies BEFORE importing the module under test
+jest.mock('fs/promises', () => ({
+  __esModule: true,
+  readFile: mockReadFile,
+  readdir: mockReaddir,
+}));
+
+// Mock ResearchOrchestrator with proper constructor
+jest.mock('../../src/utils/research-orchestrator.js', () => ({
+  __esModule: true,
+  ResearchOrchestrator: MockResearchOrchestrator,
+}));
+
+// Mock AI executor
+jest.mock('../../src/utils/ai-executor.js', () => ({
+  __esModule: true,
+  getAIExecutor: mockGetAIExecutor,
+}));
+
 jest.mock('../../src/utils/knowledge-graph-manager.js');
+
+// NOW import the module under test after all mocks are set up
+import { validateAdr, validateAllAdrs } from '../../src/tools/adr-validation-tool.js';
 
 describe('ADR Validation Tool', () => {
   beforeEach(() => {
@@ -33,11 +58,10 @@ We will use Kubernetes for container orchestration.
 - Industry standard platform
 `;
 
-      jest.mocked(fs.readFile).mockResolvedValue(mockAdrContent);
+      mockReadFile.mockResolvedValue(mockAdrContent);
 
       // Mock research orchestrator
-      const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      jest.mocked(ResearchOrchestrator).mockImplementation(
+      MockResearchOrchestrator.mockImplementation(
         () =>
           ({
             answerResearchQuestion: jest.fn().mockResolvedValue({
@@ -59,8 +83,7 @@ We will use Kubernetes for container orchestration.
       );
 
       // Mock AI executor
-      const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
-      jest.mocked(getAIExecutor).mockReturnValue({
+      mockGetAIExecutor.mockReturnValue({
         isAvailable: () => true,
         executeStructuredPrompt: jest.fn().mockResolvedValue({
           data: {
@@ -89,10 +112,9 @@ We will use Kubernetes for container orchestration.
 We will use Docker Swarm for container orchestration.
 `;
 
-      jest.mocked(fs.readFile).mockResolvedValue(mockAdrContent);
+      mockReadFile.mockResolvedValue(mockAdrContent);
 
-      const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      jest.mocked(ResearchOrchestrator).mockImplementation(
+      MockResearchOrchestrator.mockImplementation(
         () =>
           ({
             answerResearchQuestion: jest.fn().mockResolvedValue({
@@ -105,8 +127,7 @@ We will use Docker Swarm for container orchestration.
           }) as any
       );
 
-      const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
-      jest.mocked(getAIExecutor).mockReturnValue({
+      mockGetAIExecutor.mockReturnValue({
         isAvailable: () => true,
         executeStructuredPrompt: jest.fn().mockResolvedValue({
           data: {
@@ -145,10 +166,9 @@ We will use Docker Swarm for container orchestration.
 We will use Redis for caching.
 `;
 
-      jest.mocked(fs.readFile).mockResolvedValue(mockAdrContent);
+      mockReadFile.mockResolvedValue(mockAdrContent);
 
-      const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      jest.mocked(ResearchOrchestrator).mockImplementation(
+      MockResearchOrchestrator.mockImplementation(
         () =>
           ({
             answerResearchQuestion: jest.fn().mockResolvedValue({
@@ -161,8 +181,7 @@ We will use Redis for caching.
           }) as any
       );
 
-      const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
-      jest.mocked(getAIExecutor).mockReturnValue({
+      mockGetAIExecutor.mockReturnValue({
         isAvailable: () => true,
         executeStructuredPrompt: jest.fn().mockResolvedValue({
           data: {
@@ -202,10 +221,9 @@ We will use Redis for caching.
 We will use PostgreSQL as our primary database.
 `;
 
-      jest.mocked(fs.readFile).mockResolvedValue(mockAdrContent);
+      mockReadFile.mockResolvedValue(mockAdrContent);
 
-      const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      jest.mocked(ResearchOrchestrator).mockImplementation(
+      MockResearchOrchestrator.mockImplementation(
         () =>
           ({
             answerResearchQuestion: jest.fn().mockResolvedValue({
@@ -218,8 +236,7 @@ We will use PostgreSQL as our primary database.
           }) as any
       );
 
-      const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
-      jest.mocked(getAIExecutor).mockReturnValue({
+      mockGetAIExecutor.mockReturnValue({
         isAvailable: () => false,
         executeStructuredPrompt: jest.fn(),
       } as any);
@@ -234,7 +251,7 @@ We will use PostgreSQL as our primary database.
     });
 
     it('should handle file read errors', async () => {
-      jest.mocked(fs.readFile).mockRejectedValue(new Error('File not found'));
+      mockReadFile.mockRejectedValue(new Error('File not found'));
 
       await expect(
         validateAdr({
@@ -247,20 +264,19 @@ We will use PostgreSQL as our primary database.
 
   describe('validateAllAdrs', () => {
     it('should validate multiple ADRs', async () => {
-      jest.mocked(fs.readdir).mockResolvedValue([
+      mockReaddir.mockResolvedValue([
         'adr-001-kubernetes.md',
         'adr-002-redis.md',
         'README.md', // Should be filtered out
       ] as any);
 
-      jest.mocked(fs.readFile).mockResolvedValue(`# Test ADR
+      mockReadFile.mockResolvedValue(`# Test ADR
 
 ## Decision
 Test decision
 `);
 
-      const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      jest.mocked(ResearchOrchestrator).mockImplementation(
+      MockResearchOrchestrator.mockImplementation(
         () =>
           ({
             answerResearchQuestion: jest.fn().mockResolvedValue({
@@ -273,8 +289,7 @@ Test decision
           }) as any
       );
 
-      const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
-      jest.mocked(getAIExecutor).mockReturnValue({
+      mockGetAIExecutor.mockReturnValue({
         isAvailable: () => false,
       } as any);
 
@@ -288,11 +303,10 @@ Test decision
     });
 
     it('should generate validation summary', async () => {
-      jest.mocked(fs.readdir).mockResolvedValue(['adr-001-test.md'] as any);
-      jest.mocked(fs.readFile).mockResolvedValue('# Test\n## Decision\nTest');
+      mockReaddir.mockResolvedValue(['adr-001-test.md'] as any);
+      mockReadFile.mockResolvedValue('# Test\n## Decision\nTest');
 
-      const { ResearchOrchestrator } = await import('../../src/utils/research-orchestrator.js');
-      jest.mocked(ResearchOrchestrator).mockImplementation(
+      MockResearchOrchestrator.mockImplementation(
         () =>
           ({
             answerResearchQuestion: jest.fn().mockResolvedValue({
@@ -305,8 +319,7 @@ Test decision
           }) as any
       );
 
-      const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
-      jest.mocked(getAIExecutor).mockReturnValue({
+      mockGetAIExecutor.mockReturnValue({
         isAvailable: () => false,
       } as any);
 
