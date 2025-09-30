@@ -2,8 +2,10 @@ import { jest } from '@jest/globals';
 
 // Mock child_process to prevent actual git commands during tests
 const mockExecSync = jest.fn();
+const mockExec = jest.fn();
 jest.unstable_mockModule('child_process', () => ({
   execSync: mockExecSync,
+  exec: mockExec,
 }));
 
 // Mock fs functions to prevent actual file system operations
@@ -82,6 +84,15 @@ describe('Smart Git Push Tool V2', () => {
         return '* main';
       }
       return '';
+    });
+
+    // Mock exec (callback-based) for EnvironmentCapabilityRegistry
+    mockExec.mockImplementation((command: string, callback: any) => {
+      // Simulate successful command execution
+      setImmediate(() => {
+        callback(null, '', '');
+      });
+      return {} as any; // Return a mock child process object
     });
 
     // Mock file system operations
