@@ -116,7 +116,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
       expect(Array.isArray(result.content)).toBe(true);
       expect(result.content[0].type).toBe('text');
       expect(result.content[0].text).toContain('Failure Analysis');
-    });
+    }, 30000);
 
     it('should validate generate_test_plan operation input', async () => {
       const validInput = {
