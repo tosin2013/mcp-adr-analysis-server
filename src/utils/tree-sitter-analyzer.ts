@@ -662,12 +662,44 @@ export class TreeSitterAnalyzer {
 
     // Basic regex-based secret detection
     const secretPatterns = [
-      { pattern: /(?:api[_-]?key|apikey)[:=]\s*['""]([^'""]+)['""]?/i, type: 'api_key' as const },
-      { pattern: /(?:password|pwd|pass)[:=]\s*['""]([^'""]+)['""]?/i, type: 'password' as const },
-      { pattern: /(?:token|auth)[:=]\s*['""]([^'""]+)['""]?/i, type: 'token' as const },
       {
-        pattern: /(?:secret|private[_-]?key)[:=]\s*['""]([^'""]+)['""]?/i,
+        pattern: /["']?(?:api[_-]?key|apikey)["']?\s*[:=\s]\s*["']([^"']+)["']/i,
+        type: 'api_key' as const,
+      },
+      {
+        pattern: /["']?(?:password|pwd|pass)["']?\s*[:=\s]\s*["']([^"']+)["']/i,
+        type: 'password' as const,
+      },
+      { pattern: /["']?(?:token|auth)["']?\s*[:=\s]\s*["']([^"']+)["']/i, type: 'token' as const },
+      {
+        pattern: /["']?(?:secret|private[_-]?key)["']?\s*[:=\s]\s*["']([^"']+)["']/i,
         type: 'private_key' as const,
+      },
+      // AWS Access Key - specific pattern (environment variable style)
+      {
+        pattern:
+          /AWS_ACCESS_KEY_ID\s*[:=]\s*["']?((?:AKIA|ASIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA)[A-Z0-9]{16})["']?/i,
+        type: 'api_key' as const,
+      },
+      // AWS Access Key - generic pattern (any variable name with AWS key format)
+      {
+        pattern: /["']?((?:AKIA|ASIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA)[A-Z0-9]{16})["']?/,
+        type: 'api_key' as const,
+      },
+      // AWS Secret Key - specific pattern (40 chars)
+      {
+        pattern: /AWS_SECRET_ACCESS_KEY\s*[:=]\s*["']?([A-Za-z0-9+/]{40})["']?/i,
+        type: 'private_key' as const,
+      },
+      // Generic AWS secret assignment
+      {
+        pattern: /(?:aws_secret|secret_key)\s*[:=]\s*["']([A-Za-z0-9+/]{40})["']/i,
+        type: 'private_key' as const,
+      },
+      // YAML/Dockerfile environment variables with hardcoded values
+      {
+        pattern: /(?:value|ENV\s+\w+)\s*[:=]?\s*["']([a-zA-Z0-9_-]{10,})["']/i,
+        type: 'credential' as const,
       },
     ];
 
@@ -684,6 +716,17 @@ export class TreeSitterAnalyzer {
           });
         }
       });
+
+      // Detect privilege escalation in Dockerfile
+      if (language === 'dockerfile' && /USER\s+root/i.test(line)) {
+        result.securityIssues.push({
+          type: 'privilege_escalation',
+          severity: 'high',
+          location: { line: index + 1, column: 0 },
+          message: 'Running as root user',
+          suggestion: 'Use a non-root user',
+        });
+      }
     });
 
     result.hasSecrets = result.secrets.length > 0;
@@ -766,14 +809,40 @@ export class TreeSitterAnalyzer {
   }
 
   private detectSecretPattern(text: string): SecretMatch['type'] | null {
-    // AWS Access Key
-    if (/^AKIA[0-9A-Z]{16}$/.test(text)) return 'api_key';
+    // AWS Access Key (various types)
+    if (/^(A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16}$/.test(text)) {
+      return 'api_key';
+    }
 
-    // Generic API key patterns
-    if (/^[A-Za-z0-9]{32,}$/.test(text) && text.length >= 32) return 'api_key';
+    // AWS Secret Key (40 characters, base64-like) - using boundary detection
+    if (/^[A-Za-z0-9+/]{40}$/.test(text)) {
+      return 'private_key';
+    }
+
+    // AWS Session Token (longer, base64-like)
+    if (/^[A-Za-z0-9+/=]{100,}$/.test(text)) {
+      return 'token';
+    }
 
     // JWT Token
-    if (/^eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_.+/]*$/.test(text)) return 'token';
+    if (/^eyJ[A-Za-z0-9-_]+\.[A-Za-z0-9-_]+\.[A-Za-z0-9-_.+/]*$/.test(text)) {
+      return 'token';
+    }
+
+    // GitHub Personal Access Token
+    if (/^ghp_[A-Za-z0-9]{36}$/.test(text)) {
+      return 'token';
+    }
+
+    // Slack tokens
+    if (/^xox[baprs]-[0-9]{12}-[0-9]{12}-[a-zA-Z0-9]{24}$/.test(text)) {
+      return 'token';
+    }
+
+    // Generic API key patterns (32+ alphanumeric)
+    if (/^[A-Za-z0-9]{32,64}$/.test(text) && text.length >= 32) {
+      return 'api_key';
+    }
 
     return null;
   }
