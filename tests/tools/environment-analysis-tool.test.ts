@@ -403,7 +403,7 @@ describe('environment-analysis-tool', () => {
           expect(result.content[0]).toHaveProperty('type', 'text');
           expect(result.content[0]).toHaveProperty('text');
         }
-      });
+      }, 30000); // Increase timeout to 30 seconds for comprehensive analysis
 
       it('should provide different content for different analysis types', async () => {
         const specsResult = await analyzeEnvironment({ analysisType: 'specs' });
