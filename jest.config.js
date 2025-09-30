@@ -3,6 +3,17 @@ export default {
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    // Mock tree-sitter native modules that fail in Jest VM environment
+    '^tree-sitter$': '<rootDir>/tests/__mocks__/tree-sitter.ts',
+    '^tree-sitter-typescript$': '<rootDir>/tests/__mocks__/tree-sitter-typescript.ts',
+    '^tree-sitter-javascript$': '<rootDir>/tests/__mocks__/tree-sitter-javascript.ts',
+    '^tree-sitter-python$': '<rootDir>/tests/__mocks__/tree-sitter-python.ts',
+    '^tree-sitter-yaml$': '<rootDir>/tests/__mocks__/tree-sitter-yaml.ts',
+    '^tree-sitter-json$': '<rootDir>/tests/__mocks__/tree-sitter-json.ts',
+    '^tree-sitter-bash$': '<rootDir>/tests/__mocks__/tree-sitter-bash.ts',
+    '^tree-sitter-dockerfile$': '<rootDir>/tests/__mocks__/tree-sitter-dockerfile.ts',
+    '^@tree-sitter-grammars/tree-sitter-hcl$':
+      '<rootDir>/tests/__mocks__/@tree-sitter-grammars/tree-sitter-hcl.ts',
   },
   testEnvironment: 'node',
   roots: ['<rootDir>/src', '<rootDir>/tests'],
