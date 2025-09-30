@@ -13,8 +13,6 @@ import { promisify } from 'util';
 import * as os from 'os';
 import { EnhancedLogger } from './enhanced-logging.js';
 
-const execAsync = promisify(exec);
-
 export interface EnvironmentCapability {
   name: string;
   type: 'kubernetes' | 'openshift' | 'docker' | 'podman' | 'os' | 'ansible' | 'cloud' | 'database';
@@ -35,15 +33,19 @@ export interface CapabilityQueryResult {
   timestamp: string;
 }
 
+type ExecFunction = (command: string) => Promise<{ stdout: string; stderr: string }>;
+
 export class EnvironmentCapabilityRegistry {
   private capabilities: Map<string, EnvironmentCapability> = new Map();
   private logger: EnhancedLogger;
   private projectPath: string;
   private discoveryComplete: boolean = false;
+  private execAsync: ExecFunction;
 
-  constructor(projectPath?: string) {
+  constructor(projectPath?: string, execFunction?: ExecFunction) {
     this.logger = new EnhancedLogger();
     this.projectPath = projectPath || process.cwd();
+    this.execAsync = execFunction || (promisify(exec) as ExecFunction);
   }
 
   /**
@@ -105,7 +107,7 @@ export class EnvironmentCapabilityRegistry {
 
         if (queryLower.includes('disk') || queryLower.includes('storage')) {
           try {
-            const { stdout } = await execAsync('df -h');
+            const { stdout } = await this.execAsync('df -h');
             result.diskUsage = stdout;
           } catch {
             result.diskUsage = 'Unable to query disk usage';
@@ -139,7 +141,7 @@ export class EnvironmentCapabilityRegistry {
 
       detector: async () => {
         try {
-          await execAsync('docker version --format "{{.Server.Version}}"', { timeout: 5000 });
+          await this.execAsync('docker version --format "{{.Server.Version}}"');
           return true;
         } catch {
           return false;
@@ -156,7 +158,7 @@ export class EnvironmentCapabilityRegistry {
             queryLower.includes('running') ||
             queryLower.includes('status')
           ) {
-            const { stdout: ps } = await execAsync('docker ps --format json');
+            const { stdout: ps } = await this.execAsync('docker ps --format json');
             result.runningContainers = ps
               .trim()
               .split('\n')
@@ -165,7 +167,7 @@ export class EnvironmentCapabilityRegistry {
           }
 
           if (queryLower.includes('image')) {
-            const { stdout: images } = await execAsync('docker images --format json');
+            const { stdout: images } = await this.execAsync('docker images --format json');
             result.images = images
               .trim()
               .split('\n')
@@ -174,7 +176,7 @@ export class EnvironmentCapabilityRegistry {
           }
 
           if (queryLower.includes('network')) {
-            const { stdout: networks } = await execAsync('docker network ls --format json');
+            const { stdout: networks } = await this.execAsync('docker network ls --format json');
             result.networks = networks
               .trim()
               .split('\n')
@@ -183,7 +185,7 @@ export class EnvironmentCapabilityRegistry {
           }
 
           if (queryLower.includes('volume')) {
-            const { stdout: volumes } = await execAsync('docker volume ls --format json');
+            const { stdout: volumes } = await this.execAsync('docker volume ls --format json');
             result.volumes = volumes
               .trim()
               .split('\n')
@@ -211,7 +213,7 @@ export class EnvironmentCapabilityRegistry {
 
       detector: async () => {
         try {
-          await execAsync('podman version --format json', { timeout: 5000 });
+          await this.execAsync('podman version --format json');
           return true;
         } catch {
           return false;
@@ -228,21 +230,21 @@ export class EnvironmentCapabilityRegistry {
             queryLower.includes('pod') ||
             queryLower.includes('running')
           ) {
-            const { stdout: ps } = await execAsync('podman ps --format json');
+            const { stdout: ps } = await this.execAsync('podman ps --format json');
             result.runningContainers = JSON.parse(ps);
 
             // Check for pods (unique to Podman)
-            const { stdout: pods } = await execAsync('podman pod ps --format json');
+            const { stdout: pods } = await this.execAsync('podman pod ps --format json');
             result.pods = JSON.parse(pods);
           }
 
           if (queryLower.includes('image')) {
-            const { stdout: images } = await execAsync('podman images --format json');
+            const { stdout: images } = await this.execAsync('podman images --format json');
             result.images = JSON.parse(images);
           }
 
           if (queryLower.includes('network')) {
-            const { stdout: networks } = await execAsync('podman network ls --format json');
+            const { stdout: networks } = await this.execAsync('podman network ls --format json');
             result.networks = JSON.parse(networks);
           }
 
@@ -266,7 +268,7 @@ export class EnvironmentCapabilityRegistry {
 
       detector: async () => {
         try {
-          await execAsync('kubectl version --client --output=json', { timeout: 5000 });
+          await this.execAsync('kubectl version --client --output=json');
           return true;
         } catch {
           return false;
@@ -279,35 +281,37 @@ export class EnvironmentCapabilityRegistry {
 
         try {
           // Get current context
-          const { stdout: context } = await execAsync('kubectl config current-context');
+          const { stdout: context } = await this.execAsync('kubectl config current-context');
           result.currentContext = context.trim();
 
           if (queryLower.includes('pod')) {
-            const { stdout: pods } = await execAsync('kubectl get pods --all-namespaces -o json');
+            const { stdout: pods } = await this.execAsync(
+              'kubectl get pods --all-namespaces -o json'
+            );
             result.pods = JSON.parse(pods);
           }
 
           if (queryLower.includes('deployment')) {
-            const { stdout: deployments } = await execAsync(
+            const { stdout: deployments } = await this.execAsync(
               'kubectl get deployments --all-namespaces -o json'
             );
             result.deployments = JSON.parse(deployments);
           }
 
           if (queryLower.includes('service')) {
-            const { stdout: services } = await execAsync(
+            const { stdout: services } = await this.execAsync(
               'kubectl get services --all-namespaces -o json'
             );
             result.services = JSON.parse(services);
           }
 
           if (queryLower.includes('node')) {
-            const { stdout: nodes } = await execAsync('kubectl get nodes -o json');
+            const { stdout: nodes } = await this.execAsync('kubectl get nodes -o json');
             result.nodes = JSON.parse(nodes);
           }
 
           if (queryLower.includes('namespace')) {
-            const { stdout: namespaces } = await execAsync('kubectl get namespaces -o json');
+            const { stdout: namespaces } = await this.execAsync('kubectl get namespaces -o json');
             result.namespaces = JSON.parse(namespaces);
           }
 
@@ -317,7 +321,7 @@ export class EnvironmentCapabilityRegistry {
             queryLower.includes('metrics')
           ) {
             try {
-              const { stdout: metrics } = await execAsync('kubectl top nodes');
+              const { stdout: metrics } = await this.execAsync('kubectl top nodes');
               result.nodeMetrics = metrics;
             } catch {
               result.nodeMetrics = 'Metrics server not available';
@@ -344,7 +348,7 @@ export class EnvironmentCapabilityRegistry {
 
       detector: async () => {
         try {
-          await execAsync('oc version --client -o json', { timeout: 5000 });
+          await this.execAsync('oc version --client -o json');
           return true;
         } catch {
           return false;
@@ -357,35 +361,39 @@ export class EnvironmentCapabilityRegistry {
 
         try {
           // Get current project (OpenShift terminology for namespace)
-          const { stdout: project } = await execAsync('oc project -q');
+          const { stdout: project } = await this.execAsync('oc project -q');
           result.currentProject = project.trim();
 
           // Get cluster info
-          const { stdout: version } = await execAsync('oc version -o json');
+          const { stdout: version } = await this.execAsync('oc version -o json');
           result.version = JSON.parse(version);
 
           if (queryLower.includes('pod')) {
-            const { stdout: pods } = await execAsync('oc get pods --all-namespaces -o json');
+            const { stdout: pods } = await this.execAsync('oc get pods --all-namespaces -o json');
             result.pods = JSON.parse(pods);
           }
 
           if (queryLower.includes('deployment') || queryLower.includes('dc')) {
-            const { stdout: dc } = await execAsync('oc get dc --all-namespaces -o json');
+            const { stdout: dc } = await this.execAsync('oc get dc --all-namespaces -o json');
             result.deploymentConfigs = JSON.parse(dc);
           }
 
           if (queryLower.includes('route')) {
-            const { stdout: routes } = await execAsync('oc get routes --all-namespaces -o json');
+            const { stdout: routes } = await this.execAsync(
+              'oc get routes --all-namespaces -o json'
+            );
             result.routes = JSON.parse(routes);
           }
 
           if (queryLower.includes('build') || queryLower.includes('buildconfig')) {
-            const { stdout: builds } = await execAsync('oc get builds --all-namespaces -o json');
+            const { stdout: builds } = await this.execAsync(
+              'oc get builds --all-namespaces -o json'
+            );
             result.builds = JSON.parse(builds);
           }
 
           if (queryLower.includes('project') || queryLower.includes('namespace')) {
-            const { stdout: projects } = await execAsync('oc get projects -o json');
+            const { stdout: projects } = await this.execAsync('oc get projects -o json');
             result.projects = JSON.parse(projects);
           }
 
@@ -409,7 +417,7 @@ export class EnvironmentCapabilityRegistry {
 
       detector: async () => {
         try {
-          await execAsync('ansible --version', { timeout: 5000 });
+          await this.execAsync('ansible --version');
           return true;
         } catch {
           return false;
@@ -422,12 +430,12 @@ export class EnvironmentCapabilityRegistry {
 
         try {
           // Get Ansible version
-          const { stdout: version } = await execAsync('ansible --version');
+          const { stdout: version } = await this.execAsync('ansible --version');
           result.version = version;
 
           if (queryLower.includes('inventory') || queryLower.includes('host')) {
             try {
-              const { stdout: inventory } = await execAsync('ansible-inventory --list');
+              const { stdout: inventory } = await this.execAsync('ansible-inventory --list');
               result.inventory = JSON.parse(inventory);
             } catch {
               result.inventory = 'No inventory file found';
@@ -436,7 +444,7 @@ export class EnvironmentCapabilityRegistry {
 
           if (queryLower.includes('playbook')) {
             try {
-              const { stdout: playbooks } = await execAsync(
+              const { stdout: playbooks } = await this.execAsync(
                 `find ${this.projectPath} -name "*.yml" -o -name "*.yaml" | grep -E "(playbook|play)" | head -20`
               );
               result.playbooks = playbooks.trim().split('\n').filter(Boolean);
@@ -447,7 +455,7 @@ export class EnvironmentCapabilityRegistry {
 
           if (queryLower.includes('role')) {
             try {
-              const { stdout: roles } = await execAsync(
+              const { stdout: roles } = await this.execAsync(
                 `find ${this.projectPath} -type d -name "roles" | head -10`
               );
               result.roles = roles.trim().split('\n').filter(Boolean);
@@ -560,11 +568,11 @@ export class EnvironmentCapabilityRegistry {
   private getCapabilityKeywords(type: string): string[] {
     const keywordMap: Record<string, string[]> = {
       kubernetes: ['k8s', 'pod', 'deployment', 'service', 'cluster'],
-      openshift: ['ocp', 'route', 'buildconfig', 'project'],
+      openshift: ['ocp', 'route', 'buildconfig', 'project', 'build'],
       docker: ['container', 'image', 'volume'],
       podman: ['pod', 'container', 'image'],
       ansible: ['playbook', 'inventory', 'role', 'automation'],
-      os: ['system', 'cpu', 'memory', 'disk', 'network', 'os'],
+      os: ['system', 'cpu', 'memory', 'disk', 'network', 'os', 'platform'],
     };
 
     return keywordMap[type] || [];
