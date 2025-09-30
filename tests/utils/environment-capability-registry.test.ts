@@ -4,38 +4,19 @@
 
 import { jest } from '@jest/globals';
 import { EnvironmentCapabilityRegistry } from '../../src/utils/environment-capability-registry.js';
-import type { exec as execType } from 'child_process';
-
-// Mock child_process
-const mockExec = jest.fn() as jest.MockedFunction<typeof execType>;
-
-jest.mock('child_process', () => ({
-  exec: mockExec,
-}));
-
-jest.mock('util', () => ({
-  promisify: jest.fn((fn: any) => {
-    // Return a function that converts callback-based to promise-based
-    return (...args: any[]) => {
-      return new Promise((resolve, reject) => {
-        fn(...args, (error: Error | null, stdout: string, stderr: string) => {
-          if (error) {
-            reject(error);
-          } else {
-            resolve({ stdout, stderr });
-          }
-        });
-      });
-    };
-  }),
-}));
 
 describe('EnvironmentCapabilityRegistry', () => {
   let registry: EnvironmentCapabilityRegistry;
+  let mockExecAsync: jest.MockedFunction<
+    (cmd: string) => Promise<{ stdout: string; stderr: string }>
+  >;
 
   beforeEach(() => {
-    registry = new EnvironmentCapabilityRegistry('/test/project');
-    jest.clearAllMocks();
+    // Create a fresh mock exec function for each test
+    mockExecAsync = jest.fn<(cmd: string) => Promise<{ stdout: string; stderr: string }>>();
+
+    // Create registry with injected mock executor
+    registry = new EnvironmentCapabilityRegistry('/test/project', mockExecAsync);
   });
 
   describe('discoverCapabilities', () => {
@@ -48,10 +29,11 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should not discover Docker if not installed', async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('docker')) {
-          callback(new Error('command not found'), '', 'docker: command not found');
+          throw new Error('command not found');
         }
+        return { stdout: '', stderr: '' };
       });
 
       await registry.discoverCapabilities();
@@ -60,9 +42,9 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should discover Docker if installed', async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('docker version')) {
-          callback(null, '24.0.0', '');
+          return { stdout: '24.0.0', stderr: '' };
         }
       });
 
@@ -72,9 +54,9 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should discover Podman if installed', async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('podman version')) {
-          callback(null, '{"Version": "4.0.0"}', '');
+          return { stdout: '{"Version": "4.0.0"}', stderr: '' };
         }
       });
 
@@ -84,9 +66,9 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should discover Kubernetes if kubectl is available', async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('kubectl version')) {
-          callback(null, '{"clientVersion": {"gitVersion": "v1.28.0"}}', '');
+          return { stdout: '{"clientVersion": {"gitVersion": "v1.28.0"}}', stderr: '' };
         }
       });
 
@@ -96,9 +78,9 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should discover OpenShift if oc is available', async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('oc version')) {
-          callback(null, '{"openshiftVersion": "4.14"}', '');
+          return { stdout: '{"openshiftVersion": "4.14"}', stderr: '' };
         }
       });
 
@@ -108,9 +90,9 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should discover Ansible if installed', async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('ansible --version')) {
-          callback(null, 'ansible 2.15.0', '');
+          return { stdout: 'ansible 2.15.0', stderr: '' };
         }
       });
 
@@ -120,6 +102,10 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should only discover once', async () => {
+      mockExecAsync.mockImplementation(async (_cmd: string) => {
+        return { stdout: '', stderr: '' };
+      });
+
       await registry.discoverCapabilities();
       await registry.discoverCapabilities();
 
@@ -131,19 +117,19 @@ describe('EnvironmentCapabilityRegistry', () => {
   describe('query', () => {
     beforeEach(async () => {
       // Mock all capabilities as available
-      mockExec.mockImplementation((cmd: any, callback: any) => {
-        callback(null, 'success', '');
+      mockExecAsync.mockImplementation(async (_cmd: string) => {
+        return { stdout: 'success', stderr: '' };
       });
 
       await registry.discoverCapabilities();
     });
 
     it('should query relevant capabilities for container questions', async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('docker ps')) {
-          callback(null, '[{"Names": "web-app"}]', '');
+          return { stdout: '[{"Names": "web-app"}]', stderr: '' };
         } else {
-          callback(null, '{}', '');
+          return { stdout: '{}', stderr: '' };
         }
       });
 
@@ -198,6 +184,10 @@ describe('EnvironmentCapabilityRegistry', () => {
       const results = await registry.query('What platform are we on?');
 
       const osResult = results.find(r => r.capability === 'operating-system');
+      // OS capability always returns platform and arch
+      expect(osResult).toBeDefined();
+      expect(osResult?.found).toBe(true);
+      expect(osResult?.data).toBeDefined();
       expect(osResult?.data.platform).toBeDefined();
       expect(osResult?.data.arch).toBeDefined();
     });
@@ -220,15 +210,15 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('Docker capability', () => {
     beforeEach(async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('docker version')) {
-          callback(null, '24.0.0', '');
+          return { stdout: '24.0.0', stderr: '' };
         } else if (cmd.includes('docker ps')) {
-          callback(null, '[{"Names":"web"},{"Names":"db"}]', '');
+          return { stdout: '[{"Names":"web"},{"Names":"db"}]', stderr: '' };
         } else if (cmd.includes('docker images')) {
-          callback(null, '[{"Repository":"nginx"}]', '');
+          return { stdout: '[{"Repository":"nginx"}]', stderr: '' };
         } else {
-          callback(null, '[]', '');
+          return { stdout: '[]', stderr: '' };
         }
       });
 
@@ -252,15 +242,15 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('Kubernetes capability', () => {
     beforeEach(async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('kubectl version')) {
-          callback(null, '{"clientVersion": {}}', '');
+          return { stdout: '{"clientVersion": {}}', stderr: '' };
         } else if (cmd.includes('kubectl config current-context')) {
-          callback(null, 'minikube', '');
+          return { stdout: 'minikube', stderr: '' };
         } else if (cmd.includes('kubectl get')) {
-          callback(null, '{"items": []}', '');
+          return { stdout: '{"items": []}', stderr: '' };
         } else {
-          callback(null, '{}', '');
+          return { stdout: '{}', stderr: '' };
         }
       });
 
@@ -284,15 +274,15 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('OpenShift capability', () => {
     beforeEach(async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('oc version')) {
-          callback(null, '{"openshiftVersion": "4.14"}', '');
+          return { stdout: '{"openshiftVersion": "4.14"}', stderr: '' };
         } else if (cmd.includes('oc project -q')) {
-          callback(null, 'default', '');
+          return { stdout: 'default', stderr: '' };
         } else if (cmd.includes('oc get')) {
-          callback(null, '{"items": []}', '');
+          return { stdout: '{"items": []}', stderr: '' };
         } else {
-          callback(null, '{}', '');
+          return { stdout: '{}', stderr: '' };
         }
       });
 
@@ -316,15 +306,15 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('Podman capability', () => {
     beforeEach(async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('podman version')) {
-          callback(null, '{"Version": "4.0"}', '');
+          return { stdout: '{"Version": "4.0"}', stderr: '' };
         } else if (cmd.includes('podman ps')) {
-          callback(null, '[{"Names":"container1"}]', '');
+          return { stdout: '[{"Names":"container1"}]', stderr: '' };
         } else if (cmd.includes('podman pod ps')) {
-          callback(null, '[{"Name":"pod1"}]', '');
+          return { stdout: '[{"Name":"pod1"}]', stderr: '' };
         } else {
-          callback(null, '[]', '');
+          return { stdout: '[]', stderr: '' };
         }
       });
 
@@ -342,15 +332,15 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('Ansible capability', () => {
     beforeEach(async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
         if (cmd.includes('ansible --version')) {
-          callback(null, 'ansible 2.15', '');
+          return { stdout: 'ansible 2.15', stderr: '' };
         } else if (cmd.includes('ansible-inventory')) {
-          callback(null, '{"all": {"hosts": []}}', '');
+          return { stdout: '{"all": {"hosts": []}}', stderr: '' };
         } else if (cmd.includes('find')) {
-          callback(null, 'playbook1.yml\nplaybook2.yml', '');
+          return { stdout: 'playbook1.yml\nplaybook2.yml', stderr: '' };
         } else {
-          callback(null, '', '');
+          return { stdout: '', stderr: '' };
         }
       });
 
@@ -401,8 +391,8 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('error handling', () => {
     it('should handle command failures gracefully', async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
-        callback(new Error('Command failed'), '', 'error');
+      mockExecAsync.mockImplementation(async (_cmd: string) => {
+        throw new Error('Command failed');
       });
 
       await registry.discoverCapabilities();
@@ -412,8 +402,8 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should handle query failures gracefully', async () => {
-      mockExec.mockImplementation((cmd: any, callback: any) => {
-        callback(new Error('Query failed'), '', 'error');
+      mockExecAsync.mockImplementation(async (_cmd: string) => {
+        throw new Error('Query failed');
       });
 
       await registry.discoverCapabilities();
