@@ -4,18 +4,30 @@
 
 import { jest } from '@jest/globals';
 import { EnvironmentCapabilityRegistry } from '../../src/utils/environment-capability-registry.js';
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
-const _execAsync = promisify(exec);
+import type { exec as execType } from 'child_process';
 
 // Mock child_process
+const mockExec = jest.fn() as jest.MockedFunction<typeof execType>;
+
 jest.mock('child_process', () => ({
-  exec: jest.fn(),
+  exec: mockExec,
 }));
 
 jest.mock('util', () => ({
-  promisify: jest.fn(fn => fn),
+  promisify: jest.fn((fn: any) => {
+    // Return a function that converts callback-based to promise-based
+    return (...args: any[]) => {
+      return new Promise((resolve, reject) => {
+        fn(...args, (error: Error | null, stdout: string, stderr: string) => {
+          if (error) {
+            reject(error);
+          } else {
+            resolve({ stdout, stderr });
+          }
+        });
+      });
+    };
+  }),
 }));
 
 describe('EnvironmentCapabilityRegistry', () => {
@@ -36,7 +48,7 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should not discover Docker if not installed', async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('docker')) {
           callback(new Error('command not found'), '', 'docker: command not found');
         }
@@ -48,7 +60,7 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should discover Docker if installed', async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('docker version')) {
           callback(null, '24.0.0', '');
         }
@@ -60,7 +72,7 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should discover Podman if installed', async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('podman version')) {
           callback(null, '{"Version": "4.0.0"}', '');
         }
@@ -72,7 +84,7 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should discover Kubernetes if kubectl is available', async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('kubectl version')) {
           callback(null, '{"clientVersion": {"gitVersion": "v1.28.0"}}', '');
         }
@@ -84,7 +96,7 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should discover OpenShift if oc is available', async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('oc version')) {
           callback(null, '{"openshiftVersion": "4.14"}', '');
         }
@@ -96,7 +108,7 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should discover Ansible if installed', async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('ansible --version')) {
           callback(null, 'ansible 2.15.0', '');
         }
@@ -119,7 +131,7 @@ describe('EnvironmentCapabilityRegistry', () => {
   describe('query', () => {
     beforeEach(async () => {
       // Mock all capabilities as available
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         callback(null, 'success', '');
       });
 
@@ -127,7 +139,7 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should query relevant capabilities for container questions', async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('docker ps')) {
           callback(null, '[{"Names": "web-app"}]', '');
         } else {
@@ -208,7 +220,7 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('Docker capability', () => {
     beforeEach(async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('docker version')) {
           callback(null, '24.0.0', '');
         } else if (cmd.includes('docker ps')) {
@@ -240,7 +252,7 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('Kubernetes capability', () => {
     beforeEach(async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('kubectl version')) {
           callback(null, '{"clientVersion": {}}', '');
         } else if (cmd.includes('kubectl config current-context')) {
@@ -272,7 +284,7 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('OpenShift capability', () => {
     beforeEach(async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('oc version')) {
           callback(null, '{"openshiftVersion": "4.14"}', '');
         } else if (cmd.includes('oc project -q')) {
@@ -304,7 +316,7 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('Podman capability', () => {
     beforeEach(async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('podman version')) {
           callback(null, '{"Version": "4.0"}', '');
         } else if (cmd.includes('podman ps')) {
@@ -330,7 +342,7 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('Ansible capability', () => {
     beforeEach(async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         if (cmd.includes('ansible --version')) {
           callback(null, 'ansible 2.15', '');
         } else if (cmd.includes('ansible-inventory')) {
@@ -389,7 +401,7 @@ describe('EnvironmentCapabilityRegistry', () => {
 
   describe('error handling', () => {
     it('should handle command failures gracefully', async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         callback(new Error('Command failed'), '', 'error');
       });
 
@@ -400,7 +412,7 @@ describe('EnvironmentCapabilityRegistry', () => {
     });
 
     it('should handle query failures gracefully', async () => {
-      jest.mocked(exec).mockImplementation((cmd: any, callback: any) => {
+      mockExec.mockImplementation((cmd: any, callback: any) => {
         callback(new Error('Query failed'), '', 'error');
       });
 
