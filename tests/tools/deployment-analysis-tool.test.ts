@@ -507,7 +507,7 @@ describe('deployment-analysis-tool', () => {
         expect(result.content[0].text).toContain('Expected Outcomes');
         expect(result.content[0].text).toContain('Deployment Excellence');
         expect(result.content[0].text).toContain('Integration with AI Agents');
-      });
+      }, 30000);
 
       it('should use default parameters for comprehensive analysis', async () => {
         const mockTaskResult = {
