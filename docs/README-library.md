@@ -59,19 +59,19 @@ const result = lib.doSomething({
 
 ## Full Documentation
 
-[Link to full documentation](docs/)
+[Link to full documentation](./)
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+We welcome contributions! Please see [../CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - see [../LICENSE](../LICENSE) file for details.
 
 [build-badge]: https://github.com/username/repo/workflows/CI/badge.svg
 [build-link]: https://github.com/username/repo/actions
 [npm-badge]: https://img.shields.io/npm/v/package-name.svg
 [npm-link]: https://www.npmjs.com/package/package-name
 [license-badge]: https://img.shields.io/badge/license-MIT-blue.svg
-[license-link]: LICENSE
+[license-link]: ../LICENSE

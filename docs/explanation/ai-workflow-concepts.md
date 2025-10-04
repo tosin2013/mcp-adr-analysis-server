@@ -435,6 +435,6 @@ Always have fallbacks when AI is unavailable:
 ---
 
 **Need Help?** 
-- Check the main [README](../README.md) for basic setup
+- Check the main [README](../../README.md) for basic setup
 - Review specific tool guides for detailed parameters
 - Open an issue on [GitHub](https://github.com/tosin2013/mcp-adr-analysis-server/issues) for AI-related problems

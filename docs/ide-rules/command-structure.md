@@ -82,7 +82,7 @@ Parameters: {
 ```javascript
 Tool: generate_rules
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "source": "both",
   "outputFormat": "json"
 }

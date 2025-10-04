@@ -27,7 +27,7 @@ Add to your MCP client configuration (e.g., Claude Desktop):
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -54,7 +54,7 @@ Add to your MCP client configuration (e.g., Claude Desktop):
 Tool: discover_existing_adrs
 Parameters:
 {
-  "adrDirectory": "docs/adrs"
+  "adrDirectory": "./adrs"
 }
 ```
 *This will scan your ADR directory, catalog all existing decisions, and initialize the `.mcp-adr-cache` infrastructure (always runs regardless of whether ADRs are found).*
@@ -96,7 +96,7 @@ Tool: compare_adr_progress
 Parameters:
 {
   "todoPath": "todo.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "deepCodeAnalysis": true,
   "functionalValidation": true,
   "strictMode": true
@@ -164,7 +164,7 @@ Parameters: {
 Tool: generate_adrs_from_prd
 Parameters: {
   "prdPath": "PRD.md",
-  "outputDirectory": "docs/adrs"
+  "outputDirectory": "./adrs"
 }
 ```
 *Analyzes your PRD.md and generates appropriate ADRs for architectural decisions.*
@@ -222,7 +222,7 @@ Parameters: {
 Tool: compare_adr_progress
 Parameters: {
   "todoPath": "todo.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "projectPath": "/path/to/project",
   "deepCodeAnalysis": true,        // Distinguish mock from production code
   "functionalValidation": true,    // Validate code actually works
@@ -271,7 +271,7 @@ Create and enforce architectural rules:
 ```
 Tool: generate_rules
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "includeCompliance": true
 }
 ```
@@ -320,7 +320,7 @@ Access structured data through MCP resources:
 ## 🔗 Next Steps
 
 - **[Detailed Setup Guide](getting-started-no-adrs.md)** - Complete installation and configuration
-- **[ADR Examples](adrs/)** - See real ADRs from this project
+- **[ADR Examples](./adrs/)** - See real ADRs from this project
 - **[NPM Publishing](NPM_PUBLISHING.md)** - Deploy your own MCP server
 
 ---

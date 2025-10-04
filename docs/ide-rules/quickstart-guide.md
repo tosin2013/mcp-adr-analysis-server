@@ -102,7 +102,7 @@ Parameters: {
 Tool: generate_adrs_from_prd
 Parameters: {
   "prdPath": "PRD.md",
-  "outputDirectory": "docs/adrs"
+  "outputDirectory": "./adrs"
 }
 
 # 3. Generate IDE rules based on architecture

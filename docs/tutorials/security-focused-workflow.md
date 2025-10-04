@@ -44,7 +44,7 @@ Let's create a realistic project that contains common security vulnerabilities:
 
 ```bash
 # Create project structure
-mkdir -p src config docs/adrs
+mkdir -p src config ./adrs
 cd ~/security-tutorial-project
 
 # Create package.json
@@ -341,7 +341,7 @@ Let's create a detailed ADR for secret management:
       ]
     },
     "template": "madr",
-    "outputPath": "docs/adrs/001-secret-management-strategy.md"
+    "outputPath": "././adrs/001-secret-management-strategy.md"
   }
 }
 ```
@@ -352,7 +352,7 @@ Let's create a detailed ADR for secret management:
 {
   "tool": "generate_adr_todo",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "outputPath": "SECURITY_TODO.md",
     "phase": "both",
     "linkAdrs": true,
@@ -623,7 +623,7 @@ jobs:
 {
   "tool": "validate_adr_bootstrap",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "complianceFramework": "security",
     "enableTreeSitterAnalysis": true,
     "securityValidation": true
@@ -644,7 +644,7 @@ Track your security improvements:
   "tool": "compare_adr_progress",
   "parameters": {
     "todoPath": "SECURITY_TODO.md",
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "projectPath": "~/security-tutorial-project",
     "securityFocused": true,
     "includeMetrics": true
@@ -710,9 +710,9 @@ Track your security improvements:
 
 ### Advanced Learning
 
-- **[Large Team Scaling](../how-to-guides/large-team-scaling.md)** - Enterprise security workflows
-- **[CI/CD Integration](../how-to-guides/cicd-integration.md)** - Automated security validation
-- **[Custom Rules](../how-to-guides/custom-rules.md)** - Organization-specific security rules
+- **[Large Team Scaling](./how-to-guides/large-team-scaling.md)** - Enterprise security workflows
+- **[CI/CD Integration](./how-to-guides/cicd-integration.md)** - Automated security validation
+- **[Custom Rules](./how-to-guides/custom-rules.md)** - Organization-specific security rules
 
 ### Community Contribution
 
@@ -724,12 +724,12 @@ Track your security improvements:
 
 ## 📚 Resources
 
-- **[Security Analysis Guide](../how-to-guides/security-analysis.md)** - Comprehensive security reference
-- **[Environment Configuration](../reference/environment-config.md)** - Security-related settings
-- **[Troubleshooting](../how-to-guides/troubleshooting.md)** - Security-related issues
+- **[Security Analysis Guide](./how-to-guides/security-analysis.md)** - Comprehensive security reference
+- **[Environment Configuration](./reference/environment-config.md)** - Security-related settings
+- **[Troubleshooting](./how-to-guides/troubleshooting.md)** - Security-related issues
 
 ---
 
 **🎉 Congratulations!** You've completed the Security-First Architecture Workflow tutorial. You now have the skills to integrate security analysis into every stage of your architectural decision-making process.
 
-**Questions or issues?** → **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** or check the **[Security Guide](../how-to-guides/security-analysis.md)**
+**Questions or issues?** → **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** or check the **[Security Guide](./how-to-guides/security-analysis.md)**

@@ -1,27 +1,57 @@
 {
   "name": "mcp-adr-analysis-server-docs",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "Documentation website for MCP ADR Analysis Server",
-  "type": "module",
   "scripts": {
-    "docs:dev": "vitepress dev",
-    "docs:build": "vitepress build",
-    "docs:preview": "vitepress preview",
-    "docs:serve": "vitepress serve",
-    "setup": "echo '🚀 Setting up documentation website...' && npm install && echo '✅ Setup complete! Run npm run dev to start'",
-    "dev": "echo '🌐 Starting development server...' && vitepress dev",
-    "build": "echo '🔨 Building for production...' && vitepress build && echo '✅ Build complete!'",
-    "deploy": "echo '🚀 Building and deploying...' && npm run build && echo '📡 Push to main branch to deploy via GitHub Actions'",
-    "clean": "echo '🧹 Cleaning build artifacts...' && rm -rf .vitepress/dist .vitepress/cache && echo '✅ Cleanup complete!'"
+    "docusaurus": "docusaurus",
+    "start": "docusaurus start",
+    "build": "docusaurus build",
+    "swizzle": "docusaurus swizzle",
+    "deploy": "docusaurus deploy",
+    "clear": "docusaurus clear",
+    "serve": "docusaurus serve",
+    "write-translations": "docusaurus write-translations",
+    "write-heading-ids": "docusaurus write-heading-ids",
+    "typecheck": "tsc",
+    "dev": "echo '🌐 Starting Docusaurus development server...' && docusaurus start",
+    "docs:build": "echo '🔨 Building Docusaurus for production...' && docusaurus build && echo '✅ Build complete!'",
+    "clean": "echo '🧹 Cleaning build artifacts...' && rm -rf build .docusaurus && echo '✅ Cleanup complete!'",
+    "setup": "echo '🚀 Setting up Docusaurus documentation...' && npm install && echo '✅ Setup complete! Run npm run dev to start'"
+  },
+  "dependencies": {
+    "@docusaurus/core": "^3.1.0",
+    "@docusaurus/preset-classic": "^3.1.0",
+    "@docusaurus/theme-mermaid": "^3.1.0",
+    "@mdx-js/react": "^3.0.0",
+    "clsx": "^2.0.0",
+    "prism-react-renderer": "^2.3.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "mermaid": "^11.10.0",
-    "vitepress": "^1.0.0",
-    "vitepress-plugin-mermaid": "^2.0.17"
+    "@docusaurus/module-type-aliases": "^3.1.0",
+    "@docusaurus/tsconfig": "^3.1.0",
+    "@docusaurus/types": "^3.1.0",
+    "typescript": "~5.3.0"
+  },
+  "browserslist": {
+    "production": [
+      ">0.5%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "engines": {
+    "node": ">=18.0"
   },
   "keywords": [
     "documentation",
-    "vitepress",
+    "docusaurus",
     "mcp",
     "architecture",
     "adr"

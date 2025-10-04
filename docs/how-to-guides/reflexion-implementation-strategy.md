@@ -144,7 +144,7 @@ class ReflexionActor {
 
 #### File Organization Strategy
 ```
-docs/reflexion-memory/
+./reflexion-memory/
 ├── episodic/
 │   ├── adr-suggestion/
 │   ├── project-analysis/
@@ -193,8 +193,8 @@ ${JSON.stringify(memory.content, null, 2)}
 5. **Validate Storage**: Ensure file was saved correctly
 
 ## Expected File Structure
-- Path: docs/reflexion-memory/{type}/{category}/{memoryId}.json
-- Index: docs/reflexion-memory/indexes/memory-catalog.json
+- Path: ./reflexion-memory/{type}/{category}/{memoryId}.json
+- Index: ./reflexion-memory/indexes/memory-catalog.json
 - Backup: Create backup if updating existing memory
 
 Please execute these file operations and confirm successful storage.
