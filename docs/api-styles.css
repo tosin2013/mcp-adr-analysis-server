@@ -1,0 +1,144 @@
+/* Custom styles for MCP ADR Analysis Server API Documentation */
+
+:root {
+  --color-accent: #0066cc;
+  --color-accent-2: #4d94ff;
+  --color-warning: #ff6b35;
+  --color-success: #28a745;
+}
+
+/* Header customization */
+.tsd-page-title {
+  color: var(--color-accent);
+  border-bottom: 2px solid var(--color-accent-2);
+  padding-bottom: 0.5rem;
+}
+
+/* Navigation improvements */
+.tsd-navigation a {
+  transition: color 0.2s ease;
+}
+
+.tsd-navigation a:hover {
+  color: var(--color-accent);
+}
+
+/* Code block enhancements */
+.tsd-signature {
+  background: #f8f9fa;
+  border-left: 4px solid var(--color-accent);
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+/* Method and property highlighting */
+.tsd-kind-method .tsd-signature {
+  border-left-color: var(--color-success);
+}
+
+.tsd-kind-property .tsd-signature {
+  border-left-color: var(--color-accent-2);
+}
+
+/* Warning for deprecated items */
+.tsd-is-deprecated {
+  opacity: 0.7;
+  position: relative;
+}
+
+.tsd-is-deprecated::before {
+  content: "⚠️ DEPRECATED";
+  background: var(--color-warning);
+  color: white;
+  padding: 2px 6px;
+  font-size: 0.75rem;
+  border-radius: 3px;
+  position: absolute;
+  top: -8px;
+  right: 0;
+}
+
+/* Example code blocks */
+.tsd-example {
+  background: #f1f3f4;
+  border: 1px solid #e1e4e8;
+  border-radius: 6px;
+  padding: 1rem;
+  margin: 1rem 0;
+}
+
+.tsd-example::before {
+  content: "💡 Example";
+  font-weight: bold;
+  color: var(--color-accent);
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* Improved search */
+.tsd-search input {
+  border: 2px solid var(--color-accent-2);
+  border-radius: 4px;
+}
+
+.tsd-search input:focus {
+  border-color: var(--color-accent);
+  box-shadow: 0 0 0 2px rgba(0, 102, 204, 0.2);
+}
+
+/* Better spacing for parameters */
+.tsd-parameters {
+  margin: 1rem 0;
+}
+
+.tsd-parameter {
+  margin: 0.5rem 0;
+  padding: 0.5rem;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+/* Responsive improvements */
+@media (max-width: 768px) {
+  .tsd-signature {
+    padding: 0.5rem;
+    margin: 0.5rem 0;
+  }
+  
+  .tsd-example {
+    padding: 0.75rem;
+  }
+}
+
+/* Tool-specific styling */
+.tsd-comment .tool-category {
+  display: inline-block;
+  background: var(--color-accent);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  margin-right: 0.5rem;
+}
+
+/* MCP-specific badges */
+.mcp-tool::before {
+  content: "🔧 MCP Tool";
+  background: #6f42c1;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  margin-right: 0.5rem;
+}
+
+.mcp-resource::before {
+  content: "📦 MCP Resource";
+  background: #17a2b8;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.75rem;
+  margin-right: 0.5rem;
+}
+

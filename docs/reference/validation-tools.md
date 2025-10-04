@@ -42,7 +42,7 @@ interface ReviewExistingAdrsParams {
 {
   "tool": "review_existing_adrs",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "complianceFramework": "madr",
     "analysisDepth": "standard"
   }
@@ -55,7 +55,7 @@ interface ReviewExistingAdrsParams {
 {
   "tool": "review_existing_adrs",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "includeTreeSitter": true,
     "complianceFramework": "madr",
     "analysisDepth": "comprehensive",
@@ -73,7 +73,7 @@ interface ReviewExistingAdrsParams {
 {
   "tool": "review_existing_adrs",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "complianceFramework": "nygard",
     "analysisDepth": "basic",
     "generateRecommendations": false
@@ -188,7 +188,7 @@ interface CompareAdrProgressParams {
   "tool": "compare_adr_progress",
   "parameters": {
     "todoPath": "TODO.md",
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "includeMetrics": true
   }
 }
@@ -201,7 +201,7 @@ interface CompareAdrProgressParams {
   "tool": "compare_adr_progress",
   "parameters": {
     "todoPath": "IMPLEMENTATION_TODO.md",
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "projectPath": ".",
     "timeframe": "last_60_days",
     "includeMetrics": true,
@@ -217,7 +217,7 @@ interface CompareAdrProgressParams {
 {
   "tool": "compare_adr_progress",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "projectPath": ".",
     "trackingMode": "implementations",
     "includeMetrics": true
@@ -454,7 +454,7 @@ interface ValidateAdrBootstrapParams {
 {
   "tool": "validate_adr_bootstrap",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "complianceFramework": "madr"
   }
 }
@@ -466,7 +466,7 @@ interface ValidateAdrBootstrapParams {
 {
   "tool": "validate_adr_bootstrap",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "complianceFramework": "madr",
     "organizationStandards": "standards/adr-standards.json",
     "enableTreeSitterAnalysis": true,

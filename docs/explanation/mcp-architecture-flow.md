@@ -24,7 +24,7 @@ graph TD
     C --> N[Security Scanner]
     C --> O[Deployment Validator]
     
-    M --> P[docs/adrs/]
+    M --> P[././adrs/]
     N --> Q[Content Masking]
     O --> R[Health Scoring]
     
@@ -141,10 +141,10 @@ stateDiagram-v2
     FixRequired --> TestValidation: Re-run validation
     
     TestsPassed --> DeploymentReady: smart_git_push
-    DeploymentReady --> [*]: Deployment complete
+    DeploymentReady --> [*]: # Deployment Complete
     
-    SecurityFailed --> [*]: Manual intervention required
-    FixRequired --> [*]: Development needed
+    SecurityFailed --> [*]: # Manual Intervention Required
+    FixRequired --> [*]: # Development Needed
 ```
 
 These diagrams illustrate the comprehensive workflow and architecture of the MCP ADR Analysis Server, showing how different components interact to provide AI-powered architectural analysis and decision support.

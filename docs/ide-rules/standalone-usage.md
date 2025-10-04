@@ -189,7 +189,7 @@ Future versions will support direct API integration:
 ## Contributing
 
 To add support for new IDEs:
-1. Create template in `docs/ide-rules/ide-specific/[new-ide]/`
+1. Create template in `./ide-rules/ide-specific/[new-ide]/`
 2. Add IDE to the VALID_IDES list in the script
 3. Add IDE-specific usage instructions
 4. Test with various project types

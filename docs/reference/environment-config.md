@@ -12,8 +12,11 @@
 | `OPENROUTER_API_KEY` | ⚡       | -                           | API key for AI-powered analysis    |
 | `EXECUTION_MODE`     | ⚡       | `prompt-only`               | `full` or `prompt-only`            |
 | `AI_MODEL`           | ❌       | `anthropic/claude-3-sonnet` | AI model to use                    |
-| `ADR_DIRECTORY`      | ❌       | `docs/adrs`                 | Directory for ADR files            |
+| `ADR_DIRECTORY`      | ❌       | `./adrs`                 | Directory for ADR files            |
 | `LOG_LEVEL`          | ❌       | `INFO`                      | Logging verbosity                  |
+| `FIRECRAWL_API_KEY`  | ❌       | -                           | API key for Firecrawl web scraping |
+| `FIRECRAWL_BASE_URL` | ❌       | `http://localhost:3000`     | Base URL for self-hosted Firecrawl |
+| `FIRECRAWL_ENABLED`  | ❌       | `false`                     | Enable Firecrawl integration       |
 
 **Legend**: ✅ Required • ⚡ Required for AI features • ❌ Optional
 
@@ -142,17 +145,17 @@ AI_CACHE_TTL="3600"  # 1 hour
 
 ```bash
 # Default location
-ADR_DIRECTORY="docs/adrs"
+ADR_DIRECTORY="./adrs"
 
 # Custom locations
 ADR_DIRECTORY="architecture/decisions"
-ADR_DIRECTORY="docs/architecture/adrs"
+ADR_DIRECTORY="./architecture/adrs"
 ```
 
 **Directory Structure Created**:
 
 ```
-docs/adrs/
+././adrs/
 ├── README.md           # ADR index
 ├── 001-first-decision.md
 ├── 002-second-decision.md
@@ -262,6 +265,31 @@ MAX_FILES_PER_ANALYSIS="1000"
 FILE_ANALYSIS_TIMEOUT="30000"
 ```
 
+### Firecrawl Configuration
+
+```bash
+# Enable Firecrawl integration for web search
+FIRECRAWL_ENABLED="true"
+
+# Firecrawl API key (get from https://firecrawl.dev)
+FIRECRAWL_API_KEY="fc-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+
+# Self-hosted Firecrawl base URL (if not using API key)
+FIRECRAWL_BASE_URL="http://localhost:3000"
+```
+
+**Firecrawl Configuration Options**:
+
+- **`FIRECRAWL_ENABLED`**: Set to `true` to enable Firecrawl integration
+- **`FIRECRAWL_API_KEY`**: API key for Firecrawl service (optional, enables cloud service)
+- **`FIRECRAWL_BASE_URL`**: Base URL for self-hosted Firecrawl (default: `http://localhost:3000`)
+
+**Usage Modes**:
+
+1. **Cloud Service**: Set `FIRECRAWL_API_KEY` to use Firecrawl cloud service
+2. **Self-Hosted**: Set `FIRECRAWL_BASE_URL` to point to your self-hosted instance
+3. **Disabled**: Leave `FIRECRAWL_ENABLED` unset or set to `false` (default)
+
 ---
 
 ## 🌍 Environment-Specific Configurations
@@ -277,6 +305,8 @@ AI_MODEL="anthropic/claude-3-haiku"  # Faster for dev
 LOG_LEVEL="DEBUG"
 AI_CACHE_ENABLED="true"
 TIMING_ENABLED="true"
+FIRECRAWL_ENABLED="true"
+FIRECRAWL_API_KEY="your-firecrawl-key"
 ```
 
 ### Production Environment
@@ -290,6 +320,8 @@ AI_MODEL="anthropic/claude-3-sonnet"  # Best quality
 LOG_LEVEL="ERROR"
 AI_CACHE_ENABLED="true"
 AI_CACHE_TTL="86400"  # 24 hours
+FIRECRAWL_ENABLED="true"
+FIRECRAWL_BASE_URL="http://firecrawl:3000"  # Self-hosted
 ```
 
 ### CI/CD Environment
@@ -302,6 +334,7 @@ EXECUTION_MODE="full"
 AI_MODEL="anthropic/claude-3-haiku"  # Fast for CI
 LOG_LEVEL="INFO"
 AI_CACHE_ENABLED="false"  # Fresh analysis each time
+FIRECRAWL_ENABLED="false"  # Disable for CI performance
 ```
 
 ---
@@ -320,8 +353,10 @@ AI_CACHE_ENABLED="false"  # Fresh analysis each time
         "OPENROUTER_API_KEY": "your_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
-        "LOG_LEVEL": "ERROR"
+        "ADR_DIRECTORY": "./adrs",
+        "LOG_LEVEL": "ERROR",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "your_firecrawl_key"
       }
     }
   }
@@ -340,7 +375,7 @@ AI_CACHE_ENABLED="false"  # Fresh analysis each time
         "PROJECT_PATH": "${workspaceFolder}",
         "OPENROUTER_API_KEY": "your_key_here",
         "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "ERROR"
       }
     }
@@ -360,7 +395,7 @@ AI_CACHE_ENABLED="false"  # Fresh analysis each time
         "PROJECT_PATH": ".",
         "OPENROUTER_API_KEY": "your_key_here",
         "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "ERROR"
       }
     }
@@ -415,7 +450,7 @@ echo $OPENROUTER_API_KEY | head -c 10
   "apiKeyConfigured": true,
   "model": "anthropic/claude-3-sonnet",
   "projectPath": "/absolute/path/to/project",
-  "adrDirectory": "docs/adrs"
+  "adrDirectory": "./adrs"
 }
 ```
 
@@ -448,7 +483,7 @@ CACHE_DIRECTORY="/shared/mcp-cache"
 AI_MODEL="anthropic/claude-3-sonnet"
 
 # Standardized ADR location
-ADR_DIRECTORY="docs/architecture/decisions"
+ADR_DIRECTORY="./architecture/decisions"
 ```
 
 ### For Security-Sensitive Projects

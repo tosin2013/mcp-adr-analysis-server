@@ -164,7 +164,7 @@ All contributions must pass:
 
 ## Getting Help
 
-- **Architecture Questions**: Review existing ADRs in `docs/adrs/`
+- **Architecture Questions**: Review existing ADRs in `././adrs/`
 - **Tool Development**: Examine existing tools in `src/tools/`
 - **Testing Patterns**: Check `tests/` for examples
 - **MCP Protocol**: Refer to [@modelcontextprotocol/sdk documentation](https://github.com/modelcontextprotocol/sdk)

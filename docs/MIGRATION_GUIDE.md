@@ -24,11 +24,24 @@ This guide helps you migrate from deprecated tools to the new memory-centric arc
 
 ```javascript
 // Old way
-await mcp0_manage_todo_json({ operation: 'add', task: 'My task' });
+try {
+  await mcp0_manage_todo_json({ operation: 'add', task: 'My task' });
+} catch (error) {
+  console.error('Failed to manage todo:', error);
+}
 
 // New way (via external task manager)
-// Configure mcp-shrimp-task-manager in your MCP settings
-// Then use through MCP client
+try {
+  // Configure mcp-shrimp-task-manager in your MCP settings
+  // Then use through MCP client
+  const result = await mcpClient.callTool('manage-task', {
+    operation: 'add',
+    task: 'My task'
+  });
+  console.log('Task added successfully:', result);
+} catch (error) {
+  console.error('Failed to add task:', error);
+}
 ```
 
 ### 2. `mcp0_smart_score` → Memory-Centric Health Scoring
@@ -48,11 +61,24 @@ await mcp0_manage_todo_json({ operation: 'add', task: 'My task' });
 
 ```javascript
 // Old way
-await mcp0_smart_score({ projectPath: '/my/project' });
+try {
+  const score = await mcp0_smart_score({ projectPath: '/my/project' });
+  console.log('Project score:', score);
+} catch (error) {
+  console.error('Failed to get project score:', error);
+}
 
 // New way (automatic via memory system)
-// Scores are calculated automatically and stored as memory entities
-// Access via memory query tools
+try {
+  // Scores are calculated automatically and stored as memory entities
+  const memoryQuery = await mcpClient.callTool('query-memory', {
+    entityType: 'project-health',
+    projectPath: '/my/project'
+  });
+  console.log('Health data:', memoryQuery.entities);
+} catch (error) {
+  console.error('Failed to query memory system:', error);
+}
 ```
 
 ## Cache Directory Changes
@@ -87,10 +113,17 @@ Memory features are enabled by default. To use advanced features:
 
 ```javascript
 // Enable memory integration in tools
-await deploymentReadiness({
-  enableMemoryIntegration: true,
-  migrateExistingHistory: true,
-});
+try {
+  const result = await deploymentReadiness({
+    enableMemoryIntegration: true,
+    migrateExistingHistory: true,
+  });
+  console.log('Memory integration enabled:', result);
+} catch (error) {
+  console.error('Failed to enable memory integration:', error);
+  // Fallback to basic mode
+  console.log('Continuing with basic deployment readiness...');
+}
 ```
 
 ## Troubleshooting
@@ -114,7 +147,7 @@ await deploymentReadiness({
 
 - Report issues: https://github.com/anthropics/claude-code/issues
 - Check documentation: `/docs` directory
-- Memory system guide: `/docs/explanation/memory-architecture.md`
+- Memory system guide: `/./explanation/memory-architecture.md`
 
 ## Rollback Instructions
 

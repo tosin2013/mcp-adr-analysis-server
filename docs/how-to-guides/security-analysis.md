@@ -274,7 +274,7 @@ database:
 {
   "tool": "validate_adr_bootstrap",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "complianceFramework": "security",
     "enableTreeSitterAnalysis": true
   }
@@ -522,10 +522,10 @@ Before sharing any content:
 
 ## 🔗 Related Documentation
 
-- **[Environment Configuration](../reference/environment-config.md)** - Security-related environment variables
+- **[Environment Configuration](./reference/environment-config.md)** - Security-related environment variables
 - **[Deployment Readiness](deployment-readiness.md)** - Security validation before deployment
 - **[Troubleshooting](troubleshooting.md)** - Security-related issues and solutions
-- **[API Reference](../reference/api-reference.md)** - Complete security tool documentation
+- **[API Reference](./reference/api-reference.md)** - Complete security tool documentation
 
 ---
 
