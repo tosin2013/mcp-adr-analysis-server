@@ -69,6 +69,8 @@ docs/.vitepress/dist/
 docs/.vitepress/cache/
 docs/.vitepress/dist/
 
+# Generated API documentation (TypeDoc)
+docs/api/
 
 .kiro
 mcp-shrimp-task-data
