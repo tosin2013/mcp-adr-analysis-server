@@ -170,9 +170,38 @@ export class McpAdrAnalysisServer {
 
   /**
    * Setup MCP protocol handlers
+   * 
+   * @description Configures all Model Context Protocol request handlers for the ADR Analysis Server.
+   * Implements the complete MCP specification including tools, resources, and prompts.
+   * 
+   * @private
+   * @since 2.0.0
+   * @category MCP Protocol
    */
   private setupHandlers(): void {
-    // Tools handler
+    /**
+     * List Tools Handler - MCP Protocol Endpoint
+     * 
+     * @description Returns the complete catalog of available tools for ADR analysis,
+     * research, validation, and deployment operations. Each tool includes comprehensive
+     * input schemas and descriptions for client integration.
+     * 
+     * @returns {Promise<{tools: Array}>} Complete tool catalog with schemas
+     * 
+     * @example
+     * ```typescript
+     * // MCP Client usage
+     * const tools = await mcpClient.listTools();
+     * console.log(tools.tools.length); // 20+ available tools
+     * 
+     * // Find specific tool
+     * const researchTool = tools.tools.find(t => t.name === 'perform_research');
+     * console.log(researchTool.description); // Tool description
+     * ```
+     * 
+     * @mcp-endpoint
+     * @category Tools
+     */
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
         tools: [
@@ -1390,6 +1419,130 @@ export class McpAdrAnalysisServer {
                 },
               },
               required: ['question'],
+            },
+          },
+          {
+            name: 'llm_web_search',
+            description: 'LLM-managed web search using Firecrawl for cross-platform support',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'string',
+                  description: 'The search query to execute',
+                },
+                maxResults: {
+                  type: 'number',
+                  description: 'Maximum results to return',
+                  default: 5,
+                  minimum: 1,
+                  maximum: 20,
+                },
+                includeContent: {
+                  type: 'boolean',
+                  description: 'Include full content in results',
+                  default: true,
+                },
+                llmInstructions: {
+                  type: 'string',
+                  description: 'LLM instructions for search optimization',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project directory',
+                  default: '.',
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory containing ADR files',
+                  default: 'docs/adrs',
+                },
+              },
+              required: ['query'],
+            },
+          },
+          {
+            name: 'llm_cloud_management',
+            description: 'LLM-managed cloud provider operations with research-driven approach',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                provider: {
+                  type: 'string',
+                  enum: ['aws', 'azure', 'gcp', 'redhat', 'ubuntu', 'macos'],
+                  description: 'Cloud provider to use',
+                },
+                action: {
+                  type: 'string',
+                  description: 'Action to perform',
+                },
+                parameters: {
+                  type: 'object',
+                  description: 'Action parameters',
+                },
+                llmInstructions: {
+                  type: 'string',
+                  description: 'LLM instructions for command generation',
+                },
+                researchFirst: {
+                  type: 'boolean',
+                  description: 'Research best approach first',
+                  default: true,
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project directory',
+                  default: '.',
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory containing ADR files',
+                  default: 'docs/adrs',
+                },
+              },
+              required: ['provider', 'action', 'llmInstructions'],
+            },
+          },
+          {
+            name: 'llm_database_management',
+            description: 'LLM-managed database operations with research-driven approach',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                database: {
+                  type: 'string',
+                  enum: ['postgresql', 'mongodb', 'redis', 'mysql', 'mariadb'],
+                  description: 'Database type to use',
+                },
+                action: {
+                  type: 'string',
+                  description: 'Database action to perform',
+                },
+                parameters: {
+                  type: 'object',
+                  description: 'Action parameters',
+                },
+                llmInstructions: {
+                  type: 'string',
+                  description: 'LLM instructions for command generation',
+                },
+                researchFirst: {
+                  type: 'boolean',
+                  description: 'Research best approach first',
+                  default: true,
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project directory',
+                  default: '.',
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory containing ADR files',
+                  default: 'docs/adrs',
+                },
+              },
+              required: ['database', 'action', 'llmInstructions'],
             },
           },
           {
@@ -2925,7 +3078,48 @@ export class McpAdrAnalysisServer {
       };
     });
 
-    // Tool execution handler
+    /**
+     * Call Tool Handler - MCP Protocol Endpoint
+     * 
+     * @description Executes specific tools with provided arguments. This is the core
+     * execution endpoint that routes tool calls to their respective implementations.
+     * Includes comprehensive error handling, argument validation, and response masking.
+     * 
+     * @param {CallToolRequest} request - MCP tool execution request
+     * @param {string} request.params.name - Tool name to execute
+     * @param {Object} request.params.arguments - Tool-specific arguments
+     * 
+     * @returns {Promise<CallToolResult>} Tool execution result with content and metadata
+     * 
+     * @throws {McpAdrError} When tool execution fails or arguments are invalid
+     * 
+     * @example
+     * ```typescript
+     * // Execute research tool
+     * const result = await mcpClient.callTool('perform_research', {
+     *   question: 'What authentication methods are used?',
+     *   projectPath: '/path/to/project'
+     * });
+     * 
+     * console.log(result.content); // Research findings
+     * ```
+     * 
+     * @example
+     * ```typescript
+     * // Execute ADR validation
+     * const validation = await mcpClient.callTool('validate_adr', {
+     *   adrPath: 'docs/adrs/0001-auth-choice.md',
+     *   includeEnvironmentCheck: true
+     * });
+     * 
+     * console.log(validation.isValid); // true/false
+     * console.log(validation.findings); // Validation issues
+     * ```
+     * 
+     * @mcp-endpoint
+     * @category Tools
+     * @category Execution
+     */
     this.server.setRequestHandler(CallToolRequestSchema, async request => {
       const { name, arguments: args } = request.params;
 
@@ -3034,6 +3228,15 @@ export class McpAdrAnalysisServer {
           case 'perform_research':
             response = await this.performResearch(safeArgs);
             break;
+          case 'llm_web_search':
+            response = await this.llmWebSearch(safeArgs);
+            break;
+          case 'llm_cloud_management':
+            response = await this.llmCloudManagement(safeArgs);
+            break;
+          case 'llm_database_management':
+            response = await this.llmDatabaseManagement(safeArgs);
+            break;
           case 'analyze_deployment_progress':
             response = await this.analyzeDeploymentProgress(safeArgs);
             break;
@@ -3120,7 +3323,31 @@ export class McpAdrAnalysisServer {
       }
     });
 
-    // Resources handler
+    /**
+     * List Resources Handler - MCP Protocol Endpoint
+     * 
+     * @description Returns available resources for client access including the
+     * architectural knowledge graph and project analysis data. Resources provide
+     * read-only access to server-managed data structures.
+     * 
+     * @returns {Promise<{resources: Array}>} Available resources with URIs and descriptions
+     * 
+     * @example
+     * ```typescript
+     * // List available resources
+     * const resources = await mcpClient.listResources();
+     * console.log(resources.resources.length); // Available resources
+     * 
+     * // Find knowledge graph resource
+     * const kgResource = resources.resources.find(r => 
+     *   r.uri === 'adr://architectural_knowledge_graph'
+     * );
+     * console.log(kgResource.name); // "Architectural Knowledge Graph"
+     * ```
+     * 
+     * @mcp-endpoint
+     * @category Resources
+     */
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
       return {
         resources: [
@@ -3146,7 +3373,32 @@ export class McpAdrAnalysisServer {
       };
     });
 
-    // Resource reading handler
+    /**
+     * Read Resource Handler - MCP Protocol Endpoint
+     * 
+     * @description Reads specific resource content by URI. Provides access to
+     * architectural knowledge graphs, project analysis data, and other server-managed
+     * resources with appropriate content masking applied.
+     * 
+     * @param {ReadResourceRequest} request - MCP resource read request
+     * @param {string} request.params.uri - Resource URI to read
+     * 
+     * @returns {Promise<ReadResourceResult>} Resource content with metadata
+     * 
+     * @throws {McpAdrError} When resource URI is invalid or access fails
+     * 
+     * @example
+     * ```typescript
+     * // Read knowledge graph resource
+     * const kgData = await mcpClient.readResource(
+     *   'adr://architectural_knowledge_graph'
+     * );
+     * console.log(kgData.contents); // Knowledge graph JSON
+     * ```
+     * 
+     * @mcp-endpoint
+     * @category Resources
+     */
     this.server.setRequestHandler(ReadResourceRequestSchema, async request => {
       const { uri } = request.params;
 
@@ -3164,7 +3416,31 @@ export class McpAdrAnalysisServer {
       }
     });
 
-    // Prompts handler
+    /**
+     * List Prompts Handler - MCP Protocol Endpoint
+     * 
+     * @description Returns available prompt templates for ADR analysis, research,
+     * and architectural decision support. Prompts can be executed directly or
+     * used as templates for custom implementations.
+     * 
+     * @returns {Promise<{prompts: Array}>} Available prompt templates with metadata
+     * 
+     * @example
+     * ```typescript
+     * // List available prompts
+     * const prompts = await mcpClient.listPrompts();
+     * console.log(prompts.prompts.length); // Available prompt templates
+     * 
+     * // Find ADR analysis prompt
+     * const adrPrompt = prompts.prompts.find(p => 
+     *   p.name === 'adr_analysis_prompt'
+     * );
+     * console.log(adrPrompt.description); // Prompt description
+     * ```
+     * 
+     * @mcp-endpoint
+     * @category Prompts
+     */
     this.server.setRequestHandler(ListPromptsRequestSchema, async () => {
       const { allPrompts } = await import('./prompts/index.js');
 
@@ -3177,7 +3453,47 @@ export class McpAdrAnalysisServer {
       };
     });
 
-    // Prompt execution handler
+    /**
+     * Get Prompt Handler - MCP Protocol Endpoint
+     * 
+     * @description Executes specific prompt templates with provided arguments.
+     * Returns formatted prompts ready for AI execution or further processing.
+     * Supports dynamic argument injection and template customization.
+     * 
+     * @param {GetPromptRequest} request - MCP prompt execution request
+     * @param {string} request.params.name - Prompt template name
+     * @param {Object} request.params.arguments - Template-specific arguments
+     * 
+     * @returns {Promise<GetPromptResult>} Formatted prompt with metadata
+     * 
+     * @throws {McpAdrError} When prompt template is not found or arguments are invalid
+     * 
+     * @example
+     * ```typescript
+     * // Execute ADR analysis prompt
+     * const prompt = await mcpClient.getPrompt('adr_analysis_prompt', {
+     *   adrPath: 'docs/adrs/0001-auth.md',
+     *   projectContext: 'microservices architecture'
+     * });
+     * 
+     * console.log(prompt.messages); // Formatted prompt messages
+     * ```
+     * 
+     * @example
+     * ```typescript
+     * // Execute research prompt
+     * const researchPrompt = await mcpClient.getPrompt('research_question_prompt', {
+     *   domain: 'authentication',
+     *   complexity: 'advanced'
+     * });
+     * 
+     * console.log(researchPrompt.messages[0].content); // Research prompt
+     * ```
+     * 
+     * @mcp-endpoint
+     * @category Prompts
+     * @category Execution
+     */
     this.server.setRequestHandler(GetPromptRequestSchema, async request => {
       const { name, arguments: args } = request.params;
 
@@ -6412,6 +6728,39 @@ Please provide:
   }
 
   /**
+   * LLM web search tool implementation
+   */
+  private async llmWebSearch(args: Record<string, unknown>): Promise<CallToolResult> {
+    if (!('query' in args) || typeof args['query'] !== 'string') {
+      throw new McpAdrError('Missing required parameter: query', 'INVALID_ARGUMENTS');
+    }
+    const { llmWebSearch } = await import('./tools/llm-web-search-tool.js');
+    return await llmWebSearch(args as { query: string; maxResults?: number; includeContent?: boolean; llmInstructions?: string; projectPath?: string; adrDirectory?: string });
+  }
+
+  /**
+   * LLM cloud management tool implementation
+   */
+  private async llmCloudManagement(args: Record<string, unknown>): Promise<CallToolResult> {
+    if (!('provider' in args) || !('action' in args) || !('llmInstructions' in args)) {
+      throw new McpAdrError('Missing required parameters: provider, action, llmInstructions', 'INVALID_ARGUMENTS');
+    }
+    const { llmCloudManagement } = await import('./tools/llm-cloud-management-tool.js');
+    return await llmCloudManagement(args as { provider: 'aws' | 'azure' | 'gcp' | 'redhat' | 'ubuntu' | 'macos'; action: string; parameters?: Record<string, any>; llmInstructions: string; researchFirst?: boolean; projectPath?: string; adrDirectory?: string });
+  }
+
+  /**
+   * LLM database management tool implementation
+   */
+  private async llmDatabaseManagement(args: Record<string, unknown>): Promise<CallToolResult> {
+    if (!('database' in args) || !('action' in args) || !('llmInstructions' in args)) {
+      throw new McpAdrError('Missing required parameters: database, action, llmInstructions', 'INVALID_ARGUMENTS');
+    }
+    const { llmDatabaseManagement } = await import('./tools/llm-database-management-tool.js');
+    return await llmDatabaseManagement(args as { database: 'postgresql' | 'mongodb' | 'redis' | 'mysql' | 'mariadb'; action: string; parameters?: Record<string, any>; llmInstructions: string; researchFirst?: boolean; projectPath?: string; adrDirectory?: string });
+  }
+
+  /**
    * Deployment analysis tool implementation
    */
   private async analyzeDeploymentProgress(args: Record<string, unknown>): Promise<CallToolResult> {
@@ -7053,7 +7402,24 @@ This tool has been deprecated and replaced with memory-centric health scoring.
 }
 
 /**
- * Main execution
+ * Main execution function for the MCP ADR Analysis Server
+ * 
+ * @description Initializes and starts the MCP server with proper configuration,
+ * error handling, and graceful shutdown. Handles command line arguments for
+ * help, version, and test modes.
+ * 
+ * @returns {Promise<void>} Resolves when server shuts down gracefully
+ * 
+ * @throws {Error} When server initialization fails or configuration is invalid
+ * 
+ * @example
+ * ```typescript
+ * // Start the server (typically called from CLI)
+ * await main();
+ * ```
+ * 
+ * @since 1.0.0
+ * @category Main
  */
 async function main(): Promise<void> {
   const args = process.argv.slice(2);

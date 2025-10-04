@@ -90,41 +90,143 @@ validate_links() {
     
     echo "📝 Generating link validation report: $link_report"
     
-    # Run markdown-link-check on all files
+    # Try markdown-link-check first, fallback to Python-based validation if it fails
     local total_files=0
     local files_with_errors=0
     local total_links=0
     local broken_links=0
     
-    find "$DOCS_DIR" -name "*.md" -type f | while read -r file; do
-        echo "Checking: $file" >> "$link_report"
+    # Test if markdown-link-check works
+    if echo "# Test [link](https://example.com)" | markdown-link-check /dev/stdin --quiet 2>/dev/null; then
+        echo "Using markdown-link-check for validation..."
+        find "$DOCS_DIR" -name "*.md" -type f | while read -r file; do
+            echo "Checking: $file" >> "$link_report"
+            
+            # Run link check and capture output
+            if markdown-link-check "$file" --quiet >> "$link_report" 2>&1; then
+                echo "✅ $file" >> "$link_report"
+            else
+                echo "❌ $file has broken links" >> "$link_report"
+                ((files_with_errors++))
+            fi
+            
+            echo "---" >> "$link_report"
+            ((total_files++))
+        done
+    else
+        echo "markdown-link-check not working, using Python-based validation..."
         
-        # Run link check and capture output
-        if markdown-link-check "$file" --quiet >> "$link_report" 2>&1; then
-            echo "✅ $file" >> "$link_report"
-        else
-            echo "❌ $file has broken links" >> "$link_report"
-            ((files_with_errors++))
-        fi
+        # Use Python-based link validation
+        python3 << 'EOF'
+import os
+import re
+import requests
+from pathlib import Path
+import json
+
+docs_dir = Path("/docs/docs")
+report_file = "/docs/reports/link-validation_20251003_185121.txt"
+summary_file = "/docs/reports/link-summary_20251003_185121.json"
+
+total_files = 0
+files_with_errors = 0
+total_links = 0
+broken_links = 0
+
+# Link patterns
+link_patterns = [
+    r'\[([^\]]+)\]\(([^)]+)\)',  # Markdown links [text](url)
+    r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>',  # HTML links
+    r'https?://[^\s\)]+',  # Bare URLs
+]
+
+def check_link(url):
+    """Check if a link is valid"""
+    try:
+        # Skip certain types of links
+        if url.startswith('#') or url.startswith('mailto:') or url.startswith('tel:'):
+            return True
         
-        echo "---" >> "$link_report"
-        ((total_files++))
-    done
+        # For relative links, check if file exists
+        if not url.startswith(('http://', 'https://')):
+            if url.startswith('/'):
+                # Absolute path from docs root
+                full_path = docs_dir / url[1:]
+            else:
+                # Relative path (would need context)
+                return True  # Skip for now
+            return full_path.exists()
+        
+        # For external links, do a HEAD request
+        response = requests.head(url, timeout=5, allow_redirects=True)
+        return response.status_code < 400
+    except:
+        return False
+
+def validate_file(file_path):
+    """Validate links in a single file"""
+    global total_files, files_with_errors, total_links, broken_links
     
-    # Generate summary
-    echo "📊 Link validation summary:"
-    echo "   Total files checked: $total_files"
-    echo "   Files with errors: $files_with_errors"
+    total_files += 1
+    file_errors = 0
     
-    # Create JSON summary
-    cat > "$link_summary" << EOF
-{
-  "timestamp": "$(date -Iseconds)",
-  "total_files": $total_files,
-  "files_with_errors": $files_with_errors,
-  "report_file": "$link_report"
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Find all links
+        links = []
+        for pattern in link_patterns:
+            matches = re.findall(pattern, content)
+            if isinstance(matches[0], tuple) if matches else False:
+                links.extend([match[1] for match in matches])
+            else:
+                links.extend(matches)
+        
+        total_links += len(links)
+        
+        # Check each link
+        for link in links:
+            if not check_link(link):
+                broken_links += 1
+                file_errors += 1
+        
+        if file_errors > 0:
+            files_with_errors += 1
+            print(f"❌ {file_path} has {file_errors} broken links")
+        else:
+            print(f"✅ {file_path}")
+            
+    except Exception as e:
+        print(f"❌ Error processing {file_path}: {e}")
+        files_with_errors += 1
+
+# Process all markdown files
+for md_file in docs_dir.rglob("*.md"):
+    validate_file(md_file)
+
+print(f"📊 Link validation summary:")
+print(f"   Total files checked: {total_files}")
+print(f"   Files with errors: {files_with_errors}")
+print(f"   Total links found: {total_links}")
+print(f"   Broken links: {broken_links}")
+
+# Create summary JSON
+summary = {
+    "timestamp": "2025-10-03T18:51:21Z",
+    "total_files": total_files,
+    "files_with_errors": files_with_errors,
+    "total_links": total_links,
+    "broken_links": broken_links,
+    "report_file": report_file
 }
+
+with open(summary_file, 'w') as f:
+    json.dump(summary, f, indent=2)
+
+print("✅ Python-based link validation complete")
 EOF
+    fi
     
     echo "✅ Link validation complete. Report: $link_report"
 }

@@ -200,7 +200,7 @@
       "args": ["path/to/mcp-adr-analysis-server"],
       "env": {
         "PROJECT_PATH": "${workspaceFolder}",
-        "ADR_DIRECTORY": "docs/adrs"
+        "ADR_DIRECTORY": "./adrs"
       }
     }
   }

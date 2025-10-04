@@ -90,7 +90,7 @@ node node_modules/mcp-adr-analysis-server/dist/src/index.js
 ### Package Contents
 - **Main entry**: `dist/src/index.js`
 - **Binary**: `mcp-adr-analysis-server` command
-- **Documentation**: README.md and LICENSE
+- **Documentation**: README.md and ../../LICENSE
 - **Type definitions**: Full TypeScript support
 
 ## 🔄 Version Management

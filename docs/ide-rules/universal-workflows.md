@@ -207,7 +207,7 @@ Parameters: {
 **Deployment Decision Matrix**:
 - **🟢 GREEN (Deploy)**: Human confidence ≥8 + All automated checks pass + Health score ≥80%
 - **🟡 YELLOW (Review)**: Human confidence 6-7 + Minor issues identified + Health score 60-79%
-- **🔴 RED (Block)**: Human confidence ≤5 OR Critical issues found OR Health score <60%
+- **🔴 RED (Block)**: Human confidence ≤5 OR Critical issues found OR Health score &lt;60%
 
 ---
 
@@ -234,7 +234,7 @@ Parameters: {
 Tool: generate_adrs_from_prd
 Parameters: {
   "prdPath": "PRD.md",
-  "outputDirectory": "docs/adrs",
+  "outputDirectory": "./adrs",
   "enhancedMode": true,
   "knowledgeEnhancement": true
 }
@@ -257,7 +257,7 @@ Parameters: {
 ```
 Tool: generate_adr_todo
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "todoPath": "TODO.md",
   "phase": "both",
   "includeRules": true
@@ -284,7 +284,7 @@ Parameters: {
 ```
 Tool: generate_rules
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "source": "adrs",
   "outputFormat": "json"
 }
@@ -303,7 +303,7 @@ Parameters: {
 ```
 Tool: discover_existing_adrs
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "includeContent": true
 }
 ```
@@ -337,7 +337,7 @@ Parameters: {
 Tool: generate_research_questions
 Parameters: {
   "analysisType": "comprehensive",
-  "adrDirectory": "docs/adrs"
+  "adrDirectory": "./adrs"
 }
 ```
 
@@ -347,7 +347,7 @@ Parameters: {
 ```
 Tool: generate_adr_todo
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "preserveExisting": true,
   "linkAdrs": true,
   "includeRules": true
@@ -358,7 +358,7 @@ Parameters: {
 ```
 Tool: compare_adr_progress
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "todoPath": "TODO.md",
   "deepCodeAnalysis": true,
   "functionalValidation": true,
@@ -414,7 +414,7 @@ Parameters: {
 ```
 Tool: generate_rules
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "source": "both",
   "outputFormat": "both"
 }
@@ -426,7 +426,7 @@ Parameters: {
 ```
 Tool: generate_adr_todo
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "phase": "both",
   "includeRules": true,
   "linkAdrs": true
@@ -469,7 +469,7 @@ Parameters: {
 ```
 Tool: generate_adr_todo
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "phase": "test",
   "includeRules": true,
   "linkAdrs": true,
@@ -482,7 +482,7 @@ Parameters: {
 ```
 Tool: generate_rules
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "source": "both",
   "outputFormat": "json",
   "existingRules": []
@@ -521,7 +521,7 @@ Parameters: {
 Tool: compare_adr_progress
 Parameters: {
   "todoPath": "TODO.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "deepCodeAnalysis": true,
   "functionalValidation": true,
   "strictMode": true
@@ -716,7 +716,7 @@ Parameters: {
 **Sophia Human-LLM Confidence Framework**:
 - **High Confidence (≥90%)**: Human approval + all automated checks pass → Proceed with deployment
 - **Medium Confidence (70-89%)**: Human review required + additional validation → Conditional deployment
-- **Low Confidence (<70%)**: Human oversight mandatory + TODO blocking tasks → Stop deployment
+- **Low Confidence (&lt;70%)**: Human oversight mandatory + TODO blocking tasks → Stop deployment
 
 **Human Feedback Integration Points**:
 1. **Pre-Assessment** (Step 7): Human provides current state context
@@ -798,7 +798,7 @@ Parameters: {
 ```
 Tool: generate_rules
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "source": "both",
   "existingRules": []
 }
@@ -886,7 +886,7 @@ Parameters: {
 ```
 Tool: generate_rules
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "projectPath": ".",
   "source": "both"
 }
@@ -896,7 +896,7 @@ Parameters: {
 ```
 Tool: generate_adr_todo
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "phase": "both",
   "includeRules": true,
   "linkAdrs": true
@@ -910,7 +910,7 @@ Parameters: {
 Tool: analyze_environment
 Parameters: {
   "analysisType": "comprehensive",
-  "adrDirectory": "docs/adrs"
+  "adrDirectory": "./adrs"
 }
 ```
 
@@ -928,7 +928,7 @@ Parameters: {
 ```
 Tool: compare_adr_progress
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "deepCodeAnalysis": true,
   "strictMode": true,
   "includeRuleValidation": true
@@ -983,7 +983,7 @@ Parameters: {
 ```
 Tool: generate_rules
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "source": "both",
   "outputFormat": "both"
 }
@@ -1026,7 +1026,7 @@ Parameters: {
 Tool: manage_todo_json
 Parameters: {
   "operation": "import_adr_tasks",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "mergeStrategy": "merge"
 }
 ```
@@ -1057,7 +1057,7 @@ Parameters: {
 Tool: generate_research_questions
 Parameters: {
   "analysisType": "comprehensive",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "researchContext": {
     "topic": "[FEATURE_NAME]",
     "scope": "feature_development",
@@ -1106,7 +1106,7 @@ Tool: create_research_template
 Parameters: {
   "title": "[FEATURE_NAME] Research Findings",
   "category": "feature_analysis",
-  "researchPath": "docs/research"
+  "researchPath": "./research"
 }
 ```
 
@@ -1150,7 +1150,7 @@ Parameters: {
 ```
 Tool: compare_adr_progress
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "strictMode": true,
   "functionalValidation": true,
   "includeRuleValidation": true
@@ -1179,8 +1179,8 @@ Parameters: {
 Tool: incorporate_research
 Parameters: {
   "analysisType": "generate_updates",
-  "adrDirectory": "docs/adrs",
-  "researchPath": "docs/research",
+  "adrDirectory": "./adrs",
+  "researchPath": "./research",
   "researchFindings": [
     {
       "finding": "[Key research insight]",
@@ -1263,7 +1263,7 @@ Parameters: {
 ```
 Tool: generate_rules
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "source": "patterns",
   "outputFormat": "json",
   "projectPath": "."
@@ -1405,7 +1405,7 @@ Parameters: {
 ```
 Tool: generate_deployment_guidance
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "environment": "all",
   "format": "structured",
   "includeConfigs": true,
@@ -1551,7 +1551,7 @@ Parameters: {
 - **High Confidence (≥90%)**: Standard web applications with common deployment patterns
 - **Medium Confidence (80-89%)**: Complex applications with custom infrastructure requirements
 - **Lower Confidence (70-79%)**: Enterprise applications with specialized compliance needs
-- **Human Review Required**: Confidence <70% or when dealing with sensitive production environments
+- **Human Review Required**: Confidence &lt;70% or when dealing with sensitive production environments
 
 ---
 
@@ -1624,7 +1624,7 @@ Parameters: {
 #### Confidence-Based Progression
 - **High Confidence (85%+)**: Proceed immediately with recommendations
 - **Medium Confidence (70-84%)**: Validate with additional tools
-- **Low Confidence (<70%)**: Seek alternative approaches or human review
+- **Low Confidence (&lt;70%)**: Seek alternative approaches or human review
 
 #### Error Architecture Awareness
 - **Human-Cognitive Errors**: Use AI to supplement domain knowledge gaps
@@ -1893,7 +1893,7 @@ Parameters: {
 **Health Monitoring Decision Matrix**:
 - **🟢 GREEN (Healthy)**: Overall health ≥80% + Human confidence ≥8/10
 - **🟡 YELLOW (Watch)**: Overall health 60-79% + Human confidence 6-7/10
-- **🔴 RED (Action Needed)**: Overall health <60% OR Human confidence ≤5/10
+- **🔴 RED (Action Needed)**: Overall health &lt;60% OR Human confidence ≤5/10
 
 **Loop Automation Triggers**:
 1. **Time-based**: Every 2-4 hours during active development

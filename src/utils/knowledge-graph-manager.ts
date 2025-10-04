@@ -639,11 +639,158 @@ export class KnowledgeGraphManager {
   }
 
   /**
-   * Get relationships from knowledge graph
+   * Query knowledge graph for relevant information based on question
    */
-  getRelationships(_nodeType: string, _relationType: string): Array<any> {
-    // Placeholder implementation - returns empty array
-    // Future: Query knowledge graph for actual relationships
+  async queryKnowledgeGraph(question: string): Promise<{
+    found: boolean;
+    nodes: any[];
+    relationships: any[];
+    relevantIntents: IntentSnapshot[];
+    relevantDecisions: any[];
+  }> {
+    const kg = await this.loadKnowledgeGraph();
+    const questionLower = question.toLowerCase();
+    const keywords = this.extractQueryKeywords(question);
+
+    const results = {
+      found: false,
+      nodes: [] as any[],
+      relationships: [] as any[],
+      relevantIntents: [] as IntentSnapshot[],
+      relevantDecisions: [] as any[],
+    };
+
+    // Search through intents for relevant information
+    for (const intent of kg.intents) {
+      let relevanceScore = 0;
+
+      // Check human request
+      const requestLower = intent.humanRequest.toLowerCase();
+      for (const keyword of keywords) {
+        if (requestLower.includes(keyword)) {
+          relevanceScore += 0.3;
+        }
+      }
+
+      // Check parsed goals
+      for (const goal of intent.parsedGoals) {
+        const goalLower = goal.toLowerCase();
+        for (const keyword of keywords) {
+          if (goalLower.includes(keyword)) {
+            relevanceScore += 0.2;
+          }
+        }
+      }
+
+      // Check tool chain
+      for (const tool of intent.toolChain) {
+        if (tool.toolName.toLowerCase().includes(questionLower)) {
+          relevanceScore += 0.2;
+        }
+
+        // Check tool parameters and results
+        const paramStr = JSON.stringify(tool.parameters).toLowerCase();
+        const resultStr = JSON.stringify(tool.result).toLowerCase();
+
+        for (const keyword of keywords) {
+          if (paramStr.includes(keyword) || resultStr.includes(keyword)) {
+            relevanceScore += 0.1;
+          }
+        }
+      }
+
+      // Check ADRs created
+      if ((intent as any).adrsCreated) {
+        for (const adr of (intent as any).adrsCreated) {
+          if (typeof adr === 'string' && adr.toLowerCase().includes(questionLower)) {
+            relevanceScore += 0.3;
+          }
+        }
+      }
+
+      // Add to results if relevant
+      if (relevanceScore > 0.3) {
+        results.relevantIntents.push(intent);
+
+        // Add as node
+        results.nodes.push({
+          id: intent.intentId,
+          type: 'intent',
+          name: intent.humanRequest,
+          relevanceScore,
+          timestamp: intent.timestamp,
+          status: intent.currentStatus,
+        });
+
+        // Add tool relationships
+        for (const tool of intent.toolChain) {
+          results.relationships.push({
+            source: intent.intentId,
+            target: tool.toolName,
+            type: 'uses',
+            success: tool.success,
+          });
+        }
+      }
+    }
+
+    // Extract ADR-related information
+    for (const intent of results.relevantIntents) {
+      if ((intent as any).adrsCreated) {
+        for (const adr of (intent as any).adrsCreated) {
+          results.relevantDecisions.push({
+            adrId: adr,
+            intentId: intent.intentId,
+            timestamp: intent.timestamp,
+          });
+
+          // Add ADR node
+          results.nodes.push({
+            id: `adr-${adr}`,
+            type: 'decision',
+            name: `ADR ${adr}`,
+          });
+
+          // Add ADR relationship
+          results.relationships.push({
+            source: intent.intentId,
+            target: `adr-${adr}`,
+            type: 'created',
+          });
+        }
+      }
+    }
+
+    results.found = results.nodes.length > 0;
+
+    return results;
+  }
+
+  /**
+   * Extract keywords from query for knowledge graph search
+   */
+  private extractQueryKeywords(query: string): string[] {
+    const stopWords = new Set([
+      'the', 'is', 'are', 'was', 'were', 'what', 'when', 'where', 'why', 'how',
+      'which', 'who', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to',
+      'for', 'with', 'about', 'as', 'by', 'from', 'of', 'can', 'could',
+      'should', 'would', 'do', 'does', 'did', 'have', 'has', 'had',
+    ]);
+
+    return query
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, ' ')
+      .split(/\s+/)
+      .filter(w => w.length > 2 && !stopWords.has(w));
+  }
+
+  /**
+   * Get relationships from knowledge graph
+   * @deprecated Use queryKnowledgeGraph for actual queries
+   */
+  getRelationships(_nodeType: string, _relationType?: string): Array<any> {
+    // This is a synchronous method that requires async data
+    // Return empty array for now - use queryKnowledgeGraph for actual queries
     return [];
   }
 

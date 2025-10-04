@@ -20,8 +20,8 @@
 
 ## Related Documentation
 
-- **[Related Doc 1](../reference/)** - [Description]
-- **[Related Doc 2](../how-to-guides/)** - [Description]
+- **[Related Doc 1](./reference/)** - [Description]
+- **[Related Doc 2](./how-to-guides/)** - [Description]
 
 ---
 

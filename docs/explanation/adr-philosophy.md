@@ -461,8 +461,8 @@ As software systems become more complex, ADR philosophy must evolve to address:
 ## 🔗 Related Documentation
 
 - **[MCP Concepts](mcp-concepts.md)** - Technical implementation of philosophical principles
-- **[Team Collaboration Tutorial](../tutorials/team-collaboration.md)** - Practical application of ADR philosophy
-- **[Analysis Tools](../reference/analysis-tools.md)** - Tools implementing methodological pragmatism
+- **[Team Collaboration Tutorial](./tutorials/team-collaboration.md)** - Practical application of ADR philosophy
+- **[Analysis Tools](./reference/analysis-tools.md)** - Tools implementing methodological pragmatism
 
 ---
 

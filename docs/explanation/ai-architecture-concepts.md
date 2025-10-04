@@ -65,8 +65,8 @@
 
 ## 📚 Further Reading
 
-- **[Implementation Guide](../how-to-guides/)** - How to implement these concepts
-- **[API Reference](../reference/)** - Technical reference documentation
+- **[Implementation Guide](./how-to-guides/)** - How to implement these concepts
+- **[API Reference](./reference/)** - Technical reference documentation
 
 ---
 

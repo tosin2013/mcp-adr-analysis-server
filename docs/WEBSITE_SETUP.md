@@ -56,7 +56,7 @@ npm run docs:build       # Build for production
 ## 🎨 Customization Options
 
 ### **Theme Configuration**
-Edit `docs/.vitepress/config.js` to customize:
+Edit `./.vitepress/config.js` to customize:
 
 ```js
 // Change colors, fonts, and layout
@@ -88,7 +88,7 @@ The GitHub Actions workflow is already configured in `.github/workflows/docs.yml
 1. **Connect your GitHub repo** to Vercel
 2. **Set build settings**:
    - Build Command: `cd docs && npm run docs:build`
-   - Output Directory: `docs/.vitepress/dist`
+   - Output Directory: `./.vitepress/dist`
 3. **Deploy automatically** on every push
 
 ### **Option 3: Netlify**
@@ -96,7 +96,7 @@ The GitHub Actions workflow is already configured in `.github/workflows/docs.yml
 1. **Connect your GitHub repo** to Netlify  
 2. **Set build settings**:
    - Build Command: `cd docs && npm run docs:build`
-   - Publish Directory: `docs/.vitepress/dist`
+   - Publish Directory: `./.vitepress/dist`
 3. **Deploy automatically** on every push
 
 ### **Option 4: Self-Hosted**
@@ -195,7 +195,7 @@ npm run docs:build
 npm run docs:preview
 
 # Check for broken links
-npx linkinator docs/.vitepress/dist --recurse
+npx linkinator ./.vitepress/dist --recurse
 ```
 
 ---
@@ -231,7 +231,7 @@ npm install
 ```
 
 **Images not loading**
-- Ensure images are in `docs/public/` directory
+- Ensure images are in `./public/` directory
 - Reference with `/image-name.jpg` (leading slash)
 
 **Search not working**
