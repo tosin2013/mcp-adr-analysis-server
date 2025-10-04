@@ -2,26 +2,56 @@
 
 **Find exactly what you need based on your current goal.**
 
+## 🏗️ Documentation Architecture
+
+```mermaid
+graph TB
+    subgraph "User Intent"
+        Learn[🎓 I want to LEARN]
+        Solve[🛠️ I want to SOLVE]
+        Lookup[📖 I want to LOOK UP]
+        Understand[💡 I want to UNDERSTAND]
+    end
+    
+    subgraph "Documentation Sections"
+        Learn --> Tutorials[Tutorials<br/>Step-by-step learning]
+        Solve --> HowTo[How-To Guides<br/>Problem solving]
+        Lookup --> Reference[Reference<br/>Technical details]
+        Understand --> Explanation[Explanation<br/>Deep concepts]
+    end
+    
+    subgraph "Content Types"
+        Tutorials --> T1[Getting Started]
+        Tutorials --> T2[Advanced Techniques]
+        HowTo --> H1[Troubleshooting]
+        HowTo --> H2[Workflows]
+        Reference --> R1[API Reference]
+        Reference --> R2[Configuration]
+        Explanation --> E1[Architecture]
+        Explanation --> E2[Design Philosophy]
+    end
+```
+
 ---
 
 ## 🎯 What do you want to do right now?
 
-### 🎓 **I want to LEARN** → [Tutorials](#tutorials)
+### 🎓 **I want to LEARN** → [Tutorials](#-tutorials)
 *"Teach me how to use this step-by-step"*
 
 **When to use**: You're new to MCP or architectural decision records, want to understand concepts through hands-on practice.
 
-### 🛠️ **I want to SOLVE** → [How-To Guides](#how-to-guides)  
+### 🛠️ **I want to SOLVE** → [How-To Guides](#-how-to-guides)  
 *"Help me fix this specific problem"*
 
 **When to use**: You have a specific issue, error, or task you need to accomplish right now.
 
-### 📖 **I want to LOOK UP** → [Reference](#reference)
+### 📖 **I want to LOOK UP** → [Reference](#-reference)
 *"What are the exact parameters for this tool?"*
 
 **When to use**: You know what tool you want to use but need exact syntax, parameters, or options.
 
-### 💡 **I want to UNDERSTAND** → [Explanation](#explanation)
+### 💡 **I want to UNDERSTAND** → [Explanation](#-explanation)
 *"Why does this work this way?"*
 
 **When to use**: You want to understand the deeper concepts, design decisions, and architectural principles.
@@ -93,6 +123,12 @@ Use these when you need to solve a specific problem or accomplish a particular t
 
 - **[Create Custom Rules](how-to-guides/custom-rules.md)**
   - Define architectural constraints, validate compliance, enforce standards
+
+- **[Setup Firecrawl Integration](how-to-guides/firecrawl-setup.md)** 🔥
+  - Enable web research capabilities for enhanced analysis
+
+- **[MCP Client Compatibility](how-to-guides/mcp-client-compatibility.md)** 🔌
+  - Configure server for Claude Desktop, Cline, Cursor, Gemini, and more
 
 **🚨 Having an issue right now?** Check [Troubleshooting](how-to-guides/troubleshooting.md) first.
 

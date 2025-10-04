@@ -1,0 +1,13 @@
+{
+  "timestamp": "2025-10-04T02:08:26+00:00",
+  "validation_duration_seconds": 26191,
+  "docs_directory": "/docs/docs",
+  "build_directory": "/docs/build",
+  "reports_directory": "/docs/reports",
+  "validation_steps": [
+    "structure_validation",
+    "link_validation", 
+    "markdown_validation"
+  ],
+  "status": "completed"
+}

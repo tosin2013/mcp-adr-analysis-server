@@ -18,13 +18,13 @@ This directory contains the Architectural Decision Records for the MCP ADR Analy
 
 ## Legacy ADRs (Sample Project)
 
-The following ADRs exist in the `sample-project/docs/adrs/` directory and serve as examples:
+The following ADRs exist in the `sample-project/././adrs/` directory and serve as examples:
 
 | ADR                                                                   | Title                           | Status     | Category  |
 | --------------------------------------------------------------------- | ------------------------------- | ---------- | --------- |
-| [001](../../../sample-project/docs/adrs/001-database-architecture.md) | Database Architecture Selection | Accepted   | Database  |
-| [002](../../../sample-project/docs/adrs/002-api-authentication.md)    | API Authentication Strategy     | Proposed   | Security  |
-| [003](../../../sample-project/docs/adrs/003-legacy-data-migration.md) | Legacy Data Migration Strategy  | Deprecated | Migration |
+| [001](../../sample-project/docs/adrs/001-database-architecture.md) | Database Architecture Selection | Accepted   | Database  |
+| [002](../../sample-project/docs/adrs/002-api-authentication.md)    | API Authentication Strategy     | Proposed   | Security  |
+| [003](../../sample-project/docs/adrs/003-legacy-data-migration.md) | Legacy Data Migration Strategy  | Deprecated | Migration |
 
 ## ADR Categories
 

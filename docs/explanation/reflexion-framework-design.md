@@ -282,7 +282,7 @@ export async function persistReflexionMemory(memory: ReflexionMemory) {
 ```
 
 ### Memory Organization
-- **Directory Structure**: `docs/reflexion-memory/`
+- **Directory Structure**: `./reflexion-memory/`
   - `episodic/` - Specific task attempts and outcomes
   - `semantic/` - General lessons and principles
   - `procedural/` - Improved methods and approaches

@@ -80,7 +80,7 @@ Add this configuration to your MCP client (e.g., Claude Desktop):
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "ERROR"
       }
     }
@@ -161,7 +161,7 @@ Research-driven analysis works by:
 
 ### First: Load ADRs into Memory (If You Have Any)
 
-If your project already has ADRs in the `docs/adrs` directory (or your configured ADR directory), load them into the memory system first:
+If your project already has ADRs in the `./adrs` directory (or your configured ADR directory), load them into the memory system first:
 
 ```json
 {
@@ -233,7 +233,7 @@ Now let's explore the **`perform_research`** tool, which uses the research-orche
   "parameters": {
     "question": "What deployment infrastructure is currently available in this project?",
     "projectPath": ".",
-    "adrDirectory": "docs/adrs"
+    "adrDirectory": "./adrs"
   }
 }
 ```
@@ -263,7 +263,7 @@ configuration for local development and Kubernetes manifests in k8s/ directory.
 **Understanding Confidence Scores:**
 - **≥70%**: High confidence, results are reliable
 - **60-69%**: Medium confidence, consider web search fallback
-- **<60%**: Low confidence, automatic web search triggered
+- **&lt;60%**: Low confidence, automatic web search triggered
 
 **Exercise**: Try asking research questions about:
 1. "What database technology is used in this project?"
@@ -310,14 +310,14 @@ Pick one of the suggested decisions and create an ADR:
         "Potential performance limitations for high-scale scenarios"
       ]
     },
-    "adrDirectory": "docs/adrs"
+    "adrDirectory": "./adrs"
   }
 }
 ```
 
 ### Review Your ADR
 
-Check the `docs/adrs/` directory. You should see a new file like `001-web-framework-selection.md`.
+Check the `././adrs/` directory. You should see a new file like `001-web-framework-selection.md`.
 
 **Exercise**: Open the ADR file and review:
 
@@ -349,7 +349,7 @@ Use the new **research-driven ADR validation** to check if your documented decis
 {
   "tool": "validate_adr",
   "parameters": {
-    "adrPath": "docs/adrs/001-web-framework-selection.md",
+    "adrPath": "././adrs/001-web-framework-selection.md",
     "projectPath": ".",
     "includeEnvironmentCheck": true,
     "confidenceThreshold": 0.6
@@ -390,7 +390,7 @@ Use the new **research-driven ADR validation** to check if your documented decis
   "tool": "validate_all_adrs",
   "parameters": {
     "projectPath": ".",
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "includeEnvironmentCheck": true,
     "minConfidence": 0.6
   }
@@ -409,7 +409,7 @@ ADRs aren't just documentation - they're implementation roadmaps.
 {
   "tool": "generate_adr_todo",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "todoFormat": "both",
     "includePriorities": true
   }
@@ -427,7 +427,7 @@ As you implement the decisions, track progress:
   "tool": "compare_adr_progress",
   "parameters": {
     "todoPath": "TODO.md",
-    "adrDirectory": "docs/adrs"
+    "adrDirectory": "./adrs"
   }
 }
 ```
@@ -458,8 +458,8 @@ Now that you understand the basics, you can:
 
 ### **Immediate Next Steps**
 
-- **[Tutorial 2: Working with Existing Projects](02-existing-projects.md)** - Learn to analyze codebases with existing architecture
-- **[Tutorial 3: Advanced Analysis Techniques](03-advanced-analysis.md)** - Explore security scanning, deployment readiness, and more
+- **[Tutorial 2: Working with Existing Projects](./02-existing-projects.md)** - Learn to analyze codebases with existing architecture
+- **[Tutorial 3: Advanced Analysis Techniques](./03-advanced-analysis.md)** - Explore security scanning, deployment readiness, and more
 
 ### **Explore Specific Use Cases**
 
@@ -498,7 +498,7 @@ Now that you understand the basics, you can:
 
 - **[Troubleshooting Guide](../how-to-guides/troubleshooting.md)** - Solutions to common problems
 - **[GitHub Issues](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** - Report bugs or request features
-- **[Main Documentation](../README.md)** - Complete project overview
+- **[Main Documentation](../../README.md)** - Complete project overview
 
 ### API Key Issues
 
@@ -516,7 +516,7 @@ Now that you understand the basics, you can:
 
 ---
 
-**Ready for Tutorial 2?** → **[Working with Existing Projects](02-existing-projects.md)**
+**Ready for Tutorial 2?** → **[Working with Existing Projects](./02-existing-projects.md)**
 
 ---
 

@@ -42,7 +42,7 @@ Before running deep analysis, use **research-driven tools** to query your live e
   "parameters": {
     "question": "What is the complete technology stack, deployment infrastructure, and architectural patterns in this existing project?",
     "projectPath": ".",
-    "adrDirectory": "docs/adrs"
+    "adrDirectory": "./adrs"
   }
 }
 ```
@@ -128,16 +128,16 @@ Many projects have some architectural documentation, even if not formal ADRs.
 {
   "tool": "discover_existing_adrs",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "projectPath": "."
   }
 }
 ```
 
 **Common ADR Locations to Check:**
-- `docs/adrs/`
-- `docs/decisions/`
-- `docs/architecture/`
+- `././adrs/`
+- `./decisions/`
+- `./architecture/`
 - `architecture/`
 - `decisions/`
 - Root-level `ARCHITECTURE.md` or `DECISIONS.md`
@@ -228,7 +228,7 @@ If your analysis revealed PostgreSQL usage, create an ADR:
         "More complex setup than simple NoSQL options"
       ]
     },
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "templateFormat": "standard"
   }
 }
@@ -253,7 +253,7 @@ If your analysis revealed PostgreSQL usage, create an ADR:
         "Need secure storage for refresh tokens on clients"
       ]
     },
-    "adrDirectory": "docs/adrs"
+    "adrDirectory": "./adrs"
   }
 }
 ```
@@ -280,7 +280,7 @@ Use the new **research-driven validation** to check if documented decisions matc
   "tool": "validate_all_adrs",
   "parameters": {
     "projectPath": ".",
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "includeEnvironmentCheck": true,
     "minConfidence": 0.6
   }
@@ -341,7 +341,7 @@ For comparison tracking over time:
 {
   "tool": "compare_adr_progress",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "includeEnvironmentCheck": true,
     "strictMode": true
   }
@@ -370,7 +370,7 @@ If you find drift:
 {
   "tool": "generate_adr_todo",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "todoFormat": "both",
     "includePriorities": true,
     "includeTimestamps": true
@@ -473,7 +473,7 @@ Use research-driven tools to analyze actual deployment infrastructure:
   "parameters": {
     "analysisType": "comprehensive",
     "targetEnvironment": "production",
-    "adrDirectory": "docs/adrs"
+    "adrDirectory": "./adrs"
   }
 }
 ```
@@ -525,7 +525,7 @@ Use research-driven tools to analyze actual deployment infrastructure:
 {
   "tool": "generate_deployment_guidance",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "targetEnvironment": "production",
     "includeSecurityChecks": true,
     "includeScripts": true,
@@ -611,7 +611,7 @@ By completing this tutorial, you should have:
 
 ### **Continue Learning**
 - **[Tutorial 3: Advanced Analysis Techniques](03-advanced-analysis.md)** - Security scanning, performance analysis, and deployment validation
-- **[How-To: Work with Existing ADRs](../how-to-guides/work-with-existing-adrs.md)** - Advanced techniques for enhancing existing documentation
+- **[How-To: Work with Existing ADRs](./how-to-guides/work-with-existing-adrs.md)** - Advanced techniques for enhancing existing documentation
 
 ---
 

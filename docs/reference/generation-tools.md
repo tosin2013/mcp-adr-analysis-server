@@ -162,7 +162,7 @@ interface GenerateAdrFromDecisionParams {
       ]
     },
     "template": "madr",
-    "outputPath": "docs/adrs/001-database-selection.md"
+    "outputPath": "././adrs/001-database-selection.md"
   }
 }
 ```
@@ -279,7 +279,7 @@ interface GenerateAdrTodoParams {
 {
   "tool": "generate_adr_todo",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "outputPath": "TODO.md",
     "phase": "both"
   }
@@ -292,7 +292,7 @@ interface GenerateAdrTodoParams {
 {
   "tool": "generate_adr_todo",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "outputPath": "SECURITY_TODO.md",
     "phase": "implementation",
     "securityFocused": true,
@@ -309,7 +309,7 @@ interface GenerateAdrTodoParams {
 {
   "tool": "generate_adr_todo",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "phase": "implementation",
     "assignees": ["@backend-team", "@security-team", "@devops-team"],
     "linkAdrs": true
@@ -471,7 +471,7 @@ interface ContentMaskingResponse {
 {
   "tool": "generate_adr_todo",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "phase": "implementation"
   }
 }
@@ -506,7 +506,7 @@ for (const suggestion of adrSuggestions) {
       priority: suggestion.priority,
     },
     template: 'madr',
-    outputPath: `docs/adrs/${suggestion.title.toLowerCase().replace(/\s+/g, '-')}.md`,
+    outputPath: `././adrs/${suggestion.title.toLowerCase().replace(/\s+/g, '-')}.md`,
   });
 }
 ```

@@ -25,7 +25,7 @@ mcp-adr-analysis-server --version
 
 ```bash
 export PROJECT_PATH="/path/to/your/new/project"
-export ADR_DIRECTORY="docs/adrs"
+export ADR_DIRECTORY="./adrs"
 export LOG_LEVEL="INFO"
 export CACHE_ENABLED="true"
 ```
@@ -45,7 +45,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -93,7 +93,7 @@ generate_adrs_from_prd
 ```json
 {
   "prdPath": "PRD.md",
-  "outputDirectory": "docs/adrs"
+  "outputDirectory": "./adrs"
 }
 ```
 
@@ -104,7 +104,7 @@ generate_adrs_from_prd
 - Creates properly formatted ADR files
 
 **Expected Output:**
-- Multiple ADR files in `docs/adrs/` directory
+- Multiple ADR files in `././adrs/` directory
 - Each ADR addresses a specific architectural decision
 - ADRs follow standard format (Context, Decision, Consequences)
 - Numbered sequence (001-xxx.md, 002-xxx.md, etc.)
@@ -204,7 +204,7 @@ generate_deployment_guidance
 **Parameters:**
 ```json
 {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "environmentType": "production",
   "includeInfrastructure": true,
   "includeSecurityChecklist": true,
@@ -250,7 +250,7 @@ compare_adr_progress
 ```json
 {
   "todoPath": "todo.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "deepCodeAnalysis": true,
   "functionalValidation": true,
   "strictMode": true,
@@ -438,7 +438,7 @@ Parameters: {
 Tool: compare_adr_progress
 Parameters: {
   "todoPath": "todo.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "projectPath": "/path/to/project",
   "deepCodeAnalysis": true,
   "functionalValidation": true,
@@ -615,7 +615,7 @@ generate_rules
 **Parameters:**
 ```json
 {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "includeCompliance": true,
   "outputFormat": "json"
 }

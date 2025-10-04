@@ -11,7 +11,10 @@
 | **Claude Desktop** | `claude_desktop_config.json` | `mcp-adr-analysis-server`     | General use, best AI integration |
 | **Cline**          | `cline_mcp_settings.json`    | `npx mcp-adr-analysis-server` | VS Code development              |
 | **Cursor**         | `.cursor/mcp.json`           | `npx mcp-adr-analysis-server` | AI-powered coding                |
+| **Gemini**         | `gemini_mcp_config.json`     | `mcp-adr-analysis-server`     | Google AI integration            |
 | **Windsurf**       | `mcp_config.json`            | `mcp-adr-analysis-server`     | Professional development         |
+| **Continue.dev**   | `config.json`                | `npx mcp-adr-analysis-server` | VS Code AI extension             |
+| **Aider**          | `.aider_config.yaml`         | `mcp-adr-analysis-server`     | Command-line AI coding           |
 
 ---
 
@@ -33,7 +36,9 @@
       "env": {
         "PROJECT_PATH": "/absolute/path/to/your/project",
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full"
+        "EXECUTION_MODE": "full",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "your_firecrawl_api_key_here"
       }
     }
   }
@@ -52,7 +57,7 @@
         "OPENROUTER_API_KEY": "sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxx",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "ERROR",
         "AI_TEMPERATURE": "0.1",
         "AI_MAX_TOKENS": "4000",
@@ -76,7 +81,7 @@
         "PROJECT_PATH": "/Users/username/frontend-project",
         "OPENROUTER_API_KEY": "your_key_here",
         "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "ERROR"
       }
     },
@@ -146,8 +151,10 @@
         "PROJECT_PATH": "${workspaceFolder}",
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "docs/adrs",
-        "LOG_LEVEL": "ERROR"
+        "ADR_DIRECTORY": "./adrs",
+        "LOG_LEVEL": "ERROR",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "your_firecrawl_api_key"
       }
     }
   }
@@ -167,10 +174,12 @@
         "OPENROUTER_API_KEY": "your_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-haiku",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "DEBUG",
         "AI_CACHE_ENABLED": "true",
-        "TIMING_ENABLED": "true"
+        "TIMING_ENABLED": "true",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "your_firecrawl_key"
       }
     }
   }
@@ -192,7 +201,9 @@ Create `.vscode/cline_mcp_settings.json`:
         "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
         "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "architecture/adrs",
-        "LOG_LEVEL": "INFO"
+        "LOG_LEVEL": "INFO",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
       }
     }
   }
@@ -226,8 +237,10 @@ Create `.vscode/cline_mcp_settings.json`:
         "PROJECT_PATH": ".",
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "docs/adrs",
-        "LOG_LEVEL": "ERROR"
+        "ADR_DIRECTORY": "./adrs",
+        "LOG_LEVEL": "ERROR",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "your_firecrawl_api_key_here"
       }
     }
   }
@@ -247,7 +260,7 @@ Create `.vscode/cline_mcp_settings.json`:
         "OPENROUTER_API_KEY": "your_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "ERROR",
         "AI_TEMPERATURE": "0.05",
         "AI_MAX_TOKENS": "3000",
@@ -271,7 +284,7 @@ Create `.vscode/cline_mcp_settings.json`:
         "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/architecture/decisions",
+        "ADR_DIRECTORY": "./architecture/decisions",
         "LOG_LEVEL": "WARN",
         "AI_CACHE_ENABLED": "true",
         "MASKING_LEVEL": "strict"
@@ -287,6 +300,175 @@ Create `.vscode/cline_mcp_settings.json`:
 2. **Environment variables**: Reference with `${VAR_NAME}`
 3. **Version in .gitignore**: Add `.cursor/` to `.gitignore` if it contains secrets
 4. **Team sharing**: Use environment variables for API keys
+
+---
+
+## 🤖 Gemini (Google AI)
+
+### Configuration Location
+
+**File**: `gemini_mcp_config.json` (in project root or user config directory)
+
+### Basic Configuration
+
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/absolute/path/to/project",
+        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "google/gemini-pro",
+        "ADR_DIRECTORY": "./adrs",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  }
+}
+```
+
+### Google AI Optimized Configuration
+
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/Users/username/project",
+        "OPENROUTER_API_KEY": "your_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "google/gemini-pro-1.5",
+        "ADR_DIRECTORY": "./architecture/decisions",
+        "LOG_LEVEL": "INFO",
+        "AI_TEMPERATURE": "0.2",
+        "AI_MAX_TOKENS": "8192",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "your_firecrawl_key"
+      }
+    }
+  }
+}
+```
+
+### Gemini Best Practices
+
+1. **Model Selection**: Use `google/gemini-pro-1.5` for best performance
+2. **Temperature**: Lower values (0.1-0.3) for consistent architectural analysis
+3. **Token Limits**: Gemini supports larger contexts, use higher limits
+4. **Multimodal**: Gemini can process images and documents in ADRs
+
+---
+
+## 🔄 Continue.dev (VS Code Extension)
+
+### Configuration Location
+
+**File**: `config.json` (in `.continue` directory)
+
+### Basic Configuration
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "adr-analysis",
+      "command": "npx",
+      "args": ["mcp-adr-analysis-server"],
+      "env": {
+        "PROJECT_PATH": "${workspaceFolder}",
+        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
+        "EXECUTION_MODE": "full",
+        "ADR_DIRECTORY": "./adrs",
+        "LOG_LEVEL": "INFO"
+      }
+    }
+  ]
+}
+```
+
+### VS Code Integration Configuration
+
+```json
+{
+  "mcpServers": [
+    {
+      "name": "adr-analysis",
+      "command": "npx",
+      "args": ["mcp-adr-analysis-server"],
+      "env": {
+        "PROJECT_PATH": "${workspaceFolder}",
+        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "anthropic/claude-3-sonnet",
+        "ADR_DIRECTORY": "./docs/adrs",
+        "LOG_LEVEL": "DEBUG",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
+      }
+    }
+  ]
+}
+```
+
+### Continue.dev Best Practices
+
+1. **Workspace Integration**: Use `${workspaceFolder}` for seamless VS Code integration
+2. **Environment Variables**: Leverage VS Code's environment variable support
+3. **Debug Mode**: Enable DEBUG logging for development troubleshooting
+4. **Multi-Project**: Configure different servers for different workspace folders
+
+---
+
+## 🛠️ Aider (Command Line)
+
+### Configuration Location
+
+**File**: `.aider_config.yaml` (in project root or home directory)
+
+### Basic Configuration
+
+```yaml
+mcp_servers:
+  - name: adr-analysis
+    command: mcp-adr-analysis-server
+    env:
+      PROJECT_PATH: "/absolute/path/to/project"
+      OPENROUTER_API_KEY: "your_openrouter_api_key_here"
+      EXECUTION_MODE: "full"
+      ADR_DIRECTORY: "./adrs"
+      LOG_LEVEL: "INFO"
+```
+
+### Advanced Aider Configuration
+
+```yaml
+mcp_servers:
+  - name: adr-analysis
+    command: mcp-adr-analysis-server
+    env:
+      PROJECT_PATH: "/Users/username/project"
+      OPENROUTER_API_KEY: "your_key_here"
+      EXECUTION_MODE: "full"
+      AI_MODEL: "anthropic/claude-3-sonnet"
+      ADR_DIRECTORY: "./architecture/decisions"
+      LOG_LEVEL: "DEBUG"
+      AI_TEMPERATURE: "0.1"
+      AI_MAX_TOKENS: "4000"
+      FIRECRAWL_ENABLED: "true"
+      FIRECRAWL_API_KEY: "your_firecrawl_key"
+      ENABLE_CONTENT_MASKING: "true"
+      MASKING_LEVEL: "strict"
+```
+
+### Aider Best Practices
+
+1. **YAML Format**: Use proper YAML indentation and syntax
+2. **Absolute Paths**: Always use absolute paths for PROJECT_PATH
+3. **Security**: Enable content masking for sensitive projects
+4. **Performance**: Use DEBUG logging only when needed
 
 ---
 
@@ -308,8 +490,10 @@ Create `.vscode/cline_mcp_settings.json`:
         "PROJECT_PATH": "/absolute/path/to/your/project",
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "docs/adrs",
-        "LOG_LEVEL": "ERROR"
+        "ADR_DIRECTORY": "./adrs",
+        "LOG_LEVEL": "ERROR",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "your_firecrawl_api_key_here"
       }
     }
   }
@@ -329,7 +513,7 @@ Create `.vscode/cline_mcp_settings.json`:
         "OPENROUTER_API_KEY": "your_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "ERROR",
         "AI_CACHE_ENABLED": "true",
         "AI_CACHE_TTL": "3600",
@@ -457,6 +641,406 @@ await client.connect({
 
 ---
 
+## 🔥 Firecrawl Configuration
+
+**Firecrawl integration provides enhanced web research capabilities for comprehensive architectural analysis.**
+
+### **Firecrawl Environment Variables**
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `FIRECRAWL_ENABLED` | No | `false` | Enable Firecrawl integration |
+| `FIRECRAWL_API_KEY` | No* | - | API key for cloud service |
+| `FIRECRAWL_BASE_URL` | No | `http://localhost:3000` | Self-hosted instance URL |
+
+*Required if using cloud service
+
+### **Configuration Examples**
+
+#### **Cloud Service (Recommended)**
+```json
+{
+  "env": {
+    "FIRECRAWL_ENABLED": "true",
+    "FIRECRAWL_API_KEY": "fc-your-api-key-here"
+  }
+}
+```
+
+#### **Self-Hosted**
+```json
+{
+  "env": {
+    "FIRECRAWL_ENABLED": "true",
+    "FIRECRAWL_BASE_URL": "http://localhost:3000"
+  }
+}
+```
+
+#### **Disabled (Default)**
+```json
+{
+  "env": {
+    "FIRECRAWL_ENABLED": "false"
+  }
+}
+```
+
+### **Client-Specific Firecrawl Configuration**
+
+#### **Claude Desktop**
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/absolute/path/to/project",
+        "OPENROUTER_API_KEY": "your_key_here",
+        "EXECUTION_MODE": "full",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "fc-your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+#### **Cline (VS Code)**
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "npx",
+      "args": ["mcp-adr-analysis-server"],
+      "env": {
+        "PROJECT_PATH": "${workspaceFolder}",
+        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
+        "EXECUTION_MODE": "full",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
+      }
+    }
+  }
+}
+```
+
+#### **Cursor**
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "npx",
+      "args": ["mcp-adr-analysis-server"],
+      "env": {
+        "PROJECT_PATH": ".",
+        "OPENROUTER_API_KEY": "your_key_here",
+        "EXECUTION_MODE": "full",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "fc-your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+#### **Gemini**
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/absolute/path/to/project",
+        "OPENROUTER_API_KEY": "your_key_here",
+        "EXECUTION_MODE": "full",
+        "AI_MODEL": "google/gemini-pro-1.5",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "fc-your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+#### **Continue.dev**
+```json
+{
+  "mcpServers": [
+    {
+      "name": "adr-analysis",
+      "command": "npx",
+      "args": ["mcp-adr-analysis-server"],
+      "env": {
+        "PROJECT_PATH": "${workspaceFolder}",
+        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
+        "EXECUTION_MODE": "full",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
+      }
+    }
+  ]
+}
+```
+
+#### **Aider (YAML)**
+```yaml
+mcp_servers:
+  - name: adr-analysis
+    command: mcp-adr-analysis-server
+    env:
+      PROJECT_PATH: "/absolute/path/to/project"
+      OPENROUTER_API_KEY: "your_key_here"
+      EXECUTION_MODE: "full"
+      FIRECRAWL_ENABLED: "true"
+      FIRECRAWL_API_KEY: "fc-your-api-key-here"
+```
+
+#### **Windsurf**
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "args": [],
+      "env": {
+        "PROJECT_PATH": "/absolute/path/to/project",
+        "OPENROUTER_API_KEY": "your_key_here",
+        "EXECUTION_MODE": "full",
+        "FIRECRAWL_ENABLED": "true",
+        "FIRECRAWL_API_KEY": "fc-your-api-key-here"
+      }
+    }
+  }
+}
+```
+
+### **Firecrawl Benefits**
+
+- **Real-time Research** - Access current best practices and architectural patterns
+- **Enhanced ADRs** - Generate more comprehensive decision records with external context
+- **Intelligent Scraping** - Extract relevant content from technical documentation and blogs
+- **Fallback Support** - Graceful degradation when web search is unavailable
+
+### **Getting Your Firecrawl API Key**
+
+1. **Visit**: https://firecrawl.dev
+2. **Sign up** for an account
+3. **Get your API key** (starts with "fc-")
+4. **Add to configuration** as shown above
+
+---
+
+## 🚨 Client-Specific Troubleshooting
+
+### Claude Desktop Issues
+
+#### **"Server not found" or "Unknown tool"**
+```bash
+# 1. Verify global installation
+which mcp-adr-analysis-server
+npm list -g mcp-adr-analysis-server
+
+# 2. Check PATH in Claude Desktop
+# Ensure Node.js and npm are in your system PATH
+echo $PATH | grep -E "(node|npm)"
+
+# 3. Restart Claude Desktop after installation
+```
+
+#### **"Permission denied" errors**
+```json
+{
+  "env": {
+    "PROJECT_PATH": "/absolute/path/not/relative"
+  }
+}
+```
+
+#### **"Tools return prompts instead of results"**
+```json
+{
+  "env": {
+    "EXECUTION_MODE": "full",
+    "OPENROUTER_API_KEY": "required_for_ai_features"
+  }
+}
+```
+
+### Cline (VS Code) Issues
+
+#### **"Command not found: npx"**
+```bash
+# Install Node.js and npm
+# Then verify installation
+node --version
+npm --version
+```
+
+#### **"Workspace folder not found"**
+```json
+{
+  "env": {
+    "PROJECT_PATH": "${workspaceFolder}"
+  }
+}
+```
+
+#### **"Environment variables not resolved"**
+```json
+{
+  "env": {
+    "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}"
+  }
+}
+```
+
+### Cursor Issues
+
+#### **"Relative paths not working"**
+```json
+{
+  "env": {
+    "PROJECT_PATH": "/absolute/path/to/project"
+  }
+}
+```
+
+#### **"npx command fails"**
+```json
+{
+  "command": "mcp-adr-analysis-server",
+  "args": []
+}
+```
+
+### Gemini Issues
+
+#### **"Model not supported"**
+```json
+{
+  "env": {
+    "AI_MODEL": "google/gemini-pro-1.5"
+  }
+}
+```
+
+#### **"Token limit exceeded"**
+```json
+{
+  "env": {
+    "AI_MAX_TOKENS": "8192"
+  }
+}
+```
+
+### Continue.dev Issues
+
+#### **"Array format expected"**
+```json
+{
+  "mcpServers": [
+    {
+      "name": "adr-analysis",
+      "command": "npx",
+      "args": ["mcp-adr-analysis-server"]
+    }
+  ]
+}
+```
+
+#### **"Workspace folder not accessible"**
+```json
+{
+  "env": {
+    "PROJECT_PATH": "${workspaceFolder}"
+  }
+}
+```
+
+### Aider Issues
+
+#### **"YAML syntax error"**
+```yaml
+# Check indentation (use spaces, not tabs)
+mcp_servers:
+  - name: adr-analysis
+    command: mcp-adr-analysis-server
+    env:
+      PROJECT_PATH: "/absolute/path"
+```
+
+#### **"Command not found"**
+```bash
+# Ensure mcp-adr-analysis-server is in PATH
+which mcp-adr-analysis-server
+```
+
+### Windsurf Issues
+
+#### **"Configuration not loaded"**
+```bash
+# Check file location
+ls -la ~/.codeium/windsurf/mcp_config.json
+
+# Ensure proper JSON syntax
+cat ~/.codeium/windsurf/mcp_config.json | jq .
+```
+
+#### **"Environment variables not working"**
+```json
+{
+  "env": {
+    "PROJECT_PATH": "/absolute/path",
+    "OPENROUTER_API_KEY": "your_key_here"
+  }
+}
+```
+
+### General Troubleshooting
+
+#### **Test Server Installation**
+```bash
+# Test global installation
+mcp-adr-analysis-server --version
+
+# Test with npx
+npx mcp-adr-analysis-server --version
+
+# Test configuration
+mcp-adr-analysis-server --test
+```
+
+#### **Validate Configuration**
+```bash
+# Test JSON syntax
+cat config.json | jq .
+
+# Test YAML syntax (for Aider)
+yamllint .aider_config.yaml
+```
+
+#### **Check Environment Variables**
+```bash
+# List all environment variables
+env | grep -E "(PROJECT_PATH|OPENROUTER|FIRECRAWL)"
+
+# Test specific variables
+echo $PROJECT_PATH
+echo $OPENROUTER_API_KEY
+```
+
+#### **Debug Mode**
+```json
+{
+  "env": {
+    "LOG_LEVEL": "DEBUG"
+  }
+}
+```
+
+---
+
 ## 🔒 Security Best Practices
 
 ### Environment Variables
@@ -487,7 +1071,7 @@ export OPENROUTER_API_KEY="your_key_here"
         "PROJECT_PATH": "/absolute/path/to/project",
         "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
         "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "ERROR",
         "ENABLE_CONTENT_MASKING": "true",
         "MASKING_LEVEL": "strict",

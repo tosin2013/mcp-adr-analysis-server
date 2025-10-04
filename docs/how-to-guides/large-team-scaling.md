@@ -76,21 +76,21 @@ jobs:
 # Enterprise ADR structure
 enterprise_structure:
   central_hub:
-    path: 'enterprise-adrs/'
+    path: 'enterprise-./adrs/'
     scope: 'organization-wide'
     owners: ['architecture-council']
 
   product_spokes:
     - name: 'ecommerce-platform'
-      path: 'products/ecommerce/adrs/'
+      path: 'products/ecommerce/./adrs/'
       owners: ['ecommerce-architects']
 
     - name: 'payment-services'
-      path: 'products/payments/adrs/'
+      path: 'products/payments/./adrs/'
       owners: ['payments-team']
 
     - name: 'user-platform'
-      path: 'products/users/adrs/'
+      path: 'products/users/./adrs/'
       owners: ['user-platform-team']
 ```
 
@@ -103,14 +103,14 @@ enterprise_structure:
 echo "🏢 Setting up enterprise ADR structure..."
 
 # Create central hub
-mkdir -p enterprise-adrs/{security,compliance,architecture,data}
+mkdir -p enterprise-./adrs/{security,compliance,architecture,data}
 
 # Create product spokes
 for product in ecommerce payments users analytics; do
   mkdir -p "products/$product/adrs"
 
   # Copy enterprise templates
-  cp enterprise-adrs/templates/* "products/$product/adrs/"
+  cp enterprise-./adrs/templates/* "products/$product/./adrs/"
 
   echo "✅ Created ADR structure for $product"
 done
@@ -164,7 +164,7 @@ name: Global ADR Coordination
 
 on:
   pull_request:
-    paths: ['**/adrs/**']
+    paths: ['**/./adrs/**']
 
 jobs:
   coordinate-reviews:
@@ -298,7 +298,7 @@ name: Enterprise ADR Lifecycle
 
 on:
   pull_request:
-    paths: ['**/adrs/**']
+    paths: ['**/./adrs/**']
 
 jobs:
   impact-analysis:
@@ -645,7 +645,7 @@ jobs:
 
 ## 🔗 Related Documentation
 
-- **[Team Collaboration](../tutorials/team-collaboration.md)** - Multi-team collaboration patterns
+- **[Team Collaboration](./tutorials/team-collaboration.md)** - Multi-team collaboration patterns
 - **[CI/CD Integration](cicd-integration.md)** - Enterprise CI/CD workflows
 - **[Security Analysis](security-analysis.md)** - Enterprise security practices
 

@@ -352,7 +352,7 @@ interface ReviewExistingAdrsParams {
 {
   "tool": "review_existing_adrs",
   "parameters": {
-    "adrDirectory": "docs/adrs"
+    "adrDirectory": "./adrs"
   }
 }
 ```
@@ -363,7 +363,7 @@ interface ReviewExistingAdrsParams {
 {
   "tool": "review_existing_adrs",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "includeTreeSitter": true,
     "complianceFramework": "madr",
     "analysisDepth": "comprehensive",
@@ -379,7 +379,7 @@ interface ReviewExistingAdrsParams {
 {
   "tool": "review_existing_adrs",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "complianceFramework": "nygard",
     "analysisDepth": "basic"
   }
@@ -464,7 +464,7 @@ interface AdrReviewAnalysis {
 {
   "tool": "review_existing_adrs",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "includeTreeSitter": true,
     "projectPath": "."
   }

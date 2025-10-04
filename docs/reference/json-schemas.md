@@ -57,7 +57,7 @@ configuration:
 ## 🔗 Related Documentation
 
 - **[API Reference](api-reference.md)** - Complete API documentation
-- **[How-To Guides](../how-to-guides/)** - Step-by-step guides
+- **[How-To Guides](./how-to-guides/)** - Step-by-step guides
 
 ---
 

@@ -248,4 +248,76 @@ describe('ResearchOrchestrator', () => {
       expect(result.answer).toBeDefined();
     });
   });
+
+  describe('knowledge graph integration', () => {
+    it('should query knowledge graph and include results', async () => {
+      const result = await orchestrator.answerResearchQuestion('What tools have been executed?');
+
+      // Should include knowledge_graph in sources queried
+      expect(result.metadata.sourcesQueried).toContain('knowledge_graph');
+
+      // Knowledge graph source should always be present
+      const kgSource = result.sources.find(s => s.type === 'knowledge_graph');
+      expect(kgSource).toBeDefined();
+      expect(kgSource?.data).toBeDefined();
+
+      // Confidence should be > 0 only if data was found
+      if (kgSource?.found) {
+        expect(kgSource.confidence).toBeGreaterThan(0);
+      }
+    });
+
+    it('should handle empty knowledge graph gracefully', async () => {
+      // Fresh orchestrator with new knowledge graph
+      const freshOrchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
+
+      const result = await freshOrchestrator.answerResearchQuestion(
+        'What is the architectural history?'
+      );
+
+      // Should complete without errors even with empty knowledge graph
+      expect(result).toBeDefined();
+      expect(result.confidence).toBeGreaterThanOrEqual(0);
+      expect(result.confidence).toBeLessThanOrEqual(1);
+    });
+
+    it('should include knowledge graph nodes in results when relevant', async () => {
+      const result = await orchestrator.answerResearchQuestion(
+        'What architectural decisions have been made?'
+      );
+
+      // Should attempt to query knowledge graph
+      expect(result.metadata.sourcesQueried).toContain('knowledge_graph');
+
+      const kgSource = result.sources.find(s => s.type === 'knowledge_graph');
+      if (kgSource && kgSource.data.found) {
+        expect(kgSource.data.nodes).toBeDefined();
+        expect(Array.isArray(kgSource.data.nodes)).toBe(true);
+        expect(kgSource.data.relationships).toBeDefined();
+        expect(Array.isArray(kgSource.data.relationships)).toBe(true);
+      }
+    });
+
+    it('should extract keywords for knowledge graph query', async () => {
+      const result = await orchestrator.answerResearchQuestion(
+        'What testing tools were used in recent decisions?'
+      );
+
+      // Knowledge graph should be queried with extracted keywords
+      expect(result.metadata.sourcesQueried).toContain('knowledge_graph');
+
+      // Should have attempted search even if no results found
+      expect(result.sources.some(s => s.type === 'knowledge_graph')).toBeTruthy();
+    });
+
+    it('should boost confidence when knowledge graph data is found', async () => {
+      // This test assumes some intents exist in knowledge graph
+      const result = await orchestrator.answerResearchQuestion('What has been implemented?');
+
+      if (result.sources.some(s => s.type === 'knowledge_graph' && s.data.found)) {
+        // Confidence should be higher with knowledge graph data
+        expect(result.confidence).toBeGreaterThan(0.5);
+      }
+    });
+  });
 });

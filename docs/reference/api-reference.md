@@ -2,7 +2,7 @@
 
 **MCP ADR Analysis Server** - All available tools, parameters, and usage examples
 
-> **Version**: 2.1.0 | **Tools**: 39 comprehensive tools | **Updated**: September 2025
+> **Version**: 2.1.0 | **Tools**: 41 comprehensive tools | **Updated**: October 2025
 
 ---
 
@@ -48,9 +48,11 @@
 - [`get_development_guidance`](#get_development_guidance) - Development roadmap guidance
 - [`tool_chain_orchestrator`](#tool_chain_orchestrator) - Orchestrate multiple tool workflows
 - [`smart_git_push`](#smart_git_push) - Intelligent Git operations with validation
+- [`smart_git_push_v2`](#smart_git_push_v2) - **NEW**: Security-focused Git push with deployment readiness
 
 ### **🔬 Research & Knowledge**
 
+- [`perform_research`](#perform_research) - **NEW**: Answer questions using cascading data sources
 - [`generate_research_questions`](#generate_research_questions) - Generate targeted research questions
 - [`create_research_template`](#create_research_template) - Create research templates
 - [`incorporate_research`](#incorporate_research) - Integrate research findings into ADRs
@@ -168,7 +170,7 @@
 ```json
 {
   "projectPath": "string (required)",
-  "adrDirectory": "string (default: 'docs/adrs')",
+  "adrDirectory": "string (default: './adrs')",
   "includeMetadata": "boolean (default: true)",
   "validateStructure": "boolean (default: true)"
 }
@@ -185,7 +187,7 @@
 ```json
 {
   "projectPath": "string (required)",
-  "adrDirectory": "string (default: 'docs/adrs')",
+  "adrDirectory": "string (default: './adrs')",
   "includeTreeSitter": "boolean (default: true)",
   "analysisDepth": "string (enum: 'basic'|'detailed'|'comprehensive', default: 'detailed')"
 }
@@ -224,7 +226,7 @@
 {
   "prdContent": "string (required) - PRD content",
   "projectPath": "string (default: '.')",
-  "outputDirectory": "string (default: 'docs/adrs')",
+  "outputDirectory": "string (default: './adrs')",
   "adrTemplate": "string (enum: 'nygard'|'madr'|'custom', default: 'nygard')",
   "includeImplementationPlan": "boolean (default: true)"
 }
@@ -260,7 +262,7 @@
 ```json
 {
   "projectPath": "string (required)",
-  "adrDirectory": "string (default: 'docs/adrs')",
+  "adrDirectory": "string (default: './adrs')",
   "enableTreeSitterAnalysis": "boolean (default: false)",
   "validationLevel": "string (enum: 'basic'|'standard'|'strict', default: 'standard')"
 }
@@ -395,7 +397,147 @@
 
 ---
 
+### `smart_git_push_v2`
+
+**Purpose**: Security-focused Git push with deployment readiness validation and metrics tracking
+
+**Use Cases**:
+- Secure git pushes with comprehensive security scanning
+- Deployment readiness validation before pushing
+- Metrics tracking for deployment success rates
+- Prevention of credential leaks and sensitive data exposure
+- Repository hygiene enforcement
+
+**Parameters**:
+
+```json
+{
+  "branch": "string (optional) - Target branch",
+  "message": "string (optional) - Commit message",
+  "testResults": "object (optional) - Test execution results",
+  "skipSecurity": "boolean (optional) - Skip security scanning (default: false)",
+  "dryRun": "boolean (optional) - Preview changes without pushing (default: false)",
+  "projectPath": "string (optional) - Project path (default: cwd)",
+  "forceUnsafe": "boolean (optional) - Force push despite issues (default: false)",
+  "humanOverrides": "array (optional) - Human override decisions",
+  "requestHumanConfirmation": "boolean (optional) - Request human confirmation",
+  "checkDeploymentReadiness": "boolean (optional) - Check deployment readiness (default: false)",
+  "targetEnvironment": "string (optional) - Target environment (staging|production|integration)",
+  "enforceDeploymentReadiness": "boolean (optional) - Enforce deployment readiness (default: false)",
+  "strictDeploymentMode": "boolean (optional) - Strict deployment mode (default: true)"
+}
+```
+
+**Example Usage**:
+
+```json
+{
+  "branch": "main",
+  "message": "feat: add new authentication system",
+  "checkDeploymentReadiness": true,
+  "targetEnvironment": "production",
+  "strictDeploymentMode": true,
+  "testResults": {
+    "success": true,
+    "testsRun": 25,
+    "testsPassed": 25,
+    "testsFailed": 0
+  }
+}
+```
+
+**Response Format**:
+
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "# Smart Git Push V2 Results\n\n## Security Scan Results\n[security findings]\n\n## Deployment Readiness\n[readiness assessment]\n\n## Push Status\n[push results]\n\n## Metrics Updated\n[deployment metrics]"
+    }
+  ]
+}
+```
+
+**Key Features**:
+- **Security Scanning**: Detects credentials, secrets, and sensitive data
+- **Repository Hygiene**: Blocks irrelevant files (temp, build artifacts)
+- **Deployment Readiness**: Validates deployment readiness before pushing
+- **Metrics Tracking**: Updates deployment success rates and test results
+- **Human Overrides**: Supports human confirmation for edge cases
+
+**Cache Dependencies**:
+- **Creates/Updates**: `.mcp-adr-cache/deploy-history.json` (deployment metrics)
+- **Uses**: Enhanced sensitive detector for security scanning
+
+**Blocking Conditions**:
+- Critical security issues detected
+- Failed tests (when `testResults` provided)
+- Deployment readiness failures (when enabled)
+- Irrelevant files detected (unless overridden)
+
+---
+
 ## 🔬 Research & Knowledge
+
+### `perform_research`
+
+**Purpose**: Answer research questions using cascading data sources (project files → knowledge graph → environment → web search)
+
+**Use Cases**:
+- Investigate architectural decisions and patterns
+- Understand project implementation details
+- Research deployment and configuration approaches
+- Gather context for ADR creation
+- Validate architectural assumptions
+
+**Parameters**:
+
+```json
+{
+  "question": "string (required) - The research question to investigate",
+  "projectPath": "string (optional) - Path to project root (defaults to cwd)",
+  "adrDirectory": "string (optional) - ADR directory relative to project (defaults to './adrs')",
+  "confidenceThreshold": "number (optional) - Minimum confidence for results (0-1, defaults to 0.6)",
+  "performWebSearch": "boolean (optional) - Enable web search as fallback (defaults to true)"
+}
+```
+
+**Example Usage**:
+
+```json
+{
+  "question": "What authentication methods are used in this project?",
+  "confidenceThreshold": 0.8,
+  "performWebSearch": false
+}
+```
+
+**Response Format**:
+
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "# Research Results: [question]\n\n## Summary\n[research findings]\n\n## Confidence Score: [percentage]\n\n## Sources Consulted\n[detailed source information]\n\n## Research Metadata\n[execution details]\n\n## Next Steps\n[recommendations]"
+    }
+  ]
+}
+```
+
+**Research Sources** (in order of priority):
+1. **📁 Project Files** - Code, configs, documentation
+2. **🧠 Knowledge Graph** - ADR relationships and decisions
+3. **🔧 Environment Resources** - Live system data (Kubernetes, Docker, etc.)
+4. **🌐 Web Search** - External information (fallback only)
+
+**Confidence Scoring**:
+- **High (≥80%)**: Reliable answer from project sources
+- **Moderate (60-79%)**: Good answer, may need validation
+- **Low (&lt;60%)**: Limited information, web search recommended
+
+---
 
 ### `generate_research_questions`
 
@@ -441,7 +583,7 @@
 ```json
 {
   "projectPath": "string (required)",
-  "adrDirectory": "string (default: 'docs/adrs')",
+  "adrDirectory": "string (default: './adrs')",
   "ruleTypes": "array (optional) - Types of rules to generate",
   "strictness": "string (enum: 'lenient'|'moderate'|'strict', default: 'moderate')"
 }
@@ -628,8 +770,8 @@
 
 ## 📚 Additional Resources
 
-- **[Tutorials](../tutorials/01-first-steps.md)** - Step-by-step guides
-- **[How-To Guides](../how-to-guides/troubleshooting.md)** - Problem-solving guides
+- **[Tutorials](./tutorials/01-first-steps.md)** - Step-by-step guides
+- **[How-To Guides](./how-to-guides/troubleshooting.md)** - Problem-solving guides
 - **[Explanation](../explanation/mcp-concepts.md)** - Conceptual documentation
 - **[GitHub Repository](https://github.com/tosin2013/mcp-adr-analysis-server)** - Source code and issues
 
