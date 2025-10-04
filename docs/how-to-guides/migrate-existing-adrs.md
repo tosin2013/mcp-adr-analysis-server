@@ -66,7 +66,7 @@ npm run [command]
 ## 📚 Related Documentation
 
 - **[Related Guide 1](../reference/api-reference.md)** - [Description]
-- **[Related Guide 2](../how-to-guides/troubleshooting.md)** - [Description]
+- **[Related Guide 2](./how-to-guides/troubleshooting.md)** - [Description]
 
 ---
 

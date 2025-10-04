@@ -630,10 +630,10 @@ Current test metrics:
 
 ## 📚 Additional Resources
 
-- **[Jest Documentation](https://jestjs.io/docs/getting-started)** - Testing framework guide
+- **[Jest Documentation](https://jestjs.io/./getting-started)** - Testing framework guide
 - **[Testing Best Practices](https://github.com/goldbergyoni/javascript-testing-best-practices)** - Industry standards
-- **[CI/CD Guide](../how-to-guides/cicd-integration.md)** - Continuous integration setup
-- **[Contributing Guide](../../CONTRIBUTING.md)** - Project contribution guidelines
+- **[CI/CD Guide](./how-to-guides/cicd-integration.md)** - Continuous integration setup
+- **[Contributing Guide](./../../CONTRIBUTING.md)** - Project contribution guidelines
 
 ---
 

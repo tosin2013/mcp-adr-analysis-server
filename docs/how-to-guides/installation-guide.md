@@ -302,7 +302,7 @@ export PROJECT_PATH="/path/to/your/project"
 export EXECUTION_MODE="full"
 
 # Optional Configuration
-export ADR_DIRECTORY="docs/adrs"
+export ADR_DIRECTORY="./adrs"
 export LOG_LEVEL="info"
 export CACHE_ENABLED="true"
 export ENHANCED_MODE="true"
@@ -318,7 +318,7 @@ Create `.env` file in your project:
 OPENROUTER_API_KEY=sk-or-v1-your-api-key-here
 PROJECT_PATH=/absolute/path/to/your/project
 EXECUTION_MODE=full
-ADR_DIRECTORY=docs/adrs
+ADR_DIRECTORY=./adrs
 LOG_LEVEL=info
 CACHE_ENABLED=true
 ENHANCED_MODE=true
@@ -600,8 +600,8 @@ After successful installation:
 
 1. **📖 Read the [Prompting Guide](./prompting-guide.md)** - Learn effective prompting techniques
 2. **🔧 Configure Your Environment** - Set up project-specific settings
-3. **🚀 Try the [Quick Start Tutorial](../tutorials/01-first-steps.md)** - Get hands-on experience
-4. **📋 Review [API Reference](../reference/api-reference.md)** - Explore available tools
+3. **🚀 Try the [Quick Start Tutorial](./tutorials/01-first-steps.md)** - Get hands-on experience
+4. **📋 Review [API Reference](./reference/api-reference.md)** - Explore available tools
 5. **🤝 Join the Community** - Contribute and get support
 
 ---

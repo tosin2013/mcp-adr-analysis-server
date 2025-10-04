@@ -34,7 +34,7 @@ Set up your environment variables. The server needs to know where your project i
 
 ```bash
 export PROJECT_PATH="/path/to/your/project"
-export ADR_DIRECTORY="docs/adrs"
+export ADR_DIRECTORY="./adrs"
 export LOG_LEVEL="INFO"
 export CACHE_ENABLED="true"
 ```
@@ -54,7 +54,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -76,7 +76,7 @@ Add to your Cline MCP settings:
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -89,7 +89,7 @@ Add to your Cline MCP settings:
 Create the ADR directory in your project:
 
 ```bash
-mkdir -p docs/adrs
+mkdir -p ./adrs
 ```
 
 ## � Step-by-Step Workflow
@@ -322,7 +322,7 @@ compare_adr_progress
 ```json
 {
   "todoPath": "todo.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "deepCodeAnalysis": true,
   "functionalValidation": true,
   "strictMode": true
@@ -415,8 +415,8 @@ After completing the workflow, you should have:
 ### Generated Files
 ```
 your-project/
-├── docs/
-│   └── adrs/
+├── ./
+│   └── ./adrs/
 │       ├── 0001-use-typescript-for-type-safety.md
 │       ├── 0002-express-js-for-rest-api.md
 │       └── 0003-component-based-architecture.md
@@ -509,7 +509,7 @@ Parameters: {
 Tool: compare_adr_progress
 Parameters: {
   "todoPath": "todo.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "projectPath": "/path/to/project",
   "deepCodeAnalysis": true,
   "functionalValidation": true,
@@ -641,8 +641,8 @@ ls package.json tsconfig.json *.config.*
 **Solution:**
 ```bash
 # Create directory manually
-mkdir -p docs/adrs
-chmod 755 docs/adrs
+mkdir -p ./adrs
+chmod 755 ./adrs
 ```
 
 #### 4. Cache Issues
@@ -702,13 +702,13 @@ export CACHE_ENABLED="false"
 
 ### Related Documentation
 
-- **[Main README](../README.md)** - Complete feature overview and installation
+- **[Main README](../../README.md)** - Complete feature overview and installation
 - **[NPM Publishing Guide](NPM_PUBLISHING.md)** - Deploy your own MCP server
-- **[Architecture Decisions](adrs/)** - Example ADRs from this project
+- **[Architecture Decisions](./adrs/)** - Example ADRs from this project
 
 ---
 
 **Need Help?** 
 - Check the [troubleshooting section](#-troubleshooting) above
-- Review the [main documentation](../README.md)
+- Review the [main documentation](../../README.md)
 - Open an issue on [GitHub](https://github.com/tosin2013/mcp-adr-analysis-server/issues)

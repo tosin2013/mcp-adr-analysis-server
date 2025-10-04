@@ -27,7 +27,7 @@ mcp-adr-analysis-server --version
 
 ```bash
 export PROJECT_PATH="/path/to/your/project"
-export ADR_DIRECTORY="docs/adrs"  # or wherever your ADRs are located
+export ADR_DIRECTORY="./adrs"  # or wherever your ADRs are located
 export LOG_LEVEL="INFO"
 export CACHE_ENABLED="true"
 ```
@@ -47,7 +47,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "INFO"
       }
     }
@@ -69,7 +69,7 @@ discover_existing_adrs
 **Parameters:**
 ```json
 {
-  "adrDirectory": "docs/adrs"
+  "adrDirectory": "./adrs"
 }
 ```
 
@@ -223,7 +223,7 @@ compare_adr_progress
 ```json
 {
   "todoPath": "todo.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "deepCodeAnalysis": true,
   "functionalValidation": true,
   "strictMode": true
@@ -272,7 +272,7 @@ Parameters: {
 Tool: compare_adr_progress
 Parameters: {
   "todoPath": "todo.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "strictMode": true
 }
 ```
@@ -291,7 +291,7 @@ Parameters: {
 ```
 Tool: generate_rules
 Parameters: {
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "includeCompliance": true
 }
 ```
@@ -301,7 +301,7 @@ Parameters: {
 Tool: validate_rules
 Parameters: {
   "projectPath": ".",
-  "rulesPath": "docs/architectural-rules.json"
+  "rulesPath": "./architectural-rules.json"
 }
 ```
 
@@ -357,7 +357,7 @@ Parameters: {
 Tool: compare_adr_progress
 Parameters: {
   "todoPath": "todo.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "projectPath": ".",
   "deepCodeAnalysis": true,
   "functionalValidation": true,
@@ -437,7 +437,7 @@ smart_git_push
 Tool: compare_adr_progress
 Parameters: {
   "todoPath": "todo.md",
-  "adrDirectory": "docs/adrs",
+  "adrDirectory": "./adrs",
   "projectPath": "/path/to/project",
   "deepCodeAnalysis": true,
   "functionalValidation": true,

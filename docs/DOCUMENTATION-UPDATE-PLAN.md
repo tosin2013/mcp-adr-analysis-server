@@ -14,7 +14,7 @@ The research-driven architecture is a **major paradigm shift** from traditional 
 
 ### 1.1 Main README.md Updates
 
-**File**: `/README.md`
+**File**: ../../README.md`
 
 **Changes Needed**:
 
@@ -31,7 +31,7 @@ The research-driven architecture is a **major paradigm shift** from traditional 
 
    **Why Not RAG?** Your infrastructure changes constantly. Live queries ensure accuracy.
 
-   [Learn more →](docs/RESEARCH-DRIVEN-ARCHITECTURE.md)
+   [Learn more →](./RESEARCH-DRIVEN-ARCHITECTURE.md)
    ```
 
 2. **Update Tool List** (add `perform_research`)
@@ -82,7 +82,7 @@ The research-driven architecture is a **major paradigm shift** from traditional 
 
 ### 1.2 Architecture Documentation
 
-**File**: `/docs/ARCHITECTURE.md` (NEW or update existing)
+**File**: `/./ARCHITECTURE.md` (NEW or update existing)
 
 **Content Structure**:
 ```markdown
@@ -112,7 +112,7 @@ The research-driven architecture is a **major paradigm shift** from traditional 
 
 ### 1.3 API Documentation Updates
 
-**File**: `/docs/API.md` or `/docs/TOOLS.md`
+**File**: `/./API.md` or `/./TOOLS.md`
 
 **Changes Needed**:
 
@@ -167,7 +167,7 @@ Returns:
 
 ### 2.1 Red Hat Integration Guide
 
-**File**: `/docs/RED-HAT-INTEGRATION.md` (NEW)
+**File**: `/./RED-HAT-INTEGRATION.md` (NEW)
 
 **Content**:
 ```markdown
@@ -216,7 +216,7 @@ Common issues and solutions...
 
 ### 2.2 Environment Setup Guide
 
-**File**: `/docs/ENVIRONMENT-SETUP.md` (NEW)
+**File**: `/./ENVIRONMENT-SETUP.md` (NEW)
 
 **Content**:
 ```markdown
@@ -261,7 +261,7 @@ Common detection issues...
 
 ### 3.1 Research Workflow Tutorial
 
-**File**: `/docs/tutorials/RESEARCH-WORKFLOW.md` (NEW)
+**File**: `/./tutorials/RESEARCH-WORKFLOW.md` (NEW)
 
 **Content**:
 ```markdown
@@ -296,7 +296,7 @@ How to structure complex research questions...
 
 ### 3.2 Migration Guide (RAG to Research-Driven)
 
-**File**: `/docs/MIGRATION-FROM-RAG.md` (NEW)
+**File**: `/./MIGRATION-FROM-RAG.md` (NEW)
 
 **Content**:
 ```markdown
@@ -335,7 +335,7 @@ After (Research): ...
 
 ### 4.1 Architecture Diagrams
 
-**Files**: Various `.png` or `.svg` in `/docs/diagrams/`
+**Files**: Various `.png` or `.svg` in `/./diagrams/`
 
 **Needed Diagrams**:
 1. Cascading source hierarchy (flow diagram)

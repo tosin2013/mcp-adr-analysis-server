@@ -371,10 +371,10 @@ Expected outcome: Complete ADR management system with validation."
 
 ## 📚 Additional Resources
 
-- **[API Reference](../reference/api-reference.md)** - Complete tool documentation
+- **[API Reference](./reference/api-reference.md)** - Complete tool documentation
 - **[Architecture Guide](../explanation/server-architecture.md)** - System design principles
 - **[Troubleshooting](./troubleshooting.md)** - Common issues and solutions
-- **[Examples](../tutorials/)** - Step-by-step tutorials
+- **[Examples](./tutorials/)** - Step-by-step tutorials
 
 ---
 

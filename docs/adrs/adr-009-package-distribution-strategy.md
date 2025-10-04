@@ -18,7 +18,7 @@ Key components:
 - **ES Module Architecture**: Modern JavaScript modules with `"type": "module"`
 - **TypeScript Compilation**: Pre-compiled JavaScript with TypeScript definitions
 - **CLI Binary Access**: Executable binary for command-line usage
-- **Selective File Distribution**: Only essential files (dist/, README.md, LICENSE) in package
+- **Selective File Distribution**: Only essential files (dist/, README.md, ../../LICENSE) in package
 - **Engine Requirements**: Node.js >=20.0.0 and npm >=9.0.0 for modern features
 - **Public Access**: Open source distribution with MIT license
 

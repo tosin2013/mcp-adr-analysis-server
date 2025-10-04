@@ -1,0 +1,15 @@
+# Docusaurus
+.docusaurus/
+build/
+node_modules/
+
+# VitePress (legacy - can be removed after migration)
+.vitepress/dist/
+.vitepress/cache/
+
+# Misc
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

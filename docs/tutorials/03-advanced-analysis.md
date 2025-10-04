@@ -125,7 +125,7 @@ Every project has unique security considerations:
         "Performance overhead from multiple security checks"
       ]
     },
-    "adrDirectory": "docs/adrs"
+    "adrDirectory": "./adrs"
   }
 }
 ```
@@ -196,7 +196,7 @@ Based on your analysis, document key performance decisions:
         "Potential for cache consistency issues during updates"
       ]
     },
-    "adrDirectory": "docs/adrs"
+    "adrDirectory": "./adrs"
   }
 }
 ```
@@ -265,7 +265,7 @@ Modern deployment requires comprehensive validation to prevent production issues
 {
   "tool": "generate_deployment_guidance",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "targetEnvironment": "production",
     "deploymentType": "kubernetes",
     "includeSecurityChecks": true
@@ -329,7 +329,7 @@ Large teams need structured processes for architectural decision-making:
   "tool": "get_development_guidance",
   "parameters": {
     "developmentPhase": "implementation",
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "technologyStack": ["typescript", "react", "node.js", "postgresql"],
     "constraints": ["microservices architecture", "cloud-native deployment"]
   }
@@ -428,7 +428,7 @@ Self-correcting analysis through iterative refinement:
 {
   "tool": "compare_adr_progress",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "conversationContext": {
       "useReflexion": true,
       "validateFindings": true,
@@ -576,7 +576,7 @@ When things go wrong, systematic troubleshooting saves time:
   "tool": "generate_rules",
   "parameters": {
     "source": "both",
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "projectPath": ".",
     "ruleTypes": ["all"],
     "outputFormat": "json"
@@ -797,7 +797,7 @@ You've mastered advanced architectural analysis techniques and are ready to lead
 ---
 
 **Want to contribute back?** Consider:
-- **[Contributing to the project](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)**
+- **[Contributing to the project](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/../../CONTRIBUTING.md)**
 - **Sharing your experience** through blog posts or presentations
 - **Mentoring others** in architectural decision-making
 - **Building extensions** to the MCP ADR Analysis Server

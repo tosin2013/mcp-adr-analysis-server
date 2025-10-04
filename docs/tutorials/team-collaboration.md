@@ -49,7 +49,7 @@ Create shared ADR configuration for consistency:
 mkdir -p .adr-config
 cat > .adr-config/team-standards.json << 'EOF'
 {
-  "adrDirectory": "docs/architecture/decisions",
+  "adrDirectory": "./architecture/decisions",
   "template": "madr",
   "reviewProcess": {
     "requiredReviewers": 2,
@@ -82,7 +82,7 @@ EOF
     "template": "team-collaborative",
     "includeStakeholders": true,
     "includeReviewProcess": true,
-    "outputPath": "docs/architecture/adr-template.md"
+    "outputPath": "./architecture/adr-template.md"
   }
 }
 ```
@@ -91,12 +91,12 @@ EOF
 
 ```bash
 # Create standardized directory structure
-mkdir -p docs/architecture/decisions
-mkdir -p docs/architecture/reviews
-mkdir -p docs/architecture/proposals
+mkdir -p ./architecture/decisions
+mkdir -p ./architecture/reviews
+mkdir -p ./architecture/proposals
 
 # Create ADR index
-cat > docs/architecture/decisions/README.md << 'EOF'
+cat > ./architecture/decision../../README.md << 'EOF'
 # Architectural Decision Records
 
 ## Team Process
@@ -162,7 +162,7 @@ EOF
       "timeline": "Decision needed by 2024-02-01"
     },
     "template": "collaborative",
-    "outputPath": "docs/architecture/proposals/microservices-communication.md",
+    "outputPath": "./architecture/proposals/microservices-communication.md",
     "status": "proposed"
   }
 }
@@ -176,7 +176,7 @@ EOF
 {
   "tool": "analyze_adr_proposal",
   "parameters": {
-    "proposalPath": "docs/architecture/proposals/microservices-communication.md",
+    "proposalPath": "./architecture/proposals/microservices-communication.md",
     "reviewerContext": {
       "role": "senior-backend-engineer",
       "expertise": ["distributed-systems", "performance"],
@@ -193,7 +193,7 @@ EOF
 {
   "tool": "add_adr_review",
   "parameters": {
-    "adrPath": "docs/architecture/proposals/microservices-communication.md",
+    "adrPath": "./architecture/proposals/microservices-communication.md",
     "reviewer": "bob@company.com",
     "reviewType": "technical",
     "comments": [
@@ -223,8 +223,8 @@ EOF
 {
   "tool": "facilitate_adr_decision",
   "parameters": {
-    "proposalPath": "docs/architecture/proposals/microservices-communication.md",
-    "reviewsPath": "docs/architecture/reviews/",
+    "proposalPath": "./architecture/proposals/microservices-communication.md",
+    "reviewsPath": "./architecture/reviews/",
     "facilitatorRole": "tech-lead",
     "decisionCriteria": {
       "performance": 0.3,
@@ -327,7 +327,7 @@ For organizations with multiple repositories:
       {
         "name": "frontend-app",
         "path": "../frontend-app",
-        "adrDirectory": "docs/adrs"
+        "adrDirectory": "./adrs"
       },
       {
         "name": "backend-api",
@@ -337,7 +337,7 @@ For organizations with multiple repositories:
       {
         "name": "infrastructure",
         "path": "../infrastructure",
-        "adrDirectory": "docs/architecture"
+        "adrDirectory": "./architecture"
       }
     ],
     "syncStrategy": "bidirectional",
@@ -352,7 +352,7 @@ For organizations with multiple repositories:
 {
   "tool": "analyze_cross_team_impact",
   "parameters": {
-    "proposedAdr": "docs/architecture/proposals/microservices-communication.md",
+    "proposedAdr": "./architecture/proposals/microservices-communication.md",
     "affectedTeams": [
       {
         "name": "frontend-team",
@@ -423,7 +423,7 @@ For organizations with multiple repositories:
 {
   "tool": "assess_decision_quality",
   "parameters": {
-    "adrDirectory": "docs/architecture/decisions",
+    "adrDirectory": "./architecture/decisions",
     "qualityMetrics": [
       "stakeholder-involvement",
       "alternative-consideration",
@@ -463,7 +463,7 @@ name: ADR Collaboration Workflow
 
 on:
   pull_request:
-    paths: ['docs/architecture/**']
+    paths: ['./architecture/**']
 
 jobs:
   adr-review:
@@ -520,8 +520,8 @@ jobs:
   "tool": "sync_team_documentation",
   "parameters": {
     "sources": [
-      "docs/architecture/decisions/",
-      "docs/architecture/reviews/",
+      "./architecture/decisions/",
+      "./architecture/reviews/",
       "team-wiki/architecture/"
     ],
     "destinations": ["confluence-space", "notion-database", "team-handbook"],
@@ -673,9 +673,9 @@ For distributed teams across time zones:
 
 ### Advanced Practices
 
-- **[Large Team Scaling](../how-to-guides/large-team-scaling.md)** - Enterprise-level collaboration
-- **[CI/CD Integration](../how-to-guides/cicd-integration.md)** - Automated decision validation
-- **[Custom Rules](../how-to-guides/custom-rules.md)** - Organization-specific standards
+- **[Large Team Scaling](./how-to-guides/large-team-scaling.md)** - Enterprise-level collaboration
+- **[CI/CD Integration](./how-to-guides/cicd-integration.md)** - Automated decision validation
+- **[Custom Rules](./how-to-guides/custom-rules.md)** - Organization-specific standards
 
 ### Continuous Improvement
 
@@ -688,9 +688,9 @@ For distributed teams across time zones:
 
 ## 📚 Resources
 
-- **[API Reference](../reference/api-reference.md)** - Complete tool documentation
-- **[Environment Configuration](../reference/environment-config.md)** - Team setup guidance
-- **[Troubleshooting](../how-to-guides/troubleshooting.md)** - Common collaboration issues
+- **[API Reference](./reference/api-reference.md)** - Complete tool documentation
+- **[Environment Configuration](./reference/environment-config.md)** - Team setup guidance
+- **[Troubleshooting](./how-to-guides/troubleshooting.md)** - Common collaboration issues
 
 ---
 

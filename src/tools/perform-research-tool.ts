@@ -10,6 +10,49 @@ import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 /**
  * Perform research using the orchestrated multi-source approach
+ * 
+ * @description Executes comprehensive research using cascading data sources:
+ * project files → knowledge graph → environment analysis → web search.
+ * Returns structured research results with confidence scoring and source attribution.
+ * 
+ * @param {Object} args - Research configuration parameters
+ * @param {string} args.question - The research question to investigate
+ * @param {string} [args.projectPath] - Path to project root (defaults to cwd)
+ * @param {string} [args.adrDirectory] - ADR directory relative to project (defaults to 'docs/adrs')
+ * @param {number} [args.confidenceThreshold] - Minimum confidence for results (0-1, defaults to 0.6)
+ * @param {boolean} [args.performWebSearch] - Enable web search as fallback (defaults to true)
+ * 
+ * @returns {Promise<any>} Research results with answer, confidence, and sources
+ * 
+ * @throws {McpAdrError} When question is empty or research orchestration fails
+ * 
+ * @example
+ * ```typescript
+ * // Basic research question
+ * const result = await performResearch({
+ *   question: 'What authentication methods are used in this project?'
+ * });
+ * 
+ * console.log(result.answer);     // Research findings
+ * console.log(result.confidence); // 0.85
+ * console.log(result.sources);    // ['project-files', 'knowledge-graph']
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * // Advanced research with custom settings
+ * const result = await performResearch({
+ *   question: 'How does the deployment pipeline work?',
+ *   projectPath: '/path/to/project',
+ *   confidenceThreshold: 0.8,
+ *   performWebSearch: false
+ * });
+ * ```
+ * 
+ * @since 2.0.0
+ * @category Research
+ * @category Tools
+ * @mcp-tool
  */
 export async function performResearch(args: {
   question: string;

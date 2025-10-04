@@ -3,8 +3,8 @@
 [![GitHub](https://img.shields.io/badge/github-tosin2013/mcp--adr--analysis--server-blue.svg?style=flat&logo=github)](https://github.com/tosin2013/mcp-adr-analysis-server)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 [![NPM Version](https://img.shields.io/npm/v/mcp-adr-analysis-server)](https://www.npmjs.com/package/mcp-adr-analysis-server)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18.0.0-brightgreen)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.3+-blue)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue)](https://www.typescriptlang.org/)
 
 > **AI-powered architectural analysis for intelligent development workflows.** Returns actual analysis results, not prompts to submit elsewhere.
 
@@ -124,8 +124,8 @@ const relatedCode = await findRelatedCode(
 
 ## 🛠️ Technology Stack
 
-**Runtime:** Node.js 18+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Jest (>80% coverage)
-**Search:** ripgrep + fast-glob • **AI Integration:** OpenRouter.ai • **Code Analysis:** Smart Code Linking
+**Runtime:** Node.js 20+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Jest (>80% coverage)
+**Search:** ripgrep + fast-glob • **AI Integration:** OpenRouter.ai • **Web Research:** Firecrawl • **Code Analysis:** Smart Code Linking
 
 📖 **[Technical Details →](docs/explanation/server-architecture.md)**
 
@@ -148,6 +148,26 @@ npm run test:coverage # Coverage report
 ```
 
 📖 **[Testing Guide →](docs/how-to-guides/troubleshooting.md)**
+
+## 🔥 Firecrawl Integration (Optional)
+
+**Enhanced web research capabilities for comprehensive architectural analysis.**
+
+```bash
+# Option 1: Cloud service (recommended)
+export FIRECRAWL_ENABLED="true"
+export FIRECRAWL_API_KEY="fc-your-api-key-here"
+
+# Option 2: Self-hosted
+export FIRECRAWL_ENABLED="true"
+export FIRECRAWL_BASE_URL="http://localhost:3000"
+
+# Option 3: Disabled (default - server works without web search)
+```
+
+**Benefits:** Real-time research • Enhanced ADRs • Best practices discovery • Intelligent web scraping
+
+📖 **[Firecrawl Setup Guide →](docs/reference/environment-config.md#firecrawl-configuration)**
 
 ## 🔧 Development
 

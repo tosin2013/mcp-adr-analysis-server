@@ -1,0 +1,67 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #646cff;
+  --ifm-color-primary-dark: #4d56ff;
+  --ifm-color-primary-darker: #3d47ff;
+  --ifm-color-primary-darkest: #1a24ff;
+  --ifm-color-primary-light: #7b82ff;
+  --ifm-color-primary-lighter: #8b91ff;
+  --ifm-color-primary-lightest: #b3b8ff;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #7b82ff;
+  --ifm-color-primary-dark: #646cff;
+  --ifm-color-primary-darker: #5660ff;
+  --ifm-color-primary-darkest: #3d47ff;
+  --ifm-color-primary-light: #9298ff;
+  --ifm-color-primary-lighter: #a0a5ff;
+  --ifm-color-primary-lightest: #c5c9ff;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Custom styles for better documentation experience */
+.markdown h1:first-child {
+  margin-bottom: 1.5rem;
+}
+
+.markdown > h2 {
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+
+.markdown > h3 {
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Code blocks */
+.prism-code {
+  font-size: 0.9rem;
+}
+
+/* Admonitions */
+.admonition {
+  margin-bottom: 1rem;
+}
+
+/* Tables */
+.markdown table {
+  display: table;
+  width: 100%;
+}
+
+/* Mermaid diagrams */
+.mermaid {
+  text-align: center;
+  margin: 1rem 0;
+}

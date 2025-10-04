@@ -41,6 +41,42 @@ export interface AIExecutionError extends Error {
 
 /**
  * AI Executor Service Class
+ * 
+ * @description Core service for executing AI prompts through OpenRouter.ai integration.
+ * Transforms the MCP server from returning prompts to returning actual AI-generated results.
+ * Includes caching, retry logic, and comprehensive error handling.
+ * 
+ * @example
+ * ```typescript
+ * // Initialize with custom configuration
+ * const executor = new AIExecutor({
+ *   apiKey: 'your-api-key',
+ *   model: 'anthropic/claude-3-sonnet',
+ *   maxTokens: 4000
+ * });
+ * 
+ * // Execute a prompt
+ * const result = await executor.executePrompt({
+ *   prompt: 'Analyze this ADR...',
+ *   context: { projectPath: '/path/to/project' }
+ * });
+ * 
+ * console.log(result.content); // AI-generated analysis
+ * ```
+ * 
+ * @example
+ * ```typescript
+ * // Use singleton instance
+ * const executor = getAIExecutor();
+ * const result = await executor.executePrompt({
+ *   prompt: 'Generate ADR suggestions',
+ *   maxTokens: 2000
+ * });
+ * ```
+ * 
+ * @since 2.0.0
+ * @category AI
+ * @category Core
  */
 export class AIExecutor {
   private client: OpenAI | null = null;

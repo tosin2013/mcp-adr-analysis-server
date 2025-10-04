@@ -12,7 +12,7 @@ npm run setup
 npm run dev
 ```
 
-**→ Open http://localhost:5173 to see your website!**
+**→ Open https://localhost:5173 to see your website!**
 
 ---
 
@@ -92,7 +92,7 @@ npm run build
 ## 🎨 Common Customizations
 
 ### **Change Site Colors**
-Edit `docs/.vitepress/config.js`:
+Edit `./.vitepress/config.js`:
 ```js
 themeConfig: {
   // Add your branding here
@@ -100,7 +100,7 @@ themeConfig: {
 ```
 
 ### **Add Your Logo**
-1. Put logo in `docs/public/logo.svg`
+1. Put logo in `./public/logo.svg`
 2. It's automatically used in the config
 
 ### **Custom Domain**
@@ -116,7 +116,7 @@ base: '/', // For custom domain
 
 ### **Script Permission Error**
 ```bash
-chmod +x docs/setup-website.sh
+chmod +x ./setup-website.sh
 ```
 
 ### **Node.js Version Error**

@@ -4,6 +4,43 @@
 
 **When to use this guide**: When you encounter errors, unexpected behavior, or need to diagnose issues with the MCP ADR Analysis Server.
 
+## 🔄 Troubleshooting Workflow
+
+```mermaid
+graph TD
+    A[🚨 Problem Encountered] --> B{Quick Fix Available?}
+    B -->|Yes| C[Apply Quick Fix]
+    B -->|No| D[Identify Problem Type]
+    
+    C --> E{Fix Successful?}
+    E -->|Yes| F[✅ Problem Resolved]
+    E -->|No| D
+    
+    D --> G{Problem Category}
+    G -->|Installation| H[Installation Issues]
+    G -->|Configuration| I[Configuration Issues]
+    G -->|Runtime| J[Runtime Issues]
+    G -->|Performance| K[Performance Issues]
+    
+    H --> L[Check Prerequisites]
+    I --> M[Validate Configuration]
+    J --> N[Check Logs & Status]
+    K --> O[Profile Performance]
+    
+    L --> P{Issue Resolved?}
+    M --> P
+    N --> P
+    O --> P
+    
+    P -->|Yes| F
+    P -->|No| Q[Advanced Troubleshooting]
+    Q --> R[Community Support]
+    
+    style A fill:#ffebee
+    style F fill:#e8f5e8
+    style R fill:#e3f2fd
+```
+
 ---
 
 ## 🚨 Emergency Quick Fixes
@@ -30,13 +67,13 @@ mcp-adr-analysis-server --test
 
 ```bash
 # 1. Check directory permissions
-ls -la docs/
+ls -la ./
 
 # 2. Create missing directories
-mkdir -p docs/adrs
+mkdir -p ./adrs
 
 # 3. Fix permissions if needed
-chmod 755 docs/
+chmod 755 ./
 ```
 
 ### AI seems confused or gives poor results
@@ -91,7 +128,7 @@ Check your MCP client configuration:
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "docs/adrs",
+        "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "DEBUG"
       }
     }
@@ -168,7 +205,7 @@ Run this diagnostic sequence:
 ```bash
 # Ensure you have a proper project structure
 ls -la
-# Should see: package.json, src/, docs/, etc.
+# Should see: package.json, src/, ./, etc.
 
 # Check for hidden files that might indicate project type
 ls -la | grep -E "\.(git|env|config)"
@@ -311,7 +348,7 @@ ls -la | grep -E "\.(git|env|config)"
 {
   "tool": "generate_adr_todo",
   "parameters": {
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "todoFormat": "both",
     "includePriorities": true,
     "includeTimestamps": true
@@ -323,11 +360,11 @@ ls -la | grep -E "\.(git|env|config)"
 
 ```bash
 # Check ADR files exist
-ls -la docs/adrs/
+ls -la ././adrs/
 # Should see .md files like 001-decision-name.md
 
 # Check ADR format
-head -20 docs/adrs/001-*.md
+head -20 ././adrs/001-*.md
 ```
 
 **Solution 3: Manual Progress Sync**
@@ -337,7 +374,7 @@ head -20 docs/adrs/001-*.md
   "tool": "compare_adr_progress",
   "parameters": {
     "todoPath": "TODO.md",
-    "adrDirectory": "docs/adrs",
+    "adrDirectory": "./adrs",
     "includeEnvironmentCheck": true
   }
 }
@@ -467,11 +504,11 @@ rm -rf .mcp-adr-cache/
 
 ```bash
 # Backup your work
-cp -r docs/adrs/ ~/backup-adrs/
+cp -r ././adrs/ ~/backup-./adrs/
 
 # Start fresh
-rm -rf docs/
-mkdir -p docs/adrs
+rm -rf ./
+mkdir -p ./adrs
 ```
 
 3. **Environment Reset**
@@ -482,7 +519,7 @@ unset PROJECT_PATH ADR_DIRECTORY LOG_LEVEL
 
 # Start with minimal configuration
 export PROJECT_PATH="$(pwd)"
-export ADR_DIRECTORY="docs/adrs"
+export ADR_DIRECTORY="./adrs"
 ```
 
 ### Get Help
@@ -505,7 +542,7 @@ export ADR_DIRECTORY="docs/adrs"
 
 3. **Community Support**
 
-- **Documentation**: [Main README](../README.md)
+- **Documentation**: [Main README](../../README.md)
 - **API Reference**: [Complete Tool Documentation](../reference/api-reference.md)
 
 ---
