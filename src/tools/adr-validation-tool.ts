@@ -35,36 +35,36 @@ export interface ADRValidationResult {
 
 /**
  * Validate an ADR against current infrastructure reality
- * 
+ *
  * @description Performs comprehensive validation of Architecture Decision Records (ADRs)
  * against actual project infrastructure and environment state. Uses research orchestration,
  * AI analysis, and knowledge graph relationships to detect compliance issues, drift,
  * and outdated decisions.
- * 
+ *
  * @param {Object} args - Validation configuration parameters
  * @param {string} args.adrPath - Path to the ADR file to validate
  * @param {string} [args.projectPath] - Path to project root (defaults to cwd)
  * @param {string} [args.adrDirectory] - ADR directory relative to project (defaults to 'docs/adrs')
  * @param {boolean} [args.includeEnvironmentCheck] - Enable environment validation (defaults to true)
  * @param {number} [args.confidenceThreshold] - Minimum confidence for findings (0-1, defaults to 0.6)
- * 
+ *
  * @returns {Promise<ADRValidationResult>} Comprehensive validation results with findings and recommendations
- * 
+ *
  * @throws {McpAdrError} When ADR file doesn't exist or validation process fails
- * 
+ *
  * @example
  * ```typescript
  * // Validate specific ADR
  * const result = await validateAdr({
  *   adrPath: 'docs/adrs/0001-use-microservices.md'
  * });
- * 
+ *
  * console.log(result.isValid);        // false
  * console.log(result.confidence);     // 0.92
  * console.log(result.findings);       // Array of compliance issues
  * console.log(result.recommendations); // Suggested actions
  * ```
- * 
+ *
  * @example
  * ```typescript
  * // Validate with custom settings
@@ -74,14 +74,14 @@ export interface ADRValidationResult {
  *   includeEnvironmentCheck: false,
  *   confidenceThreshold: 0.8
  * });
- * 
+ *
  * // Check for critical issues
  * const criticalIssues = result.findings.filter(f => f.severity === 'critical');
  * if (criticalIssues.length > 0) {
  *   console.warn('Critical compliance issues found:', criticalIssues);
  * }
  * ```
- * 
+ *
  * @since 2.0.0
  * @category ADR
  * @category Validation
