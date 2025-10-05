@@ -9,9 +9,11 @@ This document outlines the detailed implementation strategy for the Automatic Pr
 ### Core Components Implementation
 
 #### 1. Prompt Candidate Generator
+
 **Purpose**: Generate diverse, high-quality prompt candidates using multiple strategies
 
 **Implementation Approach**:
+
 ```typescript
 // Pseudo-implementation structure
 class PromptCandidateGenerator {
@@ -19,77 +21,89 @@ class PromptCandidateGenerator {
     basePrompt: PromptObject,
     strategies: GenerationStrategy[],
     count: number
-  ): Promise<PromptCandidate[]>
+  ): Promise<PromptCandidate[]>;
 }
 ```
 
 **Generation Strategies**:
 
 ##### Template-based Variation
+
 - **Strategy**: Use predefined templates with variable substitution
-- **Templates**: 
-  - Imperative: "Please {action} the {subject} by {method}..."
-  - Collaborative: "Let's work together to {action} {subject}..."
-  - Instructional: "To {action} {subject}, follow these steps..."
-  - Question-based: "How can we {action} {subject} using {method}?"
+- **Templates**:
+  - Imperative: "Please `{action}` the `{subject}` by `{method}`..."
+  - Collaborative: "Let's work together to `{action}` `{subject}`..."
+  - Instructional: "To `{action}` `{subject}`, follow these steps..."
+  - Question-based: "How can we `{action}` `{subject}` using `{method}`?"
 
 ##### Semantic Variation
+
 - **Synonym Replacement**: Replace key terms with domain-appropriate synonyms
 - **Phrase Restructuring**: Reorganize sentence structure while preserving meaning
 - **Perspective Shifting**: Change from different viewpoints (user, system, expert)
 - **Abstraction Level**: Adjust between high-level and detailed instructions
 
 ##### Style Variation
+
 - **Formal Style**: "Please conduct a comprehensive analysis..."
 - **Conversational Style**: "Let's take a look at this project and see..."
 - **Technical Style**: "Execute architectural analysis using established patterns..."
 - **Instructional Style**: "Step 1: Analyze the codebase. Step 2: Identify patterns..."
 
 #### 2. Evaluation Engine
+
 **Purpose**: Score prompt candidates using multiple evaluation criteria
 
 **Evaluation Criteria Implementation**:
 
 ##### Task Completion (Weight: 30%)
+
 - **Metric**: How well the prompt achieves the intended task
 - **Evaluation**: Compare expected vs actual outcomes
 - **Scoring**: 0-1 scale based on task success rate
 
 ##### Clarity (Weight: 25%)
+
 - **Metric**: How clear and unambiguous the prompt is
 - **Evaluation**: Analyze sentence structure, word choice, organization
 - **Scoring**: Readability scores, ambiguity detection
 
 ##### Specificity (Weight: 20%)
+
 - **Metric**: How specific and actionable the prompt is
 - **Evaluation**: Count specific instructions, concrete examples
 - **Scoring**: Ratio of specific to general statements
 
 ##### Robustness (Weight: 15%)
+
 - **Metric**: How well the prompt handles edge cases
 - **Evaluation**: Test with various input scenarios
 - **Scoring**: Success rate across different contexts
 
 ##### Efficiency (Weight: 10%)
+
 - **Metric**: How concise yet comprehensive the prompt is
 - **Evaluation**: Information density, redundancy analysis
 - **Scoring**: Information per token ratio
 
 #### 3. Selection Algorithm
+
 **Purpose**: Choose optimal prompts from evaluated candidates
 
 **Selection Strategies**:
 
 ##### Multi-criteria Selection (Recommended)
+
 ```typescript
 function selectOptimalPrompts(
   candidates: EvaluationResult[],
   criteria: EvaluationCriterion[],
   weights: Record<EvaluationCriterion, number>
-): PromptCandidate[]
+): PromptCandidate[];
 ```
 
 **Algorithm**:
+
 1. **Weighted Scoring**: Calculate weighted average of all criteria
 2. **Pareto Optimization**: Find candidates that are not dominated by others
 3. **Diversity Filtering**: Ensure selected prompts are sufficiently different
@@ -98,32 +112,40 @@ function selectOptimalPrompts(
 ## Optimization Workflow
 
 ### Phase 1: Initial Candidate Generation
+
 **Duration**: 30-60 seconds
 **Process**:
+
 1. **Strategy Selection**: Choose appropriate generation strategies based on task type
 2. **Parallel Generation**: Generate candidates using multiple strategies simultaneously
 3. **Quality Filtering**: Remove obviously poor candidates early
 4. **Diversity Checking**: Ensure sufficient diversity in candidate pool
 
 ### Phase 2: Comprehensive Evaluation
+
 **Duration**: 60-120 seconds
 **Process**:
+
 1. **Automated Evaluation**: Apply all evaluation criteria to each candidate
 2. **Context Matching**: Assess how well candidates fit the specific context
 3. **Performance Prediction**: Estimate likely performance of each candidate
 4. **Bias Detection**: Check for potential biases in prompts
 
 ### Phase 3: Selection and Refinement
+
 **Duration**: 30-60 seconds
 **Process**:
+
 1. **Multi-criteria Selection**: Select top candidates using weighted criteria
 2. **Ensemble Creation**: Combine strengths of multiple good candidates
 3. **Refinement Generation**: Create refined versions of top candidates
 4. **Final Validation**: Validate selected prompts against requirements
 
 ### Phase 4: Optimization Loop (Optional)
+
 **Duration**: Variable (1-3 iterations)
 **Process**:
+
 1. **Performance Feedback**: Collect feedback from initial prompt usage
 2. **Pattern Analysis**: Identify successful patterns in top-performing prompts
 3. **Targeted Generation**: Generate new candidates based on successful patterns
@@ -134,13 +156,16 @@ function selectOptimalPrompts(
 ### High-Priority Tool Optimizations
 
 #### 1. ADR Generation Tools
+
 **Target Tools**: `generate_adrs_from_prd`, `suggest_adrs`
 **Optimization Focus**:
+
 - **Context Analysis**: Better understanding of PRD requirements
 - **ADR Structure**: Optimal ADR format and content organization
 - **Decision Rationale**: Clearer explanation of architectural decisions
 
 **APE Configuration**:
+
 ```typescript
 const adrOptimizationConfig: APEConfig = {
   candidateCount: 7,
@@ -151,20 +176,24 @@ const adrOptimizationConfig: APEConfig = {
   performanceTracking: true,
   maxOptimizationTime: 180000, // 3 minutes
   qualityThreshold: 0.7,
-  diversityWeight: 0.3
+  diversityWeight: 0.3,
 };
 ```
 
 #### 2. Analysis Tools
+
 **Target Tools**: `analyze_project_ecosystem`, `get_architectural_context`
 **Optimization Focus**:
+
 - **Technology Detection**: Better identification of technologies and patterns
 - **Context Extraction**: More comprehensive context analysis
 - **Insight Generation**: Deeper architectural insights
 
 #### 3. Research Tools
+
 **Target Tools**: `generate_research_questions`, `incorporate_research`
 **Optimization Focus**:
+
 - **Question Quality**: More targeted and valuable research questions
 - **Research Integration**: Better integration of research findings
 - **Knowledge Synthesis**: Improved synthesis of multiple research sources
@@ -179,10 +208,9 @@ export async function generateOptimizedPrompt(
   context: any,
   config?: Partial<APEConfig>
 ): Promise<{ prompt: string; instructions: string; context: any }> {
-  
   // Step 1: Get tool-specific APE configuration
   const apeConfig = getToolAPEConfig(toolName, config);
-  
+
   // Step 2: Generate optimization prompt for AI delegation
   const optimizationPrompt = `
 # Automatic Prompt Engineering Request
@@ -284,8 +312,8 @@ You must:
       originalPrompt: basePrompt,
       apeConfig,
       securityLevel: 'high',
-      expectedFormat: 'json'
-    }
+      expectedFormat: 'json',
+    },
   };
 }
 ```
@@ -293,18 +321,21 @@ You must:
 ## Performance Optimization
 
 ### Caching Strategy
+
 1. **Candidate Cache**: Cache generated candidates by strategy and context
 2. **Evaluation Cache**: Cache evaluation results for reuse
 3. **Optimization Cache**: Cache final optimized prompts
 4. **Performance Cache**: Cache performance metrics and feedback
 
 ### Resource Management
+
 - **Parallel Processing**: Generate and evaluate candidates in parallel
 - **Memory Limits**: Implement memory usage limits for large optimization tasks
 - **Time Limits**: Set maximum optimization time to prevent runaway processes
 - **Quality Gates**: Stop optimization early if quality threshold is met
 
 ### Monitoring and Metrics
+
 - **Optimization Success Rate**: Track percentage of successful optimizations
 - **Performance Improvement**: Measure average improvement scores
 - **Resource Usage**: Monitor CPU, memory, and time usage
