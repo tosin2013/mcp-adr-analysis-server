@@ -39,6 +39,7 @@ import {
 } from './utils/config.js';
 import { KnowledgeGraphManager } from './utils/knowledge-graph-manager.js';
 import { StateReinforcementManager } from './utils/state-reinforcement-manager.js';
+import { ConversationMemoryManager } from './utils/conversation-memory-manager.js';
 import {
   type GetWorkflowGuidanceArgs,
   type GetArchitecturalContextArgs,
@@ -124,6 +125,7 @@ export class McpAdrAnalysisServer {
   private logger: ReturnType<typeof createLogger>;
   private kgManager: KnowledgeGraphManager;
   private stateReinforcementManager: StateReinforcementManager;
+  private conversationMemoryManager: ConversationMemoryManager;
 
   constructor() {
     // Load and validate configuration
@@ -131,6 +133,7 @@ export class McpAdrAnalysisServer {
     this.logger = createLogger(this.config);
     this.kgManager = new KnowledgeGraphManager();
     this.stateReinforcementManager = new StateReinforcementManager(this.kgManager);
+    this.conversationMemoryManager = new ConversationMemoryManager(this.kgManager);
 
     // Print configuration summary
     printConfigSummary(this.config);
@@ -3102,6 +3105,88 @@ export class McpAdrAnalysisServer {
               required: ['userRequest'],
             },
           },
+          {
+            name: 'expand_memory',
+            description:
+              'Phase 3: Retrieve and expand stored content from a tiered response using its expandable ID',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                expandableId: {
+                  type: 'string',
+                  description: 'Expandable ID from a tiered response',
+                },
+                section: {
+                  type: 'string',
+                  description: 'Optional: specific section to expand',
+                },
+                includeContext: {
+                  type: 'boolean',
+                  description: 'Include related conversation context and knowledge graph state',
+                  default: true,
+                },
+              },
+              required: ['expandableId'],
+            },
+          },
+          {
+            name: 'query_conversation_history',
+            description: 'Phase 3: Search and retrieve conversation sessions based on filters',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                projectPath: {
+                  type: 'string',
+                  description: 'Filter by project path',
+                },
+                dateRange: {
+                  type: 'object',
+                  properties: {
+                    start: { type: 'string', description: 'Start date (ISO 8601)' },
+                    end: { type: 'string', description: 'End date (ISO 8601)' },
+                  },
+                  description: 'Filter by date range',
+                },
+                toolsUsed: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Filter by tools used in the session',
+                },
+                keyword: {
+                  type: 'string',
+                  description: 'Search keyword in conversation turns',
+                },
+                limit: {
+                  type: 'number',
+                  description: 'Maximum number of sessions to return',
+                  default: 10,
+                },
+              },
+            },
+          },
+          {
+            name: 'get_conversation_snapshot',
+            description:
+              'Phase 3: Get current conversation context snapshot for resumption or analysis',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                recentTurnCount: {
+                  type: 'number',
+                  description: 'Number of recent turns to include',
+                  default: 5,
+                },
+              },
+            },
+          },
+          {
+            name: 'get_memory_stats',
+            description: 'Phase 3: Get statistics about stored conversation memory',
+            inputSchema: {
+              type: 'object',
+              properties: {},
+            },
+          },
         ],
       };
     });
@@ -3325,6 +3410,18 @@ export class McpAdrAnalysisServer {
               safeArgs as unknown as ToolChainOrchestratorArgs
             );
             break;
+          case 'expand_memory':
+            response = await this.expandMemory(safeArgs);
+            break;
+          case 'query_conversation_history':
+            response = await this.queryConversationHistory(safeArgs);
+            break;
+          case 'get_conversation_snapshot':
+            response = await this.getConversationSnapshot(safeArgs);
+            break;
+          case 'get_memory_stats':
+            response = await this.getMemoryStats();
+            break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
         }
@@ -3333,7 +3430,8 @@ export class McpAdrAnalysisServer {
         await this.trackToolExecution(name, args, response, true);
 
         // Apply state reinforcement (Phase 2: Context Decay Mitigation) and content masking
-        return await this.enrichResponseWithStateReinforcement(response);
+        // Also record conversation turn (Phase 3: Structured External Memory)
+        return await this.enrichResponseWithStateReinforcement(response, name, args);
       } catch (error) {
         // Track failed execution
         await this.trackToolExecution(
@@ -7114,10 +7212,15 @@ Please provide:
    *
    * Implements Phase 2 of context decay mitigation by injecting
    * context reminders every N turns or when response exceeds token threshold.
+   *
+   * Phase 3 extension: Records conversation turns to structured external memory.
    */
   private async enrichResponseWithStateReinforcement(
-    response: CallToolResult
+    response: CallToolResult,
+    toolName?: string,
+    toolArgs?: any
   ): Promise<CallToolResult> {
+    const startTime = Date.now();
     try {
       // Extract text content from response
       const textContent = response.content
@@ -7130,12 +7233,15 @@ Please provide:
         return await this.applyOutputMasking(response);
       }
 
-      // Enrich with state reinforcement
+      // Enrich with state reinforcement (Phase 2)
       const enriched = await this.stateReinforcementManager.enrichResponseWithContext(textContent);
+
+      // Prepare final response
+      let finalResponse: CallToolResult;
 
       // Replace text content with enriched version if context was injected
       if (enriched.contextInjected) {
-        const enrichedResponse: CallToolResult = {
+        finalResponse = {
           ...response,
           content: response.content.map(item => {
             if (item.type === 'text') {
@@ -7147,16 +7253,47 @@ Please provide:
             return item;
           }),
         };
-
-        // Apply masking to enriched response
-        return await this.applyOutputMasking(enrichedResponse);
+      } else {
+        finalResponse = response;
       }
 
-      // No enrichment needed, just apply masking
-      return await this.applyOutputMasking(response);
+      // Record conversation turn (Phase 3: Structured External Memory)
+      if (toolName) {
+        const duration = Date.now() - startTime;
+
+        // Check if response has expandableId (from tiered response)
+        const expandableIdMatch = textContent.match(/expandableId:\s*(\S+)/);
+        const expandableId = expandableIdMatch ? expandableIdMatch[1] : undefined;
+
+        await this.conversationMemoryManager.recordTurn(
+          {
+            type: 'tool_call',
+            toolName,
+            toolArgs,
+          },
+          {
+            content: enriched.enrichedContent || textContent,
+            tokenCount: enriched.tokenCount,
+            contextInjected: enriched.contextInjected,
+            ...(expandableId ? { expandableId } : {}),
+          },
+          {
+            duration,
+            cacheHit: false, // Could be enhanced to track cache hits
+            errorOccurred: false,
+          }
+        );
+
+        this.logger.debug(`Conversation turn recorded for ${toolName}`, 'McpAdrAnalysisServer', {
+          turnNumber: enriched.turnNumber,
+        });
+      }
+
+      // Apply masking to final response
+      return await this.applyOutputMasking(finalResponse);
     } catch (error) {
       this.logger.error(
-        'State reinforcement failed, returning original response',
+        'State reinforcement or conversation recording failed, returning original response',
         'McpAdrAnalysisServer',
         error instanceof Error ? error : undefined
       );
@@ -7257,6 +7394,10 @@ Please provide:
   async start(): Promise<void> {
     // Validate configuration before starting
     await this.validateConfiguration();
+
+    // Initialize conversation memory manager (Phase 3: Structured External Memory)
+    await this.conversationMemoryManager.initialize();
+    this.logger.info('Phase 3 (Structured External Memory) initialized', 'McpAdrAnalysisServer');
 
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
@@ -7552,6 +7693,70 @@ This tool has been deprecated and replaced with memory-centric health scoring.
       throw new McpAdrError(
         `Tool chain orchestration failed: ${error instanceof Error ? error.message : String(error)}`,
         'TOOL_CHAIN_ORCHESTRATOR_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Phase 3: Expand Memory Tool
+   * Retrieves and expands stored content from tiered responses
+   */
+  private async expandMemory(args: any): Promise<CallToolResult> {
+    try {
+      const { expandMemory } = await import('./tools/conversation-memory-tool.js');
+      return await expandMemory(args, this.conversationMemoryManager);
+    } catch (error) {
+      throw new McpAdrError(
+        `Memory expansion failed: ${error instanceof Error ? error.message : String(error)}`,
+        'MEMORY_EXPANSION_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Phase 3: Query Conversation History Tool
+   * Searches and retrieves conversation sessions
+   */
+  private async queryConversationHistory(args: any): Promise<CallToolResult> {
+    try {
+      const { queryConversationHistory } = await import('./tools/conversation-memory-tool.js');
+      return await queryConversationHistory(args, this.conversationMemoryManager);
+    } catch (error) {
+      throw new McpAdrError(
+        `Conversation history query failed: ${error instanceof Error ? error.message : String(error)}`,
+        'CONVERSATION_QUERY_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Phase 3: Get Conversation Snapshot Tool
+   * Retrieves current conversation context
+   */
+  private async getConversationSnapshot(args: any): Promise<CallToolResult> {
+    try {
+      const { getConversationSnapshot } = await import('./tools/conversation-memory-tool.js');
+      return await getConversationSnapshot(args, this.conversationMemoryManager);
+    } catch (error) {
+      throw new McpAdrError(
+        `Conversation snapshot retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
+        'SNAPSHOT_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Phase 3: Get Memory Statistics Tool
+   * Retrieves conversation memory statistics
+   */
+  private async getMemoryStats(): Promise<CallToolResult> {
+    try {
+      const { getMemoryStats } = await import('./tools/conversation-memory-tool.js');
+      return await getMemoryStats(this.conversationMemoryManager);
+    } catch (error) {
+      throw new McpAdrError(
+        `Memory stats retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
+        'MEMORY_STATS_ERROR'
       );
     }
   }
