@@ -19,6 +19,24 @@ jest.unstable_mockModule('../../src/utils/prompt-execution.js', () => ({
   formatMCPResponse: jest.fn(),
 }));
 
+jest.unstable_mockModule('../../src/utils/research-orchestrator.js', () => ({
+  ResearchOrchestrator: jest.fn().mockImplementation(() => ({
+    answerResearchQuestion: jest.fn().mockResolvedValue({
+      answer: 'Mock environment analysis',
+      confidence: 0.85,
+      sources: [
+        {
+          type: 'environment',
+          data: {
+            capabilities: ['Docker', 'Kubernetes', 'GitHub Actions'],
+          },
+        },
+      ],
+      needsWebSearch: false,
+    }),
+  })),
+}));
+
 const { analyzeDeploymentProgress } = await import('../../src/tools/deployment-analysis-tool.js');
 const {
   identifyDeploymentTasks,
