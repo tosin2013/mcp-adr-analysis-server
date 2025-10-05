@@ -3033,6 +3033,32 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'expand_analysis_section',
+            description:
+              'Retrieve full analysis content from tiered responses. Expand entire analysis or specific sections stored in memory. Use this when a tool returns a summary with an expandable ID.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                expandableId: {
+                  type: 'string',
+                  description: 'ID of the expandable analysis (provided in tiered response)',
+                },
+                section: {
+                  type: 'string',
+                  description:
+                    'Optional: Specific section to expand (omit to get full analysis). Available sections are listed in the tiered response.',
+                },
+                format: {
+                  type: 'string',
+                  enum: ['markdown', 'json'],
+                  description: 'Output format (default: markdown)',
+                  default: 'markdown',
+                },
+              },
+              required: ['expandableId'],
+            },
+          },
+          {
             name: 'tool_chain_orchestrator',
             description:
               'AI-powered dynamic tool sequencing - intelligently analyze user requests and generate structured tool execution plans',
@@ -3284,6 +3310,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'memory_loading':
             response = await this.memoryLoading(safeArgs);
+            break;
+          case 'expand_analysis_section':
+            response = await this.expandAnalysisSection(safeArgs);
             break;
           case 'interactive_adr_planning':
             response = await this.interactiveAdrPlanning(safeArgs);
@@ -7425,6 +7454,18 @@ This tool has been deprecated and replaced with memory-centric health scoring.
       throw new McpAdrError(
         `Memory loading failed: ${error instanceof Error ? error.message : String(error)}`,
         'MEMORY_LOADING_ERROR'
+      );
+    }
+  }
+
+  private async expandAnalysisSection(args: Record<string, unknown>): Promise<CallToolResult> {
+    try {
+      const { expandAnalysisSection } = await import('./tools/expand-analysis-tool.js');
+      return await expandAnalysisSection(args as any);
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to expand analysis: ${error instanceof Error ? error.message : String(error)}`,
+        'EXPAND_ANALYSIS_ERROR'
       );
     }
   }

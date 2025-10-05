@@ -84,10 +84,16 @@ Provide detailed risk assessment and practical implementation guidance.`,
         );
 
         if (executionResult.isAIGenerated) {
-          // AI execution successful - return actual deployment task identification results
-          return formatMCPResponse({
-            ...executionResult,
-            content: `# Deployment Task Identification Results
+          // AI execution successful - use tiered response for token efficiency
+          const { TieredResponseManager } = await import('../utils/tiered-response-manager.js');
+          const { MemoryEntityManager } = await import('../utils/memory-entity-manager.js');
+
+          const memoryManager = new MemoryEntityManager();
+          const tieredManager = new TieredResponseManager(memoryManager);
+          await tieredManager.initialize();
+
+          // Build full analysis content
+          const fullContent = `# Deployment Task Identification Results
 
 ## Analysis Information
 - **ADR Directory**: ${adrDirectory}
@@ -122,7 +128,53 @@ For deeper deployment insights:
 - **CI/CD Analysis**: \`analyze_deployment_progress\` with \`analysisType: "cicd"\`
 - **Progress Tracking**: \`analyze_deployment_progress\` with \`analysisType: "progress"\`
 - **Completion Verification**: \`analyze_deployment_progress\` with \`analysisType: "completion"\`
-`,
+`;
+
+          // Define sections for expandable content
+          const sections = {
+            'Analysis Information': `## Analysis Information
+- **ADR Directory**: ${adrDirectory}
+- **Todo Path**: ${todoPath || 'Not specified'}`,
+            'Task Analysis': `## AI Deployment Task Analysis Results
+
+${executionResult.content}`,
+            'Next Steps': `## Next Steps
+
+Based on the identified deployment tasks:
+
+1. **Review Task List**: Examine each deployment task for completeness and accuracy
+2. **Validate Dependencies**: Confirm task sequencing and dependency relationships
+3. **Assign Responsibilities**: Determine who will execute each deployment task
+4. **Create Timeline**: Establish deployment schedule with milestones
+5. **Set Up Monitoring**: Implement progress tracking and verification systems`,
+            'Task Management': `## Deployment Task Management
+
+Use the identified tasks to:
+- **Track Progress**: Monitor deployment progress across all categories
+- **Manage Dependencies**: Ensure proper task sequencing and coordination
+- **Assess Risks**: Identify and mitigate deployment risks
+- **Verify Completion**: Use verification criteria for completion validation
+- **Optimize Process**: Improve deployment efficiency and reliability`,
+            'Follow-up Analysis': `## Follow-up Analysis
+
+For deeper deployment insights:
+- **CI/CD Analysis**: \`analyze_deployment_progress\` with \`analysisType: "cicd"\`
+- **Progress Tracking**: \`analyze_deployment_progress\` with \`analysisType: "progress"\`
+- **Completion Verification**: \`analyze_deployment_progress\` with \`analysisType: "completion"\``,
+          };
+
+          // Create tiered response
+          const tieredResponse = await tieredManager.createTieredResponse(
+            'analyze_deployment_progress',
+            fullContent,
+            sections,
+            { analysisType, adrDirectory, todoPath }
+          );
+
+          // Format and return tiered response
+          return formatMCPResponse({
+            ...executionResult,
+            content: tieredManager.formatTieredResponse(tieredResponse),
           });
         } else {
           // Fallback to prompt-only mode
