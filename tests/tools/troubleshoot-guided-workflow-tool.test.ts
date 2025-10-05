@@ -38,6 +38,28 @@ jest.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
   })),
 }));
 
+// Mock ResearchOrchestrator to eliminate slow research operations
+jest.mock('../../src/utils/research-orchestrator.js', () => ({
+  ResearchOrchestrator: jest.fn().mockImplementation(() => ({
+    answerResearchQuestion: jest.fn().mockResolvedValue({
+      answer: 'Mock research answer',
+      confidence: 0.8,
+      sources: [],
+      needsWebSearch: false,
+    }),
+  })),
+}));
+
+// Mock MemoryEntityManager to eliminate memory operations
+jest.mock('../../src/utils/memory-entity-manager.js', () => ({
+  MemoryEntityManager: jest.fn().mockImplementation(() => ({
+    initialize: jest.fn().mockResolvedValue(undefined),
+    upsertEntity: jest.fn().mockResolvedValue(undefined),
+    queryEntities: jest.fn().mockResolvedValue([]),
+    updateEntity: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
 describe('Troubleshoot Guided Workflow Tool', () => {
   let troubleshootGuidedWorkflow: any;
 
