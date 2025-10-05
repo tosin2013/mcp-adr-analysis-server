@@ -38,6 +38,7 @@ import {
   type ServerConfig,
 } from './utils/config.js';
 import { KnowledgeGraphManager } from './utils/knowledge-graph-manager.js';
+import { StateReinforcementManager } from './utils/state-reinforcement-manager.js';
 import {
   type GetWorkflowGuidanceArgs,
   type GetArchitecturalContextArgs,
@@ -122,12 +123,14 @@ export class McpAdrAnalysisServer {
   private config: ServerConfig;
   private logger: ReturnType<typeof createLogger>;
   private kgManager: KnowledgeGraphManager;
+  private stateReinforcementManager: StateReinforcementManager;
 
   constructor() {
     // Load and validate configuration
     this.config = loadConfig();
     this.logger = createLogger(this.config);
     this.kgManager = new KnowledgeGraphManager();
+    this.stateReinforcementManager = new StateReinforcementManager(this.kgManager);
 
     // Print configuration summary
     printConfigSummary(this.config);
@@ -3326,11 +3329,11 @@ export class McpAdrAnalysisServer {
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
         }
 
-        // Apply content masking to response
         // Track tool execution in knowledge graph
         await this.trackToolExecution(name, args, response, true);
 
-        return await this.applyOutputMasking(response);
+        // Apply state reinforcement (Phase 2: Context Decay Mitigation) and content masking
+        return await this.enrichResponseWithStateReinforcement(response);
       } catch (error) {
         // Track failed execution
         await this.trackToolExecution(
@@ -7103,6 +7106,62 @@ Please provide:
       // Log to stderr to avoid corrupting MCP protocol
       console.error('[WARN] Output masking failed:', error);
       return response;
+    }
+  }
+
+  /**
+   * Enrich response with state reinforcement and apply masking
+   *
+   * Implements Phase 2 of context decay mitigation by injecting
+   * context reminders every N turns or when response exceeds token threshold.
+   */
+  private async enrichResponseWithStateReinforcement(
+    response: CallToolResult
+  ): Promise<CallToolResult> {
+    try {
+      // Extract text content from response
+      const textContent = response.content
+        .filter((item): item is { type: 'text'; text: string } => item.type === 'text')
+        .map(item => item.text)
+        .join('\n\n');
+
+      if (!textContent) {
+        // No text content to enrich, just apply masking
+        return await this.applyOutputMasking(response);
+      }
+
+      // Enrich with state reinforcement
+      const enriched = await this.stateReinforcementManager.enrichResponseWithContext(textContent);
+
+      // Replace text content with enriched version if context was injected
+      if (enriched.contextInjected) {
+        const enrichedResponse: CallToolResult = {
+          ...response,
+          content: response.content.map(item => {
+            if (item.type === 'text') {
+              return {
+                type: 'text',
+                text: enriched.enrichedContent,
+              };
+            }
+            return item;
+          }),
+        };
+
+        // Apply masking to enriched response
+        return await this.applyOutputMasking(enrichedResponse);
+      }
+
+      // No enrichment needed, just apply masking
+      return await this.applyOutputMasking(response);
+    } catch (error) {
+      this.logger.error(
+        'State reinforcement failed, returning original response',
+        'McpAdrAnalysisServer',
+        error instanceof Error ? error : undefined
+      );
+      // Fallback to just masking if enrichment fails
+      return await this.applyOutputMasking(response);
     }
   }
 
