@@ -170,6 +170,7 @@ export default [
   {
     ignores: [
       'dist/**',
+      'docs/api/**',
       'node_modules/**',
       'coverage/**',
       '.mcp-adr-cache/**',

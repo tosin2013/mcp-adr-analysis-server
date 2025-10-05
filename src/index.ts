@@ -170,10 +170,10 @@ export class McpAdrAnalysisServer {
 
   /**
    * Setup MCP protocol handlers
-   * 
+   *
    * @description Configures all Model Context Protocol request handlers for the ADR Analysis Server.
    * Implements the complete MCP specification including tools, resources, and prompts.
-   * 
+   *
    * @private
    * @since 2.0.0
    * @category MCP Protocol
@@ -181,24 +181,24 @@ export class McpAdrAnalysisServer {
   private setupHandlers(): void {
     /**
      * List Tools Handler - MCP Protocol Endpoint
-     * 
+     *
      * @description Returns the complete catalog of available tools for ADR analysis,
      * research, validation, and deployment operations. Each tool includes comprehensive
      * input schemas and descriptions for client integration.
-     * 
+     *
      * @returns {Promise<{tools: Array}>} Complete tool catalog with schemas
-     * 
+     *
      * @example
      * ```typescript
      * // MCP Client usage
      * const tools = await mcpClient.listTools();
      * console.log(tools.tools.length); // 20+ available tools
-     * 
+     *
      * // Find specific tool
      * const researchTool = tools.tools.find(t => t.name === 'perform_research');
      * console.log(researchTool.description); // Tool description
      * ```
-     * 
+     *
      * @mcp-endpoint
      * @category Tools
      */
@@ -941,8 +941,7 @@ export class McpAdrAnalysisServer {
           },
           {
             name: 'validate_all_adrs',
-            description:
-              'Validate all ADRs in a directory against actual infrastructure reality',
+            description: 'Validate all ADRs in a directory against actual infrastructure reality',
             inputSchema: {
               type: 'object',
               properties: {
@@ -3080,19 +3079,19 @@ export class McpAdrAnalysisServer {
 
     /**
      * Call Tool Handler - MCP Protocol Endpoint
-     * 
+     *
      * @description Executes specific tools with provided arguments. This is the core
      * execution endpoint that routes tool calls to their respective implementations.
      * Includes comprehensive error handling, argument validation, and response masking.
-     * 
+     *
      * @param {CallToolRequest} request - MCP tool execution request
      * @param {string} request.params.name - Tool name to execute
      * @param {Object} request.params.arguments - Tool-specific arguments
-     * 
+     *
      * @returns {Promise<CallToolResult>} Tool execution result with content and metadata
-     * 
+     *
      * @throws {McpAdrError} When tool execution fails or arguments are invalid
-     * 
+     *
      * @example
      * ```typescript
      * // Execute research tool
@@ -3100,10 +3099,10 @@ export class McpAdrAnalysisServer {
      *   question: 'What authentication methods are used?',
      *   projectPath: '/path/to/project'
      * });
-     * 
+     *
      * console.log(result.content); // Research findings
      * ```
-     * 
+     *
      * @example
      * ```typescript
      * // Execute ADR validation
@@ -3111,11 +3110,11 @@ export class McpAdrAnalysisServer {
      *   adrPath: 'docs/adrs/0001-auth-choice.md',
      *   includeEnvironmentCheck: true
      * });
-     * 
+     *
      * console.log(validation.isValid); // true/false
      * console.log(validation.findings); // Validation issues
      * ```
-     * 
+     *
      * @mcp-endpoint
      * @category Tools
      * @category Execution
@@ -3325,26 +3324,26 @@ export class McpAdrAnalysisServer {
 
     /**
      * List Resources Handler - MCP Protocol Endpoint
-     * 
+     *
      * @description Returns available resources for client access including the
      * architectural knowledge graph and project analysis data. Resources provide
      * read-only access to server-managed data structures.
-     * 
+     *
      * @returns {Promise<{resources: Array}>} Available resources with URIs and descriptions
-     * 
+     *
      * @example
      * ```typescript
      * // List available resources
      * const resources = await mcpClient.listResources();
      * console.log(resources.resources.length); // Available resources
-     * 
+     *
      * // Find knowledge graph resource
-     * const kgResource = resources.resources.find(r => 
+     * const kgResource = resources.resources.find(r =>
      *   r.uri === 'adr://architectural_knowledge_graph'
      * );
      * console.log(kgResource.name); // "Architectural Knowledge Graph"
      * ```
-     * 
+     *
      * @mcp-endpoint
      * @category Resources
      */
@@ -3375,18 +3374,18 @@ export class McpAdrAnalysisServer {
 
     /**
      * Read Resource Handler - MCP Protocol Endpoint
-     * 
+     *
      * @description Reads specific resource content by URI. Provides access to
      * architectural knowledge graphs, project analysis data, and other server-managed
      * resources with appropriate content masking applied.
-     * 
+     *
      * @param {ReadResourceRequest} request - MCP resource read request
      * @param {string} request.params.uri - Resource URI to read
-     * 
+     *
      * @returns {Promise<ReadResourceResult>} Resource content with metadata
-     * 
+     *
      * @throws {McpAdrError} When resource URI is invalid or access fails
-     * 
+     *
      * @example
      * ```typescript
      * // Read knowledge graph resource
@@ -3395,7 +3394,7 @@ export class McpAdrAnalysisServer {
      * );
      * console.log(kgData.contents); // Knowledge graph JSON
      * ```
-     * 
+     *
      * @mcp-endpoint
      * @category Resources
      */
@@ -3418,26 +3417,26 @@ export class McpAdrAnalysisServer {
 
     /**
      * List Prompts Handler - MCP Protocol Endpoint
-     * 
+     *
      * @description Returns available prompt templates for ADR analysis, research,
      * and architectural decision support. Prompts can be executed directly or
      * used as templates for custom implementations.
-     * 
+     *
      * @returns {Promise<{prompts: Array}>} Available prompt templates with metadata
-     * 
+     *
      * @example
      * ```typescript
      * // List available prompts
      * const prompts = await mcpClient.listPrompts();
      * console.log(prompts.prompts.length); // Available prompt templates
-     * 
+     *
      * // Find ADR analysis prompt
-     * const adrPrompt = prompts.prompts.find(p => 
+     * const adrPrompt = prompts.prompts.find(p =>
      *   p.name === 'adr_analysis_prompt'
      * );
      * console.log(adrPrompt.description); // Prompt description
      * ```
-     * 
+     *
      * @mcp-endpoint
      * @category Prompts
      */
@@ -3455,19 +3454,19 @@ export class McpAdrAnalysisServer {
 
     /**
      * Get Prompt Handler - MCP Protocol Endpoint
-     * 
+     *
      * @description Executes specific prompt templates with provided arguments.
      * Returns formatted prompts ready for AI execution or further processing.
      * Supports dynamic argument injection and template customization.
-     * 
+     *
      * @param {GetPromptRequest} request - MCP prompt execution request
      * @param {string} request.params.name - Prompt template name
      * @param {Object} request.params.arguments - Template-specific arguments
-     * 
+     *
      * @returns {Promise<GetPromptResult>} Formatted prompt with metadata
-     * 
+     *
      * @throws {McpAdrError} When prompt template is not found or arguments are invalid
-     * 
+     *
      * @example
      * ```typescript
      * // Execute ADR analysis prompt
@@ -3475,10 +3474,10 @@ export class McpAdrAnalysisServer {
      *   adrPath: 'docs/adrs/0001-auth.md',
      *   projectContext: 'microservices architecture'
      * });
-     * 
+     *
      * console.log(prompt.messages); // Formatted prompt messages
      * ```
-     * 
+     *
      * @example
      * ```typescript
      * // Execute research prompt
@@ -3486,10 +3485,10 @@ export class McpAdrAnalysisServer {
      *   domain: 'authentication',
      *   complexity: 'advanced'
      * });
-     * 
+     *
      * console.log(researchPrompt.messages[0].content); // Research prompt
      * ```
-     * 
+     *
      * @mcp-endpoint
      * @category Prompts
      * @category Execution
@@ -4787,8 +4786,11 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
       );
 
       // Import advanced prompting utilities if enhanced mode is enabled
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let generateArchitecturalKnowledge: any = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let optimizePromptWithAPE: any = null;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let createToolAPEConfig: any = null;
 
       if (enhancedMode) {
@@ -5244,7 +5246,7 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
 
     // Environment validation and auto-detection
     let detectedEnvironment = environment;
-    let finalEnvironmentConfig = { ...(environmentConfig as Record<string, any>) };
+    let finalEnvironmentConfig = { ...(environmentConfig as Record<string, unknown>) };
 
     if (
       environmentValidation &&
@@ -5310,7 +5312,7 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
       const analysis = await this.performLocalAdrProgressAnalysis({
         todoContent,
         todoPath: absoluteTodoPath,
-        discoveredAdrs: (discoveryResult as any)?.adrs || [],
+        discoveredAdrs: (discoveryResult as { adrs?: unknown[] })?.adrs || [],
         adrDirectory: absoluteAdrPath,
         projectStructure: projectStructure || null,
         projectPath: projectPath as string,
@@ -5445,9 +5447,9 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
   private async performLocalAdrProgressAnalysis(params: {
     todoContent: string;
     todoPath: string;
-    discoveredAdrs: any[];
+    discoveredAdrs: unknown[];
     adrDirectory: string;
-    projectStructure: any;
+    projectStructure: unknown;
     projectPath: string;
     validationType: string;
     includeFileChecks: boolean;
@@ -5456,7 +5458,7 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
     functionalValidation: boolean;
     strictMode: boolean;
     environment: string;
-    environmentConfig: any;
+    environmentConfig: unknown;
     environmentValidation: boolean;
   }): Promise<string> {
     const {
@@ -5557,15 +5559,18 @@ ${importResult.content?.[0]?.text || 'TODO management feature has been deprecate
 
 ## Environment Context
 - **Target Environment**: ${environment}
-- **Security Level**: ${environmentConfig.securityLevel || 'Not specified'}
-- **Required Files**: ${environmentConfig.requiredFiles?.length || 0} files
-- **Required Services**: ${environmentConfig.requiredServices?.length || 0} services
+- **Security Level**: ${(environmentConfig as Record<string, unknown>)?.['securityLevel'] || 'Not specified'}
+- **Required Files**: ${((environmentConfig as Record<string, unknown>)?.['requiredFiles'] as unknown[] | undefined)?.length || 0} files
+- **Required Services**: ${((environmentConfig as Record<string, unknown>)?.['requiredServices'] as unknown[] | undefined)?.length || 0} services
 
 ## ADR Discovery Results
 ${
   totalAdrs > 0
     ? `Found ${totalAdrs} ADRs:\n${discoveredAdrs
-        .map((adr, i) => `${i + 1}. **${adr.title}** (${adr.status}) - ${adr.filename}`)
+        .map((adr, i) => {
+          const adrRecord = adr as Record<string, unknown>;
+          return `${i + 1}. **${adrRecord['title']}** (${adrRecord['status']}) - ${adrRecord['filename']}`;
+        })
         .join('\n')}`
     : 'No ADRs found in the specified directory.'
 }
@@ -5727,9 +5732,9 @@ To re-run this validation with strict mode:
    */
   private mapTasksToAdrs(
     tasks: Array<{ title: string; completed: boolean }>,
-    adrs: any[],
+    adrs: unknown[],
     environment?: string,
-    environmentConfig?: any
+    environmentConfig?: unknown
   ): {
     aligned: typeof tasks;
     misaligned: typeof tasks;
@@ -5740,17 +5745,20 @@ To re-run this validation with strict mode:
     const missing: string[] = [];
 
     // Simple keyword matching for alignment detection
-    const adrKeywords = adrs.flatMap(adr => [
-      adr.title.toLowerCase(),
-      ...(adr.decision || '')
-        .toLowerCase()
-        .split(/\s+/)
-        .filter((w: string) => w.length > 4),
-      ...(adr.context || '')
-        .toLowerCase()
-        .split(/\s+/)
-        .filter((w: string) => w.length > 4),
-    ]);
+    const adrKeywords = adrs.flatMap(adr => {
+      const adrRecord = adr as Record<string, unknown>;
+      return [
+        String(adrRecord['title'] || '').toLowerCase(),
+        ...String(adrRecord['decision'] || '')
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((w: string) => w.length > 4),
+        ...String(adrRecord['context'] || '')
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((w: string) => w.length > 4),
+      ];
+    });
 
     // Environment-specific keywords that should be prioritized
     const envKeywords: string[] = [];
@@ -5766,8 +5774,9 @@ To re-run this validation with strict mode:
 
     for (const task of tasks) {
       const taskLower = task.title.toLowerCase();
+      const firstWord = taskLower.split(' ')[0] || '';
       const hasKeywordMatch = adrKeywords.some(
-        keyword => taskLower.includes(keyword) || keyword.includes(taskLower.split(' ')[0])
+        keyword => taskLower.includes(keyword) || keyword.includes(firstWord)
       );
 
       // Environment-aware alignment scoring
@@ -5782,8 +5791,9 @@ To re-run this validation with strict mode:
 
     // Identify potential missing tasks based on ADR content
     for (const adr of adrs) {
-      if (adr.status === 'accepted' && adr.decision) {
-        const decisionWords = adr.decision.toLowerCase().split(/\s+/);
+      const adrRecord = adr as Record<string, unknown>;
+      if (adrRecord['status'] === 'accepted' && adrRecord['decision']) {
+        const decisionWords = String(adrRecord['decision']).toLowerCase().split(/\s+/);
         const implementationWords = [
           'implement',
           'create',
@@ -5795,12 +5805,14 @@ To re-run this validation with strict mode:
         ];
 
         if (implementationWords.some(word => decisionWords.includes(word))) {
+          const adrTitle = String(adrRecord['title'] || '');
+          const adrFirstWord = adrTitle.toLowerCase().split(' ')[0] || '';
           const hasCorrespondingTask = tasks.some(task =>
-            task.title.toLowerCase().includes(adr.title.toLowerCase().split(' ')[0])
+            task.title.toLowerCase().includes(adrFirstWord)
           );
 
           if (!hasCorrespondingTask) {
-            missing.push(`Implement ${adr.title}`);
+            missing.push(`Implement ${adrTitle}`);
           }
         }
       }
@@ -5808,8 +5820,9 @@ To re-run this validation with strict mode:
 
     // Environment-specific missing tasks
     if (environment && environmentConfig) {
-      if (environmentConfig.requiredFiles) {
-        for (const file of environmentConfig.requiredFiles) {
+      const envConfig = environmentConfig as Record<string, unknown>;
+      if (envConfig['requiredFiles']) {
+        for (const file of envConfig['requiredFiles'] as string[]) {
           const hasFileTask = tasks.some(task =>
             task.title.toLowerCase().includes(file.toLowerCase())
           );
@@ -5819,8 +5832,8 @@ To re-run this validation with strict mode:
         }
       }
 
-      if (environmentConfig.requiredServices) {
-        for (const service of environmentConfig.requiredServices) {
+      if (envConfig['requiredServices']) {
+        for (const service of envConfig['requiredServices'] as string[]) {
           const hasServiceTask = tasks.some(task =>
             task.title.toLowerCase().includes(service.toLowerCase())
           );
@@ -6724,7 +6737,15 @@ Please provide:
       throw new McpAdrError('Missing required parameter: question', 'INVALID_ARGUMENTS');
     }
     const { performResearch } = await import('./tools/perform-research-tool.js');
-    return await performResearch(args as { question: string; projectPath?: string; adrDirectory?: string; confidenceThreshold?: number; performWebSearch?: boolean });
+    return await performResearch(
+      args as {
+        question: string;
+        projectPath?: string;
+        adrDirectory?: string;
+        confidenceThreshold?: number;
+        performWebSearch?: boolean;
+      }
+    );
   }
 
   /**
@@ -6735,7 +6756,16 @@ Please provide:
       throw new McpAdrError('Missing required parameter: query', 'INVALID_ARGUMENTS');
     }
     const { llmWebSearch } = await import('./tools/llm-web-search-tool.js');
-    return await llmWebSearch(args as { query: string; maxResults?: number; includeContent?: boolean; llmInstructions?: string; projectPath?: string; adrDirectory?: string });
+    return await llmWebSearch(
+      args as {
+        query: string;
+        maxResults?: number;
+        includeContent?: boolean;
+        llmInstructions?: string;
+        projectPath?: string;
+        adrDirectory?: string;
+      }
+    );
   }
 
   /**
@@ -6743,10 +6773,23 @@ Please provide:
    */
   private async llmCloudManagement(args: Record<string, unknown>): Promise<CallToolResult> {
     if (!('provider' in args) || !('action' in args) || !('llmInstructions' in args)) {
-      throw new McpAdrError('Missing required parameters: provider, action, llmInstructions', 'INVALID_ARGUMENTS');
+      throw new McpAdrError(
+        'Missing required parameters: provider, action, llmInstructions',
+        'INVALID_ARGUMENTS'
+      );
     }
     const { llmCloudManagement } = await import('./tools/llm-cloud-management-tool.js');
-    return await llmCloudManagement(args as { provider: 'aws' | 'azure' | 'gcp' | 'redhat' | 'ubuntu' | 'macos'; action: string; parameters?: Record<string, any>; llmInstructions: string; researchFirst?: boolean; projectPath?: string; adrDirectory?: string });
+    return await llmCloudManagement(
+      args as {
+        provider: 'aws' | 'azure' | 'gcp' | 'redhat' | 'ubuntu' | 'macos';
+        action: string;
+        parameters?: Record<string, any>;
+        llmInstructions: string;
+        researchFirst?: boolean;
+        projectPath?: string;
+        adrDirectory?: string;
+      }
+    );
   }
 
   /**
@@ -6754,10 +6797,23 @@ Please provide:
    */
   private async llmDatabaseManagement(args: Record<string, unknown>): Promise<CallToolResult> {
     if (!('database' in args) || !('action' in args) || !('llmInstructions' in args)) {
-      throw new McpAdrError('Missing required parameters: database, action, llmInstructions', 'INVALID_ARGUMENTS');
+      throw new McpAdrError(
+        'Missing required parameters: database, action, llmInstructions',
+        'INVALID_ARGUMENTS'
+      );
     }
     const { llmDatabaseManagement } = await import('./tools/llm-database-management-tool.js');
-    return await llmDatabaseManagement(args as { database: 'postgresql' | 'mongodb' | 'redis' | 'mysql' | 'mariadb'; action: string; parameters?: Record<string, any>; llmInstructions: string; researchFirst?: boolean; projectPath?: string; adrDirectory?: string });
+    return await llmDatabaseManagement(
+      args as {
+        database: 'postgresql' | 'mongodb' | 'redis' | 'mysql' | 'mariadb';
+        action: string;
+        parameters?: Record<string, any>;
+        llmInstructions: string;
+        researchFirst?: boolean;
+        projectPath?: string;
+        adrDirectory?: string;
+      }
+    );
   }
 
   /**
@@ -7403,21 +7459,21 @@ This tool has been deprecated and replaced with memory-centric health scoring.
 
 /**
  * Main execution function for the MCP ADR Analysis Server
- * 
+ *
  * @description Initializes and starts the MCP server with proper configuration,
  * error handling, and graceful shutdown. Handles command line arguments for
  * help, version, and test modes.
- * 
+ *
  * @returns {Promise<void>} Resolves when server shuts down gracefully
- * 
+ *
  * @throws {Error} When server initialization fails or configuration is invalid
- * 
+ *
  * @example
  * ```typescript
  * // Start the server (typically called from CLI)
  * await main();
  * ```
- * 
+ *
  * @since 1.0.0
  * @category Main
  */

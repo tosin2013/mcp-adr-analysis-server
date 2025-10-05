@@ -1,6 +1,6 @@
 /**
  * LLM-Managed Database Management Tool
- * 
+ *
  * Provides LLM-driven database operations with research-driven approach
  */
 
@@ -9,10 +9,10 @@ import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 /**
  * LLM-managed database operations with research-driven approach
- * 
+ *
  * @description Executes database operations using LLM to research best practices,
  * generate appropriate commands, and execute them. Supports PostgreSQL, MongoDB, Redis, MySQL, and MariaDB.
- * 
+ *
  * @param {Object} args - Database management configuration parameters
  * @param {string} args.database - Database type (postgresql, mongodb, redis, mysql, mariadb)
  * @param {string} args.action - Action to perform
@@ -21,11 +21,11 @@ import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
  * @param {boolean} [args.researchFirst] - Research best approach first (default: true)
  * @param {string} [args.projectPath] - Path to project root (defaults to cwd)
  * @param {string} [args.adrDirectory] - ADR directory relative to project (defaults to 'docs/adrs')
- * 
+ *
  * @returns {Promise<any>} Database operation results with LLM analysis
- * 
+ *
  * @throws {McpAdrError} When required parameters are missing or operation fails
- * 
+ *
  * @example
  * ```typescript
  * // PostgreSQL database creation
@@ -36,7 +36,7 @@ import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
  *   llmInstructions: 'Create a secure database with proper permissions'
  * });
  * ```
- * 
+ *
  * @example
  * ```typescript
  * // MongoDB collection optimization
@@ -47,7 +47,7 @@ import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
  *   llmInstructions: 'Optimize for read-heavy workloads with proper indexing'
  * });
  * ```
- * 
+ *
  * @since 2.1.0
  * @category Database Management
  * @category LLM
@@ -69,7 +69,7 @@ export async function llmDatabaseManagement(args: {
     llmInstructions,
     researchFirst = true,
     projectPath,
-    adrDirectory
+    adrDirectory,
   } = args;
 
   if (!database || !action || !llmInstructions) {
@@ -103,7 +103,7 @@ ${llmInstructions}
       action,
       parameters,
       research: researchResult,
-      instructions: llmInstructions
+      instructions: llmInstructions,
     });
 
     // Step 3: Execute the command (simulated for now)
@@ -123,13 +123,17 @@ ${llmInstructions}
 ## LLM Instructions
 ${llmInstructions}
 
-${researchResult ? `
+${
+  researchResult
+    ? `
 ## Research Results
 - **Confidence**: ${(researchResult.confidence * 100).toFixed(1)}%
 - **Sources**: ${researchResult.metadata.sourcesQueried.join(', ')}
 - **Research Summary**: ${researchResult.answer}
 
-` : ''}
+`
+    : ''
+}
 
 ## Generated Command
 \`\`\`sql
@@ -147,9 +151,9 @@ ${command.analysis || 'No analysis available'}
 - **Command Confidence**: ${(command.confidence * 100).toFixed(1)}%
 - **Timestamp**: ${new Date().toISOString()}
 - **Research-Driven**: ${researchFirst ? 'Yes' : 'No'}
-`
-        }
-      ]
+`,
+        },
+      ],
     };
   } catch (error) {
     throw new McpAdrError(
@@ -213,19 +217,22 @@ async function generateDatabaseCommand(context: {
   return {
     generated: `-- LLM command generation for ${context.database} ${context.action} not yet implemented`,
     confidence: 0.3,
-    analysis: 'LLM command generation is not yet available. This is a placeholder implementation.'
+    analysis: 'LLM command generation is not yet available. This is a placeholder implementation.',
   };
 }
 
 /**
  * Execute database command (simulated for now)
  */
-async function executeDatabaseCommand(command: { generated: string; confidence: number }): Promise<{ success: boolean; output: string }> {
+async function executeDatabaseCommand(command: {
+  generated: string;
+  confidence: number;
+}): Promise<{ success: boolean; output: string }> {
   // For now, simulate command execution
   // In a real implementation, this would execute the actual database command
   return {
     success: command.confidence > 0.7,
-    output: `Simulated execution of: ${command.generated}\n\nThis is a simulation. In production, this would execute the actual database command.`
+    output: `Simulated execution of: ${command.generated}\n\nThis is a simulation. In production, this would execute the actual database command.`,
   };
 }
 

@@ -27,25 +27,25 @@ export type ServerConfig = z.infer<typeof ConfigSchema>;
 
 /**
  * Load and validate configuration from environment variables
- * 
+ *
  * @description Loads server configuration from environment variables with fallback defaults.
  * Validates all configuration values using Zod schema and returns a type-safe config object.
- * 
+ *
  * @returns {ServerConfig} Validated configuration object with all required settings
- * 
+ *
  * @throws {Error} When configuration validation fails or required values are missing
- * 
+ *
  * @example
  * ```typescript
  * // Load configuration with environment variables
  * process.env.PROJECT_PATH = '/path/to/project';
  * process.env.LOG_LEVEL = 'DEBUG';
- * 
+ *
  * const config = loadConfig();
  * console.log(config.projectPath); // '/path/to/project'
  * console.log(config.logLevel);    // 'DEBUG'
  * ```
- * 
+ *
  * @example
  * ```typescript
  * // Load configuration with defaults
@@ -54,7 +54,7 @@ export type ServerConfig = z.infer<typeof ConfigSchema>;
  * console.log(config.cacheEnabled);  // true
  * console.log(config.maxCacheSize);  // 104857600 (100MB)
  * ```
- * 
+ *
  * @since 2.0.0
  * @category Configuration
  */
@@ -76,7 +76,8 @@ export function loadConfig(): ServerConfig {
     // Firecrawl configuration
     firecrawlApiKey: process.env['FIRECRAWL_API_KEY'],
     firecrawlBaseUrl: process.env['FIRECRAWL_BASE_URL'] || 'http://localhost:3000',
-    firecrawlEnabled: process.env['FIRECRAWL_ENABLED'] === 'true' || !!process.env['FIRECRAWL_API_KEY'],
+    firecrawlEnabled:
+      process.env['FIRECRAWL_ENABLED'] === 'true' || !!process.env['FIRECRAWL_API_KEY'],
   };
 
   try {
@@ -109,24 +110,24 @@ export function getCacheDirectoryPath(config: ServerConfig): string {
 
 /**
  * Validate that the project path exists and is accessible
- * 
+ *
  * @description Performs filesystem validation to ensure the specified project path
  * exists, is accessible, and is a directory. This is critical for server initialization
  * as all ADR analysis operations depend on a valid project root.
- * 
+ *
  * @param {string} projectPath - Absolute or relative path to validate
- * 
+ *
  * @returns {Promise<void>} Resolves if path is valid, rejects with descriptive error
- * 
+ *
  * @throws {Error} When path doesn't exist, isn't a directory, or isn't accessible
- * 
+ *
  * @example
  * ```typescript
  * // Validate existing project directory
  * await validateProjectPath('/path/to/project');
  * console.log('Project path is valid');
  * ```
- * 
+ *
  * @example
  * ```typescript
  * // Handle validation errors
@@ -137,7 +138,7 @@ export function getCacheDirectoryPath(config: ServerConfig): string {
  *   // Error: PROJECT_PATH does not exist: /invalid/path
  * }
  * ```
- * 
+ *
  * @since 2.0.0
  * @category Configuration
  * @category Validation
