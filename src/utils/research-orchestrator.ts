@@ -51,32 +51,32 @@ interface CachedResearchResult {
 
 /**
  * Research Orchestrator Class
- * 
+ *
  * @description Coordinates multi-source research with cascading fallback strategy.
  * Implements a hierarchical approach to answering research questions by querying
  * sources in order of preference: project files → knowledge graph → environment → web search.
- * 
+ *
  * Features:
  * - Intelligent confidence scoring for each source
  * - Configurable confidence thresholds
  * - Result caching for performance optimization
  * - Firecrawl integration for web search capabilities
  * - Comprehensive error handling and fallback mechanisms
- * 
+ *
  * @example
  * ```typescript
  * const orchestrator = new ResearchOrchestrator('/path/to/project', 'docs/adrs');
  * orchestrator.setConfidenceThreshold(0.8);
- * 
+ *
  * const result = await orchestrator.answerResearchQuestion(
  *   'What authentication methods are used in this project?'
  * );
- * 
+ *
  * console.log(`Answer: ${result.answer}`);
  * console.log(`Confidence: ${result.confidence}`);
  * console.log(`Sources: ${result.sources.map(s => s.type).join(', ')}`);
  * ```
- * 
+ *
  * @since 2.0.0
  * @category Research
  * @category Orchestration
@@ -118,43 +118,43 @@ export class ResearchOrchestrator {
 
   /**
    * Answer a research question using cascading source hierarchy
-   * 
+   *
    * @description Executes comprehensive research using a cascading approach:
    * 1. Project files search (fastest, most relevant)
    * 2. Knowledge graph query (instant, context-aware)
    * 3. Environment resources query (live data)
    * 4. Web search fallback (external, when confidence is low)
-   * 
+   *
    * Results are cached for 5 minutes to improve performance for repeated queries.
-   * 
+   *
    * @param {string} question - The research question to investigate
-   * 
+   *
    * @returns {Promise<ResearchAnswer>} Comprehensive research results with:
    * - `answer`: Synthesized answer from all sources
    * - `confidence`: Overall confidence score (0-1)
    * - `sources`: Array of source results with individual confidence scores
    * - `needsWebSearch`: Whether web search is recommended
    * - `metadata`: Execution metadata (duration, files analyzed, etc.)
-   * 
+   *
    * @throws {Error} When question is empty or research orchestration fails
-   * 
+   *
    * @example
    * ```typescript
    * const result = await orchestrator.answerResearchQuestion(
    *   'How does authentication work in this project?'
    * );
-   * 
+   *
    * if (result.confidence >= 0.8) {
    *   console.log('High confidence answer:', result.answer);
    * } else if (result.needsWebSearch) {
    *   console.log('Consider web search for more information');
    * }
-   * 
+   *
    * result.sources.forEach(source => {
    *   console.log(`${source.type}: ${(source.confidence * 100).toFixed(1)}%`);
    * });
    * ```
-   * 
+   *
    * @since 2.0.0
    * @category Research
    * @category Public API
@@ -259,10 +259,10 @@ export class ResearchOrchestrator {
           `Confidence below threshold (${this.confidenceThreshold}), attempting web search`,
           'ResearchOrchestrator'
         );
-        
+
         try {
           const webSearchData = await this.performWebSearch(question);
-          
+
           if (webSearchData.found) {
             answer.sources.push({
               type: 'web_search',
@@ -271,10 +271,10 @@ export class ResearchOrchestrator {
               timestamp: new Date().toISOString(),
             });
             answer.metadata.sourcesQueried.push('web_search');
-            
+
             // Recalculate confidence with web search
             answer.confidence = this.calculateConfidence(answer.sources);
-            
+
             this.logger.info(
               `Web search found ${webSearchData.results?.length || 0} results`,
               'ResearchOrchestrator'
@@ -754,14 +754,17 @@ export class ResearchOrchestrator {
    */
   private async performWebSearch(question: string): Promise<any> {
     try {
-      this.logger.debug(`Performing Firecrawl web search for: "${question}"`, 'ResearchOrchestrator');
+      this.logger.debug(
+        `Performing Firecrawl web search for: "${question}"`,
+        'ResearchOrchestrator'
+      );
 
       // Generate search queries
       const searchQueries = this.generateSearchQueries(question);
-      
+
       // Use Firecrawl to search and extract content
       const results = await Promise.all(
-        searchQueries.map(async (query) => {
+        searchQueries.map(async query => {
           return await this.searchWithFirecrawl(query);
         })
       );
@@ -773,16 +776,16 @@ export class ResearchOrchestrator {
         results: flattenedResults,
         queries: searchQueries,
         timestamp: new Date().toISOString(),
-        provider: 'firecrawl'
+        provider: 'firecrawl',
       };
     } catch (error) {
       this.logger.error('Firecrawl web search failed', 'ResearchOrchestrator', error as Error);
-      return { 
-        found: false, 
-        results: [], 
-        queries: [], 
+      return {
+        found: false,
+        results: [],
+        queries: [],
         error: error instanceof Error ? error.message : String(error),
-        provider: 'firecrawl'
+        provider: 'firecrawl',
       };
     }
   }
@@ -794,16 +797,19 @@ export class ResearchOrchestrator {
     try {
       // Check if Firecrawl is available
       if (!this.firecrawl) {
-        this.logger.warn('Firecrawl is not available, using fallback search', 'ResearchOrchestrator');
+        this.logger.warn(
+          'Firecrawl is not available, using fallback search',
+          'ResearchOrchestrator'
+        );
         return this.generateFallbackSearchResults(query);
       }
 
       // Step 1: Generate search URLs using LLM
       const searchUrls = await this.generateSearchUrls(query);
-      
+
       // Step 2: Use Firecrawl to extract content from search results
       const results = await Promise.all(
-        searchUrls.map(async (url) => {
+        searchUrls.map(async url => {
           try {
             const crawlResult = await this.firecrawl.scrapeUrl(url, {
               formats: ['markdown', 'html'],
@@ -813,7 +819,7 @@ export class ResearchOrchestrator {
               removeLinks: false,
               removeImages: false,
               removeScripts: true,
-              removeStyles: true
+              removeStyles: true,
             });
 
             return {
@@ -821,10 +827,14 @@ export class ResearchOrchestrator {
               url: url,
               content: crawlResult.markdown || crawlResult.html,
               relevance: await this.calculateRelevance(query, crawlResult.markdown || ''),
-              timestamp: new Date().toISOString()
+              timestamp: new Date().toISOString(),
             };
           } catch (error) {
-            this.logger.debug(`Failed to scrape ${url}`, 'ResearchOrchestrator', error instanceof Error ? error : new Error(String(error)));
+            this.logger.debug(
+              `Failed to scrape ${url}`,
+              'ResearchOrchestrator',
+              error instanceof Error ? error : new Error(String(error))
+            );
             return null;
           }
         })
@@ -832,7 +842,11 @@ export class ResearchOrchestrator {
 
       return results.filter(result => result !== null && result.relevance > 0.3);
     } catch (error) {
-      this.logger.error(`Firecrawl search failed for query: ${query}`, 'ResearchOrchestrator', error as Error);
+      this.logger.error(
+        `Firecrawl search failed for query: ${query}`,
+        'ResearchOrchestrator',
+        error as Error
+      );
       return this.generateFallbackSearchResults(query);
     }
   }
@@ -846,8 +860,8 @@ export class ResearchOrchestrator {
       title: `Search Result ${index + 1} for "${searchQuery}"`,
       url: `https://example.com/search?q=${encodeURIComponent(searchQuery)}`,
       content: `This is a fallback search result for the query: ${searchQuery}. Firecrawl is not available, so this is a placeholder result.`,
-      relevance: Math.max(0.3, 0.9 - (index * 0.1)),
-      timestamp: new Date().toISOString()
+      relevance: Math.max(0.3, 0.9 - index * 0.1),
+      timestamp: new Date().toISOString(),
     }));
   }
 
@@ -876,8 +890,8 @@ export class ResearchOrchestrator {
     //   const result = await executor.executeStructuredPrompt(prompt, {
     //     type: 'object',
     //     properties: {
-    //       urls: { 
-    //         type: 'array', 
+    //       urls: {
+    //         type: 'array',
     //         items: { type: 'string' },
     //         description: 'List of URLs to search'
     //       }
@@ -887,12 +901,12 @@ export class ResearchOrchestrator {
     // } catch (error) {
     //   this.logger.warn('LLM search URL generation failed, using fallback', 'ResearchOrchestrator');
     // }
-    
+
     // Fallback to common search URLs
     return [
       `https://www.google.com/search?q=${encodeURIComponent(query)}`,
       `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
-      `https://www.bing.com/search?q=${encodeURIComponent(query)}`
+      `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
     ];
   }
 
@@ -931,7 +945,7 @@ export class ResearchOrchestrator {
     // } catch (error) {
     //   // Fallback to simple keyword matching
     // }
-    
+
     // Fallback to simple keyword matching
     const queryWords = query.toLowerCase().split(' ');
     const contentLower = content.toLowerCase();
