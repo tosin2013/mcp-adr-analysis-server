@@ -630,7 +630,6 @@ import * as researchIntegrationPrompts from './research-integration-prompts.js';
 import * as researchQuestionPrompts from './research-question-prompts.js';
 import * as ruleGenerationPrompts from './rule-generation-prompts.js';
 import * as securityPrompts from './security-prompts.js';
-import * as todoPrompts from './todo-prompts.js';
 
 /**
  * Convert function-based prompts to template format
@@ -858,32 +857,6 @@ const functionBasedPrompts: PromptTemplate[] = [
     'Generate custom security pattern configuration prompt',
     [{ name: 'args', description: 'Custom pattern configuration parameters', required: true }],
     securityPrompts.generateCustomPatternConfigurationPrompt
-  ),
-
-  // TODO prompts
-  createFunctionPromptTemplate(
-    'todo_creation_prompt',
-    'Generate TODO task creation prompt',
-    [{ name: 'args', description: 'TODO creation parameters', required: true }],
-    todoPrompts.generateTodoCreationPrompt
-  ),
-  createFunctionPromptTemplate(
-    'task_status_prompt',
-    'Generate task status management prompt',
-    [{ name: 'args', description: 'Task status management parameters', required: true }],
-    todoPrompts.generateTaskStatusPrompt
-  ),
-  createFunctionPromptTemplate(
-    'dependency_analysis_prompt',
-    'Generate task dependency analysis prompt',
-    [{ name: 'args', description: 'Dependency analysis parameters', required: true }],
-    todoPrompts.generateDependencyAnalysisPrompt
-  ),
-  createFunctionPromptTemplate(
-    'task_estimation_prompt',
-    'Generate task estimation prompt',
-    [{ name: 'args', description: 'Task estimation parameters', required: true }],
-    todoPrompts.generateTaskEstimationPrompt
   ),
 ];
 
