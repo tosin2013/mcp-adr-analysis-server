@@ -40,6 +40,8 @@ import {
 import { KnowledgeGraphManager } from './utils/knowledge-graph-manager.js';
 import { StateReinforcementManager } from './utils/state-reinforcement-manager.js';
 import { ConversationMemoryManager } from './utils/conversation-memory-manager.js';
+import { RootManager } from './utils/root-manager.js';
+import { type ToolContext, createNoOpContext } from './types/tool-context.js';
 import {
   type GetWorkflowGuidanceArgs,
   type GetArchitecturalContextArgs,
@@ -126,6 +128,7 @@ export class McpAdrAnalysisServer {
   private kgManager: KnowledgeGraphManager;
   private stateReinforcementManager: StateReinforcementManager;
   private conversationMemoryManager: ConversationMemoryManager;
+  private rootManager: RootManager;
 
   constructor() {
     // Load and validate configuration
@@ -134,6 +137,9 @@ export class McpAdrAnalysisServer {
     this.kgManager = new KnowledgeGraphManager();
     this.stateReinforcementManager = new StateReinforcementManager(this.kgManager);
     this.conversationMemoryManager = new ConversationMemoryManager(this.kgManager);
+
+    // Initialize root manager for file access control
+    this.rootManager = new RootManager(this.config.projectPath, this.config.adrDirectory);
 
     // Print configuration summary
     printConfigSummary(this.config);
@@ -347,76 +353,6 @@ export class McpAdrAnalysisServer {
                 conversationContext: CONVERSATION_CONTEXT_SCHEMA,
               },
               required: ['prdPath'],
-            },
-          },
-          {
-            name: 'generate_adr_todo',
-            description:
-              'Generate TDD-focused todo.md from existing ADRs with JSON-first approach: creates structured JSON TODO and syncs to markdown',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                adrDirectory: {
-                  type: 'string',
-                  description:
-                    'Directory containing ADR files (optional, uses configured ADR_DIRECTORY if not provided)',
-                },
-                scope: {
-                  type: 'string',
-                  enum: ['all', 'pending', 'in_progress'],
-                  description: 'Scope of tasks to include',
-                  default: 'all',
-                },
-                phase: {
-                  type: 'string',
-                  enum: ['both', 'test', 'production'],
-                  description:
-                    'TDD phase: both (default), test (mock test generation), production (implementation after tests)',
-                  default: 'both',
-                },
-                linkAdrs: {
-                  type: 'boolean',
-                  description: 'Auto-detect and link ADR dependencies in task creation',
-                  default: true,
-                },
-                includeRules: {
-                  type: 'boolean',
-                  description: 'Include architectural rules validation in TDD tasks',
-                  default: true,
-                },
-                ruleSource: {
-                  type: 'string',
-                  enum: ['adrs', 'patterns', 'both'],
-                  description: 'Source for architectural rules (only used if includeRules is true)',
-                  default: 'both',
-                },
-                todoPath: {
-                  type: 'string',
-                  description: 'Path to TODO.md file (relative to project root)',
-                  default: 'TODO.md',
-                },
-                preserveExisting: {
-                  type: 'boolean',
-                  description:
-                    'Preserve existing TODO.md content by merging instead of overwriting',
-                  default: true,
-                },
-                forceSyncToMarkdown: {
-                  type: 'boolean',
-                  description: 'Force sync JSON to markdown even if markdown is newer',
-                  default: false,
-                },
-                intentId: {
-                  type: 'string',
-                  description: 'Link generated tasks to specific knowledge graph intent',
-                },
-                createJsonBackup: {
-                  type: 'boolean',
-                  description: 'Create backup of existing JSON TODO data before import',
-                  default: true,
-                },
-                conversationContext: CONVERSATION_CONTEXT_SCHEMA,
-              },
             },
           },
           {
@@ -1760,6 +1696,31 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'list_roots',
+            description:
+              'List available file system roots that can be accessed. Use this to discover what directories are available before reading files.',
+            inputSchema: {
+              type: 'object',
+              properties: {},
+            },
+          },
+          {
+            name: 'read_directory',
+            description:
+              'List files and folders in a directory. Use this to explore the file structure within accessible roots.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                path: {
+                  type: 'string',
+                  description:
+                    'Directory path to list (relative to project root or absolute within roots)',
+                },
+              },
+              required: ['path'],
+            },
+          },
+          {
             name: 'read_file',
             description: 'Read contents of a file',
             inputSchema: {
@@ -1803,201 +1764,6 @@ export class McpAdrAnalysisServer {
                 },
               },
               required: ['path'],
-            },
-          },
-          {
-            name: 'manage_todo_json',
-            description:
-              'JSON-first TODO management with consistent LLM interactions, automatic scoring sync, and knowledge graph integration',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                operation: {
-                  type: 'string',
-                  enum: [
-                    'create_task',
-                    'update_task',
-                    'bulk_update',
-                    'get_tasks',
-                    'get_analytics',
-                    'import_adr_tasks',
-                    'sync_knowledge_graph',
-                    'sync_to_markdown',
-                    'import_from_markdown',
-                  ],
-                  description: 'Operation to perform on TODO JSON backend',
-                },
-                projectPath: {
-                  type: 'string',
-                  description: 'Project root path (uses configured PROJECT_PATH if not provided)',
-                },
-                taskId: {
-                  type: 'string',
-                  description: 'Task ID for update operations',
-                },
-                title: {
-                  type: 'string',
-                  description: 'Task title for create operations',
-                },
-                description: {
-                  type: 'string',
-                  description: 'Task description',
-                },
-                priority: {
-                  type: 'string',
-                  enum: ['low', 'medium', 'high', 'critical'],
-                  default: 'medium',
-                  description: 'Task priority level',
-                },
-                assignee: {
-                  type: 'string',
-                  description: 'Task assignee',
-                },
-                dueDate: {
-                  type: 'string',
-                  description: 'Due date (ISO string format)',
-                },
-                category: {
-                  type: 'string',
-                  description: 'Task category',
-                },
-                tags: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Task tags',
-                },
-                dependencies: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Task dependencies (task IDs)',
-                },
-                intentId: {
-                  type: 'string',
-                  description: 'Link to knowledge graph intent',
-                },
-                linkedAdrs: {
-                  type: 'array',
-                  items: { type: 'string' },
-                  description: 'Related ADR files',
-                },
-                autoComplete: {
-                  type: 'boolean',
-                  default: false,
-                  description: 'Auto-complete when criteria are met',
-                },
-                completionCriteria: {
-                  type: 'string',
-                  description: 'Auto-completion rules',
-                },
-                updates: {
-                  type: 'object',
-                  properties: {
-                    title: { type: 'string' },
-                    description: { type: 'string' },
-                    status: {
-                      type: 'string',
-                      enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'],
-                    },
-                    priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
-                    assignee: { type: 'string' },
-                    dueDate: { type: 'string' },
-                    progressPercentage: { type: 'number', minimum: 0, maximum: 100 },
-                    notes: { type: 'string' },
-                    tags: { type: 'array', items: { type: 'string' } },
-                  },
-                  description: 'Fields to update for update operations',
-                },
-                reason: {
-                  type: 'string',
-                  description: 'Reason for update (for changelog)',
-                },
-                filters: {
-                  type: 'object',
-                  properties: {
-                    status: {
-                      type: 'string',
-                      enum: ['pending', 'in_progress', 'completed', 'blocked', 'cancelled'],
-                    },
-                    priority: { type: 'string', enum: ['low', 'medium', 'high', 'critical'] },
-                    assignee: { type: 'string' },
-                    category: { type: 'string' },
-                    hasDeadline: { type: 'boolean' },
-                    overdue: { type: 'boolean' },
-                    tags: { type: 'array', items: { type: 'string' } },
-                  },
-                  description: 'Filter criteria for get_tasks operation',
-                },
-                sortBy: {
-                  type: 'string',
-                  enum: ['priority', 'dueDate', 'createdAt', 'updatedAt'],
-                  default: 'priority',
-                  description: 'Sort field for get_tasks operation',
-                },
-                sortOrder: {
-                  type: 'string',
-                  enum: ['asc', 'desc'],
-                  default: 'desc',
-                  description: 'Sort order for get_tasks operation',
-                },
-                limit: {
-                  type: 'number',
-                  description: 'Maximum number of tasks to return',
-                },
-                timeframe: {
-                  type: 'string',
-                  enum: ['day', 'week', 'month', 'all'],
-                  default: 'week',
-                  description: 'Analysis timeframe for analytics',
-                },
-                includeVelocity: {
-                  type: 'boolean',
-                  default: true,
-                  description: 'Include velocity metrics in analytics',
-                },
-                includeScoring: {
-                  type: 'boolean',
-                  default: true,
-                  description: 'Include scoring metrics in analytics',
-                },
-                adrDirectory: {
-                  type: 'string',
-                  default: 'docs/adrs',
-                  description: 'ADR directory path for imports',
-                },
-                preserveExisting: {
-                  type: 'boolean',
-                  default: true,
-                  description: 'Keep existing tasks during imports',
-                },
-                autoLinkDependencies: {
-                  type: 'boolean',
-                  default: true,
-                  description: 'Auto-detect task dependencies',
-                },
-                direction: {
-                  type: 'string',
-                  enum: ['to_kg', 'from_kg', 'bidirectional'],
-                  default: 'bidirectional',
-                  description: 'Knowledge graph sync direction',
-                },
-                force: {
-                  type: 'boolean',
-                  default: false,
-                  description: 'Force operation even if conflicts exist',
-                },
-                mergeStrategy: {
-                  type: 'string',
-                  enum: ['overwrite', 'merge', 'preserve_json'],
-                  default: 'merge',
-                  description: 'Merge strategy for imports',
-                },
-                backupExisting: {
-                  type: 'boolean',
-                  default: true,
-                  description: 'Create backup before destructive operations',
-                },
-              },
-              required: ['operation'],
             },
           },
           {
@@ -2508,7 +2274,6 @@ export class McpAdrAnalysisServer {
                   items: {
                     type: 'string',
                     enum: [
-                      'manage_todo_json',
                       'smart_git_push',
                       'compare_adr_progress',
                       'analyze_content_security',
@@ -3236,6 +3001,25 @@ export class McpAdrAnalysisServer {
     this.server.setRequestHandler(CallToolRequestSchema, async request => {
       const { name, arguments: args } = request.params;
 
+      // Create context for progress notifications and logging
+      const context: ToolContext = {
+        info: (message: string) => {
+          this.logger.info(message);
+          // Note: MCP progress notifications will be available in future SDK versions
+          // For now, we log to server console for visibility
+        },
+        report_progress: (progress: number, total?: number) => {
+          const percentage = total ? Math.round((progress / total) * 100) : progress;
+          this.logger.info(`Progress: ${percentage}%${total ? ` (${progress}/${total})` : ''}`);
+        },
+        warn: (message: string) => {
+          this.logger.warn(message);
+        },
+        error: (message: string) => {
+          this.logger.error(message);
+        },
+      };
+
       try {
         let response: CallToolResult;
         const safeArgs = args || {};
@@ -3243,7 +3027,8 @@ export class McpAdrAnalysisServer {
         switch (name) {
           case 'analyze_project_ecosystem':
             response = await this.analyzeProjectEcosystem(
-              safeArgs as unknown as AnalyzeProjectEcosystemArgs
+              safeArgs as unknown as AnalyzeProjectEcosystemArgs,
+              context
             );
             break;
           case 'get_architectural_context':
@@ -3252,10 +3037,7 @@ export class McpAdrAnalysisServer {
             );
             break;
           case 'generate_adrs_from_prd':
-            response = await this.generateAdrsFromPrd(safeArgs);
-            break;
-          case 'generate_adr_todo':
-            response = await this.generateAdrTodo(safeArgs);
+            response = await this.generateAdrsFromPrd(safeArgs, context);
             break;
           case 'compare_adr_progress':
             response = await this.compareAdrProgress(safeArgs);
@@ -3303,7 +3085,7 @@ export class McpAdrAnalysisServer {
             response = await this.generateAdrBootstrap(safeArgs);
             break;
           case 'discover_existing_adrs':
-            response = await this.discoverExistingAdrs(safeArgs);
+            response = await this.discoverExistingAdrs(safeArgs, context);
             break;
           case 'review_existing_adrs':
             response = await this.reviewExistingAdrs(safeArgs);
@@ -3339,7 +3121,7 @@ export class McpAdrAnalysisServer {
             response = await this.generateResearchQuestions(safeArgs);
             break;
           case 'perform_research':
-            response = await this.performResearch(safeArgs);
+            response = await this.performResearch(safeArgs, context);
             break;
           case 'llm_web_search':
             response = await this.llmWebSearch(safeArgs);
@@ -3366,6 +3148,12 @@ export class McpAdrAnalysisServer {
               safeArgs as unknown as GetDevelopmentGuidanceArgs
             );
             break;
+          case 'list_roots':
+            response = await this.listRoots();
+            break;
+          case 'read_directory':
+            response = await this.readDirectory(safeArgs);
+            break;
           case 'read_file':
             response = await this.readFile(safeArgs as unknown as ReadFileArgs);
             break;
@@ -3374,9 +3162,6 @@ export class McpAdrAnalysisServer {
             break;
           case 'list_directory':
             response = await this.listDirectory(safeArgs);
-            break;
-          case 'manage_todo_json':
-            response = await this.manageTodoJson(safeArgs);
             break;
           case 'generate_deployment_guidance':
             response = await this.generateDeploymentGuidance(safeArgs);
@@ -3810,18 +3595,17 @@ Verify these environment variables are set in your MCP configuration:
 5. **suggest_adrs** - Auto-suggest ADRs from implicit decisions
 6. **generate_adr_from_decision** - Create ADRs from specific decisions
 7. **discover_existing_adrs** - Intelligent ADR discovery and analysis
-8. **generate_adr_todo** - Create actionable task lists from ADRs
 
 ### 🔍 **Research & Documentation Tools** (AI-Powered ✅)
-9. **generate_research_questions** - Create context-aware research questions
-10. **incorporate_research** - Integrate research findings into decisions
-11. **create_research_template** - Generate research documentation templates
+8. **generate_research_questions** - Create context-aware research questions
+9. **incorporate_research** - Integrate research findings into decisions
+10. **create_research_template** - Generate research documentation templates
 
 ### 🛡️ **Security & Compliance Tools** (AI-Powered ✅)
-12. **generate_content_masking** - Intelligent content masking and protection
-13. **configure_custom_patterns** - Customize security and masking settings
-14. **apply_basic_content_masking** - Basic content masking (fallback)
-15. **validate_content_masking** - Validate masking effectiveness
+11. **generate_content_masking** - Intelligent content masking and protection
+12. **configure_custom_patterns** - Customize security and masking settings
+13. **apply_basic_content_masking** - Basic content masking (fallback)
+14. **validate_content_masking** - Validate masking effectiveness
 
 ### 🏗️ **Rule & Governance Tools** (AI-Powered ✅)
 16. **generate_rules** - Extract architectural rules from ADRs
@@ -3879,13 +3663,13 @@ Define how to measure success:
 1. analyze_project_ecosystem → 2. get_architectural_context → 3. suggest_adrs → 4. generate_adr_from_decision
 
 ### **Existing Project Analysis**
-1. discover_existing_adrs → 2. get_architectural_context → 3. generate_adr_todo → 4. validate_rules
+1. discover_existing_adrs → 2. get_architectural_context → 3. validate_rules
 
 ### **Security Audit**
 1. analyze_content_security → 2. generate_content_masking → 3. configure_custom_patterns → 4. validate_content_masking
 
 ### **PRD to Implementation**
-1. generate_adrs_from_prd → 2. generate_adr_todo → 3. analyze_deployment_progress
+1. generate_adrs_from_prd → 2. analyze_deployment_progress
 
 ### **Legacy Modernization**
 1. analyze_project_ecosystem → 2. get_architectural_context → 3. suggest_adrs → 4. generate_rules → 5. validate_rules
@@ -3941,7 +3725,7 @@ ${executionResult.content}
 ## Quick Reference: Available Tools
 
 **Core Analysis**: analyze_project_ecosystem, get_architectural_context, generate_adrs_from_prd, analyze_content_security
-**ADR Management**: suggest_adrs, generate_adr_from_decision, discover_existing_adrs, generate_adr_todo
+**ADR Management**: suggest_adrs, generate_adr_from_decision, discover_existing_adrs
 **Security**: generate_content_masking, configure_custom_patterns, validate_content_masking
 **Governance**: generate_rules, validate_rules, create_rule_set
 **Environment**: analyze_environment, analyze_deployment_progress
@@ -4214,7 +3998,6 @@ This development guidance works seamlessly with other MCP tools:
 - **analyze_content_security** → Security validation during development
 
 ### **Documentation Tools**
-- **generate_adr_todo** → Create implementation task lists
 - **discover_existing_adrs** → Reference existing architectural decisions
 
 ## Next Steps: From Architecture to Code
@@ -4248,8 +4031,11 @@ This guidance ensures your development work is **architecturally aligned**, **qu
   }
 
   private async analyzeProjectEcosystem(
-    args: AnalyzeProjectEcosystemArgs
+    args: AnalyzeProjectEcosystemArgs,
+    context?: ToolContext
   ): Promise<CallToolResult> {
+    const ctx = context || createNoOpContext();
+
     // Use configured project path if not provided in args
     const projectPath = args.projectPath || this.config.projectPath;
     const {
@@ -4276,7 +4062,13 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       `Analysis scope: ${analysisScope.length > 0 ? analysisScope.join(', ') : 'Full ecosystem analysis'}`
     );
 
+    ctx.info(`🌐 Starting comprehensive ecosystem analysis: ${projectPath}`);
+    ctx.report_progress(0, 100);
+
     try {
+      ctx.info('📊 Phase 1: Analyzing project structure');
+      ctx.report_progress(10, 100);
+
       // Import utilities dynamically to avoid circular dependencies
       const { analyzeProjectStructureCompat: analyzeProjectStructure } = await import(
         './utils/file-system.js'
@@ -4303,6 +4095,9 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       }
 
       // Step 1: Generate technology-specific knowledge if enabled
+      ctx.info('🧠 Phase 2: Generating architectural knowledge');
+      ctx.report_progress(25, 100);
+
       let knowledgeContext = '';
       if (enhancedMode && knowledgeEnhancement && generateArchitecturalKnowledge) {
         try {
@@ -4362,9 +4157,14 @@ ${memoryResult.prompt}
       }
 
       // Step 3: Generate base project analysis prompt with recursive depth
+      ctx.info('📁 Phase 3: Scanning project files and structure');
+      ctx.report_progress(40, 100);
+
       const baseProjectAnalysisPrompt = await analyzeProjectStructure(projectPath);
 
       // Step 4: Generate environment analysis if enabled
+      ctx.info('🔧 Phase 4: Analyzing environment and infrastructure');
+      ctx.report_progress(55, 100);
       let environmentAnalysisContext = '';
       if (includeEnvironment) {
         try {
@@ -4400,6 +4200,9 @@ ${environmentResult.content[0].text}
       }
 
       // Step 5: Apply Reflexion execution if learning is enabled
+      ctx.info('🧪 Phase 5: Applying learning and reflexion');
+      ctx.report_progress(70, 100);
+
       let enhancedAnalysisPrompt = baseProjectAnalysisPrompt.prompt + environmentAnalysisContext;
       if (enhancedMode && learningEnabled && executeWithReflexion && createToolReflexionConfig) {
         try {
@@ -4441,6 +4244,9 @@ ${environmentResult.content[0].text}
       }
 
       // Execute the analysis with AI if enabled, otherwise return prompt
+      ctx.info('🤖 Phase 6: Executing AI-powered ecosystem analysis');
+      ctx.report_progress(85, 100);
+
       const { executeEcosystemAnalysisPrompt, formatMCPResponse } = await import(
         './utils/prompt-execution.js'
       );
@@ -4474,6 +4280,9 @@ ${environmentResult.content[0].text}
         this.logger.warn('Failed to record project structure to knowledge graph:', kgError);
         // Don't fail the entire analysis if KG recording fails
       }
+
+      ctx.info('✅ Ecosystem analysis completed successfully');
+      ctx.report_progress(100, 100);
 
       // Return appropriate response based on execution result
       if (executionResult.isAIGenerated) {
@@ -4895,7 +4704,12 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
     }
   }
 
-  private async generateAdrsFromPrd(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async generateAdrsFromPrd(
+    args: Record<string, unknown>,
+    context?: ToolContext
+  ): Promise<CallToolResult> {
+    const ctx = context || createNoOpContext();
+
     const {
       prdPath,
       enhancedMode = true,
@@ -4910,7 +4724,12 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
       `Enhancement features - APE: ${promptOptimization}, Knowledge: ${knowledgeEnhancement}, Type: ${prdType}`
     );
 
+    ctx.info(`📝 Starting ADR generation from PRD: ${prdPath}`);
+    ctx.report_progress(0, 100);
+
     try {
+      ctx.info('📂 Phase 1: Validating PRD file');
+      ctx.report_progress(10, 100);
       const { readFileContentCompat: readFileContent, fileExistsCompat: fileExists } = await import(
         './utils/file-system.js'
       );
@@ -4942,7 +4761,13 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
       // Generate file content reading prompt
       const fileContentPrompt = await readFileContent(prdPath as string);
 
+      ctx.info('📚 Phase 2: Reading PRD content');
+      ctx.report_progress(25, 100);
+
       // Step 1: Generate domain-specific knowledge if enabled
+      ctx.info('🧠 Phase 3: Generating domain knowledge');
+      ctx.report_progress(40, 100);
+
       let knowledgeContext = '';
       if (enhancedMode && knowledgeEnhancement && generateArchitecturalKnowledge) {
         try {
@@ -4977,6 +4802,9 @@ ${knowledgeResult.prompt}
       }
 
       // Step 2: Create base ADR generation prompt
+      ctx.info('📋 Phase 4: Creating base ADR prompts');
+      ctx.report_progress(60, 100);
+
       const baseAdrPrompt = this.createBaseAdrPrompt(
         prdPath as string,
         outputDirectory as string,
@@ -4984,6 +4812,9 @@ ${knowledgeResult.prompt}
       );
 
       // Step 3: Apply APE optimization if enabled
+      ctx.info('⚡ Phase 5: Optimizing prompts with APE');
+      ctx.report_progress(75, 100);
+
       let finalAdrPrompt = baseAdrPrompt;
       if (enhancedMode && promptOptimization && optimizePromptWithAPE && createToolAPEConfig) {
         try {
@@ -5070,6 +4901,9 @@ For each generated ADR, create a file creation prompt using the following patter
 `;
 
       // Execute the ADR generation with AI if enabled, otherwise return prompt
+      ctx.info('🤖 Phase 6: Executing AI-powered ADR generation');
+      ctx.report_progress(90, 100);
+
       const { executeADRGenerationPrompt, formatMCPResponse } = await import(
         './utils/prompt-execution.js'
       );
@@ -5084,6 +4918,9 @@ Generate well-structured ADRs that follow best practices and include all necessa
 Focus on extracting architectural decisions from the PRD and creating actionable ADRs with clear reasoning.`,
         }
       );
+
+      ctx.info('✅ ADR generation completed successfully');
+      ctx.report_progress(100, 100);
 
       if (executionResult.isAIGenerated) {
         // AI execution successful - return actual ADR generation results
@@ -5212,135 +5049,6 @@ The enhanced process maintains full traceability from PRD requirements to genera
       throw new McpAdrError(
         `Failed to generate ADR prompts from PRD: ${error instanceof Error ? error.message : String(error)}`,
         'PROMPT_GENERATION_ERROR'
-      );
-    }
-  }
-
-  private async generateAdrTodo(args: Record<string, unknown>): Promise<CallToolResult> {
-    const {
-      scope = 'all',
-      phase = 'both',
-      linkAdrs = true,
-      includeRules = true,
-      ruleSource = 'both',
-      preserveExisting = true,
-      forceSyncToMarkdown = false,
-      intentId,
-      createJsonBackup = true,
-    } = args;
-    const { getAdrDirectoryPath } = await import('./utils/config.js');
-    const path = await import('path');
-
-    // Use absolute ADR path relative to project
-    const absoluteAdrPath = args['adrDirectory']
-      ? path.resolve(this.config.projectPath, args['adrDirectory'] as string)
-      : getAdrDirectoryPath(this.config);
-
-    // Keep relative path for display purposes
-    const adrDirectory = args['adrDirectory'] || this.config.adrDirectory;
-
-    this.logger.info(
-      `Generating JSON-first TODO for ADRs in: ${absoluteAdrPath} (phase: ${phase})`
-    );
-
-    try {
-      // Always use JSON-first TODO system
-      this.logger.info('Using JSON-first TODO system for ADR task generation');
-
-      // TODO management has been deprecated and moved to mcp-shrimp-task-manager
-      this.logger.warn(
-        '⚠️ TODO management has been deprecated - use mcp-shrimp-task-manager instead'
-      );
-
-      // Optional: Create backup if requested and JSON exists
-      if (createJsonBackup) {
-        try {
-          this.logger.info(
-            'Backup feature deprecated - use mcp-shrimp-task-manager for task management'
-          );
-        } catch {
-          // Continue if backup fails - might be first time setup
-          this.logger.debug('No existing JSON data to backup');
-        }
-      }
-
-      // Import ADR tasks into JSON system has been deprecated
-      const importResult = {
-        content: [
-          {
-            type: 'text',
-            text: `⚠️ **TODO Management Deprecated**
-
-This feature has been moved to mcp-shrimp-task-manager.
-
-**Replacement:** Use the external \`mcp-shrimp-task-manager\` for:
-- Task planning and breaking down from ADRs
-- Task tracking and status updates
-- Task dependencies and priorities
-- Task completion and verification
-
-**Migration:** The system now uses memory-centric architecture where task management is handled by external MCP servers.`,
-          },
-        ],
-      };
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# ✅ JSON-First TODO Generated from ADRs
-
-## 🏗️ JSON-First TODO System Active
-✅ **todo-data.json** - JSON-first TODO backend created/updated  
-✅ **TODO.md** - Markdown frontend ${forceSyncToMarkdown ? 'synchronized' : 'available for sync'}  
-
-## Configuration Applied
-- **ADR Directory**: ${adrDirectory}
-- **Scope**: ${scope}
-- **TDD Phase**: ${phase}
-- **ADR Dependency Linking**: ${linkAdrs ? 'Enabled' : 'Disabled'}
-- **Rules Integration**: ${includeRules ? `Enabled (${ruleSource})` : 'Disabled'}
-- **Preserve Existing**: ${preserveExisting}
-- **Force Markdown Sync**: ${forceSyncToMarkdown ? 'Enabled' : 'Disabled'}
-- **Intent Linking**: ${intentId ? `Linked to ${intentId}` : 'None'}
-- **JSON Backup**: ${createJsonBackup ? 'Created' : 'Skipped'}
-
-## JSON-First Architecture Benefits
-✅ **Structured Data**: JSON backend ensures consistent LLM interactions
-✅ **Automatic Sync**: JSON-to-markdown conversion maintains TODO.md compatibility  
-✅ **Enhanced Metadata**: Full task lifecycle with dependencies, assignees, priorities
-✅ **Complete Integration**: Native support for scoring, git automation, and knowledge graph
-✅ **Backup Protection**: Automatic data preservation during updates
-✅ **No Manual Setup**: All cache files auto-generated, tests can immediately validate
-
-${importResult.content?.[0]?.text || 'TODO management feature has been deprecated'}
-
-## Available Operations (use manage_todo_v2 tool)
-1. **View Tasks**: \`get_tasks\` operation with filtering and sorting
-2. **Update Status**: \`update_task\` operation with status, progress, notes
-3. **Bulk Updates**: \`bulk_update\` operation for multiple tasks
-4. **Analytics**: \`get_analytics\` operation for progress metrics
-5. **Sync Control**: \`sync_to_markdown\` and \`sync_knowledge_graph\` operations
-
-## Validation & Progress Tracking
-- **Progress Check**: Use \`compare_adr_progress\` to validate implementation vs ADRs
-- **Git Integration**: Use \`smart_git_push\` for automatic task status updates
-- **Scoring**: Integrated with smart scoring for release readiness assessment
-
-## TDD Workflow Integration
-- **Phase 1**: Mock test generation tasks created
-- **Phase 2**: Production implementation tasks linked to tests
-- **Dependencies**: ADR relationships mapped to task dependencies
-- **Validation**: Architectural rules integrated into task criteria
-
-*All TODO data is now managed in JSON format with automatic markdown sync*`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to generate ADR todo: ${error instanceof Error ? error.message : String(error)}`,
-        'GENERATION_ERROR'
       );
     }
   }
@@ -5783,23 +5491,9 @@ ${
 
 ## Next Steps
 1. Address high-priority alignment issues identified above
-2. ${totalTasks === 0 ? 'Create initial TODO.md from ADR requirements using generate_adr_todo tool' : 'Update TODO.md with missing tasks'}
+2. ${totalTasks === 0 ? 'Create initial TODO.md from ADR requirements' : 'Update TODO.md with missing tasks'}
 3. ${includeFileChecks ? 'Verify implementation of completed tasks' : 'Enable file checks for detailed implementation verification'}
 4. ${includeRuleValidation ? 'Resolve architectural rule compliance violations' : 'Enable rule validation for compliance checking'}
-
-## Integration Commands
-
-To regenerate TODO after fixes:
-\`\`\`json
-{
-  "tool": "generate_adr_todo",
-  "args": {
-    "adrDirectory": "${adrDirectory}",
-    "phase": "both",
-    "linkAdrs": true,
-    "includeRules": ${includeRuleValidation}
-  }
-}
 \`\`\`
 
 To re-run this validation with strict mode:
@@ -6784,9 +6478,36 @@ Please provide:
     return await generateAdrBootstrapScripts(args);
   }
 
-  private async discoverExistingAdrs(args: Record<string, unknown>): Promise<CallToolResult> {
-    const { discoverExistingAdrs } = await import('./tools/adr-suggestion-tool.js');
-    return await discoverExistingAdrs(args);
+  private async discoverExistingAdrs(
+    args: Record<string, unknown>,
+    context?: ToolContext
+  ): Promise<CallToolResult> {
+    const ctx = context || createNoOpContext();
+
+    try {
+      ctx.info('🔍 Starting ADR discovery process...');
+      ctx.report_progress(0, 100);
+
+      ctx.info('📂 Phase 1: Scanning ADR directory');
+      ctx.report_progress(30, 100);
+
+      const { discoverExistingAdrs } = await import('./tools/adr-suggestion-tool.js');
+
+      ctx.info('📄 Phase 2: Analyzing ADR files');
+      ctx.report_progress(60, 100);
+
+      const result = await discoverExistingAdrs(args);
+
+      ctx.info('✅ ADR discovery completed successfully');
+      ctx.report_progress(100, 100);
+
+      return result;
+    } catch (error) {
+      ctx.error?.(
+        `❌ ADR discovery failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+      throw error;
+    }
   }
 
   private async reviewExistingAdrs(args: Record<string, unknown>): Promise<CallToolResult> {
@@ -6862,20 +6583,54 @@ Please provide:
   /**
    * Perform research tool implementation
    */
-  private async performResearch(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async performResearch(
+    args: Record<string, unknown>,
+    context?: ToolContext
+  ): Promise<CallToolResult> {
+    const ctx = context || createNoOpContext();
+
     if (!('question' in args) || typeof args['question'] !== 'string') {
       throw new McpAdrError('Missing required parameter: question', 'INVALID_ARGUMENTS');
     }
-    const { performResearch } = await import('./tools/perform-research-tool.js');
-    return await performResearch(
-      args as {
-        question: string;
-        projectPath?: string;
-        adrDirectory?: string;
-        confidenceThreshold?: number;
-        performWebSearch?: boolean;
-      }
-    );
+
+    try {
+      ctx.info('🔍 Starting research process...');
+      ctx.report_progress(0, 100);
+
+      ctx.info('📊 Phase 1: Initializing research framework');
+      ctx.report_progress(10, 100);
+
+      const { performResearch } = await import('./tools/perform-research-tool.js');
+
+      ctx.info('📚 Phase 2: Collecting research data');
+      ctx.report_progress(30, 100);
+
+      const result = await performResearch(
+        args as {
+          question: string;
+          projectPath?: string;
+          adrDirectory?: string;
+          confidenceThreshold?: number;
+          performWebSearch?: boolean;
+        }
+      );
+
+      ctx.info('🧪 Phase 3: Analyzing collected data');
+      ctx.report_progress(70, 100);
+
+      ctx.info('✅ Research completed successfully');
+      ctx.report_progress(100, 100);
+
+      return result;
+    } catch (error) {
+      ctx.error?.(
+        `❌ Research execution failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+      throw new McpAdrError(
+        `Failed to perform research: ${error instanceof Error ? error.message : String(error)}`,
+        'RESEARCH_EXECUTION_ERROR'
+      );
+    }
   }
 
   /**
@@ -7412,6 +7167,77 @@ Please provide:
   /**
    * File system tool implementations
    */
+
+  /**
+   * List accessible roots (MCP best practice)
+   */
+  private async listRoots(): Promise<CallToolResult> {
+    const roots = this.rootManager.listRoots();
+
+    const rootsList = roots
+      .map(r => `### ${r.name}\n\n**Path**: \`${r.path}\`\n\n**Description**: ${r.description}\n`)
+      .join('\n');
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# Available File System Roots\n\nThese are the directories that can be accessed by this MCP server.\n\n${rootsList}\nUse these paths with \`read_directory\` and \`read_file\` tools to explore and access files.`,
+        },
+      ],
+    };
+  }
+
+  /**
+   * Read directory contents (MCP best practice for autonomous file discovery)
+   */
+  private async readDirectory(args: { path?: string }): Promise<CallToolResult> {
+    const targetPath = args.path || this.config.projectPath;
+
+    try {
+      const path = await import('path');
+      const resolvedPath = path.resolve(targetPath);
+
+      // Security check: ensure path is within accessible roots
+      if (!this.rootManager.isPathAllowed(resolvedPath)) {
+        const roots = this.rootManager.listRoots();
+        const rootList = roots.map(r => `  - ${r.name}: ${r.path}`).join('\n');
+
+        throw new McpAdrError(
+          `Access denied: Path '${targetPath}' is outside accessible roots.\n\nAccessible roots:\n${rootList}\n\nUse list_roots tool for more details.`,
+          'ACCESS_DENIED'
+        );
+      }
+
+      const { readdir } = await import('fs/promises');
+      const entries = await readdir(resolvedPath, { withFileTypes: true });
+
+      const files = entries.filter(e => e.isFile()).map(e => `📄 ${e.name}`);
+
+      const dirs = entries.filter(e => e.isDirectory()).map(e => `📁 ${e.name}/`);
+
+      const root = this.rootManager.getRootForPath(resolvedPath);
+      const relPath = this.rootManager.getRelativePathFromRoot(resolvedPath);
+
+      const filesList = files.length > 0 ? files.join('\n') : '(no files)';
+      const dirsList = dirs.length > 0 ? dirs.join('\n') : '(no directories)';
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Directory: ${targetPath}\n\n**Root**: ${root?.name}\n**Relative Path**: ${relPath || '/'}\n**Full Path**: \`${resolvedPath}\`\n\n## Directories (${dirs.length})\n\n${dirsList}\n\n## Files (${files.length})\n\n${filesList}`,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to read directory: ${error instanceof Error ? error.message : String(error)}`,
+        'DIRECTORY_READ_ERROR'
+      );
+    }
+  }
+
   private async readFile(args: ReadFileArgs): Promise<CallToolResult> {
     const { filePath } = args;
 
@@ -7419,12 +7245,18 @@ Please provide:
       const fs = await import('fs/promises');
       const path = await import('path');
 
-      // Resolve path relative to project path for security
-      const safePath = path.resolve(this.config.projectPath, filePath);
+      // Resolve path (handle both relative and absolute paths)
+      const safePath = path.resolve(filePath);
 
-      // Security check: ensure path is within project directory
-      if (!safePath.startsWith(this.config.projectPath)) {
-        throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
+      // Security check: ensure path is within accessible roots
+      if (!this.rootManager.isPathAllowed(safePath)) {
+        const roots = this.rootManager.listRoots();
+        const rootList = roots.map(r => `  - ${r.name}: ${r.path}`).join('\n');
+
+        throw new McpAdrError(
+          `Access denied: Path '${filePath}' is outside accessible roots.\n\nAccessible roots:\n${rootList}\n\nUse list_roots tool for more details.`,
+          'ACCESS_DENIED'
+        );
       }
 
       const content = await fs.readFile(safePath, 'utf-8');
@@ -7516,45 +7348,6 @@ Please provide:
       throw new McpAdrError(
         `Failed to list directory: ${error instanceof Error ? error.message : String(error)}`,
         'DIRECTORY_LIST_ERROR'
-      );
-    }
-  }
-
-  private async manageTodoJson(_args: Record<string, unknown>): Promise<CallToolResult> {
-    try {
-      // TODO management has been deprecated and moved to mcp-shrimp-task-manager
-      this.logger.warn('⚠️ manageTodoJson deprecated - use mcp-shrimp-task-manager instead');
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `⚠️ **TODO Management Tool Deprecated**
-
-This tool (manageTodoJson) has been deprecated and is no longer functional.
-
-**Replacement:** Use the external \`mcp-shrimp-task-manager\` for task management:
-- Task planning and breaking down
-- Task tracking and status updates
-- Task dependencies and priorities
-- Task completion and verification
-
-**Migration:** The system has moved to a memory-centric architecture where task management is handled by external MCP servers rather than internal JSON files.
-
-**Error:** TodoJsonManager was removed - use mcp-shrimp-task-manager for task management`,
-          },
-        ],
-        isError: false,
-      };
-    } catch (error) {
-      // If it's already a McpAdrError with good details, re-throw it as-is
-      if (error instanceof Error && error.name === 'McpAdrError') {
-        throw error;
-      }
-
-      throw new McpAdrError(
-        `JSON TODO management failed: ${error instanceof Error ? error.message : String(error)}`,
-        'TODO_JSON_MANAGEMENT_ERROR'
       );
     }
   }
