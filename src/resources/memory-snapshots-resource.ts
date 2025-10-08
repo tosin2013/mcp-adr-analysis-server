@@ -33,13 +33,7 @@ import { EnhancedLogger } from '../utils/enhanced-logging.js';
 import { ResourceCache } from './resource-cache.js';
 
 interface ParsedMemoryUri {
-  operation:
-    | 'current'
-    | 'query'
-    | 'entity'
-    | 'related'
-    | 'intelligence'
-    | 'load-adrs';
+  operation: 'current' | 'query' | 'entity' | 'related' | 'intelligence' | 'load-adrs';
   entityId?: string;
 }
 
@@ -218,7 +212,7 @@ export class MemorySnapshotsResource {
       }
 
       return parsed;
-    } catch (error) {
+    } catch {
       // If JSON parsing fails, return raw text
       return {
         status: 'raw',
@@ -289,7 +283,9 @@ export class MemorySnapshotsResource {
 
       sections.push('## Entity Summary');
       sections.push(`- **Total Entities**: ${snapshot.entitySummary.totalEntities}`);
-      sections.push(`- **Average Confidence**: ${(snapshot.entitySummary.averageConfidence * 100).toFixed(1)}%`);
+      sections.push(
+        `- **Average Confidence**: ${(snapshot.entitySummary.averageConfidence * 100).toFixed(1)}%`
+      );
       sections.push('');
 
       sections.push('### Entities by Type');
@@ -299,7 +295,9 @@ export class MemorySnapshotsResource {
       sections.push('');
 
       sections.push('## Relationship Summary');
-      sections.push(`- **Total Relationships**: ${snapshot.relationshipSummary.totalRelationships}`);
+      sections.push(
+        `- **Total Relationships**: ${snapshot.relationshipSummary.totalRelationships}`
+      );
       sections.push('');
 
       sections.push('### Relationships by Type');
@@ -309,8 +307,12 @@ export class MemorySnapshotsResource {
       sections.push('');
 
       sections.push('## Intelligence Summary');
-      sections.push(`- **Discovered Patterns**: ${snapshot.intelligenceSummary.discoveredPatterns}`);
-      sections.push(`- **Suggested Relationships**: ${snapshot.intelligenceSummary.suggestedRelationships}`);
+      sections.push(
+        `- **Discovered Patterns**: ${snapshot.intelligenceSummary.discoveredPatterns}`
+      );
+      sections.push(
+        `- **Suggested Relationships**: ${snapshot.intelligenceSummary.suggestedRelationships}`
+      );
       sections.push(`- **Next Actions**: ${snapshot.intelligenceSummary.nextActions}`);
       sections.push(`- **Knowledge Gaps**: ${snapshot.intelligenceSummary.knowledgeGaps}`);
     } else {
@@ -389,7 +391,9 @@ export class MemorySnapshotsResource {
         if (data.intelligence.patterns && data.intelligence.patterns.length > 0) {
           sections.push('### Patterns');
           for (const pattern of data.intelligence.patterns) {
-            sections.push(`- ${pattern.pattern} (confidence: ${(pattern.confidence * 100).toFixed(1)}%)`);
+            sections.push(
+              `- ${pattern.pattern} (confidence: ${(pattern.confidence * 100).toFixed(1)}%)`
+            );
           }
           sections.push('');
         }
@@ -470,7 +474,11 @@ export class MemorySnapshotsResource {
         }
       }
 
-      if (data.intelligence && data.intelligence.suggestedActions && data.intelligence.suggestedActions.length > 0) {
+      if (
+        data.intelligence &&
+        data.intelligence.suggestedActions &&
+        data.intelligence.suggestedActions.length > 0
+      ) {
         sections.push('## Suggested Actions');
         for (const action of data.intelligence.suggestedActions) {
           sections.push(`- ${action.action}`);
@@ -562,11 +570,18 @@ export class MemorySnapshotsResource {
       sections.push('## Context Awareness');
       sections.push('### Current Context');
       sections.push(`- **Project Phase**: ${intel.contextAwareness.currentContext.projectPhase}`);
-      sections.push(`- **Business Domain**: ${intel.contextAwareness.currentContext.businessDomain}`);
-      sections.push(`- **Technical Stack**: ${intel.contextAwareness.currentContext.technicalStack.join(', ')}`);
+      sections.push(
+        `- **Business Domain**: ${intel.contextAwareness.currentContext.businessDomain}`
+      );
+      sections.push(
+        `- **Technical Stack**: ${intel.contextAwareness.currentContext.technicalStack.join(', ')}`
+      );
       sections.push('');
 
-      if (intel.contextAwareness.recentContextChanges && intel.contextAwareness.recentContextChanges.length > 0) {
+      if (
+        intel.contextAwareness.recentContextChanges &&
+        intel.contextAwareness.recentContextChanges.length > 0
+      ) {
         sections.push('### Recent Context Changes');
         for (const change of intel.contextAwareness.recentContextChanges) {
           sections.push(`- ${change.timestamp}: ${change.description || 'Context updated'}`);
@@ -575,22 +590,32 @@ export class MemorySnapshotsResource {
       }
 
       sections.push('## Pattern Recognition');
-      sections.push(`- **Pattern Confidence**: ${(intel.patternRecognition.patternConfidence * 100).toFixed(1)}%`);
+      sections.push(
+        `- **Pattern Confidence**: ${(intel.patternRecognition.patternConfidence * 100).toFixed(1)}%`
+      );
       sections.push('');
 
-      if (intel.patternRecognition.discoveredPatterns && intel.patternRecognition.discoveredPatterns.length > 0) {
+      if (
+        intel.patternRecognition.discoveredPatterns &&
+        intel.patternRecognition.discoveredPatterns.length > 0
+      ) {
         sections.push('### Discovered Patterns');
         for (const pattern of intel.patternRecognition.discoveredPatterns) {
           sections.push(`#### ${pattern.pattern}`);
           sections.push(`- **Confidence**: ${(pattern.confidence * 100).toFixed(1)}%`);
           sections.push(`- **Frequency**: ${pattern.frequency}`);
-          sections.push(`- **Applicability Score**: ${(pattern.applicabilityScore * 100).toFixed(1)}%`);
+          sections.push(
+            `- **Applicability Score**: ${(pattern.applicabilityScore * 100).toFixed(1)}%`
+          );
           sections.push(`- **Contexts**: ${pattern.contexts.join(', ')}`);
           sections.push('');
         }
       }
 
-      if (intel.patternRecognition.emergentBehaviors && intel.patternRecognition.emergentBehaviors.length > 0) {
+      if (
+        intel.patternRecognition.emergentBehaviors &&
+        intel.patternRecognition.emergentBehaviors.length > 0
+      ) {
         sections.push('### Emergent Behaviors');
         for (const behavior of intel.patternRecognition.emergentBehaviors) {
           sections.push(`- ${behavior}`);
@@ -599,7 +624,10 @@ export class MemorySnapshotsResource {
       }
 
       sections.push('## Relationship Inference');
-      if (intel.relationshipInference.suggestedRelationships && intel.relationshipInference.suggestedRelationships.length > 0) {
+      if (
+        intel.relationshipInference.suggestedRelationships &&
+        intel.relationshipInference.suggestedRelationships.length > 0
+      ) {
         sections.push('### Suggested Relationships');
         for (const rel of intel.relationshipInference.suggestedRelationships) {
           sections.push(`- ${rel.sourceId} → ${rel.targetId} (${rel.type})`);
@@ -609,15 +637,23 @@ export class MemorySnapshotsResource {
         sections.push('');
       }
 
-      if (intel.relationshipInference.weakConnections && intel.relationshipInference.weakConnections.length > 0) {
+      if (
+        intel.relationshipInference.weakConnections &&
+        intel.relationshipInference.weakConnections.length > 0
+      ) {
         sections.push('### Weak Connections');
         for (const conn of intel.relationshipInference.weakConnections) {
-          sections.push(`- ${conn.sourceId} ↔ ${conn.targetId} (strength: ${(conn.strength * 100).toFixed(1)}%)`);
+          sections.push(
+            `- ${conn.sourceId} ↔ ${conn.targetId} (strength: ${(conn.strength * 100).toFixed(1)}%)`
+          );
         }
         sections.push('');
       }
 
-      if (intel.relationshipInference.conflictDetection && intel.relationshipInference.conflictDetection.length > 0) {
+      if (
+        intel.relationshipInference.conflictDetection &&
+        intel.relationshipInference.conflictDetection.length > 0
+      ) {
         sections.push('### Conflict Detection');
         for (const conflict of intel.relationshipInference.conflictDetection) {
           sections.push(`- ${conflict.description}`);
@@ -627,7 +663,10 @@ export class MemorySnapshotsResource {
       }
 
       sections.push('## Adaptive Recommendations');
-      if (intel.adaptiveRecommendations.nextActions && intel.adaptiveRecommendations.nextActions.length > 0) {
+      if (
+        intel.adaptiveRecommendations.nextActions &&
+        intel.adaptiveRecommendations.nextActions.length > 0
+      ) {
         sections.push('### Next Actions');
         for (const action of intel.adaptiveRecommendations.nextActions) {
           sections.push(`#### ${action.action}`);
@@ -638,7 +677,10 @@ export class MemorySnapshotsResource {
         }
       }
 
-      if (intel.adaptiveRecommendations.knowledgeGaps && intel.adaptiveRecommendations.knowledgeGaps.length > 0) {
+      if (
+        intel.adaptiveRecommendations.knowledgeGaps &&
+        intel.adaptiveRecommendations.knowledgeGaps.length > 0
+      ) {
         sections.push('### Knowledge Gaps');
         for (const gap of intel.adaptiveRecommendations.knowledgeGaps) {
           sections.push(`- ${gap.description} (impact: ${gap.impact})`);
@@ -687,8 +729,12 @@ export class MemorySnapshotsResource {
       }
 
       sections.push('## Transformation Insights');
-      sections.push(`- **Average Confidence**: ${(data.transformation.averageConfidence * 100).toFixed(1)}%`);
-      sections.push(`- **Technical Stack**: ${data.transformation.technicalStackCoverage.join(', ')}`);
+      sections.push(
+        `- **Average Confidence**: ${(data.transformation.averageConfidence * 100).toFixed(1)}%`
+      );
+      sections.push(
+        `- **Technical Stack**: ${data.transformation.technicalStackCoverage.join(', ')}`
+      );
       sections.push(`- **Business Domains**: ${data.transformation.businessDomains.join(', ')}`);
       sections.push('');
 
@@ -829,7 +875,8 @@ export class MemorySnapshotsResource {
         mimeType: 'text/markdown',
       },
       {
-        uriTemplate: 'adr://memory-snapshots/query?entityTypes={types}&tags={tags}&textQuery={query}',
+        uriTemplate:
+          'adr://memory-snapshots/query?entityTypes={types}&tags={tags}&textQuery={query}',
         name: 'Query Memory Entities',
         description: 'Query memory entities with filters and search criteria',
         mimeType: 'text/markdown',

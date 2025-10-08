@@ -216,12 +216,14 @@ async function getPackageVersion(): Promise<string> {
 /**
  * Run deployment checks
  */
-async function runDeploymentChecks(): Promise<Array<{
-  name: string;
-  status: 'passed' | 'failed' | 'warning';
-  message: string;
-  timestamp: string;
-}>> {
+async function runDeploymentChecks(): Promise<
+  Array<{
+    name: string;
+    status: 'passed' | 'failed' | 'warning';
+    message: string;
+    timestamp: string;
+  }>
+> {
   const checks = [];
   const timestamp = new Date().toISOString();
 
@@ -439,14 +441,17 @@ function extractDeploymentDataFromToolOutput(toolOutput: string): Partial<Deploy
     if (scoreMatch || productionMatch) {
       extracted.codeQualityAnalysis = {
         overallScore: scoreMatch && scoreMatch[1] ? parseInt(scoreMatch[1]) : 0,
-        productionCodeScore: productionMatch && productionMatch[1] ? parseInt(productionMatch[1]) : 0,
+        productionCodeScore:
+          productionMatch && productionMatch[1] ? parseInt(productionMatch[1]) : 0,
         mockCodeIndicators: mockMatch && mockMatch[1] ? parseInt(mockMatch[1]) : 0,
         productionCodeThreshold: 80,
         qualityGates: [],
       };
 
       // Extract quality gates
-      const gateMatches = toolOutput.matchAll(/(?:gate|check)[:\s]+([\w\s]+)[\s-]+(passed|failed)/gi);
+      const gateMatches = toolOutput.matchAll(
+        /(?:gate|check)[:\s]+([\w\s]+)[\s-]+(passed|failed)/gi
+      );
       for (const match of gateMatches) {
         if (extracted.codeQualityAnalysis && match[1] && match[2]) {
           extracted.codeQualityAnalysis.qualityGates.push({
@@ -481,7 +486,7 @@ function extractDeploymentDataFromToolOutput(toolOutput: string): Partial<Deploy
     };
 
     // Extract test failures
-    const failureMatches = toolOutput.matchAll(/(?:FAIL|failed)[:\s]+([\w\/\.\-]+)\s*(?:›\s*)?(.*)/gi);
+    const failureMatches = toolOutput.matchAll(/(?:FAIL|failed)[:\s]+([\w/.-]+)\s*(?:›\s*)?(.*)/gi);
     for (const match of failureMatches) {
       if (extracted.testValidation && match[1]) {
         extracted.testValidation.failureDetails.push({
@@ -494,7 +499,10 @@ function extractDeploymentDataFromToolOutput(toolOutput: string): Partial<Deploy
   }
 
   // Extract deployment history
-  if (toolOutput.includes('deployment') && (toolOutput.includes('history') || toolOutput.includes('previous'))) {
+  if (
+    toolOutput.includes('deployment') &&
+    (toolOutput.includes('history') || toolOutput.includes('previous'))
+  ) {
     const totalMatch = toolOutput.match(/(\d+)\s+(?:total\s+)?deployments?/i);
     const successMatch = toolOutput.match(/(\d+)\s+successful/i);
     const failedMatch = toolOutput.match(/(\d+)\s+failed/i);
@@ -509,7 +517,12 @@ function extractDeploymentDataFromToolOutput(toolOutput: string): Partial<Deploy
       totalDeployments,
       successfulDeployments,
       failedDeployments,
-      successRate: successRateMatch && successRateMatch[1] ? parseInt(successRateMatch[1]) : totalDeployments > 0 ? Math.round((successfulDeployments / totalDeployments) * 100) : 0,
+      successRate:
+        successRateMatch && successRateMatch[1]
+          ? parseInt(successRateMatch[1])
+          : totalDeployments > 0
+            ? Math.round((successfulDeployments / totalDeployments) * 100)
+            : 0,
       recentFailures: failedMatch && failedMatch[1] ? parseInt(failedMatch[1]) : 0,
       rollbackFrequency: rollbackMatch && rollbackMatch[1] ? parseInt(rollbackMatch[1]) : 0,
       averageDeploymentTime: '5 minutes',
@@ -530,7 +543,12 @@ function extractDeploymentDataFromToolOutput(toolOutput: string): Partial<Deploy
       totalRequirements,
       metRequirements,
       unmetRequirements: totalRequirements - metRequirements,
-      complianceScore: complianceMatch && complianceMatch[1] ? parseInt(complianceMatch[1]) : totalRequirements > 0 ? Math.round((metRequirements / totalRequirements) * 100) : 100,
+      complianceScore:
+        complianceMatch && complianceMatch[1]
+          ? parseInt(complianceMatch[1])
+          : totalRequirements > 0
+            ? Math.round((metRequirements / totalRequirements) * 100)
+            : 100,
       violations: [],
     };
 
@@ -562,12 +580,19 @@ function extractDeploymentDataFromToolOutput(toolOutput: string): Partial<Deploy
   for (const match of blockerMatches) {
     if (match[1]) {
       const text = match[1].trim();
-      let category: 'tests' | 'code_quality' | 'dependencies' | 'adr_compliance' | 'deployment_history' = 'tests';
+      let category:
+        | 'tests'
+        | 'code_quality'
+        | 'dependencies'
+        | 'adr_compliance'
+        | 'deployment_history' = 'tests';
 
       if (text.toLowerCase().includes('test')) category = 'tests';
-      else if (text.toLowerCase().includes('quality') || text.toLowerCase().includes('code')) category = 'code_quality';
+      else if (text.toLowerCase().includes('quality') || text.toLowerCase().includes('code'))
+        category = 'code_quality';
       else if (text.toLowerCase().includes('dependen')) category = 'dependencies';
-      else if (text.toLowerCase().includes('adr') || text.toLowerCase().includes('compliance')) category = 'adr_compliance';
+      else if (text.toLowerCase().includes('adr') || text.toLowerCase().includes('compliance'))
+        category = 'adr_compliance';
       else if (text.toLowerCase().includes('deploy')) category = 'deployment_history';
 
       blockers.push({
@@ -605,13 +630,20 @@ function extractDeploymentDataFromToolOutput(toolOutput: string): Partial<Deploy
       extracted.memoryIntegration.historicalComparison = {
         previousScore,
         currentScore,
-        trend: currentScore > previousScore ? 'improving' : currentScore < previousScore ? 'degrading' : 'stable',
+        trend:
+          currentScore > previousScore
+            ? 'improving'
+            : currentScore < previousScore
+              ? 'degrading'
+              : 'stable',
         improvement: currentScore - previousScore,
       };
     }
 
     // Extract insights
-    const insightMatches = toolOutput.matchAll(/(?:insight|recommendation|pattern)[:\s]+(.*?)(?:\n|$)/gi);
+    const insightMatches = toolOutput.matchAll(
+      /(?:insight|recommendation|pattern)[:\s]+(.*?)(?:\n|$)/gi
+    );
     const insights: string[] = [];
     for (const match of insightMatches) {
       if (match[1]) {
@@ -625,12 +657,19 @@ function extractDeploymentDataFromToolOutput(toolOutput: string): Partial<Deploy
 
   // Extract git push status
   if (toolOutput.includes('git push') || toolOutput.includes('deployment allowed')) {
-    const allowedMatch = toolOutput.match(/(?:push|deployment)\s+(?:is\s+)?(allowed|blocked|conditional)/i);
+    const allowedMatch = toolOutput.match(
+      /(?:push|deployment)\s+(?:is\s+)?(allowed|blocked|conditional)/i
+    );
 
     extracted.gitPushStatus = {
-      allowed: allowedMatch && allowedMatch[1] ? allowedMatch[1].toLowerCase() === 'allowed' : false,
-      decision: allowedMatch && allowedMatch[1] ? (allowedMatch[1].toLowerCase() as 'allowed' | 'blocked' | 'conditional') : 'blocked',
-      reason: allowedMatch && allowedMatch[1] ? `Deployment is ${allowedMatch[1]}` : 'Status unknown',
+      allowed:
+        allowedMatch && allowedMatch[1] ? allowedMatch[1].toLowerCase() === 'allowed' : false,
+      decision:
+        allowedMatch && allowedMatch[1]
+          ? (allowedMatch[1].toLowerCase() as 'allowed' | 'blocked' | 'conditional')
+          : 'blocked',
+      reason:
+        allowedMatch && allowedMatch[1] ? `Deployment is ${allowedMatch[1]}` : 'Status unknown',
     };
   }
 
@@ -748,7 +787,10 @@ async function generateComprehensiveDeploymentStatus(
 
     return comprehensiveStatus;
   } catch (error) {
-    console.error('[deployment-status-resource] Tool execution failed, falling back to basic status:', error);
+    console.error(
+      '[deployment-status-resource] Tool execution failed, falling back to basic status:',
+      error
+    );
     return generateBasicDeploymentStatus();
   }
 }
@@ -762,7 +804,8 @@ export async function generateDeploymentStatusResource(
 ): Promise<ResourceGenerationResult> {
   // Extract query parameters
   const operation = searchParams?.get('operation') || 'check_readiness';
-  const targetEnvironment = searchParams?.get('environment') || process.env['NODE_ENV'] || 'production';
+  const targetEnvironment =
+    searchParams?.get('environment') || process.env['NODE_ENV'] || 'production';
   const enableMemory = searchParams?.get('memory') !== 'false';
   const strictMode = searchParams?.get('strict') !== 'false';
   const useComprehensive = searchParams?.get('comprehensive') !== 'false';
