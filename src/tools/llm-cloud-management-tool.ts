@@ -5,6 +5,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import type { ToolContext } from '../types/tool-context.js';
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 /**
@@ -53,15 +54,18 @@ import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
  * @category LLM
  * @mcp-tool
  */
-export async function llmCloudManagement(args: {
-  provider: 'aws' | 'azure' | 'gcp' | 'redhat' | 'ubuntu' | 'macos';
-  action: string;
-  parameters?: Record<string, any>;
-  llmInstructions: string;
-  researchFirst?: boolean;
-  projectPath?: string;
-  adrDirectory?: string;
-}): Promise<any> {
+export async function llmCloudManagement(
+  args: {
+    provider: 'aws' | 'azure' | 'gcp' | 'redhat' | 'ubuntu' | 'macos';
+    action: string;
+    parameters?: Record<string, any>;
+    llmInstructions: string;
+    researchFirst?: boolean;
+    projectPath?: string;
+    adrDirectory?: string;
+  },
+  context?: ToolContext
+): Promise<any> {
   const {
     provider,
     action,
@@ -80,11 +84,17 @@ export async function llmCloudManagement(args: {
   }
 
   try {
+    context?.info(`🔧 Initializing ${provider} cloud management for: ${action}`);
+    context?.report_progress(0, 100);
+
     // Initialize research orchestrator
     const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
 
     let researchResult = null;
     if (researchFirst) {
+      context?.info('📚 Researching best practices and documentation...');
+      context?.report_progress(20, 100);
+
       // Step 1: Research the best approach
       const researchQuery = `
 How to ${action} on ${provider} platform?
@@ -97,6 +107,9 @@ ${llmInstructions}
     }
 
     // Step 2: Generate command using LLM
+    context?.info('🤖 Generating commands with LLM guidance...');
+    context?.report_progress(50, 100);
+
     const command = await generateCloudCommand({
       provider,
       action,
@@ -106,7 +119,13 @@ ${llmInstructions}
     });
 
     // Step 3: Execute the command (simulated for now)
+    context?.info(`☁️ Executing ${provider} operation...`);
+    context?.report_progress(80, 100);
+
     const executionResult = await executeCloudCommand(command);
+
+    context?.info('✅ Cloud operation complete!');
+    context?.report_progress(100, 100);
 
     return {
       content: [
