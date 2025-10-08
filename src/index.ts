@@ -3265,22 +3265,129 @@ export class McpAdrAnalysisServer {
     this.server.setRequestHandler(ListResourcesRequestSchema, async () => {
       return {
         resources: [
+          // Existing resources (refactored to return data)
           {
             uri: 'adr://architectural_knowledge_graph',
             name: 'Architectural Knowledge Graph',
-            description: 'Complete architectural knowledge graph of the project',
+            description: 'Complete architectural knowledge graph with technologies, patterns, and relationships',
             mimeType: 'application/json',
           },
           {
             uri: 'adr://analysis_report',
             name: 'Analysis Report',
-            description: 'Comprehensive project analysis report',
+            description: 'Comprehensive project analysis report with metrics and recommendations',
             mimeType: 'application/json',
           },
           {
             uri: 'adr://adr_list',
             name: 'ADR List',
-            description: 'List of all Architectural Decision Records',
+            description: 'List of all Architectural Decision Records with status and metadata',
+            mimeType: 'application/json',
+          },
+          // NEW Phase 1 Resources
+          {
+            uri: 'adr://todo_list',
+            name: 'Todo List',
+            description: 'Current project task list with status, priorities, and dependencies',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://research_index',
+            name: 'Research Index',
+            description: 'Index of all research documents and findings with metadata',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://rule_catalog',
+            name: 'Rule Catalog',
+            description: 'Catalog of all architectural and validation rules from ADRs and code',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://rule_generation',
+            name: 'Rule Generation',
+            description: 'AI-powered rule generation from ADRs and code patterns. Supports query parameters: ?operation=generate|validate|create_set, ?source=adrs|patterns|both, ?knowledge=true|false, ?enhanced=true|false, ?format=json|yaml|both, ?comprehensive=true|false',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://project_status',
+            name: 'Project Status',
+            description: 'Current project status and health metrics aggregated from all sources',
+            mimeType: 'application/json',
+          },
+          // NEW Phase 2 Templated Resources
+          {
+            uri: 'adr://adr/{id}',
+            name: 'ADR by ID',
+            description: 'Individual Architectural Decision Record by ID or title match',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://research/{topic}',
+            name: 'Research by Topic',
+            description: 'Research documents filtered by topic with full content',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://todo/{task_id}',
+            name: 'Todo by Task ID',
+            description: 'Individual task details by ID or title match with dependencies and history',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://rule/{rule_id}',
+            name: 'Rule by ID',
+            description: 'Individual architectural rule by ID or name match with violations and usage stats',
+            mimeType: 'application/json',
+          },
+          // NEW Phase 3 Advanced Resources
+          {
+            uri: 'adr://deployment_status',
+            name: 'Deployment Status',
+            description: 'Current deployment state with health checks, build status, and readiness score',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://environment_analysis',
+            name: 'Environment Analysis',
+            description: 'System environment details including platform, dependencies, and capabilities',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://memory_snapshots',
+            name: 'Memory Snapshots',
+            description: 'Knowledge graph snapshots with statistics, insights, and relationship data',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://project_metrics',
+            name: 'Project Metrics',
+            description: 'Code metrics and quality scores including codebase stats, quality assessment, and git metrics',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://technology/{name}',
+            name: 'Technology by Name',
+            description: 'Individual technology analysis by name with usage, relationships, and adoption status',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://pattern/{name}',
+            name: 'Pattern by Name',
+            description: 'Individual pattern analysis by name with quality metrics, relationships, and examples',
+            mimeType: 'application/json',
+          },
+          // NEW Phase 4 Final Resources
+          {
+            uri: 'adr://deployment_history',
+            name: 'Deployment History',
+            description: 'Historical deployment data with trends, failure analysis, and patterns. Supports query parameters: ?period=7d|30d|90d|1y|all, ?environment=production|staging|development|all, ?includeFailures=true|false, ?includeMetrics=true|false, ?format=summary|detailed',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://code_quality',
+            name: 'Code Quality',
+            description: 'Comprehensive code quality assessment with metrics, issues, and recommendations. Supports query parameters: ?scope=full|changes|critical, ?includeMetrics=true|false, ?includeRecommendations=true|false, ?threshold=0-100, ?format=summary|detailed',
             mimeType: 'application/json',
           },
         ],
@@ -6602,8 +6709,8 @@ Please provide:
 
       const { performResearch } = await import('./tools/perform-research-tool.js');
 
-      ctx.info('📚 Phase 2: Collecting research data');
-      ctx.report_progress(30, 100);
+      ctx.info('📚 Phase 2: Executing research orchestration');
+      ctx.report_progress(20, 100);
 
       const result = await performResearch(
         args as {
@@ -6612,14 +6719,9 @@ Please provide:
           adrDirectory?: string;
           confidenceThreshold?: number;
           performWebSearch?: boolean;
-        }
+        },
+        ctx // ✅ Pass context to tool function for progress updates
       );
-
-      ctx.info('🧪 Phase 3: Analyzing collected data');
-      ctx.report_progress(70, 100);
-
-      ctx.info('✅ Research completed successfully');
-      ctx.report_progress(100, 100);
 
       return result;
     } catch (error) {
@@ -6636,10 +6738,19 @@ Please provide:
   /**
    * LLM web search tool implementation
    */
-  private async llmWebSearch(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async llmWebSearch(
+    args: Record<string, unknown>,
+    context?: ToolContext
+  ): Promise<CallToolResult> {
+    const ctx = context || createNoOpContext();
+
     if (!('query' in args) || typeof args['query'] !== 'string') {
       throw new McpAdrError('Missing required parameter: query', 'INVALID_ARGUMENTS');
     }
+
+    ctx.info('🌐 Starting LLM-managed web search...');
+    ctx.report_progress(0, 100);
+
     const { llmWebSearch } = await import('./tools/llm-web-search-tool.js');
     return await llmWebSearch(
       args as {
@@ -6649,20 +6760,30 @@ Please provide:
         llmInstructions?: string;
         projectPath?: string;
         adrDirectory?: string;
-      }
+      },
+      ctx // ✅ Pass context to tool function for progress updates
     );
   }
 
   /**
    * LLM cloud management tool implementation
    */
-  private async llmCloudManagement(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async llmCloudManagement(
+    args: Record<string, unknown>,
+    context?: ToolContext
+  ): Promise<CallToolResult> {
+    const ctx = context || createNoOpContext();
+
     if (!('provider' in args) || !('action' in args) || !('llmInstructions' in args)) {
       throw new McpAdrError(
         'Missing required parameters: provider, action, llmInstructions',
         'INVALID_ARGUMENTS'
       );
     }
+
+    ctx.info('🔧 Starting LLM-managed cloud operation...');
+    ctx.report_progress(0, 100);
+
     const { llmCloudManagement } = await import('./tools/llm-cloud-management-tool.js');
     return await llmCloudManagement(
       args as {
@@ -6673,20 +6794,30 @@ Please provide:
         researchFirst?: boolean;
         projectPath?: string;
         adrDirectory?: string;
-      }
+      },
+      ctx // ✅ Pass context to tool function for progress updates
     );
   }
 
   /**
    * LLM database management tool implementation
    */
-  private async llmDatabaseManagement(args: Record<string, unknown>): Promise<CallToolResult> {
+  private async llmDatabaseManagement(
+    args: Record<string, unknown>,
+    context?: ToolContext
+  ): Promise<CallToolResult> {
+    const ctx = context || createNoOpContext();
+
     if (!('database' in args) || !('action' in args) || !('llmInstructions' in args)) {
       throw new McpAdrError(
         'Missing required parameters: database, action, llmInstructions',
         'INVALID_ARGUMENTS'
       );
     }
+
+    ctx.info('🗄️ Starting LLM-managed database operation...');
+    ctx.report_progress(0, 100);
+
     const { llmDatabaseManagement } = await import('./tools/llm-database-management-tool.js');
     return await llmDatabaseManagement(
       args as {
@@ -6697,7 +6828,8 @@ Please provide:
         researchFirst?: boolean;
         projectPath?: string;
         adrDirectory?: string;
-      }
+      },
+      ctx // ✅ Pass context to tool function for progress updates
     );
   }
 
@@ -7062,6 +7194,38 @@ Please provide:
    */
   private async readResource(uri: string): Promise<any> {
     try {
+      // Import resource router and templated resources (ensures routes are registered)
+      const { resourceRouter } = await import('./resources/resource-router.js');
+
+      // Import templated resources to register routes
+      await import('./resources/adr-by-id-resource.js');
+      await import('./resources/research-by-topic-resource.js');
+      await import('./resources/todo-by-id-resource.js');
+      await import('./resources/rule-by-id-resource.js');
+      await import('./resources/technology-by-name-resource.js');
+      await import('./resources/pattern-by-name-resource.js');
+
+      // Try routing first (handles templated resources)
+      if (resourceRouter.canRoute(uri)) {
+        const result = await resourceRouter.route(uri);
+
+        return {
+          contents: [
+            {
+              uri,
+              mimeType: result.contentType,
+              text: JSON.stringify(result.data, null, 2),
+            },
+          ],
+          _meta: {
+            lastModified: result.lastModified,
+            etag: result.etag,
+            cacheKey: result.cacheKey,
+          },
+        };
+      }
+
+      // Fall back to static resource handling
       // Parse URI to determine resource type and parameters
       const url = new globalThis.URL(uri);
       const resourceType = url.pathname.replace('/', '');
@@ -7126,6 +7290,226 @@ Please provide:
                 text: JSON.stringify(result.data, null, 2),
               },
             ],
+          };
+        }
+
+        case 'todo_list': {
+          const { generateTodoListResource } = await import('./resources/todo-list-resource.js');
+          const result = await generateTodoListResource();
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'research_index': {
+          const { generateResearchIndexResource } = await import('./resources/research-index-resource.js');
+          const result = await generateResearchIndexResource();
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'rule_catalog': {
+          const { generateRuleCatalogResource } = await import('./resources/rule-catalog-resource.js');
+          const result = await generateRuleCatalogResource();
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'rule_generation': {
+          const { generateRuleGenerationResource } = await import('./resources/rule-generation-resource.js');
+          const result = await generateRuleGenerationResource(undefined, url.searchParams);
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'project_status': {
+          const { generateProjectStatusResource } = await import('./resources/project-status-resource.js');
+          const result = await generateProjectStatusResource();
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'deployment_status': {
+          const { generateDeploymentStatusResource } = await import('./resources/deployment-status-resource.js');
+          const result = await generateDeploymentStatusResource(undefined, url.searchParams);
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'environment_analysis': {
+          const { generateEnvironmentAnalysisResource } = await import('./resources/environment-analysis-resource.js');
+          const result = await generateEnvironmentAnalysisResource(undefined, url.searchParams);
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'memory_snapshots': {
+          const { generateMemorySnapshotsResource } = await import('./resources/memory-snapshots-resource.js');
+          const result = await generateMemorySnapshotsResource(undefined, url.searchParams);
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'project_metrics': {
+          const { generateProjectMetricsResource } = await import('./resources/project-metrics-resource.js');
+          const result = await generateProjectMetricsResource();
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'deployment_history': {
+          const { generateDeploymentHistoryResource } = await import('./resources/deployment-history-resource.js');
+          const result = await generateDeploymentHistoryResource(undefined, url.searchParams);
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'code_quality': {
+          const { generateCodeQualityResource } = await import('./resources/code-quality-resource.js');
+          const result = await generateCodeQualityResource(undefined, url.searchParams);
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
           };
         }
 
