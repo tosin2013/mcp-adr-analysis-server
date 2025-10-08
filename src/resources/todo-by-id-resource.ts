@@ -107,7 +107,12 @@ function parseTodoMarkdown(content: string): TodoTask[] {
     }
 
     // Parse description (plain text lines)
-    if (currentTask && !trimmed.startsWith('**') && !trimmed.startsWith('#') && trimmed.length > 0) {
+    if (
+      currentTask &&
+      !trimmed.startsWith('**') &&
+      !trimmed.startsWith('#') &&
+      trimmed.length > 0
+    ) {
       currentTask.description = (currentTask.description || '') + '\n' + trimmed;
     }
   }
@@ -187,11 +192,13 @@ async function findRelatedAdrs(task: TodoTask): Promise<string[]> {
 /**
  * Get task history (placeholder - would require history tracking)
  */
-async function getTaskHistory(_taskId: string): Promise<Array<{
-  timestamp: string;
-  action: string;
-  details: string;
-}>> {
+async function getTaskHistory(_taskId: string): Promise<
+  Array<{
+    timestamp: string;
+    action: string;
+    details: string;
+  }>
+> {
   // TODO: Implement actual task history tracking
   // For now, return placeholder history
   return [
@@ -229,11 +236,8 @@ export async function generateTodoByIdResource(
   let todoContent: string;
   try {
     todoContent = await fs.readFile(todoPath, 'utf-8');
-  } catch (error) {
-    throw new McpAdrError(
-      `Todo file not found at ${todoPath}`,
-      'RESOURCE_NOT_FOUND'
-    );
+  } catch {
+    throw new McpAdrError(`Todo file not found at ${todoPath}`, 'RESOURCE_NOT_FOUND');
   }
 
   const todos = parseTodoMarkdown(todoContent);
