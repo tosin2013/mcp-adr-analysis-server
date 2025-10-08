@@ -3269,7 +3269,8 @@ export class McpAdrAnalysisServer {
           {
             uri: 'adr://architectural_knowledge_graph',
             name: 'Architectural Knowledge Graph',
-            description: 'Complete architectural knowledge graph with technologies, patterns, and relationships',
+            description:
+              'Complete architectural knowledge graph with technologies, patterns, and relationships',
             mimeType: 'application/json',
           },
           {
@@ -3306,7 +3307,8 @@ export class McpAdrAnalysisServer {
           {
             uri: 'adr://rule_generation',
             name: 'Rule Generation',
-            description: 'AI-powered rule generation from ADRs and code patterns. Supports query parameters: ?operation=generate|validate|create_set, ?source=adrs|patterns|both, ?knowledge=true|false, ?enhanced=true|false, ?format=json|yaml|both, ?comprehensive=true|false',
+            description:
+              'AI-powered rule generation from ADRs and code patterns. Supports query parameters: ?operation=generate|validate|create_set, ?source=adrs|patterns|both, ?knowledge=true|false, ?enhanced=true|false, ?format=json|yaml|both, ?comprehensive=true|false',
             mimeType: 'application/json',
           },
           {
@@ -3331,63 +3333,73 @@ export class McpAdrAnalysisServer {
           {
             uri: 'adr://todo/{task_id}',
             name: 'Todo by Task ID',
-            description: 'Individual task details by ID or title match with dependencies and history',
+            description:
+              'Individual task details by ID or title match with dependencies and history',
             mimeType: 'application/json',
           },
           {
             uri: 'adr://rule/{rule_id}',
             name: 'Rule by ID',
-            description: 'Individual architectural rule by ID or name match with violations and usage stats',
+            description:
+              'Individual architectural rule by ID or name match with violations and usage stats',
             mimeType: 'application/json',
           },
           // NEW Phase 3 Advanced Resources
           {
             uri: 'adr://deployment_status',
             name: 'Deployment Status',
-            description: 'Current deployment state with health checks, build status, and readiness score',
+            description:
+              'Current deployment state with health checks, build status, and readiness score',
             mimeType: 'application/json',
           },
           {
             uri: 'adr://environment_analysis',
             name: 'Environment Analysis',
-            description: 'System environment details including platform, dependencies, and capabilities',
+            description:
+              'System environment details including platform, dependencies, and capabilities',
             mimeType: 'application/json',
           },
           {
             uri: 'adr://memory_snapshots',
             name: 'Memory Snapshots',
-            description: 'Knowledge graph snapshots with statistics, insights, and relationship data',
+            description:
+              'Knowledge graph snapshots with statistics, insights, and relationship data',
             mimeType: 'application/json',
           },
           {
             uri: 'adr://project_metrics',
             name: 'Project Metrics',
-            description: 'Code metrics and quality scores including codebase stats, quality assessment, and git metrics',
+            description:
+              'Code metrics and quality scores including codebase stats, quality assessment, and git metrics',
             mimeType: 'application/json',
           },
           {
             uri: 'adr://technology/{name}',
             name: 'Technology by Name',
-            description: 'Individual technology analysis by name with usage, relationships, and adoption status',
+            description:
+              'Individual technology analysis by name with usage, relationships, and adoption status',
             mimeType: 'application/json',
           },
           {
             uri: 'adr://pattern/{name}',
             name: 'Pattern by Name',
-            description: 'Individual pattern analysis by name with quality metrics, relationships, and examples',
+            description:
+              'Individual pattern analysis by name with quality metrics, relationships, and examples',
             mimeType: 'application/json',
           },
           // NEW Phase 4 Final Resources
           {
             uri: 'adr://deployment_history',
             name: 'Deployment History',
-            description: 'Historical deployment data with trends, failure analysis, and patterns. Supports query parameters: ?period=7d|30d|90d|1y|all, ?environment=production|staging|development|all, ?includeFailures=true|false, ?includeMetrics=true|false, ?format=summary|detailed',
+            description:
+              'Historical deployment data with trends, failure analysis, and patterns. Supports query parameters: ?period=7d|30d|90d|1y|all, ?environment=production|staging|development|all, ?includeFailures=true|false, ?includeMetrics=true|false, ?format=summary|detailed',
             mimeType: 'application/json',
           },
           {
             uri: 'adr://code_quality',
             name: 'Code Quality',
-            description: 'Comprehensive code quality assessment with metrics, issues, and recommendations. Supports query parameters: ?scope=full|changes|critical, ?includeMetrics=true|false, ?includeRecommendations=true|false, ?threshold=0-100, ?format=summary|detailed',
+            description:
+              'Comprehensive code quality assessment with metrics, issues, and recommendations. Supports query parameters: ?scope=full|changes|critical, ?includeMetrics=true|false, ?includeRecommendations=true|false, ?threshold=0-100, ?format=summary|detailed',
             mimeType: 'application/json',
           },
         ],
@@ -4180,6 +4192,43 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       const { analyzeProjectStructureCompat: analyzeProjectStructure } = await import(
         './utils/file-system.js'
       );
+
+      // Initialize ADR knowledge base on first run
+      ctx.info('📚 Phase 1.5: Initializing ADR knowledge base');
+      ctx.report_progress(15, 100);
+
+      try {
+        const { initializeAdrKnowledgeBase, isAdrKnowledgeBaseInitialized } = await import(
+          './utils/adr-knowledge-initializer.js'
+        );
+
+        const isInitialized = await isAdrKnowledgeBaseInitialized(this.kgManager);
+
+        if (!isInitialized) {
+          this.logger.info('First run detected - initializing ADR knowledge base');
+          const initResult = await initializeAdrKnowledgeBase(
+            this.kgManager,
+            this.config.adrDirectory,
+            projectPath
+          );
+
+          if (initResult.success) {
+            this.logger.info(
+              `✅ ADR knowledge base initialized with ${initResult.adrsIndexed} ADRs`
+            );
+            ctx.info(`📚 Indexed ${initResult.adrsIndexed} existing ADRs to knowledge base`);
+          } else {
+            this.logger.warn(
+              `ADR knowledge base initialization completed with errors: ${initResult.errors.join(', ')}`
+            );
+          }
+        } else {
+          this.logger.info('ADR knowledge base already initialized - skipping');
+        }
+      } catch (error) {
+        this.logger.warn('Failed to initialize ADR knowledge base:', error);
+        // Don't fail the entire analysis if ADR initialization fails
+      }
 
       // Import advanced prompting utilities if enhanced mode is enabled
       let generateArchitecturalKnowledge: GenerateArchitecturalKnowledgeFunction | null = null;
@@ -7314,7 +7363,9 @@ Please provide:
         }
 
         case 'research_index': {
-          const { generateResearchIndexResource } = await import('./resources/research-index-resource.js');
+          const { generateResearchIndexResource } = await import(
+            './resources/research-index-resource.js'
+          );
           const result = await generateResearchIndexResource();
 
           return {
@@ -7334,7 +7385,9 @@ Please provide:
         }
 
         case 'rule_catalog': {
-          const { generateRuleCatalogResource } = await import('./resources/rule-catalog-resource.js');
+          const { generateRuleCatalogResource } = await import(
+            './resources/rule-catalog-resource.js'
+          );
           const result = await generateRuleCatalogResource();
 
           return {
@@ -7354,7 +7407,9 @@ Please provide:
         }
 
         case 'rule_generation': {
-          const { generateRuleGenerationResource } = await import('./resources/rule-generation-resource.js');
+          const { generateRuleGenerationResource } = await import(
+            './resources/rule-generation-resource.js'
+          );
           const result = await generateRuleGenerationResource(undefined, url.searchParams);
 
           return {
@@ -7374,7 +7429,9 @@ Please provide:
         }
 
         case 'project_status': {
-          const { generateProjectStatusResource } = await import('./resources/project-status-resource.js');
+          const { generateProjectStatusResource } = await import(
+            './resources/project-status-resource.js'
+          );
           const result = await generateProjectStatusResource();
 
           return {
@@ -7394,7 +7451,9 @@ Please provide:
         }
 
         case 'deployment_status': {
-          const { generateDeploymentStatusResource } = await import('./resources/deployment-status-resource.js');
+          const { generateDeploymentStatusResource } = await import(
+            './resources/deployment-status-resource.js'
+          );
           const result = await generateDeploymentStatusResource(undefined, url.searchParams);
 
           return {
@@ -7414,7 +7473,9 @@ Please provide:
         }
 
         case 'environment_analysis': {
-          const { generateEnvironmentAnalysisResource } = await import('./resources/environment-analysis-resource.js');
+          const { generateEnvironmentAnalysisResource } = await import(
+            './resources/environment-analysis-resource.js'
+          );
           const result = await generateEnvironmentAnalysisResource(undefined, url.searchParams);
 
           return {
@@ -7434,7 +7495,9 @@ Please provide:
         }
 
         case 'memory_snapshots': {
-          const { generateMemorySnapshotsResource } = await import('./resources/memory-snapshots-resource.js');
+          const { generateMemorySnapshotsResource } = await import(
+            './resources/memory-snapshots-resource.js'
+          );
           const result = await generateMemorySnapshotsResource(undefined, url.searchParams);
 
           return {
@@ -7454,7 +7517,9 @@ Please provide:
         }
 
         case 'project_metrics': {
-          const { generateProjectMetricsResource } = await import('./resources/project-metrics-resource.js');
+          const { generateProjectMetricsResource } = await import(
+            './resources/project-metrics-resource.js'
+          );
           const result = await generateProjectMetricsResource();
 
           return {
@@ -7474,7 +7539,9 @@ Please provide:
         }
 
         case 'deployment_history': {
-          const { generateDeploymentHistoryResource } = await import('./resources/deployment-history-resource.js');
+          const { generateDeploymentHistoryResource } = await import(
+            './resources/deployment-history-resource.js'
+          );
           const result = await generateDeploymentHistoryResource(undefined, url.searchParams);
 
           return {
@@ -7494,7 +7561,9 @@ Please provide:
         }
 
         case 'code_quality': {
-          const { generateCodeQualityResource } = await import('./resources/code-quality-resource.js');
+          const { generateCodeQualityResource } = await import(
+            './resources/code-quality-resource.js'
+          );
           const result = await generateCodeQualityResource(undefined, url.searchParams);
 
           return {
