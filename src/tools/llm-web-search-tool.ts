@@ -5,6 +5,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import type { ToolContext } from '../types/tool-context.js';
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 /**
@@ -51,14 +52,17 @@ import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
  * @category LLM
  * @mcp-tool
  */
-export async function llmWebSearch(args: {
-  query: string;
-  maxResults?: number;
-  includeContent?: boolean;
-  llmInstructions?: string;
-  projectPath?: string;
-  adrDirectory?: string;
-}): Promise<any> {
+export async function llmWebSearch(
+  args: {
+    query: string;
+    maxResults?: number;
+    includeContent?: boolean;
+    llmInstructions?: string;
+    projectPath?: string;
+    adrDirectory?: string;
+  },
+  context?: ToolContext
+): Promise<any> {
   const {
     query,
     maxResults = 5,
@@ -73,16 +77,25 @@ export async function llmWebSearch(args: {
   }
 
   try {
+    context?.info(`🌐 Initializing web search for: ${query}`);
+    context?.report_progress(0, 100);
+
     // Initialize research orchestrator with Firecrawl
     const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
 
     // Enhance query with LLM instructions if provided
+    context?.info('🤖 Optimizing search query with LLM guidance...');
+    context?.report_progress(25, 100);
+
     let enhancedQuery = query;
     if (llmInstructions) {
       enhancedQuery = `${query}\n\nLLM Instructions: ${llmInstructions}`;
     }
 
     // Perform web search using research orchestrator
+    context?.info('🔍 Executing web search with Firecrawl...');
+    context?.report_progress(50, 100);
+
     const researchResult = await orchestrator.answerResearchQuestion(enhancedQuery);
 
     // Extract web search results
@@ -93,7 +106,13 @@ export async function llmWebSearch(args: {
     const limitedResults = webResults.slice(0, maxResults);
 
     // Generate LLM analysis of results
+    context?.info('📊 Analyzing search results with LLM...');
+    context?.report_progress(75, 100);
+
     const llmAnalysis = await generateLLMAnalysis(query, limitedResults, llmInstructions);
+
+    context?.info('✅ Web search complete!');
+    context?.report_progress(100, 100);
 
     return {
       content: [

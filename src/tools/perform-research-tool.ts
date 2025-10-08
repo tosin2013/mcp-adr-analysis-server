@@ -6,6 +6,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import type { ToolContext } from '../types/tool-context.js';
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 
 /**
@@ -54,13 +55,16 @@ import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
  * @category Tools
  * @mcp-tool
  */
-export async function performResearch(args: {
-  question: string;
-  projectPath?: string;
-  adrDirectory?: string;
-  confidenceThreshold?: number;
-  performWebSearch?: boolean;
-}): Promise<any> {
+export async function performResearch(
+  args: {
+    question: string;
+    projectPath?: string;
+    adrDirectory?: string;
+    confidenceThreshold?: number;
+    performWebSearch?: boolean;
+  },
+  context?: ToolContext
+): Promise<any> {
   const {
     question,
     projectPath = process.cwd(),
@@ -74,12 +78,24 @@ export async function performResearch(args: {
   }
 
   try {
+    context?.info(`🔍 Starting research: ${question}`);
+    context?.report_progress(0, 100);
+
     // Create research orchestrator
     const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
     orchestrator.setConfidenceThreshold(confidenceThreshold);
 
-    // Perform research
+    context?.info('📁 Searching project files...');
+    context?.report_progress(25, 100);
+
+    // Perform research (orchestrator handles: files → knowledge graph → environment → web)
+    context?.info('📊 Querying knowledge graph and environment resources...');
+    context?.report_progress(50, 100);
+
     const research = await orchestrator.answerResearchQuestion(question);
+
+    context?.info('🌐 Analyzing results and preparing response...');
+    context?.report_progress(75, 100);
 
     // Format response
     let response = `# Research Results: ${question}
@@ -197,6 +213,9 @@ ${generateSearchQueries(question)
 - Check environment configuration against ADR requirements
 `;
     }
+
+    context?.info('✅ Research complete!');
+    context?.report_progress(100, 100);
 
     return {
       content: [
