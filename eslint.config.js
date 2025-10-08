@@ -171,6 +171,8 @@ export default [
     ignores: [
       'dist/**',
       'docs/api/**',
+      'docs/build/**',
+      'docs/.docusaurus/**',
       'node_modules/**',
       'coverage/**',
       '.mcp-adr-cache/**',
