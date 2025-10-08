@@ -107,14 +107,16 @@ export async function generateResearchIndexResource(): Promise<ResourceGeneratio
             });
           }
         }
-      } catch (error) {
+      } catch {
         // Directory doesn't exist or can't be accessed, skip
         console.warn(`[ResearchIndexResource] Cannot access directory: ${fullPath}`);
       }
     }
 
     // Sort by last modified (newest first)
-    researchDocs.sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime());
+    researchDocs.sort(
+      (a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime()
+    );
 
     const researchIndexData = {
       version: '1.0.0',
