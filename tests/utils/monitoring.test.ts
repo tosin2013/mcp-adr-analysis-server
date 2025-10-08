@@ -279,15 +279,18 @@ describe('Monitoring and Analytics', () => {
       expect(snapshot.requests.pending).toBe(0);
     });
 
-    it('should calculate latency percentiles', () => {
-      const durations = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-      durations.forEach((duration, i) => {
+    it('should calculate latency percentiles', async () => {
+      // Use smaller delays to speed up test (1-5ms range)
+      const durations = [1, 1, 2, 2, 3, 3, 4, 4, 5, 5];
+
+      for (let i = 0; i < durations.length; i++) {
+        const duration = durations[i];
         const id = `req-${i}`;
         monitor.startRequest(id, 'tool', 'perf-tool');
-        // Simulate duration
-        monitor.recordHistogram('request.duration', MetricCategory.PERFORMANCE, duration);
+        // Simulate actual duration with small delay
+        await new Promise(resolve => setTimeout(resolve, duration));
         monitor.completeRequest(id);
-      });
+      }
 
       const snapshot = monitor.getPerformanceSnapshot();
       expect(snapshot.latency.p50).toBeGreaterThan(0);
@@ -420,9 +423,11 @@ describe('Monitoring and Analytics', () => {
   });
 
   describe('Recent Requests', () => {
-    it('should return recent requests sorted by time', () => {
+    it('should return recent requests sorted by time', async () => {
       monitor.startRequest('req1', 'tool', 'tool1');
+      await new Promise(resolve => setTimeout(resolve, 2));
       monitor.startRequest('req2', 'tool', 'tool2');
+      await new Promise(resolve => setTimeout(resolve, 2));
       monitor.startRequest('req3', 'tool', 'tool3');
 
       const recent = monitor.getRecentRequests(10);
@@ -532,12 +537,9 @@ describe('Monitoring and Analytics', () => {
     });
 
     it('should track operation with tags', async () => {
-      await trackOperation(
-        async () => 'done',
-        'tagged.operation',
-        MetricCategory.TOOL,
-        { environment: 'test' }
-      );
+      await trackOperation(async () => 'done', 'tagged.operation', MetricCategory.TOOL, {
+        environment: 'test',
+      });
 
       const metrics = monitoring.getMetrics();
       const taggedMetrics = metrics.filter(
