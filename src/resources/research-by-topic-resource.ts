@@ -48,9 +48,10 @@ function generateTopicSummary(documents: ResearchDocument[]): {
     totalSize: documents.reduce((sum, doc) => sum + doc.size, 0),
     lastUpdated:
       documents.length > 0 && firstDoc
-        ? documents.reduce((latest, doc) =>
-            doc.lastModified > latest ? doc.lastModified : latest
-          , firstDoc.lastModified)
+        ? documents.reduce(
+            (latest, doc) => (doc.lastModified > latest ? doc.lastModified : latest),
+            firstDoc.lastModified
+          )
         : new Date().toISOString(),
     documentCount: documents.length,
   };
@@ -74,10 +75,7 @@ function matchesTopic(filename: string, content: string, topic: string): boolean
 
   // Check content (first 1000 characters for keywords)
   const contentPreview = normalizedContent.substring(0, 1000);
-  if (
-    contentPreview.includes(topic.toLowerCase()) ||
-    contentPreview.includes(normalizedTopic)
-  ) {
+  if (contentPreview.includes(topic.toLowerCase()) || contentPreview.includes(normalizedTopic)) {
     return true;
   }
 
@@ -137,7 +135,7 @@ export async function generateResearchByTopicResource(
           }
         }
       }
-    } catch (error) {
+    } catch {
       // Directory doesn't exist or can't be read, skip silently
       continue;
     }
@@ -147,10 +145,7 @@ export async function generateResearchByTopicResource(
   relatedDocs.sort((a, b) => b.lastModified.localeCompare(a.lastModified));
 
   if (relatedDocs.length === 0) {
-    throw new McpAdrError(
-      `No research documents found for topic: ${topic}`,
-      'RESOURCE_NOT_FOUND'
-    );
+    throw new McpAdrError(`No research documents found for topic: ${topic}`, 'RESOURCE_NOT_FOUND');
   }
 
   const topicData = {

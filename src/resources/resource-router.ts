@@ -3,6 +3,7 @@
  * Supports parameterized URIs like adr://adr/{id} and adr://research/{topic}
  */
 
+import { URL, URLSearchParams } from 'url';
 import { ResourceGenerationResult } from './index.js';
 import { McpAdrError } from '../types/index.js';
 

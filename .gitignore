@@ -35,6 +35,10 @@ build/
 # Generated documentation (TypeDoc)
 docs/api/
 
+# Docusaurus build artifacts
+docs/build/
+docs/.docusaurus/
+
 # IDE and editor files
 .vscode/
 .idea/
