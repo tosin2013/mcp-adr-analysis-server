@@ -787,6 +787,58 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'bootstrap_validation_loop',
+            description:
+              'Execute complete bootstrap validation loop with environment monitoring, auto-fixing, and ADR learning. Iteratively validates deployments against ADRs and updates ADRs with real-world deployment experience.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to the project directory',
+                  default: '.',
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory where ADRs are stored',
+                  default: 'docs/adrs',
+                },
+                targetEnvironment: {
+                  type: 'string',
+                  enum: ['development', 'staging', 'production', 'testing'],
+                  description: 'Target deployment environment',
+                  default: 'development',
+                },
+                maxIterations: {
+                  type: 'number',
+                  description: 'Maximum validation/fix iterations',
+                  default: 5,
+                },
+                autoFix: {
+                  type: 'boolean',
+                  description: 'Automatically fix bootstrap scripts based on failures',
+                  default: true,
+                },
+                validateAfterFix: {
+                  type: 'boolean',
+                  description: 'Re-validate after applying auto-fixes',
+                  default: true,
+                },
+                captureEnvironmentSnapshot: {
+                  type: 'boolean',
+                  description: 'Capture environment state during execution',
+                  default: true,
+                },
+                updateAdrsWithLearnings: {
+                  type: 'boolean',
+                  description: 'Update ADRs with deployment learnings (non-sensitive)',
+                  default: true,
+                },
+                conversationContext: CONVERSATION_CONTEXT_SCHEMA,
+              },
+            },
+          },
+          {
             name: 'discover_existing_adrs',
             description: 'Discover and catalog existing ADRs in the project',
             inputSchema: {
@@ -3083,6 +3135,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'generate_adr_bootstrap':
             response = await this.generateAdrBootstrap(safeArgs);
+            break;
+          case 'bootstrap_validation_loop':
+            response = await this.bootstrapValidationLoop(safeArgs);
             break;
           case 'discover_existing_adrs':
             response = await this.discoverExistingAdrs(safeArgs, context);
@@ -6632,6 +6687,13 @@ Please provide:
       './tools/adr-bootstrap-validation-tool.js'
     );
     return await generateAdrBootstrapScripts(args);
+  }
+
+  private async bootstrapValidationLoop(args: Record<string, unknown>): Promise<CallToolResult> {
+    const { default: bootstrapValidationLoop } = await import(
+      './tools/bootstrap-validation-loop-tool.js'
+    );
+    return await bootstrapValidationLoop(args);
   }
 
   private async discoverExistingAdrs(
