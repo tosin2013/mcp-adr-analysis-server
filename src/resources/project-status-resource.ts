@@ -41,9 +41,10 @@ function calculateOverallHealth(components: any[]): 'excellent' | 'good' | 'fair
       if (component.summary) {
         // Score based on completion
         if (component.summary.completed !== undefined && component.summary.total !== undefined) {
-          const completionRate = component.summary.total > 0
-            ? (component.summary.completed / component.summary.total) * 100
-            : 100;
+          const completionRate =
+            component.summary.total > 0
+              ? (component.summary.completed / component.summary.total) * 100
+              : 100;
           score += completionRate;
         } else {
           score += 75; // Neutral score if no completion data
@@ -112,7 +113,57 @@ function calculateResourceCoverage(): number {
 }
 
 /**
- * Generate project status resource
+ * Generate comprehensive project status resource aggregating data from multiple sources.
+ *
+ * This function provides a holistic view of the project's current state by combining
+ * task management, research documentation, and rule compliance metrics.
+ *
+ * @returns Promise resolving to resource generation result containing:
+ *   - data: Complete project status including health metrics and component breakdown
+ *   - contentType: "application/json"
+ *   - lastModified: ISO timestamp of generation
+ *   - cacheKey: Unique identifier for caching
+ *   - ttl: Cache duration (120 seconds)
+ *   - etag: Entity tag for cache validation
+ *
+ * @throws {McpAdrError} When resource generation fails due to:
+ *   - Inability to generate todo/research/rules resources
+ *   - Invalid data structure from component resources
+ *   - Cache operation failures
+ *
+ * @example
+ * ```typescript
+ * const status = await generateProjectStatusResource();
+ * console.log(`Project health: ${status.data.overallHealth}`);
+ * console.log(`Completion rate: ${status.data.metrics.completionRate}%`);
+ *
+ * // Expected output structure:
+ * {
+ *   data: {
+ *     version: "1.0.0",
+ *     timestamp: "2025-10-12T17:00:00.000Z",
+ *     overallHealth: "good",
+ *     components: {
+ *       tasks: { summary: { total: 10, completed: 7 } },
+ *       research: { summary: { total: 5 } },
+ *       rules: { summary: { enabled: 15, total: 20 } }
+ *     },
+ *     metrics: {
+ *       completionRate: 70,
+ *       qualityScore: 85,
+ *       resourceCoverage: 35
+ *     }
+ *   },
+ *   contentType: "application/json",
+ *   cacheKey: "project-status:current",
+ *   ttl: 120
+ * }
+ * ```
+ *
+ * @since v2.0.0
+ * @see {@link generateTodoListResource} for task management data
+ * @see {@link generateResearchIndexResource} for research documentation
+ * @see {@link generateRuleCatalogResource} for rule compliance
  */
 export async function generateProjectStatusResource(): Promise<ResourceGenerationResult> {
   try {

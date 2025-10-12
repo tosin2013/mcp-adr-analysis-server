@@ -68,7 +68,88 @@ function groupByTopic(docs: ResearchDocument[]): Record<string, number> {
 }
 
 /**
- * Generate research index resource
+ * Generate comprehensive research document index resource with metadata and categorization.
+ *
+ * Scans project research directories and builds an index of all research documents with
+ * metadata including titles, topics, word counts, file sizes, and last modified dates.
+ * Supports multiple research directories for organizational flexibility.
+ *
+ * **Scanned Directories:**
+ * - `docs/research/` - Primary research documentation
+ * - `custom/research/` - Custom user research notes
+ *
+ * **Document Extraction:**
+ * - Title: Extracted from first H1 heading or filename
+ * - Topic: Derived from filename prefix or directory structure
+ * - Metadata: Word count, file size, last modified timestamp
+ *
+ * @returns Promise resolving to resource generation result containing:
+ *   - data: Complete research index with documents array and summary statistics
+ *   - contentType: "application/json"
+ *   - lastModified: ISO timestamp of generation
+ *   - cacheKey: "research-index:current"
+ *   - ttl: Cache duration (300 seconds / 5 minutes)
+ *   - etag: Entity tag for cache validation
+ *
+ * @throws {McpAdrError} When research index generation fails due to:
+ *   - RESOURCE_GENERATION_ERROR: File system access errors or markdown parsing failures
+ *   - Cache operation failures
+ *
+ * @example
+ * ```typescript
+ * const researchIndex = await generateResearchIndexResource();
+ *
+ * console.log(`Total research documents: ${researchIndex.data.summary.total}`);
+ * console.log(`Topics covered: ${researchIndex.data.summary.byTopic.length}`);
+ * console.log(`Total words: ${researchIndex.data.summary.totalWords}`);
+ *
+ * // Find research by topic
+ * const architectureDocs = researchIndex.data.documents.filter(
+ *   doc => doc.topic === 'architecture'
+ * );
+ * console.log(`Architecture research docs: ${architectureDocs.length}`);
+ *
+ * // Sort by recency
+ * const recentDocs = researchIndex.data.documents
+ *   .sort((a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime())
+ *   .slice(0, 5);
+ *
+ * // Expected output structure:
+ * {
+ *   data: {
+ *     version: "1.0.0",
+ *     timestamp: "2025-10-12T17:00:00.000Z",
+ *     summary: {
+ *       total: 55,
+ *       byTopic: {
+ *         "performance": 12,
+ *         "security": 8,
+ *         "architecture": 15
+ *       },
+ *       totalWords: 45000,
+ *       averageWordCount: 818
+ *     },
+ *     documents: [
+ *       {
+ *         id: "perform_research_research_001",
+ *         title: "TypeScript Performance Optimization",
+ *         topic: "performance",
+ *         path: "docs/research/perform_research_research_001.md",
+ *         lastModified: "2025-10-10T12:00:00.000Z",
+ *         wordCount: 1250,
+ *         size: 8192
+ *       }
+ *     ]
+ *   },
+ *   contentType: "application/json",
+ *   cacheKey: "research-index:current",
+ *   ttl: 300
+ * }
+ * ```
+ *
+ * @since v2.0.0
+ * @see {@link extractTitle} for title extraction logic
+ * @see {@link extractTopic} for topic categorization
  */
 export async function generateResearchIndexResource(): Promise<ResourceGenerationResult> {
   try {

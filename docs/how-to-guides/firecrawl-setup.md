@@ -45,7 +45,7 @@ docker run -p 3000:3000 firecrawl/firecrawl
 
 # 2. Configure environment variables
 export FIRECRAWL_ENABLED="true"
-export FIRECRAWL_BASE_URL="http://localhost:3000"
+export FIRECRAWL_BASE_URL="https://localhost:3000"
 
 # 3. Test the integration
 mcp-adr-analysis-server --test
@@ -67,17 +67,18 @@ mcp-adr-analysis-server --test
 
 ### **Environment Variables**
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `FIRECRAWL_ENABLED` | No | `false` | Enable Firecrawl integration |
-| `FIRECRAWL_API_KEY` | No* | - | API key for cloud service |
-| `FIRECRAWL_BASE_URL` | No | `http://localhost:3000` | Self-hosted instance URL |
+| Variable             | Required | Default                  | Description                  |
+| -------------------- | -------- | ------------------------ | ---------------------------- |
+| `FIRECRAWL_ENABLED`  | No       | `false`                  | Enable Firecrawl integration |
+| `FIRECRAWL_API_KEY`  | No\*     | -                        | API key for cloud service    |
+| `FIRECRAWL_BASE_URL` | No       | `https://localhost:3000` | Self-hosted instance URL     |
 
-*Required if using cloud service
+\*Required if using cloud service
 
 ### **Configuration Examples**
 
 #### **Development Environment**
+
 ```bash
 # .env.development
 FIRECRAWL_ENABLED="true"
@@ -86,14 +87,16 @@ LOG_LEVEL="DEBUG"
 ```
 
 #### **Production Environment**
+
 ```bash
 # .env.production
 FIRECRAWL_ENABLED="true"
-FIRECRAWL_BASE_URL="http://firecrawl:3000"
+FIRECRAWL_BASE_URL="https://firecrawl:3000"
 LOG_LEVEL="INFO"
 ```
 
 #### **CI/CD Environment**
+
 ```bash
 # .env.ci
 FIRECRAWL_ENABLED="false"  # Disable for CI performance
@@ -149,9 +152,9 @@ mcp-adr-analysis-server --test-web-search
 ```typescript
 // Test in your MCP client
 const result = await llm_web_search({
-  query: "microservices architecture best practices 2024",
+  query: 'microservices architecture best practices 2024',
   maxResults: 3,
-  includeContent: true
+  includeContent: true,
 });
 
 console.log(result);
@@ -165,21 +168,25 @@ console.log(result);
 When Firecrawl is enabled, these tools gain enhanced capabilities:
 
 ### **`llm_web_search`**
+
 - **Purpose**: Intelligent web search with relevance scoring
 - **Enhanced with**: Real-time content extraction and analysis
 - **Use case**: Research architectural patterns and best practices
 
 ### **`llm_cloud_management`**
+
 - **Purpose**: Cloud provider research and recommendations
 - **Enhanced with**: Current pricing, features, and best practices
 - **Use case**: Make informed cloud architecture decisions
 
 ### **`llm_database_management`**
+
 - **Purpose**: Database technology research and recommendations
 - **Enhanced with**: Performance benchmarks and real-world usage
 - **Use case**: Select optimal database technologies
 
 ### **Research Orchestrator**
+
 - **Purpose**: Multi-source research with confidence scoring
 - **Enhanced with**: Web search as additional research source
 - **Use case**: Comprehensive architectural analysis
@@ -191,6 +198,7 @@ When Firecrawl is enabled, these tools gain enhanced capabilities:
 ### **Common Issues**
 
 #### **"Firecrawl integration: DISABLED"**
+
 ```bash
 # Check if FIRECRAWL_ENABLED is set
 echo $FIRECRAWL_ENABLED
@@ -200,6 +208,7 @@ export FIRECRAWL_ENABLED="true"
 ```
 
 #### **"Firecrawl connection: FAILED"**
+
 ```bash
 # Check API key format
 echo $FIRECRAWL_API_KEY
@@ -212,6 +221,7 @@ curl "$FIRECRAWL_BASE_URL/health"
 ```
 
 #### **"Web search: FAILED"**
+
 ```bash
 # Check network connectivity
 curl -I https://firecrawl.dev
@@ -222,6 +232,7 @@ curl -H "Authorization: Bearer $FIRECRAWL_API_KEY" \
 ```
 
 #### **"Content extraction: FAILED"**
+
 ```bash
 # Check if target URLs are accessible
 curl -I "https://example.com"
@@ -256,15 +267,18 @@ The server gracefully handles Firecrawl failures:
 ## 📊 Performance Considerations
 
 ### **Response Times**
+
 - **Web search**: 2-5 seconds per query
 - **Content extraction**: 1-3 seconds per page
 - **Relevance scoring**: 0.5-1 second per result
 
 ### **Rate Limits**
+
 - **Cloud service**: 100 requests/minute (free tier)
 - **Self-hosted**: No rate limits (depends on your infrastructure)
 
 ### **Caching**
+
 - **Research results**: 5-minute TTL
 - **Web content**: 1-hour TTL
 - **Relevance scores**: 24-hour TTL
@@ -273,7 +287,7 @@ The server gracefully handles Firecrawl failures:
 
 ```bash
 # Use self-hosted for high-volume usage
-export FIRECRAWL_BASE_URL="http://your-firecrawl-instance:3000"
+export FIRECRAWL_BASE_URL="https://your-firecrawl-instance:3000"
 
 # Enable caching for better performance
 export AI_CACHE_ENABLED="true"
@@ -288,6 +302,7 @@ export MAX_CONCURRENT_REQUESTS="5"
 ## 🔒 Security Considerations
 
 ### **API Key Security**
+
 ```bash
 # Never commit API keys to version control
 echo "FIRECRAWL_API_KEY=fc-*" >> .gitignore
@@ -298,6 +313,7 @@ export FIRECRAWL_API_KEY="fc-prod-key" # Production
 ```
 
 ### **Self-Hosted Security**
+
 ```bash
 # Use HTTPS in production
 export FIRECRAWL_BASE_URL="https://firecrawl.yourcompany.com"
@@ -310,6 +326,7 @@ export FIRECRAWL_AUTH_TOKEN="your-auth-token"
 ```
 
 ### **Content Filtering**
+
 ```bash
 # Filter sensitive domains
 export FIRECRAWL_BLOCKED_DOMAINS="internal.company.com,private.*"
@@ -329,10 +346,6 @@ export FIRECRAWL_SANITIZE_CONTENT="true"
 
 ---
 
-**Need help with Firecrawl setup?** → **[Join the Discussion](https://github.com/tosin2013/mcp-adr-analysis-server/discussions)**
+**Need help with Firecrawl setup?** → **[Join the Discussion](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**
 
 **Firecrawl issues?** → **[Check Troubleshooting](./troubleshooting.md#firecrawl-integration)**
-
-
-
-

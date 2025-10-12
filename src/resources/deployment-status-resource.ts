@@ -796,7 +796,108 @@ async function generateComprehensiveDeploymentStatus(
 }
 
 /**
- * Generate deployment status resource
+ * Generate comprehensive deployment status resource with readiness analysis and quality gates.
+ *
+ * Performs multi-dimensional deployment readiness assessment including code quality validation,
+ * test execution, dependency health, ADR compliance, deployment history analysis, and optional
+ * memory-based pattern recognition for predictive insights.
+ *
+ * **Query Parameters:**
+ * - `operation`: Operation type (default: "check_readiness")
+ * - `environment`: Target deployment environment (default: process.env.NODE_ENV || "production")
+ * - `memory`: Enable memory integration for historical analysis (default: true)
+ * - `strict`: Enable strict zero-tolerance mode (default: true)
+ * - `comprehensive`: Use comprehensive analysis vs basic (default: true)
+ *
+ * **Comprehensive Mode includes:**
+ * - TreeSitter AST-based code quality analysis with production code scoring
+ * - Zero-tolerance test validation with detailed failure tracking
+ * - Deployment history analysis with trend detection
+ * - ADR compliance validation
+ * - Memory-based pattern analysis and insights
+ * - Critical blocker identification with auto-fix suggestions
+ * - Git push allow/block decision logic
+ *
+ * @param _params - URL path parameters (currently unused, reserved for future routing)
+ * @param searchParams - URL query parameters controlling analysis behavior
+ *
+ * @returns Promise resolving to resource generation result containing:
+ *   - data: Complete deployment status with health metrics and quality gates
+ *   - contentType: "application/json"
+ *   - lastModified: ISO timestamp of generation
+ *   - cacheKey: Unique identifier based on operation/environment/options
+ *   - ttl: Cache duration (180 seconds / 3 minutes)
+ *   - etag: Entity tag for cache validation
+ *
+ * @throws {McpAdrError} When deployment status generation fails due to:
+ *   - Invalid operation or environment parameters
+ *   - Deployment-readiness-tool execution failure
+ *   - Test execution failures (in strict mode)
+ *   - Cache operation errors
+ *
+ * @example
+ * ```typescript
+ * // Basic usage with comprehensive analysis
+ * const status = await generateDeploymentStatusResource(
+ *   {},
+ *   new URLSearchParams('operation=check_readiness&environment=production')
+ * );
+ *
+ * console.log(`Status: ${status.data.status}`);
+ * console.log(`Readiness score: ${status.data.deploymentReadiness.score}`);
+ * console.log(`Blockers: ${status.data.deploymentReadiness.blockers.length}`);
+ *
+ * // Check if deployment is allowed
+ * if (status.data.gitPushStatus?.decision === 'blocked') {
+ *   console.error(`Deployment blocked: ${status.data.gitPushStatus.reason}`);
+ *   process.exit(1);
+ * }
+ *
+ * // Example with basic mode (faster, less detailed)
+ * const basicStatus = await generateDeploymentStatusResource(
+ *   {},
+ *   new URLSearchParams('comprehensive=false&memory=false')
+ * );
+ *
+ * // Expected output structure:
+ * {
+ *   data: {
+ *     environment: "production",
+ *     status: "healthy",
+ *     version: "2.0.22",
+ *     deploymentReadiness: {
+ *       score: 95,
+ *       blockers: [],
+ *       warnings: ["Minor test coverage gaps"],
+ *       recommendations: ["Increase integration test coverage"]
+ *     },
+ *     codeQualityAnalysis: {
+ *       overallScore: 92,
+ *       productionCodeScore: 95,
+ *       qualityGates: [...]
+ *     },
+ *     testValidation: {
+ *       testExecutionResult: "passed",
+ *       totalTests: 150,
+ *       passedTests: 150,
+ *       failedTests: 0,
+ *       coverage: 85
+ *     },
+ *     gitPushStatus: {
+ *       allowed: true,
+ *       decision: "allowed",
+ *       reason: "All quality gates passed"
+ *     }
+ *   },
+ *   contentType: "application/json",
+ *   cacheKey: "deployment-status:check_readiness:production:true:true:true",
+ *   ttl: 180
+ * }
+ * ```
+ *
+ * @since v2.0.0
+ * @see {@link deploymentReadiness} tool for underlying analysis engine
+ * @see {@link generateDeploymentHistoryResource} for historical deployment data
  */
 export async function generateDeploymentStatusResource(
   _params?: Record<string, string>,

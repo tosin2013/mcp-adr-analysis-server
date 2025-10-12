@@ -7,6 +7,7 @@ This guide helps you set up ADR analysis in an existing repository that has no A
 ## 📋 Prerequisites
 
 ### Required Software
+
 - **Node.js** ≥18.0.0
 - **MCP Client** (Claude Desktop, Cline, Cursor, or Windsurf)
 - **Git** repository with existing code
@@ -42,6 +43,7 @@ export CACHE_ENABLED="true"
 ### 2. MCP Client Configuration
 
 #### Claude Desktop
+
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
@@ -63,6 +65,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```
 
 #### Cline (VS Code)
+
 Add to your Cline MCP settings:
 
 ```json
@@ -99,18 +102,30 @@ mkdir -p ./adrs
 Start by understanding your existing codebase and implicit architectural decisions:
 
 **Tool Call:**
+
 ```
 analyze_project_ecosystem
 ```
 
 **Parameters:**
+
 ```json
 {
-  "includePatterns": ["*.js", "*.ts", "*.py", "*.java", "*.go", "package.json", "requirements.txt", "pom.xml"]
+  "includePatterns": [
+    "*.js",
+    "*.ts",
+    "*.py",
+    "*.java",
+    "*.go",
+    "package.json",
+    "requirements.txt",
+    "pom.xml"
+  ]
 }
 ```
 
 **What this does:**
+
 - Scans your entire codebase
 - Identifies technology stack and frameworks
 - Discovers architectural patterns in use
@@ -118,6 +133,7 @@ analyze_project_ecosystem
 - Detects implicit architectural decisions
 
 **Expected Output:**
+
 - Complete technology stack analysis (e.g., TypeScript, Node.js, React, Express)
 - Framework and library inventory
 - Architectural patterns identification (MVC, Component-based, REST API)
@@ -129,11 +145,13 @@ analyze_project_ecosystem
 Dive deeper into your project's architectural details:
 
 **Tool Call:**
+
 ```
 get_architectural_context
 ```
 
 **Parameters:**
+
 ```json
 {
   "includeCompliance": true
@@ -141,12 +159,14 @@ get_architectural_context
 ```
 
 **What this does:**
+
 - Analyzes code structure and design patterns
 - Identifies quality attributes (security, performance, maintainability)
 - Reviews compliance with best practices
 - Provides detailed architectural insights
 
 **Expected Output:**
+
 - Architectural style analysis (e.g., Layered Architecture, Microservices)
 - Design patterns in use (Factory, Observer, Singleton, etc.)
 - Code quality and compliance assessment
@@ -158,11 +178,13 @@ get_architectural_context
 Find architectural decisions that are already embedded in your code but not documented:
 
 **Tool Call:**
+
 ```
 suggest_adrs
 ```
 
 **Parameters:**
+
 ```json
 {
   "analysisType": "implicit_decisions"
@@ -170,17 +192,20 @@ suggest_adrs
 ```
 
 **What this does:**
+
 - Analyzes your code for implicit architectural decisions
 - Identifies patterns and choices you've already made
 - Suggests which decisions should be documented as ADRs
 - Prioritizes suggestions based on impact and importance
 
 **Expected Output:**
+
 - List of suggested ADRs with titles and rationale
 - Priority ranking for each suggestion
 - Context for why each decision should be documented
 
 **Example suggestions you might get:**
+
 - "Use TypeScript for Type Safety" - detected TypeScript usage throughout codebase
 - "Express.js for REST API" - identified Express framework for server implementation
 - "Component-based Architecture" - found React component patterns
@@ -190,11 +215,13 @@ suggest_adrs
 Transform suggestions into properly formatted ADR documents:
 
 **Tool Call:**
+
 ```
 generate_adr_from_decision
 ```
 
 **Parameters:**
+
 ```json
 {
   "decisionData": {
@@ -203,12 +230,17 @@ generate_adr_from_decision
     "decision": "We will use TypeScript for all new code and gradually migrate existing JavaScript",
     "consequences": "Better code quality and IDE support, but requires build step and learning curve",
     "alternatives": ["Plain JavaScript", "Flow", "JSDoc with type annotations"],
-    "evidence": ["Existing TypeScript usage in codebase", "Team familiarity", "Industry best practices"]
+    "evidence": [
+      "Existing TypeScript usage in codebase",
+      "Team familiarity",
+      "Industry best practices"
+    ]
   }
 }
 ```
 
 **What this does:**
+
 - Generates a properly formatted ADR document
 - Includes all standard ADR sections (Context, Decision, Consequences)
 - Saves to your configured ADR directory with proper numbering
@@ -219,11 +251,13 @@ generate_adr_from_decision
 Create actionable tasks using the new two-phase TDD approach:
 
 **Tool Call:**
+
 ```
 generate_adr_todo
 ```
 
 **Parameters:**
+
 ```json
 {
   "scope": "all",
@@ -234,6 +268,7 @@ generate_adr_todo
 ```
 
 **What this does:**
+
 - Reviews all your ADRs for implementation tasks with TDD approach
 - Links all ADRs to create system-wide test coverage
 - Integrates architectural rules validation
@@ -241,6 +276,7 @@ generate_adr_todo
 - Generates a prioritized todo.md file with validation checkpoints
 
 **Expected Output:**
+
 - `todo.md` file with TDD-focused structured task list
 - Test specifications linking all ADRs for comprehensive coverage
 - Implementation tasks with architectural rule compliance checks
@@ -248,6 +284,7 @@ generate_adr_todo
 - Production readiness validation criteria
 
 **Example tasks you might get:**
+
 - **Phase 1 (Tests)**: "Create TypeScript integration tests for all modules" (High priority, 1 week)
 - **Phase 2 (Implementation)**: "Implement TypeScript migration with error handling" (High priority, 2 weeks)
 - **Validation**: "Verify production-ready TypeScript setup meets ADR goals" (Critical, 2 days)
@@ -257,11 +294,13 @@ generate_adr_todo
 When starting from scratch, let AI plan your implementation workflow:
 
 **Tool Call:**
+
 ```
 tool_chain_orchestrator
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "generate_plan",
@@ -272,6 +311,7 @@ tool_chain_orchestrator
 ```
 
 **What this does:**
+
 - AI analyzes your project needs and generates optimal tool execution sequence
 - Prevents confusion with structured workflow planning
 - Provides clear dependencies and execution order
@@ -282,11 +322,13 @@ tool_chain_orchestrator
 Use the sophisticated TODO management system:
 
 **Tool Call:**
+
 ```
 manage_todo
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "add_tasks",
@@ -304,6 +346,7 @@ manage_todo
 ```
 
 **Advanced TODO Features:**
+
 - Complete task lifecycle management (pending → in_progress → completed)
 - Dynamic health scoring integration
 - Progress analytics with velocity metrics
@@ -314,11 +357,13 @@ manage_todo
 Set up validation to ensure implementations meet ADR goals:
 
 **Tool Call:**
+
 ```
 compare_adr_progress
 ```
 
 **Parameters:**
+
 ```json
 {
   "todoPath": "todo.md",
@@ -330,6 +375,7 @@ compare_adr_progress
 ```
 
 **What this does:**
+
 - Validates that implementations are production-ready and meet ADR goals
 - Distinguishes mock implementations from production code
 - Checks functional correctness in realistic environments
@@ -337,6 +383,7 @@ compare_adr_progress
 - Validates cross-ADR dependencies and consistency
 
 **Expected Output:**
+
 - Comprehensive validation report
 - Mock vs production code analysis
 - ADR goal compliance assessment
@@ -348,11 +395,13 @@ compare_adr_progress
 Before deploying your new architecture, ensure everything is ready:
 
 **Tool Call:**
+
 ```
 deployment_readiness
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "full_audit",
@@ -367,6 +416,7 @@ deployment_readiness
 ```
 
 **What this does:**
+
 - Validates all tests are passing (zero tolerance)
 - Ensures minimum test coverage requirements
 - Checks deployment history (if available)
@@ -374,6 +424,7 @@ deployment_readiness
 - Creates blocking tasks for any issues found
 
 **Expected Output:**
+
 - Deployment readiness score (0-100)
 - Test validation results with detailed failures
 - Code quality analysis (mock vs production)
@@ -385,11 +436,13 @@ deployment_readiness
 Deploy your changes with confidence using deployment-aware git push:
 
 **Tool Call:**
+
 ```
 smart_git_push
 ```
 
 **Parameters:**
+
 ```json
 {
   "message": "Initial ADR implementation with TypeScript setup",
@@ -402,6 +455,7 @@ smart_git_push
 ```
 
 **What this does:**
+
 - Runs comprehensive deployment readiness checks before push
 - Blocks push if any critical issues are found
 - Validates test results and coverage
@@ -413,6 +467,7 @@ smart_git_push
 After completing the workflow, you should have:
 
 ### Generated Files
+
 ```
 your-project/
 ├── ./
@@ -426,6 +481,7 @@ your-project/
 ```
 
 ### ADR Example (Nygard Format)
+
 ```markdown
 # 1. Use TypeScript for Type Safety
 
@@ -446,12 +502,14 @@ We will adopt TypeScript for all new development and gradually migrate existing 
 ## Consequences
 
 ### Positive
+
 - Improved code quality and maintainability
 - Better IDE support with autocomplete and refactoring
 - Reduced runtime errors through compile-time checking
 - Enhanced developer experience
 
 ### Negative
+
 - Increased build complexity
 - Learning curve for team members unfamiliar with TypeScript
 - Additional tooling and configuration required
@@ -476,6 +534,7 @@ Parameters: {
 ```
 
 **Benefits for new projects:**
+
 - Establishes clear testing boundaries before implementation
 - Links all ADRs to create comprehensive system test coverage
 - Defines success criteria for each architectural decision
@@ -496,6 +555,7 @@ Parameters: {
 ```
 
 **Benefits for new projects:**
+
 - Clear implementation path that follows test specifications
 - Architectural rule compliance built into every task
 - Cross-ADR dependency validation
@@ -518,6 +578,7 @@ Parameters: {
 ```
 
 **Common issues this prevents in new projects:**
+
 - Mock implementations being mistaken for production code
 - Incomplete implementations that don't meet ADR goals
 - Missing error handling and input validation
@@ -529,6 +590,7 @@ Parameters: {
 The validation system will check for:
 
 **Mock Implementation Patterns (to avoid):**
+
 - Console.log returns instead of real functionality
 - Hardcoded values instead of configurable settings
 - TODO comments in production paths
@@ -536,6 +598,7 @@ The validation system will check for:
 - Stub functions without real implementation
 
 **Production-Ready Patterns (to achieve):**
+
 - Proper error handling and recovery
 - Input validation and sanitization
 - Real database or API integrations
@@ -550,11 +613,13 @@ The validation system will check for:
 If you're stuck or LLMs seem confused, use the human override system:
 
 **Tool Call:**
+
 ```
 troubleshoot_guided_workflow
 ```
 
 **Parameters:**
+
 ```json
 {
   "taskDescription": "Create ADRs for new TypeScript project and set up development workflow",
@@ -564,6 +629,7 @@ troubleshoot_guided_workflow
 ```
 
 **What this does:**
+
 - Forces AI-powered planning through OpenRouter.ai
 - Cuts through LLM confusion with structured execution plans
 - Provides clear command schemas for LLM understanding
@@ -574,11 +640,13 @@ troubleshoot_guided_workflow
 For comprehensive problem analysis:
 
 **Tool Call:**
+
 ```
 troubleshoot_guided_workflow
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "full_workflow",
@@ -593,11 +661,13 @@ troubleshoot_guided_workflow
 Track your progress with intelligent scoring:
 
 **Tool Call:**
+
 ```
 smart_score
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "diagnose_scores",
@@ -611,8 +681,10 @@ smart_score
 ### Common Issues
 
 #### 1. "No project found" Error
+
 **Problem:** Server can't locate your project
-**Solution:** 
+**Solution:**
+
 ```bash
 # Verify PROJECT_PATH is set correctly
 echo $PROJECT_PATH
@@ -624,8 +696,10 @@ echo $PROJECT_PATH
 ```
 
 #### 2. Empty Analysis Results
+
 **Problem:** No technologies or patterns detected
 **Solution:**
+
 ```bash
 # Check if your project has recognizable files
 ls package.json tsconfig.json *.config.*
@@ -637,8 +711,10 @@ ls package.json tsconfig.json *.config.*
 ```
 
 #### 3. Permission Errors
+
 **Problem:** Can't create ADR directory
 **Solution:**
+
 ```bash
 # Create directory manually
 mkdir -p ./adrs
@@ -646,8 +722,10 @@ chmod 755 ./adrs
 ```
 
 #### 4. Cache Issues
+
 **Problem:** Outdated analysis results
 **Solution:**
+
 ```bash
 # Clear cache
 rm -rf .mcp-adr-cache/
@@ -656,8 +734,10 @@ export CACHE_ENABLED="false"
 ```
 
 #### 5. AI Planning Issues
+
 **Problem:** Tool orchestration not working as expected
 **Solution:**
+
 ```bash
 # Use human override to force planning
 {
@@ -708,7 +788,8 @@ export CACHE_ENABLED="false"
 
 ---
 
-**Need Help?** 
-- Check the [troubleshooting section](#-troubleshooting) above
+**Need Help?**
+
+- Check the [troubleshooting section](#troubleshooting) above
 - Review the [main documentation](../../README.md)
 - Open an issue on [GitHub](https://github.com/tosin2013/mcp-adr-analysis-server/issues)

@@ -19,6 +19,7 @@ The research-driven architecture is a **major paradigm shift** from traditional 
 **Changes Needed**:
 
 1. **Add Research-Driven Section** (after "Features")
+
    ```markdown
    ## Research-Driven Architecture
 
@@ -31,10 +32,11 @@ The research-driven architecture is a **major paradigm shift** from traditional 
 
    **Why Not RAG?** Your infrastructure changes constantly. Live queries ensure accuracy.
 
-   [Learn more →](./RESEARCH-DRIVEN-ARCHITECTURE.md)
+   [Learn more →](./notes/RESEARCH-DRIVEN-ARCHITECTURE.md)
    ```
 
 2. **Update Tool List** (add `perform_research`)
+
    ```markdown
    ### New: Research Tools
 
@@ -43,10 +45,12 @@ The research-driven architecture is a **major paradigm shift** from traditional 
    ```
 
 3. **Add Red Hat Section**
+
    ```markdown
    ## Red Hat Support
 
    First-class support for Red Hat ecosystem:
+
    - ✅ OpenShift (`oc` CLI)
    - ✅ Podman (containers & pods)
    - ✅ Ansible (inventories, playbooks)
@@ -55,7 +59,8 @@ The research-driven architecture is a **major paradigm shift** from traditional 
    ```
 
 4. **Update Quick Start** (add research example)
-   ```markdown
+
+   ````markdown
    ## Quick Start
 
    ### Perform Research
@@ -70,8 +75,12 @@ The research-driven architecture is a **major paradigm shift** from traditional 
      }
    }
    ```
+   ````
 
    The server cascades through project files → knowledge graph → environment → web search.
+
+   ```
+
    ```
 
 **Priority**: 🔴 **CRITICAL** - Users need to understand the new paradigm
@@ -85,20 +94,24 @@ The research-driven architecture is a **major paradigm shift** from traditional 
 **File**: `/./ARCHITECTURE.md` (NEW or update existing)
 
 **Content Structure**:
+
 ```markdown
 # Architecture Overview
 
 ## Research-Driven Design
 
 ### Cascading Source Hierarchy
+
 [Diagram showing the cascade]
 
 ### Component Architecture
+
 - ResearchOrchestrator
 - EnvironmentCapabilityRegistry
 - Knowledge Graph Integration
 
 ### Why Not RAG?
+
 - Real-time data vs stale documents
 - Lower maintenance overhead
 - Perfect for infrastructure decisions
@@ -121,7 +134,8 @@ The research-driven architecture is a **major paradigm shift** from traditional 
 3. Add environment capability examples
 
 **Example Entry**:
-```markdown
+
+````markdown
 ## perform_research
 
 Answer research questions using cascading sources.
@@ -135,6 +149,7 @@ Answer research questions using cascading sources.
   "confidenceThreshold": number // Optional: 0-1, default 0.6
 }
 ```
+````
 
 ### Example
 
@@ -151,11 +166,13 @@ Answer research questions using cascading sources.
 ### Response
 
 Returns:
+
 - Sources consulted (project files, knowledge graph, environment)
 - Confidence score
 - Synthesized answer
 - Web search recommendation (if needed)
-```
+
+````
 
 **Priority**: 🟡 **HIGH**
 
@@ -206,7 +223,7 @@ Real-world usage examples...
 ## Troubleshooting
 
 Common issues and solutions...
-```
+````
 
 **Priority**: 🟢 **MEDIUM** - Important for Red Hat users
 
@@ -219,6 +236,7 @@ Common issues and solutions...
 **File**: `/./ENVIRONMENT-SETUP.md` (NEW)
 
 **Content**:
+
 ```markdown
 # Environment Setup Guide
 
@@ -229,16 +247,19 @@ The MCP server auto-detects environment capabilities.
 ## Supported Environments
 
 ### Kubernetes
+
 - kubectl installation
 - Context configuration
 - Permissions needed
 
 ### Docker/Podman
+
 - Installation
 - Socket permissions
 - Rootless configuration
 
 ### Operating System
+
 - Supported platforms
 - Required permissions
 
@@ -264,6 +285,7 @@ Common detection issues...
 **File**: `/./tutorials/RESEARCH-WORKFLOW.md` (NEW)
 
 **Content**:
+
 ```markdown
 # Research Workflow Tutorial
 
@@ -299,6 +321,7 @@ How to structure complex research questions...
 **File**: `/./MIGRATION-FROM-RAG.md` (NEW)
 
 **Content**:
+
 ```markdown
 # Migrating from RAG to Research-Driven
 
@@ -309,8 +332,8 @@ Benefits of research-driven over RAG...
 ## Conceptual Differences
 
 | RAG | Research-Driven |
-|-----|-----------------|
-| ... | ... |
+| --- | --------------- |
+| ... | ...             |
 
 ## Migration Steps
 
@@ -338,6 +361,7 @@ After (Research): ...
 **Files**: Various `.png` or `.svg` in `/./diagrams/`
 
 **Needed Diagrams**:
+
 1. Cascading source hierarchy (flow diagram)
 2. Component architecture (system diagram)
 3. Environment capability detection (sequence diagram)
@@ -356,6 +380,7 @@ After (Research): ...
 **File**: `demo.gif` or link to video
 
 **Content**:
+
 - Show research query execution
 - Demonstrate environment detection
 - Show confidence scoring
@@ -374,6 +399,7 @@ After (Research): ...
 **Platform**: GitHub Discussions, Medium, Dev.to
 
 **Content**:
+
 ```markdown
 # Introducing Research-Driven Architecture for MCP Servers
 
@@ -397,6 +423,7 @@ Try it yourself...
 **Platform**: Blog or documentation site
 
 **Content**:
+
 - Implementation details
 - Performance benchmarks
 - Comparison with RAG
@@ -411,6 +438,7 @@ Try it yourself...
 ## Summary: Documentation Deliverables
 
 ### Critical (Phase 1)
+
 - [ ] Update README.md with research-driven section
 - [ ] Add Red Hat support section
 - [ ] Update tool list
@@ -418,16 +446,19 @@ Try it yourself...
 - [ ] Update API documentation
 
 ### High Priority (Phase 2)
+
 - [ ] Create RED-HAT-INTEGRATION.md
 - [ ] Create ENVIRONMENT-SETUP.md
 - [ ] Add troubleshooting guides
 
 ### Medium Priority (Phase 3)
+
 - [ ] Create tutorial content
 - [ ] Add architecture diagrams
 - [ ] Create example projects
 
 ### Nice to Have (Phase 4+)
+
 - [ ] Migration guide from RAG
 - [ ] Demo videos/GIFs
 - [ ] Blog posts
@@ -450,18 +481,21 @@ Try it yourself...
 ## Success Metrics
 
 ### Documentation Quality
+
 - [ ] All new tools documented
 - [ ] Examples for each capability
 - [ ] Troubleshooting sections complete
 - [ ] Architecture clearly explained
 
 ### User Understanding
+
 - [ ] Users understand RAG vs Research-Driven
 - [ ] Red Hat users can set up easily
 - [ ] Clear migration path provided
 - [ ] Confidence scoring explained
 
 ### Community Engagement
+
 - [ ] GitHub stars increase
 - [ ] Issues/questions about features decrease
 - [ ] Positive feedback on new direction
@@ -472,12 +506,14 @@ Try it yourself...
 ## Maintenance Plan
 
 ### Regular Updates (Monthly)
+
 - [ ] Update capability list as new tools are added
 - [ ] Add community-contributed examples
 - [ ] Refresh troubleshooting with new issues
 - [ ] Update performance benchmarks
 
 ### Version Updates (Per Release)
+
 - [ ] Update API schemas
 - [ ] Add new tool documentation
 - [ ] Update compatibility matrix

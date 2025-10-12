@@ -36,4 +36,4 @@ In this tutorial, you learned how to:
 ## Next Steps
 
 - Explore [How-To Guides](../how-to/)
-- Read the [API Reference](./reference/)
+- Read the [API Reference](../reference/)
