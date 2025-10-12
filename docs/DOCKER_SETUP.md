@@ -8,6 +8,7 @@ This guide explains how to build and run the Docusaurus documentation site using
 - Docker Compose installed (version 2.0+)
 
 Check versions:
+
 ```bash
 docker --version
 docker-compose --version
@@ -22,7 +23,7 @@ cd docs
 docker-compose --profile dev up
 ```
 
-Visit: http://localhost:3000/mcp-adr-analysis-server/
+Visit: https://localhost:3000/mcp-adr-analysis-server/
 
 Changes to markdown files will auto-reload! 🔥
 
@@ -33,7 +34,7 @@ cd docs
 docker-compose --profile prod up --build
 ```
 
-Visit: http://localhost:8080/mcp-adr-analysis-server/
+Visit: https://localhost:8080/mcp-adr-analysis-server/
 
 ### Build Only (Test Build)
 
@@ -134,6 +135,7 @@ docker-compose --profile dev up
 ```
 
 **Features:**
+
 - Hot reload on file changes
 - Fast feedback loop
 - No local Node.js required
@@ -147,6 +149,7 @@ docker-compose --profile prod up --build
 ```
 
 **Features:**
+
 - Nginx serving (production-like)
 - Gzip compression
 - Security headers
@@ -161,6 +164,7 @@ docker-compose --profile build up --build
 ```
 
 **Features:**
+
 - Build verification
 - Output artifacts
 - No server overhead
@@ -170,6 +174,7 @@ docker-compose --profile build up --build
 ### Port Already in Use
 
 **Development (3000):**
+
 ```bash
 # Change port in docker-compose.yml
 ports:
@@ -177,6 +182,7 @@ ports:
 ```
 
 **Production (8080):**
+
 ```bash
 # Change port in docker-compose.yml
 ports:
@@ -229,7 +235,7 @@ docker-compose --profile dev up
 docker-compose --profile prod up --build
 
 # 3. Verify everything works
-# Visit http://localhost:8080/mcp-adr-analysis-server/
+# Visit https://localhost:8080/mcp-adr-analysis-server/
 
 # 4. Push to GitHub (triggers GitHub Actions)
 git add .
@@ -258,6 +264,7 @@ fi
 ### Nginx Configuration
 
 The `nginx.conf` includes:
+
 - ✅ Gzip compression
 - ✅ Static asset caching (1 year)
 - ✅ Security headers
@@ -306,7 +313,7 @@ Edit `docker-compose.yml`:
 services:
   docusaurus-dev:
     ports:
-      - "3001:3000"  # Change 3001 to your port
+      - '3001:3000' # Change 3001 to your port
 ```
 
 ### Add Environment Variables
@@ -322,6 +329,7 @@ services:
 ### Custom Nginx Config
 
 Edit `nginx.conf` for:
+
 - Custom headers
 - Proxy settings
 - SSL/TLS configuration
@@ -341,7 +349,7 @@ After Docker setup:
 - [ ] Development server runs: `docker-compose --profile dev up`
 - [ ] Hot reload works (edit a .md file)
 - [ ] Production build succeeds: `docker-compose --profile prod up --build`
-- [ ] Production site accessible at http://localhost:8080
+- [ ] Production site accessible at https://localhost:8080
 - [ ] All pages load correctly
 - [ ] Navigation works
 - [ ] Search functionality works
@@ -349,9 +357,10 @@ After Docker setup:
 
 ## 🎉 Success!
 
-Your Docusaurus documentation is now running in Docker! 
+Your Docusaurus documentation is now running in Docker!
 
 **Quick Commands:**
+
 ```bash
 # Development
 docker-compose --profile dev up

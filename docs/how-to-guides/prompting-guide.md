@@ -9,16 +9,36 @@
 ## 📖 Table of Contents
 
 1. [Quick Start Prompting](#quick-start-prompting)
-2. [Basic Prompting Patterns](#basic-prompting-patterns)
-3. [Advanced Prompting Techniques](#advanced-prompting-techniques)
-4. [Tool-Specific Prompting](#tool-specific-prompting)
-5. [Multi-Tool Workflows](#multi-tool-workflows)
-6. [Troubleshooting Prompts](#troubleshooting-prompts)
-7. [Best Practices & Templates](#best-practices--templates)
+2. [Context File Reference (`.mcp-server-context.md`)](#context-file-referencing)
+3. [Basic Prompting Patterns](#basic-prompting-patterns)
+4. [Advanced Prompting Techniques](#advanced-prompting-techniques)
+5. [Tool-Specific Prompting](#tool-specific-prompting)
+6. [Multi-Tool Workflows](#multi-tool-workflows)
+7. [Troubleshooting Prompts](#troubleshooting-prompts)
+8. [Best Practices & Templates](#best-practices--templates)
 
 ---
 
 ## 🚀 Quick Start Prompting
+
+### 📌 Use `.mcp-server-context.md` First!
+
+Before crafting prompts, reference the context file for instant server awareness:
+
+```markdown
+@.mcp-server-context.md
+```
+
+This gives you:
+
+- ✅ All available tools by category (37+ tools)
+- ✅ Current project state and recent activity
+- ✅ Active workflows and intents
+- ✅ Tool usage examples and capabilities
+
+**See [Context File Referencing](#context-file-referencing) section below for details.**
+
+---
 
 ### Essential Prompt Structure
 
@@ -93,6 +113,44 @@ Enable the server's advanced AI capabilities:
 3. Generate confidence-scored recommendations
 4. Provide explicit acknowledgment of limitations"
 ```
+
+### Context File Referencing
+
+**Use `.mcp-server-context.md` for instant server awareness:**
+
+The `.mcp-server-context.md` file is auto-generated and provides comprehensive context about:
+
+- All 37+ available tools by category
+- Current server state and memory
+- Active intents and workflow context
+- Recent architectural decisions
+- Project analysis history
+
+**How to use:**
+
+```markdown
+# Reference the context file in your prompts:
+
+@.mcp-server-context.md I'm new to this project. What architectural decisions have been made?
+
+@.mcp-server-context.md What tools are available for security analysis?
+
+@.mcp-server-context.md Show me the active intents and current workflow state.
+```
+
+**Benefits:**
+
+- ✅ Instant awareness of all server capabilities
+- ✅ Access to recent activity and decisions
+- ✅ Understanding of project-specific context
+- ✅ Tool discovery and usage guidance
+
+**Related Documentation:**
+
+- See [Server Context File Guide](./server-context-file.md) for detailed usage
+- See [Context File Tool Coverage](../explanation/context-file-tool-coverage.md) for tool integration
+
+---
 
 ### Memory-Centric Prompting
 
@@ -371,10 +429,10 @@ Expected outcome: Complete ADR management system with validation."
 
 ## 📚 Additional Resources
 
-- **[API Reference](./reference/api-reference.md)** - Complete tool documentation
+- **[API Reference](../reference/api-reference.md)** - Complete tool documentation
 - **[Architecture Guide](../explanation/server-architecture.md)** - System design principles
 - **[Troubleshooting](./troubleshooting.md)** - Common issues and solutions
-- **[Examples](./tutorials/)** - Step-by-step tutorials
+- **[Examples](../tutorials/)** - Step-by-step tutorials
 
 ---
 

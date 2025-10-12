@@ -2,7 +2,8 @@
 
 **Learning Goal**: Master analyzing existing codebases, discovering implicit architectural decisions, and creating comprehensive documentation for established projects.
 
-**Prerequisites**: 
+**Prerequisites**:
+
 - Completed [Tutorial 1: Your First MCP Analysis](01-first-steps.md)
 - Understanding of basic MCP concepts
 - Access to an existing codebase
@@ -26,6 +27,7 @@
 ### Understanding What You're Working With
 
 When analyzing an existing project, you need to understand:
+
 - **Technology stack and dependencies**
 - **Architectural patterns and design choices**
 - **Existing documentation and standards**
@@ -59,15 +61,18 @@ Before running deep analysis, use **research-driven tools** to query your live e
 
 ```markdown
 ## Research Results
+
 **Confidence**: 92.0% ✓ (High confidence, no web search needed)
 
 ### Technology Stack
+
 - **Backend**: Node.js 20.x with Express.js 4.18.x
 - **Database**: PostgreSQL 15.x (found in docker-compose.yml)
 - **Frontend**: React 18.x with TypeScript
 - **Container Orchestration**: Docker Compose (local), Kubernetes (production)
 
 ### Infrastructure Capabilities Detected
+
 ✓ docker - Container runtime available
 ✓ docker-compose - Multi-container orchestration
 ✓ kubectl - Kubernetes CLI configured
@@ -76,6 +81,7 @@ Before running deep analysis, use **research-driven tools** to query your live e
 ✓ ansible - Configuration management available
 
 ### Architectural Insights
+
 - Microservices architecture with 3 services
 - Event-driven communication via message queue
 - RESTful API design with versioning
@@ -101,6 +107,7 @@ Start with a comprehensive ecosystem analysis:
 ```
 
 **What to Look For:**
+
 - **Detected Technologies** - Languages, frameworks, databases
 - **Architecture Patterns** - MVC, microservices, monolith, etc.
 - **Code Organization** - Directory structure and module organization
@@ -110,6 +117,7 @@ Start with a comprehensive ecosystem analysis:
 ### Exercise: Project Inventory
 
 **Take 10 minutes to review the analysis results and answer:**
+
 1. What is the primary technology stack?
 2. What architectural pattern is being used?
 3. Are there any outdated dependencies or technologies?
@@ -135,6 +143,7 @@ Many projects have some architectural documentation, even if not formal ADRs.
 ```
 
 **Common ADR Locations to Check:**
+
 - `././adrs/`
 - `./decisions/`
 - `./architecture/`
@@ -149,6 +158,7 @@ Don't worry! This is common. The tool will help you discover implicit decisions 
 ### If ADRs Exist
 
 Great! You can enhance and expand the existing documentation. Note:
+
 - **Format consistency** - Are they using a standard template?
 - **Completeness** - Do they cover all major decisions?
 - **Currency** - Are they up to date with current implementation?
@@ -173,6 +183,7 @@ Every codebase contains implicit architectural decisions that aren't documented.
 ```
 
 **Common Implicit Decisions Include:**
+
 - **Database choice and schema design**
 - **Authentication and authorization approach**
 - **API design patterns (REST, GraphQL, etc.)**
@@ -184,6 +195,7 @@ Every codebase contains implicit architectural decisions that aren't documented.
 ### Prioritize by Impact
 
 The tool will suggest decisions, but you should prioritize based on:
+
 1. **Business Impact** - Decisions affecting user experience or business goals
 2. **Technical Risk** - Decisions with significant technical debt or complexity
 3. **Team Confusion** - Areas where team members frequently ask questions
@@ -193,11 +205,11 @@ The tool will suggest decisions, but you should prioritize based on:
 
 **Create a simple priority matrix:**
 
-| Decision | Business Impact | Technical Risk | Priority |
-|----------|----------------|----------------|----------|
-| Database Architecture | High | Medium | 1 |
-| API Authentication | High | High | 1 |
-| Frontend State Management | Medium | Low | 3 |
+| Decision                  | Business Impact | Technical Risk | Priority |
+| ------------------------- | --------------- | -------------- | -------- |
+| Database Architecture     | High            | Medium         | 1        |
+| API Authentication        | High            | High           | 1        |
+| Frontend State Management | Medium          | Low            | 3        |
 
 ---
 
@@ -261,6 +273,7 @@ If your analysis revealed PostgreSQL usage, create an ADR:
 ### Exercise: Create Your First ADR
 
 **Choose one decision from your priority list and create an ADR:**
+
 1. **Identify the decision** from your analysis
 2. **Research the context** - Why was this choice needed?
 3. **Document the rationale** - What factors influenced the decision?
@@ -303,14 +316,18 @@ Use the new **research-driven validation** to check if documented decisions matc
 ## ADR Validation Report - Research Confidence: 85.0% ✓
 
 ### ADR-001: PostgreSQL Database Selection
+
 **Status**: ✓ VALIDATED
+
 - PostgreSQL 15.x running in Docker container
 - Connection string found in .env.example
 - Migration scripts present in db/migrations/
 - Research Confidence: 95.0% ✓
 
 ### ADR-003: Kubernetes Deployment
+
 **Status**: ⚠️ DRIFT DETECTED
+
 - ADR specifies Kubernetes, but OpenShift (oc) is primary tool
 - Kubernetes manifests exist but unused
 - OpenShift templates in openshift/ directory are actively used
@@ -318,17 +335,21 @@ Use the new **research-driven validation** to check if documented decisions matc
 - Research Confidence: 88.0% ✓
 
 ### ADR-007: Redis Caching
+
 **Status**: ✗ NOT IMPLEMENTED
+
 - No Redis container in docker-compose.yml
 - No Redis client in package.json
 - Caching code commented out in src/cache/
 - Research Confidence: 92.0% ✓
 
 ### Environment Infrastructure Detected
+
 ✓ docker, kubectl, oc, ansible
 ```
 
 **Why This Matters:**
+
 - **Prevents documentation rot** - Keep ADRs aligned with reality
 - **Discovers undocumented changes** - Find OpenShift adoption without ADR
 - **Identifies incomplete implementations** - Redis decision never executed
@@ -349,6 +370,7 @@ For comparison tracking over time:
 ```
 
 **This helps identify:**
+
 - **Drift** - Implementation that doesn't match documented decisions
 - **Evolution** - Decisions that have evolved but documentation hasn't
 - **Gaps** - Implemented features without corresponding ADRs
@@ -356,6 +378,7 @@ For comparison tracking over time:
 ### Update or Create New ADRs
 
 If you find drift:
+
 1. **Determine if the implementation is correct** - Should the code change?
 2. **Or if the decision evolved** - Should the ADR be updated?
 3. **Create new ADRs** for evolved decisions (e.g., ADR-008: Migration from Kubernetes to OpenShift)
@@ -379,6 +402,7 @@ If you find drift:
 ```
 
 **This creates tasks for:**
+
 - **Documentation gaps** - Missing ADRs for implemented features
 - **Implementation gaps** - Documented decisions not yet implemented
 - **Consistency issues** - Code that doesn't match documented decisions
@@ -387,6 +411,7 @@ If you find drift:
 ### Prioritize Tasks
 
 Review the generated TODO items and prioritize based on:
+
 1. **Security implications**
 2. **User impact**
 3. **Technical debt level**
@@ -421,6 +446,7 @@ Existing projects often have security considerations that should be documented:
 ### Document Security Decisions
 
 Create ADRs for security-related decisions:
+
 - **Authentication mechanisms**
 - **Data encryption at rest and in transit**
 - **Input validation strategies**
@@ -454,6 +480,7 @@ Create ADRs for security-related decisions:
 ### Exercise: Team Review Meeting
 
 **Organize a 1-hour team meeting to:**
+
 1. **Present the architectural analysis** (15 minutes)
 2. **Review proposed ADRs** (20 minutes)
 3. **Identify any missed decisions** (15 minutes)
@@ -492,15 +519,18 @@ Use research-driven tools to analyze actual deployment infrastructure:
 
 ```markdown
 ## 🔍 Environment Research Analysis
+
 **Research Confidence**: 91.0% ✓
 
 ### Current Environment State
+
 - **Container Runtime**: Docker 24.x + Podman 4.x (hybrid setup)
 - **Orchestration**: OpenShift 4.14 (oc CLI detected and configured)
 - **Automation**: Ansible 2.15 with 12 playbooks
 - **CI/CD**: GitHub Actions + Tekton pipelines on OpenShift
 
 ### Available Infrastructure
+
 ✓ docker - Container builds and local testing
 ✓ podman - Rootless containers for development
 ✓ oc - OpenShift CLI (primary deployment target)
@@ -509,11 +539,13 @@ Use research-driven tools to analyze actual deployment infrastructure:
 ✗ helm - Not installed (consider for package management)
 
 ### Deployment Patterns from ADRs
+
 - ADR-003: Kubernetes deployment (OUTDATED - migrated to OpenShift)
 - ADR-009: Continuous deployment via Tekton
 - ADR-011: Infrastructure as Code with Ansible
 
 ### Recommendations
+
 1. Update ADR-003 or create ADR-015 for OpenShift migration
 2. Document Tekton pipeline decisions in new ADR
 3. Consider Helm charts for easier OpenShift deployments
@@ -543,6 +575,7 @@ Use research-driven tools to analyze actual deployment infrastructure:
 - **Rollback procedures** for safe deployments
 
 **Document decisions about:**
+
 - **Infrastructure choices** (cloud provider, containerization, Red Hat vs upstream)
 - **CI/CD pipeline design** (Tekton, GitHub Actions, Jenkins)
 - **Environment configuration management** (Ansible, ConfigMaps, Secrets)
@@ -578,6 +611,7 @@ Set up processes to keep your architectural documentation current:
 ### Exercise: Create Maintenance Calendar
 
 **Set up recurring tasks:**
+
 - **Weekly**: Review TODO progress and update ADR implementation status
 - **Monthly**: Team architectural review meeting
 - **Quarterly**: Comprehensive architecture analysis and gap assessment
@@ -593,40 +627,47 @@ By completing this tutorial, you should have:
 ✅ **Implementation Roadmap** - TODO list with prioritized tasks  
 ✅ **Security Assessment** - Identified and documented security-related decisions  
 ✅ **Team Process** - Established workflow for ongoing ADR maintenance  
-✅ **Deployment Documentation** - Understood and documented deployment decisions  
+✅ **Deployment Documentation** - Understood and documented deployment decisions
 
 ---
 
 ## 🚀 What's Next?
 
 ### **Immediate Actions (This Week)**
+
 1. **Complete your top 3 ADRs** based on the tutorial exercises
 2. **Share findings with your team** and get validation
 3. **Start implementing high-priority TODO items**
 
 ### **Short-term Goals (This Month)**
+
 1. **Document remaining major decisions** (aim for 80% coverage)
 2. **Establish team review process** for new architectural decisions
 3. **Integrate ADR updates** into your development workflow
 
 ### **Continue Learning**
+
 - **[Tutorial 3: Advanced Analysis Techniques](03-advanced-analysis.md)** - Security scanning, performance analysis, and deployment validation
-- **[How-To: Work with Existing ADRs](./how-to-guides/work-with-existing-adrs.md)** - Advanced techniques for enhancing existing documentation
+- **[How-To: Work with Existing ADRs](../how-to-guides/work-with-existing-adrs.md)** - Advanced techniques for enhancing existing documentation
 
 ---
 
 ## 🆘 Common Challenges and Solutions
 
 ### **"Too Many Decisions to Document"**
+
 **Solution**: Start with the top 5 most impactful decisions. You don't need to document everything at once.
 
 ### **"Team Doesn't Remember Why Decisions Were Made"**
+
 **Solution**: Document current state and rationale based on code analysis. It's okay to say "inferred from implementation."
 
 ### **"Implementation Doesn't Match Any Clear Pattern"**
+
 **Solution**: This indicates technical debt. Document the current state and create ADRs for desired future state.
 
 ### **"Existing Documentation is Outdated"**
+
 **Solution**: Use the comparison tools to identify drift, then update documentation to match current reality.
 
 ---
@@ -647,5 +688,4 @@ By completing this tutorial, you should have:
 
 ---
 
-*This tutorial is part of the MCP ADR Analysis Server learning path. Each tutorial builds on the previous one while being useful on its own.*
-
+_This tutorial is part of the MCP ADR Analysis Server learning path. Each tutorial builds on the previous one while being useful on its own._

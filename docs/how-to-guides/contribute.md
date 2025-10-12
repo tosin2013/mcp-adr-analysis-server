@@ -16,17 +16,20 @@ This guide explains how to contribute to the MCP ADR Analysis Server project. We
 ### Development Setup
 
 1. **Fork and Clone**
+
    ```bash
    git clone https://github.com/your-username/mcp-adr-analysis-server.git
    cd mcp-adr-analysis-server
    ```
 
 2. **Install Dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Build the Project**
+
    ```bash
    npm run build
    ```
@@ -41,6 +44,7 @@ This guide explains how to contribute to the MCP ADR Analysis Server project. We
 ### Bug Reports
 
 When reporting bugs, please include:
+
 - Clear description of the issue
 - Steps to reproduce
 - Expected vs actual behavior
@@ -49,6 +53,7 @@ When reporting bugs, please include:
 ### Feature Requests
 
 For new features, please:
+
 - Describe the use case
 - Explain the expected behavior
 - Consider backward compatibility
@@ -57,6 +62,7 @@ For new features, please:
 ### Code Contributions
 
 1. **Create a Branch**
+
    ```bash
    git checkout -b feature/your-feature-name
    ```
@@ -67,6 +73,7 @@ For new features, please:
    - Update documentation as needed
 
 3. **Test Your Changes**
+
    ```bash
    npm run test
    npm run lint
@@ -74,6 +81,7 @@ For new features, please:
    ```
 
 4. **Commit Changes**
+
    ```bash
    git add .
    git commit -m "feat: add your feature description"
@@ -87,18 +95,21 @@ For new features, please:
 ## Code Style
 
 ### TypeScript
+
 - Use strict TypeScript configuration
 - Prefer interfaces over types for object shapes
 - Use meaningful variable and function names
 - Add JSDoc comments for public APIs
 
 ### Testing
+
 - Write unit tests for new functionality
 - Use descriptive test names
 - Follow AAA pattern (Arrange, Act, Assert)
 - Aim for high test coverage
 
 ### Documentation
+
 - Update README.md for user-facing changes
 - Add JSDoc comments for new functions
 - Update API reference for new tools
@@ -107,13 +118,16 @@ For new features, please:
 ## Development Workflow
 
 ### Branch Naming
+
 - `feature/description` - New features
 - `bugfix/description` - Bug fixes
 - `docs/description` - Documentation updates
 - `refactor/description` - Code refactoring
 
 ### Commit Messages
+
 Follow conventional commits:
+
 - `feat:` - New features
 - `fix:` - Bug fixes
 - `docs:` - Documentation changes
@@ -142,6 +156,7 @@ Follow conventional commits:
 ## Testing
 
 ### Running Tests
+
 ```bash
 # Run all tests
 npm test
@@ -158,6 +173,7 @@ npm run test:integration
 ```
 
 ### Test Structure
+
 - `tests/unit/` - Unit tests
 - `tests/integration/` - Integration tests
 - `tests/fixtures/` - Test data and fixtures
@@ -165,6 +181,7 @@ npm run test:integration
 ## Documentation
 
 ### Documentation Structure
+
 - `docs/` - Main documentation
 - `docs/tutorials/` - Step-by-step guides
 - `docs/how-to-guides/` - Task-oriented guides
@@ -172,6 +189,7 @@ npm run test:integration
 - `docs/explanation/` - Conceptual explanations
 
 ### Writing Documentation
+
 - Use clear, concise language
 - Include code examples
 - Add screenshots when helpful
@@ -180,12 +198,14 @@ npm run test:integration
 ## Release Process
 
 ### Version Management
+
 - Follow semantic versioning (semver)
 - Update `package.json` version
 - Update `CHANGELOG.md`
 - Tag releases in Git
 
 ### Release Steps
+
 1. Update version in `package.json`
 2. Update `CHANGELOG.md`
 3. Create release PR
@@ -195,12 +215,14 @@ npm run test:integration
 ## Community Guidelines
 
 ### Code of Conduct
+
 - Be respectful and inclusive
 - Welcome newcomers
 - Focus on constructive feedback
 - Respect different perspectives
 
 ### Communication
+
 - Use GitHub Issues for discussions
 - Be clear and concise
 - Provide context for questions
@@ -209,12 +231,14 @@ npm run test:integration
 ## Getting Help
 
 ### Resources
-- [README.md](../.../../README.md) - Project overview
+
+- [README.md](../../../README.md) - Project overview
 - [API Reference](../../reference/api-reference.md) - Technical documentation
 - [Troubleshooting Guide](./troubleshooting.md) - Common issues
 - [Developer Guidance](../../DEVELOPER_GUIDANCE.md) - Development details
 
 ### Support
+
 - GitHub Issues for bug reports and feature requests
 - GitHub Discussions for questions and ideas
 - Pull Requests for code contributions
@@ -222,6 +246,7 @@ npm run test:integration
 ## Recognition
 
 Contributors are recognized in:
+
 - `CONTRIBUTORS.md` file
 - Release notes
 - Project documentation
@@ -231,7 +256,7 @@ Thank you for contributing to the MCP ADR Analysis Server project!
 
 ## Related Documentation
 
-- [README.md](../.../../README.md)
+- [README.md](../../../README.md)
 - [API Reference](../../reference/api-reference.md)
 - [Developer Guidance](../../DEVELOPER_GUIDANCE.md)
 - [Testing Guide](../../TESTING_GUIDE.md)

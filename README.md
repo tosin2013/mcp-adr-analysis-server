@@ -5,6 +5,7 @@
 [![NPM Version](https://img.shields.io/npm/v/mcp-adr-analysis-server)](https://www.npmjs.com/package/mcp-adr-analysis-server)
 [![Node.js](https://img.shields.io/badge/node-%3E%3D20.0.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue)](https://www.typescriptlang.org/)
+[![Good First Issues](https://img.shields.io/github/issues/tosin2013/mcp-adr-analysis-server/good%20first%20issue?label=good%20first%20issues&color=7057ff)](https://github.com/tosin2013/mcp-adr-analysis-server/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
 > **AI-powered architectural analysis for intelligent development workflows.** Returns actual analysis results, not prompts to submit elsewhere.
 
@@ -40,10 +41,13 @@ The Model Context Protocol enables seamless integration between AI assistants an
 ## 📦 Quick Installation
 
 ```bash
-# Global installation (recommended)
+# Option 1: Global installation (recommended for frequent use)
 npm install -g mcp-adr-analysis-server
 
-# RHEL 9/10 systems (special installer)
+# Option 2: Use npx (no installation required)
+npx mcp-adr-analysis-server
+
+# Option 3: RHEL 9/10 systems (special installer)
 curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/main/scripts/install-rhel.sh | bash
 ```
 
@@ -199,13 +203,36 @@ npm install && npm run build && npm test
 
 📖 **[Security Guide →](docs/explanation/security-philosophy.md)** | **[Performance →](docs/explanation/performance-design.md)**
 
+### 🔐 Security Vulnerability Reporting
+
+Found a security issue? Please read our [Security Policy](SECURITY.md) for responsible disclosure procedures. **Do not** create public issues for security vulnerabilities.
+
 ## 🤝 Contributing
 
-We welcome contributions! Fork → Create branch → Add tests → Submit PR
+We welcome contributions! Whether you're fixing bugs, adding features, or improving documentation, your help is appreciated.
+
+### 🌟 Quick Start for Contributors
+
+1. **Fork** the repository
+2. **Clone** your fork: `git clone https://github.com/YOUR_USERNAME/mcp-adr-analysis-server.git`
+3. **Create** a branch: `git checkout -b feature/your-feature-name`
+4. **Make** your changes with tests
+5. **Test**: `npm test` (maintain >80% coverage)
+6. **Submit** a Pull Request
+
+### 👶 First Time Contributing?
+
+Looking for a good first issue? Check out our [**good first issues**](https://github.com/tosin2013/mcp-adr-analysis-server/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) - these are beginner-friendly tasks perfect for getting started!
+
+**New to open source?** Our [Contributing Guide](CONTRIBUTING.md) walks you through the entire process step-by-step.
+
+### 📝 Reporting Issues
+
+Use our [**issue templates**](https://github.com/tosin2013/mcp-adr-analysis-server/issues/new/choose) when reporting bugs or requesting features. Templates help us understand and resolve issues faster.
 
 **Standards:** TypeScript strict • >80% coverage • ESLint • Security validation • MCP compliance
 
-📖 **[Contributing Guide →](CONTRIBUTING.md)**
+📖 **[Full Contributing Guide →](CONTRIBUTING.md)** | **[Code of Conduct →](docs/community/CODE_OF_CONDUCT.md)**
 
 ## 🔗 Resources
 

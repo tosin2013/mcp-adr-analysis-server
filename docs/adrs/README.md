@@ -20,8 +20,8 @@ This directory contains the Architectural Decision Records for the MCP ADR Analy
 
 The following ADRs exist in the `sample-project/././adrs/` directory and serve as examples:
 
-| ADR                                                                   | Title                           | Status     | Category  |
-| --------------------------------------------------------------------- | ------------------------------- | ---------- | --------- |
+| ADR                                                                | Title                           | Status     | Category  |
+| ------------------------------------------------------------------ | ------------------------------- | ---------- | --------- |
 | [001](../../sample-project/docs/adrs/001-database-architecture.md) | Database Architecture Selection | Accepted   | Database  |
 | [002](../../sample-project/docs/adrs/002-api-authentication.md)    | API Authentication Strategy     | Proposed   | Security  |
 | [003](../../sample-project/docs/adrs/003-legacy-data-migration.md) | Legacy Data Migration Strategy  | Deprecated | Migration |
@@ -60,7 +60,7 @@ The following ADRs exist in the `sample-project/././adrs/` directory and serve a
 
 ## ADR Template
 
-We use the [NYGARD template](http://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions) for our ADRs:
+We use the [NYGARD template](https://thinkrelevance.com/blog/2011/11/15/documenting-architecture-decisions) for our ADRs:
 
 ```markdown
 # ADR-XXX: [Title]

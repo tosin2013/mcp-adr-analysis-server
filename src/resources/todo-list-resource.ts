@@ -78,7 +78,12 @@ function parseTodoMarkdown(content: string): TodoTask[] {
     }
 
     // Parse description (plain text lines)
-    if (currentTask && !trimmed.startsWith('**') && !trimmed.startsWith('#') && trimmed.length > 0) {
+    if (
+      currentTask &&
+      !trimmed.startsWith('**') &&
+      !trimmed.startsWith('#') &&
+      trimmed.length > 0
+    ) {
       currentTask.description = (currentTask.description || '') + '\n' + trimmed;
     }
   }
@@ -92,7 +97,83 @@ function parseTodoMarkdown(content: string): TodoTask[] {
 }
 
 /**
- * Generate todo list resource
+ * Generate comprehensive todo list resource with task management and progress tracking.
+ *
+ * Parses the project's `todo.md` file and extracts structured task information including
+ * status, priority, assignees, and dependencies. Provides aggregated statistics for
+ * project planning and progress monitoring.
+ *
+ * **File Location:** `{projectRoot}/todo.md`
+ *
+ * **Supported Task Statuses:**
+ * - pending: Task not yet started
+ * - in_progress: Task currently being worked on
+ * - completed: Task finished
+ *
+ * **Supported Priorities:**
+ * - critical: Must be done immediately
+ * - high: Important, should be done soon
+ * - medium: Normal priority
+ * - low: Can be deferred
+ *
+ * @returns Promise resolving to resource generation result containing:
+ *   - data: Complete todo list with tasks array and summary statistics
+ *   - contentType: "application/json"
+ *   - lastModified: ISO timestamp of generation
+ *   - cacheKey: "todo-list:current"
+ *   - ttl: Cache duration (120 seconds / 2 minutes)
+ *   - etag: Entity tag for cache validation
+ *
+ * @throws {McpAdrError} When todo list generation fails due to:
+ *   - RESOURCE_GENERATION_ERROR: Parse errors in todo.md format
+ *   - Cache operation failures
+ *
+ * @example
+ * ```typescript
+ * const todoList = await generateTodoListResource();
+ *
+ * console.log(`Total tasks: ${todoList.data.summary.total}`);
+ * console.log(`Completed: ${todoList.data.summary.completed}`);
+ * console.log(`In progress: ${todoList.data.summary.inProgress}`);
+ * console.log(`Completion rate: ${(todoList.data.summary.completed / todoList.data.summary.total * 100).toFixed(1)}%`);
+ *
+ * // Filter critical tasks
+ * const criticalTasks = todoList.data.tasks.filter(t => t.priority === 'critical' && t.status !== 'completed');
+ * console.log(`Critical tasks remaining: ${criticalTasks.length}`);
+ *
+ * // Expected output structure:
+ * {
+ *   data: {
+ *     version: "1.0.0",
+ *     timestamp: "2025-10-12T17:00:00.000Z",
+ *     source: "/project/todo.md",
+ *     summary: {
+ *       total: 25,
+ *       pending: 10,
+ *       inProgress: 5,
+ *       completed: 10,
+ *       byPriority: { critical: 2, high: 8, medium: 10, low: 5 }
+ *     },
+ *     tasks: [
+ *       {
+ *         id: "task-001",
+ *         title: "Implement user authentication",
+ *         status: "in_progress",
+ *         priority: "high",
+ *         assignee: "developer@example.com",
+ *         dueDate: "2025-10-20",
+ *         dependencies: ["task-002"]
+ *       }
+ *     ]
+ *   },
+ *   contentType: "application/json",
+ *   cacheKey: "todo-list:current",
+ *   ttl: 120
+ * }
+ * ```
+ *
+ * @since v2.0.0
+ * @see {@link parseTodoMarkdown} for todo.md parsing logic
  */
 export async function generateTodoListResource(): Promise<ResourceGenerationResult> {
   try {
