@@ -8,16 +8,16 @@
 
 ## 🎯 Quick Compatibility Matrix
 
-| AI Assistant/IDE | MCP Support | Config File | Command | Status |
-|------------------|-------------|-------------|---------|--------|
-| **Claude Desktop** | ✅ Native | `claude_desktop_config.json` | `mcp-adr-analysis-server` | **Recommended** |
-| **Cline** | ✅ Extension | `cline_mcp_settings.json` | `npx mcp-adr-analysis-server` | **Full Support** |
-| **Cursor** | ✅ Native | `.cursor/mcp.json` | `npx mcp-adr-analysis-server` | **Full Support** |
-| **Gemini** | ✅ Native | `gemini_mcp_config.json` | `mcp-adr-analysis-server` | **Full Support** |
-| **Continue.dev** | ✅ Extension | `.continue/config.json` | `npx mcp-adr-analysis-server` | **Full Support** |
-| **Aider** | ✅ Native | `.aider_config.yaml` | `mcp-adr-analysis-server` | **Full Support** |
-| **Windsurf** | ✅ Native | `mcp_config.json` | `mcp-adr-analysis-server` | **Full Support** |
-| **VS Code** | ✅ Via Extensions | Various | `npx mcp-adr-analysis-server` | **Full Support** |
+| AI Assistant/IDE   | MCP Support       | Config File                  | Command                       | Status           |
+| ------------------ | ----------------- | ---------------------------- | ----------------------------- | ---------------- |
+| **Claude Desktop** | ✅ Native         | `claude_desktop_config.json` | `mcp-adr-analysis-server`     | **Recommended**  |
+| **Cline**          | ✅ Extension      | `cline_mcp_settings.json`    | `npx mcp-adr-analysis-server` | **Full Support** |
+| **Cursor**         | ✅ Native         | `.cursor/mcp.json`           | `npx mcp-adr-analysis-server` | **Full Support** |
+| **Gemini**         | ✅ Native         | `gemini_mcp_config.json`     | `mcp-adr-analysis-server`     | **Full Support** |
+| **Continue.dev**   | ✅ Extension      | `.continue/config.json`      | `npx mcp-adr-analysis-server` | **Full Support** |
+| **Aider**          | ✅ Native         | `.aider_config.yaml`         | `mcp-adr-analysis-server`     | **Full Support** |
+| **Windsurf**       | ✅ Native         | `mcp_config.json`            | `mcp-adr-analysis-server`     | **Full Support** |
+| **VS Code**        | ✅ Via Extensions | Various                      | `npx mcp-adr-analysis-server` | **Full Support** |
 
 ---
 
@@ -70,11 +70,13 @@ Select the configuration that matches your preferred AI assistant or IDE:
 **Best for**: General use, best AI integration, most stable
 
 ### Configuration Location
+
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
 ### Basic Configuration
+
 ```json
 {
   "mcpServers": {
@@ -93,6 +95,7 @@ Select the configuration that matches your preferred AI assistant or IDE:
 ```
 
 ### Advantages
+
 - ✅ Native MCP support
 - ✅ Best AI integration
 - ✅ Stable and reliable
@@ -105,9 +108,11 @@ Select the configuration that matches your preferred AI assistant or IDE:
 **Best for**: VS Code development, team collaboration
 
 ### Configuration Location
+
 **File**: `cline_mcp_settings.json` (in workspace or global settings)
 
 ### Basic Configuration
+
 ```json
 {
   "mcpServers": {
@@ -127,6 +132,7 @@ Select the configuration that matches your preferred AI assistant or IDE:
 ```
 
 ### Advantages
+
 - ✅ VS Code integration
 - ✅ Workspace-aware
 - ✅ Team-friendly
@@ -139,9 +145,11 @@ Select the configuration that matches your preferred AI assistant or IDE:
 **Best for**: AI-powered coding, modern development workflow
 
 ### Configuration Location
+
 **File**: `.cursor/mcp.json` (in project root)
 
 ### Basic Configuration
+
 ```json
 {
   "mcpServers": {
@@ -159,6 +167,7 @@ Select the configuration that matches your preferred AI assistant or IDE:
 ```
 
 ### Advantages
+
 - ✅ AI-native IDE
 - ✅ Built-in MCP support
 - ✅ Modern interface
@@ -171,9 +180,11 @@ Select the configuration that matches your preferred AI assistant or IDE:
 **Best for**: Google AI ecosystem, multimodal capabilities
 
 ### Configuration Location
+
 **File**: `gemini_mcp_config.json` (in project root or user config directory)
 
 ### Basic Configuration
+
 ```json
 {
   "mcpServers": {
@@ -191,6 +202,7 @@ Select the configuration that matches your preferred AI assistant or IDE:
 ```
 
 ### Advantages
+
 - ✅ Google AI integration
 - ✅ Multimodal capabilities
 - ✅ Large context windows
@@ -203,9 +215,11 @@ Select the configuration that matches your preferred AI assistant or IDE:
 **Best for**: VS Code users, open-source alternative
 
 ### Configuration Location
+
 **File**: `config.json` (in `.continue` directory)
 
 ### Basic Configuration
+
 ```json
 {
   "mcpServers": [
@@ -224,6 +238,7 @@ Select the configuration that matches your preferred AI assistant or IDE:
 ```
 
 ### Advantages
+
 - ✅ Open-source
 - ✅ VS Code integration
 - ✅ Extensible
@@ -236,20 +251,23 @@ Select the configuration that matches your preferred AI assistant or IDE:
 **Best for**: Command-line users, automation, CI/CD
 
 ### Configuration Location
+
 **File**: `.aider_config.yaml` (in project root or home directory)
 
 ### Basic Configuration
+
 ```yaml
 mcp_servers:
   - name: adr-analysis
     command: mcp-adr-analysis-server
     env:
-      PROJECT_PATH: "/absolute/path/to/project"
-      OPENROUTER_API_KEY: "your_openrouter_api_key_here"
-      EXECUTION_MODE: "full"
+      PROJECT_PATH: '/absolute/path/to/project'
+      OPENROUTER_API_KEY: 'your_openrouter_api_key_here'
+      EXECUTION_MODE: 'full'
 ```
 
 ### Advantages
+
 - ✅ Command-line interface
 - ✅ Automation-friendly
 - ✅ CI/CD integration
@@ -262,9 +280,11 @@ mcp_servers:
 **Best for**: Professional development, enterprise features
 
 ### Configuration Location
+
 **File**: `~/.codeium/windsurf/mcp_config.json`
 
 ### Basic Configuration
+
 ```json
 {
   "mcpServers": {
@@ -281,6 +301,7 @@ mcp_servers:
 ```
 
 ### Advantages
+
 - ✅ Professional features
 - ✅ Enterprise support
 - ✅ Advanced AI capabilities
@@ -291,6 +312,7 @@ mcp_servers:
 ## 🧪 Testing Your Configuration
 
 ### **Step 1: Test Server Installation**
+
 ```bash
 # Verify the server is installed and working
 mcp-adr-analysis-server --version
@@ -298,6 +320,7 @@ mcp-adr-analysis-server --test
 ```
 
 ### **Step 2: Test Client Connection**
+
 ```bash
 # Test with your specific client
 # For Claude Desktop: Restart Claude Desktop
@@ -306,12 +329,15 @@ mcp-adr-analysis-server --test
 ```
 
 ### **Step 3: Verify Tools Availability**
+
 In your AI assistant, try:
+
 ```
 "List the available MCP tools for ADR analysis"
 ```
 
 Expected response should include tools like:
+
 - `analyze_project_ecosystem`
 - `generate_adrs_from_prd`
 - `analyze_content_security`
@@ -322,6 +348,7 @@ Expected response should include tools like:
 ## 🚨 Common Issues & Solutions
 
 ### **"Server not found" or "Unknown tool"**
+
 ```bash
 # Solution 1: Verify installation
 which mcp-adr-analysis-server
@@ -334,6 +361,7 @@ echo $PATH | grep -E "(node|npm)"
 ```
 
 ### **"Permission denied" errors**
+
 ```json
 {
   "env": {
@@ -343,6 +371,7 @@ echo $PATH | grep -E "(node|npm)"
 ```
 
 ### **"Tools return prompts instead of results"**
+
 ```json
 {
   "env": {
@@ -353,6 +382,7 @@ echo $PATH | grep -E "(node|npm)"
 ```
 
 ### **"Command not found: npx"**
+
 ```bash
 # Install Node.js and npm
 # Then verify installation
@@ -361,6 +391,7 @@ npm --version
 ```
 
 ### **Environment variables not working**
+
 ```bash
 # Check if variables are set
 echo $PROJECT_PATH
@@ -376,6 +407,7 @@ export OPENROUTER_API_KEY="your_key_here"
 ## 🔧 Advanced Configuration
 
 ### **Multi-Project Setup**
+
 ```json
 {
   "mcpServers": {
@@ -402,6 +434,7 @@ export OPENROUTER_API_KEY="your_key_here"
 ```
 
 ### **Performance Optimization**
+
 ```json
 {
   "env": {
@@ -414,6 +447,7 @@ export OPENROUTER_API_KEY="your_key_here"
 ```
 
 ### **Security Configuration**
+
 ```json
 {
   "env": {
@@ -436,6 +470,6 @@ export OPENROUTER_API_KEY="your_key_here"
 
 ---
 
-**Need help with a specific client?** → **[Join the Discussion](https://github.com/tosin2013/mcp-adr-analysis-server/discussions)**
+**Need help with a specific client?** → **[Join the Discussion](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**
 
 **Having compatibility issues?** → **[Check Troubleshooting](./troubleshooting.md#mcp-client-compatibility)**

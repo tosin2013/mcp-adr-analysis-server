@@ -16,12 +16,14 @@
 ### The Problem MCP Solves
 
 Before MCP, AI assistants were limited to:
+
 - ❌ Only information from their training data (which becomes outdated)
 - ❌ No ability to access real-time data or current files
 - ❌ No way to take actions in the real world
 - ❌ Each integration required custom, one-off solutions
 
 With MCP, AI assistants can:
+
 - ✅ Access current, real-time information
 - ✅ Interact with your actual project files and data
 - ✅ Execute specialized analysis and automation tools
@@ -37,26 +39,26 @@ graph TB
         User[👤 You]
         AI[🤖 AI Assistant<br/>Claude, ChatGPT, etc.]
     end
-    
+
     subgraph "MCP Layer"
         Client[📱 MCP Client<br/>Desktop app, IDE, etc.]
         Protocol[🔌 MCP Protocol<br/>JSON-RPC over stdio]
     end
-    
+
     subgraph "MCP Server"
         Server[🏗️ ADR Analysis Server]
         Tools[🛠️ Tools<br/>37 analysis functions]
         Resources[📚 Resources<br/>Dynamic content]
         Prompts[💭 Prompts<br/>AI templates]
     end
-    
+
     subgraph "Your Project"
         Files[📁 Files]
         Code[💻 Code]
         Docs[📄 Documentation]
         ADRs[📋 ADRs]
     end
-    
+
     User --> AI
     AI --> Client
     Client --> Protocol
@@ -91,7 +93,7 @@ sequenceDiagram
     participant MCP as 📡 MCP Protocol
     participant Server as 🏗️ ADR Server
     participant Project as 📁 Your Project
-    
+
     AI->>MCP: "I need to analyze this project"
     MCP->>Server: tool_call: analyze_project_ecosystem
     Server->>Project: Read files, analyze structure
@@ -105,21 +107,25 @@ sequenceDiagram
 ### Tool Categories in ADR Analysis Server
 
 #### **Analysis Tools** (Understanding)
+
 - `analyze_project_ecosystem` - Comprehensive project analysis
 - `discover_existing_adrs` - Find and catalog existing decisions
 - `analyze_content_security` - Scan for sensitive information
 
 #### **Generation Tools** (Creating)
+
 - `generate_adrs_from_prd` - Create ADRs from requirements
 - `generate_adr_todo` - Extract implementation tasks
 - `suggest_adrs` - Recommend missing decisions
 
 #### **Validation Tools** (Checking)
+
 - `compare_adr_progress` - Track implementation progress
 - `validate_rules` - Check code compliance
 - `deployment_readiness` - Verify deployment preparation
 
 #### **Management Tools** (Organizing)
+
 - `manage_cache` - Handle server cache
 - `smart_git_push` - Secure version control
 - `troubleshoot_guided_workflow` - Systematic problem solving
@@ -133,30 +139,39 @@ Resources in MCP are like "live documents" that the AI can read. Unlike static f
 ### Our Key Resources
 
 #### **Architectural Knowledge Graph**
+
 ```
 adr://architectural_knowledge_graph?projectPath=/your/project
 ```
+
 A comprehensive map of your project's:
+
 - Technology stack and dependencies
 - Architectural patterns and designs
 - Decision relationships and impacts
 - Implementation status and progress
 
 #### **Analysis Report**
+
 ```
 adr://analysis_report?projectPath=/your/project&focusAreas=security,performance
 ```
+
 Real-time analysis including:
+
 - Current architectural state
 - Identified issues and risks
 - Recommendations and next steps
 - Progress metrics and trends
 
 #### **ADR List**
+
 ```
 adr://adr_list?adrDirectory=./adrs
 ```
+
 Live catalog of architectural decisions:
+
 - All current ADRs with metadata
 - Decision status and implementation progress
 - Cross-references and dependencies
@@ -165,6 +180,7 @@ Live catalog of architectural decisions:
 ### Why Resources Matter
 
 Resources enable the AI to:
+
 - **Stay Current** - Always work with up-to-date project information
 - **Understand Context** - See the full picture of your architecture
 - **Make Connections** - Identify relationships between decisions and code
@@ -179,19 +195,25 @@ Prompts in MCP are specialized templates that help the AI understand how to use 
 ### Prompt Categories
 
 #### **Analysis Prompts**
+
 Help the AI conduct thorough architectural analysis:
+
 - Project ecosystem evaluation templates
 - Security assessment guidelines
 - Performance analysis frameworks
 
-#### **Generation Prompts** 
+#### **Generation Prompts**
+
 Guide the AI in creating high-quality content:
+
 - ADR writing standards and templates
 - Documentation structure patterns
 - Code generation guidelines
 
 #### **Validation Prompts**
+
 Ensure the AI performs comprehensive checks:
+
 - Deployment readiness checklists
 - Rule compliance verification
 - Progress tracking methodologies
@@ -199,12 +221,14 @@ Ensure the AI performs comprehensive checks:
 ### How Prompts Enhance AI Performance
 
 Without prompts, AI might:
+
 - Miss important architectural considerations
 - Generate inconsistent documentation formats
 - Overlook security or compliance requirements
 - Fail to follow established best practices
 
 With specialized prompts, AI:
+
 - ✅ Follows proven architectural analysis methodologies
 - ✅ Generates consistent, professional documentation
 - ✅ Applies comprehensive security and compliance checks
@@ -217,6 +241,7 @@ With specialized prompts, AI:
 ### Typical Analysis Session
 
 1. **Initial Discovery**
+
    ```
    AI asks: "What kind of project are we working with?"
    → Calls analyze_project_ecosystem
@@ -224,6 +249,7 @@ With specialized prompts, AI:
    ```
 
 2. **Context Building**
+
    ```
    AI reads: adr://architectural_knowledge_graph
    → Understands existing decisions and patterns
@@ -231,6 +257,7 @@ With specialized prompts, AI:
    ```
 
 3. **Gap Analysis**
+
    ```
    AI calls: suggest_adrs
    → Identifies missing architectural decisions
@@ -238,6 +265,7 @@ With specialized prompts, AI:
    ```
 
 4. **Documentation Generation**
+
    ```
    AI calls: generate_adr_from_decision
    → Creates professional ADR documents
@@ -245,6 +273,7 @@ With specialized prompts, AI:
    ```
 
 5. **Implementation Planning**
+
    ```
    AI calls: generate_adr_todo
    → Extracts actionable implementation tasks
@@ -271,18 +300,22 @@ With specialized prompts, AI:
 ## 🎯 Why MCP ADR Analysis Server is Powerful
 
 ### Traditional Approach (Without MCP)
+
 ```
 You → Generic AI → Generic responses based on training data
 ```
+
 - Limited to AI's training knowledge
 - No access to your actual project
 - Generic advice that may not apply
 - No ability to generate actual files or track progress
 
 ### MCP-Enhanced Approach
+
 ```
 You → AI + MCP → Specialized tools → Your actual project → Tailored analysis
 ```
+
 - Works with your real project files and structure
 - Applies specialized architectural analysis techniques
 - Generates actual ADR documents and implementation plans
@@ -316,6 +349,7 @@ MCP enables AI to maintain context across multiple interactions:
 ```
 
 This context helps the AI:
+
 - Remember previous decisions and their rationale
 - Understand project constraints and priorities
 - Provide consistent recommendations across sessions
@@ -334,7 +368,7 @@ graph LR
         Issues[Identified Issues]
         Progress[Implementation Progress]
     end
-    
+
     Tech --> Decisions
     Arch --> Decisions
     Decisions --> Issues
@@ -343,6 +377,7 @@ graph LR
 ```
 
 This enables:
+
 - **Learning from Experience** - Each analysis improves future recommendations
 - **Relationship Discovery** - Understanding how decisions impact each other
 - **Progress Tracking** - Monitoring implementation across time
@@ -353,16 +388,19 @@ This enables:
 The server employs sophisticated prompting techniques:
 
 #### **Automatic Prompt Engineering (APE)**
+
 - Generates optimized prompts for better analysis results
 - Adapts prompting strategies based on project characteristics
 - Continuously improves prompt effectiveness through feedback
 
 #### **Knowledge Generation**
+
 - Builds comprehensive understanding of project context
 - Synthesizes information from multiple sources
 - Creates structured knowledge representations
 
 #### **Reflexion Framework**
+
 - Self-corrects analysis through iterative refinement
 - Validates findings against multiple criteria
 - Improves accuracy through reflection and revision
@@ -374,12 +412,14 @@ The server employs sophisticated prompting techniques:
 ### How MCP Changes Architecture Analysis
 
 **Before MCP:**
+
 - Manual analysis of project structure and decisions
 - Generic architectural advice from documentation
 - Disconnected tools and processes
 - Inconsistent documentation and tracking
 
 **With MCP:**
+
 - Automated, comprehensive project analysis
 - Tailored recommendations based on actual project state
 - Integrated workflow from analysis to implementation
@@ -419,6 +459,7 @@ MCP represents a fundamental shift toward AI assistants that can:
 - **Provide Real Value** - Actionable insights and implementation guidance
 
 The ADR Analysis Server demonstrates this future by providing AI assistants with:
+
 - Deep architectural analysis capabilities
 - Professional documentation generation
 - Implementation tracking and guidance
@@ -429,7 +470,7 @@ This enables a new level of AI-human collaboration where the AI becomes a true a
 ---
 
 **Related Reading:**
-- **[Tutorial: Your First MCP Analysis](.../tutorials/01-first-steps.md)** - Hands-on introduction to using MCP
-- **[API Reference](.../reference/api-reference.md)** - Complete tool documentation
-- **[Architecture Overview](architecture-decisions.md)** - Design decisions behind the server
 
+- **[Tutorial: Your First MCP Analysis](../tutorials/01-first-steps.md)** - Hands-on introduction to using MCP
+- **[API Reference](../reference/api-reference.md)** - Complete tool documentation
+- **[Architecture Overview](architecture-decisions.md)** - Design decisions behind the server

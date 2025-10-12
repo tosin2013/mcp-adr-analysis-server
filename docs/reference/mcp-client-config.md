@@ -435,11 +435,11 @@ mcp_servers:
   - name: adr-analysis
     command: mcp-adr-analysis-server
     env:
-      PROJECT_PATH: "/absolute/path/to/project"
-      OPENROUTER_API_KEY: "your_openrouter_api_key_here"
-      EXECUTION_MODE: "full"
-      ADR_DIRECTORY: "./adrs"
-      LOG_LEVEL: "INFO"
+      PROJECT_PATH: '/absolute/path/to/project'
+      OPENROUTER_API_KEY: 'your_openrouter_api_key_here'
+      EXECUTION_MODE: 'full'
+      ADR_DIRECTORY: './adrs'
+      LOG_LEVEL: 'INFO'
 ```
 
 ### Advanced Aider Configuration
@@ -449,18 +449,18 @@ mcp_servers:
   - name: adr-analysis
     command: mcp-adr-analysis-server
     env:
-      PROJECT_PATH: "/Users/username/project"
-      OPENROUTER_API_KEY: "your_key_here"
-      EXECUTION_MODE: "full"
-      AI_MODEL: "anthropic/claude-3-sonnet"
-      ADR_DIRECTORY: "./architecture/decisions"
-      LOG_LEVEL: "DEBUG"
-      AI_TEMPERATURE: "0.1"
-      AI_MAX_TOKENS: "4000"
-      FIRECRAWL_ENABLED: "true"
-      FIRECRAWL_API_KEY: "your_firecrawl_key"
-      ENABLE_CONTENT_MASKING: "true"
-      MASKING_LEVEL: "strict"
+      PROJECT_PATH: '/Users/username/project'
+      OPENROUTER_API_KEY: 'your_key_here'
+      EXECUTION_MODE: 'full'
+      AI_MODEL: 'anthropic/claude-3-sonnet'
+      ADR_DIRECTORY: './architecture/decisions'
+      LOG_LEVEL: 'DEBUG'
+      AI_TEMPERATURE: '0.1'
+      AI_MAX_TOKENS: '4000'
+      FIRECRAWL_ENABLED: 'true'
+      FIRECRAWL_API_KEY: 'your_firecrawl_key'
+      ENABLE_CONTENT_MASKING: 'true'
+      MASKING_LEVEL: 'strict'
 ```
 
 ### Aider Best Practices
@@ -647,17 +647,18 @@ await client.connect({
 
 ### **Firecrawl Environment Variables**
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `FIRECRAWL_ENABLED` | No | `false` | Enable Firecrawl integration |
-| `FIRECRAWL_API_KEY` | No* | - | API key for cloud service |
-| `FIRECRAWL_BASE_URL` | No | `http://localhost:3000` | Self-hosted instance URL |
+| Variable             | Required | Default                  | Description                  |
+| -------------------- | -------- | ------------------------ | ---------------------------- |
+| `FIRECRAWL_ENABLED`  | No       | `false`                  | Enable Firecrawl integration |
+| `FIRECRAWL_API_KEY`  | No\*     | -                        | API key for cloud service    |
+| `FIRECRAWL_BASE_URL` | No       | `https://localhost:3000` | Self-hosted instance URL     |
 
-*Required if using cloud service
+\*Required if using cloud service
 
 ### **Configuration Examples**
 
 #### **Cloud Service (Recommended)**
+
 ```json
 {
   "env": {
@@ -668,16 +669,18 @@ await client.connect({
 ```
 
 #### **Self-Hosted**
+
 ```json
 {
   "env": {
     "FIRECRAWL_ENABLED": "true",
-    "FIRECRAWL_BASE_URL": "http://localhost:3000"
+    "FIRECRAWL_BASE_URL": "https://localhost:3000"
   }
 }
 ```
 
 #### **Disabled (Default)**
+
 ```json
 {
   "env": {
@@ -689,6 +692,7 @@ await client.connect({
 ### **Client-Specific Firecrawl Configuration**
 
 #### **Claude Desktop**
+
 ```json
 {
   "mcpServers": {
@@ -707,6 +711,7 @@ await client.connect({
 ```
 
 #### **Cline (VS Code)**
+
 ```json
 {
   "mcpServers": {
@@ -726,6 +731,7 @@ await client.connect({
 ```
 
 #### **Cursor**
+
 ```json
 {
   "mcpServers": {
@@ -745,6 +751,7 @@ await client.connect({
 ```
 
 #### **Gemini**
+
 ```json
 {
   "mcpServers": {
@@ -764,6 +771,7 @@ await client.connect({
 ```
 
 #### **Continue.dev**
+
 ```json
 {
   "mcpServers": [
@@ -784,19 +792,21 @@ await client.connect({
 ```
 
 #### **Aider (YAML)**
+
 ```yaml
 mcp_servers:
   - name: adr-analysis
     command: mcp-adr-analysis-server
     env:
-      PROJECT_PATH: "/absolute/path/to/project"
-      OPENROUTER_API_KEY: "your_key_here"
-      EXECUTION_MODE: "full"
-      FIRECRAWL_ENABLED: "true"
-      FIRECRAWL_API_KEY: "fc-your-api-key-here"
+      PROJECT_PATH: '/absolute/path/to/project'
+      OPENROUTER_API_KEY: 'your_key_here'
+      EXECUTION_MODE: 'full'
+      FIRECRAWL_ENABLED: 'true'
+      FIRECRAWL_API_KEY: 'fc-your-api-key-here'
 ```
 
 #### **Windsurf**
+
 ```json
 {
   "mcpServers": {
@@ -836,6 +846,7 @@ mcp_servers:
 ### Claude Desktop Issues
 
 #### **"Server not found" or "Unknown tool"**
+
 ```bash
 # 1. Verify global installation
 which mcp-adr-analysis-server
@@ -849,6 +860,7 @@ echo $PATH | grep -E "(node|npm)"
 ```
 
 #### **"Permission denied" errors**
+
 ```json
 {
   "env": {
@@ -858,6 +870,7 @@ echo $PATH | grep -E "(node|npm)"
 ```
 
 #### **"Tools return prompts instead of results"**
+
 ```json
 {
   "env": {
@@ -870,6 +883,7 @@ echo $PATH | grep -E "(node|npm)"
 ### Cline (VS Code) Issues
 
 #### **"Command not found: npx"**
+
 ```bash
 # Install Node.js and npm
 # Then verify installation
@@ -878,6 +892,7 @@ npm --version
 ```
 
 #### **"Workspace folder not found"**
+
 ```json
 {
   "env": {
@@ -887,6 +902,7 @@ npm --version
 ```
 
 #### **"Environment variables not resolved"**
+
 ```json
 {
   "env": {
@@ -898,6 +914,7 @@ npm --version
 ### Cursor Issues
 
 #### **"Relative paths not working"**
+
 ```json
 {
   "env": {
@@ -907,6 +924,7 @@ npm --version
 ```
 
 #### **"npx command fails"**
+
 ```json
 {
   "command": "mcp-adr-analysis-server",
@@ -917,6 +935,7 @@ npm --version
 ### Gemini Issues
 
 #### **"Model not supported"**
+
 ```json
 {
   "env": {
@@ -926,6 +945,7 @@ npm --version
 ```
 
 #### **"Token limit exceeded"**
+
 ```json
 {
   "env": {
@@ -937,6 +957,7 @@ npm --version
 ### Continue.dev Issues
 
 #### **"Array format expected"**
+
 ```json
 {
   "mcpServers": [
@@ -950,6 +971,7 @@ npm --version
 ```
 
 #### **"Workspace folder not accessible"**
+
 ```json
 {
   "env": {
@@ -961,16 +983,18 @@ npm --version
 ### Aider Issues
 
 #### **"YAML syntax error"**
+
 ```yaml
 # Check indentation (use spaces, not tabs)
 mcp_servers:
   - name: adr-analysis
     command: mcp-adr-analysis-server
     env:
-      PROJECT_PATH: "/absolute/path"
+      PROJECT_PATH: '/absolute/path'
 ```
 
 #### **"Command not found"**
+
 ```bash
 # Ensure mcp-adr-analysis-server is in PATH
 which mcp-adr-analysis-server
@@ -979,6 +1003,7 @@ which mcp-adr-analysis-server
 ### Windsurf Issues
 
 #### **"Configuration not loaded"**
+
 ```bash
 # Check file location
 ls -la ~/.codeium/windsurf/mcp_config.json
@@ -988,6 +1013,7 @@ cat ~/.codeium/windsurf/mcp_config.json | jq .
 ```
 
 #### **"Environment variables not working"**
+
 ```json
 {
   "env": {
@@ -1000,6 +1026,7 @@ cat ~/.codeium/windsurf/mcp_config.json | jq .
 ### General Troubleshooting
 
 #### **Test Server Installation**
+
 ```bash
 # Test global installation
 mcp-adr-analysis-server --version
@@ -1012,6 +1039,7 @@ mcp-adr-analysis-server --test
 ```
 
 #### **Validate Configuration**
+
 ```bash
 # Test JSON syntax
 cat config.json | jq .
@@ -1021,6 +1049,7 @@ yamllint .aider_config.yaml
 ```
 
 #### **Check Environment Variables**
+
 ```bash
 # List all environment variables
 env | grep -E "(PROJECT_PATH|OPENROUTER|FIRECRAWL)"
@@ -1031,6 +1060,7 @@ echo $OPENROUTER_API_KEY
 ```
 
 #### **Debug Mode**
+
 ```json
 {
   "env": {
@@ -1198,10 +1228,10 @@ EOF
 ## 📚 Related Documentation
 
 - **[Environment Configuration](environment-config.md)** - Complete environment variable reference
-- **[Troubleshooting](../how-to-guides/troubleshooting.md)** - Common issues and solutions
+- **[Troubleshooting](.../how-to-guides/troubleshooting.md)** - Common issues and solutions
 - **[API Reference](api-reference.md)** - Complete tool documentation
-- **[Security Guide](../how-to-guides/security-analysis.md)** - Security configuration
+- **[Security Guide](.../how-to-guides/security-analysis.md)** - Security configuration
 
 ---
 
-**Configuration not working?** → **[Troubleshooting Guide](../how-to-guides/troubleshooting.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**
+**Configuration not working?** → **[Troubleshooting Guide](.../how-to-guides/troubleshooting.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**

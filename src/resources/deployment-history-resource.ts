@@ -112,7 +112,119 @@ export interface ResourceGenerationResult {
 }
 
 /**
- * Generate deployment history resource
+ * Generate comprehensive deployment history resource with trend analysis and insights.
+ *
+ * Analyzes historical deployment data to provide insights into deployment patterns,
+ * success rates, failure trends, and recommendations for improving deployment reliability.
+ * Supports filtering by time period, environment, and analysis depth.
+ *
+ * **Query Parameters:**
+ * - `period`: Time period for analysis (default: "30d")
+ *   - Values: "7d" (week), "30d" (month), "90d" (quarter), "365d" (year), "all"
+ * - `environment`: Filter by deployment environment (default: "all")
+ *   - Values: "production", "staging", "development", "all"
+ * - `includeFailures`: Include failure analysis (default: true)
+ * - `includeMetrics`: Include detailed metrics (default: true)
+ * - `format`: Output format (default: "detailed")
+ *   - Values: "summary", "detailed"
+ *
+ * **Analysis Includes:**
+ * - Total deployments and success/failure counts
+ * - Success rate percentage and trends
+ * - Average deployment time and frequency
+ * - Failure pattern analysis with common causes
+ * - Rollback frequency and impact
+ * - Time-series data for trend visualization
+ * - Improvement recommendations based on patterns
+ *
+ * @param _params - URL path parameters (currently unused, reserved for future routing)
+ * @param searchParams - URL query parameters controlling analysis scope and detail
+ *
+ * @returns Promise resolving to resource generation result containing:
+ *   - data: Complete deployment history with statistics, trends, and insights
+ *   - contentType: "application/json"
+ *   - lastModified: ISO timestamp of generation
+ *   - cacheKey: Unique identifier based on period/environment/options
+ *   - ttl: Cache duration (300 seconds / 5 minutes)
+ *   - etag: Entity tag for cache validation
+ *
+ * @throws {Error} Rarely throws; gracefully handles missing data by:
+ *   - Returning empty history if no deployment records found
+ *   - Providing zero values for missing metrics
+ *   - Logging warnings for data collection issues
+ *
+ * @example
+ * ```typescript
+ * // Get last 30 days of deployment history
+ * const history = await generateDeploymentHistoryResource(
+ *   {},
+ *   new URLSearchParams('period=30d&environment=production')
+ * );
+ *
+ * console.log(`Total deployments: ${history.data.totalDeployments}`);
+ * console.log(`Success rate: ${history.data.successRate}%`);
+ * console.log(`Failed deployments: ${history.data.failedDeployments}`);
+ * console.log(`Rollback frequency: ${history.data.rollbackFrequency}`);
+ *
+ * // Check deployment health trends
+ * if (history.data.trends) {
+ *   const qualityTrend = history.data.trends.find(t => t.metric === 'success_rate');
+ *   console.log(`Quality trend: ${qualityTrend?.trend}`); // improving/stable/degrading
+ * }
+ *
+ * // Get failure patterns
+ * if (history.data.failurePatterns) {
+ *   console.log('Common failure causes:');
+ *   history.data.failurePatterns.commonCauses.forEach(cause => {
+ *     console.log(`  - ${cause.reason}: ${cause.occurrences} times`);
+ *   });
+ * }
+ *
+ * // Example with summary format (faster, less detail)
+ * const summary = await generateDeploymentHistoryResource(
+ *   {},
+ *   new URLSearchParams('period=7d&format=summary&includeMetrics=false')
+ * );
+ *
+ * // Expected output structure:
+ * {
+ *   data: {
+ *     period: "30d",
+ *     environment: "production",
+ *     totalDeployments: 45,
+ *     successfulDeployments: 42,
+ *     failedDeployments: 3,
+ *     successRate: 93.3,
+ *     averageDeploymentTime: "8.5 minutes",
+ *     rollbackFrequency: 2,
+ *     trends: [
+ *       {
+ *         metric: "success_rate",
+ *         trend: "improving",
+ *         change: +5.2
+ *       }
+ *     ],
+ *     failurePatterns: {
+ *       commonCauses: [
+ *         { reason: "Test failures", occurrences: 2 },
+ *         { reason: "Dependency conflicts", occurrences: 1 }
+ *       ],
+ *       peakFailureTimes: ["2025-10-05", "2025-10-12"]
+ *     },
+ *     recommendations: [
+ *       "Increase pre-deployment test coverage",
+ *       "Implement canary deployments for reduced risk"
+ *     ]
+ *   },
+ *   contentType: "application/json",
+ *   cacheKey: "deployment-history:30d:production:true:true:detailed",
+ *   ttl: 300
+ * }
+ * ```
+ *
+ * @since v2.0.0
+ * @see {@link generateComprehensiveHistory} for detailed historical analysis
+ * @see {@link generateDeploymentStatusResource} for current deployment status
  */
 export async function generateDeploymentHistoryResource(
   _params?: Record<string, string>,

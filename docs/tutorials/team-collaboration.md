@@ -519,11 +519,7 @@ jobs:
 {
   "tool": "sync_team_documentation",
   "parameters": {
-    "sources": [
-      "./architecture/decisions/",
-      "./architecture/reviews/",
-      "team-wiki/architecture/"
-    ],
+    "sources": ["./architecture/decisions/", "./architecture/reviews/", "team-wiki/architecture/"],
     "destinations": ["confluence-space", "notion-database", "team-handbook"],
     "syncFrequency": "daily",
     "formatTransformation": true
@@ -673,9 +669,9 @@ For distributed teams across time zones:
 
 ### Advanced Practices
 
-- **[Large Team Scaling](./how-to-guides/large-team-scaling.md)** - Enterprise-level collaboration
-- **[CI/CD Integration](./how-to-guides/cicd-integration.md)** - Automated decision validation
-- **[Custom Rules](./how-to-guides/custom-rules.md)** - Organization-specific standards
+- **[Large Team Scaling](../how-to-guides/large-team-scaling.md)** - Enterprise-level collaboration
+- **[CI/CD Integration](../how-to-guides/cicd-integration.md)** - Automated decision validation
+- **[Custom Rules](../how-to-guides/custom-rules.md)** - Organization-specific standards
 
 ### Continuous Improvement
 
@@ -688,12 +684,12 @@ For distributed teams across time zones:
 
 ## 📚 Resources
 
-- **[API Reference](./reference/api-reference.md)** - Complete tool documentation
-- **[Environment Configuration](./reference/environment-config.md)** - Team setup guidance
-- **[Troubleshooting](./how-to-guides/troubleshooting.md)** - Common collaboration issues
+- **[API Reference](../reference/api-reference.md)** - Complete tool documentation
+- **[Environment Configuration](../reference/environment-config.md)** - Team setup guidance
+- **[Troubleshooting](../how-to-guides/troubleshooting.md)** - Common collaboration issues
 
 ---
 
 **🎉 Congratulations!** You've completed the Team Collaboration Workflows tutorial. You now have the skills to implement effective collaborative architectural decision-making processes that scale with your team and organization.
 
-**Questions or want to share your team's success story?** → **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** or contribute to our **[Community Discussions](https://github.com/tosin2013/mcp-adr-analysis-server/discussions)**
+**Questions or want to share your team's success story?** → **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** or contribute to our **[Community Discussions](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**

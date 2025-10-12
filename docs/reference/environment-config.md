@@ -12,10 +12,10 @@
 | `OPENROUTER_API_KEY` | ⚡       | -                           | API key for AI-powered analysis    |
 | `EXECUTION_MODE`     | ⚡       | `prompt-only`               | `full` or `prompt-only`            |
 | `AI_MODEL`           | ❌       | `anthropic/claude-3-sonnet` | AI model to use                    |
-| `ADR_DIRECTORY`      | ❌       | `./adrs`                 | Directory for ADR files            |
+| `ADR_DIRECTORY`      | ❌       | `./adrs`                    | Directory for ADR files            |
 | `LOG_LEVEL`          | ❌       | `INFO`                      | Logging verbosity                  |
 | `FIRECRAWL_API_KEY`  | ❌       | -                           | API key for Firecrawl web scraping |
-| `FIRECRAWL_BASE_URL` | ❌       | `http://localhost:3000`     | Base URL for self-hosted Firecrawl |
+| `FIRECRAWL_BASE_URL` | ❌       | `https://localhost:3000`    | Base URL for self-hosted Firecrawl |
 | `FIRECRAWL_ENABLED`  | ❌       | `false`                     | Enable Firecrawl integration       |
 
 **Legend**: ✅ Required • ⚡ Required for AI features • ❌ Optional
@@ -275,14 +275,14 @@ FIRECRAWL_ENABLED="true"
 FIRECRAWL_API_KEY="fc-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 
 # Self-hosted Firecrawl base URL (if not using API key)
-FIRECRAWL_BASE_URL="http://localhost:3000"
+FIRECRAWL_BASE_URL="https://localhost:3000"
 ```
 
 **Firecrawl Configuration Options**:
 
 - **`FIRECRAWL_ENABLED`**: Set to `true` to enable Firecrawl integration
 - **`FIRECRAWL_API_KEY`**: API key for Firecrawl service (optional, enables cloud service)
-- **`FIRECRAWL_BASE_URL`**: Base URL for self-hosted Firecrawl (default: `http://localhost:3000`)
+- **`FIRECRAWL_BASE_URL`**: Base URL for self-hosted Firecrawl (default: `https://localhost:3000`)
 
 **Usage Modes**:
 
@@ -321,7 +321,7 @@ LOG_LEVEL="ERROR"
 AI_CACHE_ENABLED="true"
 AI_CACHE_TTL="86400"  # 24 hours
 FIRECRAWL_ENABLED="true"
-FIRECRAWL_BASE_URL="http://firecrawl:3000"  # Self-hosted
+FIRECRAWL_BASE_URL="https://firecrawl:3000"  # Self-hosted
 ```
 
 ### CI/CD Environment
@@ -505,10 +505,10 @@ AI_CACHE_ENABLED="false"
 ## 📚 Related Documentation
 
 - **[MCP Client Configuration](mcp-client-config.md)** - Detailed client setup
-- **[Troubleshooting](../how-to-guides/troubleshooting.md)** - Common issues and solutions
-- **[Security Guide](../how-to-guides/security-analysis.md)** - Security configuration
+- **[Troubleshooting](.../how-to-guides/troubleshooting.md)** - Common issues and solutions
+- **[Security Guide](.../how-to-guides/security-analysis.md)** - Security configuration
 - **[API Reference](api-reference.md)** - Complete tool documentation
 
 ---
 
-**Need help with configuration?** → **[Troubleshooting Guide](../how-to-guides/troubleshooting.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**
+**Need help with configuration?** → **[Troubleshooting Guide](.../how-to-guides/troubleshooting.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**

@@ -510,7 +510,7 @@ If you encounter issues:
 1. **Check Logs**: Run with `DEBUG=* mcp-adr-analysis-server`
 2. **GitHub Issues**: [Report bugs](https://github.com/tosin2013/mcp-adr-analysis-server/issues)
 3. **Documentation**: [Troubleshooting Guide](./troubleshooting.md)
-4. **Community**: [Discussions](https://github.com/tosin2013/mcp-adr-analysis-server/discussions)
+4. **Community**: [Discussions](https://github.com/tosin2013/mcp-adr-analysis-server/issues)
 
 ---
 
@@ -600,8 +600,8 @@ After successful installation:
 
 1. **📖 Read the [Prompting Guide](./prompting-guide.md)** - Learn effective prompting techniques
 2. **🔧 Configure Your Environment** - Set up project-specific settings
-3. **🚀 Try the [Quick Start Tutorial](./tutorials/01-first-steps.md)** - Get hands-on experience
-4. **📋 Review [API Reference](./reference/api-reference.md)** - Explore available tools
+3. **🚀 Try the [Quick Start Tutorial](../tutorials/01-first-steps.md)** - Get hands-on experience
+4. **📋 Review [API Reference](../reference/api-reference.md)** - Explore available tools
 5. **🤝 Join the Community** - Contribute and get support
 
 ---

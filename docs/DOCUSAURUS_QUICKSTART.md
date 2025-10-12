@@ -10,6 +10,7 @@ cd docs
 ```
 
 This script will:
+
 - Clean old VitePress artifacts
 - Install Docusaurus dependencies
 - Create favicon from logo
@@ -33,13 +34,13 @@ npm run build
 
 ## 📋 Quick Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run start` | Start dev server at http://localhost:3000 |
-| `npm run build` | Build production site |
-| `npm run serve` | Preview production build |
-| `npm run clear` | Clear cache |
-| `npm run deploy` | Deploy to GitHub Pages |
+| Command          | Description                                |
+| ---------------- | ------------------------------------------ |
+| `npm run start`  | Start dev server at https://localhost:3000 |
+| `npm run build`  | Build production site                      |
+| `npm run serve`  | Preview production build                   |
+| `npm run clear`  | Clear cache                                |
+| `npm run deploy` | Deploy to GitHub Pages                     |
 
 ## 🌐 Development Server
 
@@ -47,7 +48,7 @@ npm run build
 npm run start
 ```
 
-Visit: `http://localhost:3000/mcp-adr-analysis-server/`
+Visit: `https://localhost:3000/mcp-adr-analysis-server/`
 
 The site will auto-reload when you edit markdown files.
 
@@ -64,6 +65,7 @@ Output: `build/` directory (ready for deployment)
 ### Automatic (GitHub Actions)
 
 Push to `main` branch - GitHub Actions will automatically:
+
 1. Build the Docusaurus site
 2. Deploy to GitHub Pages
 3. Available at: https://tosin2013.github.io/mcp-adr-analysis-server/
@@ -90,11 +92,13 @@ docs/
 ### Adding a New Page
 
 1. Create markdown file in appropriate directory:
+
    ```bash
    touch tutorials/my-new-tutorial.md
    ```
 
 2. Add front matter:
+
    ```yaml
    ---
    id: my-new-tutorial
@@ -256,6 +260,7 @@ npm install
 ### Broken Links
 
 Docusaurus will warn about broken links during build. Fix them by:
+
 - Using relative paths: `/tutorials/my-doc`
 - Checking file exists in docs directory
 - Updating `onBrokenLinks` in config (not recommended)

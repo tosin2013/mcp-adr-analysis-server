@@ -183,7 +183,7 @@ server {
     limit_req zone=api burst=20 nodelay;
 
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass https://127.0.0.1:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -198,7 +198,7 @@ server {
 
     # Health check endpoint
     location /health {
-        proxy_pass http://127.0.0.1:8080/health;
+        proxy_pass https://127.0.0.1:8080/health;
         access_log off;
     }
 
@@ -208,7 +208,7 @@ server {
         allow 172.16.0.0/12;
         allow 192.168.0.0/16;
         deny all;
-        proxy_pass http://127.0.0.1:9090/metrics;
+        proxy_pass https://127.0.0.1:9090/metrics;
     }
 }
 EOF
@@ -251,7 +251,7 @@ pm2 install pm2-server-monit
 
 ```bash
 # Test server health
-curl -f http://localhost:8080/health
+curl -f https://localhost:8080/health
 # Expected: {"status":"healthy","timestamp":"..."}
 
 # Test MCP functionality
@@ -259,7 +259,7 @@ mcp-adr-analysis-server --test
 # Expected: ✅ Health check passed
 
 # Test API endpoints
-curl -X POST http://localhost:3000/mcp \
+curl -X POST https://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -d '{"method":"tools/list"}'
 ```
@@ -271,7 +271,7 @@ curl -X POST http://localhost:3000/mcp \
 npm install -g autocannon
 
 # Load test the server
-autocannon -c 10 -d 30 http://localhost:3000/health
+autocannon -c 10 -d 30 https://localhost:3000/health
 
 # Memory usage monitoring
 pm2 monit
@@ -285,7 +285,7 @@ npm audit
 gitleaks detect --source . --verbose
 
 # Test content masking
-curl -X POST http://localhost:3000/mcp \
+curl -X POST https://localhost:3000/mcp \
   -H "Content-Type: application/json" \
   -d '{"method":"tools/call","params":{"name":"analyze_content_security","arguments":{"content":"API_KEY=secret123"}}}'
 ```
