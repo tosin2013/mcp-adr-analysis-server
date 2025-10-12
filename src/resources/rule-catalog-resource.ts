@@ -94,7 +94,111 @@ function groupBySeverity(rules: Rule[]): Record<string, number> {
 }
 
 /**
- * Generate rule catalog resource
+ * Generate comprehensive rule catalog resource with compliance tracking and rule management.
+ *
+ * Aggregates architectural rules from multiple sources including ADRs, inferred patterns,
+ * and custom user-defined rules. Provides categorization by type, severity, and source for
+ * effective governance and compliance monitoring.
+ *
+ * **Rule Sources:**
+ * - ADR-based rules: Extracted from architectural decision records
+ * - Inferred rules: Derived from codebase patterns and best practices
+ * - Custom rules: User-defined via configuration files
+ *
+ * **Rule Types:**
+ * - architecture: Architectural patterns and structures
+ * - security: Security policies and practices
+ * - performance: Performance optimization guidelines
+ * - testing: Test coverage and quality requirements
+ * - documentation: Documentation standards
+ *
+ * **Severity Levels:**
+ * - critical: Violations block deployment
+ * - high: Must fix before release
+ * - medium: Should fix soon
+ * - low: Nice to fix
+ *
+ * @returns Promise resolving to resource generation result containing:
+ *   - data: Complete rule catalog with rules array and summary statistics
+ *   - contentType: "application/json"
+ *   - lastModified: ISO timestamp of generation
+ *   - cacheKey: "rule-catalog:current"
+ *   - ttl: Cache duration (300 seconds / 5 minutes)
+ *   - etag: Entity tag for cache validation
+ *
+ * @throws {McpAdrError} When rule catalog generation fails due to:
+ *   - RESOURCE_GENERATION_ERROR: ADR parsing errors or rule extraction failures
+ *   - Cache operation failures
+ *
+ * @example
+ * ```typescript
+ * const ruleCatalog = await generateRuleCatalogResource();
+ *
+ * console.log(`Total rules: ${ruleCatalog.data.summary.total}`);
+ * console.log(`Enabled: ${ruleCatalog.data.summary.enabled}`);
+ * console.log(`Disabled: ${ruleCatalog.data.summary.disabled}`);
+ *
+ * // Get critical security rules
+ * const criticalSecurityRules = ruleCatalog.data.rules.filter(
+ *   r => r.type === 'security' && r.severity === 'critical' && r.enabled
+ * );
+ * console.log(`Critical security rules: ${criticalSecurityRules.length}`);
+ *
+ * // Group rules by source
+ * console.log(`ADR rules: ${ruleCatalog.data.summary.bySource.adr}`);
+ * console.log(`Inferred rules: ${ruleCatalog.data.summary.bySource.inferred}`);
+ * console.log(`Custom rules: ${ruleCatalog.data.summary.bySource.user_defined}`);
+ *
+ * // Expected output structure:
+ * {
+ *   data: {
+ *     version: "1.0.0",
+ *     timestamp: "2025-10-12T17:00:00.000Z",
+ *     summary: {
+ *       total: 45,
+ *       byType: {
+ *         architecture: 12,
+ *         security: 10,
+ *         performance: 8,
+ *         testing: 10,
+ *         documentation: 5
+ *       },
+ *       bySeverity: {
+ *         critical: 5,
+ *         high: 15,
+ *         medium: 20,
+ *         low: 5
+ *       },
+ *       bySource: {
+ *         adr: 20,
+ *         inferred: 15,
+ *         user_defined: 10
+ *       },
+ *       enabled: 40,
+ *       disabled: 5
+ *     },
+ *     rules: [
+ *       {
+ *         id: "rule-001",
+ *         name: "Use PostgreSQL for primary database",
+ *         type: "architecture",
+ *         severity: "critical",
+ *         source: "adr",
+ *         enabled: true,
+ *         adrReference: "ADR-001"
+ *       }
+ *     ]
+ *   },
+ *   contentType: "application/json",
+ *   cacheKey: "rule-catalog:current",
+ *   ttl: 300
+ * }
+ * ```
+ *
+ * @since v2.0.0
+ * @see {@link extractRulesFromAdrs} for ADR rule extraction
+ * @see {@link extractInferredRules} for pattern-based rule inference
+ * @see {@link loadCustomRules} for user-defined rule loading
  */
 export async function generateRuleCatalogResource(): Promise<ResourceGenerationResult> {
   try {

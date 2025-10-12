@@ -304,9 +304,7 @@ function getEnvironmentVariables(): Record<string, string | undefined> {
   const env: Record<string, string | undefined> = {};
 
   for (const [key, value] of Object.entries(process.env)) {
-    const isSensitive = sensitiveKeys.some(sensitive =>
-      key.toUpperCase().includes(sensitive)
-    );
+    const isSensitive = sensitiveKeys.some(sensitive => key.toUpperCase().includes(sensitive));
 
     if (isSensitive && value) {
       env[key] = '***masked***';
@@ -449,7 +447,8 @@ function extractStructuredDataFromToolOutput(toolOutput: string): Partial<Enviro
 
   // Extract containerization information
   const dockerDetected = toolOutput.toLowerCase().includes('docker');
-  const kubernetesDetected = toolOutput.toLowerCase().includes('kubernetes') || toolOutput.toLowerCase().includes('k8s');
+  const kubernetesDetected =
+    toolOutput.toLowerCase().includes('kubernetes') || toolOutput.toLowerCase().includes('k8s');
 
   if (dockerDetected || kubernetesDetected) {
     const technologies = [];
@@ -472,49 +471,94 @@ function extractStructuredDataFromToolOutput(toolOutput: string): Partial<Enviro
   }
 
   // Extract cloud services
-  const cloudProviders = extractTechnologies(toolOutput, ['aws', 'azure', 'gcp', 'google cloud', 'heroku', 'vercel', 'netlify']);
+  const cloudProviders = extractTechnologies(toolOutput, [
+    'aws',
+    'azure',
+    'gcp',
+    'google cloud',
+    'heroku',
+    'vercel',
+    'netlify',
+  ]);
   if (cloudProviders.length > 0) {
     extracted.cloudServices = {
       providers: cloudProviders,
-      services: extractListItems(toolOutput, ['lambda', 'ec2', 's3', 'rds', 'functions', 'storage']),
+      services: extractListItems(toolOutput, [
+        'lambda',
+        'ec2',
+        's3',
+        'rds',
+        'functions',
+        'storage',
+      ]),
       deployment: toolOutput.toLowerCase().includes('serverless') ? 'serverless' : 'traditional',
     };
   }
 
   // Extract security information
-  const httpsEnabled = toolOutput.toLowerCase().includes('https') || toolOutput.toLowerCase().includes('ssl');
-  const authSetup = toolOutput.toLowerCase().includes('auth') || toolOutput.toLowerCase().includes('authentication');
+  const httpsEnabled =
+    toolOutput.toLowerCase().includes('https') || toolOutput.toLowerCase().includes('ssl');
+  const authSetup =
+    toolOutput.toLowerCase().includes('auth') ||
+    toolOutput.toLowerCase().includes('authentication');
 
   extracted.security = {
     httpsEnabled,
     authenticationSetup: authSetup,
-    secretManagement: toolOutput.toLowerCase().includes('secret') && toolOutput.toLowerCase().includes('management'),
-    complianceFrameworks: extractTechnologies(toolOutput, ['gdpr', 'soc2', 'iso27001', 'hipaa', 'pci']),
+    secretManagement:
+      toolOutput.toLowerCase().includes('secret') &&
+      toolOutput.toLowerCase().includes('management'),
+    complianceFrameworks: extractTechnologies(toolOutput, [
+      'gdpr',
+      'soc2',
+      'iso27001',
+      'hipaa',
+      'pci',
+    ]),
     vulnerabilities: (toolOutput.match(/vulnerability|vulnerable/gi) || []).length,
   };
 
   // Extract deployment information
-  const cicdDetected = toolOutput.toLowerCase().includes('ci/cd') || toolOutput.toLowerCase().includes('pipeline');
+  const cicdDetected =
+    toolOutput.toLowerCase().includes('ci/cd') || toolOutput.toLowerCase().includes('pipeline');
 
   extracted.deployment = {
     cicdDetected,
-    pipeline: extractTechnologies(toolOutput, ['github actions', 'gitlab ci', 'jenkins', 'circleci', 'travis'])[0] || 'unknown',
+    pipeline:
+      extractTechnologies(toolOutput, [
+        'github actions',
+        'gitlab ci',
+        'jenkins',
+        'circleci',
+        'travis',
+      ])[0] || 'unknown',
     automated: cicdDetected,
     frequency: toolOutput.toLowerCase().includes('continuous') ? 'continuous' : 'manual',
   };
 
   // Extract monitoring information
-  const monitoringTools = extractTechnologies(toolOutput, ['prometheus', 'grafana', 'datadog', 'new relic', 'cloudwatch', 'stackdriver']);
+  const monitoringTools = extractTechnologies(toolOutput, [
+    'prometheus',
+    'grafana',
+    'datadog',
+    'new relic',
+    'cloudwatch',
+    'stackdriver',
+  ]);
 
   extracted.monitoring = {
     toolsDetected: monitoringTools,
     metricsEnabled: toolOutput.toLowerCase().includes('metrics'),
-    loggingEnabled: toolOutput.toLowerCase().includes('logging') || toolOutput.toLowerCase().includes('logs'),
-    tracingEnabled: toolOutput.toLowerCase().includes('tracing') || toolOutput.toLowerCase().includes('jaeger'),
+    loggingEnabled:
+      toolOutput.toLowerCase().includes('logging') || toolOutput.toLowerCase().includes('logs'),
+    tracingEnabled:
+      toolOutput.toLowerCase().includes('tracing') || toolOutput.toLowerCase().includes('jaeger'),
   };
 
   // Extract ADR integration
-  const adrMentioned = toolOutput.toLowerCase().includes('adr') || toolOutput.toLowerCase().includes('architecture decision');
+  const adrMentioned =
+    toolOutput.toLowerCase().includes('adr') ||
+    toolOutput.toLowerCase().includes('architecture decision');
 
   if (adrMentioned) {
     extracted.adrIntegration = {
@@ -528,9 +572,21 @@ function extractStructuredDataFromToolOutput(toolOutput: string): Partial<Enviro
   // Extract quality attributes
   extracted.qualityAttributes = {
     performance: toolOutput.toLowerCase().includes('performance') ? 'mentioned' : 'not mentioned',
-    scalability: toolOutput.toLowerCase().includes('scalability') || toolOutput.toLowerCase().includes('scalable') ? 'mentioned' : 'not mentioned',
-    reliability: toolOutput.toLowerCase().includes('reliability') || toolOutput.toLowerCase().includes('reliable') ? 'mentioned' : 'not mentioned',
-    maintainability: toolOutput.toLowerCase().includes('maintainability') || toolOutput.toLowerCase().includes('maintainable') ? 'mentioned' : 'not mentioned',
+    scalability:
+      toolOutput.toLowerCase().includes('scalability') ||
+      toolOutput.toLowerCase().includes('scalable')
+        ? 'mentioned'
+        : 'not mentioned',
+    reliability:
+      toolOutput.toLowerCase().includes('reliability') ||
+      toolOutput.toLowerCase().includes('reliable')
+        ? 'mentioned'
+        : 'not mentioned',
+    maintainability:
+      toolOutput.toLowerCase().includes('maintainability') ||
+      toolOutput.toLowerCase().includes('maintainable')
+        ? 'mentioned'
+        : 'not mentioned',
     security: toolOutput.toLowerCase().includes('security') ? 'mentioned' : 'not mentioned',
   };
 
@@ -674,14 +730,119 @@ async function generateComprehensiveAnalysis(
 
     return comprehensiveAnalysis;
   } catch (error) {
-    console.error('[environment-analysis-resource] Tool execution failed, falling back to basic analysis:', error);
+    console.error(
+      '[environment-analysis-resource] Tool execution failed, falling back to basic analysis:',
+      error
+    );
     return generateBasicAnalysis();
   }
 }
 
 /**
- * Generate environment analysis resource
- * Enhanced with bridge pattern to leverage comprehensive tool
+ * Generate comprehensive environment analysis resource with infrastructure detection and cloud services discovery.
+ *
+ * Analyzes the runtime environment, system specifications, project dependencies, containerization setup,
+ * cloud services configuration, and security posture to provide complete environmental context.
+ *
+ * **Query Parameters:**
+ * - `type`: Analysis type - "specs" (system specs), "infrastructure" (detailed infra), or "security" (security focus) (default: "specs")
+ * - `memory`: Enable memory integration for historical environment tracking (default: true)
+ * - `comprehensive`: Use comprehensive analysis via tool bridge (default: true)
+ *
+ * **Comprehensive Mode includes:**
+ * - Advanced infrastructure component detection (Kubernetes, Docker, databases)
+ * - Cloud services discovery (AWS, Azure, GCP, Vercel, Netlify)
+ * - Container security analysis with scoring
+ * - HTTPS/authentication/secrets management checks
+ * - Compliance framework detection (SOC2, HIPAA, GDPR, PCI-DSS)
+ * - Real-time health metrics (disk space, load average, uptime)
+ *
+ * **Basic Mode includes:**
+ * - System specifications (OS, arch, Node.js, npm versions)
+ * - Project structure analysis (TypeScript, tests, package manager)
+ * - Runtime dependencies catalog
+ * - Environment variables overview
+ * - Basic capability flags
+ *
+ * @param _params - URL path parameters (currently unused, reserved for future routing)
+ * @param searchParams - URL query parameters controlling analysis depth and type
+ *
+ * @returns Promise resolving to resource generation result containing:
+ *   - data: Complete environment analysis with system, project, and infrastructure details
+ *   - contentType: "application/json"
+ *   - lastModified: ISO timestamp of generation
+ *   - cacheKey: Unique identifier based on analysis type and options
+ *   - ttl: Cache duration (300 seconds / 5 minutes)
+ *   - etag: Entity tag for cache validation
+ *
+ * @throws {Error} Rarely throws; gracefully handles analysis failures by:
+ *   - Falling back to basic analysis if comprehensive fails
+ *   - Returning partial data for unavailable metrics
+ *   - Logging warnings for non-critical errors
+ *
+ * @example
+ * ```typescript
+ * // Get comprehensive environment analysis
+ * const env = await generateEnvironmentAnalysisResource(
+ *   {},
+ *   new URLSearchParams('type=infrastructure&memory=true')
+ * );
+ *
+ * console.log(`Platform: ${env.data.system.platform} ${env.data.system.arch}`);
+ * console.log(`Node: ${env.data.system.nodeVersion}`);
+ * console.log(`AI Execution: ${env.data.capabilities.aiExecution ? 'Enabled' : 'Disabled'}`);
+ *
+ * // Check containerization
+ * if (env.data.containerization?.detected) {
+ *   console.log(`Container tech: ${env.data.containerization.technologies.join(', ')}`);
+ *   console.log(`Security score: ${env.data.containerization.security.score}`);
+ * }
+ *
+ * // Check cloud services
+ * if (env.data.cloudServices) {
+ *   console.log(`Cloud providers: ${env.data.cloudServices.providers.join(', ')}`);
+ *   console.log(`Services: ${env.data.cloudServices.services.length}`);
+ * }
+ *
+ * // Basic mode example (faster)
+ * const basicEnv = await generateEnvironmentAnalysisResource(
+ *   {},
+ *   new URLSearchParams('comprehensive=false')
+ * );
+ *
+ * // Expected output structure:
+ * {
+ *   data: {
+ *     system: {
+ *       platform: "linux",
+ *       arch: "x64",
+ *       nodeVersion: "20.10.0",
+ *       npmVersion: "10.2.3"
+ *     },
+ *     project: {
+ *       hasTypeScript: true,
+ *       hasTests: true,
+ *       frameworks: ["express", "jest"]
+ *     },
+ *     capabilities: {
+ *       aiExecution: true,
+ *       knowledgeGraph: true,
+ *       caching: true
+ *     },
+ *     containerization: {
+ *       detected: true,
+ *       technologies: ["docker"],
+ *       security: { score: 85 }
+ *     }
+ *   },
+ *   contentType: "application/json",
+ *   cacheKey: "environment-analysis:specs:true:true",
+ *   ttl: 300
+ * }
+ * ```
+ *
+ * @since v2.0.0
+ * @see {@link environmentAnalysis} tool for underlying analysis engine
  */
 export async function generateEnvironmentAnalysisResource(
   _params?: Record<string, string>,

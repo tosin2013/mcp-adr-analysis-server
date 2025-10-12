@@ -7,14 +7,17 @@
 ## 🚀 Quick Start
 
 ### **Super Quick (1 minute)**
+
 ```bash
 cd docs
 npm run setup
 npm run dev
 ```
-**→ Open http://localhost:5173 to see your website!**
+
+**→ Open https://localhost:5173 to see your website!**
 
 ### **Using Scripts (Advanced)**
+
 ```bash
 cd docs
 ./setup-website.sh setup  # First-time setup
@@ -22,6 +25,7 @@ cd docs
 ```
 
 ### **Manual Steps**
+
 ```bash
 cd docs
 npm install               # Install dependencies
@@ -36,16 +40,19 @@ npm run docs:build       # Build for production
 ## ✨ What You Get
 
 ### **🎯 Perfect Diataxis Navigation**
+
 - **Clear user paths** based on goals (Learn/Solve/Lookup/Understand)
 - **Intuitive sidebar** organized by documentation type
 - **Smart search** across all 37 tools and concepts
 
 ### **📱 Professional Design**
+
 - **Responsive layout** works perfectly on mobile and desktop
 - **Fast loading** with optimized static site generation
 - **Accessible** following web accessibility standards
 
 ### **🔍 Powerful Features**
+
 - **Full-text search** with instant results
 - **Syntax highlighting** for code examples
 - **Cross-references** between related topics
@@ -56,6 +63,7 @@ npm run docs:build       # Build for production
 ## 🎨 Customization Options
 
 ### **Theme Configuration**
+
 Edit `./.vitepress/config.js` to customize:
 
 ```js
@@ -66,9 +74,11 @@ themeConfig: {
 ```
 
 ### **Add Custom Pages**
+
 Create new `.md` files in the docs directory and they'll automatically be included.
 
 ### **Modify Navigation**
+
 Update the sidebar configuration in `config.js` to reorganize content.
 
 ---
@@ -93,7 +103,7 @@ The GitHub Actions workflow is already configured in `.github/workflows/docs.yml
 
 ### **Option 3: Netlify**
 
-1. **Connect your GitHub repo** to Netlify  
+1. **Connect your GitHub repo** to Netlify
 2. **Set build settings**:
    - Build Command: `cd docs && npm run docs:build`
    - Publish Directory: `./.vitepress/dist`
@@ -117,30 +127,37 @@ python -m http.server -d .vitepress/dist
 ## 🔧 Advanced Configuration
 
 ### **Custom Domain**
+
 If using a custom domain, update `base` in `config.js`:
 
 ```js
 export default defineConfig({
   base: '/', // Change from '/mcp-adr-analysis-server/'
   // ... rest of config
-})
+});
 ```
 
 ### **Analytics Integration**
+
 Add Google Analytics or other tracking:
 
 ```js
 head: [
   // Add analytics scripts here
   ['script', { async: '', src: 'https://www.googletagmanager.com/gtag/js?id=GA_MEASUREMENT_ID' }],
-  ['script', {}, `window.dataLayer = window.dataLayer || [];
+  [
+    'script',
+    {},
+    `window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'GA_MEASUREMENT_ID');`]
-]
+  gtag('config', 'GA_MEASUREMENT_ID');`,
+  ],
+];
 ```
 
 ### **Search Enhancement**
+
 For even better search, consider integrating Algolia:
 
 ```js
@@ -159,12 +176,14 @@ search: {
 ## 📊 Performance Features
 
 ### **Built-in Optimizations**
+
 - ⚡ **Fast builds** with Vite's optimized bundling
 - 🚀 **Lightning-fast loading** with code splitting
 - 📱 **Mobile optimized** with responsive design
 - 🔍 **SEO optimized** with proper meta tags
 
 ### **Performance Monitoring**
+
 - Check Core Web Vitals in browser dev tools
 - Use Lighthouse for performance audits
 - Monitor bundle size with `npm run docs:build --debug`
@@ -174,6 +193,7 @@ search: {
 ## 🛠️ Development Workflow
 
 ### **Local Development**
+
 ```bash
 # Start dev server (hot reload enabled)
 npm run docs:dev
@@ -184,11 +204,13 @@ npm run docs:preview
 ```
 
 ### **Content Updates**
+
 1. **Edit markdown files** in the docs directory
 2. **See changes instantly** with hot reload
 3. **Commit and push** to deploy automatically
 
 ### **Testing**
+
 ```bash
 # Build and test locally
 npm run docs:build
@@ -212,6 +234,7 @@ Your site is pre-configured for excellent SEO:
 - ✅ **Mobile-friendly** responsive design
 
 ### **Enhance Further**
+
 - Add page-specific meta descriptions in frontmatter
 - Include relevant images with alt text
 - Use descriptive headings and structure
@@ -224,6 +247,7 @@ Your site is pre-configured for excellent SEO:
 ### **Common Issues**
 
 **Build fails with "Cannot resolve module"**
+
 ```bash
 # Clear cache and reinstall
 rm -rf node_modules package-lock.json
@@ -231,18 +255,22 @@ npm install
 ```
 
 **Images not loading**
+
 - Ensure images are in `./public/` directory
 - Reference with `/image-name.jpg` (leading slash)
 
 **Search not working**
+
 - Ensure all markdown files have proper frontmatter
 - Check for malformed markdown syntax
 
 **Styling issues**
+
 - Clear browser cache
 - Check for CSS conflicts in custom styles
 
 ### **Getting Help**
+
 - **VitePress Docs**: https://vitepress.dev/
 - **GitHub Issues**: Report specific problems
 - **Community**: Join VitePress Discord for quick help
@@ -267,6 +295,7 @@ Before going live:
 **🎉 Your documentation website is ready to launch!**
 
 **Next Steps:**
+
 1. Run `npm run docs:dev` to see your site locally
 2. Customize the theme colors and branding in `config.js`
 3. Deploy to your preferred hosting platform
@@ -274,4 +303,4 @@ Before going live:
 
 ---
 
-*This website setup leverages your excellent Diataxis-structured documentation to create a professional, searchable, and user-friendly experience that guides users exactly where they need to go.*
+_This website setup leverages your excellent Diataxis-structured documentation to create a professional, searchable, and user-friendly experience that guides users exactly where they need to go._

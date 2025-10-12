@@ -674,7 +674,7 @@ function calculateRuleEffectiveness(metrics: RuleMetrics): number {
 ## 🔗 Related Documentation
 
 - **[Security Analysis](security-analysis.md)** - Security-focused rule implementation
-- **[API Reference](./reference/api-reference.md)** - Complete tool documentation
+- **[API Reference](../reference/api-reference.md)** - Complete tool documentation
 - **[Troubleshooting](troubleshooting.md)** - Rule-related troubleshooting
 
 ---

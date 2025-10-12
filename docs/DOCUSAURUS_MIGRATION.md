@@ -13,10 +13,12 @@ This guide documents the migration from VitePress to Docusaurus for the MCP ADR 
 ### 1. Configuration Files
 
 #### Removed (VitePress)
+
 - `.vitepress/config.js` - VitePress configuration
 - `.vitepress/dist/` - VitePress build output
 
 #### Added (Docusaurus)
+
 - `docusaurus.config.js` - Main Docusaurus configuration
 - `sidebars.js` - Sidebar navigation configuration
 - `src/css/custom.css` - Custom styling
@@ -27,6 +29,7 @@ This guide documents the migration from VitePress to Docusaurus for the MCP ADR 
 ### 2. Package Dependencies
 
 #### Removed
+
 ```json
 {
   "vitepress": "^1.0.0",
@@ -35,6 +38,7 @@ This guide documents the migration from VitePress to Docusaurus for the MCP ADR 
 ```
 
 #### Added
+
 ```json
 {
   "@docusaurus/core": "^3.1.0",
@@ -48,13 +52,13 @@ This guide documents the migration from VitePress to Docusaurus for the MCP ADR 
 
 ### 3. Scripts Updated
 
-| Old (VitePress) | New (Docusaurus) | Description |
-|-----------------|------------------|-------------|
-| `npm run dev` | `npm run start` or `npm run dev` | Start development server |
-| `npm run build` | `npm run build` | Build for production |
-| `npm run preview` | `npm run serve` | Preview production build |
-| N/A | `npm run clear` | Clear cache |
-| N/A | `npm run deploy` | Deploy to GitHub Pages |
+| Old (VitePress)   | New (Docusaurus)                 | Description              |
+| ----------------- | -------------------------------- | ------------------------ |
+| `npm run dev`     | `npm run start` or `npm run dev` | Start development server |
+| `npm run build`   | `npm run build`                  | Build for production     |
+| `npm run preview` | `npm run serve`                  | Preview production build |
+| N/A               | `npm run clear`                  | Clear cache              |
+| N/A               | `npm run deploy`                 | Deploy to GitHub Pages   |
 
 ### 4. Directory Structure
 
@@ -100,6 +104,7 @@ cp -r public/* static/img/
 Most markdown files work as-is, but you may need to update:
 
 1. **Front matter** - Docusaurus uses slightly different front matter:
+
    ```yaml
    ---
    id: my-doc
@@ -110,6 +115,7 @@ Most markdown files work as-is, but you may need to update:
    ```
 
 2. **Internal links** - Should work the same, but verify:
+
    ```markdown
    [Link to tutorial](/tutorials/01-first-steps)
    ```
@@ -123,7 +129,7 @@ cd docs
 npm run start
 ```
 
-Visit `http://localhost:3000/mcp-adr-analysis-server/` to preview.
+Visit `https://localhost:3000/mcp-adr-analysis-server/` to preview.
 
 ### Step 5: Build for Production
 
@@ -142,6 +148,7 @@ The GitHub Actions workflow (`.github/workflows/deploy-docusaurus.yml`) will aut
 ### Docusaurus Config (`docusaurus.config.js`)
 
 Key configurations:
+
 - **Base URL**: `/mcp-adr-analysis-server/` (for GitHub Pages)
 - **Organization**: `tosin2013`
 - **Project**: `mcp-adr-analysis-server`
@@ -151,6 +158,7 @@ Key configurations:
 ### Sidebars Config (`sidebars.js`)
 
 Multiple sidebars for different sections:
+
 - `mainSidebar` - Complete documentation tree
 - `tutorialsSidebar` - Tutorials only
 - `howToSidebar` - How-to guides only
@@ -173,21 +181,22 @@ Edit `src/css/custom.css` to customize:
 ### Logo and Favicon
 
 Place files in `static/img/`:
+
 - `static/img/logo.png` - Site logo
 - `static/img/favicon.ico` - Favicon
 - `static/img/og-image.png` - Social media preview
 
 ## 📊 Feature Comparison
 
-| Feature | VitePress | Docusaurus | Notes |
-|---------|-----------|------------|-------|
-| Mermaid Diagrams | ✅ Plugin | ✅ Built-in theme | Better integration in Docusaurus |
-| Search | ✅ Local | ✅ Algolia/Local | More options in Docusaurus |
-| MDX Support | ⚠️ Limited | ✅ Full | React components in docs |
-| Versioning | ❌ | ✅ | Built-in version management |
-| i18n | ⚠️ Basic | ✅ Advanced | Better internationalization |
-| Plugin System | ⚠️ Limited | ✅ Extensive | Rich plugin ecosystem |
-| React Integration | ❌ | ✅ | Full React component support |
+| Feature           | VitePress  | Docusaurus        | Notes                            |
+| ----------------- | ---------- | ----------------- | -------------------------------- |
+| Mermaid Diagrams  | ✅ Plugin  | ✅ Built-in theme | Better integration in Docusaurus |
+| Search            | ✅ Local   | ✅ Algolia/Local  | More options in Docusaurus       |
+| MDX Support       | ⚠️ Limited | ✅ Full           | React components in docs         |
+| Versioning        | ❌         | ✅                | Built-in version management      |
+| i18n              | ⚠️ Basic   | ✅ Advanced       | Better internationalization      |
+| Plugin System     | ⚠️ Limited | ✅ Extensive      | Rich plugin ecosystem            |
+| React Integration | ❌         | ✅                | Full React component support     |
 
 ## 🔍 Troubleshooting
 
@@ -200,6 +209,7 @@ Place files in `static/img/`:
 ### Broken Links
 
 Docusaurus has stricter link checking. Update broken links in:
+
 - Internal links: Use relative paths from docs root
 - External links: Ensure they're valid URLs
 

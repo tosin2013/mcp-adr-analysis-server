@@ -4,14 +4,14 @@
 
 ## 📋 Table of Contents
 
-- [Quick Start](#-quick-start)
-- [Testing Architecture](#-testing-architecture)
-- [Test Types & Categories](#-test-types--categories)
-- [Running Tests](#-running-tests)
-- [Writing Tests](#-writing-tests)
-- [Testing Best Practices](#-testing-best-practices)
-- [Troubleshooting](#-troubleshooting)
-- [CI/CD Integration](#-cicd-integration)
+- [Quick Start](#quick-start)
+- [Testing Architecture](#testing-architecture)
+- [Test Types & Categories](#test-types--categories)
+- [Running Tests](#running-tests)
+- [Writing Tests](#writing-tests)
+- [Testing Best Practices](#testing-best-practices)
+- [Troubleshooting](#troubleshooting)
+- [CI/CD Integration](#cicd-integration)
 
 ---
 
@@ -236,10 +236,10 @@ describe('ComponentUnderTest', () => {
     it('should perform expected behavior', async () => {
       // Arrange
       const input = testContext.createMockInput();
-      
+
       // Act
       const result = await component.process(input);
-      
+
       // Assert
       expect(result).toBeDefined();
       expect(result.success).toBe(true);
@@ -270,7 +270,7 @@ expect(performanceResult).toShowSignificantImprovement(0.15);
 
 ```typescript
 // Tree-sitter mocks (automatically available)
-import TreeSitter from 'tree-sitter';  // Uses mock implementation
+import TreeSitter from 'tree-sitter'; // Uses mock implementation
 
 // Custom mocks
 import { mockFileSystem } from '../__mocks__/file-system.js';
@@ -288,7 +288,7 @@ beforeEach(() => {
 const testData = testInfrastructure.generateTestData({
   type: 'adr',
   count: 5,
-  complexity: 'medium'
+  complexity: 'medium',
 });
 
 // Create temporary directories
@@ -370,6 +370,7 @@ it('should complete within reasonable time', async () => {
 **Problem**: Tests fail with out-of-memory errors
 
 **Solution**:
+
 ```bash
 # Increase Node.js memory limit
 export NODE_OPTIONS="--max-old-space-size=4096"
@@ -387,6 +388,7 @@ npm test
 **Problem**: Tests timeout in CI environment
 
 **Solution**:
+
 ```bash
 # Use infrastructure script with custom timeout
 ./scripts/test-infrastructure.sh integration --timeout=600
@@ -397,6 +399,7 @@ npm test
 **Problem**: Tests leave temporary files or handles open
 
 **Solution**:
+
 ```bash
 # Run cleanup
 ./scripts/test-infrastructure.sh cleanup
@@ -526,13 +529,12 @@ open coverage/lcov-report/index.html
 
 ---
 
-**Need Help?** 
+**Need Help?**
 
 - 🐛 **Issues**: [GitHub Issues](https://github.com/tosin2013/mcp-adr-analysis-server/issues)
-- 💬 **Discussions**: [GitHub Discussions](https://github.com/tosin2013/mcp-adr-analysis-server/discussions)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/tosin2013/mcp-adr-analysis-server/issues)
 - 📖 **Documentation**: [Full Documentation](./index.md)
 
 ---
 
-*This guide is maintained as part of the MCP ADR Analysis Server project. Last updated: October 2025*
-
+_This guide is maintained as part of the MCP ADR Analysis Server project. Last updated: October 2025_

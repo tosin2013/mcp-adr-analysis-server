@@ -65,9 +65,9 @@
 
 ## 📚 Further Reading
 
-- **[Implementation Guide](./how-to-guides/)** - How to implement these concepts
-- **[API Reference](./reference/)** - Technical reference documentation
+- **[Implementation Guide](../how-to-guides/)** - How to implement these concepts
+- **[API Reference](../reference/)** - Technical reference documentation
 
 ---
 
-**Questions about ai architecture concepts?** → **[Join the Discussion](https://github.com/tosin2013/mcp-adr-analysis-server/discussions)**
+**Questions about ai architecture concepts?** → **[Open an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**

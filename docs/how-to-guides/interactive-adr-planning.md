@@ -51,16 +51,19 @@ mcp-adr analyze_code_patterns --project-path /path/to/project
 ## Planning Workflow
 
 ### Phase 1: Discovery
+
 1. **Project Analysis**: Understand current architecture
 2. **Requirement Gathering**: Identify architectural needs
 3. **Research**: Investigate best practices and patterns
 
 ### Phase 2: Decision Making
+
 1. **ADR Creation**: Document architectural decisions
 2. **Impact Analysis**: Assess decision implications
 3. **Validation**: Ensure decisions align with project goals
 
 ### Phase 3: Implementation
+
 1. **TODO Generation**: Create actionable tasks
 2. **Progress Tracking**: Monitor implementation status
 3. **Validation**: Verify decisions are implemented correctly
@@ -68,18 +71,21 @@ mcp-adr analyze_code_patterns --project-path /path/to/project
 ## Best Practices
 
 ### ADR Structure
+
 - Use clear, descriptive titles
 - Include context and decision rationale
 - Document consequences and trade-offs
 - Maintain decision status
 
 ### Interactive Planning
+
 - Use research tools for informed decisions
 - Validate decisions against project constraints
 - Track progress with TODO management
 - Regular review and updates
 
 ### Collaboration
+
 - Share ADRs with team members
 - Use version control for ADR changes
 - Document discussions and feedback
@@ -88,12 +94,14 @@ mcp-adr analyze_code_patterns --project-path /path/to/project
 ## Advanced Features
 
 ### Research Integration
+
 - Leverage knowledge graph for context
 - Use environment analysis for constraints
 - Apply web search for external insights
 - Cache results for performance
 
 ### Validation and Compliance
+
 - Check architectural rule compliance
 - Validate against project standards
 - Ensure security requirements
@@ -102,13 +110,15 @@ mcp-adr analyze_code_patterns --project-path /path/to/project
 ## Troubleshooting
 
 ### Common Issues
+
 - **Missing ADR Directory**: Ensure `./adrs` exists
 - **Permission Errors**: Check file system permissions
 - **Configuration Issues**: Verify MCP server configuration
 
 ### Getting Help
+
 - Check the [troubleshooting guide](./troubleshooting.md)
-- Review [API reference](./reference/api-reference.md)
+- Review [API reference](../reference/api-reference.md)
 - Consult [developer guidance](./DEVELOPER_GUIDANCE.md)
 
 ## Next Steps
@@ -116,11 +126,11 @@ mcp-adr analyze_code_patterns --project-path /path/to/project
 - [Research Integration Guide](./research-integration.md)
 - [Security Analysis Guide](./security-analysis.md)
 - [Deployment Readiness Guide](./deployment-readiness.md)
-- [API Reference](./reference/api-reference.md)
+- [API Reference](../reference/api-reference.md)
 
 ## Related Documentation
 
-- [Research-Driven Architecture](./RESEARCH-DRIVEN-ARCHITECTURE.md)
+- [Research-Driven Architecture](../notes/RESEARCH-DRIVEN-ARCHITECTURE.md)
 - [Developer Guidance](./DEVELOPER_GUIDANCE.md)
 - [User Guidance](./USER_GUIDANCE.md)
 - [Testing Guide](./TESTING_GUIDE.md)

@@ -83,7 +83,7 @@ const config = {
         items: [
           {
             type: 'doc',
-            docId: 'diataxis-index',
+            docId: 'how-to-guides/installation-guide',
             position: 'left',
             label: '🚀 Get Started',
           },

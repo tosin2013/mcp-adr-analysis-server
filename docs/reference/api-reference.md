@@ -2,7 +2,7 @@
 
 **MCP ADR Analysis Server** - All available tools, parameters, and usage examples
 
-> **Version**: 2.1.0 | **Tools**: 41 comprehensive tools | **Updated**: October 2025
+> **Version**: 2.1.11 | **Tools**: 52 comprehensive tools | **Updated**: October 2024
 
 ---
 
@@ -402,6 +402,7 @@
 **Purpose**: Security-focused Git push with deployment readiness validation and metrics tracking
 
 **Use Cases**:
+
 - Secure git pushes with comprehensive security scanning
 - Deployment readiness validation before pushing
 - Metrics tracking for deployment success rates
@@ -460,6 +461,7 @@
 ```
 
 **Key Features**:
+
 - **Security Scanning**: Detects credentials, secrets, and sensitive data
 - **Repository Hygiene**: Blocks irrelevant files (temp, build artifacts)
 - **Deployment Readiness**: Validates deployment readiness before pushing
@@ -467,10 +469,12 @@
 - **Human Overrides**: Supports human confirmation for edge cases
 
 **Cache Dependencies**:
+
 - **Creates/Updates**: `.mcp-adr-cache/deploy-history.json` (deployment metrics)
 - **Uses**: Enhanced sensitive detector for security scanning
 
 **Blocking Conditions**:
+
 - Critical security issues detected
 - Failed tests (when `testResults` provided)
 - Deployment readiness failures (when enabled)
@@ -485,6 +489,7 @@
 **Purpose**: Answer research questions using cascading data sources (project files → knowledge graph → environment → web search)
 
 **Use Cases**:
+
 - Investigate architectural decisions and patterns
 - Understand project implementation details
 - Research deployment and configuration approaches
@@ -527,12 +532,14 @@
 ```
 
 **Research Sources** (in order of priority):
+
 1. **📁 Project Files** - Code, configs, documentation
 2. **🧠 Knowledge Graph** - ADR relationships and decisions
 3. **🔧 Environment Resources** - Live system data (Kubernetes, Docker, etc.)
 4. **🌐 Web Search** - External information (fallback only)
 
 **Confidence Scoring**:
+
 - **High (≥80%)**: Reliable answer from project sources
 - **Moderate (60-79%)**: Good answer, may need validation
 - **Low (&lt;60%)**: Limited information, web search recommended
@@ -770,9 +777,9 @@
 
 ## 📚 Additional Resources
 
-- **[Tutorials](./tutorials/01-first-steps.md)** - Step-by-step guides
-- **[How-To Guides](./how-to-guides/troubleshooting.md)** - Problem-solving guides
-- **[Explanation](../explanation/mcp-concepts.md)** - Conceptual documentation
+- **[Tutorials](.../tutorials/01-first-steps.md)** - Step-by-step guides
+- **[How-To Guides](.../how-to-guides/troubleshooting.md)** - Problem-solving guides
+- **[Explanation](.../explanation/mcp-concepts.md)** - Conceptual documentation
 - **[GitHub Repository](https://github.com/tosin2013/mcp-adr-analysis-server)** - Source code and issues
 
 ---
