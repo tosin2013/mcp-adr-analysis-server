@@ -308,10 +308,18 @@ export class BootstrapValidationLoop {
       adrUpdates.push(...updates);
     }
 
+    // Ensure finalResult exists before proceeding
+    if (!finalResult) {
+      throw new McpAdrError(
+        'No execution result available - bootstrap validation loop failed to execute',
+        'EXECUTION_ERROR'
+      );
+    }
+
     const result = {
       success,
       iterations: this.currentIteration,
-      finalResult: finalResult!,
+      finalResult,
       adrUpdates,
       executionHistory: this.executionHistory,
       requiresHumanApproval: true as const,
@@ -499,8 +507,42 @@ Please review this deployment plan and:
         enableTreeSitterAnalysis: true,
       });
 
-      // Extract scripts from result
-      const response = JSON.parse(result.content[0].text);
+      // Validate result structure
+      if (!result?.content?.[0]?.text) {
+        throw new McpAdrError(
+          'Invalid response from bootstrap script generator - missing content',
+          'INVALID_RESPONSE'
+        );
+      }
+
+      // Extract and validate scripts from result
+      let response: any;
+      try {
+        response = JSON.parse(result.content[0].text);
+      } catch (parseError) {
+        this.logger.error(
+          'Failed to parse bootstrap script response as JSON',
+          'BootstrapValidationLoop',
+          parseError as Error
+        );
+        throw new McpAdrError('Malformed JSON response from script generator', 'PARSE_ERROR');
+      }
+
+      // Validate response structure and required properties
+      if (!response?.scripts) {
+        throw new McpAdrError(
+          'Invalid response structure - missing scripts property',
+          'INVALID_RESPONSE'
+        );
+      }
+
+      if (typeof response.scripts.bootstrap !== 'string' || !response.scripts.bootstrap.trim()) {
+        throw new McpAdrError('Invalid or empty bootstrap script in response', 'INVALID_SCRIPT');
+      }
+
+      if (typeof response.scripts.validation !== 'string' || !response.scripts.validation.trim()) {
+        throw new McpAdrError('Invalid or empty validation script in response', 'INVALID_SCRIPT');
+      }
 
       // Write bootstrap.sh
       const bootstrapPath = path.join(this.projectPath, 'bootstrap.sh');
@@ -533,7 +575,7 @@ Please review this deployment plan and:
     targetEnvironment: string,
     captureSnapshot: boolean
   ): Promise<BootstrapExecutionResult> {
-    const executionId = `bootstrap_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const executionId = `bootstrap_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
     const timestamp = new Date().toISOString();
     const startTime = Date.now();
 
@@ -918,12 +960,19 @@ fi
         try {
           await fs.access(fullPath);
           // File exists, continue
-        } catch {
-          // File is missing
-          const isIgnored = this.isFileIgnored(filePath, gitignorePatterns);
-          const fileInfo = this.analyzeMissingFile(filePath, referencedBy, isIgnored);
-
-          missingFiles.push(fileInfo);
+        } catch (error: any) {
+          // Only treat as missing if it's a "file not found" error
+          // Other errors (permissions, etc.) should be logged but not treated as missing
+          if (error.code === 'ENOENT') {
+            const isIgnored = this.isFileIgnored(filePath, gitignorePatterns);
+            const fileInfo = this.analyzeMissingFile(filePath, referencedBy, isIgnored);
+            missingFiles.push(fileInfo);
+          } else {
+            this.logger.warn(
+              `Error accessing file ${filePath}: ${error.message}`,
+              'BootstrapValidationLoop'
+            );
+          }
         }
       }
 
@@ -942,22 +991,30 @@ fi
 
         try {
           await fs.access(fullPath);
-        } catch {
-          const isIgnored = this.isFileIgnored(common.path, gitignorePatterns);
+        } catch (error: any) {
+          // Only treat as missing if it's a "file not found" error
+          if (error.code === 'ENOENT') {
+            const isIgnored = this.isFileIgnored(common.path, gitignorePatterns);
 
-          if (isIgnored || common.critical) {
-            missingFiles.push({
-              filePath: common.path,
-              fileType: common.type,
-              isIgnored,
-              requiredBy: ['bootstrap-process'],
-              severity: common.critical ? 'critical' : 'warning',
-              canCreateTemplate: true,
-              templateContent: this.generateTemplateContent(common.path, common.type),
-              recommendation: isIgnored
-                ? `Create ${common.path} from template (file is gitignored)`
-                : `Consider creating ${common.path} for better configuration`,
-            });
+            if (isIgnored || common.critical) {
+              missingFiles.push({
+                filePath: common.path,
+                fileType: common.type,
+                isIgnored,
+                requiredBy: ['bootstrap-process'],
+                severity: common.critical ? 'critical' : 'warning',
+                canCreateTemplate: true,
+                templateContent: this.generateTemplateContent(common.path, common.type),
+                recommendation: isIgnored
+                  ? `Create ${common.path} from template (file is gitignored)`
+                  : `Consider creating ${common.path} for better configuration`,
+              });
+            }
+          } else {
+            this.logger.warn(
+              `Error accessing common file ${common.path}: ${error.message}`,
+              'BootstrapValidationLoop'
+            );
           }
         }
       }
