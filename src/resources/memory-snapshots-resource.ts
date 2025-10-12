@@ -910,8 +910,93 @@ export class MemorySnapshotsResource {
 }
 
 /**
- * Wrapper function for compatibility with resource generation pattern
- * Returns current memory snapshot by default
+ * Generate memory snapshots resource for knowledge graph and learning system access.
+ *
+ * Provides access to the MCP server's intelligent memory system including project analyses,
+ * recommendations, deployments, and learned patterns. Supports temporal queries and
+ * contextual retrieval for AI-enhanced decision making.
+ *
+ * **Query Parameters:**
+ * - `type`: Snapshot type - "current" (latest), "historical" (time-based), "all" (complete)
+ * - `projectId`: Filter by project identifier
+ * - `since`: ISO timestamp for historical queries (e.g., "2025-10-01T00:00:00Z")
+ * - `limit`: Maximum number of snapshots to return (default: 10, max: 100)
+ *
+ * **Memory System Features:**
+ * - Project analysis history with patterns and predictions
+ * - Recommendation tracking with success metrics
+ * - Deployment history with trend analysis
+ * - Configuration changes and their impacts
+ * - Cross-project learning and insights
+ *
+ * @param _params - URL path parameters (currently unused, reserved for future routing)
+ * @param searchParams - URL query parameters controlling snapshot selection
+ *
+ * @returns Promise resolving to resource generation result containing:
+ *   - data: Memory snapshots with metadata, timestamps, and relationships
+ *   - contentType: "application/json"
+ *   - lastModified: ISO timestamp of snapshot generation
+ *   - cacheKey: Unique identifier for caching
+ *   - ttl: Cache duration (60 seconds for real-time memory access)
+ *   - etag: Entity tag for cache validation
+ *
+ * @throws {Error} When memory system access fails or query parameters invalid
+ *
+ * @example
+ * ```typescript
+ * // Get current memory snapshot
+ * const current = await generateMemorySnapshotsResource({}, new URLSearchParams());
+ * console.log(`Total memories: ${current.data.summary.total}`);
+ * console.log(`Recent analyses: ${current.data.recent.analyses.length}`);
+ *
+ * // Get historical snapshots since specific date
+ * const historical = await generateMemorySnapshotsResource(
+ *   {},
+ *   new URLSearchParams('type=historical&since=2025-10-01T00:00:00Z&limit=50')
+ * );
+ *
+ * // Filter by project
+ * const projectMemory = await generateMemorySnapshotsResource(
+ *   {},
+ *   new URLSearchParams('projectId=mcp-adr-analysis-server')
+ * );
+ *
+ * // Expected output structure:
+ * {
+ *   data: {
+ *     snapshot: {
+ *       id: "snapshot-2025-10-12",
+ *       timestamp: "2025-10-12T17:00:00.000Z",
+ *       type: "current"
+ *     },
+ *     summary: {
+ *       total: 150,
+ *       byType: {
+ *         analysis: 50,
+ *         recommendation: 40,
+ *         deployment: 30,
+ *         configuration: 20,
+ *         interaction: 10
+ *       }
+ *     },
+ *     recent: {
+ *       analyses: [...],
+ *       recommendations: [...],
+ *       deployments: [...]
+ *     },
+ *     insights: {
+ *       patterns: ["Frequent deployment on Fridays", "High test coverage correlates with success"],
+ *       predictions: ["Next deployment likely to succeed (95% confidence)"]
+ *     }
+ *   },
+ *   contentType: "application/json",
+ *   cacheKey: "memory-snapshots:current",
+ *   ttl: 60
+ * }
+ * ```
+ *
+ * @since v2.0.0
+ * @see {@link MemorySnapshotsResource} for underlying memory access implementation
  */
 export async function generateMemorySnapshotsResource(
   _params?: Record<string, string>,

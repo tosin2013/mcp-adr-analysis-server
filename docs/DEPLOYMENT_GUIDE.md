@@ -9,6 +9,7 @@ This guide covers deploying the MCP ADR Analysis Server documentation to GitHub 
 ### GitHub Actions Workflow
 
 The documentation automatically deploys to GitHub Pages when:
+
 - ✅ Changes are pushed to `main` branch in `docs/**`
 - ✅ Workflow file is modified
 - ✅ Manual trigger via `workflow_dispatch`
@@ -33,6 +34,7 @@ The documentation automatically deploys to GitHub Pages when:
 ### Build Verification
 
 The workflow includes automatic verification:
+
 - ✅ Build directory exists
 - ✅ `index.html` is generated
 - ✅ Build size reporting
@@ -73,7 +75,7 @@ cd docs
 docker-compose --profile dev up
 ```
 
-Access at: http://localhost:3000/mcp-adr-analysis-server/
+Access at: https://localhost:3000/mcp-adr-analysis-server/
 
 ### Production Build
 
@@ -82,7 +84,7 @@ cd docs
 docker-compose --profile prod up --build
 ```
 
-Access at: http://localhost:8080/mcp-adr-analysis-server/
+Access at: https://localhost:8080/mcp-adr-analysis-server/
 
 ## GitHub Pages Configuration
 
@@ -113,6 +115,7 @@ baseUrl: '/',
 ### Build Failures
 
 **Issue:** Build fails with MDX errors
+
 ```bash
 # Check for invalid MDX syntax
 grep -r "<[0-9]" docs/**/*.md
@@ -120,6 +123,7 @@ grep -r "<[0-9]" docs/**/*.md
 ```
 
 **Issue:** Missing dependencies
+
 ```bash
 cd docs
 rm -rf node_modules package-lock.json
@@ -129,11 +133,13 @@ npm install
 ### Deployment Failures
 
 **Issue:** 404 errors on deployed site
+
 - Check `baseUrl` in `docusaurus.config.js`
 - Verify GitHub Pages is enabled
 - Check branch is `gh-pages`
 
 **Issue:** Old content showing
+
 - Clear browser cache
 - Wait 5-10 minutes for CDN propagation
 - Check deployment timestamp in Actions
@@ -143,6 +149,7 @@ npm install
 **Issue:** Workflow fails with permission errors
 
 Ensure workflow has correct permissions:
+
 ```yaml
 permissions:
   contents: read
@@ -155,6 +162,7 @@ permissions:
 ### GitHub Actions
 
 View deployment status:
+
 1. Go to **Actions** tab
 2. Select "Deploy Docusaurus to GitHub Pages"
 3. View recent runs
@@ -162,6 +170,7 @@ View deployment status:
 ### Deployment URL
 
 After successful deployment:
+
 - **Production:** https://tosin2013.github.io/mcp-adr-analysis-server/
 - **Staging:** Use PR preview (if configured)
 
@@ -170,6 +179,7 @@ After successful deployment:
 ### Before Committing
 
 1. **Test locally:**
+
    ```bash
    npm run build
    npm run serve
@@ -201,6 +211,7 @@ After successful deployment:
 If deployment breaks:
 
 1. **Revert commit:**
+
    ```bash
    git revert HEAD
    git push origin main
@@ -225,6 +236,7 @@ If deployment breaks:
 ### Pull Request Previews
 
 The workflow builds on PRs but doesn't deploy:
+
 - ✅ Validates build succeeds
 - ✅ Catches errors before merge
 - ❌ Doesn't deploy to production
@@ -232,6 +244,7 @@ The workflow builds on PRs but doesn't deploy:
 ### Branch Protection
 
 Recommended settings:
+
 - ✅ Require status checks to pass
 - ✅ Require "build" job to succeed
 - ✅ Require review before merge

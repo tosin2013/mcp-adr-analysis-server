@@ -104,7 +104,89 @@ async function validateAdr(adr: any): Promise<{
 }
 
 /**
- * Generate ADR by ID resource
+ * Generate individual ADR (Architectural Decision Record) resource with enhanced metadata and validation.
+ *
+ * Retrieves a specific ADR by its unique identifier and enriches it with:
+ * - Structural validation scoring
+ * - Related ADR discovery through content analysis
+ * - Implementation status tracking
+ * - Priority and complexity assessment
+ * - File metadata (size, location, tags)
+ *
+ * **URI Pattern:** `adr://adr/{id}`
+ *
+ * **Query Parameters:**
+ * - `projectPath`: Override project root path (default: process.cwd())
+ *
+ * @param params - URL path parameters containing:
+ *   - id: ADR identifier (e.g., "001", "database-architecture", or full filename)
+ * @param searchParams - URL query parameters for path customization
+ *
+ * @returns Promise resolving to resource generation result containing:
+ *   - data: Complete ADR details with validation, relationships, and metadata
+ *   - contentType: "application/json"
+ *   - lastModified: ISO timestamp of generation
+ *   - cacheKey: Unique identifier "adr:{id}"
+ *   - ttl: Cache duration (600 seconds / 10 minutes)
+ *   - etag: Entity tag for cache validation
+ *
+ * @throws {McpAdrError} When ADR retrieval fails due to:
+ *   - INVALID_PARAMS: Missing required 'id' parameter
+ *   - RESOURCE_NOT_FOUND: ADR with specified ID not found in directory
+ *   - RESOURCE_GENERATION_ERROR: ADR discovery or parsing failure
+ *
+ * @example
+ * ```typescript
+ * // Get ADR by numeric ID
+ * const adr = await generateAdrByIdResource(
+ *   { id: '001' },
+ *   new URLSearchParams()
+ * );
+ *
+ * console.log(`Title: ${adr.data.title}`);
+ * console.log(`Status: ${adr.data.status}`);
+ * console.log(`Validation score: ${adr.data.validationResults.score}/100`);
+ * console.log(`Related ADRs: ${adr.data.relatedAdrs.join(', ')}`);
+ *
+ * // Get ADR from custom project path
+ * const customAdr = await generateAdrByIdResource(
+ *   { id: 'database-architecture' },
+ *   new URLSearchParams('projectPath=/path/to/project')
+ * );
+ *
+ * // Expected output structure:
+ * {
+ *   data: {
+ *     id: "001",
+ *     title: "Use PostgreSQL for primary database",
+ *     status: "accepted",
+ *     date: "2025-01-15",
+ *     context: "We need a reliable RDBMS...",
+ *     decision: "We will use PostgreSQL...",
+ *     consequences: "- Positive: ACID compliance...",
+ *     implementationStatus: "completed",
+ *     priority: "high",
+ *     complexity: "medium",
+ *     relatedAdrs: ["002-database-migrations", "005-data-access-layer"],
+ *     validationResults: {
+ *       isValid: true,
+ *       issues: [],
+ *       score: 95
+ *     },
+ *     filePath: "/project/docs/adrs/001-database-choice.md",
+ *     fileSize: 2048,
+ *     tags: ["database", "infrastructure"]
+ *   },
+ *   contentType: "application/json",
+ *   cacheKey: "adr:001",
+ *   ttl: 600
+ * }
+ * ```
+ *
+ * @since v2.0.0
+ * @see {@link discoverAdrsInDirectory} for ADR discovery logic
+ * @see {@link validateAdr} for ADR validation rules
+ * @see {@link findRelatedAdrs} for relationship detection
  */
 export async function generateAdrByIdResource(
   params: Record<string, string>,

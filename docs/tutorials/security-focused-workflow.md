@@ -710,9 +710,9 @@ Track your security improvements:
 
 ### Advanced Learning
 
-- **[Large Team Scaling](./how-to-guides/large-team-scaling.md)** - Enterprise security workflows
-- **[CI/CD Integration](./how-to-guides/cicd-integration.md)** - Automated security validation
-- **[Custom Rules](./how-to-guides/custom-rules.md)** - Organization-specific security rules
+- **[Large Team Scaling](../how-to-guides/large-team-scaling.md)** - Enterprise security workflows
+- **[CI/CD Integration](../how-to-guides/cicd-integration.md)** - Automated security validation
+- **[Custom Rules](../how-to-guides/custom-rules.md)** - Organization-specific security rules
 
 ### Community Contribution
 
@@ -724,12 +724,12 @@ Track your security improvements:
 
 ## 📚 Resources
 
-- **[Security Analysis Guide](./how-to-guides/security-analysis.md)** - Comprehensive security reference
-- **[Environment Configuration](./reference/environment-config.md)** - Security-related settings
-- **[Troubleshooting](./how-to-guides/troubleshooting.md)** - Security-related issues
+- **[Security Analysis Guide](../how-to-guides/security-analysis.md)** - Comprehensive security reference
+- **[Environment Configuration](../reference/environment-config.md)** - Security-related settings
+- **[Troubleshooting](../how-to-guides/troubleshooting.md)** - Security-related issues
 
 ---
 
 **🎉 Congratulations!** You've completed the Security-First Architecture Workflow tutorial. You now have the skills to integrate security analysis into every stage of your architectural decision-making process.
 
-**Questions or issues?** → **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** or check the **[Security Guide](./how-to-guides/security-analysis.md)**
+**Questions or issues?** → **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** or check the **[Security Guide](../how-to-guides/security-analysis.md)**

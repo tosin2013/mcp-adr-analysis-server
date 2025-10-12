@@ -506,7 +506,98 @@ function calculateProductivityMetrics(gitMetrics: {
 }
 
 /**
- * Generate project metrics resource
+ * Generate comprehensive project metrics resource with code quality, architecture, and productivity analysis.
+ *
+ * Performs deep analysis of the codebase, dependencies, git history, and architectural decisions
+ * to provide actionable metrics for project health and development velocity.
+ *
+ * **Performance Note:** This function performs multiple expensive operations including:
+ * - File system traversal (src, lib, tests, docs directories)
+ * - TypeScript compilation check (`npm run typecheck`)
+ * - Test execution (`npm test`)
+ * - Dependency analysis (`npm outdated`, `npm audit`)
+ * - Git history analysis (commits, contributors, branches)
+ * - ADR discovery and parsing
+ *
+ * Results are cached for 5 minutes to balance freshness with performance.
+ *
+ * @returns Promise resolving to resource generation result containing:
+ *   - data: Complete project metrics including:
+ *     - codebase: File counts, line counts, language breakdown, largest files
+ *     - quality: Overall score, maintainability, complexity, documentation, testing
+ *     - architecture: ADR count, decisions status, tech stack, architectural debt
+ *     - dependencies: Package counts, outdated/vulnerable packages, health score
+ *     - git: Commit history, contributors, branches, recent activity
+ *     - productivity: Velocity, active contributors, change frequency
+ *   - contentType: "application/json"
+ *   - lastModified: ISO timestamp of generation
+ *   - cacheKey: "project-metrics"
+ *   - ttl: Cache duration (300 seconds / 5 minutes)
+ *   - etag: Entity tag for cache validation
+ *
+ * @throws {Error} Rarely throws; gracefully handles individual metric collection failures by:
+ *   - Returning zero/default values for failed metrics
+ *   - Logging warnings for non-critical failures
+ *   - Continuing execution even if some metrics unavailable
+ *
+ * @example
+ * ```typescript
+ * const metrics = await generateProjectMetricsResource();
+ * console.log(`Overall quality: ${metrics.data.quality.overallScore}%`);
+ * console.log(`Total files: ${metrics.data.codebase.totalFiles}`);
+ * console.log(`ADRs: ${metrics.data.architecture.adrCount}`);
+ * console.log(`Dependencies: ${metrics.data.dependencies.total} (${metrics.data.dependencies.vulnerable} vulnerable)`);
+ *
+ * // Check if cached result was returned
+ * if (metrics.etag) {
+ *   console.log('Using cached metrics:', metrics.etag);
+ * }
+ *
+ * // Expected output structure:
+ * {
+ *   data: {
+ *     codebase: {
+ *       totalFiles: 150,
+ *       totalLines: 25000,
+ *       totalSize: "2.5 MB",
+ *       languages: { ts: { files: 120, lines: 20000 } },
+ *       largestFiles: [...]
+ *     },
+ *     quality: {
+ *       overallScore: 85,
+ *       maintainability: 90,
+ *       complexity: 85,
+ *       documentation: 80,
+ *       testing: 85,
+ *       breakdown: {...}
+ *     },
+ *     architecture: {
+ *       adrCount: 12,
+ *       implementedDecisions: 10,
+ *       pendingDecisions: 2,
+ *       architecturalDebt: { score: 85, issues: [] }
+ *     },
+ *     dependencies: {
+ *       total: 50,
+ *       direct: 30,
+ *       dev: 20,
+ *       outdated: 3,
+ *       vulnerable: 0,
+ *       healthScore: 95
+ *     },
+ *     git: {...},
+ *     productivity: {...}
+ *   },
+ *   contentType: "application/json",
+ *   cacheKey: "project-metrics",
+ *   ttl: 300
+ * }
+ * ```
+ *
+ * @since v2.0.0
+ * @see {@link getCodebaseStats} for codebase analysis
+ * @see {@link calculateQualityMetrics} for quality scoring
+ * @see {@link getArchitectureMetrics} for ADR analysis
  */
 export async function generateProjectMetricsResource(): Promise<ResourceGenerationResult> {
   const cacheKey = 'project-metrics';

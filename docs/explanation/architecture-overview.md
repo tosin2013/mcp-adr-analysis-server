@@ -43,5 +43,5 @@ The main trade-offs include:
 
 ## Further Reading
 
-- [Related Tutorial](./tutorials/)
+- [Related Tutorial](../tutorials/)
 - [Implementation Guide](../how-to/)

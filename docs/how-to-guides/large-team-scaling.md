@@ -645,7 +645,7 @@ jobs:
 
 ## 🔗 Related Documentation
 
-- **[Team Collaboration](./tutorials/team-collaboration.md)** - Multi-team collaboration patterns
+- **[Team Collaboration](../tutorials/team-collaboration.md)** - Multi-team collaboration patterns
 - **[CI/CD Integration](cicd-integration.md)** - Enterprise CI/CD workflows
 - **[Security Analysis](security-analysis.md)** - Enterprise security practices
 
