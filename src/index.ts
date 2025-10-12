@@ -40,7 +40,9 @@ import {
 import { KnowledgeGraphManager } from './utils/knowledge-graph-manager.js';
 import { StateReinforcementManager } from './utils/state-reinforcement-manager.js';
 import { ConversationMemoryManager } from './utils/conversation-memory-manager.js';
+import { MemoryEntityManager } from './utils/memory-entity-manager.js';
 import { RootManager } from './utils/root-manager.js';
+import { ServerContextGenerator } from './utils/server-context-generator.js';
 import { type ToolContext, createNoOpContext } from './types/tool-context.js';
 import {
   type GetWorkflowGuidanceArgs,
@@ -128,7 +130,9 @@ export class McpAdrAnalysisServer {
   private kgManager: KnowledgeGraphManager;
   private stateReinforcementManager: StateReinforcementManager;
   private conversationMemoryManager: ConversationMemoryManager;
+  private memoryEntityManager: MemoryEntityManager;
   private rootManager: RootManager;
+  private contextGenerator: ServerContextGenerator;
 
   constructor() {
     // Load and validate configuration
@@ -137,9 +141,13 @@ export class McpAdrAnalysisServer {
     this.kgManager = new KnowledgeGraphManager();
     this.stateReinforcementManager = new StateReinforcementManager(this.kgManager);
     this.conversationMemoryManager = new ConversationMemoryManager(this.kgManager);
+    this.memoryEntityManager = new MemoryEntityManager();
 
     // Initialize root manager for file access control
     this.rootManager = new RootManager(this.config.projectPath, this.config.adrDirectory);
+
+    // Initialize server context generator
+    this.contextGenerator = new ServerContextGenerator();
 
     // Print configuration summary
     printConfigSummary(this.config);
@@ -3004,6 +3012,35 @@ export class McpAdrAnalysisServer {
               properties: {},
             },
           },
+          {
+            name: 'get_server_context',
+            description:
+              "Generate a comprehensive context file showing the server's current state, memory, and capabilities. Creates .mcp-server-context.md that can be @ referenced in conversations for instant LLM awareness",
+            inputSchema: {
+              type: 'object',
+              properties: {
+                writeToFile: {
+                  type: 'boolean',
+                  description: 'Whether to write the context to .mcp-server-context.md file',
+                  default: true,
+                },
+                outputPath: {
+                  type: 'string',
+                  description: 'Custom output path for the context file',
+                },
+                includeDetailed: {
+                  type: 'boolean',
+                  description: 'Include detailed information',
+                  default: true,
+                },
+                maxRecentItems: {
+                  type: 'number',
+                  description: 'Maximum number of recent items to show',
+                  default: 5,
+                },
+              },
+            },
+          },
         ],
       };
     });
@@ -3261,6 +3298,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'get_memory_stats':
             response = await this.getMemoryStats();
+            break;
+          case 'get_server_context':
+            response = await this.getServerContext(safeArgs);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -7665,9 +7705,30 @@ Please provide:
     // Validate configuration before starting
     await this.validateConfiguration();
 
+    // Initialize memory entity manager
+    await this.memoryEntityManager.initialize();
+    this.logger.info('Memory Entity Manager initialized', 'McpAdrAnalysisServer');
+
     // Initialize conversation memory manager (Phase 3: Structured External Memory)
     await this.conversationMemoryManager.initialize();
     this.logger.info('Phase 3 (Structured External Memory) initialized', 'McpAdrAnalysisServer');
+
+    // Generate initial server context file
+    try {
+      await this.contextGenerator.writeContextFile(
+        this.kgManager,
+        this.memoryEntityManager,
+        this.conversationMemoryManager
+      );
+      this.logger.info(
+        'Server context file generated at .mcp-server-context.md',
+        'McpAdrAnalysisServer'
+      );
+    } catch (error) {
+      this.logger.warn('Failed to generate initial server context file', 'McpAdrAnalysisServer', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
 
     const transport = new StdioServerTransport();
     await this.server.connect(transport);
@@ -8065,6 +8126,27 @@ This tool has been deprecated and replaced with memory-centric health scoring.
       throw new McpAdrError(
         `Memory stats retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
         'MEMORY_STATS_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Get Server Context Tool
+   * Generates comprehensive server context file for LLM @ referencing
+   */
+  private async getServerContext(args: any): Promise<CallToolResult> {
+    try {
+      const { getServerContext } = await import('./tools/get-server-context-tool.js');
+      return await getServerContext(
+        args,
+        this.kgManager,
+        this.memoryEntityManager,
+        this.conversationMemoryManager
+      );
+    } catch (error) {
+      throw new McpAdrError(
+        `Server context generation failed: ${error instanceof Error ? error.message : String(error)}`,
+        'SERVER_CONTEXT_ERROR'
       );
     }
   }
