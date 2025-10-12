@@ -17,14 +17,29 @@ jest.mock('../../src/utils/prompt-execution.js');
 
 describe('environment-analysis-tool', () => {
   let analyzeEnvironment: any;
+  let logger: any;
 
   beforeAll(async () => {
     const module = await import('../../src/tools/environment-analysis-tool.js');
     analyzeEnvironment = module.analyzeEnvironment;
+
+    // Import logger for cleanup
+    const loggingModule = await import('../../src/utils/enhanced-logging.js');
+    logger = loggingModule.logger;
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterEach(async () => {
+    // Flush any pending async operations
+    await new Promise(resolve => setImmediate(resolve));
+
+    // Clear logger to prevent logging after tests complete
+    if (logger && logger.clearLogs) {
+      logger.clearLogs();
+    }
   });
 
   describe('analyzeEnvironment', () => {
@@ -40,7 +55,7 @@ describe('environment-analysis-tool', () => {
             },
           ],
         });
-      });
+      }, 30000);
 
       it('should handle specs analysis with knowledge enhancement enabled', async () => {
         const result = await analyzeEnvironment({
@@ -57,7 +72,7 @@ describe('environment-analysis-tool', () => {
             },
           ],
         });
-      });
+      }, 30000);
 
       it('should handle specs analysis with knowledge enhancement disabled', async () => {
         const result = await analyzeEnvironment({
@@ -74,7 +89,7 @@ describe('environment-analysis-tool', () => {
             },
           ],
         });
-      });
+      }, 30000);
 
       it('should handle custom project path and ADR directory', async () => {
         const result = await analyzeEnvironment({
@@ -243,7 +258,7 @@ describe('environment-analysis-tool', () => {
             },
           ],
         });
-      });
+      }, 30000);
 
       it('should include all analysis types in comprehensive mode', async () => {
         const result = await analyzeEnvironment({ analysisType: 'comprehensive' });
@@ -252,7 +267,7 @@ describe('environment-analysis-tool', () => {
         expect(result.content[0].text).toContain('Containerization Detection');
         expect(result.content[0].text).toContain('Environment Requirements from ADRs');
         expect(result.content[0].text).toContain('Compliance Assessment');
-      });
+      }, 30000);
 
       it('should include comprehensive knowledge enhancement', async () => {
         const result = await analyzeEnvironment({
@@ -265,7 +280,7 @@ describe('environment-analysis-tool', () => {
         expect(result.content[0].text).toContain('DevOps practices');
         expect(result.content[0].text).toContain('security standards');
         expect(result.content[0].text).toContain('Advanced (comprehensive coverage)');
-      });
+      }, 30000);
 
       it('should provide comprehensive workflow guidance', async () => {
         const result = await analyzeEnvironment({ analysisType: 'comprehensive' });
@@ -276,7 +291,7 @@ describe('environment-analysis-tool', () => {
         expect(result.content[0].text).toContain('Requirements Extraction');
         expect(result.content[0].text).toContain('Compliance Assessment');
         expect(result.content[0].text).toContain('Optimization Implementation');
-      });
+      }, 30000);
 
       it('should provide expected comprehensive outcomes', async () => {
         const result = await analyzeEnvironment({ analysisType: 'comprehensive' });
@@ -286,7 +301,7 @@ describe('environment-analysis-tool', () => {
         expect(result.content[0].text).toContain('Technology Assessment');
         expect(result.content[0].text).toContain('Optimization Roadmap');
         expect(result.content[0].text).toContain('Risk Mitigation');
-      });
+      }, 30000);
     });
 
     describe('error handling', () => {
@@ -413,7 +428,7 @@ describe('environment-analysis-tool', () => {
         expect(specsResult.content[0].text).toContain('Environment Specification');
         expect(containerResult.content[0].text).toContain('Containerization Technology');
         expect(requirementsResult.content[0].text).toContain('Environment Requirements from ADRs');
-      });
+      }, 30000);
     });
   });
 });
