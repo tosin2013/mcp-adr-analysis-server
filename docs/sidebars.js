@@ -21,7 +21,7 @@ const sidebars = {
       collapsed: false,
       items: [
         'how-to-guides/installation-guide',
-        'tutorials/getting-started',
+        'tutorials/first-steps', // Tutorial 1: Your First MCP Analysis
         'explanation/index', // Framework overview
       ],
     },
