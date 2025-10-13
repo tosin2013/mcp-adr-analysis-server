@@ -22,6 +22,68 @@
 
 ---
 
+## 💡 Resuming Previous Work? Use @.mcp-server-context.md
+
+### Quick Context Recovery
+
+If you're returning to a project you've analyzed before, the `.mcp-server-context.md` file is your best friend. Instead of re-running analysis or trying to remember what you discovered, simply ask:
+
+```
+@.mcp-server-context.md What was I working on? Show me the active intents
+and what analysis has been done on this project.
+```
+
+**The AI will tell you:**
+
+- What ADRs were suggested or created
+- Which tools you used last time
+- Patterns that were discovered
+- Your last architecture score
+- Recommended next steps
+
+### Real Example
+
+**You (after a week away):**
+
+```
+@.mcp-server-context.md I'm back to work on the microservices migration project.
+What's the current status and what should I focus on?
+```
+
+**AI Response:**
+
+```
+Based on the context file, you were working on:
+
+1. **Active Intent**: Microservices communication strategy (started 7 days ago)
+   - Status: 60% complete
+   - Last action: Analyzed API gateway options
+
+2. **Discovered Patterns**:
+   - Monolithic architecture (95% confidence)
+   - REST API design (88% confidence)
+
+3. **Current Score**: 72/100 (up 8 points from initial)
+
+4. **Next Steps**:
+   - Complete ADR for service communication
+   - Define service boundaries
+   - Plan data consistency strategy
+```
+
+### Why This Matters for Existing Projects
+
+Existing projects often involve:
+
+- **Long analysis sessions** spread across days/weeks
+- **Multiple team members** working on different aspects
+- **Complex decision trees** that need to be remembered
+- **Historical context** that's easy to lose
+
+The context file solves all of these problems automatically!
+
+---
+
 ## 🔍 Step 1: Comprehensive Project Discovery
 
 ### Understanding What You're Working With

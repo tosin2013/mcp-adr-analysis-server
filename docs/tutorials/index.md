@@ -28,6 +28,16 @@ All tutorials now feature **research-driven workflows** that query your live env
 - **Red Hat Ecosystem Support**: First-class support for OpenShift (`oc`), Podman, and Ansible
 - **ADR Validation**: Check if documented decisions match actual implementation
 
+## 🧠 Context File - Your Project's Memory
+
+Every tutorial teaches you to use **`.mcp-server-context.md`** - the auto-generated file that tracks your progress, patterns, and decisions:
+
+- 💡 **In Tutorial 1**: Learn to track your progress with `@.mcp-server-context.md`
+- 🔄 **In Tutorial 2**: Resume work seamlessly by reviewing past analysis
+- 🎯 **In Tutorial 3**: Master advanced decision-making with pattern analysis
+
+Just use `@.mcp-server-context.md` in your AI assistant to access your project's living memory!
+
 ### Key Research-Driven Tools
 
 - **`perform_research`**: Ask questions about your project and get confidence-scored answers
@@ -46,7 +56,6 @@ All tutorials now feature **research-driven workflows** that query your live env
 
 ### Specialized Workflows
 
-- [Example: getting-started.md](./getting-started.md) - Simple template for new guides
 - [Security-Focused Workflow](./security-focused-workflow.md) - Security analysis and content masking
 - [Team Collaboration](./team-collaboration.md) - Collaborative ADR processes
 
