@@ -242,30 +242,36 @@ Now let's explore the **`perform_research`** tool, which uses the research-orche
 
 ```markdown
 ## Research Results
+
 **Confidence**: 85.0% ✓
 
 ### Answer
+
 The project has Docker and Kubernetes available. Found docker-compose.yml
 configuration for local development and Kubernetes manifests in k8s/ directory.
 
 ### Sources Consulted
+
 ✓ Project Files: Analyzed 45 files
 ✓ Knowledge Graph: Found 2 related ADRs
 ✓ Environment: Detected docker, kubectl
 ✗ Web Search: Not needed (confidence above threshold)
 
 ### Key Findings
+
 - Docker: Container orchestration available
 - Kubernetes: kubectl configured and accessible
 - Infrastructure decisions documented in ADR-003
 ```
 
 **Understanding Confidence Scores:**
+
 - **≥70%**: High confidence, results are reliable
 - **60-69%**: Medium confidence, consider web search fallback
 - **&lt;60%**: Low confidence, automatic web search triggered
 
 **Exercise**: Try asking research questions about:
+
 1. "What database technology is used in this project?"
 2. "Are there any container orchestration tools configured?"
 3. "What testing frameworks are available?"
@@ -358,6 +364,7 @@ Use the new **research-driven ADR validation** to check if your documented decis
 ```
 
 **What This Does:**
+
 1. **Reads your ADR** to understand the documented decision
 2. **Researches live environment** to check actual implementation
 3. **Compares documentation vs reality** with confidence scoring
@@ -371,11 +378,13 @@ Use the new **research-driven ADR validation** to check if your documented decis
 **Research Confidence**: 78.0% ✓
 
 ### Implementation Status: ✓ MATCHES
+
 - Express.js detected in package.json (v4.18.2)
 - Express routes found in src/routes/
 - Middleware patterns consistent with documented decision
 
 ### Environment Check: ✓ PASSED
+
 - Node.js v20.0.0 (meets requirements)
 - npm packages installed correctly
 - No conflicting frameworks detected
@@ -513,6 +522,75 @@ Now that you understand the basics, you can:
 - Check your OpenRouter account has sufficient credits
 - Try a different AI model (e.g., "openai/gpt-4o-mini" for lower cost)
 - Reduce analysis scope with `enhancedMode: false`
+
+---
+
+## 💡 Bonus: Track Your Learning with @.mcp-server-context.md
+
+### Your Project's Living Memory
+
+As you've been working through this tutorial, the MCP server has been quietly building a **memory of your progress** in a special file called `.mcp-server-context.md`. This auto-generated file is like your project's brain - it remembers everything!
+
+### What's Inside?
+
+The context file tracks:
+
+- ✅ **Tools you've used** and how often
+- ✅ **Patterns discovered** in your project
+- ✅ **Active intents** and what you're working on
+- ✅ **Architecture scores** and improvements
+- ✅ **Recommendations** for next steps
+- ✅ **Memory entities** and relationships
+
+### Try It Now!
+
+In your AI assistant, use the `@` symbol to reference the file:
+
+```
+@.mcp-server-context.md What have I learned in this tutorial?
+Show me the patterns discovered and my current project score.
+```
+
+**Your AI assistant will respond with:**
+
+- Summary of what tools you used
+- Patterns detected in your project
+- Your current architecture score
+- Recommended next actions
+
+### Real-World Examples
+
+**Checking Progress:**
+
+```
+@.mcp-server-context.md How has my architecture score improved?
+```
+
+**Understanding Discoveries:**
+
+```
+@.mcp-server-context.md What architectural patterns did you find?
+```
+
+**Planning Next Steps:**
+
+```
+@.mcp-server-context.md What should I focus on next?
+```
+
+### Why This Matters
+
+1. **Continuity** - Resume work seamlessly by seeing what you were doing
+2. **Learning** - Track your progress and see patterns emerge
+3. **Guidance** - Get AI-powered recommendations based on your project
+4. **Team Sharing** - Share context with team members (they can `@` it too!)
+
+### Learn More
+
+Want to master the context file? Check out:
+
+- **[Server Context File Guide](../how-to-guides/server-context-file.md)** - Complete documentation
+- **[Tutorial 2](./02-existing-projects.md)** - See it in action with existing projects
 
 ---
 
