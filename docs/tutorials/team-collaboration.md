@@ -110,8 +110,8 @@ cat > ./architecture/decision../../README.md << 'EOF'
 
 | ID | Title | Status | Date | Stakeholders |
 |----|-------|--------|------|--------------|
-| 001 | [Database Architecture](001-database-architecture.md) | Accepted | 2024-01-15 | @backend-team |
-| 002 | [API Gateway Strategy](002-api-gateway-strategy.md) | Proposed | 2024-01-20 | @api-team |
+| 001 | [MCP Protocol Implementation](../adrs/adr-001-mcp-protocol-implementation-strategy.md) | Accepted | 2024-01-15 | @backend-team |
+| 003 | [Memory-Centric Architecture](../adrs/adr-003-memory-centric-architecture.md) | Accepted | 2024-01-20 | @architecture-team |
 
 ## Review Schedule
 
