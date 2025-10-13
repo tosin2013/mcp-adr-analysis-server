@@ -78,16 +78,55 @@ export async function discoverAdrsInDirectory(
     const fs = await import('fs/promises');
     const path = await import('path');
 
-    // Resolve the ADR directory path
-    const fullAdrPath = path.resolve(projectPath, adrDirectory);
-
-    // Check if directory exists
+    // Try multiple strategies to resolve the correct ADR directory path
+    // This handles cases where:
+    // 1. projectPath is already in a subdirectory (e.g., /project/docs)
+    // 2. adrDirectory is relative (e.g., "docs/adrs")
+    // 3. adrDirectory is already absolute
+    let fullAdrPath: string;
     let dirExists = false;
+
+    // Strategy 1: Try resolving as-is (standard behavior)
+    fullAdrPath = path.resolve(projectPath, adrDirectory);
     try {
       const stat = await fs.stat(fullAdrPath);
       dirExists = stat.isDirectory();
     } catch {
-      // Directory doesn't exist
+      dirExists = false;
+    }
+
+    // Strategy 2: If that fails and adrDirectory contains the same path segment as projectPath,
+    // the projectPath might be pointing to a subdirectory. Try stripping the common suffix.
+    if (!dirExists && adrDirectory.includes(path.sep)) {
+      const projectPathParts = projectPath.split(path.sep);
+      const adrDirParts = adrDirectory.split(path.sep);
+
+      // Check if projectPath ends with the first part of adrDirectory
+      // e.g., projectPath ends with "docs" and adrDirectory starts with "docs/adrs"
+      const lastProjectPart = projectPathParts[projectPathParts.length - 1];
+      if (lastProjectPart && lastProjectPart === adrDirParts[0]) {
+        // Remove the redundant first part from adrDirectory
+        const adjustedAdrDir = adrDirParts.slice(1).join(path.sep);
+        fullAdrPath = path.resolve(projectPath, adjustedAdrDir);
+        try {
+          const stat = await fs.stat(fullAdrPath);
+          dirExists = stat.isDirectory();
+        } catch {
+          dirExists = false;
+        }
+      }
+    }
+
+    // Strategy 3: If still not found, try checking one level up from projectPath
+    if (!dirExists) {
+      const parentPath = path.dirname(projectPath);
+      fullAdrPath = path.resolve(parentPath, adrDirectory);
+      try {
+        const stat = await fs.stat(fullAdrPath);
+        dirExists = stat.isDirectory();
+      } catch {
+        dirExists = false;
+      }
     }
 
     if (!dirExists) {
@@ -97,7 +136,8 @@ export async function discoverAdrsInDirectory(
         adrs: [],
         summary: { byStatus: {}, byCategory: {} },
         recommendations: [
-          `ADR directory '${adrDirectory}' does not exist`,
+          `ADR directory '${adrDirectory}' does not exist (tried multiple path resolutions)`,
+          `Attempted paths: ${path.resolve(projectPath, adrDirectory)}, ${path.resolve(path.dirname(projectPath), adrDirectory)}`,
           'Consider creating the directory and adding your first ADR',
           'Use the generate_adr_from_decision tool to create new ADRs',
         ],
