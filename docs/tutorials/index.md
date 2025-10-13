@@ -59,7 +59,7 @@ Just use `@.mcp-server-context.md` in your AI assistant to access your project's
 - [Security-Focused Workflow](./security-focused-workflow.md) - Security analysis and content masking
 - [Team Collaboration](./team-collaboration.md) - Collaborative ADR processes
 
-### Example ADRs
+### Example ADRs from Our Codebase
 
-- [001: Database Architecture](./001-database-architecture.md)
-- [002: API Gateway Strategy](./002-api-gateway-strategy.md)
+- [ADR-001: MCP Protocol Implementation](../adrs/adr-001-mcp-protocol-implementation-strategy.md) - Core architecture decisions
+- [ADR-003: Memory-Centric Architecture](../adrs/adr-003-memory-centric-architecture.md) - Architectural pattern example
