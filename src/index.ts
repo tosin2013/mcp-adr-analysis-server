@@ -644,7 +644,7 @@ export class McpAdrAnalysisServer {
           {
             name: 'suggest_adrs',
             description:
-              'Suggest architectural decisions with advanced prompting techniques (Knowledge Generation + Reflexion)',
+              'Suggest architectural decisions with advanced prompting techniques (Knowledge Generation + Reflexion). TIP: Read @.mcp-server-context.md first for project history, patterns, and previous ADRs to ensure consistency.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -703,7 +703,8 @@ export class McpAdrAnalysisServer {
           },
           {
             name: 'generate_adr_from_decision',
-            description: 'Generate a complete ADR from decision data',
+            description:
+              'Generate a complete ADR from decision data. TIP: Reference @.mcp-server-context.md to align with existing architectural patterns and decisions.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -868,7 +869,7 @@ export class McpAdrAnalysisServer {
           {
             name: 'review_existing_adrs',
             description:
-              'Review existing ADRs against actual code implementation with cloud/DevOps expertise',
+              'Review existing ADRs against actual code implementation with cloud/DevOps expertise. TIP: After review, call get_server_context to update @.mcp-server-context.md with findings.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -909,7 +910,7 @@ export class McpAdrAnalysisServer {
           {
             name: 'validate_adr',
             description:
-              'Validate an existing ADR against actual infrastructure reality using research-driven analysis',
+              'Validate an existing ADR against actual infrastructure reality using research-driven analysis. TIP: Compare findings against patterns in @.mcp-server-context.md for consistency checks.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -2661,7 +2662,7 @@ export class McpAdrAnalysisServer {
           {
             name: 'interactive_adr_planning',
             description:
-              'Interactive guided ADR planning and creation tool - walks users through structured decision-making process with research integration, option evaluation, and automatic ADR generation',
+              'Interactive guided ADR planning and creation tool - walks users through structured decision-making process with research integration, option evaluation, and automatic ADR generation. TIP: Start by reading @.mcp-server-context.md to understand project context and previous decisions.',
             inputSchema: {
               type: 'object',
               properties: {
