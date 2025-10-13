@@ -2,7 +2,8 @@
 
 **Learning Goal**: Master advanced architectural analysis including security scanning, performance optimization, deployment validation, and team collaboration workflows.
 
-**Prerequisites**: 
+**Prerequisites**:
+
 - Completed [Tutorial 1: Your First MCP Analysis](01-first-steps.md)
 - Completed [Tutorial 2: Working with Existing Projects](02-existing-projects.md)
 - Familiarity with security concepts and deployment processes
@@ -27,6 +28,7 @@
 ### Understanding Security in Architecture
 
 Security isn't just about code - it's about architectural decisions that affect your entire system:
+
 - **Data flow and storage decisions**
 - **Authentication and authorization architecture**
 - **Network security and API design**
@@ -53,6 +55,7 @@ Start with a comprehensive security analysis of your project:
 ```
 
 **Common Security Issues Detected:**
+
 - **Hardcoded API keys** in configuration files
 - **Database passwords** in environment files
 - **Private keys** committed to repository
@@ -137,6 +140,7 @@ Every project has unique security considerations:
 ### Performance-Related Architectural Decisions
 
 Performance isn't just about optimization - it's about architectural decisions that affect scalability:
+
 - **Database design and query patterns**
 - **Caching strategies and data flow**
 - **API design and communication patterns**
@@ -218,6 +222,7 @@ Based on your analysis, document key performance decisions:
 ### Understanding Deployment Readiness
 
 Modern deployment requires comprehensive validation to prevent production issues:
+
 - **All tests passing** with adequate coverage
 - **Security vulnerabilities** addressed
 - **Performance benchmarks** met
@@ -240,6 +245,7 @@ Modern deployment requires comprehensive validation to prevent production issues
 ```
 
 **This validates:**
+
 - **Test Coverage** - Minimum thresholds met
 - **Security Scanning** - No high-severity vulnerabilities
 - **Dependency Audit** - No known security issues
@@ -303,6 +309,7 @@ Modern deployment requires comprehensive validation to prevent production issues
 ### Multi-Developer ADR Processes
 
 Large teams need structured processes for architectural decision-making:
+
 - **Decision proposal and review workflows**
 - **Collaborative ADR creation and editing**
 - **Knowledge sharing and onboarding**
@@ -398,6 +405,7 @@ The APE framework optimizes prompts for better analysis results:
 ```
 
 **APE Benefits:**
+
 - **Better accuracy** in architectural pattern detection
 - **More relevant suggestions** based on project context
 - **Improved consistency** across analysis runs
@@ -650,6 +658,7 @@ When things go wrong, systematic troubleshooting saves time:
 ```
 
 **This analyzes:**
+
 - **Infrastructure configuration** and optimization opportunities
 - **Resource utilization** and scaling recommendations
 - **Security configuration** and hardening suggestions
@@ -707,6 +716,95 @@ Run a comprehensive analysis using all advanced techniques:
 }
 ```
 
+### 🎯 Master the Context File for Decision-Making
+
+As an advanced practitioner, `.mcp-server-context.md` becomes your strategic decision-making tool. Here's how masters use it:
+
+#### Pattern-Driven Architecture
+
+```
+@.mcp-server-context.md Analyze the patterns we've discovered across all
+analyses. What architectural style is emerging and what does it suggest
+about our next decisions?
+```
+
+**Master's Insight**: The context file aggregates patterns across multiple sessions, revealing architectural trends invisible in single analyses.
+
+#### Score-Based Prioritization
+
+```
+@.mcp-server-context.md Show me the score breakdown by component. Which areas
+have improved most and which need attention? What's the correlation between
+our decisions and score changes?
+```
+
+**Use Case**: Prioritize architectural improvements based on data, not gut feeling.
+
+#### Knowledge Gap Intelligence
+
+```
+@.mcp-server-context.md What knowledge gaps have been identified? Cross-reference
+them with our active intents and recommend which gaps to address first.
+```
+
+**Advanced Technique**: Let the memory system guide your learning path.
+
+#### Team Coordination
+
+```
+@.mcp-server-context.md Generate a status report for the team: what patterns
+are discovered, what decisions are pending, what blockers exist, and what
+each team member should focus on based on the memory graph.
+```
+
+**Team Lead Power Move**: Automatically generate team coordination from project memory.
+
+#### Temporal Analysis
+
+```
+@.mcp-server-context.md Compare our current state with 2 weeks ago. What
+architectural decisions led to the biggest improvements? What patterns have
+become stronger or weaker?
+```
+
+**Strategic Insight**: Understand cause-and-effect in architectural evolution.
+
+#### Predictive Recommendations
+
+```
+@.mcp-server-context.md Based on discovered patterns, our architecture score
+trajectory, and similar projects in memory, what architectural decisions
+should we prioritize in the next sprint?
+```
+
+**Master Level**: Use historical data for predictive architectural planning.
+
+### Context File Advanced Workflows
+
+**Pre-Architecture Review:**
+
+```bash
+# Before team review meeting
+@.mcp-server-context.md Prepare an executive summary: key patterns,
+critical decisions, risk areas, and recommended actions
+```
+
+**Post-Deployment Analysis:**
+
+```bash
+# After production deployment
+@.mcp-server-context.md Compare pre-deployment and post-deployment states.
+What changed? What patterns emerged? Update our learnings.
+```
+
+**Continuous Learning:**
+
+```bash
+# Regular practice
+@.mcp-server-context.md What new patterns or relationships were discovered
+this week? How do they relate to our existing knowledge?
+```
+
 ### Exercise: Architectural Excellence Portfolio
 
 **Create a comprehensive architectural documentation portfolio:**
@@ -734,24 +832,27 @@ By completing this advanced tutorial, you should have:
 ✅ **AI Proficiency** - Advanced AI techniques for enhanced analysis  
 ✅ **Troubleshooting Skills** - Systematic problem diagnosis and resolution  
 ✅ **Quality Assurance** - Health monitoring and compliance checking  
-✅ **Operational Excellence** - Environment optimization and monitoring  
+✅ **Operational Excellence** - Environment optimization and monitoring
 
 ---
 
 ## 🚀 Beyond Mastery: Becoming an Architecture Leader
 
 ### **Immediate Next Steps**
+
 1. **Implement advanced techniques** in your current project
 2. **Train your team** on advanced workflows
 3. **Establish center of excellence** for architectural decisions
 
 ### **Career Development**
+
 - **Become the architecture SME** for your organization
 - **Mentor other developers** in architectural decision-making
 - **Contribute to open source** architectural tools and frameworks
 - **Speak at conferences** about AI-assisted architecture
 
 ### **Continuous Learning**
+
 - **Stay current** with architectural patterns and technologies
 - **Experiment** with new AI techniques and frameworks
 - **Build** your own architectural analysis tools
@@ -774,6 +875,7 @@ By completing this advanced tutorial, you should have:
 ### **Your Advanced Toolkit**
 
 You now have mastery of all 37 MCP tools and can:
+
 - **Conduct comprehensive security analysis** with custom patterns
 - **Implement zero-tolerance deployment validation**
 - **Facilitate team architectural decision processes**
@@ -789,6 +891,7 @@ You now have mastery of all 37 MCP tools and can:
 You've mastered advanced architectural analysis techniques and are ready to lead architectural decision-making in any organization. Your skills in AI-assisted architecture, security analysis, and team collaboration make you a valuable contributor to any development team.
 
 **Keep Growing:**
+
 - **Experiment** with new techniques and approaches
 - **Share your knowledge** with the community
 - **Push the boundaries** of what's possible with AI-assisted architecture
@@ -797,6 +900,7 @@ You've mastered advanced architectural analysis techniques and are ready to lead
 ---
 
 **Want to contribute back?** Consider:
+
 - **[Contributing to the project](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/../../CONTRIBUTING.md)**
 - **Sharing your experience** through blog posts or presentations
 - **Mentoring others** in architectural decision-making
@@ -804,5 +908,4 @@ You've mastered advanced architectural analysis techniques and are ready to lead
 
 ---
 
-*This completes the MCP ADR Analysis Server tutorial series. You've progressed from beginner to advanced practitioner with comprehensive skills in AI-assisted architectural analysis. Use these skills to build better software and help your teams make excellent architectural decisions.*
-
+_This completes the MCP ADR Analysis Server tutorial series. You've progressed from beginner to advanced practitioner with comprehensive skills in AI-assisted architectural analysis. Use these skills to build better software and help your teams make excellent architectural decisions._
