@@ -43,7 +43,7 @@
     "docs:clean": "rm -rf docs/api"
   },
   "dependencies": {
-    "@mendable/firecrawl-js": "^0.0.16",
+    "@mendable/firecrawl-js": "^4.4.0",
     "@modelcontextprotocol/sdk": "^1.19.1",
     "@tree-sitter-grammars/tree-sitter-hcl": "^1.2.0",
     "fast-glob": "^3.3.2",
