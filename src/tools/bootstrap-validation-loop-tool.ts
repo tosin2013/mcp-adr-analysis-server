@@ -1707,6 +1707,7 @@ ${
 **Pattern**: ${validatedPattern.name} v${validatedPattern.version}
 **Base Repository**: ${validatedPattern.baseCodeRepository.url}
 **Documentation**: ${validatedPattern.authoritativeSources.find(s => s.type === 'documentation')?.url || 'N/A'}
+${detectedPlatform === 'openshift' ? '**OpenShift Framework Guide**: https://validatedpatterns.io/learn/vp_openshift_framework/' : ''}
 `
     : ''
 }
