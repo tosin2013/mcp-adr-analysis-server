@@ -51,6 +51,15 @@ export interface ValidatedPattern {
     references: string[]; // URLs to documentation
   };
 
+  // Base code repository - LLMs should merge this into the project as starter code
+  baseCodeRepository: {
+    url: string; // GitHub repository URL (e.g., "https://github.com/validatedpatterns/common")
+    purpose: string; // What this repository provides
+    integrationInstructions: string; // How to merge/integrate this code into the project
+    requiredFiles: string[]; // Key files/directories to integrate
+    scriptEntrypoint?: string; // Main script to call from bootstrap.sh (e.g., "scripts/install.sh")
+  };
+
   // Live pattern sources - LLMs should query these for latest information
   authoritativeSources: PatternSource[];
 }
@@ -399,6 +408,22 @@ export const OPENSHIFT_PATTERN: ValidatedPattern = {
     ],
   },
 
+  baseCodeRepository: {
+    url: 'https://github.com/validatedpatterns/common',
+    purpose:
+      'Common framework providing GitOps/ArgoCD infrastructure, Helm chart templates, Makefile build system, and values hierarchy for OpenShift validated patterns',
+    integrationInstructions:
+      '1) Clone the common repo into your project as a Git submodule or vendor directory. 2) Customize values-global.yaml with your project specifics. 3) Create clustergroup-specific values files. 4) Reference common Helm charts in your charts/. 5) Use the Makefile targets for deployment.',
+    requiredFiles: [
+      'common/Makefile',
+      'common/scripts/',
+      'common/operator-install/',
+      'common/argocd/',
+      'values-global.yaml',
+    ],
+    scriptEntrypoint: 'common/Makefile',
+  },
+
   authoritativeSources: [
     {
       type: 'documentation',
@@ -616,6 +641,20 @@ export const KUBERNETES_PATTERN: ValidatedPattern = {
       'https://kubernetes.io/docs/concepts/configuration/overview/',
       'https://helm.sh/docs/chart_best_practices/',
     ],
+  },
+
+  baseCodeRepository: {
+    url: 'https://github.com/kubernetes/examples',
+    purpose:
+      'Official Kubernetes examples repository providing starter templates for deployments, services, config maps, secrets, and common workload patterns',
+    integrationInstructions:
+      '1) Browse examples/ directory for relevant patterns. 2) Copy example manifests into your k8s/ or manifests/ directory. 3) Customize namespace, labels, and resource specifications. 4) Use kubectl apply -f or integrate with Kustomize/Helm.',
+    requiredFiles: [
+      'examples/*/README.md',
+      'examples/*/deployment.yaml',
+      'examples/*/service.yaml',
+    ],
+    scriptEntrypoint: 'kubectl apply -f',
   },
 
   authoritativeSources: [
@@ -841,6 +880,16 @@ export const DOCKER_PATTERN: ValidatedPattern = {
     ],
   },
 
+  baseCodeRepository: {
+    url: 'https://github.com/docker/awesome-compose',
+    purpose:
+      'Official Docker Compose samples providing production-ready multi-container application examples with best practices for networking, volumes, and service orchestration',
+    integrationInstructions:
+      '1) Browse samples directory for similar stack (e.g., nginx-golang, react-express-mongodb). 2) Copy relevant docker-compose.yml and Dockerfile patterns. 3) Customize service configurations, environment variables, and volumes. 4) Use docker-compose up for local development.',
+    requiredFiles: ['docker-compose.yml', 'Dockerfile', '.dockerignore'],
+    scriptEntrypoint: 'docker-compose up -d',
+  },
+
   authoritativeSources: [
     {
       type: 'documentation',
@@ -1055,6 +1104,16 @@ export const NODEJS_PATTERN: ValidatedPattern = {
     references: ['https://nodejs.org/en/docs/', 'https://pm2.keymetrics.io/docs/usage/deployment/'],
   },
 
+  baseCodeRepository: {
+    url: 'https://github.com/goldbergyoni/nodebestpractices',
+    purpose:
+      'Comprehensive Node.js best practices repository with production-ready patterns for project structure, error handling, security, testing, and deployment',
+    integrationInstructions:
+      '1) Review sections/ directory for applicable patterns (e.g., project-structure, error-handling, security). 2) Adopt recommended folder structure and conventions. 3) Integrate ESLint configs and security practices. 4) Use PM2 ecosystem.config.js for process management.',
+    requiredFiles: ['package.json', 'ecosystem.config.js', '.env.example', 'src/'],
+    scriptEntrypoint: 'npm start',
+  },
+
   authoritativeSources: [
     {
       type: 'documentation',
@@ -1260,6 +1319,21 @@ export const PYTHON_PATTERN: ValidatedPattern = {
       'https://packaging.python.org/en/latest/discussions/deploying-python-applications/',
       'https://docs.gunicorn.org/en/stable/deploy.html',
     ],
+  },
+
+  baseCodeRepository: {
+    url: 'https://github.com/ansible/ansible-examples',
+    purpose:
+      'Official Ansible playbook examples demonstrating deployment automation, configuration management, and infrastructure provisioning patterns for Python applications',
+    integrationInstructions:
+      '1) Browse language_features/ and wordpress-nginx/ for relevant deployment patterns. 2) Adapt playbooks for your Python app (Flask/Django). 3) Configure ansible.cfg and inventory. 4) Use ansible-playbook for automated deployment.',
+    requiredFiles: [
+      'requirements.txt',
+      'gunicorn.conf.py',
+      'ansible/playbook.yml',
+      'ansible/hosts',
+    ],
+    scriptEntrypoint: 'gunicorn app:app',
   },
 
   authoritativeSources: [
@@ -1482,6 +1556,16 @@ export const MCP_PATTERN: ValidatedPattern = {
     ],
   },
 
+  baseCodeRepository: {
+    url: 'https://github.com/modelcontextprotocol/servers',
+    purpose:
+      'Official MCP server reference implementations demonstrating protocol features, SDK usage, stdio/SSE transports, and tool/resource/prompt patterns',
+    integrationInstructions:
+      '1) Clone reference servers (filesystem, fetch, git, memory) as examples. 2) Choose TypeScript or Python SDK. 3) Implement server following SDK patterns. 4) Configure stdio transport in client config. 5) Test with MCP Inspector.',
+    requiredFiles: ['src/index.ts', 'package.json', 'tsconfig.json'],
+    scriptEntrypoint: 'npm start',
+  },
+
   authoritativeSources: [
     {
       type: 'specification',
@@ -1685,6 +1769,16 @@ export const A2A_PATTERN: ValidatedPattern = {
       'https://github.com/a2aproject/A2A',
       'https://www.linuxfoundation.org/press/linux-foundation-launches-the-agent2agent-protocol-project',
     ],
+  },
+
+  baseCodeRepository: {
+    url: 'https://github.com/a2aproject/a2a-samples',
+    purpose:
+      'Official A2A protocol samples demonstrating agent card creation, task handoff, OAuth authentication, and multi-agent communication patterns',
+    integrationInstructions:
+      '1) Review samples/ for agent types (coordinator, executor, specialized). 2) Implement agent card following schema. 3) Set up OAuth 2.0 authentication. 4) Configure task routing and handoff logic. 5) Test inter-agent communication.',
+    requiredFiles: ['agent-card.json', 'src/agent.ts', 'oauth-config.json'],
+    scriptEntrypoint: 'npm run agent',
   },
 
   authoritativeSources: [

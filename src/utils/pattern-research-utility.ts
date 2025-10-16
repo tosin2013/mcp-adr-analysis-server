@@ -376,6 +376,31 @@ ${results.map((r, i) => `${i + 1}. ${r.source.url} (${r.source.type}, priority: 
 - **Last Updated**: ${pattern.metadata.lastUpdated}
 - **Maintainer**: ${pattern.metadata.maintainer}
 
+## ⭐ BASE CODE REPOSITORY (CRITICAL - MERGE FIRST)
+
+**Repository**: ${pattern.baseCodeRepository.url}
+**Purpose**: ${pattern.baseCodeRepository.purpose}
+
+### Integration Steps:
+${pattern.baseCodeRepository.integrationInstructions}
+
+### Required Files to Integrate:
+${pattern.baseCodeRepository.requiredFiles.map((file, i) => `${i + 1}. \`${file}\``).join('\n')}
+
+${
+  pattern.baseCodeRepository.scriptEntrypoint
+    ? `### Script Entrypoint:
+Your \`bootstrap.sh\` should call: \`${pattern.baseCodeRepository.scriptEntrypoint}\`
+`
+    : ''
+}
+
+**⚠️ DEPLOYMENT STRATEGY**: Do NOT generate scripts from scratch. Instead:
+1. **Clone/merge** the base repository into your project
+2. **Customize** configuration files for your specific use case
+3. **Call** the validated pattern's scripts from your bootstrap.sh
+4. This ensures you follow tested, production-ready patterns
+
 ## Research Requirements
 
 ### REQUIRED Sources (Must Query Before Deployment)

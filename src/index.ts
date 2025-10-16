@@ -751,7 +751,7 @@ export class McpAdrAnalysisServer {
           {
             name: 'generate_adr_bootstrap',
             description:
-              'Generate bootstrap.sh and validate_bootstrap.sh scripts to ensure deployed code follows ADR requirements',
+              "Generate bootstrap.sh and validate_bootstrap.sh scripts to ensure deployed code follows ADR requirements. **CRITICAL**: Before generating scripts, use WebFetch to query the base code repository (e.g., https://github.com/validatedpatterns/common for OpenShift) and authoritative pattern documentation (e.g., https://play.validatedpatterns.io/). Merge the base repository code into your project and have bootstrap.sh call the pattern's scripts rather than generating everything from scratch. This ensures compliance with validated deployment patterns.",
             inputSchema: {
               type: 'object',
               properties: {
@@ -798,7 +798,7 @@ export class McpAdrAnalysisServer {
           {
             name: 'bootstrap_validation_loop',
             description:
-              'Execute complete bootstrap validation loop with environment monitoring, auto-fixing, and ADR learning. Iteratively validates deployments against ADRs and updates ADRs with real-world deployment experience.',
+              'Execute complete bootstrap validation loop with environment monitoring, auto-fixing, and ADR learning. Iteratively validates deployments against ADRs and updates ADRs with real-world deployment experience. **IMPORTANT**: This tool automatically detects the platform type, identifies the base code repository (e.g., validatedpatterns/common for OpenShift), and generates guidance for merging validated pattern code into your project. Query the base repository using WebFetch to understand how to integrate and call its deployment scripts.',
             inputSchema: {
               type: 'object',
               properties: {
