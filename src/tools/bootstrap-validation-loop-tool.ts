@@ -1768,18 +1768,233 @@ ${platformDetection.evidence
     };
   }
 
-  // TODO: Add Phase 1, 2, 3 in subsequent iterations
-  return {
-    content: [
-      {
-        type: 'text',
-        text: `# 🔄 Bootstrap Validation Loop - Iteration ${currentIteration}/${maxIterations}
+  // Check if deployment cleanup requested (CI/CD workflow)
+  if (params.deploymentCleanupRequested) {
+    const platformDetection = await detectPlatforms(projectPath);
+    const detectedPlatform = platformDetection.primaryPlatform || 'unknown';
+
+    const cleanupCommands: {
+      [key: string]: { teardown: string; verify: string; restart: string };
+    } = {
+      openshift: {
+        teardown:
+          'oc delete all --selector app=myapp && oc delete configmap --selector app=myapp && oc delete secret --selector app=myapp',
+        verify: 'oc get all --selector app=myapp',
+        restart: './bootstrap.sh',
+      },
+      kubernetes: {
+        teardown: 'kubectl delete deployment,service,configmap,secret -l app=myapp',
+        verify: 'kubectl get all -l app=myapp',
+        restart: './bootstrap.sh',
+      },
+      docker: {
+        teardown: 'docker-compose down -v && docker system prune -f',
+        verify: 'docker ps -a',
+        restart: 'docker-compose up -d',
+      },
+      'docker-compose': {
+        teardown: 'docker-compose down -v && docker system prune -f',
+        verify: 'docker ps -a && docker volume ls',
+        restart: 'docker-compose up -d',
+      },
+    };
+
+    const cleanup = cleanupCommands[detectedPlatform] || {
+      teardown: 'echo "Manual cleanup required for ' + detectedPlatform + '"',
+      verify: 'echo "Manual verification required"',
+      restart: './bootstrap.sh',
+    };
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# 🗑️ Deployment Cleanup & Restart (CI/CD Mode)
+
+## Detected Platform
+**Platform**: ${detectedPlatform.toUpperCase()}
+
+## ⚠️ CI/CD Workflow: Teardown → Verify → Restart
+
+This workflow is designed for CI/CD pipelines that need to completely tear down and restart deployments.
+
+### Step 1: Teardown Current Deployment
+
+**IMPORTANT**: This will DELETE all resources. Confirm with human before proceeding.
+
+Run:
+\`\`\`bash
+${cleanup.teardown}
+\`\`\`
+
+**What this does**:
+- Deletes all deployments, services, and resources
+- Removes configuration and secrets
+- Cleans up volumes and persistent data
+
+### Step 2: Verify Cleanup
+
+Confirm resources are deleted:
+\`\`\`bash
+${cleanup.verify}
+\`\`\`
+
+**Expected result**: No resources found (or minimal system resources only).
+
+### Step 3: Restart Deployment
+
+After cleanup verification, restart the deployment:
+\`\`\`bash
+${cleanup.restart}
+\`\`\`
+
+### Step 4: Report Back
+
+After running teardown, verification, and restart, call this tool again with:
+\`\`\`json
+{
+  "currentIteration": ${currentIteration + 1},
+  "previousExecutionOutput": "<paste all command outputs>",
+  "previousExecutionSuccess": true,
+  "deploymentCleanupRequested": false
+}
+\`\`\`
+
+---
+
+**Current Iteration**: ${currentIteration}/${maxIterations}
+**Phase**: Deployment Cleanup
+**Next Phase**: Deployment Validation
+`,
+        },
+      ],
+    };
+  }
+
+  // PHASE 1+: Bootstrap script generation and execution guidance
+  if (currentIteration >= 1 && currentIteration < maxIterations) {
+    const platformDetection = await detectPlatforms(projectPath);
+    const detectedPlatform = platformDetection.primaryPlatform || 'unknown';
+
+    // Analyze previous execution output for failures
+    const hadFailures =
+      !previousExecutionSuccess ||
+      previousExecutionOutput.toLowerCase().includes('error') ||
+      previousExecutionOutput.toLowerCase().includes('failed');
+
+    if (hadFailures && currentIteration === 1) {
+      // First iteration failed - provide troubleshooting guidance
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# ⚠️ Bootstrap Validation Loop - Connection Failed
+
+## Iteration ${currentIteration}/${maxIterations}
+
+The environment connection validation failed. Let's troubleshoot:
+
+## Previous Output Analysis
+\`\`\`
+${previousExecutionOutput.substring(0, 500)}
+\`\`\`
+
+## Troubleshooting Steps
+
+### Common Issues for ${detectedPlatform}:
+
+1. **Authentication**: Ensure you're logged in
+2. **Permissions**: Verify you have sufficient privileges
+3. **Network**: Check connectivity to the cluster/service
+4. **Configuration**: Validate connection settings
+
+### Recommended Actions:
+
+1. Review the error message above
+2. Fix the identified issue
+3. Re-run the connection validation command
+4. Call this tool again with updated output
+
+---
+
+**Current Iteration**: ${currentIteration}/${maxIterations}
+**Phase**: Connection Troubleshooting
+`,
+          },
+        ],
+      };
+    }
+
+    // Connection successful - proceed with bootstrap
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# 🔄 Bootstrap Validation Loop - Iteration ${currentIteration}/${maxIterations}
 
 Previous execution: ${previousExecutionSuccess ? '✅ Success' : '❌ Failed'}
 
 ${previousExecutionOutput ? `## Previous Output\n\n\`\`\`\n${previousExecutionOutput.substring(0, 1000)}\n\`\`\`` : ''}
 
-More phases coming soon...
+## Next Steps
+
+${previousExecutionSuccess ? '✅ Environment validated successfully!' : '⚠️ Previous step had issues'}
+
+### Phase ${currentIteration}: Bootstrap Script Generation
+
+The tool will now generate bootstrap and validation scripts. In the next iteration:
+
+1. Call \`generate_adr_bootstrap\` to create deployment scripts
+2. Run the generated \`bootstrap.sh\` script
+3. Run \`validate_bootstrap.sh\` to check compliance
+4. Report back with results
+
+**Next Call**:
+\`\`\`json
+{
+  "currentIteration": ${currentIteration + 1},
+  "previousExecutionOutput": "<command outputs>",
+  "previousExecutionSuccess": true/false
+}
+\`\`\`
+
+---
+
+**Current Iteration**: ${currentIteration}/${maxIterations}
+**Phase**: Bootstrap Generation
+**Next Phase**: Bootstrap Execution
+`,
+        },
+      ],
+    };
+  }
+
+  // Iteration limit reached
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `# 🏁 Bootstrap Validation Loop - Complete
+
+Maximum iterations (${maxIterations}) reached.
+
+## Summary
+
+- **Total Iterations**: ${currentIteration}
+- **Final Status**: ${previousExecutionSuccess ? '✅ Success' : '⚠️ Issues Remain'}
+
+## Final Output
+\`\`\`
+${previousExecutionOutput.substring(0, 1000)}
+\`\`\`
+
+## Next Steps
+
+${previousExecutionSuccess ? '✅ Deployment validation complete!\n\nReview the results and update ADRs with deployment learnings.' : '⚠️ Deployment validation incomplete.\n\nReview errors, make necessary fixes, and restart the validation loop.'}
+
+---
+
+**Note**: To restart the validation loop, call this tool again with \`currentIteration: 0\`.
 `,
       },
     ],
