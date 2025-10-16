@@ -8,6 +8,9 @@ import { McpAdrError } from '../types/index.js';
 import { ConversationContext } from '../types/conversation-context.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 import { findRelatedCode } from '../utils/file-system.js';
+import { detectPlatforms, PlatformDetectionResult } from '../utils/platform-detector.js';
+import { getPattern, ValidatedPattern } from '../utils/validated-pattern-definitions.js';
+import { generatePatternResearchReport } from '../utils/pattern-research-utility.js';
 
 /**
  * Interface for bootstrap script generation
@@ -63,6 +66,80 @@ export async function generateAdrBootstrapScripts(args: {
   } = args;
 
   try {
+    // STEP 0: Detect platform using Validated Patterns framework
+    console.log('🔍 Detecting platform type using Validated Patterns...');
+    const platformDetection: PlatformDetectionResult = await detectPlatforms(projectPath);
+
+    console.log(
+      `📋 Platform detection complete (confidence: ${(platformDetection.confidence * 100).toFixed(0)}%)`,
+      {
+        primaryPlatform: platformDetection.primaryPlatform,
+        detectedPlatforms: platformDetection.detectedPlatforms.map(p => p.type),
+      }
+    );
+
+    // STEP 0.1: Get validated pattern and generate research report
+    let validatedPattern: ValidatedPattern | null = null;
+    let patternResearchReport: string | null = null;
+    let baseRepoGuidance = '';
+
+    if (platformDetection.primaryPlatform) {
+      validatedPattern = getPattern(platformDetection.primaryPlatform);
+
+      if (validatedPattern) {
+        console.log(`✅ Loaded validated pattern: ${validatedPattern.name}`);
+
+        // Generate research report with base code repository guidance
+        patternResearchReport = generatePatternResearchReport(platformDetection.primaryPlatform);
+
+        // Create specific guidance about the base code repository
+        baseRepoGuidance = `
+
+## 🎯 VALIDATED PATTERN INTEGRATION (CRITICAL)
+
+**Platform Detected**: ${platformDetection.primaryPlatform.toUpperCase()}
+**Base Code Repository**: ${validatedPattern.baseCodeRepository.url}
+
+### Integration Instructions:
+${validatedPattern.baseCodeRepository.integrationInstructions}
+
+### Required Files:
+${validatedPattern.baseCodeRepository.requiredFiles.map((f, i) => `${i + 1}. \`${f}\``).join('\n')}
+
+${
+  validatedPattern.baseCodeRepository.scriptEntrypoint
+    ? `### Bootstrap Entry Point:
+Your bootstrap.sh should call: \`${validatedPattern.baseCodeRepository.scriptEntrypoint}\`
+`
+    : ''
+}
+
+**⚠️ IMPORTANT**: Before generating scripts, use WebFetch to query:
+1. **Base Repository**: ${validatedPattern.baseCodeRepository.url}
+2. **Documentation**: ${validatedPattern.authoritativeSources.find(s => s.type === 'documentation')?.url || 'N/A'}
+
+Then merge the base repository into your project and customize for your needs.
+
+---
+`;
+
+        console.log('📚 Generated research report with base code repository guidance');
+        console.log(
+          `⚠️  CRITICAL: LLM should merge ${validatedPattern.baseCodeRepository.url} before generating scripts`
+        );
+
+        // Log the research report for debugging (can be removed if not needed)
+        console.log(
+          '[DEBUG] Pattern Research Report Generated:',
+          patternResearchReport ? 'YES' : 'NO'
+        );
+      } else {
+        console.warn(
+          `No validated pattern found for ${platformDetection.primaryPlatform}, generating generic scripts`
+        );
+      }
+    }
+
     // Discover ADRs in the target project
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
     const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
@@ -215,7 +292,8 @@ ${codeAnalysisResults.violations.map((violation: any) => `- **${violation.adrTit
       projectPath,
       includeTests,
       includeDeployment,
-      customValidations
+      customValidations,
+      validatedPattern // Pass validated pattern for pattern-aware script generation
     );
 
     // Generate validate_bootstrap.sh script
@@ -232,6 +310,8 @@ ${codeAnalysisResults.violations.map((violation: any) => `- **${violation.adrTit
 ## Purpose
 These scripts ensure that code deployed to production follows the architectural decisions documented in ADRs.
 The bootstrap script deploys the code while the validation script verifies ADR compliance.
+
+${baseRepoGuidance}
 
 ## Discovered ADRs (${discoveryResult.totalAdrs} total)
 ${discoveryResult.adrs.map(adr => `- ${adr.title} (${adr.status})`).join('\n')}
@@ -581,24 +661,179 @@ function determineSeverity(text: string): 'critical' | 'error' | 'warning' | 'in
 
 /**
  * Generate bootstrap.sh script content
+ * If validatedPattern is provided, generates a script that calls the pattern's scripts
+ * Otherwise, generates standalone deployment script
  */
 function generateBootstrapScript(
   checks: AdrComplianceCheck[],
   projectPath: string,
   includeTests: boolean,
   includeDeployment: boolean,
-  customValidations: string[]
+  customValidations: string[],
+  validatedPattern: ValidatedPattern | null = null
 ): string {
+  // If we have a validated pattern, generate a script that calls its scripts
+  const hasValidatedPattern =
+    validatedPattern && validatedPattern.baseCodeRepository.scriptEntrypoint;
+
+  if (hasValidatedPattern) {
+    const baseRepo = validatedPattern!.baseCodeRepository;
+    return `#!/bin/bash
+# ADR Bootstrap Deployment Script with Validated Pattern Integration
+# Generated by MCP ADR Analysis Server
+# Purpose: Deploy code using validated ${validatedPattern!.name} pattern
+
+set -e # Exit on error
+
+echo "🚀 ADR Bootstrap Deployment Starting..."
+echo "📍 Project: ${projectPath}"
+echo "🎯 Pattern: ${validatedPattern!.name}"
+echo "📦 Base Repository: ${baseRepo.url}"
+echo "📋 ADR Compliance Checks: ${checks.length}"
+echo ""
+
+# Color codes for output
+RED='\\033[0;31m'
+GREEN='\\033[0;32m'
+YELLOW='\\033[1;33m'
+BLUE='\\033[0;34m'
+NC='\\033[0m' # No Color
+
+# Track deployment status
+DEPLOYMENT_SUCCESS=true
+FAILED_CHECKS=()
+
+echo -e "\${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\${NC}"
+echo -e "\${BLUE}Phase 0: Validated Pattern Integration Check\${NC}"
+echo -e "\${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\${NC}"
+echo ""
+
+# Check if base repository code is present
+${baseRepo.requiredFiles
+  .map(
+    (file, i) => `
+echo -n "  [${i + 1}/${baseRepo.requiredFiles.length}] Checking for ${file}... "
+if [ -e "${file}" ]; then
+    echo -e "\${GREEN}✓\${NC}"
+else
+    echo -e "\${RED}✗ MISSING\${NC}"
+    echo ""
+    echo -e "\${RED}ERROR: Required file '${file}' from validated pattern not found!\${NC}"
+    echo ""
+    echo "To fix this:"
+    echo "  1. Clone/merge base repository: ${baseRepo.url}"
+    echo "  2. Follow integration instructions:"
+    echo "     ${baseRepo.integrationInstructions.split('.').slice(0, 2).join('.')}"
+    echo ""
+    exit 1
+fi`
+  )
+  .join('')}
+
+echo ""
+echo -e "\${GREEN}✅ All validated pattern files present\${NC}"
+echo ""
+
+# Function to check ADR compliance
+check_adr_compliance() {
+    local adr_id="$1"
+    local requirement="$2"
+    local command="$3"
+    local expected="$4"
+    local severity="$5"
+
+    echo -n "  Checking $adr_id: $requirement... "
+
+    if eval "$command" > /dev/null 2>&1; then
+        echo -e "\${GREEN}✓\${NC}"
+        return 0
+    else
+        echo -e "\${RED}✗\${NC}"
+        FAILED_CHECKS+=("$adr_id: $requirement [$severity]")
+        if [ "$severity" = "critical" ]; then
+            DEPLOYMENT_SUCCESS=false
+        fi
+        return 1
+    fi
+}
+
+echo -e "\${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\${NC}"
+echo -e "\${BLUE}Phase 1: Pre-deployment ADR Validation\${NC}"
+echo -e "\${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\${NC}"
+echo ""
+
+${checks
+  .filter(c => c.severity === 'critical')
+  .map(
+    check => `
+check_adr_compliance \\
+    "${check.adrId}" \\
+    "${check.requirement.substring(0, 50)}..." \\
+    "${check.validationCommand}" \\
+    "${check.expectedOutcome}" \\
+    "${check.severity}"`
+  )
+  .join('\n')}
+
+if [ "$DEPLOYMENT_SUCCESS" = false ]; then
+    echo ""
+    echo -e "\${RED}❌ Critical ADR violations found. Deployment aborted.\${NC}"
+    exit 1
+fi
+
+echo ""
+echo -e "\${GREEN}✅ All critical checks passed\${NC}"
+echo ""
+
+echo -e "\${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\${NC}"
+echo -e "\${BLUE}Phase 2: Execute Validated Pattern Deployment\${NC}"
+echo -e "\${BLUE}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\${NC}"
+echo ""
+
+echo "🎯 Calling validated pattern script: ${baseRepo.scriptEntrypoint}"
+echo ""
+
+# Call the validated pattern's deployment script
+if [ -x "${baseRepo.scriptEntrypoint}" ]; then
+    ${baseRepo.scriptEntrypoint}
+    PATTERN_EXIT_CODE=$?
+elif [ -f "${baseRepo.scriptEntrypoint}" ]; then
+    bash ${baseRepo.scriptEntrypoint}
+    PATTERN_EXIT_CODE=$?
+else
+    echo -e "\${RED}ERROR: Pattern script '${baseRepo.scriptEntrypoint}' not found or not executable\${NC}"
+    exit 1
+fi
+
+if [ $PATTERN_EXIT_CODE -ne 0 ]; then
+    echo ""
+    echo -e "\${RED}❌ Validated pattern deployment failed with exit code: $PATTERN_EXIT_CODE\${NC}"
+    exit $PATTERN_EXIT_CODE
+fi
+
+echo ""
+echo -e "\${GREEN}✅ Validated pattern deployment successful\${NC}"
+`;
+  }
+
+  // Original standalone script generation (fallback when no validated pattern)
   return `#!/bin/bash
-# ADR Bootstrap Deployment Script
+# ADR Bootstrap Deployment Script (Standalone Mode)
 # Generated by MCP ADR Analysis Server
 # Purpose: Deploy code that follows ADR architectural decisions
+#
+# ⚠️  WARNING: This is a standalone deployment script.
+# Consider integrating a validated pattern for production deployments:
+# - OpenShift: https://github.com/validatedpatterns/common
+# - Kubernetes: https://github.com/kubernetes/examples
+# - Docker: https://github.com/docker/awesome-compose
 
 set -e # Exit on error
 
 echo "🚀 ADR Bootstrap Deployment Starting..."
 echo "📍 Project: ${projectPath}"
 echo "📋 ADR Compliance Checks: ${checks.length}"
+echo "⚠️  Running in STANDALONE mode (no validated pattern detected)"
 echo ""
 
 # Color codes for output
