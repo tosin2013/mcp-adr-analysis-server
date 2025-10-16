@@ -1698,7 +1698,7 @@ async function generateGuidedExecutionInstructions(params: {
 ## Detected Platform
 **Primary Platform**: ${detectedPlatform.toUpperCase()}
 **Confidence**: ${(platformDetection.confidence * 100).toFixed(0)}%
-**Detected Platforms**: ${platformDetection.detectedPlatforms.map(p => p.type).join(', ')}
+**All Detected**: ${platformDetection.detectedPlatforms?.map(p => p.type).join(', ') || detectedPlatform}
 
 ${
   validatedPattern
@@ -1765,6 +1765,7 @@ ${platformDetection.evidence
 `,
         },
       ],
+      isError: false,
     };
   }
 
@@ -1868,6 +1869,7 @@ After running teardown, verification, and restart, call this tool again with:
 `,
         },
       ],
+      isError: false,
     };
   }
 
@@ -1922,6 +1924,7 @@ ${previousExecutionOutput.substring(0, 500)}
 `,
           },
         ],
+        isError: false,
       };
     }
 
@@ -1966,6 +1969,7 @@ The tool will now generate bootstrap and validation scripts. In the next iterati
 `,
         },
       ],
+      isError: false,
     };
   }
 
@@ -1998,6 +2002,7 @@ ${previousExecutionSuccess ? '✅ Deployment validation complete!\n\nReview the 
 `,
       },
     ],
+    isError: false,
   };
 }
 
