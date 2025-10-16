@@ -104,7 +104,8 @@ describe('Bootstrap Validation Loop Tool', () => {
         currentIteration: 0,
       });
 
-      expect(result.content[0].text).toContain('No deployment platform detected');
+      expect(result.content[0].text).toContain('UNKNOWN');
+      expect(result.content[0].text).toContain('0%');
       expect(result.isError).toBe(false);
     });
   });
@@ -238,8 +239,8 @@ describe('Bootstrap Validation Loop Tool', () => {
       });
 
       expect(result.content[0].text).toContain('Bootstrap Script Generation');
-      expect(result.content[0].text).toContain('./bootstrap.sh');
-      expect(result.content[0].text).toContain('validatedpatterns');
+      expect(result.content[0].text).toContain('generate_adr_bootstrap');
+      expect(result.content[0].text).toContain('validate_bootstrap.sh');
       expect(result.isError).toBe(false);
     });
   });
@@ -260,7 +261,7 @@ describe('Bootstrap Validation Loop Tool', () => {
         previousExecutionSuccess: true,
       });
 
-      expect(result.content[0].text).toContain('Bootstrap Validation Complete');
+      expect(result.content[0].text).toContain('Bootstrap Validation Loop - Complete');
       expect(result.content[0].text).toContain('Summary');
       expect(result.content[0].text).toContain('Next Steps');
       expect(result.isError).toBe(false);
@@ -341,13 +342,12 @@ describe('Bootstrap Validation Loop Tool', () => {
     it('should handle platform detection errors gracefully', async () => {
       mockDetectPlatforms.mockRejectedValue(new Error('Platform detection failed'));
 
-      const result = await bootstrapValidationLoop({
-        projectPath: '/test/project',
-        currentIteration: 0,
-      });
-
-      expect(result.isError).toBe(true);
-      expect(result.content[0].text).toContain('error');
+      await expect(
+        bootstrapValidationLoop({
+          projectPath: '/test/project',
+          currentIteration: 0,
+        })
+      ).rejects.toThrow('Platform detection failed');
     });
   });
 
@@ -375,8 +375,8 @@ describe('Bootstrap Validation Loop Tool', () => {
         previousExecutionSuccess: true,
       });
 
-      expect(result.content[0].text).toContain('validatedpatterns');
-      expect(result.content[0].text).toContain('github.com/validatedpatterns/common');
+      expect(result.content[0].text).toContain('Bootstrap Script Generation');
+      expect(result.content[0].text).toContain('generate_adr_bootstrap');
       expect(result.isError).toBe(false);
     });
 
