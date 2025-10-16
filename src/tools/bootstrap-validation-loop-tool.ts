@@ -28,6 +28,11 @@ import {
 } from '../utils/dynamic-deployment-intelligence.js';
 import generateAdrBootstrapScripts from './adr-bootstrap-validation-tool.js';
 
+// NEW: Validated Patterns Integration
+import { detectPlatforms, PlatformDetectionResult } from '../utils/platform-detector.js';
+import { getPattern, ValidatedPattern } from '../utils/validated-pattern-definitions.js';
+import { generatePatternResearchReport } from '../utils/pattern-research-utility.js';
+
 const execAsync = promisify(exec);
 
 /**
@@ -124,6 +129,11 @@ export class BootstrapValidationLoop {
   private currentIteration: number = 0;
   private deploymentPlan: DynamicDeploymentPlan | null = null;
 
+  // NEW: Validated Patterns fields
+  private platformDetection: PlatformDetectionResult | null = null;
+  private validatedPattern: ValidatedPattern | null = null;
+  private patternResearchReport: string | null = null;
+
   constructor(projectPath: string, adrDirectory: string, maxIterations: number = 5) {
     this.logger = new EnhancedLogger();
     this.projectPath = projectPath;
@@ -174,7 +184,69 @@ export class BootstrapValidationLoop {
       maxIterations: this.maxIterations,
     });
 
-    // STEP 0: Generate AI-powered deployment plan using dynamic intelligence
+    // STEP 0: Detect platform using Validated Patterns framework
+    this.logger.info(
+      '🔍 Detecting platform type using Validated Patterns...',
+      'BootstrapValidationLoop'
+    );
+    this.platformDetection = await detectPlatforms(this.projectPath);
+
+    this.logger.info(
+      `📋 Platform detection complete (confidence: ${(this.platformDetection.confidence * 100).toFixed(0)}%)`,
+      'BootstrapValidationLoop',
+      {
+        primaryPlatform: this.platformDetection.primaryPlatform,
+        detectedPlatforms: this.platformDetection.detectedPlatforms.map(p => p.type),
+        evidence: this.platformDetection.evidence.length,
+      }
+    );
+
+    // STEP 0.1: Get validated pattern for detected platform
+    if (this.platformDetection.primaryPlatform) {
+      this.validatedPattern = getPattern(this.platformDetection.primaryPlatform);
+
+      if (this.validatedPattern) {
+        this.logger.info(
+          `✅ Loaded validated pattern: ${this.validatedPattern.name}`,
+          'BootstrapValidationLoop',
+          {
+            version: this.validatedPattern.version,
+            lastUpdated: this.validatedPattern.metadata.lastUpdated,
+            authoritativeSources: this.validatedPattern.authoritativeSources.length,
+            requiredSources: this.validatedPattern.authoritativeSources.filter(
+              s => s.requiredForDeployment
+            ).length,
+          }
+        );
+
+        // STEP 0.2: Generate research report for authoritative sources
+        this.patternResearchReport = generatePatternResearchReport(
+          this.platformDetection.primaryPlatform
+        );
+
+        this.logger.info(
+          '📚 Generated research report with authoritative source instructions',
+          'BootstrapValidationLoop'
+        );
+        this.logger.info(
+          `⚠️  IMPORTANT: LLM should query ${this.validatedPattern.authoritativeSources.filter(s => s.requiredForDeployment).length} REQUIRED authoritative sources before deployment`,
+          'BootstrapValidationLoop'
+        );
+
+        // Log the research report for LLM to see
+        this.logger.info(
+          '📖 Research Report:\n' + this.patternResearchReport,
+          'BootstrapValidationLoop'
+        );
+      } else {
+        this.logger.warn(
+          `No validated pattern found for ${this.platformDetection.primaryPlatform}, falling back to dynamic intelligence`,
+          'BootstrapValidationLoop'
+        );
+      }
+    }
+
+    // STEP 0.3: Generate AI-powered deployment plan (fallback or hybrid approach)
     this.logger.info(
       '🤖 Generating dynamic deployment plan with AI + research...',
       'BootstrapValidationLoop'
@@ -499,9 +571,163 @@ Please review this deployment plan and:
   }
 
   /**
-   * Generate bootstrap scripts from current ADRs
+   * Generate bootstrap scripts from validated pattern (NEW)
+   */
+  private async generateBootstrapScriptsFromPattern(): Promise<boolean> {
+    if (!this.validatedPattern) {
+      return false;
+    }
+
+    try {
+      this.logger.info(
+        `Generating bootstrap scripts from validated pattern: ${this.validatedPattern.name}`,
+        'BootstrapValidationLoop'
+      );
+
+      // Generate bootstrap.sh from pattern's deployment phases
+      let bootstrapScript = `#!/bin/bash
+# Bootstrap script generated from ${this.validatedPattern.name} v${this.validatedPattern.version}
+# Pattern source: ${this.validatedPattern.metadata.source}
+# Last updated: ${this.validatedPattern.metadata.lastUpdated}
+# Generated: ${new Date().toISOString()}
+
+set -e  # Exit on error
+set -u  # Exit on undefined variable
+
+echo "========================================"
+echo "Bootstrap Deployment - ${this.validatedPattern.platformType}"
+echo "Pattern: ${this.validatedPattern.name}"
+echo "========================================"
+echo ""
+
+`;
+
+      // Add each deployment phase
+      for (const phase of this.validatedPattern.deploymentPhases) {
+        bootstrapScript += `
+# ============================================================================
+# Phase ${phase.order}: ${phase.name}
+# ${phase.description}
+# Estimated duration: ${phase.estimatedDuration}
+# ============================================================================
+
+echo "Starting Phase ${phase.order}: ${phase.name}"
+
+`;
+
+        // Add commands for this phase
+        for (const command of phase.commands) {
+          bootstrapScript += `# ${command.description}\n`;
+          bootstrapScript += `echo "  → ${command.description}"\n`;
+          bootstrapScript += `${command.command}\n\n`;
+        }
+
+        bootstrapScript += `echo "✓ Phase ${phase.order} complete"\necho ""\n`;
+      }
+
+      bootstrapScript += `
+echo "========================================"
+echo "✅ Bootstrap deployment complete!"
+echo "========================================"
+`;
+
+      // Generate validate_bootstrap.sh from pattern's validation checks
+      let validationScript = `#!/bin/bash
+# Validation script generated from ${this.validatedPattern.name}
+# Generated: ${new Date().toISOString()}
+
+set -e
+
+echo "========================================"
+echo "Bootstrap Validation"
+echo "========================================"
+echo ""
+
+FAILED_CHECKS=0
+
+`;
+
+      for (const check of this.validatedPattern.validationChecks) {
+        validationScript += `
+# ${check.name} (${check.severity})
+echo "Checking: ${check.name}"
+if ${check.command}; then
+  echo "  ✅ PASSED: ${check.name}"
+else
+  echo "  ❌ FAILED: ${check.name}"
+  echo "     ${check.failureMessage}"
+  echo "     Remediation steps:"
+${check.remediationSteps.map(step => `  echo "       - ${step}"`).join('\n')}
+  FAILED_CHECKS=$((FAILED_CHECKS + 1))
+fi
+echo ""
+
+`;
+      }
+
+      validationScript += `
+if [ $FAILED_CHECKS -eq 0 ]; then
+  echo "========================================"
+  echo "✅ All validation checks passed!"
+  echo "========================================"
+  exit 0
+else
+  echo "========================================"
+  echo "❌ $FAILED_CHECKS validation check(s) failed"
+  echo "========================================"
+  exit 1
+fi
+`;
+
+      // Write scripts
+      const bootstrapPath = path.join(this.projectPath, 'bootstrap.sh');
+      await fs.writeFile(bootstrapPath, bootstrapScript, { mode: 0o755 });
+
+      const validationPath = path.join(this.projectPath, 'validate_bootstrap.sh');
+      await fs.writeFile(validationPath, validationScript, { mode: 0o755 });
+
+      this.logger.info(
+        'Bootstrap scripts generated from validated pattern',
+        'BootstrapValidationLoop',
+        {
+          bootstrapPath,
+          validationPath,
+          phases: this.validatedPattern.deploymentPhases.length,
+          validationChecks: this.validatedPattern.validationChecks.length,
+        }
+      );
+
+      return true;
+    } catch (error) {
+      this.logger.error(
+        'Failed to generate scripts from validated pattern',
+        'BootstrapValidationLoop',
+        error as Error
+      );
+      return false;
+    }
+  }
+
+  /**
+   * Generate bootstrap scripts from current ADRs (FALLBACK)
    */
   private async generateBootstrapScripts(): Promise<boolean> {
+    // NEW: Try validated pattern first if available
+    if (this.validatedPattern) {
+      this.logger.info(
+        '🎯 Using validated pattern to generate bootstrap scripts',
+        'BootstrapValidationLoop'
+      );
+      const patternSuccess = await this.generateBootstrapScriptsFromPattern();
+      if (patternSuccess) {
+        return true;
+      }
+      this.logger.warn(
+        'Failed to generate from validated pattern, falling back to ADR-based generation',
+        'BootstrapValidationLoop'
+      );
+    }
+
     try {
       this.logger.info('Generating bootstrap scripts from ADRs', 'BootstrapValidationLoop');
 
