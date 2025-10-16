@@ -1643,6 +1643,150 @@ production:
 }
 
 /**
+ * Generate guided execution instructions for LLM
+ * This function returns step-by-step commands for the LLM to execute
+ */
+async function generateGuidedExecutionInstructions(params: {
+  loop: BootstrapValidationLoop;
+  projectPath: string;
+  adrDirectory: string;
+  targetEnvironment: string;
+  maxIterations: number;
+  autoFix: boolean;
+  updateAdrsWithLearnings: boolean;
+  currentIteration: number;
+  previousExecutionOutput: string;
+  previousExecutionSuccess: boolean;
+  deploymentCleanupRequested: boolean;
+}): Promise<any> {
+  const {
+    projectPath,
+    targetEnvironment,
+    maxIterations,
+    currentIteration,
+    previousExecutionOutput,
+    previousExecutionSuccess,
+  } = params;
+
+  // PHASE 0: Environment Validation (Iteration 0)
+  if (currentIteration === 0) {
+    // Detect platform
+    const platformDetection = await detectPlatforms(projectPath);
+    const validatedPattern = platformDetection.primaryPlatform
+      ? getPattern(platformDetection.primaryPlatform)
+      : null;
+
+    const connectionCommands: { [key: string]: string } = {
+      openshift: 'oc status && oc whoami',
+      kubernetes: 'kubectl cluster-info && kubectl get nodes',
+      docker: 'docker ps && docker info',
+      'docker-compose': 'docker-compose --version && docker ps',
+      ansible: 'ansible --version && ansible localhost -m ping',
+      nodejs: 'node --version && npm --version',
+      python: 'python --version && pip --version',
+    };
+
+    const detectedPlatform = platformDetection.primaryPlatform || 'unknown';
+    const connectionCommand = connectionCommands[detectedPlatform] || 'echo "Unknown platform"';
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# 🔍 Bootstrap Validation Loop - Phase 0: Environment Validation
+
+## Detected Platform
+**Primary Platform**: ${detectedPlatform.toUpperCase()}
+**Confidence**: ${(platformDetection.confidence * 100).toFixed(0)}%
+**Detected Platforms**: ${platformDetection.detectedPlatforms.map(p => p.type).join(', ')}
+
+${
+  validatedPattern
+    ? `
+## 📚 Validated Pattern Available
+**Pattern**: ${validatedPattern.name} v${validatedPattern.version}
+**Base Repository**: ${validatedPattern.baseCodeRepository.url}
+**Documentation**: ${validatedPattern.authoritativeSources.find(s => s.type === 'documentation')?.url || 'N/A'}
+`
+    : ''
+}
+
+## ⚠️ ACTION REQUIRED: Validate Environment Connection
+
+Before proceeding with deployment, you MUST:
+
+### 1. Verify Target Environment Connection
+
+Run the following command to validate your connection to **${detectedPlatform.toUpperCase()}**:
+
+\`\`\`bash
+${connectionCommand}
+\`\`\`
+
+### 2. Confirm Target Environment
+
+**IMPORTANT**: Please confirm with the human user:
+
+> "I've detected **${detectedPlatform}** as the target deployment platform (${(platformDetection.confidence * 100).toFixed(0)}% confidence).
+>
+> Is this correct? Should I proceed with ${detectedPlatform} deployment, or would you like to target a different platform?"
+
+### 3. After Confirmation, Report Back
+
+Once you've:
+- ✅ Run the connection validation command
+- ✅ Confirmed the command succeeded (exit code 0)
+- ✅ Received human approval for the target environment
+
+Call this tool again with:
+\`\`\`json
+{
+  "currentIteration": 1,
+  "previousExecutionOutput": "<paste the output from the connection command>",
+  "previousExecutionSuccess": true,
+  "targetEnvironment": "${targetEnvironment}"
+}
+\`\`\`
+
+## Evidence Found
+
+${platformDetection.evidence
+  .slice(0, 5)
+  .map(
+    (e, i) => `${i + 1}. **${e.file}**: ${e.indicator} (weight: ${(e.weight * 100).toFixed(0)}%)`
+  )
+  .join('\n')}
+
+---
+
+**Current Iteration**: 0/${maxIterations}
+**Phase**: Environment Validation
+**Next Phase**: Bootstrap Script Generation
+`,
+        },
+      ],
+    };
+  }
+
+  // TODO: Add Phase 1, 2, 3 in subsequent iterations
+  return {
+    content: [
+      {
+        type: 'text',
+        text: `# 🔄 Bootstrap Validation Loop - Iteration ${currentIteration}/${maxIterations}
+
+Previous execution: ${previousExecutionSuccess ? '✅ Success' : '❌ Failed'}
+
+${previousExecutionOutput ? `## Previous Output\n\n\`\`\`\n${previousExecutionOutput.substring(0, 1000)}\n\`\`\`` : ''}
+
+More phases coming soon...
+`,
+      },
+    ],
+  };
+}
+
+/**
  * Main tool function for bootstrap validation loop
  */
 export async function bootstrapValidationLoop(args: {
@@ -1651,9 +1795,11 @@ export async function bootstrapValidationLoop(args: {
   targetEnvironment?: string;
   maxIterations?: number;
   autoFix?: boolean;
-  validateAfterFix?: boolean;
-  captureEnvironmentSnapshot?: boolean;
   updateAdrsWithLearnings?: boolean;
+  currentIteration?: number;
+  previousExecutionOutput?: string;
+  previousExecutionSuccess?: boolean;
+  deploymentCleanupRequested?: boolean;
 }): Promise<any> {
   const {
     projectPath = process.cwd(),
@@ -1661,130 +1807,31 @@ export async function bootstrapValidationLoop(args: {
     targetEnvironment = 'development',
     maxIterations = 5,
     autoFix = true,
-    validateAfterFix = true,
-    captureEnvironmentSnapshot = true,
     updateAdrsWithLearnings = true,
+    currentIteration = 0,
+    previousExecutionOutput = '',
+    previousExecutionSuccess = false,
+    deploymentCleanupRequested = false,
   } = args;
 
   const loop = new BootstrapValidationLoop(projectPath, adrDirectory, maxIterations);
   await loop.initialize();
 
-  const result = await loop.executeLoop({
+  // GUIDED MODE: Return instructions for LLM to execute commands
+  // This mode tells the LLM what to run and processes the output iteratively
+  return await generateGuidedExecutionInstructions({
+    loop,
+    projectPath,
+    adrDirectory,
     targetEnvironment,
+    maxIterations,
     autoFix,
-    validateAfterFix,
-    captureEnvironmentSnapshot,
     updateAdrsWithLearnings,
+    currentIteration,
+    previousExecutionOutput,
+    previousExecutionSuccess,
+    deploymentCleanupRequested,
   });
-
-  // Generate response
-  const response = `
-# 🔄 Bootstrap Validation Loop - Complete
-
-## Execution Summary
-- **Status**: ${result.success ? '✅ Success' : '⚠️ Failed'}
-- **Iterations**: ${result.iterations}/${maxIterations}
-- **Duration**: ${result.finalResult.duration}ms
-- **Learnings Captured**: ${result.finalResult.learnings.length}
-- **ADR Updates Proposed**: ${result.adrUpdates.length}
-
-## Final Execution Result
-
-**Exit Code**: ${result.finalResult.exitCode}
-**Validation Results**: ${result.finalResult.validationResults?.length || 0} checks
-
-${
-  result.finalResult.validationResults?.filter(v => !v.passed).length
-    ? `
-### Failed Validations
-${result.finalResult.validationResults
-  .filter(v => !v.passed)
-  .map(v => `- ${v.requirement}`)
-  .join('\n')}
-`
-    : ''
-}
-
-## Learnings Captured
-
-${result.finalResult.learnings
-  .slice(0, 10)
-  .map(
-    (l, i) => `
-### ${i + 1}. ${l.type.toUpperCase()}: ${l.category}
-- **Description**: ${l.description}
-- **Severity**: ${l.severity}
-- **Recommendation**: ${l.recommendation}
-${l.environmentSpecific ? '- *Environment-specific*' : ''}
-`
-  )
-  .join('\n')}
-
-${result.finalResult.learnings.length > 10 ? `\n... and ${result.finalResult.learnings.length - 10} more learnings\n` : ''}
-
-## ADR Update Proposals
-
-${result.adrUpdates.length === 0 ? 'No ADR updates proposed.' : ''}
-${result.adrUpdates
-  .map(
-    (update, i) => `
-### ${i + 1}. ${update.adrTitle}
-- **Update Type**: ${update.updateType}
-- **Section**: ${update.sectionToUpdate}
-- **Confidence**: ${(update.confidence * 100).toFixed(0)}%
-- **Requires Review**: ${update.requiresReview ? 'Yes' : 'No'}
-- **Related Learnings**: ${update.learnings.length}
-
-**Proposed Content**:
-\`\`\`markdown
-${update.proposedContent.substring(0, 500)}${update.proposedContent.length > 500 ? '...' : ''}
-\`\`\`
-`
-  )
-  .join('\n')}
-
-## Environment Snapshot
-
-${JSON.stringify(result.finalResult.environmentSnapshot, null, 2).substring(0, 1000)}
-
-## Next Steps
-
-${
-  result.success
-    ? `
-✅ **Bootstrap validation successful!**
-
-1. Review ADR update proposals above
-2. Apply ADR updates if they look correct
-3. Commit updated ADRs to version control
-4. Re-run bootstrap on other environments (staging, production)
-`
-    : `
-⚠️ **Bootstrap validation failed after ${result.iterations} iterations**
-
-1. Review failed validations above
-2. Check learnings for specific issues
-3. ${autoFix ? 'Auto-fix attempted but issues remain' : 'Enable auto-fix to attempt automatic resolution'}
-4. Consider manual intervention for complex issues
-5. Review ADR update proposals for documentation improvements
-`
-}
-
----
-
-**Execution ID**: ${result.finalResult.executionId}
-**Timestamp**: ${result.finalResult.timestamp}
-`;
-
-  return {
-    content: [
-      {
-        type: 'text',
-        text: response,
-      },
-    ],
-    executionResult: result,
-  };
 }
 
 export default bootstrapValidationLoop;
