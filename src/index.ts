@@ -798,7 +798,7 @@ export class McpAdrAnalysisServer {
           {
             name: 'bootstrap_validation_loop',
             description:
-              'Execute complete bootstrap validation loop with environment monitoring, auto-fixing, and ADR learning. Iteratively validates deployments against ADRs and updates ADRs with real-world deployment experience. **IMPORTANT**: This tool automatically detects the platform type, identifies the base code repository (e.g., validatedpatterns/common for OpenShift), and generates guidance for merging validated pattern code into your project. Query the base repository using WebFetch to understand how to integrate and call its deployment scripts.',
+              '**GUIDED EXECUTION MODE**: This tool guides you through an interactive, step-by-step deployment validation workflow. It does NOT execute commands internally - instead, it tells YOU what commands to run and processes the results iteratively. **Workflow**: (1) First call with iteration=0: Detects platform (OpenShift/K8s/Docker), validates environment connection, and requests human approval for target platform. (2) Subsequent calls: After running each command and reporting back with output, the tool provides next steps. **Environment Validation**: Before deployment, the tool verifies connection to the target platform (e.g., `oc status` for OpenShift, `kubectl cluster-info` for K8s) and requires explicit human confirmation. **Validated Patterns Integration**: Automatically identifies base code repositories (e.g., validatedpatterns/common for OpenShift) and guides you to merge them into your project. **Deployment Cleanup**: Supports CI/CD-style workflows with deployment teardown/restart guidance. **Call this tool iteratively**, passing previous command output back each time.',
             inputSchema: {
               type: 'object',
               properties: {
@@ -825,23 +825,37 @@ export class McpAdrAnalysisServer {
                 },
                 autoFix: {
                   type: 'boolean',
-                  description: 'Automatically fix bootstrap scripts based on failures',
-                  default: true,
-                },
-                validateAfterFix: {
-                  type: 'boolean',
-                  description: 'Re-validate after applying auto-fixes',
-                  default: true,
-                },
-                captureEnvironmentSnapshot: {
-                  type: 'boolean',
-                  description: 'Capture environment state during execution',
+                  description: 'Whether to generate auto-fix suggestions in guidance',
                   default: true,
                 },
                 updateAdrsWithLearnings: {
                   type: 'boolean',
                   description: 'Update ADRs with deployment learnings (non-sensitive)',
                   default: true,
+                },
+                currentIteration: {
+                  type: 'number',
+                  description:
+                    'Current iteration number (0 for initial call, then increment). Used to track workflow progress.',
+                  default: 0,
+                },
+                previousExecutionOutput: {
+                  type: 'string',
+                  description:
+                    'Output from the previous command execution. Paste the stdout/stderr from running the command that was recommended in the previous iteration.',
+                  default: '',
+                },
+                previousExecutionSuccess: {
+                  type: 'boolean',
+                  description:
+                    'Whether the previous command execution succeeded (exit code 0). Set to true if command succeeded, false if it failed.',
+                  default: false,
+                },
+                deploymentCleanupRequested: {
+                  type: 'boolean',
+                  description:
+                    'Set to true to request deployment cleanup/teardown guidance (for CI/CD workflows that need to delete and restart deployments).',
+                  default: false,
                 },
                 conversationContext: CONVERSATION_CONTEXT_SCHEMA,
               },
