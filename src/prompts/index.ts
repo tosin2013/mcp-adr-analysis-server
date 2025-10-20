@@ -630,6 +630,7 @@ import * as researchIntegrationPrompts from './research-integration-prompts.js';
 import * as researchQuestionPrompts from './research-question-prompts.js';
 import * as ruleGenerationPrompts from './rule-generation-prompts.js';
 import * as securityPrompts from './security-prompts.js';
+import * as validatedPatternPrompts from './validated-pattern-prompts.js';
 
 /**
  * Convert function-based prompts to template format
@@ -857,6 +858,47 @@ const functionBasedPrompts: PromptTemplate[] = [
     'Generate custom security pattern configuration prompt',
     [{ name: 'args', description: 'Custom pattern configuration parameters', required: true }],
     securityPrompts.generateCustomPatternConfigurationPrompt
+  ),
+
+  // Validated Pattern prompts
+  createFunctionPromptTemplate(
+    'validated_pattern_selection_prompt',
+    'Generate validated pattern selection guidance for LLMs',
+    [
+      {
+        name: 'args',
+        description:
+          'Pattern selection parameters including project context, detected platforms, and requirements',
+        required: true,
+      },
+    ],
+    validatedPatternPrompts.generatePatternSelectionPrompt
+  ),
+  createFunctionPromptTemplate(
+    'validated_pattern_integration_prompt',
+    'Generate comprehensive pattern integration guide with base code repository instructions',
+    [
+      {
+        name: 'args',
+        description:
+          'Pattern integration parameters including pattern object, target project path, and existing infrastructure',
+        required: true,
+      },
+    ],
+    validatedPatternPrompts.generatePatternIntegrationPrompt
+  ),
+  createFunctionPromptTemplate(
+    'validated_pattern_troubleshooting_prompt',
+    'Generate pattern troubleshooting guide for deployment failures',
+    [
+      {
+        name: 'args',
+        description:
+          'Troubleshooting parameters including pattern object, failed phase, failed validation, and error messages',
+        required: true,
+      },
+    ],
+    validatedPatternPrompts.generatePatternTroubleshootingPrompt
   ),
 ];
 
