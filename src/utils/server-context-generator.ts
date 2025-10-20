@@ -105,36 +105,198 @@ export class ServerContextGenerator {
   }
 
   private generateServerInfo(toolList?: Array<{ name: string; description: string }>): string {
-    // Generate tool list from actual registered tools or use default list
+    // Generate tool list from actual registered tools or use complete default list
     const tools = toolList || [
-      { name: 'adr_suggestion', description: 'Suggest new ADRs based on context' },
-      { name: 'smart_score', description: 'Score code quality and architecture (0-100)' },
-      { name: 'deployment_readiness', description: 'Validate deployment with zero-tolerance' },
-      { name: 'todo_management_v2', description: 'Advanced context-aware todo tracking' },
-      { name: 'smart_git_push', description: 'Intelligent git operations' },
-      { name: 'content_masking', description: 'Protect sensitive information' },
-      { name: 'tool_chain_orchestrator', description: 'Coordinate multi-tool workflows' },
-      { name: 'environment_analysis', description: 'Analyze project environment' },
-      { name: 'interactive_adr_planning', description: 'Interactive ADR creation' },
-      { name: 'conversation_memory', description: 'Manage conversation context' },
-      { name: 'adr_validation', description: 'Validate ADR content and structure' },
-      { name: 'rule_generation', description: 'Generate architectural rules' },
-      { name: 'deployment_guidance', description: 'Get deployment recommendations' },
-      { name: 'deployment_analysis', description: 'Analyze deployment configurations' },
-      { name: 'perform_research', description: 'Conduct architectural research' },
-      { name: 'research_question', description: 'Ask research questions' },
-      { name: 'research_integration', description: 'Integrate research findings' },
-      { name: 'expand_analysis', description: 'Expand on analysis results' },
-      { name: 'review_existing_adrs', description: 'Review and analyze existing ADRs' },
-      { name: 'bootstrap_validation_loop', description: 'Bootstrap validation workflows' },
-      { name: 'adr_bootstrap_validation', description: 'Validate ADR bootstrap process' },
-      { name: 'troubleshoot_guided_workflow', description: 'Guided troubleshooting' },
-      { name: 'llm_web_search', description: 'Search web for context' },
-      { name: 'llm_cloud_management', description: 'Manage cloud resources' },
-      { name: 'llm_database_management', description: 'Manage database operations' },
-      { name: 'memory_loading', description: 'Load and manage memory entities' },
-      { name: 'get_server_context', description: 'Get current server context' },
-      { name: 'mcp_planning', description: 'Plan MCP workflows' },
+      // ADR Management (14 tools)
+      {
+        name: 'analyze_project_ecosystem',
+        description:
+          'Analyze complete project ecosystem including dependencies, technologies, and architecture',
+      },
+      {
+        name: 'get_architectural_context',
+        description: 'Retrieve architectural context and decisions for a project',
+      },
+      {
+        name: 'generate_adrs_from_prd',
+        description: 'Generate ADRs from Product Requirements Document',
+      },
+      {
+        name: 'compare_adr_progress',
+        description: 'Compare ADR implementation progress against requirements',
+      },
+      {
+        name: 'suggest_adrs',
+        description: 'Suggest new ADRs based on project context and analysis',
+      },
+      {
+        name: 'generate_adr_from_decision',
+        description: 'Generate ADR from a specific architectural decision',
+      },
+      { name: 'generate_adr_bootstrap', description: 'Bootstrap ADR structure for a project' },
+      {
+        name: 'discover_existing_adrs',
+        description: 'Discover and index existing ADRs in project',
+      },
+      { name: 'validate_adr', description: 'Validate individual ADR content and structure' },
+      { name: 'validate_all_adrs', description: 'Validate all ADRs in project' },
+      {
+        name: 'review_existing_adrs',
+        description: 'Review and analyze existing ADRs for quality and completeness',
+      },
+      {
+        name: 'interactive_adr_planning',
+        description: 'Interactive ADR creation with guided workflow',
+      },
+      {
+        name: 'generate_rules',
+        description: 'Generate architectural rules from ADRs and code patterns',
+      },
+      { name: 'create_rule_set', description: 'Create comprehensive rule set for validation' },
+
+      // Content Security (6 tools)
+      {
+        name: 'analyze_content_security',
+        description: 'Analyze content for security vulnerabilities and sensitive data',
+      },
+      {
+        name: 'generate_content_masking',
+        description: 'Generate content masking for detected sensitive information',
+      },
+      {
+        name: 'configure_custom_patterns',
+        description: 'Configure custom security patterns for content analysis',
+      },
+      {
+        name: 'apply_basic_content_masking',
+        description: 'Apply basic content masking to protect sensitive data',
+      },
+      {
+        name: 'validate_content_masking',
+        description: 'Validate effectiveness of content masking',
+      },
+      {
+        name: 'configure_output_masking',
+        description: 'Configure masking patterns for tool outputs',
+      },
+
+      // Research & Analysis (6 tools)
+      {
+        name: 'perform_research',
+        description: 'Perform comprehensive architectural research on specific questions',
+      },
+      {
+        name: 'generate_research_questions',
+        description: 'Generate context-aware research questions from project analysis',
+      },
+      {
+        name: 'incorporate_research',
+        description: 'Incorporate research findings into ADRs and documentation',
+      },
+      {
+        name: 'create_research_template',
+        description: 'Create structured research templates for investigations',
+      },
+      {
+        name: 'expand_analysis_section',
+        description: 'Retrieve and expand tiered analysis sections from memory',
+      },
+      {
+        name: 'request_action_confirmation',
+        description: 'Request user confirmation for critical actions',
+      },
+
+      // Deployment & Infrastructure (6 tools)
+      {
+        name: 'deployment_readiness',
+        description: 'Assess deployment readiness with zero-tolerance validation',
+      },
+      {
+        name: 'generate_deployment_guidance',
+        description: 'Generate deployment guidance and recommendations',
+      },
+      {
+        name: 'analyze_deployment_progress',
+        description: 'Analyze deployment progress and identify blockers',
+      },
+      {
+        name: 'check_ai_execution_status',
+        description: 'Check AI execution mode and capabilities',
+      },
+      {
+        name: 'analyze_environment',
+        description: 'Analyze project environment and system configuration',
+      },
+      {
+        name: 'bootstrap_validation_loop',
+        description: 'Bootstrap self-learning validation and deployment workflow',
+      },
+
+      // Development Workflow (4 tools)
+      {
+        name: 'smart_git_push',
+        description: 'Intelligent git operations with validation and safety checks',
+      },
+      {
+        name: 'troubleshoot_guided_workflow',
+        description: 'Guided troubleshooting for deployment and validation issues',
+      },
+      {
+        name: 'get_workflow_guidance',
+        description: 'Get workflow guidance for specific development tasks',
+      },
+      {
+        name: 'get_development_guidance',
+        description: 'Get development guidance and best practices',
+      },
+
+      // File System Operations (5 tools)
+      { name: 'list_roots', description: 'List available filesystem roots for operations' },
+      { name: 'read_directory', description: 'Read directory contents and metadata' },
+      { name: 'read_file', description: 'Read file contents from filesystem' },
+      { name: 'write_file', description: 'Write content to filesystem' },
+      { name: 'list_directory', description: 'List directory contents with filtering' },
+
+      // Memory & Context (8 tools)
+      {
+        name: 'memory_loading',
+        description: 'Load and manage memory entities from various sources',
+      },
+      {
+        name: 'expand_memory',
+        description: 'Retrieve and expand stored content from tiered responses',
+      },
+      {
+        name: 'query_conversation_history',
+        description: 'Search and retrieve conversation sessions',
+      },
+      {
+        name: 'get_conversation_snapshot',
+        description: 'Get current conversation context snapshot',
+      },
+      { name: 'get_memory_stats', description: 'Get statistics about stored conversation memory' },
+      {
+        name: 'get_server_context',
+        description: 'Generate comprehensive server context for LLM awareness',
+      },
+      { name: 'validate_rules', description: 'Validate architectural rules against code' },
+      { name: 'manage_cache', description: 'Manage multi-level caching system' },
+
+      // Cloud & Database (3 tools)
+      { name: 'llm_web_search', description: 'Search web for contextual information using LLM' },
+      { name: 'llm_cloud_management', description: 'Manage cloud resources and infrastructure' },
+      { name: 'llm_database_management', description: 'Manage database operations and queries' },
+
+      // Other (3 tools)
+      {
+        name: 'smart_score',
+        description: 'Score code quality and architecture (0-100) with detailed analysis',
+      },
+      {
+        name: 'tool_chain_orchestrator',
+        description: 'AI-powered dynamic tool sequencing and workflow coordination',
+      },
+      { name: 'mcp_planning', description: 'Plan and manage MCP workflows and project phases' },
     ];
 
     // Group tools by category for better organization
@@ -169,9 +331,11 @@ ${toolsSection}
   ): Record<string, Array<{ name: string; description: string }>> {
     const categories: Record<string, Array<{ name: string; description: string }>> = {
       'ADR Management': [],
-      'Deployment & Infrastructure': [],
+      'Content Security': [],
       'Research & Analysis': [],
+      'Deployment & Infrastructure': [],
       'Development Workflow': [],
+      'File System Operations': [],
       'Memory & Context': [],
       'Cloud & Database': [],
       Other: [],
@@ -180,24 +344,53 @@ ${toolsSection}
     tools.forEach(tool => {
       const name = tool.name.toLowerCase();
 
-      if (name.includes('adr') || name.includes('rule')) {
+      if (
+        name.includes('adr') ||
+        name.includes('rule') ||
+        name.includes('ecosystem') ||
+        name.includes('architectural')
+      ) {
         categories['ADR Management']?.push(tool);
-      } else if (name.includes('deploy') || name.includes('environment')) {
-        categories['Deployment & Infrastructure']?.push(tool);
-      } else if (name.includes('research') || name.includes('expand') || name.includes('review')) {
+      } else if (
+        name.includes('security') ||
+        name.includes('masking') ||
+        name.includes('content_masking')
+      ) {
+        categories['Content Security']?.push(tool);
+      } else if (
+        name.includes('research') ||
+        name.includes('expand_analysis') ||
+        name.includes('confirmation')
+      ) {
         categories['Research & Analysis']?.push(tool);
+      } else if (
+        name.includes('deploy') ||
+        name.includes('environment') ||
+        name.includes('readiness')
+      ) {
+        categories['Deployment & Infrastructure']?.push(tool);
       } else if (
         name.includes('git') ||
         name.includes('todo') ||
         name.includes('troubleshoot') ||
         name.includes('bootstrap') ||
-        name.includes('validation')
+        name.includes('workflow') ||
+        name.includes('guidance')
       ) {
         categories['Development Workflow']?.push(tool);
       } else if (
+        name.includes('file') ||
+        name.includes('directory') ||
+        name.includes('list_roots') ||
+        name.includes('read_file') ||
+        name.includes('write_file')
+      ) {
+        categories['File System Operations']?.push(tool);
+      } else if (
         name.includes('memory') ||
         name.includes('conversation') ||
-        name.includes('context')
+        name.includes('context') ||
+        name.includes('cache')
       ) {
         categories['Memory & Context']?.push(tool);
       } else if (name.includes('cloud') || name.includes('database') || name.includes('llm')) {
