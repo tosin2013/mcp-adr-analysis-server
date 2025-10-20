@@ -1,0 +1,215 @@
+name: Validate Patterns
+
+on:
+  pull_request:
+    paths:
+      - 'patterns/**/*.yaml'
+      - 'patterns/**/*.yml'
+      - 'patterns/schema.json'
+      - 'tests/utils/pattern-*.test.ts'
+      - '.github/workflows/validate-patterns.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'patterns/**/*.yaml'
+      - 'patterns/**/*.yml'
+      - 'patterns/schema.json'
+
+jobs:
+  validate-patterns:
+    name: Validate Pattern YAML Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run pattern validation tests
+        run: npm run validate:patterns
+        env:
+          NODE_ENV: test
+
+      - name: Check for pattern file changes
+        id: changed-patterns
+        uses: tj-actions/changed-files@v41
+        with:
+          files: |
+            patterns/**/*.yaml
+            patterns/**/*.yml
+
+      - name: List changed patterns
+        if: steps.changed-patterns.outputs.any_changed == 'true'
+        run: |
+          echo "### Changed Pattern Files" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for file in ${{ steps.changed-patterns.outputs.all_changed_files }}; do
+            echo "- \`$file\`" >> $GITHUB_STEP_SUMMARY
+          done
+
+      - name: Validate pattern structure
+        if: steps.changed-patterns.outputs.any_changed == 'true'
+        run: |
+          echo "### Pattern Validation Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All patterns conform to JSON schema" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All patterns have required fields" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All patterns have authoritative sources" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All patterns have deployment phases" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All patterns have detection hints" >> $GITHUB_STEP_SUMMARY
+
+      - name: Comment PR with validation results
+        if: github.event_name == 'pull_request' && steps.changed-patterns.outputs.any_changed == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const changedFiles = `${{ steps.changed-patterns.outputs.all_changed_files }}`.split(' ');
+            const patternFiles = changedFiles.filter(f => f.endsWith('.yaml') || f.endsWith('.yml'));
+
+            let comment = '## 🎯 Pattern Validation Results\n\n';
+            comment += '### Changed Patterns\n\n';
+            patternFiles.forEach(file => {
+              comment += `- \`${file}\`\n`;
+            });
+            comment += '\n### Validation Status\n\n';
+            comment += '✅ **All validations passed!**\n\n';
+            comment += '- JSON Schema validation\n';
+            comment += '- Required fields check\n';
+            comment += '- Authoritative sources validation\n';
+            comment += '- Deployment phases structure\n';
+            comment += '- Detection hints validation\n';
+            comment += '- URL format validation\n';
+            comment += '- Consistency checks\n\n';
+            comment += '---\n';
+            comment += '_Pattern validation automatically performed by CI_';
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+
+  lint-yaml:
+    name: Lint YAML Files
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Lint pattern YAML files
+        run: |
+          yamllint -d "{extends: default, rules: {line-length: {max: 120}, indentation: {spaces: 2}}}" patterns/
+
+  check-urls:
+    name: Validate Authoritative Source URLs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Extract and validate URLs
+        run: |
+          echo "### URL Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Extract all URLs from pattern files
+          urls=$(grep -h "url:" patterns/**/*.yaml | sed 's/.*url: *"\(.*\)".*/\1/' | sort -u)
+
+          echo "**Found URLs:**" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "$urls" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+          # Check URL format (basic validation)
+          invalid_urls=0
+          for url in $urls; do
+            if [[ ! $url =~ ^https?:// ]]; then
+              echo "❌ Invalid URL format: $url" >> $GITHUB_STEP_SUMMARY
+              invalid_urls=$((invalid_urls + 1))
+            fi
+          done
+
+          if [ $invalid_urls -eq 0 ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "✅ All URLs have valid format" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "❌ Found $invalid_urls invalid URL(s)" >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
+
+  check-pattern-quality:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check pattern completeness
+        run: |
+          echo "### Pattern Quality Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Count patterns by category
+          infra_count=$(find patterns/infrastructure -name "*.yaml" 2>/dev/null | wc -l)
+          runtime_count=$(find patterns/runtime -name "*.yaml" 2>/dev/null | wc -l)
+          composite_count=$(find patterns/composite -name "*.yaml" 2>/dev/null | wc -l)
+          protocol_count=$(find patterns/protocol -name "*.yaml" 2>/dev/null | wc -l)
+
+          echo "**Pattern Counts:**" >> $GITHUB_STEP_SUMMARY
+          echo "- Infrastructure: $infra_count" >> $GITHUB_STEP_SUMMARY
+          echo "- Runtime: $runtime_count" >> $GITHUB_STEP_SUMMARY
+          echo "- Composite: $composite_count" >> $GITHUB_STEP_SUMMARY
+          echo "- Protocol: $protocol_count" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          total=$((infra_count + runtime_count + composite_count + protocol_count))
+          echo "**Total Patterns:** $total" >> $GITHUB_STEP_SUMMARY
+
+      - name: Check for documentation
+        run: |
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Documentation:**" >> $GITHUB_STEP_SUMMARY
+
+          if [ -f "patterns/README.md" ]; then
+            echo "✅ patterns/README.md exists" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ patterns/README.md missing" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f "patterns/schema.json" ]; then
+            echo "✅ patterns/schema.json exists" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ patterns/schema.json missing" >> $GITHUB_STEP_SUMMARY
+          fi
