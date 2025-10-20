@@ -8,6 +8,8 @@
 import { McpAdrError } from '../types/index.js';
 import type { ToolContext } from '../types/tool-context.js';
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import { ToolContextManager, type ToolContextDocument } from '../utils/context-document-manager.js';
+import * as path from 'path';
 
 /**
  * Perform research using the orchestrated multi-source approach
@@ -216,6 +218,100 @@ ${generateSearchQueries(question)
 
     context?.info('✅ Research complete!');
     context?.report_progress(100, 100);
+
+    // Save research context for future sessions
+    try {
+      const contextManager = new ToolContextManager(projectPath);
+      await contextManager.initialize();
+
+      const contextDoc: ToolContextDocument = {
+        metadata: {
+          toolName: 'perform_research',
+          toolVersion: '2.0.0',
+          generated: new Date().toISOString(),
+          projectPath,
+          projectName: path.basename(projectPath),
+          status: research.confidence >= confidenceThreshold ? 'success' : 'partial',
+          confidence: research.confidence * 100,
+        },
+        quickReference: `Research: "${question}" - ${(research.confidence * 100).toFixed(0)}% confidence. Sources: ${research.sources.map(s => formatSourceName(s.type)).join(', ')}`,
+        executionSummary: {
+          status: `Research completed with ${(research.confidence * 100).toFixed(0)}% confidence`,
+          confidence: research.confidence * 100,
+          keyFindings: [
+            `Question: ${question}`,
+            `Confidence: ${(research.confidence * 100).toFixed(1)}%`,
+            `Sources consulted: ${research.metadata.sourcesQueried.join(', ')}`,
+            `Files analyzed: ${research.metadata.filesAnalyzed}`,
+            `Duration: ${research.metadata.duration}ms`,
+          ],
+        },
+        detectedContext: {
+          question,
+          answer: research.answer,
+          confidence: research.confidence,
+          sources: research.sources.map(s => ({
+            type: s.type,
+            confidence: s.confidence,
+            timestamp: s.timestamp,
+            dataType: s.data ? Object.keys(s.data).join(', ') : 'none',
+          })),
+          needsWebSearch: research.needsWebSearch,
+        },
+        keyDecisions: [
+          {
+            decision: `Research approach: ${research.metadata.sourcesQueried.join(' → ')}`,
+            rationale: `Cascading research strategy from local project files to external sources`,
+            alternatives: ['Direct web search', 'Manual code review'],
+          },
+        ],
+        learnings: {
+          successes:
+            research.confidence >= 0.8
+              ? ['High confidence research results obtained', 'Sufficient local context available']
+              : research.confidence >= 0.6
+                ? ['Moderate confidence results', 'Some local context found']
+                : [],
+          failures:
+            research.confidence < 0.6
+              ? [
+                  'Low confidence - insufficient local data',
+                  'May need web search or manual research',
+                ]
+              : [],
+          recommendations:
+            research.confidence >= 0.8
+              ? ['Results can be used with confidence', 'Consider documenting findings in ADR']
+              : research.confidence >= 0.6
+                ? [
+                    'Validate findings with additional sources',
+                    'Consider cross-referencing with documentation',
+                  ]
+                : ['Perform web search for additional context', 'Manual research recommended'],
+          environmentSpecific: [],
+        },
+        relatedDocuments: {
+          adrs: [],
+          configs: [],
+          otherContexts: [],
+        },
+        rawData: {
+          research: {
+            answer: research.answer,
+            confidence: research.confidence,
+            sources: research.sources,
+            needsWebSearch: research.needsWebSearch,
+            metadata: research.metadata,
+          },
+        },
+      };
+
+      await contextManager.saveContext('research', contextDoc);
+      context?.info('💾 Research context saved for future reference');
+    } catch (contextError) {
+      // Don't fail the research if context saving fails
+      context?.info(`⚠️ Failed to save research context: ${contextError}`);
+    }
 
     return {
       content: [

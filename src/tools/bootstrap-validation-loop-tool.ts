@@ -18,6 +18,7 @@ import { promises as fs } from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import * as path from 'path';
+import { createHash } from 'crypto';
 import { McpAdrError } from '../types/index.js';
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
@@ -156,6 +157,7 @@ export class BootstrapValidationLoop {
    */
   async initialize(): Promise<void> {
     await this.memoryManager.initialize();
+    await this.contextManager.initialize();
     this.logger.info('Bootstrap Validation Loop initialized', 'BootstrapValidationLoop', {
       projectPath: this.projectPath,
       adrDirectory: this.adrDirectory,
@@ -649,6 +651,9 @@ Bootstrap ADR: ${bootstrapAdrPath}
                 name: validatedPattern.name,
                 version: validatedPattern.version,
                 platformType: validatedPattern.platformType,
+                source: 'typescript-builtin', // Could be enhanced to detect YAML vs TS
+                sourceHash: this.computePatternHash(validatedPattern),
+                loadedAt: new Date().toISOString(),
                 baseRepository: validatedPattern.baseCodeRepository.url,
                 authoritativeSources: validatedPattern.authoritativeSources.map(s => ({
                   type: s.type,
@@ -704,6 +709,27 @@ Bootstrap ADR: ${bootstrapAdrPath}
           adrs: [bootstrapAdrPath],
           configs: deploymentPlan.requiredFiles.map(f => f.path),
           otherContexts: [],
+        },
+        rawData: {
+          // Full validated pattern snapshot for reproducibility
+          validatedPatternSnapshot: validatedPattern
+            ? {
+                source: 'typescript-builtin', // Could be enhanced to detect YAML vs TS
+                hash: this.computePatternHash(validatedPattern),
+                timestamp: new Date().toISOString(),
+                definition: validatedPattern, // FULL pattern object with all commands, checks, templates
+              }
+            : null,
+          // Deployment plan details
+          deploymentPlan: {
+            recommendedPlatform: deploymentPlan.recommendedPlatform,
+            confidence: deploymentPlan.confidence,
+            source: deploymentPlan.source,
+            requiredFiles: deploymentPlan.requiredFiles,
+            environmentVariables: deploymentPlan.environmentVariables,
+            deploymentSteps: deploymentPlan.deploymentSteps,
+            estimatedDuration: deploymentPlan.estimatedDuration,
+          },
         },
       };
 
@@ -1796,6 +1822,37 @@ production:
         'BootstrapValidationLoop',
         error as Error
       );
+    }
+  }
+
+  /**
+   * Compute SHA-256 hash of validated pattern for change detection
+   * @param pattern - Validated pattern to hash
+   * @returns Hex-encoded SHA-256 hash
+   */
+  private computePatternHash(pattern: ValidatedPattern): string {
+    try {
+      // Create a deterministic string representation of the pattern
+      const patternString = JSON.stringify(
+        {
+          id: pattern.id,
+          name: pattern.name,
+          version: pattern.version,
+          platformType: pattern.platformType,
+          deploymentPhases: pattern.deploymentPhases,
+          validationChecks: pattern.validationChecks,
+          authoritativeSources: pattern.authoritativeSources,
+          baseCodeRepository: pattern.baseCodeRepository,
+        },
+        null,
+        2
+      );
+
+      // Compute SHA-256 hash
+      return createHash('sha256').update(patternString).digest('hex');
+    } catch (error) {
+      this.logger.warn('Failed to compute pattern hash', 'BootstrapValidationLoop', error as Error);
+      return 'hash-computation-failed';
     }
   }
 }
