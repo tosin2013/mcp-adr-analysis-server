@@ -53,7 +53,7 @@ describe('deployment-guidance-tool', () => {
         expect(result.content[0].text).toContain('Found 1 ADRs');
         expect(result.content[0].text).toContain('**Target Environment**: production');
         expect(result.content[0].text).toContain('Use Docker for Containerization');
-      });
+      }, 30000); // Increased timeout to 30s for Node.js 22 compatibility
 
       it('should handle custom ADR directory and project path', async () => {
         const mockAdrs = [
