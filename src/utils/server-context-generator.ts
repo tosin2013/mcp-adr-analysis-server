@@ -16,6 +16,7 @@ import { MemoryEntityManager } from './memory-entity-manager.js';
 import { ConversationMemoryManager } from './conversation-memory-manager.js';
 import { loadConfig } from './config.js';
 import { EnhancedLogger } from './enhanced-logging.js';
+import { listAllPatterns } from './validated-pattern-definitions.js';
 
 export interface ServerContextOptions {
   outputPath?: string;
@@ -51,6 +52,12 @@ export class ServerContextGenerator {
     // Server Quick Reference
     sections.push(this.generateServerInfo());
 
+    // Validated Deployment Patterns
+    sections.push(this.generateValidatedPatternsSection());
+
+    // MCP Resources
+    sections.push(this.generateMcpResourcesSection());
+
     // Memory & Knowledge Graph Status
     sections.push(
       await this.generateMemoryStatus(kgManager, memoryManager, conversationManager, maxRecentItems)
@@ -58,6 +65,9 @@ export class ServerContextGenerator {
 
     // Analytics
     sections.push(await this.generateAnalytics(kgManager));
+
+    // Recent Deployment Activity
+    sections.push(await this.generateDeploymentActivitySection(kgManager));
 
     // Patterns
     sections.push(await this.generatePatterns(memoryManager));
@@ -578,6 +588,166 @@ ${knowledgeGaps || '- No knowledge gaps identified'}
 
 ### Optimization Opportunities
 ${opportunities || '- No optimization opportunities identified'}`;
+  }
+
+  private generateValidatedPatternsSection(): string {
+    const patterns = listAllPatterns();
+
+    const patternList = patterns
+      .map(
+        p => `- **${p.name}** (${p.platformType})
+  - Version: ${p.version}
+  - Dependencies: ${p.billOfMaterials.dependencies.filter(d => d.required).length} required
+  - Deployment Phases: ${p.deploymentPhases.length}
+  - Validation Checks: ${p.validationChecks.filter(v => v.severity === 'critical').length} critical
+  - Base Code: ${p.baseCodeRepository.url}`
+      )
+      .join('\n\n');
+
+    return `## 🚀 Validated Deployment Patterns
+
+The server provides ${patterns.length} pre-validated deployment patterns for different platforms.
+Each pattern includes bill of materials, deployment phases, validation checks, and authoritative sources.
+
+### Available Patterns
+
+${patternList}
+
+### How to Access
+
+Use MCP resources to get pattern details:
+- \`adr://validated_patterns\` - Complete catalog
+- \`adr://validated_pattern/{platform}\` - Specific pattern (openshift, kubernetes, docker, nodejs, python, mcp, a2a)
+- \`adr://pattern_sources/{platform}\` - Authoritative documentation sources
+- \`adr://pattern_base_code/{platform}\` - Base code repository integration
+
+### Related Tools
+
+- \`bootstrap_validation_loop\` - Deploy with DAG-based infrastructure automation
+- \`deployment_readiness\` - Validate deployment readiness
+- \`generate_deployment_guidance\` - Get platform-specific deployment recommendations`;
+  }
+
+  private generateMcpResourcesSection(): string {
+    const resources = [
+      {
+        uri: 'adr://validated_patterns',
+        name: 'Validated Patterns Catalog',
+        description: 'Complete catalog of all deployment patterns',
+      },
+      {
+        uri: 'adr://validated_pattern/{platform}',
+        name: 'Pattern by Platform',
+        description: 'Individual pattern with BOM, phases, validations',
+      },
+      {
+        uri: 'adr://pattern_sources/{platform}',
+        name: 'Authoritative Sources',
+        description: 'Prioritized documentation sources for LLM research',
+      },
+      {
+        uri: 'adr://pattern_base_code/{platform}',
+        name: 'Base Code Repository',
+        description: 'Framework code integration instructions',
+      },
+      {
+        uri: 'adr://architectural_knowledge_graph',
+        name: 'Knowledge Graph',
+        description: 'Complete architectural relationships and decisions',
+      },
+      {
+        uri: 'adr://deployment_status',
+        name: 'Deployment Status',
+        description: 'Current deployment state and health checks',
+      },
+      {
+        uri: 'adr://project_metrics',
+        name: 'Project Metrics',
+        description: 'Code metrics and quality scores',
+      },
+    ];
+
+    const resourceList = resources
+      .map(r => `- **${r.uri}**\n  ${r.name}: ${r.description}`)
+      .join('\n\n');
+
+    return `## 📦 MCP Resources
+
+The server exposes ${resources.length} key resources (+ 16 more) for read-only access.
+
+### Featured Resources
+
+${resourceList}
+
+**Total**: 23 resources available via MCP protocol
+See full list with \`ListResources\` MCP request`;
+  }
+
+  private async generateDeploymentActivitySection(
+    kgManager: KnowledgeGraphManager
+  ): Promise<string> {
+    try {
+      const kg = await kgManager.loadKnowledgeGraph();
+
+      // Find deployment-related intents
+      const deploymentIntents = kg.intents.filter(intent => {
+        const toolNames = intent.toolChain.map(tc => tc.toolName);
+        return (
+          intent.humanRequest.toLowerCase().includes('deploy') ||
+          intent.humanRequest.toLowerCase().includes('bootstrap') ||
+          intent.humanRequest.toLowerCase().includes('infrastructure') ||
+          toolNames.some(name =>
+            [
+              'bootstrap_validation_loop',
+              'deployment_readiness',
+              'generate_deployment_guidance',
+            ].includes(name)
+          )
+        );
+      });
+
+      const recentDeployments = deploymentIntents
+        .slice(-3)
+        .reverse()
+        .map(intent => {
+          const toolNames = intent.toolChain.map(tc => tc.toolName).join(', ');
+          return `- **${intent.humanRequest.substring(0, 60)}...**
+  - Status: ${intent.currentStatus}
+  - Tools: ${toolNames || 'None'}
+  - Time: ${new Date(intent.timestamp).toLocaleString()}`;
+        })
+        .join('\n\n');
+
+      // Check for bootstrap loop executions
+      const bootstrapExecutions = deploymentIntents.filter(intent =>
+        intent.toolChain.some(tc => tc.toolName === 'bootstrap_validation_loop')
+      );
+      const dagExecutions = bootstrapExecutions.length;
+      const successfulDeployments = deploymentIntents.filter(
+        intent => intent.currentStatus === 'completed'
+      ).length;
+
+      return `## 🏗️ Recent Deployment Activity
+
+**Deployment Intents**: ${deploymentIntents.length}
+**DAG Executions**: ${dagExecutions}
+**Successful Deployments**: ${successfulDeployments}
+
+### Recent Activity (Last 3)
+
+${recentDeployments || '- No recent deployment activity'}
+
+### Deployment Capabilities
+
+- **Hybrid DAG Architecture**: Infrastructure deployment runs once, application iterates with auto-fix
+- **Platform Support**: OpenShift, Kubernetes, Docker, Node.js, Python, MCP, A2A
+- **Validation**: Zero-tolerance validation with automatic remediation
+- **Cleanup**: Full teardown support via \`deploymentCleanupRequested\` parameter`;
+    } catch {
+      return `## 🏗️ Recent Deployment Activity
+
+_Deployment activity tracking unavailable_`;
+    }
   }
 
   private generateUsageGuide(): string {
