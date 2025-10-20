@@ -37,6 +37,12 @@ import { generatePatternResearchReport } from '../utils/pattern-research-utility
 // NEW: Tool Context Documentation System
 import { ToolContextManager, ToolContextDocument } from '../utils/context-document-manager.js';
 
+// NEW: Hybrid DAG Architecture
+import { DAGExecutor, DAGExecutionResult } from '../utils/dag-executor.js';
+import { PatternToDAGConverter } from '../utils/pattern-to-dag-converter.js';
+import { PatternContributionHelper } from '../utils/pattern-contribution-helper.js';
+import { PatternLoader, DynamicPattern } from '../utils/pattern-loader.js';
+
 const execAsync = promisify(exec);
 
 /**
@@ -141,6 +147,12 @@ export class BootstrapValidationLoop {
   // NEW: Tool Context Documentation
   private contextManager: ToolContextManager;
 
+  // NEW: Hybrid DAG Architecture
+  private dagExecutor: DAGExecutor;
+  private patternLoader: PatternLoader;
+  private patternConverter: PatternToDAGConverter;
+  private contributionHelper: PatternContributionHelper;
+
   constructor(projectPath: string, adrDirectory: string, maxIterations: number = 5) {
     this.logger = new EnhancedLogger();
     this.projectPath = projectPath;
@@ -150,6 +162,12 @@ export class BootstrapValidationLoop {
     this.memoryManager = new MemoryEntityManager();
     this.deploymentIntelligence = new DynamicDeploymentIntelligence(projectPath, adrDirectory);
     this.contextManager = new ToolContextManager(projectPath);
+
+    // Initialize DAG architecture components
+    this.dagExecutor = new DAGExecutor(5); // Max 5 parallel tasks
+    this.patternLoader = new PatternLoader();
+    this.patternConverter = new PatternToDAGConverter();
+    this.contributionHelper = new PatternContributionHelper();
   }
 
   /**
@@ -293,6 +311,54 @@ export class BootstrapValidationLoop {
     );
     this.logger.info(
       '⏸️  WAITING FOR HUMAN APPROVAL - Review the bootstrap ADR before proceeding',
+      'BootstrapValidationLoop'
+    );
+
+    // ═══════════════════════════════════════════════════════════════════
+    // INFRASTRUCTURE LAYER (Hybrid DAG Architecture)
+    // ═══════════════════════════════════════════════════════════════════
+    // Execute infrastructure DAG before application deployment iterations
+    // This runs ONCE and sets up the platform infrastructure
+    this.logger.info(
+      '🏗️  Starting Infrastructure Layer (DAG-based execution)...',
+      'BootstrapValidationLoop'
+    );
+
+    const infrastructureResult = await this.executeInfrastructureDAG(this.platformDetection!);
+
+    if (!infrastructureResult.success) {
+      const failedTasksList = infrastructureResult.failedTasks.join(', ');
+      this.logger.error(
+        `❌ Infrastructure Layer failed: ${infrastructureResult.failedTasks.length} tasks failed`,
+        'BootstrapValidationLoop',
+        undefined,
+        {
+          failedTasks: infrastructureResult.failedTasks,
+          skippedTasks: infrastructureResult.skippedTasks,
+        }
+      );
+
+      // Infrastructure failure is critical - cannot proceed to application layer
+      throw new McpAdrError(
+        `Infrastructure deployment failed. Failed tasks: ${failedTasksList}`,
+        'INFRASTRUCTURE_DEPLOYMENT_ERROR'
+      );
+    }
+
+    this.logger.info(
+      `✅ Infrastructure Layer complete (${infrastructureResult.duration}ms)`,
+      'BootstrapValidationLoop',
+      {
+        executedTasks: infrastructureResult.executedTasks.length,
+        duration: infrastructureResult.duration,
+      }
+    );
+
+    // ═══════════════════════════════════════════════════════════════════
+    // APPLICATION LAYER (Phase-based iteration with auto-fix)
+    // ═══════════════════════════════════════════════════════════════════
+    this.logger.info(
+      '🚀 Starting Application Layer (iterative deployment with auto-fix)...',
       'BootstrapValidationLoop'
     );
 
@@ -1830,6 +1896,154 @@ production:
    * @param pattern - Validated pattern to hash
    * @returns Hex-encoded SHA-256 hash
    */
+  /**
+   * Execute Infrastructure Layer using DAG with validated pattern
+   *
+   * This method:
+   * 1. Attempts to load validated pattern from YAML
+   * 2. If pattern exists: Auto-generates DAG tasks from pattern definition
+   * 3. If pattern doesn't exist: Works with user to create GitHub issue
+   * 4. Executes infrastructure DAG with parallel execution where possible
+   */
+  async executeInfrastructureDAG(
+    platformDetection: PlatformDetectionResult
+  ): Promise<DAGExecutionResult> {
+    const platform = platformDetection.primaryPlatform || 'unknown';
+
+    this.logger.info(
+      `🏗️  Starting Infrastructure Layer DAG execution for ${platform}`,
+      'BootstrapValidationLoop'
+    );
+
+    // Try to load validated pattern from YAML
+    let dynamicPattern = await this.patternLoader.loadPattern(platform);
+
+    // If no pattern exists, work with user to create GitHub issue
+    if (!dynamicPattern) {
+      this.logger.warn(
+        `⚠️  No validated pattern found for platform: ${platform}`,
+        'BootstrapValidationLoop'
+      );
+
+      // Prompt user for contribution
+      const prompt = this.contributionHelper.promptUserForContribution(platform, platformDetection);
+
+      this.logger.info(prompt, 'BootstrapValidationLoop');
+
+      // Create GitHub issue (in production, this would use GitHub API)
+      const issueResult = await this.contributionHelper.createGitHubIssue(
+        platform,
+        platformDetection
+      );
+
+      const successMessage = this.contributionHelper.generateSuccessMessage(issueResult, platform);
+
+      this.logger.info(successMessage, 'BootstrapValidationLoop');
+
+      // Fall back to AI-generated pattern
+      this.logger.info('🤖 Generating fallback pattern using AI...', 'BootstrapValidationLoop');
+
+      dynamicPattern = await this.generateFallbackPattern(platformDetection);
+    }
+
+    // Auto-generate infrastructure DAG tasks from validated pattern
+    const tasks = this.patternConverter.buildInfrastructureTasksFromPattern(
+      dynamicPattern,
+      platform
+    );
+
+    this.logger.info(
+      `📊 Generated ${tasks.length} infrastructure DAG tasks`,
+      'BootstrapValidationLoop'
+    );
+
+    // Execute infrastructure DAG
+    const result = await this.dagExecutor.execute(tasks);
+
+    // Log results
+    if (result.success) {
+      this.logger.info(
+        `✅ Infrastructure Layer complete: ${result.executedTasks.length} tasks executed in ${result.duration}ms`,
+        'BootstrapValidationLoop'
+      );
+    } else {
+      this.logger.error(
+        `❌ Infrastructure Layer failed: ${result.failedTasks.length} tasks failed, ${result.skippedTasks.length} skipped`,
+        'BootstrapValidationLoop'
+      );
+
+      // Log failed tasks
+      for (const taskId of result.failedTasks) {
+        const taskResult = result.taskResults.get(taskId);
+        if (taskResult) {
+          this.logger.error(
+            `  ❌ ${taskId}: ${taskResult.stderr || taskResult.error?.message}`,
+            'BootstrapValidationLoop'
+          );
+        }
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Generate fallback pattern using AI when validated pattern doesn't exist
+   */
+  private async generateFallbackPattern(
+    detection: PlatformDetectionResult
+  ): Promise<DynamicPattern> {
+    this.logger.warn(
+      '⚠️  Generating fallback pattern using AI - less tested than validated patterns',
+      'BootstrapValidationLoop'
+    );
+
+    // Use existing dynamic deployment intelligence as fallback
+    const plan = await this.deploymentIntelligence.generateDeploymentPlan();
+
+    // Convert to DynamicPattern format
+    return {
+      version: '1.0-fallback',
+      id: `${detection.primaryPlatform}-ai-generated`,
+      name: `${detection.primaryPlatform} (AI-Generated)`,
+      description: 'Auto-generated deployment pattern - not validated by community',
+      authoritativeSources: [],
+      deploymentPhases: plan.deploymentSteps.map((step: any, i: number) => {
+        const prevStep = i > 0 ? plan.deploymentSteps[i - 1] : undefined;
+        return {
+          order: i + 1,
+          name: step.title,
+          description: step.description,
+          estimatedDuration: step.estimatedTime,
+          canParallelize: false,
+          prerequisites: prevStep ? [prevStep.title] : [],
+          commands: [
+            {
+              description: step.description,
+              command: step.command,
+              expectedExitCode: 0,
+            },
+          ],
+        };
+      }),
+      validationChecks: plan.validationChecks.map((check: any, i: number) => ({
+        id: `check-${i}`,
+        name: check.name,
+        description: check.name,
+        command: check.command,
+        expectedExitCode: 0,
+        severity: check.severity,
+        failureMessage: `Validation failed: ${check.name}`,
+        remediationSteps: [],
+      })),
+      metadata: {
+        source: 'AI-Generated (Fallback)',
+        lastUpdated: new Date().toISOString(),
+        tags: [detection.primaryPlatform || 'unknown', 'ai-generated', 'unvalidated'],
+      },
+    };
+  }
+
   private computePatternHash(pattern: ValidatedPattern): string {
     try {
       // Create a deterministic string representation of the pattern
