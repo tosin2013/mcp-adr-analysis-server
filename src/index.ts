@@ -3512,6 +3512,35 @@ export class McpAdrAnalysisServer {
               'Comprehensive code quality assessment with metrics, issues, and recommendations. Supports query parameters: ?scope=full|changes|critical, ?includeMetrics=true|false, ?includeRecommendations=true|false, ?threshold=0-100, ?format=summary|detailed',
             mimeType: 'application/json',
           },
+          // NEW Phase 5 Validated Pattern Resources
+          {
+            uri: 'adr://validated_patterns',
+            name: 'Validated Patterns Catalog',
+            description:
+              'Complete catalog of validated deployment patterns for different platforms (OpenShift, Kubernetes, Docker, Node.js, Python, MCP, A2A) with bill of materials, deployment phases, validation checks, and authoritative sources',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://validated_pattern/{platform}',
+            name: 'Validated Pattern by Platform',
+            description:
+              'Individual validated pattern by platform type (openshift, kubernetes, docker, nodejs, python, mcp, a2a) with complete bill of materials, deployment phases, validation checks, health checks, and authoritative sources for LLM research',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://pattern_sources/{platform}',
+            name: 'Pattern Authoritative Sources',
+            description:
+              'Authoritative documentation and repository sources for a specific platform pattern, prioritized by importance with query instructions for LLMs',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://pattern_base_code/{platform}',
+            name: 'Pattern Base Code Repository',
+            description:
+              'Base code repository information for a platform pattern including URL, integration instructions, required files, and script entrypoint',
+            mimeType: 'application/json',
+          },
         ],
       };
     });
@@ -7370,6 +7399,9 @@ Please provide:
       await import('./resources/rule-by-id-resource.js');
       await import('./resources/technology-by-name-resource.js');
       await import('./resources/pattern-by-name-resource.js');
+      await import('./resources/validated-pattern-by-platform-resource.js');
+      await import('./resources/pattern-sources-by-platform-resource.js');
+      await import('./resources/pattern-base-code-by-platform-resource.js');
 
       // Try routing first (handles templated resources)
       if (resourceRouter.canRoute(uri)) {
@@ -7682,6 +7714,28 @@ Please provide:
             './resources/code-quality-resource.js'
           );
           const result = await generateCodeQualityResource(undefined, url.searchParams);
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
+        case 'validated_patterns': {
+          const { generateValidatedPatternsCatalogResource } = await import(
+            './resources/validated-patterns-catalog-resource.js'
+          );
+          const result = await generateValidatedPatternsCatalogResource();
 
           return {
             contents: [
