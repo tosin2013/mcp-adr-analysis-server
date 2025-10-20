@@ -1,0 +1,387 @@
+version: '1.0'
+id: 'openshift-v1'
+name: 'OpenShift Container Platform'
+description: 'Enterprise Kubernetes platform with validated patterns for production deployments'
+
+composition:
+  infrastructure: 'openshift'
+  strategy: 'gitops'
+
+# Authoritative sources - LLMs should query these URLs for deployment guidance
+authoritativeSources:
+  - type: 'documentation'
+    url: 'https://validatedpatterns.io/'
+    purpose: 'Red Hat Validated Patterns - Official framework and pattern library'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Essential reading for OpenShift deployments:
+      1. Browse available validated patterns (Multicluster GitOps, Industrial Edge, etc.)
+      2. Understand the Validated Patterns framework structure
+      3. Review pattern architecture and components
+      4. Check prerequisites and requirements
+      5. Identify which pattern best fits the use case
+
+      This is the PRIMARY source for OpenShift best practices and proven patterns.
+
+  - type: 'documentation'
+    url: 'https://play.validatedpatterns.io/vp-workshop/main/index.html'
+    purpose: 'Interactive workshop and hands-on tutorials for Validated Patterns'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Use this interactive workshop to:
+      1. Learn step-by-step deployment procedures
+      2. Understand the Validated Patterns framework in depth
+      3. Follow guided exercises for pattern implementation
+      4. See real-world examples and troubleshooting
+      5. Get familiar with GitOps workflows
+
+      Work through relevant sections based on the selected pattern.
+
+  - type: 'repository'
+    url: 'https://github.com/validatedpatterns/common'
+    purpose: 'Common framework code and utilities for Validated Patterns'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Review this repository for:
+      1. Framework components and Helm charts
+      2. Common patterns and reusable code
+      3. Ansible automation and scripts
+      4. Pattern structure and conventions
+      5. Integration examples
+
+      This contains the foundational code that all patterns build upon.
+
+  - type: 'documentation'
+    url: 'https://docs.openshift.com/'
+    purpose: 'Official Red Hat OpenShift documentation'
+    priority: 9
+    requiredForDeployment: true
+    queryInstructions: |
+      Consult for:
+      1. OpenShift version-specific features
+      2. Installation and configuration guides
+      3. Operators and operator lifecycle
+      4. Security and networking
+      5. API references
+
+      Essential for understanding OpenShift fundamentals.
+
+  - type: 'repository'
+    url: 'https://github.com/validatedpatterns'
+    purpose: 'Collection of all validated pattern repositories'
+    priority: 9
+    requiredForDeployment: false
+    queryInstructions: |
+      Browse organization repositories for:
+      1. Specific pattern implementations (multicloud-gitops, industrial-edge, etc.)
+      2. Pattern-specific code and configurations
+      3. Real-world deployment examples
+      4. Issue tracking and community discussions
+
+      Each pattern has its own repository with complete implementation.
+
+  - type: 'community'
+    url: 'https://github.com/openshift/odo'
+    purpose: 'OpenShift Do - Developer-focused CLI tool'
+    priority: 7
+    requiredForDeployment: false
+    queryInstructions: |
+      Review for:
+      1. Developer workflow tools
+      2. Iterative development on OpenShift
+      3. Component and service creation
+      4. Local development patterns
+
+  - type: 'specification'
+    url: 'https://kubernetes.io/docs/home/'
+    purpose: 'Kubernetes documentation (OpenShift is built on Kubernetes)'
+    priority: 6
+    requiredForDeployment: false
+    queryInstructions: |
+      Reference for:
+      1. Core Kubernetes concepts
+      2. Resource definitions (Pods, Services, Deployments)
+      3. Kubernetes API
+      4. Best practices
+
+      OpenShift extends Kubernetes, so k8s knowledge is foundational.
+
+baseCodeRepository:
+  url: 'https://github.com/validatedpatterns/common'
+  purpose: 'Common framework for building Validated Patterns'
+  integrationInstructions: |
+    To use the Validated Patterns framework:
+    1. Fork or reference the common repository
+    2. Create your pattern repository following the structure
+    3. Use the provided Helm charts and Ansible automation
+    4. Follow the framework conventions for GitOps
+    5. Test with the pattern validation tools
+  requiredFiles:
+    - 'values-global.yaml'
+    - 'values-hub.yaml'
+    - 'charts/'
+    - '.vault/'
+    - 'Makefile'
+  scriptEntrypoint: 'make install'
+
+dependencies:
+  - name: 'oc'
+    type: 'buildtime'
+    required: true
+    installCommand: 'Download from https://mirror.openshift.com/pub/openshift-v4/clients/ocp/'
+    verificationCommand: 'oc version'
+
+  - name: 'helm'
+    type: 'buildtime'
+    required: true
+    installCommand: 'curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash'
+    verificationCommand: 'helm version'
+
+  - name: 'ansible'
+    type: 'buildtime'
+    required: true
+    installCommand: 'pip install ansible'
+    verificationCommand: 'ansible --version'
+
+  - name: 'git'
+    type: 'buildtime'
+    required: true
+    installCommand: 'yum install git or apt-get install git'
+    verificationCommand: 'git --version'
+
+configurations:
+  - path: 'values-global.yaml'
+    purpose: 'Global Helm values for the pattern'
+    required: true
+    canAutoGenerate: true
+    template: |
+      global:
+        pattern: pattern-name
+        namespace: pattern-namespace
+        targetRevision: main
+        hubClusterDomain: apps.cluster.example.com
+        localClusterDomain: apps.cluster.example.com
+
+  - path: 'values-hub.yaml'
+    purpose: 'Hub cluster-specific Helm values'
+    required: true
+    canAutoGenerate: true
+    template: |
+      clusterGroup:
+        name: hub
+        isHubCluster: true
+
+  - path: '.vault/values-secret.yaml'
+    purpose: 'Vault secrets configuration'
+    required: false
+    canAutoGenerate: false
+
+secrets:
+  - name: 'git-credentials'
+    purpose: 'Git repository access for GitOps'
+    environmentVariable: 'GIT_TOKEN'
+    required: true
+
+  - name: 'vault-init-token'
+    purpose: 'HashiCorp Vault initialization token'
+    environmentVariable: 'VAULT_TOKEN'
+    required: false
+
+infrastructure:
+  - component: 'OpenShift Cluster'
+    purpose: 'OpenShift 4.x cluster (hub cluster)'
+    required: true
+    minimumVersion: '4.10'
+    setupCommands:
+      - 'oc login https://api.cluster.example.com:6443'
+      - 'oc whoami'
+    healthCheckCommand: 'oc get nodes'
+
+  - component: 'HashiCorp Vault'
+    purpose: 'Secrets management (optional but recommended)'
+    required: false
+    setupCommands:
+      - 'helm repo add hashicorp https://helm.releases.hashicorp.com'
+      - 'helm install vault hashicorp/vault'
+    healthCheckCommand: 'oc get pods -n vault'
+    alternatives:
+      - 'External Secrets Operator'
+      - 'Sealed Secrets'
+
+deploymentPhases:
+  - order: 1
+    name: 'Prerequisites Validation'
+    description: 'Verify cluster access and required tools'
+    estimatedDuration: '2-5 minutes'
+    canParallelize: false
+    prerequisites: []
+    commands:
+      - description: 'Verify OpenShift cluster access'
+        command: 'oc whoami && oc cluster-info'
+        expectedExitCode: 0
+
+      - description: 'Verify required CLI tools'
+        command: 'helm version && ansible --version'
+        expectedExitCode: 0
+
+  - order: 2
+    name: 'Fork Pattern Repository'
+    description: 'Fork the selected validated pattern'
+    estimatedDuration: '2 minutes'
+    canParallelize: false
+    prerequisites: ['Prerequisites Validation']
+    commands:
+      - description: 'Clone pattern repository'
+        command: 'git clone <pattern-repo-url>'
+        expectedExitCode: 0
+
+  - order: 3
+    name: 'Configure Pattern Values'
+    description: 'Customize values-global.yaml and values-hub.yaml'
+    estimatedDuration: '5-10 minutes'
+    canParallelize: false
+    prerequisites: ['Fork Pattern Repository']
+    commands:
+      - description: 'Edit global values'
+        command: 'vi values-global.yaml'
+        expectedExitCode: 0
+
+      - description: 'Edit hub values'
+        command: 'vi values-hub.yaml'
+        expectedExitCode: 0
+
+  - order: 4
+    name: 'Deploy Pattern to Hub Cluster'
+    description: 'Deploy the validated pattern using make install'
+    estimatedDuration: '10-20 minutes'
+    canParallelize: false
+    prerequisites: ['Configure Pattern Values']
+    commands:
+      - description: 'Install pattern on hub cluster'
+        command: 'make install'
+        expectedExitCode: 0
+
+  - order: 5
+    name: 'Verify ArgoCD Applications'
+    description: 'Check that ArgoCD applications are synced'
+    estimatedDuration: '5-10 minutes'
+    canParallelize: false
+    prerequisites: ['Deploy Pattern to Hub Cluster']
+    commands:
+      - description: 'Wait for ArgoCD to sync'
+        command: 'oc wait --for=condition=Synced application --all -n openshift-gitops --timeout=300s'
+        expectedExitCode: 0
+
+validationChecks:
+  - id: 'cluster-connection'
+    name: 'OpenShift Cluster Connection'
+    description: 'Verify connection to OpenShift cluster'
+    command: 'oc whoami'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'Cannot connect to OpenShift cluster'
+    remediationSteps:
+      - 'Verify kubeconfig is set: echo $KUBECONFIG'
+      - 'Login to cluster: oc login https://api.cluster.example.com:6443'
+      - 'Check cluster status: oc cluster-info'
+
+  - id: 'gitops-operator'
+    name: 'GitOps Operator Installed'
+    description: 'Verify OpenShift GitOps operator is installed'
+    command: 'oc get subscription openshift-gitops-operator -n openshift-operators'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'GitOps operator not installed'
+    remediationSteps:
+      - 'Install via OperatorHub in OpenShift Console'
+      - 'Or use CLI: oc apply -f gitops-operator-subscription.yaml'
+
+  - id: 'argocd-running'
+    name: 'ArgoCD Server Running'
+    description: 'Verify ArgoCD server is running'
+    command: 'oc get pods -n openshift-gitops | grep argocd-server'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'ArgoCD server not running'
+    remediationSteps:
+      - 'Check ArgoCD namespace: oc get all -n openshift-gitops'
+      - 'Check operator logs: oc logs -n openshift-operators <gitops-operator-pod>'
+      - 'Restart ArgoCD: oc delete pod -n openshift-gitops -l app.kubernetes.io/name=argocd-server'
+
+  - id: 'pattern-applications'
+    name: 'Pattern Applications Synced'
+    description: 'Verify all pattern ArgoCD applications are synced'
+    command: "oc get applications -n openshift-gitops --no-headers | awk '{print $3}' | grep -v Synced && exit 1 || exit 0"
+    expectedExitCode: 0
+    severity: 'error'
+    failureMessage: 'Some pattern applications are not synced'
+    remediationSteps:
+      - 'Check application status: oc get applications -n openshift-gitops'
+      - 'View application details: oc describe application <app-name> -n openshift-gitops'
+      - 'Check ArgoCD UI for sync errors'
+      - 'Verify Git repository accessibility'
+
+healthChecks:
+  - name: 'ArgoCD Server Health'
+    endpoint: 'https://openshift-gitops-server-openshift-gitops.apps.cluster.example.com/healthz'
+    interval: 60000
+    timeout: 5000
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+
+  - name: 'Cluster Nodes Health'
+    endpoint: 'oc get nodes --no-headers | grep -v Ready && exit 1 || exit 0'
+    interval: 300000
+    timeout: 10000
+    healthyThreshold: 1
+    unhealthyThreshold: 2
+
+environmentOverrides:
+  - environment: 'development'
+    overrides:
+      deploymentPhases:
+        - order: 4
+          name: 'Deploy Pattern (Dev Mode)'
+          commands:
+            - description: 'Install pattern with preview mode'
+              command: 'make preview'
+
+metadata:
+  source: 'Red Hat Validated Patterns'
+  lastUpdated: '2025-01-19'
+  maintainer: 'Red Hat'
+  tags:
+    - 'openshift'
+    - 'kubernetes'
+    - 'gitops'
+    - 'validated-patterns'
+    - 'enterprise'
+    - 'argocd'
+    - 'helm'
+  contributors:
+    - name: 'Red Hat Validated Patterns Team'
+      github: 'validatedpatterns'
+  changeLog:
+    - version: '1.0'
+      date: '2025-01-19'
+      changes:
+        - 'Initial OpenShift pattern definition'
+        - 'Added Validated Patterns framework links'
+        - 'Included workshop and common repository'
+
+detectionHints:
+  requiredFiles:
+    - 'values-global.yaml'
+    - 'values-hub.yaml'
+  optionalFiles:
+    - 'charts/'
+    - '.vault/'
+    - 'Makefile'
+  confidence:
+    values-global.yaml: 0.95
+    values-hub.yaml: 0.90
+    charts/: 0.85
+    Makefile: 0.70

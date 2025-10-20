@@ -1,0 +1,448 @@
+version: '1.0'
+id: 'firebase-v1'
+name: 'Firebase'
+description: "Google's mobile and web application development platform with serverless functions, real-time database, authentication, and hosting"
+
+composition:
+  infrastructure: 'firebase'
+  strategy: 'serverless'
+
+# Authoritative sources - LLMs should query these URLs for deployment guidance
+authoritativeSources:
+  - type: 'documentation'
+    url: 'https://firebase.google.com/docs'
+    purpose: 'Official Firebase documentation - comprehensive guide for all Firebase services'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Essential reading for Firebase deployments:
+      1. Review Firebase services (Authentication, Firestore, Functions, Hosting)
+      2. Understand project structure and configuration
+      3. Study security rules for Firestore and Storage
+      4. Learn about Firebase CLI and deployment workflows
+      5. Review best practices for scaling and performance
+      6. Check pricing and quota limits
+
+      This is the PRIMARY source for Firebase knowledge.
+
+  - type: 'documentation'
+    url: 'https://firebase.google.com/docs/functions'
+    purpose: 'Firebase Cloud Functions documentation for serverless backend'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      For Cloud Functions deployments:
+      1. Review function triggers (HTTP, Firestore, Auth, etc.)
+      2. Understand execution environment and runtimes
+      3. Learn about environment configuration and secrets
+      4. Study function lifecycle and cold starts
+      5. Review monitoring and logging
+      6. Check best practices for performance and costs
+
+      Essential for backend serverless logic.
+
+  - type: 'documentation'
+    url: 'https://firebase.google.com/codelabs'
+    purpose: 'Firebase Codelabs - hands-on tutorials and guided exercises'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Use these codelabs to:
+      1. Follow step-by-step implementation guides
+      2. Learn Firebase services through practice
+      3. Understand common integration patterns
+      4. See real-world application examples
+      5. Practice troubleshooting techniques
+
+      Work through codelabs relevant to your services.
+
+  - type: 'repository'
+    url: 'https://github.com/firebase/quickstart-js'
+    purpose: 'Firebase JavaScript quickstart samples'
+    priority: 9
+    requiredForDeployment: true
+    queryInstructions: |
+      Review quickstarts for:
+      1. Service-specific implementation examples
+      2. Web application integration patterns
+      3. Authentication flows
+      4. Database operations
+      5. Real-time data synchronization
+
+  - type: 'repository'
+    url: 'https://github.com/firebase/functions-samples'
+    purpose: 'Firebase Cloud Functions code samples'
+    priority: 9
+    requiredForDeployment: true
+    queryInstructions: |
+      Explore samples for:
+      1. Common function triggers and patterns
+      2. Integration with Firebase services
+      3. Third-party API integrations
+      4. Background processing patterns
+      5. Best practices for production functions
+
+  - type: 'documentation'
+    url: 'https://firebase.google.com/docs/hosting'
+    purpose: 'Firebase Hosting for web application deployment'
+    priority: 9
+    requiredForDeployment: false
+    queryInstructions: |
+      For hosting deployments:
+      1. Learn about static and dynamic content serving
+      2. Understand custom domains and SSL
+      3. Review CDN and caching strategies
+      4. Study Firebase Hosting rewrites and redirects
+      5. Check deployment workflows and rollbacks
+
+  - type: 'documentation'
+    url: 'https://firebase.google.com/docs/firestore'
+    purpose: 'Cloud Firestore documentation for NoSQL database'
+    priority: 8
+    requiredForDeployment: false
+    queryInstructions: |
+      For Firestore usage:
+      1. Understand data model and collections
+      2. Learn query capabilities and indexing
+      3. Study security rules and access control
+      4. Review real-time listeners and offline support
+      5. Check best practices for data structure
+
+  - type: 'community'
+    url: 'https://github.com/firebase'
+    purpose: 'Firebase official GitHub repositories'
+    priority: 7
+    requiredForDeployment: false
+    queryInstructions: |
+      Browse for:
+      1. Official Firebase SDKs and tools
+      2. Community extensions
+      3. Sample applications
+      4. Firebase CLI source code
+
+baseCodeRepository:
+  url: 'https://github.com/firebase/functions-samples'
+  purpose: 'Firebase Cloud Functions sample code'
+  integrationInstructions: |
+    To use Firebase Functions samples:
+    1. Initialize Firebase project: firebase init
+    2. Choose Functions, Hosting, and other needed services
+    3. Copy relevant sample function code to functions/index.js
+    4. Install dependencies: cd functions && npm install
+    5. Deploy: firebase deploy --only functions
+    6. Configure environment variables if needed
+  requiredFiles:
+    - 'firebase.json'
+    - 'functions/index.js'
+    - 'functions/package.json'
+  scriptEntrypoint: 'firebase deploy'
+
+dependencies:
+  - name: 'firebase-tools'
+    type: 'buildtime'
+    required: true
+    installCommand: 'npm install -g firebase-tools'
+    verificationCommand: 'firebase --version'
+
+  - name: 'node'
+    type: 'runtime'
+    required: true
+    installCommand: 'Download from https://nodejs.org'
+    verificationCommand: 'node --version'
+
+  - name: 'npm'
+    type: 'buildtime'
+    required: true
+    installCommand: 'Comes with Node.js'
+    verificationCommand: 'npm --version'
+
+configurations:
+  - path: 'firebase.json'
+    purpose: 'Firebase project configuration'
+    required: true
+    canAutoGenerate: true
+    template: |
+      {
+        "functions": {
+          "source": "functions"
+        },
+        "hosting": {
+          "public": "public",
+          "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+          ]
+        },
+        "firestore": {
+          "rules": "firestore.rules",
+          "indexes": "firestore.indexes.json"
+        }
+      }
+
+  - path: '.firebaserc'
+    purpose: 'Firebase project aliases'
+    required: true
+    canAutoGenerate: true
+    template: |
+      {
+        "projects": {
+          "default": "your-project-id"
+        }
+      }
+
+  - path: 'functions/package.json'
+    purpose: 'Cloud Functions dependencies'
+    required: true
+    canAutoGenerate: true
+    template: |
+      {
+        "name": "functions",
+        "description": "Cloud Functions for Firebase",
+        "scripts": {
+          "serve": "firebase emulators:start --only functions",
+          "shell": "firebase functions:shell",
+          "start": "npm run shell",
+          "deploy": "firebase deploy --only functions",
+          "logs": "firebase functions:log"
+        },
+        "engines": {
+          "node": "18"
+        },
+        "main": "index.js",
+        "dependencies": {
+          "firebase-admin": "^11.0.0",
+          "firebase-functions": "^4.0.0"
+        }
+      }
+
+  - path: 'functions/index.js'
+    purpose: 'Cloud Functions entry point'
+    required: true
+    canAutoGenerate: true
+    template: |
+      const functions = require('firebase-functions');
+      const admin = require('firebase-admin');
+      admin.initializeApp();
+
+      exports.helloWorld = functions.https.onRequest((request, response) => {
+        response.send("Hello from Firebase!");
+      });
+
+secrets:
+  - name: 'firebase-service-account'
+    purpose: 'Service account key for admin SDK'
+    environmentVariable: 'GOOGLE_APPLICATION_CREDENTIALS'
+    required: false
+
+  - name: 'api-keys'
+    purpose: 'Third-party API keys for functions'
+    environmentVariable: 'API_KEY'
+    required: false
+
+infrastructure:
+  - component: 'Firebase Project'
+    purpose: 'Firebase project in Google Cloud Console'
+    required: true
+    setupCommands:
+      - 'firebase login'
+      - 'firebase projects:list'
+    healthCheckCommand: 'firebase projects:list'
+
+  - component: 'Billing Account'
+    purpose: 'Google Cloud billing account (required for Cloud Functions)'
+    required: true
+    setupCommands:
+      - 'Enable in Firebase Console > Project Settings > Usage and Billing'
+    healthCheckCommand: 'firebase functions:list'
+
+deploymentPhases:
+  - order: 1
+    name: 'Prerequisites Validation'
+    description: 'Verify Firebase CLI and project access'
+    estimatedDuration: '2-5 minutes'
+    canParallelize: false
+    prerequisites: []
+    commands:
+      - description: 'Verify Firebase CLI is installed'
+        command: 'firebase --version'
+        expectedExitCode: 0
+
+      - description: 'Login to Firebase'
+        command: 'firebase login'
+        expectedExitCode: 0
+
+      - description: 'List accessible projects'
+        command: 'firebase projects:list'
+        expectedExitCode: 0
+
+  - order: 2
+    name: 'Initialize Firebase Project'
+    description: 'Initialize Firebase configuration files'
+    estimatedDuration: '2-5 minutes'
+    canParallelize: false
+    prerequisites: ['Prerequisites Validation']
+    commands:
+      - description: 'Initialize Firebase project'
+        command: 'firebase init'
+        expectedExitCode: 0
+
+      - description: 'Select project or create new'
+        command: 'firebase use --add'
+        expectedExitCode: 0
+
+  - order: 3
+    name: 'Install Dependencies'
+    description: 'Install Cloud Functions dependencies'
+    estimatedDuration: '1-3 minutes'
+    canParallelize: false
+    prerequisites: ['Initialize Firebase Project']
+    commands:
+      - description: 'Install function dependencies'
+        command: 'cd functions && npm install'
+        expectedExitCode: 0
+
+      - description: 'Install hosting dependencies (if applicable)'
+        command: 'npm install'
+        expectedExitCode: 0
+
+  - order: 4
+    name: 'Deploy to Firebase'
+    description: 'Deploy functions, hosting, and rules'
+    estimatedDuration: '3-7 minutes'
+    canParallelize: false
+    prerequisites: ['Install Dependencies']
+    commands:
+      - description: 'Deploy all Firebase resources'
+        command: 'firebase deploy'
+        expectedExitCode: 0
+
+      - description: 'Verify functions deployed'
+        command: 'firebase functions:list'
+        expectedExitCode: 0
+
+  - order: 5
+    name: 'Verify Deployment'
+    description: 'Test deployed functions and hosting'
+    estimatedDuration: '2-3 minutes'
+    canParallelize: false
+    prerequisites: ['Deploy to Firebase']
+    commands:
+      - description: 'Get function URLs'
+        command: 'firebase functions:list'
+        expectedExitCode: 0
+
+      - description: 'Test HTTP function'
+        command: 'curl -X GET <function-url>'
+        expectedExitCode: 0
+
+validationChecks:
+  - id: 'firebase-login'
+    name: 'Firebase Authentication'
+    description: 'Verify user is logged into Firebase CLI'
+    command: 'firebase projects:list'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'Not authenticated with Firebase'
+    remediationSteps:
+      - 'Run: firebase login'
+      - 'Complete browser authentication flow'
+      - 'Verify credentials: firebase login:list'
+
+  - id: 'project-selected'
+    name: 'Firebase Project Selected'
+    description: 'Verify a Firebase project is selected'
+    command: 'firebase use'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'No Firebase project selected'
+    remediationSteps:
+      - 'List projects: firebase projects:list'
+      - 'Select project: firebase use <project-id>'
+      - 'Or create alias: firebase use --add'
+
+  - id: 'functions-deployed'
+    name: 'Cloud Functions Deployed'
+    description: 'Verify functions were deployed successfully'
+    command: 'firebase functions:list'
+    expectedExitCode: 0
+    severity: 'error'
+    failureMessage: 'No functions found or deployment failed'
+    remediationSteps:
+      - 'Check deployment logs: firebase deploy --only functions'
+      - 'Verify functions/index.js has exported functions'
+      - 'Check Firebase Console for errors'
+      - 'Ensure billing is enabled for Cloud Functions'
+
+  - id: 'hosting-deployed'
+    name: 'Hosting Deployed'
+    description: 'Verify hosting was deployed successfully'
+    command: 'firebase hosting:channel:list'
+    expectedExitCode: 0
+    severity: 'warning'
+    failureMessage: 'Hosting not deployed or configured'
+    remediationSteps:
+      - 'Initialize hosting: firebase init hosting'
+      - 'Deploy hosting: firebase deploy --only hosting'
+      - 'Check firebase.json hosting configuration'
+
+healthChecks:
+  - name: 'Cloud Functions Health'
+    endpoint: 'curl -f <function-url>/health'
+    interval: 60000
+    timeout: 10000
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+
+  - name: 'Hosting Health'
+    endpoint: 'curl -f https://<project-id>.web.app/'
+    interval: 300000
+    timeout: 5000
+    healthyThreshold: 1
+    unhealthyThreshold: 2
+
+environmentOverrides:
+  - environment: 'development'
+    overrides:
+      deploymentPhases:
+        - order: 4
+          name: 'Local Emulator Testing'
+          commands:
+            - description: 'Start Firebase emulators'
+              command: 'firebase emulators:start'
+
+metadata:
+  source: 'Firebase Official Documentation'
+  lastUpdated: '2025-01-19'
+  maintainer: 'Google Firebase Team'
+  tags:
+    - 'firebase'
+    - 'serverless'
+    - 'google-cloud'
+    - 'baas'
+    - 'cloud-functions'
+  contributors:
+    - name: 'Firebase Documentation Team'
+      github: 'firebase'
+  changeLog:
+    - version: '1.0'
+      date: '2025-01-19'
+      changes:
+        - 'Initial Firebase pattern definition'
+        - 'Added Cloud Functions and Hosting documentation'
+        - 'Included Firebase CLI deployment workflow'
+
+detectionHints:
+  requiredFiles:
+    - 'firebase.json'
+    - '.firebaserc'
+  optionalFiles:
+    - 'functions/'
+    - 'firestore.rules'
+    - 'firestore.indexes.json'
+    - 'public/'
+  confidence:
+    firebase.json: 0.95
+    .firebaserc: 0.90
+    functions/: 0.85
+    firestore.rules: 0.75
