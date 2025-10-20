@@ -26,6 +26,17 @@ jest.unstable_mockModule('../../src/utils/knowledge-graph-manager.js', () => ({
   KnowledgeGraphManager: MockKnowledgeGraphManager,
 }));
 
+// Mock ToolContextManager to prevent filesystem operations in tests
+class MockToolContextManager {
+  initialize = jest.fn().mockResolvedValue(undefined);
+  saveContext = jest.fn().mockResolvedValue(undefined);
+  listContexts = jest.fn().mockResolvedValue([]);
+}
+
+jest.unstable_mockModule('../../src/utils/context-document-manager.js', () => ({
+  ToolContextManager: MockToolContextManager,
+}));
+
 const { bootstrapValidationLoop } = await import(
   '../../src/tools/bootstrap-validation-loop-tool.js'
 );
