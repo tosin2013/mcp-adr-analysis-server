@@ -1,0 +1,406 @@
+version: '1.0'
+id: 'kubernetes-v1'
+name: 'Kubernetes'
+description: 'Production-ready container orchestration platform for deploying, scaling, and managing containerized applications'
+
+composition:
+  infrastructure: 'kubernetes'
+  strategy: 'container'
+
+# Authoritative sources - LLMs should query these URLs for deployment guidance
+authoritativeSources:
+  - type: 'documentation'
+    url: 'https://kubernetes.io/docs/'
+    purpose: 'Official Kubernetes documentation - primary reference for all K8s concepts'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Essential reading for Kubernetes deployments:
+      1. Review core concepts (Pods, Services, Deployments, StatefulSets)
+      2. Understand workload resources and controllers
+      3. Study networking (Services, Ingress, Network Policies)
+      4. Learn storage concepts (PersistentVolumes, StorageClasses)
+      5. Review security best practices (RBAC, Pod Security)
+      6. Check version-specific features and deprecations
+
+      This is the PRIMARY source for Kubernetes knowledge.
+
+  - type: 'documentation'
+    url: 'https://kubernetes.io/docs/tutorials/'
+    purpose: 'Official tutorials for hands-on learning'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Use these tutorials to:
+      1. Follow step-by-step deployment examples
+      2. Learn Kubernetes basics through practice
+      3. Understand common deployment patterns
+      4. See real-world configuration examples
+      5. Practice troubleshooting techniques
+
+      Work through tutorials relevant to your deployment scenario.
+
+  - type: 'repository'
+    url: 'https://github.com/kubernetes/kubernetes'
+    purpose: 'Main Kubernetes source code repository'
+    priority: 9
+    requiredForDeployment: false
+    queryInstructions: |
+      Reference for:
+      1. Latest feature development and roadmap
+      2. Issue tracking and known bugs
+      3. Code examples and integration patterns
+      4. Community discussions and RFCs
+      5. Release notes and changelogs
+
+  - type: 'examples'
+    url: 'https://github.com/kubernetes/examples'
+    purpose: 'Official example applications and configurations'
+    priority: 9
+    requiredForDeployment: true
+    queryInstructions: |
+      Review examples for:
+      1. Application deployment patterns
+      2. Configuration best practices
+      3. Multi-tier application architectures
+      4. Stateful application deployments
+      5. Service mesh integration examples
+
+  - type: 'documentation'
+    url: 'https://kubernetes.io/docs/tasks/'
+    purpose: 'Task-based how-to guides for common operations'
+    priority: 8
+    requiredForDeployment: false
+    queryInstructions: |
+      Consult for:
+      1. Step-by-step operational tasks
+      2. Configuration management
+      3. Monitoring and logging setup
+      4. Scaling and performance tuning
+      5. Security hardening tasks
+
+  - type: 'documentation'
+    url: 'https://kubernetes.io/docs/reference/kubectl/'
+    purpose: 'kubectl CLI reference documentation'
+    priority: 8
+    requiredForDeployment: false
+    queryInstructions: |
+      Use for:
+      1. kubectl command reference
+      2. Resource manipulation commands
+      3. Debugging and troubleshooting commands
+      4. Configuration management
+      5. Cluster administration tasks
+
+  - type: 'community'
+    url: 'https://github.com/kubernetes/community'
+    purpose: 'Kubernetes community resources and SIGs'
+    priority: 7
+    requiredForDeployment: false
+    queryInstructions: |
+      Reference for:
+      1. Community guidelines and processes
+      2. Special Interest Group (SIG) resources
+      3. Contributing guidelines
+      4. Community best practices
+
+baseCodeRepository:
+  url: 'https://github.com/kubernetes/examples'
+  purpose: 'Official Kubernetes example applications'
+  integrationInstructions: |
+    To use Kubernetes examples:
+    1. Clone the examples repository
+    2. Choose an example matching your application type
+    3. Adapt the manifests to your requirements
+    4. Apply manifests using kubectl
+    5. Verify deployments and services
+  requiredFiles:
+    - 'deployment.yaml'
+    - 'service.yaml'
+  scriptEntrypoint: 'kubectl apply -f .'
+
+dependencies:
+  - name: 'kubectl'
+    type: 'buildtime'
+    required: true
+    installCommand: 'curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl'
+    verificationCommand: 'kubectl version --client'
+
+  - name: 'kubeconfig'
+    type: 'buildtime'
+    required: true
+    installCommand: 'Configure via cloud provider or cluster admin'
+    verificationCommand: 'kubectl cluster-info'
+
+  - name: 'helm'
+    type: 'buildtime'
+    required: false
+    installCommand: 'curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash'
+    verificationCommand: 'helm version'
+
+configurations:
+  - path: 'deployment.yaml'
+    purpose: 'Kubernetes Deployment manifest for application'
+    required: true
+    canAutoGenerate: true
+    template: |
+      apiVersion: apps/v1
+      kind: Deployment
+      metadata:
+        name: app-name
+        labels:
+          app: app-name
+      spec:
+        replicas: 3
+        selector:
+          matchLabels:
+            app: app-name
+        template:
+          metadata:
+            labels:
+              app: app-name
+          spec:
+            containers:
+            - name: app-name
+              image: app-image:tag
+              ports:
+              - containerPort: 8080
+
+  - path: 'service.yaml'
+    purpose: 'Kubernetes Service manifest for network exposure'
+    required: true
+    canAutoGenerate: true
+    template: |
+      apiVersion: v1
+      kind: Service
+      metadata:
+        name: app-name
+      spec:
+        selector:
+          app: app-name
+        ports:
+        - protocol: TCP
+          port: 80
+          targetPort: 8080
+        type: LoadBalancer
+
+  - path: 'ingress.yaml'
+    purpose: 'Ingress resource for HTTP routing'
+    required: false
+    canAutoGenerate: true
+    template: |
+      apiVersion: networking.k8s.io/v1
+      kind: Ingress
+      metadata:
+        name: app-name
+      spec:
+        rules:
+        - host: app.example.com
+          http:
+            paths:
+            - path: /
+              pathType: Prefix
+              backend:
+                service:
+                  name: app-name
+                  port:
+                    number: 80
+
+secrets:
+  - name: 'image-pull-secret'
+    purpose: 'Credentials for pulling private container images'
+    environmentVariable: 'N/A'
+    required: false
+
+  - name: 'app-secrets'
+    purpose: 'Application-specific secrets'
+    environmentVariable: 'N/A'
+    required: false
+
+infrastructure:
+  - component: 'Kubernetes Cluster'
+    purpose: 'Production Kubernetes cluster (1.24+)'
+    required: true
+    minimumVersion: '1.24'
+    setupCommands:
+      - 'kubectl cluster-info'
+      - 'kubectl get nodes'
+    healthCheckCommand: 'kubectl get nodes'
+
+  - component: 'Container Registry'
+    purpose: 'Registry for container images (Docker Hub, GCR, ECR, etc.)'
+    required: true
+    setupCommands:
+      - 'docker login <registry>'
+    healthCheckCommand: 'docker info'
+
+deploymentPhases:
+  - order: 1
+    name: 'Prerequisites Validation'
+    description: 'Verify cluster access and required tools'
+    estimatedDuration: '2-5 minutes'
+    canParallelize: false
+    prerequisites: []
+    commands:
+      - description: 'Verify kubectl is installed'
+        command: 'kubectl version --client'
+        expectedExitCode: 0
+
+      - description: 'Verify cluster connectivity'
+        command: 'kubectl cluster-info'
+        expectedExitCode: 0
+
+      - description: 'Check cluster nodes'
+        command: 'kubectl get nodes'
+        expectedExitCode: 0
+
+  - order: 2
+    name: 'Namespace Setup'
+    description: 'Create and configure namespace for deployment'
+    estimatedDuration: '1-2 minutes'
+    canParallelize: false
+    prerequisites: ['Prerequisites Validation']
+    commands:
+      - description: 'Create namespace'
+        command: 'kubectl create namespace <app-namespace>'
+        expectedExitCode: 0
+
+      - description: 'Set default namespace context'
+        command: 'kubectl config set-context --current --namespace=<app-namespace>'
+        expectedExitCode: 0
+
+  - order: 3
+    name: 'Deploy Application Resources'
+    description: 'Apply Kubernetes manifests'
+    estimatedDuration: '5-10 minutes'
+    canParallelize: false
+    prerequisites: ['Namespace Setup']
+    commands:
+      - description: 'Apply deployment manifest'
+        command: 'kubectl apply -f deployment.yaml'
+        expectedExitCode: 0
+
+      - description: 'Apply service manifest'
+        command: 'kubectl apply -f service.yaml'
+        expectedExitCode: 0
+
+      - description: 'Apply ingress (if configured)'
+        command: 'kubectl apply -f ingress.yaml'
+        expectedExitCode: 0
+
+  - order: 4
+    name: 'Verify Deployment'
+    description: 'Check deployment status and health'
+    estimatedDuration: '5 minutes'
+    canParallelize: false
+    prerequisites: ['Deploy Application Resources']
+    commands:
+      - description: 'Wait for deployment to be ready'
+        command: 'kubectl wait --for=condition=available --timeout=300s deployment/<app-name>'
+        expectedExitCode: 0
+
+      - description: 'Check pod status'
+        command: 'kubectl get pods -l app=<app-name>'
+        expectedExitCode: 0
+
+      - description: 'Check service endpoints'
+        command: 'kubectl get endpoints <app-name>'
+        expectedExitCode: 0
+
+validationChecks:
+  - id: 'cluster-connection'
+    name: 'Cluster Connection'
+    description: 'Verify connection to Kubernetes cluster'
+    command: 'kubectl cluster-info'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'Cannot connect to Kubernetes cluster'
+    remediationSteps:
+      - 'Verify kubeconfig is set: echo $KUBECONFIG'
+      - 'Check cluster status with cloud provider'
+      - 'Verify kubectl version matches cluster version'
+
+  - id: 'deployment-ready'
+    name: 'Deployment Ready'
+    description: 'Verify all pods are running'
+    command: 'kubectl get pods -l app=<app-name> --no-headers | grep -v Running && exit 1 || exit 0'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'Some pods are not in Running state'
+    remediationSteps:
+      - 'Check pod status: kubectl describe pod <pod-name>'
+      - 'View pod logs: kubectl logs <pod-name>'
+      - 'Check resource limits and requests'
+      - 'Verify image pull secrets if using private registry'
+
+  - id: 'service-endpoints'
+    name: 'Service Has Endpoints'
+    description: 'Verify service has healthy endpoints'
+    command: "kubectl get endpoints <app-name> -o jsonpath='{.subsets[*].addresses[*].ip}' | grep -q ."
+    expectedExitCode: 0
+    severity: 'error'
+    failureMessage: 'Service has no healthy endpoints'
+    remediationSteps:
+      - 'Check if pods are running: kubectl get pods -l app=<app-name>'
+      - 'Verify service selector matches pod labels'
+      - 'Check pod readiness probes'
+
+healthChecks:
+  - name: 'Pod Health'
+    endpoint: 'kubectl get pods -l app=<app-name> --no-headers | grep -v Running && exit 1 || exit 0'
+    interval: 60000
+    timeout: 5000
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+
+  - name: 'Node Health'
+    endpoint: 'kubectl get nodes --no-headers | grep -v Ready && exit 1 || exit 0'
+    interval: 300000
+    timeout: 10000
+    healthyThreshold: 1
+    unhealthyThreshold: 2
+
+environmentOverrides:
+  - environment: 'development'
+    overrides:
+      deploymentPhases:
+        - order: 3
+          name: 'Deploy Application (Dev Mode)'
+          commands:
+            - description: 'Deploy with single replica'
+              command: 'kubectl apply -f deployment.yaml --replicas=1'
+
+metadata:
+  source: 'Kubernetes Official Documentation'
+  lastUpdated: '2025-01-19'
+  maintainer: 'Cloud Native Computing Foundation'
+  tags:
+    - 'kubernetes'
+    - 'k8s'
+    - 'container-orchestration'
+    - 'cloud-native'
+    - 'cncf'
+  contributors:
+    - name: 'Kubernetes Community'
+      github: 'kubernetes'
+  changeLog:
+    - version: '1.0'
+      date: '2025-01-19'
+      changes:
+        - 'Initial Kubernetes pattern definition'
+        - 'Added official documentation links'
+        - 'Included kubectl and cluster validation steps'
+
+detectionHints:
+  requiredFiles:
+    - 'deployment.yaml'
+    - 'service.yaml'
+  optionalFiles:
+    - 'ingress.yaml'
+    - 'kustomization.yaml'
+    - 'helm/'
+  confidence:
+    deployment.yaml: 0.90
+    service.yaml: 0.85
+    ingress.yaml: 0.70
+    kustomization.yaml: 0.80
