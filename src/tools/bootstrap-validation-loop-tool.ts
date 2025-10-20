@@ -33,6 +33,9 @@ import { detectPlatforms, PlatformDetectionResult } from '../utils/platform-dete
 import { getPattern, ValidatedPattern } from '../utils/validated-pattern-definitions.js';
 import { generatePatternResearchReport } from '../utils/pattern-research-utility.js';
 
+// NEW: Tool Context Documentation System
+import { ToolContextManager, ToolContextDocument } from '../utils/context-document-manager.js';
+
 const execAsync = promisify(exec);
 
 /**
@@ -134,6 +137,9 @@ export class BootstrapValidationLoop {
   private validatedPattern: ValidatedPattern | null = null;
   private patternResearchReport: string | null = null;
 
+  // NEW: Tool Context Documentation
+  private contextManager: ToolContextManager;
+
   constructor(projectPath: string, adrDirectory: string, maxIterations: number = 5) {
     this.logger = new EnhancedLogger();
     this.projectPath = projectPath;
@@ -142,6 +148,7 @@ export class BootstrapValidationLoop {
     this.researchOrchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
     this.memoryManager = new MemoryEntityManager();
     this.deploymentIntelligence = new DynamicDeploymentIntelligence(projectPath, adrDirectory);
+    this.contextManager = new ToolContextManager(projectPath);
   }
 
   /**
@@ -173,6 +180,7 @@ export class BootstrapValidationLoop {
     executionHistory: BootstrapExecutionResult[];
     deploymentPlan?: DynamicDeploymentPlan;
     bootstrapAdrPath?: string;
+    contextDocumentPath?: string;
     requiresHumanApproval: boolean;
   }> {
     const { targetEnvironment, autoFix, captureEnvironmentSnapshot, updateAdrsWithLearnings } =
@@ -268,6 +276,19 @@ export class BootstrapValidationLoop {
     const bootstrapAdrPath = await this.createBootstrapAdr(this.deploymentPlan);
 
     this.logger.info(`📝 Bootstrap ADR created: ${bootstrapAdrPath}`, 'BootstrapValidationLoop');
+
+    // STEP 0.6: Save context document for future sessions
+    const contextDocumentPath = await this.saveBootstrapContext(
+      this.platformDetection!,
+      this.validatedPattern,
+      this.deploymentPlan,
+      bootstrapAdrPath
+    );
+
+    this.logger.info(
+      `📄 Context document saved: ${contextDocumentPath}`,
+      'BootstrapValidationLoop'
+    );
     this.logger.info(
       '⏸️  WAITING FOR HUMAN APPROVAL - Review the bootstrap ADR before proceeding',
       'BootstrapValidationLoop'
@@ -403,6 +424,7 @@ export class BootstrapValidationLoop {
       executionHistory: BootstrapExecutionResult[];
       deploymentPlan?: DynamicDeploymentPlan;
       bootstrapAdrPath?: string;
+      contextDocumentPath?: string;
       requiresHumanApproval: boolean;
     };
 
@@ -412,6 +434,9 @@ export class BootstrapValidationLoop {
     }
     if (bootstrapAdrPath) {
       result.bootstrapAdrPath = bootstrapAdrPath;
+    }
+    if (contextDocumentPath) {
+      result.contextDocumentPath = contextDocumentPath;
     }
 
     return result;
@@ -563,6 +588,139 @@ Please review this deployment plan and:
     } catch (error) {
       this.logger.error(
         'Failed to create bootstrap ADR',
+        'BootstrapValidationLoop',
+        error as Error
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Save bootstrap context document for future sessions
+   */
+  private async saveBootstrapContext(
+    platformDetection: PlatformDetectionResult,
+    validatedPattern: ValidatedPattern | null,
+    deploymentPlan: DynamicDeploymentPlan,
+    bootstrapAdrPath: string
+  ): Promise<string> {
+    try {
+      const contextDoc: ToolContextDocument = {
+        metadata: {
+          toolName: 'bootstrap_validation_loop',
+          toolVersion: '1.0.0',
+          generated: new Date().toISOString(),
+          projectPath: this.projectPath,
+          projectName: path.basename(this.projectPath),
+          status: 'success',
+          confidence: platformDetection.confidence * 100,
+        },
+        quickReference: `
+Detected ${platformDetection.primaryPlatform} (${(platformDetection.confidence * 100).toFixed(0)}% confidence).
+${validatedPattern ? `Using validated pattern: ${validatedPattern.name} v${validatedPattern.version}.` : 'Using dynamic AI analysis.'}
+Bootstrap ADR: ${bootstrapAdrPath}
+        `.trim(),
+        executionSummary: {
+          status: 'Platform detected and deployment plan generated',
+          confidence: platformDetection.confidence * 100,
+          keyFindings: [
+            `Primary platform: ${platformDetection.primaryPlatform}`,
+            validatedPattern
+              ? `Validated pattern: ${validatedPattern.name}`
+              : 'Dynamic AI deployment plan',
+            `Required files: ${deploymentPlan.requiredFiles.length}`,
+            `Deployment steps: ${deploymentPlan.deploymentSteps.length}`,
+            `Environment variables: ${deploymentPlan.environmentVariables.length}`,
+          ],
+        },
+        detectedContext: {
+          platform: {
+            primary: platformDetection.primaryPlatform,
+            all: platformDetection.detectedPlatforms.map(p => p.type),
+            confidence: platformDetection.confidence,
+            evidence: platformDetection.evidence.slice(0, 10).map(e => ({
+              file: e.file,
+              indicator: e.indicator,
+              weight: e.weight,
+            })),
+          },
+          validatedPattern: validatedPattern
+            ? {
+                name: validatedPattern.name,
+                version: validatedPattern.version,
+                platformType: validatedPattern.platformType,
+                baseRepository: validatedPattern.baseCodeRepository.url,
+                authoritativeSources: validatedPattern.authoritativeSources.map(s => ({
+                  type: s.type,
+                  url: s.url,
+                  required: s.requiredForDeployment,
+                  purpose: s.purpose,
+                })),
+                deploymentPhases: validatedPattern.deploymentPhases.length,
+                validationChecks: validatedPattern.validationChecks.length,
+              }
+            : null,
+          deploymentPlan: {
+            recommendedPlatform: deploymentPlan.recommendedPlatform,
+            confidence: deploymentPlan.confidence,
+            source: deploymentPlan.source,
+            requiredFiles: deploymentPlan.requiredFiles.map(f => ({
+              path: f.path,
+              purpose: f.purpose,
+              required: f.required,
+            })),
+            environmentVariables: deploymentPlan.environmentVariables.map(e => ({
+              name: e.name,
+              required: e.required,
+              isSecret: e.isSecret,
+            })),
+            deploymentSteps: deploymentPlan.deploymentSteps.length,
+            estimatedDuration: deploymentPlan.estimatedDuration,
+          },
+        },
+        generatedArtifacts: [bootstrapAdrPath, 'bootstrap.sh', 'validate_bootstrap.sh'],
+        keyDecisions: [
+          {
+            decision: `Use ${platformDetection.primaryPlatform} as deployment platform`,
+            rationale: `Detected with ${(platformDetection.confidence * 100).toFixed(0)}% confidence based on project structure and configuration files`,
+            alternatives: platformDetection.detectedPlatforms
+              .filter(p => p.type !== platformDetection.primaryPlatform)
+              .map(p => `${p.type} (${(p.confidence * 100).toFixed(0)}% confidence)`)
+              .slice(0, 3),
+          },
+        ],
+        learnings: {
+          successes: ['Platform detection completed successfully'],
+          failures: [],
+          recommendations: [
+            'Review bootstrap ADR before proceeding with deployment',
+            validatedPattern
+              ? `Consult authoritative sources for ${validatedPattern.name}`
+              : 'Validate deployment plan with team',
+          ],
+          environmentSpecific: [],
+        },
+        relatedDocuments: {
+          adrs: [bootstrapAdrPath],
+          configs: deploymentPlan.requiredFiles.map(f => f.path),
+          otherContexts: [],
+        },
+      };
+
+      // Add validated pattern details if available
+      if (validatedPattern) {
+        contextDoc.keyDecisions!.push({
+          decision: `Use ${validatedPattern.name} validated pattern`,
+          rationale: `Best practice pattern for ${platformDetection.primaryPlatform} deployments. Provides proven deployment workflow and authoritative sources.`,
+          alternatives: ['Custom deployment plan', 'Dynamic AI-generated plan'],
+        });
+      }
+
+      const contextPath = await this.contextManager.saveContext('bootstrap', contextDoc);
+      return contextPath;
+    } catch (error) {
+      this.logger.error(
+        'Failed to save bootstrap context',
         'BootstrapValidationLoop',
         error as Error
       );

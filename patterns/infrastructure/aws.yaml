@@ -1,0 +1,395 @@
+version: '1.0'
+id: 'aws-v1'
+name: 'Amazon Web Services (AWS)'
+description: 'Cloud platform for serverless, containerized, and traditional deployments with Lambda, ECS, EC2, and managed services'
+
+composition:
+  infrastructure: 'aws'
+  strategy: 'serverless'
+
+# Authoritative sources - LLMs should query these URLs for deployment guidance
+authoritativeSources:
+  - type: 'documentation'
+    url: 'https://docs.aws.amazon.com/'
+    purpose: 'Official AWS documentation - comprehensive reference for all AWS services'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Essential reading for AWS deployments:
+      1. Review service-specific documentation (Lambda, ECS, EC2, RDS, etc.)
+      2. Understand IAM roles and permissions
+      3. Study networking (VPC, Security Groups, Subnets)
+      4. Learn about monitoring (CloudWatch, X-Ray)
+      5. Review security best practices
+      6. Check regional availability and pricing
+
+      This is the PRIMARY source for AWS knowledge.
+
+  - type: 'documentation'
+    url: 'https://aws.amazon.com/getting-started/'
+    purpose: 'AWS getting started guides and tutorials'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Use these guides to:
+      1. Follow step-by-step deployment tutorials
+      2. Learn AWS fundamentals through hands-on labs
+      3. Understand common architectural patterns
+      4. See real-world deployment examples
+      5. Learn AWS best practices
+
+      Work through tutorials relevant to your deployment scenario.
+
+  - type: 'repository'
+    url: 'https://github.com/aws-samples'
+    purpose: 'Official AWS code samples and examples'
+    priority: 9
+    requiredForDeployment: true
+    queryInstructions: |
+      Review samples for:
+      1. Service-specific implementation examples
+      2. Architecture patterns (serverless, microservices, etc.)
+      3. Integration patterns between AWS services
+      4. Infrastructure as Code (CloudFormation, CDK)
+      5. Best practices and production-ready code
+
+  - type: 'documentation'
+    url: 'https://aws.amazon.com/architecture/'
+    purpose: 'AWS Architecture Center - reference architectures and best practices'
+    priority: 9
+    requiredForDeployment: false
+    queryInstructions: |
+      Consult for:
+      1. Well-architected framework principles
+      2. Reference architectures for common use cases
+      3. Best practices across pillars (security, reliability, performance, cost)
+      4. Industry-specific solutions
+      5. Migration strategies
+
+  - type: 'documentation'
+    url: 'https://docs.aws.amazon.com/lambda/'
+    purpose: 'AWS Lambda documentation for serverless functions'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      For Lambda deployments:
+      1. Review function configuration and runtime options
+      2. Understand execution environment and limitations
+      3. Learn event sources and triggers
+      4. Study permissions and IAM roles
+      5. Review monitoring and logging
+      6. Check best practices for performance and cost
+
+  - type: 'documentation'
+    url: 'https://docs.aws.amazon.com/serverless-application-model/'
+    purpose: 'AWS SAM (Serverless Application Model) for serverless deployments'
+    priority: 9
+    requiredForDeployment: false
+    queryInstructions: |
+      Use SAM for:
+      1. Simplified serverless application definitions
+      2. Local testing and debugging
+      3. CI/CD integration
+      4. Infrastructure as code for serverless
+      5. Best practices for serverless architectures
+
+  - type: 'documentation'
+    url: 'https://docs.aws.amazon.com/cdk/'
+    purpose: 'AWS CDK (Cloud Development Kit) for infrastructure as code'
+    priority: 8
+    requiredForDeployment: false
+    queryInstructions: |
+      Reference for:
+      1. TypeScript/Python/Java infrastructure definitions
+      2. Reusable constructs and patterns
+      3. Type-safe infrastructure code
+      4. Testing and validation
+      5. Multi-stack deployments
+
+  - type: 'community'
+    url: 'https://github.com/aws'
+    purpose: 'AWS official GitHub repositories and tools'
+    priority: 7
+    requiredForDeployment: false
+    queryInstructions: |
+      Browse for:
+      1. Official AWS SDKs and tools
+      2. Community contributions
+      3. Infrastructure tools (CDK, SAM, Copilot)
+      4. Service-specific utilities
+
+baseCodeRepository:
+  url: 'https://github.com/aws-samples/aws-lambda-sample-applications'
+  purpose: 'AWS Lambda sample applications for various runtimes'
+  integrationInstructions: |
+    To use AWS Lambda samples:
+    1. Clone the sample repository
+    2. Choose a sample matching your runtime (Node.js, Python, Java, etc.)
+    3. Adapt the code to your requirements
+    4. Configure SAM template or CloudFormation
+    5. Deploy using AWS CLI or SAM CLI
+    6. Set up IAM roles and permissions
+  requiredFiles:
+    - 'template.yaml' # SAM template
+    - 'src/' # Application code
+  scriptEntrypoint: 'sam deploy --guided'
+
+dependencies:
+  - name: 'aws-cli'
+    type: 'buildtime'
+    required: true
+    installCommand: 'pip install awscli'
+    verificationCommand: 'aws --version'
+
+  - name: 'sam-cli'
+    type: 'buildtime'
+    required: false
+    installCommand: 'pip install aws-sam-cli'
+    verificationCommand: 'sam --version'
+
+  - name: 'aws-cdk'
+    type: 'buildtime'
+    required: false
+    installCommand: 'npm install -g aws-cdk'
+    verificationCommand: 'cdk --version'
+
+configurations:
+  - path: 'template.yaml'
+    purpose: 'AWS SAM template for serverless application'
+    required: true
+    canAutoGenerate: true
+    template: |
+      AWSTemplateFormatVersion: '2010-09-09'
+      Transform: AWS::Serverless-2016-10-31
+      Description: Serverless application
+
+      Globals:
+        Function:
+          Timeout: 30
+          Runtime: nodejs18.x
+          MemorySize: 512
+
+      Resources:
+        ApiFunction:
+          Type: AWS::Serverless::Function
+          Properties:
+            Handler: index.handler
+            Events:
+              ApiEvent:
+                Type: Api
+                Properties:
+                  Path: /api
+                  Method: GET
+
+  - path: 'samconfig.toml'
+    purpose: 'SAM CLI configuration'
+    required: false
+    canAutoGenerate: true
+    template: |
+      version = 0.1
+      [default.deploy.parameters]
+      stack_name = "my-app"
+      region = "us-east-1"
+      capabilities = "CAPABILITY_IAM"
+
+  - path: '.aws/config'
+    purpose: 'AWS CLI configuration'
+    required: true
+    canAutoGenerate: false
+
+secrets:
+  - name: 'aws-credentials'
+    purpose: 'AWS access key and secret for API access'
+    environmentVariable: 'AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY'
+    required: true
+
+  - name: 'api-keys'
+    purpose: 'Application-specific API keys'
+    environmentVariable: 'API_KEY'
+    required: false
+
+infrastructure:
+  - component: 'AWS Account'
+    purpose: 'Active AWS account with appropriate permissions'
+    required: true
+    setupCommands:
+      - 'aws configure'
+      - 'aws sts get-caller-identity'
+    healthCheckCommand: 'aws sts get-caller-identity'
+
+  - component: 'IAM Roles'
+    purpose: 'Execution roles for Lambda functions and services'
+    required: true
+    setupCommands:
+      - 'aws iam create-role --role-name lambda-execution-role'
+    healthCheckCommand: 'aws iam get-role --role-name lambda-execution-role'
+
+deploymentPhases:
+  - order: 1
+    name: 'Prerequisites Validation'
+    description: 'Verify AWS credentials and required tools'
+    estimatedDuration: '2-5 minutes'
+    canParallelize: false
+    prerequisites: []
+    commands:
+      - description: 'Verify AWS CLI is installed'
+        command: 'aws --version'
+        expectedExitCode: 0
+
+      - description: 'Verify AWS credentials are configured'
+        command: 'aws sts get-caller-identity'
+        expectedExitCode: 0
+
+      - description: 'Check SAM CLI (if using SAM)'
+        command: 'sam --version'
+        expectedExitCode: 0
+
+  - order: 2
+    name: 'Build Application'
+    description: 'Build serverless application artifacts'
+    estimatedDuration: '2-5 minutes'
+    canParallelize: false
+    prerequisites: ['Prerequisites Validation']
+    commands:
+      - description: 'Build SAM application'
+        command: 'sam build'
+        expectedExitCode: 0
+
+      - description: 'Validate SAM template'
+        command: 'sam validate'
+        expectedExitCode: 0
+
+  - order: 3
+    name: 'Deploy to AWS'
+    description: 'Deploy application to AWS using SAM or CloudFormation'
+    estimatedDuration: '5-10 minutes'
+    canParallelize: false
+    prerequisites: ['Build Application']
+    commands:
+      - description: 'Deploy with SAM'
+        command: 'sam deploy --guided'
+        expectedExitCode: 0
+
+      - description: 'Wait for stack creation'
+        command: 'aws cloudformation wait stack-create-complete --stack-name <stack-name>'
+        expectedExitCode: 0
+
+  - order: 4
+    name: 'Verify Deployment'
+    description: 'Test deployed functions and endpoints'
+    estimatedDuration: '2-5 minutes'
+    canParallelize: false
+    prerequisites: ['Deploy to AWS']
+    commands:
+      - description: 'Get stack outputs'
+        command: "aws cloudformation describe-stacks --stack-name <stack-name> --query 'Stacks[0].Outputs'"
+        expectedExitCode: 0
+
+      - description: 'Test Lambda function'
+        command: 'aws lambda invoke --function-name <function-name> response.json'
+        expectedExitCode: 0
+
+      - description: 'Test API endpoint (if applicable)'
+        command: 'curl -X GET <api-endpoint>'
+        expectedExitCode: 0
+
+validationChecks:
+  - id: 'aws-credentials'
+    name: 'AWS Credentials Valid'
+    description: 'Verify AWS credentials are configured and valid'
+    command: 'aws sts get-caller-identity'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'Cannot authenticate with AWS'
+    remediationSteps:
+      - 'Run: aws configure'
+      - 'Verify credentials in ~/.aws/credentials'
+      - 'Check IAM user permissions'
+      - 'Verify MFA token if required'
+
+  - id: 'stack-deployed'
+    name: 'CloudFormation Stack Complete'
+    description: 'Verify stack deployment completed successfully'
+    command: "aws cloudformation describe-stacks --stack-name <stack-name> --query 'Stacks[0].StackStatus' --output text | grep -q COMPLETE"
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'Stack deployment failed or incomplete'
+    remediationSteps:
+      - 'Check stack events: aws cloudformation describe-stack-events --stack-name <stack-name>'
+      - 'Review CloudFormation console for errors'
+      - 'Check IAM permissions for stack creation'
+      - 'Verify service quotas and limits'
+
+  - id: 'lambda-function-exists'
+    name: 'Lambda Function Exists'
+    description: 'Verify Lambda function was created'
+    command: 'aws lambda get-function --function-name <function-name>'
+    expectedExitCode: 0
+    severity: 'error'
+    failureMessage: 'Lambda function not found'
+    remediationSteps:
+      - 'Check stack resources: aws cloudformation list-stack-resources --stack-name <stack-name>'
+      - 'Verify function name in template.yaml'
+      - 'Check CloudFormation stack outputs'
+
+healthChecks:
+  - name: 'Lambda Function Health'
+    endpoint: "aws lambda get-function --function-name <function-name> --query 'Configuration.State' --output text | grep -q Active"
+    interval: 60000
+    timeout: 5000
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+
+  - name: 'API Gateway Health'
+    endpoint: 'curl -f <api-endpoint>/health'
+    interval: 60000
+    timeout: 10000
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+
+environmentOverrides:
+  - environment: 'development'
+    overrides:
+      configurations:
+        - path: 'template.yaml'
+          template: |
+            Globals:
+              Function:
+                Timeout: 60
+                Environment:
+                  Variables:
+                    STAGE: dev
+
+metadata:
+  source: 'AWS Official Documentation'
+  lastUpdated: '2025-01-19'
+  maintainer: 'Amazon Web Services'
+  tags:
+    - 'aws'
+    - 'serverless'
+    - 'lambda'
+    - 'cloud'
+    - 'sam'
+  contributors:
+    - name: 'AWS Documentation Team'
+      github: 'aws'
+  changeLog:
+    - version: '1.0'
+      date: '2025-01-19'
+      changes:
+        - 'Initial AWS pattern definition'
+        - 'Added Lambda and SAM documentation links'
+        - 'Included serverless deployment best practices'
+
+detectionHints:
+  requiredFiles:
+    - 'template.yaml'
+    - 'samconfig.toml'
+  optionalFiles:
+    - 'cdk.json'
+    - '.aws/'
+    - 'buildspec.yml'
+  confidence:
+    template.yaml: 0.90
+    samconfig.toml: 0.85
+    cdk.json: 0.80

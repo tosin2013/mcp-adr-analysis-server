@@ -1,0 +1,537 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Validated Pattern Definition",
+  "description": "Schema for validated deployment pattern definitions",
+  "type": "object",
+  "required": ["version", "id", "name", "description", "authoritativeSources", "deploymentPhases"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+(\\.\\d+)?$",
+      "description": "Semantic version of the pattern"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$",
+      "description": "Unique identifier for the pattern (lowercase, hyphen-separated)"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 5,
+      "description": "Human-readable name of the pattern"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 20,
+      "description": "Brief description of what this pattern provides"
+    },
+    "composition": {
+      "type": "object",
+      "description": "Pattern composition details",
+      "properties": {
+        "infrastructure": {
+          "type": "string",
+          "enum": [
+            "openshift",
+            "kubernetes",
+            "docker",
+            "firebase",
+            "aws",
+            "azure",
+            "gcp",
+            "vercel",
+            "netlify",
+            "heroku"
+          ],
+          "description": "Target infrastructure platform"
+        },
+        "runtime": {
+          "type": "string",
+          "enum": ["nodejs", "python", "java", "go", "rust", "dotnet", "ruby", "php"],
+          "description": "Runtime environment"
+        },
+        "protocol": {
+          "type": "string",
+          "enum": ["mcp", "a2a", "rest-api", "grpc", "graphql", "websocket"],
+          "description": "Communication protocol"
+        },
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "gitops",
+            "blue-green",
+            "canary",
+            "rolling",
+            "serverless",
+            "container",
+            "immutable",
+            "mutable"
+          ],
+          "description": "Deployment strategy"
+        }
+      }
+    },
+    "authoritativeSources": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Authoritative sources that LLMs should query",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "url",
+          "purpose",
+          "priority",
+          "requiredForDeployment",
+          "queryInstructions"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["documentation", "repository", "specification", "examples", "community"],
+            "description": "Type of authoritative source"
+          },
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL to the source"
+          },
+          "purpose": {
+            "type": "string",
+            "minLength": 10,
+            "description": "Why this source is important"
+          },
+          "priority": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 10,
+            "description": "Priority level (1-10, higher is more important)"
+          },
+          "requiredForDeployment": {
+            "type": "boolean",
+            "description": "Whether this source must be consulted before deployment"
+          },
+          "queryInstructions": {
+            "type": "string",
+            "minLength": 20,
+            "description": "Instructions for LLMs on how to query this source"
+          }
+        }
+      }
+    },
+    "baseCodeRepository": {
+      "type": "object",
+      "description": "Base code repository for starter code",
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "description": "Repository URL"
+        },
+        "purpose": {
+          "type": "string",
+          "description": "Purpose of this repository"
+        },
+        "integrationInstructions": {
+          "type": "string",
+          "description": "How to integrate this base code"
+        },
+        "requiredFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Files that must be present"
+        },
+        "scriptEntrypoint": {
+          "type": "string",
+          "description": "Main deployment script or command"
+        }
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Required dependencies",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "required"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Dependency name"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["buildtime", "runtime"],
+            "description": "When this dependency is needed"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this dependency is required"
+          },
+          "installCommand": {
+            "type": "string",
+            "description": "Command to install this dependency"
+          },
+          "verificationCommand": {
+            "type": "string",
+            "description": "Command to verify this dependency is installed"
+          }
+        }
+      }
+    },
+    "configurations": {
+      "type": "array",
+      "description": "Configuration files needed",
+      "items": {
+        "type": "object",
+        "required": ["path", "purpose", "required"],
+        "properties": {
+          "path": {
+            "type": "string",
+            "description": "Path to configuration file"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "Purpose of this configuration file"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this file is required"
+          },
+          "canAutoGenerate": {
+            "type": "boolean",
+            "description": "Whether this file can be auto-generated"
+          },
+          "template": {
+            "type": "string",
+            "description": "Template content for this file"
+          }
+        }
+      }
+    },
+    "secrets": {
+      "type": "array",
+      "description": "Secrets and credentials needed",
+      "items": {
+        "type": "object",
+        "required": ["name", "purpose", "required"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Secret name"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "What this secret is for"
+          },
+          "environmentVariable": {
+            "type": "string",
+            "description": "Environment variable name for this secret"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this secret is required"
+          }
+        }
+      }
+    },
+    "infrastructure": {
+      "type": "array",
+      "description": "Infrastructure components required",
+      "items": {
+        "type": "object",
+        "required": ["component", "purpose", "required"],
+        "properties": {
+          "component": {
+            "type": "string",
+            "description": "Component name"
+          },
+          "purpose": {
+            "type": "string",
+            "description": "Purpose of this component"
+          },
+          "required": {
+            "type": "boolean",
+            "description": "Whether this component is required"
+          },
+          "minimumVersion": {
+            "type": "string",
+            "description": "Minimum version required"
+          },
+          "setupCommands": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Commands to set up this component"
+          },
+          "healthCheckCommand": {
+            "type": "string",
+            "description": "Command to check component health"
+          },
+          "alternatives": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Alternative components that can be used"
+          }
+        }
+      }
+    },
+    "deploymentPhases": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Deployment phases in order",
+      "items": {
+        "type": "object",
+        "required": ["order", "name", "description", "estimatedDuration", "commands"],
+        "properties": {
+          "order": {
+            "type": "number",
+            "minimum": 1,
+            "description": "Phase order number"
+          },
+          "name": {
+            "type": "string",
+            "description": "Phase name"
+          },
+          "description": {
+            "type": "string",
+            "description": "What happens in this phase"
+          },
+          "estimatedDuration": {
+            "type": "string",
+            "description": "Estimated time for this phase"
+          },
+          "canParallelize": {
+            "type": "boolean",
+            "description": "Whether this phase can run in parallel with others"
+          },
+          "prerequisites": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Prerequisites for this phase (phase names)"
+          },
+          "commands": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "required": ["description", "command"],
+              "properties": {
+                "description": {
+                  "type": "string",
+                  "description": "Command description"
+                },
+                "command": {
+                  "type": "string",
+                  "description": "Actual command to execute"
+                },
+                "expectedExitCode": {
+                  "type": "number",
+                  "description": "Expected exit code (default: 0)"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "validationChecks": {
+      "type": "array",
+      "description": "Validation checks to run after deployment",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "description", "command", "severity"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Unique check identifier"
+          },
+          "name": {
+            "type": "string",
+            "description": "Check name"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this check validates"
+          },
+          "command": {
+            "type": "string",
+            "description": "Validation command"
+          },
+          "expectedExitCode": {
+            "type": "number",
+            "description": "Expected exit code (default: 0)"
+          },
+          "severity": {
+            "type": "string",
+            "enum": ["critical", "error", "warning", "info"],
+            "description": "Severity level"
+          },
+          "failureMessage": {
+            "type": "string",
+            "description": "Message to show when check fails"
+          },
+          "remediationSteps": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Steps to fix the issue"
+          }
+        }
+      }
+    },
+    "healthChecks": {
+      "type": "array",
+      "description": "Health checks for monitoring",
+      "items": {
+        "type": "object",
+        "required": ["name", "endpoint"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Health check name"
+          },
+          "endpoint": {
+            "type": "string",
+            "description": "Health check endpoint"
+          },
+          "interval": {
+            "type": "number",
+            "description": "Check interval in milliseconds"
+          },
+          "timeout": {
+            "type": "number",
+            "description": "Timeout in milliseconds"
+          },
+          "healthyThreshold": {
+            "type": "number",
+            "description": "Number of successful checks to be healthy"
+          },
+          "unhealthyThreshold": {
+            "type": "number",
+            "description": "Number of failed checks to be unhealthy"
+          }
+        }
+      }
+    },
+    "environmentOverrides": {
+      "type": "array",
+      "description": "Environment-specific overrides",
+      "items": {
+        "type": "object",
+        "required": ["environment"],
+        "properties": {
+          "environment": {
+            "type": "string",
+            "enum": ["development", "staging", "production"],
+            "description": "Environment name"
+          },
+          "overrides": {
+            "type": "object",
+            "description": "Overrides for this environment"
+          }
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "required": ["source", "lastUpdated", "tags"],
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Where this pattern comes from"
+        },
+        "lastUpdated": {
+          "type": "string",
+          "format": "date",
+          "description": "Last update date (YYYY-MM-DD)"
+        },
+        "maintainer": {
+          "type": "string",
+          "description": "Pattern maintainer"
+        },
+        "tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Tags for categorization"
+        },
+        "contributors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "github": {
+                "type": "string"
+              }
+            }
+          },
+          "description": "Pattern contributors"
+        },
+        "changeLog": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["version", "date", "changes"],
+            "properties": {
+              "version": {
+                "type": "string"
+              },
+              "date": {
+                "type": "string",
+                "format": "date"
+              },
+              "changes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "description": "Change log"
+        }
+      }
+    },
+    "detectionHints": {
+      "type": "object",
+      "description": "Hints for auto-detection",
+      "properties": {
+        "requiredFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Files that must be present for detection"
+        },
+        "optionalFiles": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Files that may be present"
+        },
+        "confidence": {
+          "type": "object",
+          "description": "Confidence scores for file detection",
+          "additionalProperties": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1
+          }
+        }
+      }
+    }
+  }
+}
