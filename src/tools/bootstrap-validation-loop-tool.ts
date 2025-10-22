@@ -43,6 +43,9 @@ import { PatternToDAGConverter } from '../utils/pattern-to-dag-converter.js';
 import { PatternContributionHelper } from '../utils/pattern-contribution-helper.js';
 import { PatternLoader, DynamicPattern } from '../utils/pattern-loader.js';
 
+// NEW: SystemCard for Resource Tracking
+import { SystemCardManager } from '../utils/system-card-manager.js';
+
 const execAsync = promisify(exec);
 
 /**
@@ -153,6 +156,9 @@ export class BootstrapValidationLoop {
   private patternConverter: PatternToDAGConverter;
   private contributionHelper: PatternContributionHelper;
 
+  // NEW: SystemCard Resource Tracking
+  private systemCardManager: SystemCardManager;
+
   constructor(projectPath: string, adrDirectory: string, maxIterations: number = 5) {
     this.logger = new EnhancedLogger();
     this.projectPath = projectPath;
@@ -163,8 +169,11 @@ export class BootstrapValidationLoop {
     this.deploymentIntelligence = new DynamicDeploymentIntelligence(projectPath, adrDirectory);
     this.contextManager = new ToolContextManager(projectPath);
 
+    // Initialize SystemCard for resource tracking (must be before DAGExecutor)
+    this.systemCardManager = new SystemCardManager(projectPath);
+
     // Initialize DAG architecture components
-    this.dagExecutor = new DAGExecutor(5); // Max 5 parallel tasks
+    this.dagExecutor = new DAGExecutor(5, this.systemCardManager); // Max 5 parallel tasks, with resource tracking
     this.patternLoader = new PatternLoader();
     this.patternConverter = new PatternToDAGConverter();
     this.contributionHelper = new PatternContributionHelper();
@@ -1957,6 +1966,30 @@ production:
       'BootstrapValidationLoop'
     );
 
+    // Initialize SystemCard before execution
+    const bootstrapId = `${platform}-bootstrap-${Date.now()}`;
+    const detectedPlatform = platformDetection.detectedPlatforms.find(p => p.type === platform);
+    await this.systemCardManager.initialize({
+      systemId: bootstrapId,
+      created: new Date().toISOString(),
+      platform: {
+        type: platform as any,
+        ...(detectedPlatform?.version && { version: detectedPlatform.version }),
+        detectionConfidence: platformDetection.confidence,
+      },
+      bootstrapContext: {
+        bootstrapId,
+        validatedPatternId: dynamicPattern.id,
+        // These will be updated after bootstrap completion
+      },
+      metadata: {
+        tags: ['bootstrap', platform, 'infrastructure'],
+        description: `Bootstrap deployment for ${platform}`,
+      },
+    });
+
+    this.logger.info('📝 SystemCard initialized for resource tracking', 'BootstrapValidationLoop');
+
     // Execute infrastructure DAG
     const result = await this.dagExecutor.execute(tasks);
 
@@ -1964,6 +1997,16 @@ production:
     if (result.success) {
       this.logger.info(
         `✅ Infrastructure Layer complete: ${result.executedTasks.length} tasks executed in ${result.duration}ms`,
+        'BootstrapValidationLoop'
+      );
+
+      // Extract resources from task results and update SystemCard
+      // Note: Resource extraction will be implemented in next phase
+      // For now, we'll generate cleanup phases based on what was executed
+      const cleanupPhases = await this.systemCardManager.generateCleanupPhases();
+
+      this.logger.info(
+        `🧹 Generated ${cleanupPhases.length} cleanup phases with ${this.systemCardManager.getResourceCount()} tracked resources`,
         'BootstrapValidationLoop'
       );
     } else {
