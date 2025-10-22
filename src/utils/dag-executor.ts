@@ -11,6 +11,8 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { EnhancedLogger } from './enhanced-logging.js';
+import { SystemCardManager } from './system-card-manager.js';
+import { ResourceExtractor } from './resource-extractor.js';
 
 const execAsync = promisify(exec);
 
@@ -80,10 +82,14 @@ export interface DAGExecutionResult {
 export class DAGExecutor {
   private logger: EnhancedLogger;
   private maxParallelism: number;
+  private systemCardManager: SystemCardManager | undefined;
+  private resourceExtractor: ResourceExtractor;
 
-  constructor(maxParallelism: number = 5) {
+  constructor(maxParallelism: number = 5, systemCardManager?: SystemCardManager) {
     this.logger = new EnhancedLogger();
     this.maxParallelism = maxParallelism;
+    this.systemCardManager = systemCardManager;
+    this.resourceExtractor = new ResourceExtractor();
   }
 
   /**
@@ -334,6 +340,43 @@ export class DAGExecutor {
 
       if (finalSuccess) {
         this.logger.info(`✅ Completed: ${task.name} (${duration}ms)`, 'DAGExecutor');
+
+        // Extract resources from command output and update SystemCard
+        if (this.systemCardManager) {
+          try {
+            const extractionResult = this.resourceExtractor.extract(
+              fullCommand,
+              stdout,
+              stderr,
+              task.id
+            );
+
+            if (extractionResult.resources.length > 0) {
+              await this.systemCardManager.addResources(extractionResult.resources, {
+                phase: task.category,
+                taskId: task.id,
+              });
+
+              this.logger.info(
+                `📝 Tracked ${extractionResult.resources.length} resources from task: ${task.name}`,
+                'DAGExecutor'
+              );
+            }
+
+            if (extractionResult.warnings.length > 0) {
+              this.logger.warn(
+                `Resource extraction warnings: ${extractionResult.warnings.join(', ')}`,
+                'DAGExecutor'
+              );
+            }
+          } catch (error) {
+            // Log but don't fail the task if resource extraction fails
+            this.logger.warn(
+              `Failed to extract resources from task ${task.name}: ${(error as Error).message}`,
+              'DAGExecutor'
+            );
+          }
+        }
       } else {
         this.logger.error(`❌ Failed: ${task.name} (${duration}ms)`, 'DAGExecutor');
       }
