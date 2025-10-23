@@ -1,7 +1,10 @@
+---
 version: '1.0'
 id: 'firebase-emulators-v1'
 name: 'Firebase Emulators'
-description: 'Local Firebase emulator suite for testing Firebase services (Auth, Firestore, Functions, Storage, etc.) before deploying to production'
+description: >-
+  Local Firebase emulator suite for testing Firebase services (Auth, Firestore, Functions, Storage, etc.)
+  before deploying to production
 
 composition:
   infrastructure: 'firebase'

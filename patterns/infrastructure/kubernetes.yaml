@@ -1,7 +1,10 @@
+---
 version: '1.0'
 id: 'kubernetes-v1'
 name: 'Kubernetes'
-description: 'Production-ready container orchestration platform for deploying, scaling, and managing containerized applications'
+description: >-
+  Production-ready container orchestration platform for deploying, scaling, and managing
+  containerized applications
 
 composition:
   infrastructure: 'kubernetes'
@@ -123,7 +126,9 @@ dependencies:
   - name: 'kubectl'
     type: 'buildtime'
     required: true
-    installCommand: 'curl -LO https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl'
+    installCommand: >-
+      curl -LO https://dl.k8s.io/release/$(curl -L -s
+      https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl
     verificationCommand: 'kubectl version --client'
 
   - name: 'kubeconfig'
