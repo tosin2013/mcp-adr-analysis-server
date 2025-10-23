@@ -1,7 +1,10 @@
+---
 version: '1.0'
 id: 'aws-v1'
 name: 'Amazon Web Services (AWS)'
-description: 'Cloud platform for serverless, containerized, and traditional deployments with Lambda, ECS, EC2, and managed services'
+description: >-
+  Cloud platform for serverless, containerized, and traditional deployments with Lambda, ECS, EC2,
+  and managed services
 
 composition:
   infrastructure: 'aws'
@@ -310,7 +313,9 @@ validationChecks:
   - id: 'stack-deployed'
     name: 'CloudFormation Stack Complete'
     description: 'Verify stack deployment completed successfully'
-    command: "aws cloudformation describe-stacks --stack-name <stack-name> --query 'Stacks[0].StackStatus' --output text | grep -q COMPLETE"
+    command: >-
+      aws cloudformation describe-stacks --stack-name <stack-name>
+      --query 'Stacks[0].StackStatus' --output text | grep -q COMPLETE
     expectedExitCode: 0
     severity: 'critical'
     failureMessage: 'Stack deployment failed or incomplete'
@@ -334,7 +339,9 @@ validationChecks:
 
 healthChecks:
   - name: 'Lambda Function Health'
-    endpoint: "aws lambda get-function --function-name <function-name> --query 'Configuration.State' --output text | grep -q Active"
+    endpoint: >-
+      aws lambda get-function --function-name <function-name>
+      --query 'Configuration.State' --output text | grep -q Active
     interval: 60000
     timeout: 5000
     healthyThreshold: 1
