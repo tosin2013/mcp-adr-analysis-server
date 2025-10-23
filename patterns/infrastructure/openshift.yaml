@@ -1,3 +1,4 @@
+---
 version: '1.0'
 id: 'openshift-v1'
 name: 'OpenShift Container Platform'
@@ -314,7 +315,9 @@ validationChecks:
   - id: 'pattern-applications'
     name: 'Pattern Applications Synced'
     description: 'Verify all pattern ArgoCD applications are synced'
-    command: "oc get applications -n openshift-gitops --no-headers | awk '{print $3}' | grep -v Synced && exit 1 || exit 0"
+    command: >-
+      oc get applications -n openshift-gitops --no-headers | awk '{print $3}'
+      | grep -v Synced && exit 1 || exit 0
     expectedExitCode: 0
     severity: 'error'
     failureMessage: 'Some pattern applications are not synced'
