@@ -1,0 +1,576 @@
+version: '1.0'
+id: 'firebase-emulators-v1'
+name: 'Firebase Emulators'
+description: 'Local Firebase emulator suite for testing Firebase services (Auth, Firestore, Functions, Storage, etc.) before deploying to production'
+
+composition:
+  infrastructure: 'firebase'
+  strategy: 'emulator-first'
+
+# Authoritative sources - LLMs should query these URLs for deployment guidance
+authoritativeSources:
+  - type: 'documentation'
+    url: 'https://firebase.google.com/docs/emulator-suite'
+    purpose: 'Official Firebase Emulator Suite documentation - primary reference for local testing'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Essential reading for Firebase emulator deployments:
+      1. Understand the Emulator Suite components (Auth, Firestore, Functions, etc.)
+      2. Learn how to install and configure emulators
+      3. Study emulator integration with your app
+      4. Review security rules testing
+      5. Learn data import/export for emulators
+      6. Understand differences between emulators and production
+
+      This is the PRIMARY source for Firebase emulator knowledge.
+
+  - type: 'tutorial'
+    url: 'https://github.com/firebase/emulators-codelab'
+    purpose: 'Official hands-on codelab for Firebase emulators - step-by-step tutorial'
+    priority: 10
+    requiredForDeployment: true
+    queryInstructions: |
+      Work through this codelab to:
+      1. Set up Firebase emulators from scratch
+      2. Configure emulators for Auth, Firestore, and Functions
+      3. Write and run tests against emulators
+      4. Learn emulator best practices through examples
+      5. Understand emulator-to-production workflow
+
+      Complete this tutorial before deploying to production Firebase.
+
+  - type: 'documentation'
+    url: 'https://firebase.google.com/docs/cli'
+    purpose: 'Firebase CLI documentation for emulator commands'
+    priority: 9
+    requiredForDeployment: true
+    queryInstructions: |
+      Reference for:
+      1. Firebase CLI installation and setup
+      2. Emulator commands (start, export, import)
+      3. Project initialization and configuration
+      4. Deployment commands
+      5. Authentication and project management
+
+  - type: 'documentation'
+    url: 'https://firebase.google.com/docs/emulator-suite/connect_firestore'
+    purpose: 'Connecting your app to Firestore emulator'
+    priority: 9
+    requiredForDeployment: true
+    queryInstructions: |
+      Learn how to:
+      1. Configure Firestore SDK to use emulators
+      2. Switch between emulator and production
+      3. Handle environment-specific configuration
+      4. Test Firestore rules locally
+
+  - type: 'documentation'
+    url: 'https://firebase.google.com/docs/emulator-suite/connect_auth'
+    purpose: 'Connecting your app to Auth emulator'
+    priority: 9
+    requiredForDeployment: true
+    queryInstructions: |
+      Learn how to:
+      1. Configure Firebase Auth SDK for emulators
+      2. Test authentication flows locally
+      3. Create test users in emulator
+      4. Debug authentication issues
+
+  - type: 'documentation'
+    url: 'https://firebase.google.com/docs/emulator-suite/connect_functions'
+    purpose: 'Connecting your app to Cloud Functions emulator'
+    priority: 8
+    requiredForDeployment: false
+    queryInstructions: |
+      Reference for:
+      1. Local Cloud Functions development
+      2. Trigger testing with emulators
+      3. Functions debugging and logs
+      4. Integration with other emulators
+
+  - type: 'documentation'
+    url: 'https://firebase.google.com/docs/rules/unit-tests'
+    purpose: 'Unit testing security rules with emulators'
+    priority: 8
+    requiredForDeployment: false
+    queryInstructions: |
+      Learn to:
+      1. Write security rules tests
+      2. Use @firebase/rules-unit-testing library
+      3. Test complex rule scenarios
+      4. Validate rules before deployment
+
+baseCodeRepository:
+  url: 'https://github.com/firebase/emulators-codelab'
+  purpose: 'Official Firebase emulators hands-on tutorial'
+  integrationInstructions: |
+    To use the Firebase emulators codelab:
+    1. Clone the repository: git clone https://github.com/firebase/emulators-codelab.git
+    2. Follow the step-by-step tutorial in the repository
+    3. Complete the codelab to understand emulator workflow
+    4. Adapt patterns to your Firebase project
+    5. Test thoroughly with emulators before production deployment
+  requiredFiles:
+    - 'firebase.json'
+    - '.firebaserc'
+  scriptEntrypoint: 'firebase emulators:start'
+
+dependencies:
+  - name: 'firebase-tools'
+    type: 'buildtime'
+    required: true
+    installCommand: 'npm install -g firebase-tools'
+    verificationCommand: 'firebase --version'
+
+  - name: 'node'
+    type: 'buildtime'
+    required: true
+    installCommand: 'Install from https://nodejs.org/'
+    verificationCommand: 'node --version'
+
+  - name: 'java'
+    type: 'runtime'
+    required: true
+    installCommand: 'Install Java 11+ from https://adoptium.net/'
+    verificationCommand: 'java -version'
+    notes: 'Required for Firestore and Database emulators'
+
+  - name: 'npm'
+    type: 'buildtime'
+    required: true
+    installCommand: 'Installed with Node.js'
+    verificationCommand: 'npm --version'
+
+configurations:
+  - path: 'firebase.json'
+    purpose: 'Firebase project configuration including emulator settings'
+    required: true
+    canAutoGenerate: true
+    template: |
+      {
+        "firestore": {
+          "rules": "firestore.rules",
+          "indexes": "firestore.indexes.json"
+        },
+        "functions": {
+          "source": "functions"
+        },
+        "hosting": {
+          "public": "public",
+          "ignore": [
+            "firebase.json",
+            "**/.*",
+            "**/node_modules/**"
+          ]
+        },
+        "emulators": {
+          "auth": {
+            "port": 9099
+          },
+          "functions": {
+            "port": 5001
+          },
+          "firestore": {
+            "port": 8080
+          },
+          "database": {
+            "port": 9000
+          },
+          "hosting": {
+            "port": 5000
+          },
+          "pubsub": {
+            "port": 8085
+          },
+          "storage": {
+            "port": 9199
+          },
+          "ui": {
+            "enabled": true,
+            "port": 4000
+          },
+          "singleProjectMode": false
+        }
+      }
+
+  - path: '.firebaserc'
+    purpose: 'Firebase project aliases configuration'
+    required: true
+    canAutoGenerate: true
+    template: |
+      {
+        "projects": {
+          "default": "your-project-id"
+        }
+      }
+
+  - path: 'firestore.rules'
+    purpose: 'Firestore security rules'
+    required: true
+    canAutoGenerate: true
+    template: |
+      rules_version = '2';
+      service cloud.firestore {
+        match /databases/{database}/documents {
+          match /{document=**} {
+            allow read, write: if false;
+          }
+        }
+      }
+
+  - path: 'firestore.indexes.json'
+    purpose: 'Firestore composite indexes'
+    required: false
+    canAutoGenerate: true
+    template: |
+      {
+        "indexes": [],
+        "fieldOverrides": []
+      }
+
+secrets:
+  - name: 'firebase-service-account'
+    purpose: 'Service account key for Firebase Admin SDK (production only)'
+    environmentVariable: 'GOOGLE_APPLICATION_CREDENTIALS'
+    required: false
+    notes: 'Not needed for emulators, only for production deployment'
+
+  - name: 'firebase-api-key'
+    purpose: 'Firebase web API key for client SDKs'
+    environmentVariable: 'FIREBASE_API_KEY'
+    required: true
+    notes: 'Can use demo project API key for emulator testing'
+
+infrastructure:
+  - component: 'Firebase Emulator Suite'
+    purpose: 'Local Firebase services emulation (Auth, Firestore, Functions, etc.)'
+    required: true
+    minimumVersion: '11.0.0'
+    setupCommands:
+      - 'npm install -g firebase-tools'
+      - 'firebase login'
+      - 'firebase init emulators'
+    healthCheckCommand: 'firebase emulators:exec --project=demo-project "echo Emulators healthy"'
+
+  - component: 'Firebase Project'
+    purpose: 'Production Firebase project (for deployment)'
+    required: true
+    setupCommands:
+      - 'firebase projects:list'
+      - 'firebase use <project-id>'
+    healthCheckCommand: 'firebase projects:list'
+
+deploymentPhases:
+  - order: 1
+    name: 'Prerequisites Validation'
+    description: 'Verify Firebase CLI, Node.js, and Java are installed'
+    estimatedDuration: '2-5 minutes'
+    canParallelize: false
+    prerequisites: []
+    commands:
+      - description: 'Check Firebase CLI version'
+        command: 'firebase --version'
+        expectedExitCode: 0
+
+      - description: 'Check Node.js version'
+        command: 'node --version'
+        expectedExitCode: 0
+
+      - description: 'Check Java version (required for emulators)'
+        command: 'java -version'
+        expectedExitCode: 0
+
+      - description: 'Verify Firebase login'
+        command: 'firebase projects:list'
+        expectedExitCode: 0
+
+  - order: 2
+    name: 'Project Initialization'
+    description: 'Initialize Firebase project and emulators if not already configured'
+    estimatedDuration: '3-5 minutes'
+    canParallelize: false
+    prerequisites: ['Prerequisites Validation']
+    commands:
+      - description: 'Check for firebase.json (skip init if exists)'
+        command: 'test -f firebase.json || firebase init'
+        expectedExitCode: 0
+
+      - description: 'Set Firebase project'
+        command: 'firebase use <project-id>'
+        expectedExitCode: 0
+
+  - order: 3
+    name: 'Install Dependencies'
+    description: 'Install project dependencies (Cloud Functions, etc.)'
+    estimatedDuration: '2-5 minutes'
+    canParallelize: false
+    prerequisites: ['Project Initialization']
+    commands:
+      - description: 'Install functions dependencies'
+        command: 'cd functions && npm install && cd ..'
+        expectedExitCode: 0
+
+      - description: 'Install root project dependencies'
+        command: 'npm install'
+        expectedExitCode: 0
+
+  - order: 4
+    name: 'Start Emulators'
+    description: 'Launch Firebase emulator suite for local testing'
+    estimatedDuration: '1-2 minutes'
+    canParallelize: false
+    prerequisites: ['Install Dependencies']
+    commands:
+      - description: 'Start Firebase emulators'
+        command: 'firebase emulators:start --project=demo-project &'
+        expectedExitCode: 0
+        notes: 'Runs in background. Use --project=demo-project to avoid affecting production'
+
+      - description: 'Wait for emulators to be ready'
+        command: 'sleep 10'
+        expectedExitCode: 0
+
+  - order: 5
+    name: 'Run Tests Against Emulators'
+    description: 'Execute test suite against local emulators'
+    estimatedDuration: '5-10 minutes'
+    canParallelize: false
+    prerequisites: ['Start Emulators']
+    commands:
+      - description: 'Run unit tests'
+        command: 'npm test'
+        expectedExitCode: 0
+
+      - description: 'Run security rules tests (if configured)'
+        command: 'firebase emulators:exec --project=demo-project "npm run test:rules"'
+        expectedExitCode: 0
+
+      - description: 'Run integration tests'
+        command: 'npm run test:integration'
+        expectedExitCode: 0
+
+  - order: 6
+    name: 'Deploy to Production (Manual Step)'
+    description: 'Deploy to production Firebase after emulator testing passes'
+    estimatedDuration: '5-10 minutes'
+    canParallelize: false
+    prerequisites: ['Run Tests Against Emulators']
+    commands:
+      - description: 'Stop emulators'
+        command: 'firebase emulators:stop'
+        expectedExitCode: 0
+
+      - description: 'Deploy Firestore rules'
+        command: 'firebase deploy --only firestore:rules'
+        expectedExitCode: 0
+
+      - description: 'Deploy Firestore indexes'
+        command: 'firebase deploy --only firestore:indexes'
+        expectedExitCode: 0
+
+      - description: 'Deploy Cloud Functions'
+        command: 'firebase deploy --only functions'
+        expectedExitCode: 0
+
+      - description: 'Deploy hosting (if configured)'
+        command: 'firebase deploy --only hosting'
+        expectedExitCode: 0
+
+validationChecks:
+  - id: 'firebase-cli-installed'
+    name: 'Firebase CLI Installed'
+    description: 'Verify Firebase CLI is installed and accessible'
+    command: 'firebase --version'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'Firebase CLI is not installed'
+    remediationSteps:
+      - 'Install Firebase CLI: npm install -g firebase-tools'
+      - 'Verify installation: firebase --version'
+      - 'Login to Firebase: firebase login'
+
+  - id: 'java-installed'
+    name: 'Java Runtime Available'
+    description: 'Verify Java 11+ is installed (required for emulators)'
+    command: 'java -version 2>&1 | grep -E "version \"(1[1-9]|[2-9][0-9])\."'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'Java 11+ is not installed (required for Firebase emulators)'
+    remediationSteps:
+      - 'Install Java 11 or higher from https://adoptium.net/'
+      - 'Verify installation: java -version'
+      - 'Ensure JAVA_HOME is set correctly'
+
+  - id: 'emulators-running'
+    name: 'Emulators Running'
+    description: 'Verify Firebase emulators are running and accessible'
+    command: 'curl -s http://localhost:4000 > /dev/null'
+    expectedExitCode: 0
+    severity: 'error'
+    failureMessage: 'Firebase emulators are not running'
+    remediationSteps:
+      - 'Start emulators: firebase emulators:start'
+      - 'Check emulator ports in firebase.json'
+      - 'Verify no port conflicts with other services'
+      - 'Check emulator logs for startup errors'
+
+  - id: 'firestore-emulator-ready'
+    name: 'Firestore Emulator Ready'
+    description: 'Verify Firestore emulator is accepting connections'
+    command: 'curl -s http://localhost:8080 > /dev/null'
+    expectedExitCode: 0
+    severity: 'error'
+    failureMessage: 'Firestore emulator is not accessible'
+    remediationSteps:
+      - 'Check Firestore emulator port in firebase.json (default: 8080)'
+      - 'Verify Java is installed and accessible'
+      - 'Check for port conflicts: lsof -i :8080'
+      - 'Review emulator logs for errors'
+
+  - id: 'auth-emulator-ready'
+    name: 'Auth Emulator Ready'
+    description: 'Verify Auth emulator is accepting connections'
+    command: 'curl -s http://localhost:9099 > /dev/null'
+    expectedExitCode: 0
+    severity: 'warning'
+    failureMessage: 'Auth emulator is not accessible'
+    remediationSteps:
+      - 'Check Auth emulator port in firebase.json (default: 9099)'
+      - 'Verify emulators are started with auth enabled'
+      - 'Check for port conflicts: lsof -i :9099'
+
+  - id: 'tests-passing'
+    name: 'Tests Pass Against Emulators'
+    description: 'Verify all tests pass against local emulators'
+    command: 'npm test'
+    expectedExitCode: 0
+    severity: 'critical'
+    failureMessage: 'Tests are failing against emulators'
+    remediationSteps:
+      - 'Review test failures: npm test'
+      - 'Check emulator logs for errors'
+      - 'Verify security rules are correct'
+      - 'Ensure test data is properly seeded'
+      - 'Check that app is configured to use emulators'
+
+healthChecks:
+  - name: 'Emulator UI'
+    endpoint: 'http://localhost:4000'
+    interval: 60000
+    timeout: 5000
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+
+  - name: 'Firestore Emulator'
+    endpoint: 'http://localhost:8080'
+    interval: 60000
+    timeout: 5000
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+
+  - name: 'Auth Emulator'
+    endpoint: 'http://localhost:9099'
+    interval: 60000
+    timeout: 5000
+    healthyThreshold: 1
+    unhealthyThreshold: 3
+
+environmentOverrides:
+  - environment: 'development'
+    overrides:
+      deploymentPhases:
+        - order: 4
+          name: 'Start Emulators (Dev Mode)'
+          commands:
+            - description: 'Start emulators with seed data'
+              command: 'firebase emulators:start --project=demo-project --import=./emulator-data'
+
+  - environment: 'ci'
+    overrides:
+      deploymentPhases:
+        - order: 4
+          name: 'Start Emulators (CI Mode)'
+          commands:
+            - description: 'Start emulators in non-interactive mode'
+              command: 'firebase emulators:exec --project=demo-project "npm test"'
+
+metadata:
+  source: 'Firebase Official Documentation'
+  lastUpdated: '2025-01-23'
+  maintainer: 'Google Firebase Team'
+  tags:
+    - 'firebase'
+    - 'emulators'
+    - 'local-testing'
+    - 'firestore'
+    - 'firebase-auth'
+    - 'cloud-functions'
+    - 'baas'
+  contributors:
+    - name: 'Firebase Community'
+      github: 'firebase'
+  changeLog:
+    - version: '1.0'
+      date: '2025-01-23'
+      changes:
+        - 'Initial Firebase Emulators pattern definition'
+        - 'Added emulators codelab as authoritative source'
+        - 'Included comprehensive emulator validation checks'
+        - 'Added test-before-deploy workflow'
+
+detectionHints:
+  requiredFiles:
+    - 'firebase.json'
+    - '.firebaserc'
+  optionalFiles:
+    - 'firestore.rules'
+    - 'firestore.indexes.json'
+    - 'functions/'
+    - 'storage.rules'
+  confidence:
+    firebase.json: 0.95
+    .firebaserc: 0.90
+    firestore.rules: 0.85
+    functions/: 0.80
+
+troubleshooting:
+  - issue: 'Emulators fail to start'
+    symptoms:
+      - 'Error: Could not start emulator'
+      - 'Port already in use'
+    solutions:
+      - 'Check Java is installed: java -version'
+      - 'Kill processes on conflicting ports: lsof -ti:8080 | xargs kill -9'
+      - 'Update Firebase CLI: npm install -g firebase-tools@latest'
+      - 'Try different ports in firebase.json'
+
+  - issue: 'Tests fail against emulators'
+    symptoms:
+      - 'Connection refused errors'
+      - 'Permission denied errors'
+    solutions:
+      - 'Verify emulators are running: curl http://localhost:4000'
+      - 'Check security rules in firestore.rules'
+      - 'Ensure app is configured to use emulator ports'
+      - 'Review emulator logs for detailed errors'
+
+  - issue: 'Cannot deploy to production'
+    symptoms:
+      - 'Deployment fails with authentication errors'
+      - 'Project not found errors'
+    solutions:
+      - 'Login to Firebase: firebase login'
+      - 'Set correct project: firebase use <project-id>'
+      - 'Verify project permissions: firebase projects:list'
+      - 'Check .firebaserc has correct project ID'
+
+bestPractices:
+  - 'Always test with emulators before deploying to production'
+  - 'Use --project=demo-project to avoid accidental production writes'
+  - 'Export emulator data for test fixtures: firebase emulators:export ./emulator-data'
+  - 'Write comprehensive security rules tests'
+  - 'Use CI/CD with firebase emulators:exec for automated testing'
+  - 'Keep emulator ports documented and consistent across team'
+  - 'Seed emulators with realistic test data'
+  - 'Never commit production credentials to version control'
