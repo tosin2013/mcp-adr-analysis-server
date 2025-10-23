@@ -142,8 +142,8 @@ jobs:
           echo "### URL Validation" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          # Extract all URLs from pattern files
-          urls=$(grep -h "url:" patterns/**/*.yaml | sed 's/.*url: *"\(.*\)".*/\1/' | sort -u)
+          # Extract all URLs from pattern files (handles both single and double quotes)
+          urls=$(grep -h "url:" patterns/**/*.yaml | sed "s/.*url: *['\"]\\(.*\\)['\"].*/\\1/" | sort -u)
 
           echo "**Found URLs:**" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
