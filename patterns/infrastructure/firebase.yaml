@@ -1,7 +1,10 @@
+---
 version: '1.0'
 id: 'firebase-v1'
 name: 'Firebase'
-description: "Google's mobile and web application development platform with serverless functions, real-time database, authentication, and hosting"
+description: >-
+  Google's mobile and web application development platform with serverless functions, real-time database,
+  authentication, and hosting
 
 composition:
   infrastructure: 'firebase'
