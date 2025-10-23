@@ -41,7 +41,7 @@ jobs:
 
       - name: Check for pattern file changes
         id: changed-patterns
-        uses: tj-actions/changed-files@v41
+        uses: tj-actions/changed-files@v47
         with:
           files: |
             patterns/**/*.yaml
