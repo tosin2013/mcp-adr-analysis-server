@@ -45,7 +45,10 @@ describe('deployment-guidance-tool', () => {
 
         const result = await generateDeploymentGuidance({});
 
-        expect(discoverAdrsInDirectory).toHaveBeenCalledWith('docs/adrs', true, process.cwd());
+        expect(discoverAdrsInDirectory).toHaveBeenCalledWith('docs/adrs', process.cwd(), {
+          includeContent: true,
+          includeTimeline: false,
+        });
         expect(result).toHaveProperty('content');
         expect(Array.isArray(result.content)).toBe(true);
         expect(result.content[0]).toHaveProperty('type', 'text');
@@ -82,11 +85,10 @@ describe('deployment-guidance-tool', () => {
           projectPath: '/custom/project',
         });
 
-        expect(discoverAdrsInDirectory).toHaveBeenCalledWith(
-          'custom/adrs',
-          true,
-          '/custom/project'
-        );
+        expect(discoverAdrsInDirectory).toHaveBeenCalledWith('custom/adrs', '/custom/project', {
+          includeContent: true,
+          includeTimeline: false,
+        });
         expect(result.content[0].text).toContain('**ADR Directory**: custom/adrs');
         expect(result.content[0].text).toContain('Database Selection');
       });
