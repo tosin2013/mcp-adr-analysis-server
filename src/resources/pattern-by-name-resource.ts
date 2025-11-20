@@ -64,7 +64,10 @@ async function findReferencingAdrs(
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
     const path = await import('path');
     const adrDirectory = path.resolve(process.cwd(), process.env['ADR_DIRECTORY'] || 'docs/adrs');
-    const result = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
+    const result = await discoverAdrsInDirectory(adrDirectory, process.cwd(), {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     // Find ADRs that mention this pattern
     for (const adr of result.adrs) {

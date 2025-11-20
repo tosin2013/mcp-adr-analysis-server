@@ -76,7 +76,10 @@ describe('deployment-analysis', () => {
 
       const result = await identifyDeploymentTasks('docs/adrs');
 
-      expect(discoverAdrsInDirectory).toHaveBeenCalledWith('docs/adrs', true, process.cwd());
+      expect(discoverAdrsInDirectory).toHaveBeenCalledWith('docs/adrs', process.cwd(), {
+        includeContent: true,
+        includeTimeline: false,
+      });
       expect(result).toHaveProperty('identificationPrompt');
       expect(result).toHaveProperty('instructions');
       expect(result).toHaveProperty('actualData');
@@ -215,7 +218,10 @@ describe('deployment-analysis', () => {
 
       await identifyDeploymentTasks();
 
-      expect(discoverAdrsInDirectory).toHaveBeenCalledWith('docs/adrs', true, process.cwd());
+      expect(discoverAdrsInDirectory).toHaveBeenCalledWith('docs/adrs', process.cwd(), {
+        includeContent: true,
+        includeTimeline: false,
+      });
     });
 
     it('should throw McpAdrError on ADR discovery failure', async () => {

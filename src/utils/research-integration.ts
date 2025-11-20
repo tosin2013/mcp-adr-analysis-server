@@ -385,7 +385,10 @@ export async function evaluateResearchImpact(
     const { discoverAdrsInDirectory } = await import('./adr-discovery.js');
 
     // Actually read ADR files
-    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, process.cwd(), {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     const evaluationPrompt = `
 # Research Impact Evaluation
@@ -527,7 +530,10 @@ export async function generateAdrUpdateSuggestions(
     const { discoverAdrsInDirectory } = await import('./adr-discovery.js');
 
     // Actually read ADR files
-    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, process.cwd(), {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     // Try to find the target ADR by ID
     const targetAdr = discoveryResult.adrs.find(

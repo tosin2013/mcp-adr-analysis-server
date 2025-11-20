@@ -286,7 +286,10 @@ describe('research-integration', () => {
 
       const result = await evaluateResearchImpact(mockResearchTopics, 'docs/adrs');
 
-      expect(discoverAdrsInDirectory).toHaveBeenCalledWith('docs/adrs', true, process.cwd());
+      expect(discoverAdrsInDirectory).toHaveBeenCalledWith('docs/adrs', process.cwd(), {
+        includeContent: true,
+        includeTimeline: false,
+      });
       expect(result).toHaveProperty('evaluationPrompt');
       expect(result).toHaveProperty('instructions');
       expect(result).toHaveProperty('actualData');
