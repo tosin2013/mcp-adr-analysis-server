@@ -1159,11 +1159,10 @@ export async function discoverExistingAdrs(args: {
     // Use the new ADR discovery utility
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
 
-    const discoveryResult = await discoverAdrsInDirectory(
-      adrDirectory,
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, projectPath, {
       includeContent,
-      projectPath
-    );
+      includeTimeline: false,
+    });
 
     // Format the results for MCP response
     return {
