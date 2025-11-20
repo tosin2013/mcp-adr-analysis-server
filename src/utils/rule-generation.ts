@@ -74,7 +74,10 @@ export async function extractRulesFromAdrs(
     const { discoverAdrsInDirectory } = await import('./adr-discovery.js');
 
     // Actually read ADR files
-    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     const extractionPrompt = `
 # Architectural Rule Extraction

@@ -45,7 +45,10 @@ export async function generateArchitecturalKnowledgeGraph(
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
     const pathModule = await import('path');
     const adrDirectory = pathModule.resolve(projectPath, process.env['ADR_DIRECTORY'] || 'docs/adrs');
-    const adrDiscovery = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
+    const adrDiscovery = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     // Build comprehensive knowledge graph with actual data
     const knowledgeGraphData = {
@@ -148,7 +151,10 @@ export async function generateAnalysisReport(
 
     const projectAnalysis = await analyzeProjectStructure(projectPath);
     const adrDirectory = pathModule.resolve(projectPath, process.env['ADR_DIRECTORY'] || 'docs/adrs');
-    const adrDiscovery = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
+    const adrDiscovery = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     // Build analysis report with actual data
     const reportData = {
@@ -277,7 +283,10 @@ export async function generateAdrList(
       : pathModule.resolve(basePath, adrDirectory);
 
     // Discover ADRs
-    const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, basePath);
+    const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, basePath, {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     // Calculate status breakdown
     const statusBreakdown = {

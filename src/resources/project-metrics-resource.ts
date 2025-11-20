@@ -277,7 +277,10 @@ async function getArchitectureMetrics(): Promise<{
   let pendingDecisions = 0;
 
   try {
-    const result = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
+    const result = await discoverAdrsInDirectory(adrDirectory, process.cwd(), {
+      includeContent: true,
+      includeTimeline: false,
+    });
     adrCount = result.adrs.length;
     implementedDecisions = result.adrs.filter(a => a.status === 'accepted').length;
     pendingDecisions = result.adrs.filter(a => a.status === 'proposed').length;

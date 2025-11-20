@@ -49,7 +49,10 @@ export async function identifyDeploymentTasks(
     const { discoverAdrsInDirectory } = await import('./adr-discovery.js');
 
     // Actually read ADR files
-    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, process.cwd());
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, process.cwd(), {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     // Read TODO file if provided
     let todoContent = '';

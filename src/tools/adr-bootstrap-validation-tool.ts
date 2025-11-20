@@ -142,7 +142,10 @@ Then merge the base repository into your project and customize for your needs.
 
     // Discover ADRs in the target project
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
-    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     // Smart Code Linking - Find related implementation files
     let relatedCodeAnalysis = '';
