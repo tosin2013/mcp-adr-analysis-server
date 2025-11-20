@@ -216,7 +216,10 @@ export class DynamicDeploymentIntelligence {
   private async analyzeAdrDeploymentContext(): Promise<any> {
     try {
       const { discoverAdrsInDirectory } = await import('./adr-discovery.js');
-      const adrs = await discoverAdrsInDirectory(this.adrDirectory, true, this.projectPath);
+      const adrs = await discoverAdrsInDirectory(this.adrDirectory, this.projectPath, {
+        includeContent: true,
+        includeTimeline: false,
+      });
 
       // Extract deployment-related information from ADRs
       const deploymentContext = {

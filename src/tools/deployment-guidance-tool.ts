@@ -39,7 +39,10 @@ export async function generateDeploymentGuidance(args: {
   try {
     // Use existing ADR discovery
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
-    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     if (discoveryResult.adrs.length === 0) {
       return {
@@ -193,6 +196,50 @@ Create step-by-step deployment instructions:
 4. **Application Deployment**: Build, deploy, configure
 5. **Service Configuration**: Web server, load balancer, SSL
 6. **Verification**: Health checks, smoke tests, monitoring
+
+**IMPORTANT**: Include visual diagrams in your deployment guidance using mermaid syntax:
+
+#### Required Diagrams:
+
+1. **Deployment Sequence Diagram** - Show the flow from ADRs → Scripts → Environment
+\`\`\`mermaid
+sequenceDiagram
+    participant User as Developer
+    participant Tool as Deployment Tool
+    participant ADR as ADR Documents
+    participant Script as Deploy Scripts
+    participant Env as ${environment.charAt(0).toUpperCase() + environment.slice(1)} Environment
+
+    User->>Tool: Generate deployment guidance
+    Tool->>ADR: Read architectural decisions
+    ADR-->>Tool: Technology stack & configs
+    Tool->>Script: Generate deploy scripts
+    Script->>Env: Deploy components
+    Env-->>Script: Deployment status
+    Script-->>User: Success & validation steps
+\`\`\`
+
+2. **Deployment Workflow Diagram** - Show the phase-by-phase deployment process
+\`\`\`mermaid
+flowchart TD
+    Start([Start Deployment]) --> Detect[Detect Platform from ADRs]
+    Detect --> LoadADR[Read Technology Decisions]
+    LoadADR --> GenScripts[Generate Deploy Scripts]
+    GenScripts --> Phase1[Prerequisites Validation]
+    Phase1 --> Phase2[Infrastructure Setup]
+    Phase2 --> Phase3[Database Deployment]
+    Phase3 --> Phase4[Application Deployment]
+    Phase4 --> Validate{Validation<br/>Passed?}
+    Validate -->|No| Fix[Auto-fix Issues]
+    Fix --> Phase4
+    Validate -->|Yes| Success([✅ Deployment Success])
+
+    style Start fill:#e1f5ff
+    style Success fill:#d4edda
+    style Fix fill:#f8d7da
+\`\`\`
+
+Include these diagrams in the appropriate sections of your deployment guidance.
 
 ${
   includeScripts
