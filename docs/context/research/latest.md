@@ -1,6 +1,6 @@
 # Tool Context: perform_research
 
-> **Generated**: 2025-11-20T20:09:14.779Z
+> **Generated**: 2025-11-20T20:14:30.751Z
 > **Tool Version**: 2.0.0
 > **Project**: mcp-adr-analysis-server
 
@@ -30,7 +30,7 @@ Research: "Test" - 80% confidence. Sources: 📁 Project Files
     {
       "type": "project_files",
       "confidence": 0.8,
-      "timestamp": "2025-11-20T20:09:14.778Z",
+      "timestamp": "2025-11-20T20:14:30.750Z",
       "dataType": "files, relevance"
     }
   ],
@@ -102,7 +102,7 @@ continue the work from the previous session"
           "relevance": {}
         },
         "confidence": 0.8,
-        "timestamp": "2025-11-20T20:09:14.778Z"
+        "timestamp": "2025-11-20T20:14:30.750Z"
       }
     ],
     "needsWebSearch": false,
