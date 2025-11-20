@@ -140,11 +140,10 @@ export class MemoryLoadingTool {
 
       // Discover ADRs in the configured directory
       const discoveryFn = this.adrDiscoveryFn || discoverAdrsInDirectory;
-      const adrDiscovery = await discoveryFn(
-        this.config.adrDirectory,
-        true, // Include content for transformation
-        this.config.projectPath
-      );
+      const adrDiscovery = await discoveryFn(this.config.adrDirectory, this.config.projectPath, {
+        includeContent: true, // Include content for transformation
+        includeTimeline: false,
+      });
 
       if (adrDiscovery.totalAdrs === 0) {
         return {

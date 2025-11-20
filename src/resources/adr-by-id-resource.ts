@@ -214,7 +214,10 @@ export async function generateAdrByIdResource(
   const adrDirectory = pathModule.resolve(projectPath, process.env['ADR_DIRECTORY'] || 'docs/adrs');
 
   // Discover all ADRs
-  const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
+  const discoveryResult = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+    includeContent: true,
+    includeTimeline: false,
+  });
 
   // Find matching ADR (by ID in filename or title)
   const adr = discoveryResult.adrs.find(

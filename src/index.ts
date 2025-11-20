@@ -881,6 +881,52 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'analyze_adr_timeline',
+            description:
+              'Analyze ADR timeline with smart time tracking, adaptive thresholds, and actionable recommendations. Auto-detects project context (startup/growth/mature) and generates prioritized work queue based on staleness, implementation lag, and technical debt.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to the project directory',
+                  default: '.',
+                },
+                adrDirectory: {
+                  type: 'string',
+                  description: 'Directory containing ADR files',
+                  default: 'docs/adrs',
+                },
+                generateActions: {
+                  type: 'boolean',
+                  description: 'Generate actionable work items with priority and effort estimates',
+                  default: true,
+                },
+                thresholdProfile: {
+                  type: 'string',
+                  enum: ['startup', 'growth', 'mature', 'maintenance', 'feature_development'],
+                  description:
+                    'Threshold profile for action generation (auto-detected if not specified)',
+                },
+                autoDetectContext: {
+                  type: 'boolean',
+                  description: 'Auto-detect project phase from git activity and ADR patterns',
+                  default: true,
+                },
+                includeContent: {
+                  type: 'boolean',
+                  description: 'Include ADR content for better analysis',
+                  default: true,
+                },
+                forceExtract: {
+                  type: 'boolean',
+                  description: 'Force timeline extraction even if ADRs have dates',
+                  default: false,
+                },
+              },
+            },
+          },
+          {
             name: 'review_existing_adrs',
             description:
               'Review existing ADRs against actual code implementation with cloud/DevOps expertise. TIP: After review, call get_server_context to update @.mcp-server-context.md with findings.',
@@ -1801,12 +1847,16 @@ export class McpAdrAnalysisServer {
             inputSchema: {
               type: 'object',
               properties: {
-                path: {
+                filePath: {
                   type: 'string',
                   description: 'Path to the file to read',
                 },
+                path: {
+                  type: 'string',
+                  description: 'Path to the file to read (alias for filePath)',
+                },
               },
-              required: ['path'],
+              required: [],
             },
           },
           {
@@ -3194,6 +3244,9 @@ export class McpAdrAnalysisServer {
           case 'discover_existing_adrs':
             response = await this.discoverExistingAdrs(safeArgs, context);
             break;
+          case 'analyze_adr_timeline':
+            response = await this.analyzeAdrTimeline(safeArgs);
+            break;
           case 'review_existing_adrs':
             response = await this.reviewExistingAdrs(safeArgs);
             break;
@@ -3261,9 +3314,14 @@ export class McpAdrAnalysisServer {
           case 'read_directory':
             response = await this.readDirectory(safeArgs);
             break;
-          case 'read_file':
-            response = await this.readFile(safeArgs as unknown as ReadFileArgs);
+          case 'read_file': {
+            // Map 'path' parameter to 'filePath' for compatibility
+            const readFileArgs = safeArgs as { path?: string; filePath?: string };
+            response = await this.readFile({
+              filePath: readFileArgs.filePath || readFileArgs.path || '',
+            } as ReadFileArgs);
             break;
+          }
           case 'write_file':
             response = await this.writeFile(safeArgs as unknown as WriteFileArgs);
             break;
@@ -4039,11 +4097,10 @@ This guidance is tailored to your specific context and goals for maximum effecti
         const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
         const absoluteAdrPath = getAdrDirectoryPath(this.config);
 
-        const discoveryResult = await discoverAdrsInDirectory(
-          absoluteAdrPath,
-          true,
-          this.config.projectPath
-        );
+        const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, this.config.projectPath, {
+          includeContent: true,
+          includeTimeline: false,
+        });
 
         // Filter ADRs to only those specified for implementation
         const targetAdrs = discoveryResult.adrs.filter(adr =>
@@ -5436,11 +5493,10 @@ The enhanced process maintains full traceability from PRD requirements to genera
       let discoveryResult: unknown = null;
       if (validationType === 'full' || validationType === 'adr-only') {
         const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
-        discoveryResult = await discoverAdrsInDirectory(
-          absoluteAdrPath as string,
-          true,
-          projectPath as string
-        );
+        discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath as string, projectPath as string, {
+          includeContent: true,
+          includeTimeline: false,
+        });
       }
       const analysis = await this.performLocalAdrProgressAnalysis({
         todoContent,
@@ -6809,6 +6865,98 @@ Please provide:
         `❌ ADR discovery failed: ${error instanceof Error ? error.message : String(error)}`
       );
       throw error;
+    }
+  }
+
+  private async analyzeAdrTimeline(args: Record<string, unknown>): Promise<CallToolResult> {
+    try {
+      const projectPath = (args['projectPath'] as string) || this.config.projectPath;
+      const adrDirectory = (args['adrDirectory'] as string) || 'docs/adrs';
+      const generateActions = (args['generateActions'] as boolean) ?? true;
+      const thresholdProfile = args['thresholdProfile'] as string | undefined;
+      const autoDetectContext = (args['autoDetectContext'] as boolean) ?? true;
+      const includeContent = (args['includeContent'] as boolean) ?? true;
+      const forceExtract = (args['forceExtract'] as boolean) ?? false;
+
+      const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
+      const { formatActionReport } = await import('./utils/adr-action-analyzer.js');
+
+      // Discover ADRs with timeline analysis
+      const result = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+        includeContent,
+        includeTimeline: true,
+        timelineOptions: {
+          forceExtract,
+          useCache: true,
+          cacheTTL: 3600,
+        },
+        generateActions,
+        ...(thresholdProfile ? { thresholdProfile } : {}),
+        autoDetectContext,
+      });
+
+      // Format response
+      let responseText = `# ADR Timeline Analysis\n\n`;
+      responseText += `**Project:** ${projectPath}\n`;
+      responseText += `**ADR Directory:** ${adrDirectory}\n`;
+      responseText += `**Total ADRs:** ${result.totalAdrs}\n\n`;
+
+      // Add timeline summary
+      if (result.adrs.some((adr) => adr.timeline)) {
+        const withTimeline = result.adrs.filter((adr) => adr.timeline).length;
+        responseText += `## Timeline Data\n\n`;
+        responseText += `- **ADRs with Timeline:** ${withTimeline}/${result.totalAdrs}\n`;
+
+        const ages = result.adrs
+          .filter((adr) => adr.timeline)
+          .map((adr) => adr.timeline!.age_days);
+        if (ages.length > 0) {
+          const avgAge = Math.floor(ages.reduce((a, b) => a + b, 0) / ages.length);
+          const oldestAge = Math.max(...ages);
+          responseText += `- **Average ADR Age:** ${avgAge} days\n`;
+          responseText += `- **Oldest ADR:** ${oldestAge} days\n`;
+        }
+        responseText += `\n`;
+      }
+
+      // Add action queue report
+      if (result.actionQueue) {
+        responseText += `---\n\n`;
+        responseText += formatActionReport(result.actionQueue, {
+          projectPath,
+          thresholdProfile: thresholdProfile || 'auto-detected',
+        });
+      } else if (generateActions) {
+        responseText += `## No Actions Required\n\n`;
+        responseText += `All ADRs are up to date and within acceptable thresholds.\n`;
+      }
+
+      // Add summary stats
+      if (result.summary.byStatus) {
+        responseText += `\n---\n\n## ADR Status Distribution\n\n`;
+        Object.entries(result.summary.byStatus).forEach(([status, count]) => {
+          responseText += `- **${status}:** ${count}\n`;
+        });
+      }
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: responseText,
+          },
+        ],
+      };
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# ADR Timeline Analysis Failed\n\n**Error:** ${error instanceof Error ? error.message : String(error)}\n\nPlease check that the ADR directory exists and contains valid ADR files.`,
+          },
+        ],
+        isError: true,
+      };
     }
   }
 

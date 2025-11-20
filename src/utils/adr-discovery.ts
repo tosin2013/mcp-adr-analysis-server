@@ -5,6 +5,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import { BasicTimeline, TimelineExtractionOptions, AdrWorkQueue } from './adr-timeline-types.js';
 
 /**
  * Represents a discovered Architectural Decision Record
@@ -37,6 +38,26 @@ export interface DiscoveredAdr {
     /** Tags for categorization */
     tags?: string[];
   };
+  /** Timeline information (creation, updates, staleness) */
+  timeline?: BasicTimeline;
+}
+
+/**
+ * Options for ADR discovery
+ */
+export interface AdrDiscoveryOptions {
+  /** Include full ADR content */
+  includeContent?: boolean;
+  /** Include timeline analysis */
+  includeTimeline?: boolean;
+  /** Timeline extraction options */
+  timelineOptions?: TimelineExtractionOptions;
+  /** Generate action items */
+  generateActions?: boolean;
+  /** Threshold profile for action generation */
+  thresholdProfile?: string;
+  /** Auto-detect project context */
+  autoDetectContext?: boolean;
 }
 
 /**
@@ -55,25 +76,39 @@ export interface AdrDiscoveryResult {
     byStatus: Record<string, number>;
     /** Count of ADRs by category */
     byCategory: Record<string, number>;
+    /** Total actions required (if generateActions=true) */
+    totalActionsRequired?: number;
+    /** Critical actions (if generateActions=true) */
+    criticalActions?: number;
   };
   /** Recommendations for improving ADR management */
   recommendations: string[];
+  /** Action queue (if generateActions=true) */
+  actionQueue?: AdrWorkQueue;
 }
 
 /**
  * Discover ADRs in a directory using file system operations
  *
  * @param adrDirectory - Relative path to ADR directory
- * @param includeContent - Whether to include full content of ADR files
  * @param projectPath - Root path of the project
+ * @param options - Discovery options
  * @returns Promise resolving to ADR discovery results
  * @throws McpAdrError if directory access fails or parsing errors occur
  */
 export async function discoverAdrsInDirectory(
   adrDirectory: string,
-  includeContent: boolean = false,
-  projectPath: string
+  projectPath: string,
+  options: AdrDiscoveryOptions = {}
 ): Promise<AdrDiscoveryResult> {
+  const {
+    includeContent = false,
+    includeTimeline = true, // Default to true for smart extraction
+    timelineOptions = {},
+    generateActions = false,
+    thresholdProfile,
+    autoDetectContext = true,
+  } = options;
   try {
     const fs = await import('fs/promises');
     const path = await import('path');
@@ -168,6 +203,18 @@ export async function discoverAdrsInDirectory(
           if (includeContent) {
             adr.content = content;
           }
+
+          // Extract timeline if requested
+          if (includeTimeline) {
+            try {
+              const { extractBasicTimeline } = await import('./adr-timeline-extractor.js');
+              adr.timeline = await extractBasicTimeline(filePath, content, timelineOptions);
+            } catch (error) {
+              console.warn(`[Timeline] Failed to extract timeline for ${filename}:`, error);
+              // Continue without timeline data
+            }
+          }
+
           discoveredAdrs.push(adr);
         }
       } catch (error) {
@@ -181,12 +228,48 @@ export async function discoverAdrsInDirectory(
     // Generate recommendations
     const recommendations = generateRecommendations(discoveredAdrs, adrDirectory);
 
+    // Generate action items if requested
+    let actionQueue: AdrWorkQueue | undefined;
+    if (generateActions && discoveredAdrs.some((adr) => adr.timeline)) {
+      try {
+        const { detectProjectContext, selectThresholdProfile } = await import(
+          './adr-context-detector.js'
+        );
+        const { generateActionItems } = await import('./adr-action-analyzer.js');
+
+        // Detect project context or use manual profile
+        let selectedProfile;
+        if (autoDetectContext && !thresholdProfile) {
+          const context = await detectProjectContext(projectPath, discoveredAdrs);
+          selectedProfile = selectThresholdProfile(context);
+        } else {
+          const { THRESHOLD_PROFILES } = await import('./adr-context-detector.js');
+          selectedProfile =
+            THRESHOLD_PROFILES[thresholdProfile || 'mature'] || THRESHOLD_PROFILES['mature'];
+        }
+
+        // Generate action items
+        actionQueue = await generateActionItems(discoveredAdrs, selectedProfile!, {
+          useAdrTypeModifiers: true,
+          projectPath,
+        });
+
+        // Add action summary to summary object
+        (summary as any).totalActionsRequired = actionQueue.summary.totalActions;
+        (summary as any).criticalActions = actionQueue.summary.criticalCount;
+      } catch (error) {
+        console.warn('[Actions] Failed to generate action items:', error);
+        // Continue without action items
+      }
+    }
+
     return {
       directory: adrDirectory,
       totalAdrs: discoveredAdrs.length,
       adrs: discoveredAdrs,
       summary,
       recommendations,
+      ...(actionQueue ? { actionQueue } : {}),
     };
   } catch (error) {
     throw new McpAdrError(

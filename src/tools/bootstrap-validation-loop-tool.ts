@@ -1360,7 +1360,10 @@ fi
   ): Promise<AdrUpdateProposal[]> {
     const proposals: AdrUpdateProposal[] = [];
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
-    const adrs = await discoverAdrsInDirectory(this.adrDirectory, true, this.projectPath);
+    const adrs = await discoverAdrsInDirectory(this.adrDirectory, this.projectPath, {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     for (const adr of adrs.adrs) {
       // Find learnings related to this ADR
@@ -1442,7 +1445,10 @@ fi
 
       // Extract file references from ADRs
       const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
-      const adrs = await discoverAdrsInDirectory(this.adrDirectory, true, this.projectPath);
+      const adrs = await discoverAdrsInDirectory(this.adrDirectory, this.projectPath, {
+        includeContent: true,
+        includeTimeline: false,
+      });
 
       const fileReferences = await this.extractFileReferencesFromAdrs(adrs.adrs);
 
