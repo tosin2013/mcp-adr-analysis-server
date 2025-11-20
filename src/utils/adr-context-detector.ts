@@ -141,10 +141,10 @@ async function analyzeGitActivity(
     const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
     // Get commit count
-    const { stdout: commits } = await execAsync(
-      `git log --since="${since}" --oneline | wc -l`,
-      { cwd: projectPath, timeout: 5000 }
-    );
+    const { stdout: commits } = await execAsync(`git log --since="${since}" --oneline | wc -l`, {
+      cwd: projectPath,
+      timeout: 5000,
+    });
 
     const totalCommits = parseInt(commits.trim()) || 0;
     const weeks = days / 7;
@@ -198,8 +198,8 @@ function analyzeAdrPatterns(adrs: DiscoveredAdr[]): {
   // Calculate ADR creation rate
   const now = Date.now();
   const adrAges = adrs
-    .filter((adr) => adr.timeline?.created_at)
-    .map((adr) => {
+    .filter(adr => adr.timeline?.created_at)
+    .map(adr => {
       const created = new Date(adr.timeline!.created_at).getTime();
       return (now - created) / (1000 * 60 * 60 * 24); // days
     });
@@ -278,7 +278,10 @@ async function detectDeploymentCadence(
       { cwd: projectPath, timeout: 5000 }
     );
 
-    const tags = stdout.trim().split('\n').filter((line) => line.includes('tag:'));
+    const tags = stdout
+      .trim()
+      .split('\n')
+      .filter(line => line.includes('tag:'));
 
     if (tags.length === 0) return 'monthly'; // Default
 
@@ -289,7 +292,7 @@ async function detectDeploymentCadence(
     if (tagCount > 6) return 'biweekly'; // ~1 tag every 2 weeks
     if (tagCount > 3) return 'monthly'; // ~1 tag per month
     return 'quarterly';
-  } catch (error) {
+  } catch {
     return 'monthly'; // Default fallback
   }
 }
