@@ -8,10 +8,7 @@
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import { stat } from 'fs/promises';
-import type {
-  BasicTimeline,
-  TimelineExtractionOptions,
-} from './adr-timeline-types.js';
+import type { BasicTimeline, TimelineExtractionOptions } from './adr-timeline-types.js';
 
 const execAsync = promisify(exec);
 
@@ -187,8 +184,7 @@ async function shouldExtractTimeline(
   }
 
   // CONDITION 3: Has date + file modified recently → RE-EXTRACT
-  const daysSinceModification =
-    (Date.now() - fileModifiedAt.getTime()) / (1000 * 60 * 60 * 24);
+  const daysSinceModification = (Date.now() - fileModifiedAt.getTime()) / (1000 * 60 * 60 * 24);
 
   if (daysSinceModification < 7) {
     // Modified within last week
@@ -260,9 +256,7 @@ function createTimelineFromContent(
 /**
  * Try to extract timeline from git history
  */
-async function tryGitExtraction(
-  adrPath: string
-): Promise<Partial<BasicTimeline> | null> {
+async function tryGitExtraction(adrPath: string): Promise<Partial<BasicTimeline> | null> {
   try {
     // Creation date (first commit)
     const { stdout: created } = await execAsync(
@@ -303,7 +297,7 @@ async function fallbackToFilesystem(adrPath: string): Promise<Partial<BasicTimel
       updated_at: stats.mtime.toISOString(),
       extraction_method: 'filesystem',
     };
-  } catch (error) {
+  } catch {
     // Last resort: use current time
     const now = new Date().toISOString();
     return {
@@ -362,17 +356,17 @@ export function extractKeywordsFromAdr(title: string, decision?: string): string
     /\b(graphql|rest|grpc|websocket|oauth|jwt|saml)\b/gi,
   ];
 
-  techPatterns.forEach((pattern) => {
+  techPatterns.forEach(pattern => {
     const matches = text.match(pattern);
     if (matches) {
-      keywords.push(...matches.map((m) => m.toLowerCase()));
+      keywords.push(...matches.map(m => m.toLowerCase()));
     }
   });
 
   // Extract quoted terms (likely important concepts)
   const quoted = text.match(/"([^"]+)"/g);
   if (quoted) {
-    keywords.push(...quoted.map((q) => q.replace(/"/g, '').toLowerCase()));
+    keywords.push(...quoted.map(q => q.replace(/"/g, '').toLowerCase()));
   }
 
   // Remove duplicates
