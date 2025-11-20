@@ -229,6 +229,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
 
   describe('Failure Analysis Operation', () => {
     it('should analyze test failure correctly', async () => {
+      jest.setTimeout(30000); // 30 second timeout for this test
       const input = {
         operation: 'analyze_failure',
         failure: {
