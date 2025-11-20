@@ -62,6 +62,11 @@ Thumbs.db
 coverage/
 .nyc_output/
 
+# Test results and generated research files
+test-results/
+docs/context/research/
+custom/research/
+
 # Temporary files
 tmp/
 temp/
