@@ -71,7 +71,10 @@ export async function reviewExistingAdrs(args: {
   try {
     // Step 1: Discover existing ADRs
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
-    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     if (discoveryResult.totalAdrs === 0) {
       return {

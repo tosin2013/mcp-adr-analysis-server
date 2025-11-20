@@ -62,7 +62,10 @@ export async function initializeAdrKnowledgeBase(
 
   try {
     // Discover all existing ADRs
-    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     logger.info(`Discovered ${discoveryResult.totalAdrs} ADRs for knowledge base initialization`);
 

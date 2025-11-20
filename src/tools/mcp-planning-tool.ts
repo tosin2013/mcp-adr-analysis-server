@@ -376,11 +376,10 @@ async function createProject(args: z.infer<typeof CreateProjectSchema>): Promise
   if (importFromAdrs) {
     try {
       const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
-      const discoveryResult = await discoverAdrsInDirectory(
-        join(projectPath, 'docs/adrs'),
-        true,
-        projectPath
-      );
+      const discoveryResult = await discoverAdrsInDirectory(join(projectPath, 'docs/adrs'), projectPath, {
+        includeContent: true,
+        includeTimeline: false,
+      });
 
       // Link relevant ADRs to phases
       for (const phase of projectPhases) {

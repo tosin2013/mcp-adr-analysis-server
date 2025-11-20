@@ -33,6 +33,7 @@ import { EnhancedLogger } from '../utils/enhanced-logging.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 import { findFiles, findRelatedCode } from '../utils/file-system.js';
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import { MermaidDiagrams } from '../utils/mermaid-diagrams.js';
 
 // Core schemas
 const DeploymentReadinessSchema = z.object({
@@ -1555,7 +1556,10 @@ async function performFullAudit(
       // Discover ADRs in the project
       const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
       const adrDirectory = 'docs/adrs';
-      const discoveryResult = await discoverAdrsInDirectory(adrDirectory, true, projectPath);
+      const discoveryResult = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+        includeContent: true,
+        includeTimeline: false,
+      });
 
       if (discoveryResult.adrs.length > 0) {
         // Combine all ADR content for Smart Code Linking analysis
@@ -2013,6 +2017,16 @@ function generateBlockedResponse(
 - **Tree-sitter Analysis**: ${args.enableTreeSitterAnalysis ? '✅ Enhanced' : '❌ Basic'}
 - **Fast File Discovery**: ✅ Enhanced with fast-glob
 - **Smart Code Linking**: ${args.requireAdrCompliance ? '✅ ADR Analysis Enabled' : '❌ Disabled'}
+
+## Deployment Readiness Validation Flow
+
+The following diagram shows the zero-tolerance validation process:
+
+${MermaidDiagrams.generateDeploymentReadinessFlow(args.blockOnFailingTests)}
+
+### Test Validation Pyramid
+
+${MermaidDiagrams.generateTestValidationPyramid()}
 
 ## 🧪 Test Validation Issues
 ${

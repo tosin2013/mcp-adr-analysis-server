@@ -402,7 +402,10 @@ export async function determineEnvironmentRequirements(
       : path.resolve(projectPath, adrDirectory);
 
     // Use actual ADR discovery
-    const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, true, projectPath);
+    const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, projectPath, {
+      includeContent: true,
+      includeTimeline: false,
+    });
 
     let adrAnalysis = '';
     if (discoveryResult.adrs.length > 0) {
