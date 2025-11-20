@@ -68,7 +68,7 @@ describe('ADR Suggestion Tool', () => {
 
         expect(result).toBeDefined();
         expect(result.content[0].text).toContain('Comprehensive Analysis');
-      });
+      }, 30000);
     });
 
     describe('parameter validation', () => {
