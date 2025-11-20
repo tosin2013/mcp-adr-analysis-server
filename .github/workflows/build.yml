@@ -86,7 +86,7 @@ jobs:
           tar -czf mcp-adr-analysis-server-${{ github.ref_name }}.tar.gz -C package .
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: build-artifacts
           path: |
@@ -96,7 +96,7 @@ jobs:
 
       - name: Upload distribution package
         if: startsWith(github.ref, 'refs/tags/')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: distribution-package
           path: mcp-adr-analysis-server-*.tar.gz
