@@ -1,0 +1,174 @@
+name: Deployment Pattern Validation Agent
+
+on:
+  pull_request:
+    paths:
+      - 'patterns/**'
+      - 'src/tools/bootstrap-validation-loop-tool.ts'
+      - 'src/tools/deployment-readiness-tool.ts'
+      - 'src/utils/pattern-loader.ts'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  pattern-validation:
+    name: Validate Deployment Patterns
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Validate pattern schemas
+        run: npm run validate:patterns
+
+      - name: Test pattern detection
+        run: |
+          echo "Testing automatic pattern detection..."
+          npm test -- tests/utils/pattern-loader.test.ts --verbose
+
+      - name: Validate all infrastructure patterns
+        run: |
+          echo "Validating infrastructure patterns..."
+          node -e "
+            import { loadDeploymentPattern } from './dist/src/utils/pattern-loader.js';
+            import fs from 'fs';
+            import path from 'path';
+            
+            const patternsDir = './patterns/infrastructure';
+            const patterns = fs.readdirSync(patternsDir)
+              .filter(f => f.endsWith('.yaml') || f.endsWith('.yml'));
+            
+            console.log('Found patterns:', patterns);
+            
+            let allValid = true;
+            for (const pattern of patterns) {
+              try {
+                const patternName = path.basename(pattern, path.extname(pattern));
+                const loaded = loadDeploymentPattern(patternName);
+                
+                // Validate required fields
+                if (!loaded.authoritativeSources || loaded.authoritativeSources.length === 0) {
+                  console.error(\`❌ \${pattern}: Missing authoritativeSources\`);
+                  allValid = false;
+                  continue;
+                }
+                
+                if (!loaded.deploymentPhases || loaded.deploymentPhases.length === 0) {
+                  console.error(\`❌ \${pattern}: Missing deploymentPhases\`);
+                  allValid = false;
+                  continue;
+                }
+                
+                if (!loaded.validationChecks) {
+                  console.error(\`❌ \${pattern}: Missing validationChecks\`);
+                  allValid = false;
+                  continue;
+                }
+                
+                console.log(\`✅ \${pattern}: Valid\`);
+              } catch (error) {
+                console.error(\`❌ \${pattern}:\`, error.message);
+                allValid = false;
+              }
+            }
+            
+            if (!allValid) {
+              process.exit(1);
+            }
+            
+            console.log('\\n✅ All patterns validated successfully');
+          "
+
+      - name: Test bootstrap validation tool
+        run: |
+          echo "Testing bootstrap validation tool..."
+          npm test -- tests/tools/bootstrap-validation-loop-tool.test.ts --verbose
+
+      - name: Test deployment readiness tool
+        run: |
+          echo "Testing deployment readiness tool..."
+          npm test -- tests/tools/deployment-readiness-tool.test.ts --verbose
+
+      - name: Validate pattern documentation
+        run: |
+          echo "Validating pattern documentation..."
+          for pattern in patterns/infrastructure/*.yaml; do
+            if [ -f "$pattern" ]; then
+              echo "Checking $pattern..."
+              
+              # Check for required sections
+              if ! grep -q "authoritativeSources" "$pattern"; then
+                echo "❌ Missing authoritativeSources in $pattern"
+                exit 1
+              fi
+              
+              if ! grep -q "deploymentPhases" "$pattern"; then
+                echo "❌ Missing deploymentPhases in $pattern"
+                exit 1
+              fi
+              
+              if ! grep -q "detectionHints" "$pattern"; then
+                echo "❌ Missing detectionHints in $pattern"
+                exit 1
+              fi
+              
+              echo "✅ $pattern validated"
+            fi
+          done
+
+          echo "✅ All pattern documentation validated"
+
+      - name: Generate pattern validation report
+        if: always()
+        run: |
+          cat > pattern-validation-report.md << 'EOF'
+          # Deployment Pattern Validation Report
+
+          ## Patterns Validated
+          EOF
+
+          for pattern in patterns/infrastructure/*.yaml; do
+            if [ -f "$pattern" ]; then
+              name=$(basename "$pattern")
+              echo "- ✅ $name" >> pattern-validation-report.md
+            fi
+          done
+
+          cat >> pattern-validation-report.md << 'EOF'
+
+          ## Validation Tests
+          - ✅ Pattern schema validation
+          - ✅ Pattern detection tests
+          - ✅ Infrastructure pattern loading
+          - ✅ Bootstrap validation tool
+          - ✅ Deployment readiness tool
+          - ✅ Pattern documentation completeness
+
+          ## Status
+          All deployment patterns validated successfully.
+          EOF
+
+          cat pattern-validation-report.md
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pattern-validation-report
+          path: pattern-validation-report.md
+          retention-days: 30

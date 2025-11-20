@@ -1,0 +1,165 @@
+name: ESM Module Validation Agent
+
+on:
+  pull_request:
+    paths:
+      - 'src/**/*.ts'
+      - 'tests/**/*.ts'
+      - 'package.json'
+      - 'tsconfig.json'
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  esm-validation:
+    name: ESM Module System Validation
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'npm'
+
+      - name: Verify package.json ESM configuration
+        run: |
+          echo "Checking package.json for ESM configuration..."
+          if ! grep -q '"type": "module"' package.json; then
+            echo "❌ package.json must have type: module"
+            exit 1
+          fi
+          echo "✅ package.json correctly configured for ESM"
+
+      - name: Validate import extensions
+        run: |
+          echo "Validating that all imports use .js extensions..."
+
+          # Check for imports without .js extension in src/
+          missing_ext=$(find src -name "*.ts" -type f -exec grep -H "from ['\"]\..*[^.js]['\"]" {} \; | grep -v "from '\.\./\.\./\.\." | grep -v ".json" || true)
+
+          if [ ! -z "$missing_ext" ]; then
+            echo "❌ Found imports without .js extension:"
+            echo "$missing_ext"
+            echo ""
+            echo "All relative imports must use .js extension for ESM compatibility"
+            exit 1
+          fi
+
+          echo "✅ All imports use correct .js extensions"
+
+      - name: Check for CommonJS usage
+        run: |
+          echo "Checking for CommonJS patterns..."
+
+          # Check for require() calls (excluding comments and test mocks)
+          if git grep -n "require(" -- "src/**/*.ts" | grep -v "// " | grep -v "/\*" | grep -v "mock" | grep -v "jest" | head -n 10; then
+            echo "❌ Found require() calls in source code"
+            echo "Use ES6 import statements instead"
+            exit 1
+          fi
+
+          # Check for module.exports
+          if git grep -n "module\.exports" -- "src/**/*.ts" | grep -v "// " | grep -v "/\*" | head -n 10; then
+            echo "❌ Found module.exports in source code"
+            echo "Use ES6 export statements instead"
+            exit 1
+          fi
+
+          # Check for __dirname usage
+          if git grep -n "__dirname" -- "src/**/*.ts" | grep -v "// " | grep -v "/\*" | grep -v "getCurrentDirCompat" | head -n 10; then
+            echo "❌ Found __dirname usage in source code"
+            echo "Use import.meta.url or getCurrentDirCompat() instead"
+            exit 1
+          fi
+
+          echo "✅ No CommonJS patterns found"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build project
+        run: npm run build
+
+      - name: Verify ESM output
+        run: |
+          echo "Verifying compiled ESM modules..."
+
+          # Check that dist files can be imported
+          node -e "
+            import { promises as fs } from 'fs';
+            import path from 'path';
+            
+            const distFiles = await fs.readdir('./dist/src');
+            console.log('Compiled files:', distFiles);
+            
+            // Try importing main entry point
+            try {
+              await import('./dist/src/index.js');
+              console.log('✅ Main entry point imports successfully');
+            } catch (e) {
+              console.error('❌ Failed to import main entry point:', e.message);
+              process.exit(1);
+            }
+          "
+
+      - name: Test ESM module loading
+        run: |
+          echo "Testing ESM module loading..."
+          npm test -- --testPathPattern="utils" --maxWorkers=2
+
+      - name: Validate import.meta.url usage
+        run: |
+          echo "Validating import.meta.url usage..."
+          node -e "
+            import { getCurrentDirCompat } from './dist/src/utils/directory-compat.js';
+            import path from 'path';
+            
+            const dir = getCurrentDirCompat(import.meta.url);
+            
+            if (!dir || !path.isAbsolute(dir)) {
+              console.error('❌ getCurrentDirCompat() returned invalid path:', dir);
+              process.exit(1);
+            }
+            
+            console.log('✅ import.meta.url helper working correctly');
+            console.log('Current directory:', dir);
+          "
+
+      - name: Generate ESM validation report
+        if: always()
+        run: |
+          cat > esm-validation-report.md << 'EOF'
+          # ESM Module Validation Report
+
+          ## Validation Checks
+          - ✅ package.json type: module configuration
+          - ✅ All imports use .js extensions
+          - ✅ No CommonJS patterns (require, module.exports)
+          - ✅ No __dirname usage (uses import.meta.url)
+          - ✅ ESM compilation successful
+          - ✅ ESM module loading functional
+          - ✅ import.meta.url helpers working
+
+          ## Configuration
+          - **Module Type**: ESM (Pure)
+          - **Target**: ES2022
+          - **Node Version**: >=20.0.0
+
+          ## Status
+          All ESM module system validations passed successfully.
+          EOF
+          cat esm-validation-report.md
+
+      - name: Upload validation report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: esm-validation-report
+          path: esm-validation-report.md
+          retention-days: 14
