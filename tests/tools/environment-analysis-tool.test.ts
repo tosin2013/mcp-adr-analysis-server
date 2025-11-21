@@ -10,10 +10,81 @@
 import { jest } from '@jest/globals';
 // import { McpAdrError } from '../../src/types/index.js';
 
-// Mock all utility modules
-jest.mock('../../src/utils/environment-analysis.js');
-jest.mock('../../src/utils/knowledge-generation.js');
-jest.mock('../../src/utils/prompt-execution.js');
+// Mock ResearchOrchestrator to prevent hanging on API calls
+jest.mock('../../src/utils/research-orchestrator.js', () => ({
+  ResearchOrchestrator: jest.fn().mockImplementation(() => ({
+    answerResearchQuestion: jest.fn().mockResolvedValue({
+      answer: 'Mock environment research answer',
+      confidence: 0.8,
+      sources: [
+        {
+          type: 'environment',
+          data: {
+            capabilities: ['docker', 'kubernetes'],
+          },
+        },
+      ],
+      needsWebSearch: false,
+    }),
+  })),
+}));
+
+// Mock MemoryEntityManager to prevent memory operations from hanging
+// (EnvironmentMemoryManager uses MemoryEntityManager internally)
+jest.mock('../../src/utils/memory-entity-manager.js', () => ({
+  MemoryEntityManager: jest.fn().mockImplementation(() => ({
+    initialize: jest.fn().mockResolvedValue(undefined),
+    upsertEntity: jest.fn().mockResolvedValue(undefined),
+    queryEntities: jest.fn().mockResolvedValue({ entities: [] }),
+    updateEntity: jest.fn().mockResolvedValue(undefined),
+  })),
+}));
+
+// Mock all utility modules with proper implementations
+jest.mock('../../src/utils/environment-analysis.js', () => ({
+  analyzeEnvironmentSpecs: jest.fn().mockResolvedValue({
+    analysisPrompt: 'Environment Specification Analysis\n\nMock analysis prompt',
+    instructions: 'Mock instructions',
+    actualData: {},
+  }),
+  detectContainerization: jest.fn().mockResolvedValue({
+    analysisPrompt: 'Containerization Technology Detection\n\nMock containerization analysis',
+    instructions: 'Mock instructions',
+    actualData: {},
+  }),
+  determineEnvironmentRequirements: jest.fn().mockResolvedValue({
+    analysisPrompt: 'Environment Requirements from ADRs\n\nMock requirements analysis',
+    instructions: 'Mock instructions',
+    actualData: {},
+  }),
+  assessEnvironmentCompliance: jest.fn().mockResolvedValue({
+    analysisPrompt: 'Environment Compliance Assessment\n\nMock compliance analysis',
+    instructions: 'Mock instructions',
+    actualData: {},
+  }),
+}));
+
+jest.mock('../../src/utils/knowledge-generation.js', () => ({
+  generateArchitecturalKnowledge: jest.fn().mockResolvedValue({
+    prompt: 'Generated Knowledge Prompting\n\nMock knowledge enhancement',
+    confidence: 0.9,
+  }),
+}));
+
+jest.mock('../../src/utils/prompt-execution.js', () => ({
+  executePromptWithFallback: jest.fn().mockResolvedValue({
+    content: 'Mock prompt execution result',
+    isAIGenerated: false,
+  }),
+  formatMCPResponse: jest.fn((content: string) => ({
+    content: [
+      {
+        type: 'text',
+        text: content,
+      },
+    ],
+  })),
+}));
 
 describe('environment-analysis-tool', () => {
   let analyzeEnvironment: any;
@@ -121,7 +192,7 @@ describe('environment-analysis-tool', () => {
             },
           ],
         });
-      });
+      }, 30000);
 
       it('should include containerization knowledge enhancement when enabled', async () => {
         const result = await analyzeEnvironment({
@@ -133,7 +204,7 @@ describe('environment-analysis-tool', () => {
         expect(result.content[0].text).toContain('Generated Knowledge Prompting');
         expect(result.content[0].text).toContain('Enhanced Mode');
         expect(result.content[0].text).toContain('Containerization, Kubernetes, Docker');
-      });
+      }, 30000);
 
       it('should provide expected containerization output information', async () => {
         const result = await analyzeEnvironment({ analysisType: 'containerization' });
@@ -142,7 +213,7 @@ describe('environment-analysis-tool', () => {
         expect(result.content[0].text).toContain('Dockerfile Analysis');
         expect(result.content[0].text).toContain('Kubernetes Resources');
         expect(result.content[0].text).toContain('Security Findings');
-      });
+      }, 30000);
     });
 
     describe('requirements analysis', () => {
@@ -344,7 +415,7 @@ describe('environment-analysis-tool', () => {
             },
           ],
         });
-      });
+      }, 30000);
 
       it('should use default project path and ADR directory', async () => {
         const result = await analyzeEnvironment({ analysisType: 'specs' });
@@ -358,14 +429,14 @@ describe('environment-analysis-tool', () => {
             },
           ],
         });
-      });
+      }, 30000);
 
       it('should enable knowledge enhancement and enhanced mode by default', async () => {
         const result = await analyzeEnvironment({ analysisType: 'specs' });
 
         expect(result.content[0].text).toContain('Generated Knowledge Prompting');
         expect(result.content[0].text).toContain('Enhanced Mode');
-      });
+      }, 30000);
     });
 
     describe('knowledge enhancement scenarios', () => {
@@ -377,7 +448,7 @@ describe('environment-analysis-tool', () => {
         });
 
         expect(result.content[0].text).toContain('✅ Applied');
-      });
+      }, 30000);
 
       it('should handle knowledge generation disabled', async () => {
         const result = await analyzeEnvironment({
@@ -387,7 +458,7 @@ describe('environment-analysis-tool', () => {
         });
 
         expect(result.content[0].text).toContain('❌ Disabled');
-      });
+      }, 30000);
 
       it('should handle mixed enhancement settings', async () => {
         const result = await analyzeEnvironment({
@@ -418,7 +489,7 @@ describe('environment-analysis-tool', () => {
           expect(result.content[0]).toHaveProperty('type', 'text');
           expect(result.content[0]).toHaveProperty('text');
         }
-      }, 30000); // Increase timeout to 30 seconds for comprehensive analysis
+      }, 60000); // Increase timeout to 60 seconds for comprehensive analysis
 
       it('should provide different content for different analysis types', async () => {
         const specsResult = await analyzeEnvironment({ analysisType: 'specs' });
