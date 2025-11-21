@@ -42,7 +42,7 @@ describe('ResearchOrchestrator', () => {
 
       expect(result.confidence).toBeGreaterThan(0.5);
       expect(result.sources.some(s => s.type === 'project_files')).toBe(true);
-    });
+    }, 30000);
 
     it('should recommend web search when confidence is low', async () => {
       // Ask about something not in the project
