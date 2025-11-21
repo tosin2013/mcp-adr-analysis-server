@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '0 */6 * * *'  # Every 6 hours
+    - cron: '0 */6 * * *' # Every 6 hours
   workflow_dispatch:
 
 jobs:
@@ -13,38 +13,38 @@ jobs:
       contents: write
       pull-requests: read
     steps:
-      - uses: actions/checkout@v5
-      
+      - uses: actions/checkout@v6
+
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: 'npm'
-      
+
       - name: Install dependencies
         run: npm ci
-      
+
       - name: Get current metrics
         id: metrics
         run: |
           # Get latest release
           LATEST_RELEASE=$(gh release list --limit 1 --json tagName --jq '.[0].tagName' || echo "v2.0.7")
           echo "latest_release=$LATEST_RELEASE" >> $GITHUB_OUTPUT
-          
+
           # Get dependency count
           DEP_COUNT=$(jq '.dependencies | length' package.json 2>/dev/null || echo "47")
           echo "dep_count=$DEP_COUNT" >> $GITHUB_OUTPUT
-          
+
           # Get outdated dependencies
           OUTDATED=$(npm outdated --json 2>/dev/null | jq 'keys | length' || echo "3")
           echo "outdated_count=$OUTDATED" >> $GITHUB_OUTPUT
-          
+
           # Get test coverage (if available)
           COVERAGE=$(npm run test:coverage --silent 2>/dev/null | grep -o '[0-9]*\.[0-9]*%' | head -1 || echo "85%")
           echo "coverage=$COVERAGE" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Update dashboard
         run: |
           CURRENT_DATE=$(date -u '+%Y-%m-%d %H:%M UTC')
@@ -101,7 +101,7 @@ jobs:
           ---
           *Dashboard automatically updated by GitHub Actions every 6 hours*
           EOF
-      
+
       - name: Commit dashboard updates
         run: |
           git config --local user.email "action@github.com"
