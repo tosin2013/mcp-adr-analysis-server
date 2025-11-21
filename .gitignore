@@ -64,8 +64,6 @@ coverage/
 
 # Test results and generated research files
 test-results/
-docs/context/research/
-custom/research/
 
 # Temporary files
 tmp/
