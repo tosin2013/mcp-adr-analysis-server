@@ -123,7 +123,11 @@ const ProjectPlanSchema = z.object({
       riskAssessmentInterval: z.string().default('weekly'),
       progressUpdateFrequency: z.string().default('daily'),
     })
-    .default({}),
+    .default(() => ({
+      autoPhaseTransition: false,
+      riskAssessmentInterval: 'weekly',
+      progressUpdateFrequency: 'daily',
+    })),
 });
 
 // Operation schemas
@@ -1429,7 +1433,7 @@ export async function mcpPlanning(args: any): Promise<any> {
   } catch (error) {
     if (error instanceof z.ZodError) {
       throw new McpAdrError(
-        `Validation error: ${error.errors.map(e => e.message).join(', ')}`,
+        `Validation error: ${error.issues.map(e => e.message).join(', ')}`,
         'VALIDATION_ERROR'
       );
     }
