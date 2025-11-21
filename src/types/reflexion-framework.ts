@@ -539,7 +539,7 @@ export const TaskAttemptSchema = z.object({
   }),
   evaluation: z.object({
     overallScore: z.number().min(0).max(1),
-    criteriaScores: z.record(z.number()),
+    criteriaScores: z.record(z.string(), z.number()),
     feedback: z.array(z.any()),
     strengths: z.array(z.string()),
     weaknesses: z.array(z.string()),

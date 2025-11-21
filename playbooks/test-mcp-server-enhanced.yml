@@ -1,0 +1,216 @@
+---
+# Enhanced Ansible Playbook to Test MCP ADR Analysis Server
+# Tests actual tools and can integrate with Ollama for LLM testing
+
+- name: Test MCP ADR Analysis Server with Tool Testing
+  hosts: localhost
+  gather_facts: false
+  vars:
+    mcp_server_command: node
+    mcp_server_path: "{{ playbook_dir }}/../dist/src/index.js"
+    mcp_server_args: []
+    mcp_timeout: 60
+    project_path: "{{ vault_project_path | default(playbook_dir + '/..') }}"
+    adr_directory: "docs/adrs"
+    log_level: "INFO"
+    execution_mode: "full"
+    ai_model: "openai/codex-mini"
+    openrouter_api_key: "{{ vault_openrouter_api_key | default(lookup('env', 'OPENROUTER_API_KEY') | default('')) }}"
+    use_ollama: false  # Set to true to use Ollama for testing
+    ollama_model: "codellama:13b-instruct"
+
+  tasks:
+    - name: Verify MCP server binary exists
+      ansible.builtin.stat:
+        path: "{{ mcp_server_path }}"
+      register: server_binary
+
+    - name: Fail if server binary not found
+      ansible.builtin.fail:
+        msg: "MCP server binary not found at {{ mcp_server_path }}. Run 'npm run build' first."
+      when: not server_binary.stat.exists
+
+    - name: Check Ollama availability
+      ansible.builtin.command: ollama list
+      register: ollama_check
+      changed_when: false
+      failed_when: false
+      when: use_ollama | default(false)
+
+    - name: Display Ollama status
+      ansible.builtin.debug:
+        msg: "Ollama is available. Models: {{ ollama_check.stdout_lines | default([]) }}"
+      when: use_ollama | default(false) and ollama_check.rc == 0
+
+    - name: Get MCP server information
+      tosin2013.mcp_audit.mcp_server_info:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        timeout: "{{ mcp_timeout }}"
+      register: server_info
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display server information
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "MCP Server Information"
+          - "=========================================="
+          - "Server Name: {{ server_info.server_info.server_name | default('Unknown') }}"
+          - "Server Version: {{ server_info.server_info.server_version | default('Unknown') }}"
+          - "Protocol Version: {{ server_info.server_info.protocol_version | default('Unknown') }}"
+          - "Capabilities: {{ server_info.server_info.capabilities | default({}) | dict2items | map(attribute='key') | list }}"
+          - "Success: {{ server_info.success }}"
+          - "=========================================="
+      when: server_info.success | default(false)
+
+    - name: Display error if server info failed
+      ansible.builtin.debug:
+        msg: "Failed to get server info: {{ server_info.error | default('Unknown error') }}"
+      when: not (server_info.success | default(false))
+
+    # Note: tools/list is a protocol endpoint, not a tool
+    # The server_info call already validates tools can be listed
+    # We'll test actual tools instead
+
+    - name: Display tools list info
+      ansible.builtin.debug:
+        msg:
+          - "Tools List: Available via server_info (protocol endpoint, not a tool)"
+          - "Server capabilities include tools: {{ server_info.server_info.capabilities.tools | default('unknown') }}"
+      when: server_info.success | default(false)
+
+    - name: Test analyze_project_ecosystem tool
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "analyze_project_ecosystem"
+        tool_arguments:
+          project_path: "{{ project_path }}"
+          analysis_type: "quick"
+        timeout: "{{ mcp_timeout }}"
+        connection_reuse: true
+        connection_timeout: 300
+      register: analyze_test
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display analyze_project_ecosystem test result
+      ansible.builtin.debug:
+        msg:
+          - "Analyze Project Test: {{ 'PASSED' if analyze_test.success | default(false) else 'FAILED' }}"
+          - "Result preview: {{ analyze_test.result | default('No result') | string | truncate(200) }}"
+          - "Error: {{ analyze_test.error | default('None') }}"
+      when: analyze_test is defined
+
+    - name: Test read_file tool
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "read_file"
+        tool_arguments:
+          path: "{{ project_path }}/playbooks/README.md"
+        timeout: "{{ mcp_timeout }}"
+        connection_reuse: true
+        connection_timeout: 300
+      register: read_file_test
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display read_file test result
+      ansible.builtin.debug:
+        msg:
+          - "Read File Test: {{ 'PASSED' if read_file_test.success | default(false) else 'FAILED' }}"
+          - "File content preview: {{ read_file_test.result | default('No result') | string | truncate(200) }}"
+          - "Error: {{ read_file_test.error | default('None') }}"
+      when: read_file_test is defined
+
+    - name: Run comprehensive test suite
+      tosin2013.mcp_audit.mcp_test_suite:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        timeout: "{{ mcp_timeout }}"
+        tests:
+          - type: tool
+            name: analyze_project_ecosystem
+            description: "Test project ecosystem analysis"
+            arguments:
+              project_path: "{{ project_path }}"
+              analysis_type: "quick"
+          - type: tool
+            name: read_file
+            description: "Test file reading capability"
+            arguments:
+              path: "{{ project_path }}/package.json"
+        fail_on_error: false
+      register: test_suite_results
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display comprehensive test suite results
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "Comprehensive Test Suite Results"
+          - "=========================================="
+          - "Total Tests: {{ test_suite_results.test_results.total_tests | default(0) }}"
+          - "Passed: {{ test_suite_results.test_results.passed_tests | default(0) }}"
+          - "Failed: {{ test_suite_results.test_results.failed_tests | default(0) }}"
+          - "Success Rate: {{ test_suite_results.test_results.success_rate | default(0) }}%"
+          - "Success: {{ test_suite_results.success | default(false) }}"
+          - "=========================================="
+      when: test_suite_results is defined
+
+    - name: Display individual test results
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      loop: "{{ test_suite_results.test_results.test_results | default([]) }}"
+      when: test_suite_results.test_results.test_results is defined
+
+    - name: Final Summary
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "MCP Server Test Summary"
+          - "=========================================="
+          - "Server Info: {{ 'SUCCESS' if server_info.success | default(false) else 'FAILED' }}"
+          - "Tools List: {{ 'SUCCESS' if tools_list_test.success | default(false) else 'FAILED' if tools_list_test is defined else 'SKIPPED' }}"
+          - "Analyze Project: {{ 'SUCCESS' if analyze_test.success | default(false) else 'FAILED' if analyze_test is defined else 'SKIPPED' }}"
+          - "Read File: {{ 'SUCCESS' if read_file_test.success | default(false) else 'FAILED' if read_file_test is defined else 'SKIPPED' }}"
+          - "Test Suite: {{ 'SUCCESS' if test_suite_results.success | default(false) else 'FAILED' if test_suite_results is defined else 'SKIPPED' }}"
+          - "Ollama Status: {{ 'AVAILABLE' if (use_ollama | default(false)) and ollama_check.rc == 0 else 'NOT USED' }}"
+          - "=========================================="
+
