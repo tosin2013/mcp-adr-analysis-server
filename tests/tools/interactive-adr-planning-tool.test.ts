@@ -482,7 +482,7 @@ describe('Interactive ADR Planning Tool', () => {
         projectPath: '/test/project',
       };
 
-      await expect(interactiveAdrPlanning(input)).rejects.toThrow('Invalid enum value');
+      await expect(interactiveAdrPlanning(input)).rejects.toThrow(/Invalid option|Invalid enum value/);
     });
 
     it('should handle schema validation errors', async () => {
