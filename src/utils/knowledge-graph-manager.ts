@@ -121,7 +121,7 @@ export class KnowledgeGraphManager {
           architectureCompliance: currentScore.entityCoherence,
           securityPosture: currentScore.contextUtilization,
           codeQuality: currentScore.decisionAlignment,
-        },
+        } as Record<string, number>,
         lastScoreUpdate: timestamp,
       },
     };
@@ -451,7 +451,7 @@ export class KnowledgeGraphManager {
         architectureCompliance: afterScore.entityCoherence,
         securityPosture: afterScore.contextUtilization,
         codeQuality: afterScore.decisionAlignment,
-      };
+      } as Record<string, number>;
       intent.scoreTracking.lastScoreUpdate = new Date().toISOString();
 
       // Calculate progress if we have initial score
@@ -520,7 +520,7 @@ export class KnowledgeGraphManager {
       initialScore: intent.scoreTracking.initialScore || 0,
       currentScore: intent.scoreTracking.currentScore || 0,
       progress: intent.scoreTracking.scoreProgress || 0,
-      componentTrends: intent.scoreTracking.componentScores || {},
+      componentTrends: (intent.scoreTracking.componentScores || {}) as Record<string, number>,
       scoreHistory: scoreHistory.map(h => ({
         timestamp: h.timestamp,
         score: h.overallScore,
