@@ -1,0 +1,307 @@
+---
+# Workflow Test Playbook for MCP ADR Analysis Server
+# Tests end-to-end workflows with a sample project
+
+- name: Test MCP Server Workflows
+  hosts: localhost
+  gather_facts: false
+  vars:
+    mcp_server_command: node
+    mcp_server_path: "{{ playbook_dir }}/../dist/src/index.js"
+    mcp_timeout: 120
+    sample_project_path: "{{ playbook_dir }}/../sample-project"
+    adr_directory: "docs/adrs"
+    log_level: "INFO"
+    execution_mode: "full"
+    ai_model: "openai/codex-mini"
+    openrouter_api_key: "{{ vault_openrouter_api_key | default(lookup('env', 'OPENROUTER_API_KEY') | default('')) }}"
+
+  tasks:
+    - name: Verify MCP server binary exists
+      ansible.builtin.stat:
+        path: "{{ mcp_server_path }}"
+      register: server_binary
+
+    - name: Fail if server binary not found
+      ansible.builtin.fail:
+        msg: "MCP server binary not found at {{ mcp_server_path }}. Run 'npm run build' first."
+      when: not server_binary.stat.exists
+
+    - name: Verify sample project exists
+      ansible.builtin.stat:
+        path: "{{ sample_project_path }}"
+      register: sample_project
+
+    - name: Fail if sample project not found
+      ansible.builtin.fail:
+        msg: "Sample project not found at {{ sample_project_path }}"
+      when: not sample_project.stat.exists
+
+    - name: Display test configuration
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "MCP Server Workflow Testing"
+          - "=========================================="
+          - "Sample Project: {{ sample_project_path }}"
+          - "ADR Directory: {{ adr_directory }}"
+          - "Execution Mode: {{ execution_mode }}"
+          - "=========================================="
+
+    # ============================================
+    # Scenario 1: New Project Analysis Workflow
+    # ============================================
+    - name: "SCENARIO 1: Step 1 - Analyze Project Ecosystem"
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "analyze_project_ecosystem"
+        tool_arguments:
+          project_path: "{{ sample_project_path }}"
+          analysis_type: "quick"
+        timeout: "{{ mcp_timeout }}"
+        connection_reuse: true
+        connection_timeout: 300
+      register: analyze_ecosystem
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ sample_project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display ecosystem analysis result
+      ansible.builtin.debug:
+        msg:
+          - "Ecosystem Analysis: {{ 'SUCCESS' if analyze_ecosystem.success | default(false) else 'FAILED' }}"
+          - "Result preview: {{ analyze_ecosystem.result | default('No result') | string | truncate(300) }}"
+      when: analyze_ecosystem is defined
+
+    - name: "SCENARIO 1: Step 2 - Discover Existing ADRs"
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "discover_existing_adrs"
+        tool_arguments:
+          adr_directory: "{{ adr_directory }}"
+        timeout: "{{ mcp_timeout }}"
+        connection_reuse: true
+        connection_timeout: 300
+      register: discover_adrs
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ sample_project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display ADR discovery result
+      ansible.builtin.debug:
+        msg:
+          - "ADR Discovery: {{ 'SUCCESS' if discover_adrs.success | default(false) else 'FAILED' }}"
+          - "Found ADRs: {{ discover_adrs.result | default('No result') | string | truncate(200) }}"
+      when: discover_adrs is defined
+
+    - name: "SCENARIO 1: Step 3 - Suggest Missing ADRs"
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "suggest_adrs"
+        tool_arguments:
+          project_path: "{{ sample_project_path }}"
+          analysis_type: "quick"
+        timeout: "{{ mcp_timeout }}"
+        connection_reuse: true
+        connection_timeout: 300
+      register: suggest_adrs
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ sample_project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display ADR suggestions result
+      ansible.builtin.debug:
+        msg:
+          - "ADR Suggestions: {{ 'SUCCESS' if suggest_adrs.success | default(false) else 'FAILED' }}"
+          - "Suggestions: {{ suggest_adrs.result | default('No result') | string | truncate(200) }}"
+      when: suggest_adrs is defined
+
+    - name: "SCENARIO 1: Step 4 - Get Architectural Context"
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "get_architectural_context"
+        tool_arguments:
+          project_path: "{{ sample_project_path }}"
+          depth: "basic"
+        timeout: "{{ mcp_timeout }}"
+        connection_reuse: true
+        connection_timeout: 300
+      register: arch_context
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ sample_project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display architectural context result
+      ansible.builtin.debug:
+        msg:
+          - "Architectural Context: {{ 'SUCCESS' if arch_context.success | default(false) else 'FAILED' }}"
+          - "Context preview: {{ arch_context.result | default('No result') | string | truncate(200) }}"
+      when: arch_context is defined
+
+    # ============================================
+    # Scenario 2: Security Audit Workflow
+    # ============================================
+    - name: "SCENARIO 2: Step 1 - Analyze Content Security"
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "analyze_content_security"
+        tool_arguments:
+          content: "API_KEY=sk-1234567890abcdef\nDATABASE_PASSWORD=secret123\nJWT_SECRET=my-secret-key"
+          contentType: "configuration"
+        timeout: "{{ mcp_timeout }}"
+        connection_reuse: true
+        connection_timeout: 300
+      register: security_analysis
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ sample_project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display security analysis result
+      ansible.builtin.debug:
+        msg:
+          - "Security Analysis: {{ 'SUCCESS' if security_analysis.success | default(false) else 'FAILED' }}"
+          - "Security issues: {{ security_analysis.result | default('No result') | string | truncate(200) }}"
+      when: security_analysis is defined
+
+    # ============================================
+    # Scenario 3: Workflow Guidance Workflow
+    # ============================================
+    - name: "SCENARIO 3: Step 1 - Get Workflow Guidance"
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "get_workflow_guidance"
+        tool_arguments:
+          goal: "Complete architectural analysis of sample project"
+          project_context: "Node.js REST API server with Express, PostgreSQL, and Redis"
+          timeframe: "quick_review"
+          primary_concerns: ["architecture", "security"]
+        timeout: "{{ mcp_timeout }}"
+        connection_reuse: true
+        connection_timeout: 300
+      register: workflow_guidance
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ sample_project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display workflow guidance result
+      ansible.builtin.debug:
+        msg:
+          - "Workflow Guidance: {{ 'SUCCESS' if workflow_guidance.success | default(false) else 'FAILED' }}"
+          - "Guidance preview: {{ workflow_guidance.result | default('No result') | string | truncate(300) }}"
+      when: workflow_guidance is defined
+
+    - name: Display environment variables for tool chain orchestrator
+      ansible.builtin.debug:
+        msg:
+          - "EXECUTION_MODE: full"
+          - "OPENROUTER_API_KEY: {{ 'SET' if openrouter_api_key | default('') | length > 0 else 'NOT SET' }}"
+          - "API Key length: {{ openrouter_api_key | default('') | length }}"
+
+    - name: "SCENARIO 3: Step 2 - Tool Chain Orchestrator"
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "tool_chain_orchestrator"
+        tool_arguments:
+          userRequest: "Analyze this project and generate ADRs for missing architectural decisions"
+          operation: "generate_plan"
+          projectContext:
+            projectPath: "{{ sample_project_path }}"
+            adrDirectory: "{{ adr_directory }}"
+            projectType: "web-app"
+        timeout: "{{ mcp_timeout }}"
+        connection_reuse: true
+        connection_timeout: 300
+      register: tool_chain
+      failed_when: false
+      environment:
+        PROJECT_PATH: "{{ sample_project_path }}"
+        ADR_DIRECTORY: "{{ adr_directory }}"
+        LOG_LEVEL: "{{ log_level }}"
+        EXECUTION_MODE: "{{ execution_mode }}"
+        AI_MODEL: "{{ ai_model }}"
+        OPENROUTER_API_KEY: "{{ openrouter_api_key | default('') }}"
+
+    - name: Display tool chain orchestrator result
+      ansible.builtin.debug:
+        msg:
+          - "Tool Chain Orchestrator: {{ 'SUCCESS' if tool_chain.success | default(false) else 'FAILED' }}"
+          - "Execution plan: {{ tool_chain.result | default('No result') | string | truncate(300) }}"
+      when: tool_chain is defined
+
+    # ============================================
+    # Workflow Summary
+    # ============================================
+    - name: Workflow Test Summary
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "MCP Server Workflow Test Summary"
+          - "=========================================="
+          - "Scenario 1 - New Project Analysis:"
+          - "  - Analyze Ecosystem: {{ 'SUCCESS' if analyze_ecosystem.success | default(false) else 'FAILED' }}"
+          - "  - Discover ADRs: {{ 'SUCCESS' if discover_adrs.success | default(false) else 'FAILED' }}"
+          - "  - Suggest ADRs: {{ 'SUCCESS' if suggest_adrs.success | default(false) else 'FAILED' }}"
+          - "  - Architectural Context: {{ 'SUCCESS' if arch_context.success | default(false) else 'FAILED' }}"
+          - ""
+          - "Scenario 2 - Security Audit:"
+          - "  - Security Analysis: {{ 'SUCCESS' if security_analysis.success | default(false) else 'FAILED' }}"
+          - ""
+          - "Scenario 3 - Workflow Guidance:"
+          - "  - Workflow Guidance: {{ 'SUCCESS' if workflow_guidance.success | default(false) else 'FAILED' }}"
+          - "  - Tool Chain Orchestrator: {{ 'SUCCESS' if tool_chain.success | default(false) else 'FAILED' }}"
+          - "=========================================="
+          - "Connection Reuse: ✅ Enabled (all tests use same connection)"
+          - "Total Workflow Steps: 7"
+          - "=========================================="
+

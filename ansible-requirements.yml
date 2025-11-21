@@ -1,0 +1,8 @@
+---
+# Ansible Galaxy Collection Requirements
+# Install with: ansible-galaxy collection install -r ansible-requirements.yml
+
+collections:
+  - name: tosin2013.mcp_audit
+    version: ">=1.0.1"
+
