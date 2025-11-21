@@ -151,6 +151,8 @@ async function createMockTodoData(): Promise<void> {
     },
   };
 
+  // Ensure cache directory exists before writing
+  await fs.mkdir(TEST_CACHE_DIR, { recursive: true });
   await fs.writeFile(join(TEST_CACHE_DIR, 'todo-data.json'), JSON.stringify(todoData, null, 2));
 }
 
