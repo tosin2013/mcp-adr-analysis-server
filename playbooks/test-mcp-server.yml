@@ -1,0 +1,103 @@
+---
+# Ansible Playbook to Test MCP ADR Analysis Server
+# This playbook uses the tosin2013.mcp_audit collection to validate
+# the MCP server functionality
+
+- name: Test MCP ADR Analysis Server
+  hosts: localhost
+  gather_facts: false
+  vars:
+    mcp_server_command: node
+    mcp_server_path: "{{ playbook_dir }}/../dist/src/index.js"
+    mcp_server_args: []
+    mcp_timeout: 30
+
+  tasks:
+    - name: Verify MCP server binary exists
+      ansible.builtin.stat:
+        path: "{{ mcp_server_path }}"
+      register: server_binary
+
+    - name: Fail if server binary not found
+      ansible.builtin.fail:
+        msg: "MCP server binary not found at {{ mcp_server_path }}. Run 'npm run build' first."
+      when: not server_binary.stat.exists
+
+    - name: Get MCP server information
+      tosin2013.mcp_audit.mcp_server_info:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        timeout: "{{ mcp_timeout }}"
+      register: server_info
+      failed_when: false
+
+    - name: Display server information
+      ansible.builtin.debug:
+        msg:
+          - "Server Name: {{ server_info.server_info.server_name | default('Unknown') }}"
+          - "Server Version: {{ server_info.server_info.server_version | default('Unknown') }}"
+          - "Protocol Version: {{ server_info.server_info.protocol_version | default('Unknown') }}"
+          - "Capabilities: {{ server_info.server_info.capabilities | default({}) | dict2items | map(attribute='key') | list }}"
+          - "Success: {{ server_info.success }}"
+      when: server_info.success | default(false)
+
+    - name: Display error if server info failed
+      ansible.builtin.debug:
+        msg: "Failed to get server info: {{ server_info.error | default('Unknown error') }}"
+      when: not (server_info.success | default(false))
+
+    - name: Run comprehensive test suite
+      tosin2013.mcp_audit.mcp_test_suite:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        timeout: "{{ mcp_timeout }}"
+        tests:
+          - type: tool
+            name: list_tools
+            description: "Test that tools/list endpoint works"
+          - type: tool
+            name: list_resources
+            description: "Test that resources/list endpoint works"
+          - type: tool
+            name: list_prompts
+            description: "Test that prompts/list endpoint works"
+          - type: tool
+            name: analyze_project_ecosystem
+            description: "Test project analysis tool"
+            arguments:
+              project_path: "{{ playbook_dir }}/.."
+              analysis_type: "quick"
+        fail_on_error: false
+      register: test_results
+      when: server_info.success | default(false)
+
+    - name: Display test suite results
+      ansible.builtin.debug:
+        msg:
+          - "Test Suite Results:"
+          - "  Total Tests: {{ test_results.test_results.total_tests | default(0) }}"
+          - "  Passed: {{ test_results.test_results.passed_tests | default(0) }}"
+          - "  Failed: {{ test_results.test_results.failed_tests | default(0) }}"
+          - "  Success Rate: {{ test_results.test_results.success_rate | default(0) }}%"
+      when: test_results.success | default(false)
+
+    - name: Display individual test results
+      ansible.builtin.debug:
+        msg: "{{ item }}"
+      loop: "{{ test_results.test_results.test_results | default([]) }}"
+      when: test_results.success | default(false)
+
+    - name: Summary
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "MCP Server Test Summary"
+          - "=========================================="
+          - "Server Info: {{ 'SUCCESS' if server_info.success | default(false) else 'FAILED' }}"
+          - "Test Suite: {{ 'SUCCESS' if test_results.success | default(false) else 'FAILED' }}"
+          - "=========================================="
+

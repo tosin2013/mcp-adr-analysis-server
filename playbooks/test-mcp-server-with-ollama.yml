@@ -1,0 +1,148 @@
+---
+# Ansible Playbook for Testing MCP Server with Ollama Integration
+# Uses Ollama codellama:13b-instruct to test LLM integration
+
+- name: Test MCP Server with Ollama Integration
+  hosts: localhost
+  gather_facts: false
+  vars:
+    mcp_server_command: node
+    mcp_server_path: "{{ playbook_dir }}/../dist/src/index.js"
+    mcp_timeout: 120
+    project_path: "{{ playbook_dir }}/.."
+    ollama_model: "codellama:13b-instruct"
+    ollama_base_url: "http://localhost:11434"
+
+  tasks:
+    - name: Verify MCP server binary exists
+      ansible.builtin.stat:
+        path: "{{ mcp_server_path }}"
+      register: server_binary
+
+    - name: Fail if server binary not found
+      ansible.builtin.fail:
+        msg: "MCP server binary not found at {{ mcp_server_path }}. Run 'npm run build' first."
+      when: not server_binary.stat.exists
+
+    - name: Check Ollama service
+      ansible.builtin.uri:
+        url: "{{ ollama_base_url }}/api/tags"
+        method: GET
+        status_code: 200
+      register: ollama_check
+      failed_when: false
+
+    - name: Verify Ollama model is available
+      ansible.builtin.command: ollama list
+      register: ollama_models
+      changed_when: false
+
+    - name: Display Ollama status
+      ansible.builtin.debug:
+        msg:
+          - "Ollama Status: {{ 'RUNNING' if ollama_check.status == 200 else 'NOT RUNNING' }}"
+          - "Available Models: {{ ollama_models.stdout_lines | default([]) }}"
+          - "Target Model: {{ ollama_model }}"
+
+    - name: Check if target model exists
+      ansible.builtin.command: ollama show {{ ollama_model }}
+      register: model_check
+      changed_when: false
+      failed_when: false
+
+    - name: Pull Ollama model if not available
+      ansible.builtin.command: ollama pull {{ ollama_model }}
+      when: model_check.rc != 0
+      register: model_pull
+
+    - name: Test Ollama with simple prompt
+      ansible.builtin.command: >
+        ollama run {{ ollama_model }} "Write a simple Hello World in Python"
+      register: ollama_test
+      changed_when: false
+      failed_when: false
+
+    - name: Display Ollama test result
+      ansible.builtin.debug:
+        msg:
+          - "Ollama Test Output: {{ ollama_test.stdout | default('No output') }}"
+          - "Exit Code: {{ ollama_test.rc }}"
+
+    - name: Get MCP server information
+      tosin2013.mcp_audit.mcp_server_info:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        timeout: "{{ mcp_timeout }}"
+      register: server_info
+      failed_when: false
+
+    - name: Display server information
+      ansible.builtin.debug:
+        msg:
+          - "Server Info: {{ 'SUCCESS' if server_info.success | default(false) else 'FAILED' }}"
+          - "Server Name: {{ server_info.server_info.server_name | default('Unknown') }}"
+          - "Capabilities: {{ server_info.server_info.capabilities | default({}) }}"
+
+    # Test MCP tools that might use AI
+    - name: Test analyze_project_ecosystem (may use AI)
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "analyze_project_ecosystem"
+        tool_arguments:
+          project_path: "{{ project_path }}"
+          analysis_type: "quick"
+        timeout: "{{ mcp_timeout }}"
+      register: analyze_test
+      failed_when: false
+      environment:
+        # Set environment variables for Ollama integration if needed
+        OLLAMA_BASE_URL: "{{ ollama_base_url }}"
+        OLLAMA_MODEL: "{{ ollama_model }}"
+
+    - name: Display analyze_project_ecosystem results
+      ansible.builtin.debug:
+        msg:
+          - "Analyze Project Test: {{ 'SUCCESS' if analyze_test.success | default(false) else 'FAILED' }}"
+          - "Result preview: {{ analyze_test.result | default('No result') | string | truncate(500) }}"
+
+    - name: Test get_architectural_context (AI-powered tool)
+      tosin2013.mcp_audit.mcp_test_tool:
+        transport: stdio
+        server_command: "{{ mcp_server_command }}"
+        server_args:
+          - "{{ mcp_server_path }}"
+        tool_name: "get_architectural_context"
+        tool_arguments:
+          project_path: "{{ project_path }}"
+          depth: "basic"
+        timeout: "{{ mcp_timeout }}"
+      register: arch_context_test
+      failed_when: false
+      environment:
+        OLLAMA_BASE_URL: "{{ ollama_base_url }}"
+        OLLAMA_MODEL: "{{ ollama_model }}"
+
+    - name: Display architectural context test results
+      ansible.builtin.debug:
+        msg:
+          - "Architectural Context Test: {{ 'SUCCESS' if arch_context_test.success | default(false) else 'FAILED' }}"
+          - "Result preview: {{ arch_context_test.result | default('No result') | string | truncate(500) }}"
+
+    - name: Final Summary
+      ansible.builtin.debug:
+        msg:
+          - "=========================================="
+          - "MCP Server + Ollama Integration Test Summary"
+          - "=========================================="
+          - "Ollama Status: {{ 'AVAILABLE' if ollama_check.status == 200 else 'NOT AVAILABLE' }}"
+          - "Ollama Model: {{ ollama_model }}"
+          - "Server Info: {{ 'SUCCESS' if server_info.success | default(false) else 'FAILED' }}"
+          - "Analyze Project: {{ 'SUCCESS' if analyze_test.success | default(false) else 'FAILED' if analyze_test is defined else 'SKIPPED' }}"
+          - "Architectural Context: {{ 'SUCCESS' if arch_context_test.success | default(false) else 'FAILED' if arch_context_test is defined else 'SKIPPED' }}"
+          - "=========================================="
+
