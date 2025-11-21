@@ -1,0 +1,26 @@
+{
+  "name": "sample-api-server",
+  "version": "1.0.0",
+  "description": "Sample REST API server for MCP testing",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "jsonwebtoken": "^9.0.0",
+    "pg": "^8.11.0",
+    "redis": "^4.6.0"
+  },
+  "keywords": ["api", "rest", "express"],
+  "author": "Test User",
+  "license": "MIT"
+}
+
+
+
+
+
+
+
+
