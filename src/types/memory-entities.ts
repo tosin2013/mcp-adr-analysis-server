@@ -254,7 +254,7 @@ export const TroubleshootingSessionMemorySchema = BaseMemoryEntitySchema.extend(
     resolutionTimeMinutes: z.number().optional(),
     preventionMeasures: z.array(z.string()),
     relatedADRs: z.array(z.string()),
-    environmentContext: z.record(z.any()),
+    environmentContext: z.record(z.string(), z.any()),
     followUpActions: z.array(
       z.object({
         action: z.string(),
@@ -271,20 +271,20 @@ export const EnvironmentSnapshotMemorySchema = BaseMemoryEntitySchema.extend({
   type: z.literal('environment_snapshot'),
   environmentData: z.object({
     environmentType: z.enum(['development', 'staging', 'production', 'testing']),
-    configuration: z.record(z.any()),
+    configuration: z.record(z.string(), z.any()),
     complianceStatus: z.object({
       adrAlignment: z.number().min(0).max(1),
       securityPosture: z.number().min(0).max(1),
-      performanceMetrics: z.record(z.number()),
+      performanceMetrics: z.record(z.string(), z.number()),
       lastValidation: z.string().datetime(),
       complianceIssues: z.array(z.string()).optional(),
     }),
     infrastructureSpecs: z.object({
-      containerization: z.record(z.any()),
+      containerization: z.record(z.string(), z.any()),
       dependencies: z.array(z.string()),
-      resourceLimits: z.record(z.number()),
-      networkConfiguration: z.record(z.any()).optional(),
-      storageConfiguration: z.record(z.any()).optional(),
+      resourceLimits: z.record(z.string(), z.number()),
+      networkConfiguration: z.record(z.string(), z.any()).optional(),
+      storageConfiguration: z.record(z.string(), z.any()).optional(),
     }),
     changeHistory: z.array(
       z.object({
@@ -394,7 +394,7 @@ export const DeploymentAssessmentMemorySchema = BaseMemoryEntitySchema.extend({
       performanceValidation: z.object({
         performanceScore: z.number().min(0).max(1),
         bottlenecks: z.array(z.string()),
-        resourceUtilization: z.record(z.number()),
+        resourceUtilization: z.record(z.string(), z.number()),
       }),
     }),
     blockingIssues: z.array(
