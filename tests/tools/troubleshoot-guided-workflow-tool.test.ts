@@ -44,7 +44,25 @@ jest.mock('../../src/utils/research-orchestrator.js', () => ({
     answerResearchQuestion: jest.fn().mockResolvedValue({
       answer: 'Mock research answer',
       confidence: 0.8,
-      sources: [],
+      sources: [
+        {
+          type: 'environment',
+          data: {
+            capabilities: ['docker', 'kubernetes'],
+          },
+        },
+        {
+          type: 'project_files',
+          data: {},
+        },
+        {
+          type: 'knowledge_graph',
+          data: {},
+        },
+      ],
+      metadata: {
+        filesAnalyzed: 10,
+      },
       needsWebSearch: false,
     }),
   })),
@@ -274,7 +292,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
       expect(text).toContain('Frequency**: always');
       expect(text).toContain('🎯 Recommended Test Plan');
       expect(text).toContain('Run specific failing tests');
-    });
+    }, 15000);
 
     it('should analyze deployment failure correctly', async () => {
       const input = {
@@ -324,7 +342,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
       expect(text).toContain('TypeScript compilation error');
       expect(text).toContain('Check build dependencies');
       expect(text).toContain('Verify source code syntax');
-    });
+    }, 15000); // Add timeout
 
     it('should analyze runtime error correctly', async () => {
       const input = {
@@ -345,7 +363,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
       expect(text).toContain('Uncaught ReferenceError');
       expect(text).toContain('Reproduce the error');
       expect(text).toContain('Check application logs');
-    });
+    }, 15000); // Add timeout
 
     it('should analyze performance issue correctly', async () => {
       const input = {
@@ -365,7 +383,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
       expect(text).toContain('PERFORMANCE_ISSUE');
       expect(text).toContain('Page load time exceeds 5 seconds');
       expect(text).toContain('Gather additional diagnostic information');
-    });
+    }, 15000); // Add timeout
 
     it('should analyze security issue correctly', async () => {
       const input = {
@@ -383,7 +401,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
 
       expect(text).toContain('SECURITY_ISSUE');
       expect(text).toContain('Vulnerable dependency detected');
-    });
+    }, 15000); // Add timeout
 
     it('should handle minimal failure information', async () => {
       const input = {

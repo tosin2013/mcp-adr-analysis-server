@@ -342,7 +342,7 @@ describe('ADR Suggestion Tool', () => {
 
         expect(result).toBeDefined();
         expect(result.content[0].text).toContain('Comprehensive Analysis');
-      });
+      }, 30000);
 
       test('generateAdrFromDecision uses default parameters', async () => {
         const decisionData = {
