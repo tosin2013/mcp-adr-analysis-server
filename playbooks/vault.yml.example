@@ -1,0 +1,7 @@
+---
+# Example Ansible Vault File
+# Copy this to vault.yml and encrypt with: ansible-vault encrypt vault.yml
+# Or set environment variables instead
+
+vault_openrouter_api_key: "sk-or-v1-your-api-key-here"
+vault_project_path: "/home/lab-user/automated-braking"
