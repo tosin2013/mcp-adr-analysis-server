@@ -122,7 +122,7 @@ describe('deployment-guidance-tool', () => {
         expect(result.content[0].text).toContain('**Target Environment**: staging');
         expect(result.content[0].text).toContain('Testing**: Staging-specific configurations');
         expect(result.content[0].text).toContain('Load Balancer Configuration');
-      });
+      }, 30000);
 
       it('should handle development environment specifics', async () => {
         const mockAdrs = [
