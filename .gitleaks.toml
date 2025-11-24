@@ -31,6 +31,7 @@ paths = [
     '''tests/.*\.test\.ts''',
     '''tests/.*\.spec\.ts''',
     '''playbooks/.*''',
+    '''\.documcp/.*''',
     '''README\.md''',
     '''.*\.md''',
     '''package\.json''',
