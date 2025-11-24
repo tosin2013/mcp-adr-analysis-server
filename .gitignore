@@ -6,6 +6,9 @@
 # Memory system storage (exclude from repository)
 .mcp-adr-memory/
 
+# Documentation metadata (exclude from repository - security sensitive)
+.documcp/
+
 # Auto-generated server context (for LLM @ referencing)
 .mcp-server-context.md
 
