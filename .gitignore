@@ -83,6 +83,10 @@ custom/research/README.md
 tmp/
 temp/
 
+# Ansible vault files (contain secrets)
+playbooks/vault.yml
+playbooks/*.vault
+
 
 todo.md
 shrimp-rules.md
