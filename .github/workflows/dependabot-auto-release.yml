@@ -236,6 +236,5 @@ jobs:
     with:
       version: v${{ needs.auto-release.outputs.new-version }}
       skip_tests: false
-      dry_run: false
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
