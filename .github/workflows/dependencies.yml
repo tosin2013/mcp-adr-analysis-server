@@ -69,6 +69,8 @@ jobs:
 
   # Regular dependency updates
   update-dependencies:
+    # Only run on schedule or manual dispatch, not on pull_request events
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
 
     steps:
@@ -163,6 +165,7 @@ jobs:
             ### MCP SDK Status
             MCP SDK updates are handled separately to ensure thorough compatibility testing across multiple Node.js versions.
           branch: automated-dependency-updates
+          base: main
           delete-branch: true
           labels: |
             dependencies
