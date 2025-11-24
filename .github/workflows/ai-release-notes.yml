@@ -282,7 +282,6 @@ jobs:
     with:
       version: ${{ needs.generate-notes.outputs.version }}
       skip_tests: false
-      dry_run: false
     secrets:
       NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
