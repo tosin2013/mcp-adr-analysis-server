@@ -34,9 +34,10 @@ ff50b7f50f6c1c2b87651c123b141d781251cd54 → e2a4035e218fbf10ef391ef2cee22d387f8
 ## Sensitive Data Details
 
 - **Type**: OpenRouter API Key
-- **Pattern**: `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`
+- **Pattern**: `sk-or-v1-*` (64-character hex string)
 - **Location**: `playbooks/VAULT_SETUP.md`
 - **Status**: ✅ Secret has been rotated/revoked in OpenRouter
+- **Note**: Actual key value removed for security - GitHub Support can reference commit `f681d2931e764205da54c1a1dfb0c5c3cec90a83` to see the original
 
 ## Actions Completed
 
