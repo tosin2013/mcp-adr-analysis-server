@@ -30,6 +30,7 @@ description = "Global allowlist for safe patterns"
 paths = [
     '''tests/.*\.test\.ts''',
     '''tests/.*\.spec\.ts''',
+    '''playbooks/.*''',
     '''README\.md''',
     '''.*\.md''',
     '''package\.json''',
