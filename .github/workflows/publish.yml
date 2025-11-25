@@ -405,21 +405,60 @@ jobs:
       - name: Publish to NPM
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          TAG_NAME="${{ steps.version.outputs.tag }}"
 
-          if [[ "${{ github.event.inputs.version_bump }}" == "prerelease" ]] || [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"alpha"* ]]; then
+          # Determine npm dist-tag based on version type
+          if [[ "${{ github.event.inputs.version_bump }}" == "prerelease" ]] || [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"alpha"* ]] || [[ "$VERSION" == *"rc"* ]]; then
             echo "Publishing prerelease version: $VERSION"
             npm publish --tag beta
             PUBLISH_TAG="beta"
           else
             echo "Publishing stable version: $VERSION"
-            npm publish
+            # Publish with explicit 'latest' tag to ensure it's set correctly
+            npm publish --tag latest
             PUBLISH_TAG="latest"
           fi
 
-          echo "✅ Successfully published to NPM with tag: $PUBLISH_TAG"
+          echo "✅ Successfully published to NPM"
+          echo "   Version: $VERSION"
+          echo "   Tag: $TAG_NAME"
+          echo "   NPM dist-tag: $PUBLISH_TAG"
+          echo "   Package URL: https://www.npmjs.com/package/mcp-adr-analysis-server/v/$VERSION"
+
           echo "NPM_PUBLISH_TAG=$PUBLISH_TAG" >> $GITHUB_ENV
+          echo "NPM_PACKAGE_URL=https://www.npmjs.com/package/mcp-adr-analysis-server/v/$VERSION" >> $GITHUB_ENV
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify NPM dist-tags
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          PUBLISH_TAG="${{ env.NPM_PUBLISH_TAG }}"
+
+          echo "Verifying npm dist-tags..."
+
+          # Wait a moment for npm registry to update
+          sleep 2
+
+          # Check that the version exists
+          if npm view mcp-adr-analysis-server@$VERSION version >/dev/null 2>&1; then
+            echo "✅ Version $VERSION exists on npm"
+          else
+            echo "⚠️ Version $VERSION not yet visible on npm (may need a moment to propagate)"
+          fi
+
+          # Check dist-tags
+          DIST_TAGS=$(npm view mcp-adr-analysis-server dist-tags --json 2>/dev/null || echo "{}")
+          echo "Current npm dist-tags:"
+          echo "$DIST_TAGS" | jq '.' || echo "$DIST_TAGS"
+
+          # Verify our tag is set correctly
+          TAG_VERSION=$(npm view mcp-adr-analysis-server@$PUBLISH_TAG version 2>/dev/null || echo "")
+          if [[ "$TAG_VERSION" == "$VERSION" ]]; then
+            echo "✅ NPM dist-tag '$PUBLISH_TAG' correctly points to version $VERSION"
+          else
+            echo "⚠️ NPM dist-tag '$PUBLISH_TAG' points to $TAG_VERSION (expected $VERSION)"
+          fi
 
       - name: Update GitHub Release with NPM info
         if: ${{ steps.version.outputs.source == 'release_drafter' }}
@@ -449,9 +488,20 @@ jobs:
       - name: Notify success
         run: |
           VERSION="${{ steps.version.outputs.version }}"
+          TAG_NAME="${{ steps.version.outputs.tag }}"
           SOURCE="${{ steps.version.outputs.source }}"
+          PUBLISH_TAG="${{ env.NPM_PUBLISH_TAG }}"
+          PACKAGE_URL="${{ env.NPM_PACKAGE_URL }}"
 
-          echo "🎉 Successfully published MCP ADR Analysis Server to NPM!"
-          echo "📦 Package: https://www.npmjs.com/package/mcp-adr-analysis-server"
-          echo "🏷️ Version: $VERSION"
+          echo ""
+          echo "================================================"
+          echo "🎉 Successfully published to NPM!"
+          echo "================================================"
+          echo "📦 Package: mcp-adr-analysis-server"
+          echo "🏷️  Version: $VERSION"
+          echo "🔖 Git Tag: $TAG_NAME"
+          echo "📌 NPM dist-tag: $PUBLISH_TAG"
           echo "📝 Source: $SOURCE"
+          echo "🔗 Package URL: $PACKAGE_URL"
+          echo "📥 Install: npm install -g mcp-adr-analysis-server@$VERSION"
+          echo "================================================"
