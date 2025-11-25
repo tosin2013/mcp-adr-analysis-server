@@ -104,4 +104,5 @@ docs/.vitepress/dist/
 docs/api/
 
 .kiro
-mcp-shrimp-task-data
+mcp-shrimp-task-datavenv-ansible/
+mcp-shrimp-task-data/
