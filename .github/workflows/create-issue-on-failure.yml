@@ -1,0 +1,195 @@
+name: Create Issue on Workflow Failure
+
+on:
+  workflow_run:
+    workflows:
+      - 'CI'
+      - 'Build'
+      - 'Test'
+      - 'Lint'
+      - 'Publish to NPM'
+      - 'Dependabot Auto Release'
+      - 'Security Scan'
+      - 'CodeQL'
+    types:
+      - completed
+
+jobs:
+  create-issue:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    permissions:
+      issues: write
+      actions: read
+
+    steps:
+      - name: Get workflow run details
+        id: run-details
+        run: |
+          echo "workflow_name=${{ github.event.workflow_run.name }}" >> $GITHUB_OUTPUT
+          echo "run_id=${{ github.event.workflow_run.id }}" >> $GITHUB_OUTPUT
+          echo "run_url=${{ github.event.workflow_run.html_url }}" >> $GITHUB_OUTPUT
+          echo "branch=${{ github.event.workflow_run.head_branch }}" >> $GITHUB_OUTPUT
+          echo "sha=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          echo "actor=${{ github.event.workflow_run.actor.login }}" >> $GITHUB_OUTPUT
+          echo "event=${{ github.event.workflow_run.event }}" >> $GITHUB_OUTPUT
+
+      - name: Check for existing issue
+        id: check-issue
+        run: |
+          # Search for existing open issue for this workflow failure
+          EXISTING_ISSUE=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --state open \
+            --label "workflow-failure" \
+            --label "${{ github.event.workflow_run.name }}" \
+            --json number,title \
+            --jq '.[0].number // empty')
+
+          if [[ -n "$EXISTING_ISSUE" ]]; then
+            echo "existing_issue=$EXISTING_ISSUE" >> $GITHUB_OUTPUT
+            echo "should_create=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_create=true" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create issue for workflow failure
+        if: steps.check-issue.outputs.should_create == 'true'
+        run: |
+          WORKFLOW_NAME="${{ github.event.workflow_run.name }}"
+          RUN_ID="${{ github.event.workflow_run.id }}"
+          RUN_URL="${{ github.event.workflow_run.html_url }}"
+          BRANCH="${{ github.event.workflow_run.head_branch }}"
+          SHA="${{ github.event.workflow_run.head_sha }}"
+          ACTOR="${{ github.event.workflow_run.actor.login }}"
+          EVENT="${{ github.event.workflow_run.event }}"
+
+          # Create issue body
+          BODY=$(cat << EOF
+          ## 🚨 Workflow Failure Alert
+
+          The **${WORKFLOW_NAME}** workflow has failed and requires attention.
+
+          ### Details
+
+          | Field | Value |
+          |-------|-------|
+          | **Workflow** | ${WORKFLOW_NAME} |
+          | **Run ID** | [#${RUN_ID}](${RUN_URL}) |
+          | **Branch** | \`${BRANCH}\` |
+          | **Commit** | \`${SHA:0:7}\` |
+          | **Triggered by** | @${ACTOR} |
+          | **Event** | ${EVENT} |
+
+          ### Quick Links
+
+          - 📋 [View Workflow Run](${RUN_URL})
+          - 📝 [View Logs](${RUN_URL}?check_suite_focus=true)
+          - 🔍 [View Commit](https://github.com/${{ github.repository }}/commit/${SHA})
+
+          ### Next Steps
+
+          1. Review the workflow logs to identify the root cause
+          2. Fix the issue in a new commit or PR
+          3. Close this issue once the workflow passes
+
+          ---
+          *This issue was automatically created by the workflow failure monitor.*
+          EOF
+          )
+
+          # Determine priority label based on workflow
+          PRIORITY="priority:medium"
+          if [[ "$WORKFLOW_NAME" == "Publish to NPM" ]] || [[ "$WORKFLOW_NAME" == "Security Scan" ]]; then
+            PRIORITY="priority:high"
+          fi
+
+          # Create the issue
+          gh issue create \
+            --repo ${{ github.repository }} \
+            --title "🚨 [CI Failure] ${WORKFLOW_NAME} failed on ${BRANCH}" \
+            --body "$BODY" \
+            --label "workflow-failure" \
+            --label "${WORKFLOW_NAME}" \
+            --label "$PRIORITY" \
+            --label "automated"
+
+          echo "✅ Created issue for ${WORKFLOW_NAME} failure"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update existing issue
+        if: steps.check-issue.outputs.should_create == 'false'
+        run: |
+          ISSUE_NUMBER="${{ steps.check-issue.outputs.existing_issue }}"
+          RUN_URL="${{ github.event.workflow_run.html_url }}"
+
+          COMMENT=$(cat << EOF
+          ## 🔄 Additional Failure Detected
+
+          Another failure occurred for this workflow:
+
+          - **Run**: [View Logs](${RUN_URL})
+          - **Time**: $(date -u '+%Y-%m-%d %H:%M UTC')
+          - **Commit**: \`${{ github.event.workflow_run.head_sha }}\`
+
+          This issue will remain open until the workflow passes consistently.
+          EOF
+          )
+
+          gh issue comment $ISSUE_NUMBER \
+            --repo ${{ github.repository }} \
+            --body "$COMMENT"
+
+          echo "✅ Updated existing issue #$ISSUE_NUMBER with new failure"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Auto-close issues when workflow passes
+  close-issue-on-success:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      issues: write
+
+    steps:
+      - name: Find and close related issue
+        run: |
+          # Find open issue for this workflow
+          ISSUE_NUMBER=$(gh issue list \
+            --repo ${{ github.repository }} \
+            --state open \
+            --label "workflow-failure" \
+            --label "${{ github.event.workflow_run.name }}" \
+            --json number \
+            --jq '.[0].number // empty')
+
+          if [[ -n "$ISSUE_NUMBER" ]]; then
+            COMMENT=$(cat << EOF
+          ## ✅ Workflow Now Passing
+
+          The **${{ github.event.workflow_run.name }}** workflow is now passing!
+
+          - **Successful Run**: [${{ github.event.workflow_run.id }}](${{ github.event.workflow_run.html_url }})
+          - **Branch**: \`${{ github.event.workflow_run.head_branch }}\`
+
+          Automatically closing this issue.
+          EOF
+            )
+
+            gh issue comment $ISSUE_NUMBER \
+              --repo ${{ github.repository }} \
+              --body "$COMMENT"
+
+            gh issue close $ISSUE_NUMBER \
+              --repo ${{ github.repository }} \
+              --reason completed
+
+            echo "✅ Closed issue #$ISSUE_NUMBER - workflow now passing"
+          else
+            echo "ℹ️ No open issue found for ${{ github.event.workflow_run.name }}"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
