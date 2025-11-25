@@ -132,7 +132,7 @@ export class DAGExecutor {
       );
 
       // Execute all tasks in this layer in parallel (up to maxParallelism)
-      const layerResults = await this.executeLayer(layer, results);
+      const layerResults = await this.executeLayer(layer, results, tasks);
 
       for (const [taskId, result] of layerResults) {
         results.set(taskId, result);
@@ -172,7 +172,24 @@ export class DAGExecutor {
       if (criticalTaskFailed) {
         this.logger.error('❌ Critical task failed, stopping DAG execution', 'DAGExecutor');
 
-        // Mark remaining tasks as skipped
+        // Mark other tasks in the same layer as skipped
+        for (const task of layer) {
+          const result = results.get(task.id);
+          if (result && result.success && task.severity !== 'critical') {
+            // Mark successful tasks in same layer as skipped when critical task fails
+            const skippedResult = {
+              ...result,
+              skipped: true,
+              skipReason: 'Critical task failed in same layer',
+            };
+            results.set(task.id, skippedResult);
+            if (!skippedTasks.includes(task.id)) {
+              skippedTasks.push(task.id);
+            }
+          }
+        }
+
+        // Mark remaining tasks (not yet executed) as skipped
         for (const task of tasks) {
           if (!results.has(task.id)) {
             results.set(task.id, {
@@ -217,7 +234,8 @@ export class DAGExecutor {
    */
   private async executeLayer(
     layer: TaskNode[],
-    previousResults: Map<string, TaskResult>
+    previousResults: Map<string, TaskResult>,
+    allTasks: TaskNode[]
   ): Promise<Map<string, TaskResult>> {
     const results = new Map<string, TaskResult>();
 
@@ -227,25 +245,38 @@ export class DAGExecutor {
     for (const task of layer) {
       const dependenciesMet = task.dependsOn.every(depId => {
         const depResult = previousResults.get(depId);
-        return depResult?.success === true;
+        if (!depResult) return false;
+        // If dependency succeeded, it's met
+        if (depResult.success === true) return true;
+        // If dependency failed, check if it can fail safely
+        const depTask = allTasks.find(t => t.id === depId);
+        return depTask?.canFailSafely === true;
       });
 
       if (!dependenciesMet) {
         // Check if any dependency failed and wasn't safe to fail
         const failedDep = task.dependsOn.find(depId => {
           const depResult = previousResults.get(depId);
-          return depResult && !depResult.success;
+          if (!depResult || depResult.success) return false;
+          // Check if this failed dependency can fail safely
+          const depTask = allTasks.find(t => t.id === depId);
+          return !depTask?.canFailSafely;
         });
 
-        results.set(task.id, {
-          taskId: task.id,
-          success: false,
-          stdout: '',
-          stderr: `Dependencies not met: ${failedDep || 'unknown'}`,
-          duration: 0,
-          skipped: true,
-          skipReason: `Dependency ${failedDep} failed`,
-        });
+        if (failedDep) {
+          results.set(task.id, {
+            taskId: task.id,
+            success: false,
+            stdout: '',
+            stderr: `Dependencies not met: ${failedDep || 'unknown'}`,
+            duration: 0,
+            skipped: true,
+            skipReason: `Dependency ${failedDep} failed`,
+          });
+        } else {
+          // All failed dependencies can fail safely, so we can execute this task
+          executableTasks.push(task);
+        }
       } else {
         executableTasks.push(task);
       }
