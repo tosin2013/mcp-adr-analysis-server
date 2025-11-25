@@ -110,6 +110,16 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to dashboard"
           else
+            # Pull latest changes to avoid conflicts
+            git pull --rebase origin main || true
             git commit -m "chore: Update release dashboard metrics [skip ci]"
-            git push
+            # Retry push with rebase if it fails
+            git push origin main || {
+              echo "Push failed, attempting rebase..."
+              git pull --rebase origin main
+              git push origin main
+            } || {
+              echo "⚠️ Dashboard update skipped due to conflicts - will retry next run"
+              exit 0
+            }
           fi
