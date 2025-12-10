@@ -272,7 +272,19 @@ Please provide a thorough analysis of the architectural decisions reflected in t
 }
 
 /**
+ * Get the current date in ADR format (YYYY-MM-DD)
+ */
+export function getCurrentAdrDate(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * AI prompt for ADR template generation (Nygard, MADR formats)
+ * Now automatically includes the current date for ADR creation
  */
 export function generateAdrTemplatePrompt(
   decisionData: {
@@ -286,10 +298,15 @@ export function generateAdrTemplatePrompt(
   templateFormat: 'nygard' | 'madr' | 'custom' = 'nygard',
   existingAdrs?: string[]
 ): string {
+  const currentDate = getCurrentAdrDate();
+
   return `
 # ADR Template Generation
 
 Please generate a complete Architectural Decision Record based on the provided decision data.
+
+## Current Date
+**Today's Date (use this for the ADR)**: ${currentDate}
 
 ## Decision Data
 - **Title**: ${decisionData.title}
@@ -332,6 +349,9 @@ Please generate a complete ADR using the specified format:
 \`\`\`markdown
 # ADR-XXXX: [Title]
 
+## Date
+${currentDate}
+
 ## Status
 [Proposed | Accepted | Deprecated | Superseded]
 
@@ -348,6 +368,9 @@ Please generate a complete ADR using the specified format:
 ### **MADR Format** (if selected)
 \`\`\`markdown
 # [Title]
+
+* Status: proposed
+* Date: ${currentDate}
 
 ## Context and Problem Statement
 [Describe context and problem statement]
@@ -388,7 +411,7 @@ Please provide the generated ADR in the following JSON format:
     "id": "ADR-XXXX",
     "title": "Complete ADR title",
     "status": "proposed",
-    "date": "YYYY-MM-DD",
+    "date": "${currentDate}",
     "format": "${templateFormat}",
     "content": "Complete ADR content in markdown format",
     "filename": "suggested-filename.md",
