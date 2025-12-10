@@ -73,6 +73,12 @@ import {
   getSearchToolsDefinition,
   type SearchToolsArgs,
 } from './tools/tool-dispatcher.js';
+import {
+  shouldUseCEMCPDirective,
+  getCEMCPDirective,
+  formatDirectiveResponse,
+} from './tools/ce-mcp-tools.js';
+import { loadAIConfig, isCEMCPEnabled } from './config/ai-config.js';
 
 /**
  * Get version from package.json
@@ -3251,6 +3257,21 @@ export class McpAdrAnalysisServer {
       try {
         let response: CallToolResult;
         const safeArgs = args || {};
+
+        // CE-MCP Mode: Check if tool should return directive instead of executing
+        const aiConfig = loadAIConfig();
+        if (
+          isCEMCPEnabled(aiConfig) &&
+          shouldUseCEMCPDirective(name, { mode: aiConfig.executionMode })
+        ) {
+          const directive = getCEMCPDirective(name, safeArgs);
+          if (directive) {
+            this.logger.info(`[CE-MCP] Returning directive for tool: ${name}`);
+            return formatDirectiveResponse(directive);
+          }
+          // Fall through to legacy execution if no directive available
+          this.logger.info(`[CE-MCP] No directive available for ${name}, using legacy path`);
+        }
 
         switch (name) {
           case 'analyze_project_ecosystem':
