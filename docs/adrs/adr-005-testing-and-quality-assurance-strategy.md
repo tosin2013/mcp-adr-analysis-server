@@ -40,3 +40,8 @@ Key components:
 - CI/CD pipeline complexity due to multiple testing phases and quality gates
 - Resource requirements for running comprehensive test suites
 - Need for ongoing test strategy evolution as new features are added
+
+## Related ADRs
+
+- ADR-007: CI/CD Pipeline Strategy (automated testing execution)
+- ADR-008: Development Workflow Strategy (test-driven quality gates)

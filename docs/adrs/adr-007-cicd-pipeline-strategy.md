@@ -40,3 +40,10 @@ Key components:
 - Need for careful coordination between automated processes
 - Debugging complexity when workflows fail
 - Maintenance overhead for keeping workflows updated
+
+## Related ADRs
+
+- ADR-005: Testing and Quality Assurance Strategy (test execution in CI/CD)
+- ADR-008: Development Workflow Strategy (pre-commit quality gates)
+- ADR-009: Package Distribution Strategy (automated releases)
+- ADR-013: Documentation Platform Strategy (documentation CI gates)
