@@ -40,3 +40,9 @@ Key components:
 - Need for sophisticated cache invalidation and consistency management
 - Risk of memory corruption affecting analysis quality
 - Dependency on file system reliability for persistent storage
+
+## Related ADRs
+
+- ADR-001: MCP Protocol Implementation Strategy (foundation)
+- ADR-011: ADR Timeline Tracking and Context-Aware Analysis (extends memory concepts)
+- ADR-014: CE-MCP Architecture (sandbox state management leverages memory patterns)

@@ -40,3 +40,8 @@ Key components:
 - Dependency on external AI services for advanced security analysis
 - Risk of performance impact on large codebases during analysis
 - Need for ongoing maintenance of security patterns and detection rules
+
+## Related ADRs
+
+- ADR-006: Tree-Sitter Integration Strategy (AST-level security analysis)
+- ADR-008: Development Workflow Strategy (security gates in workflow)

@@ -19,6 +19,7 @@ The MCP ADR Analysis Server needs a comprehensive deployment automation system t
 5. **Provide reproducible workflows** for CI/CD integration
 
 Previously, deployment was manual and error-prone. We needed an intelligent system that integrates three key components:
+
 - **Validated Patterns Framework** - Community-maintained deployment templates
 - **SystemCard Resource Tracking** - Automated resource lifecycle management
 - **Bootstrap Validation Loop** - Iterative deployment with learning
@@ -190,6 +191,7 @@ flowchart LR
 **Purpose**: Provides community-maintained, tested deployment patterns
 
 **Structure**:
+
 ```yaml
 version: '1.0'
 id: 'kubernetes-v1'
@@ -211,6 +213,7 @@ validationChecks:
 ```
 
 **Benefits**:
+
 - Official documentation links (LLMs should query before deployment)
 - Proven deployment workflows
 - Platform-specific validation checks
@@ -223,12 +226,14 @@ validationChecks:
 **Purpose**: Track all infrastructure resources for proper cleanup
 
 **Key Features**:
+
 - Automatic resource detection during deployment
 - Generates cleanup phases with proper ordering
 - Integrates with CI/CD workflows
 - Prevents orphaned resources
 
 **SystemCard Structure**:
+
 ```typescript
 {
   systemId: 'kubernetes-bootstrap-1234567890',
@@ -268,11 +273,13 @@ validationChecks:
 **Key Phases**:
 
 #### Phase 0: Environment Validation
+
 - Detect platform type
 - Verify connectivity (oc status, kubectl cluster-info, docker ps)
 - Confirm target environment with user
 
 #### Phase 1-5: Iterative Deployment
+
 - Generate bootstrap scripts from validated patterns
 - Execute deployment
 - Validate against ADR requirements
@@ -280,6 +287,7 @@ validationChecks:
 - Retry until success or max iterations
 
 **Generated Files**:
+
 ```
 project/
 ├── docs/adrs/
@@ -293,6 +301,7 @@ project/
 ### 4. GitHub Workflows Integration
 
 #### Publish Workflow (`.github/workflows/publish.yml`)
+
 ```yaml
 - name: Test MCP server functionality
   run: ./scripts/test-mcp-server.sh
@@ -305,17 +314,20 @@ project/
 ```
 
 **Key Scripts Called**:
+
 - `scripts/test-mcp-server.sh` - Validates MCP protocol implementation
 - `scripts/test-infrastructure.sh` - Tests infrastructure deployment
 - `npm run build` - Compiles TypeScript → JavaScript
 
 #### Build Workflow (`.github/workflows/build.yml`)
+
 - Type checking
 - Linting
 - Unit tests
 - Integration tests
 
 #### Test Workflow (`.github/workflows/test.yml`)
+
 - Comprehensive test suite
 - Coverage reporting
 - Performance benchmarks
@@ -323,18 +335,20 @@ project/
 ### 5. Tool Entry Point for Developers
 
 **Tool Call**:
+
 ```typescript
 bootstrap_validation_loop({
-  projectPath: "/path/to/project",
-  adrDirectory: "docs/adrs",
-  targetEnvironment: "production",
+  projectPath: '/path/to/project',
+  adrDirectory: 'docs/adrs',
+  targetEnvironment: 'production',
   maxIterations: 5,
   autoFix: true,
-  updateAdrsWithLearnings: true
-})
+  updateAdrsWithLearnings: true,
+});
 ```
 
 **Returns**:
+
 ```typescript
 {
   success: true,
@@ -559,7 +573,8 @@ mcp-adr-analysis-server/
 
 - [ADR-001: MCP Protocol Implementation](adr-001-mcp-protocol-implementation-strategy.md)
 - [ADR-002: AI Integration Strategy](adr-002-ai-integration-and-advanced-prompting-strategy.md)
-- [ADR-Validated-Patterns: Framework](adr-validated-patterns-framework.md)
+- [ADR-012: Validated Patterns Framework](adr-012-validated-patterns-framework.md)
+- [ADR-014: CE-MCP Architecture](adr-014-ce-mcp-architecture.md) (aligns with CE-MCP execution model)
 
 ## References
 

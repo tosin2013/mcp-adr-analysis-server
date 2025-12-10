@@ -42,3 +42,8 @@ Key components:
 - Dependency on NPM registry availability and policies
 - Need for careful version management to avoid breaking changes
 - Additional testing requirements for both distribution modes
+
+## Related ADRs
+
+- ADR-007: CI/CD Pipeline Strategy (automated publishing workflow)
+- ADR-005: Testing and Quality Assurance Strategy (distribution testing)

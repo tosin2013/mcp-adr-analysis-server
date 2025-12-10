@@ -40,3 +40,9 @@ Key components:
 - Risk of workflow disruption if hooks fail or are bypassed
 - Learning curve for conventional commit standards
 - Potential performance impact from pre-commit processing
+
+## Related ADRs
+
+- ADR-005: Testing and Quality Assurance Strategy (test-driven development)
+- ADR-007: CI/CD Pipeline Strategy (workflow automation)
+- ADR-013: Documentation Platform Strategy (documentation updates in workflow)

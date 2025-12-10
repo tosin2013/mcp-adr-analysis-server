@@ -40,3 +40,8 @@ Key components:
 - Maintenance overhead for keeping parsers updated with language evolution
 - Potential parsing failures requiring robust error handling and fallback mechanisms
 - Learning curve for developers working with AST-based analysis logic
+
+## Related ADRs
+
+- ADR-004: Security and Content Masking Strategy (AST-level secret detection)
+- ADR-014: CE-MCP Architecture (code analysis for sandbox execution)
