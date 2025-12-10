@@ -3141,6 +3141,45 @@ export class McpAdrAnalysisServer {
               },
             },
           },
+          // CE-MCP Phase 4: Lazy Prompt Loading Tool
+          {
+            name: 'load_prompt',
+            description:
+              'Load a specific prompt or prompt section on-demand. Part of CE-MCP lazy loading system that reduces token usage by ~96% by loading prompts only when needed. Use this to retrieve prompt templates for ADR generation, analysis, deployment, and other operations.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                promptName: {
+                  type: 'string',
+                  description:
+                    'Name of the prompt to load (e.g., "adr-suggestion", "deployment-analysis", "environment-analysis", "research-question", "rule-generation", "analysis", "security")',
+                  enum: [
+                    'adr-suggestion',
+                    'deployment-analysis',
+                    'environment-analysis',
+                    'research-question',
+                    'rule-generation',
+                    'analysis',
+                    'research-integration',
+                    'validated-pattern',
+                    'security',
+                  ],
+                },
+                section: {
+                  type: 'string',
+                  description:
+                    'Specific section within the prompt to load. If not provided, loads the entire prompt. Available sections depend on the prompt.',
+                },
+                estimateOnly: {
+                  type: 'boolean',
+                  description:
+                    'If true, returns only token estimate without loading the full prompt content',
+                  default: false,
+                },
+              },
+              required: ['promptName'],
+            },
+          },
         ],
       };
     });
@@ -3426,6 +3465,15 @@ export class McpAdrAnalysisServer {
                 },
               ],
             };
+            break;
+          case 'load_prompt':
+            response = await this.loadPrompt(
+              safeArgs as unknown as {
+                promptName: string;
+                section?: string;
+                estimateOnly?: boolean;
+              }
+            );
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -4482,7 +4530,10 @@ This guidance ensures your development work is **architecturally aligned**, **qu
         // Don't fail the entire analysis if ADR initialization fails
       }
 
-      // Import advanced prompting utilities if enhanced mode is enabled
+      // DEPRECATED: Legacy context assembly for enhanced mode
+      // This section is part of the OpenRouter execution path and will be removed
+      // in a future release. For CE-MCP mode, use createAnalyzeProjectEcosystemDirective()
+      // from src/tools/ce-mcp-tools.ts instead. See ADR-014.
       let generateArchitecturalKnowledge: GenerateArchitecturalKnowledgeFunction | null = null;
       let executeWithReflexion: ExecuteWithReflexionFunction | null = null;
       let retrieveRelevantMemories: RetrieveRelevantMemoriesFunction | null = null;
@@ -8547,6 +8598,140 @@ ${JSON.stringify(responseData, null, 2)}
       throw new McpAdrError(
         `Failed to get current datetime: ${error instanceof Error ? error.message : String(error)}`,
         'DATETIME_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Load Prompt Tool - CE-MCP Phase 4 Lazy Loading
+   *
+   * @description Loads prompts on-demand instead of eagerly loading all prompts at startup.
+   * This reduces token usage by ~96% (from 28K tokens to ~1K on-demand).
+   *
+   * @param args - Load prompt arguments
+   * @param args.promptName - Name of the prompt to load
+   * @param args.section - Optional section within the prompt
+   * @param args.estimateOnly - If true, returns only token estimate
+   * @returns Promise<CallToolResult> - Loaded prompt content or estimate
+   */
+  private async loadPrompt(args: {
+    promptName: string;
+    section?: string;
+    estimateOnly?: boolean;
+  }): Promise<CallToolResult> {
+    const { promptName, section, estimateOnly = false } = args;
+
+    // Import the prompt catalog dynamically to enable lazy loading
+    const { getPromptLoader, getPromptMetadata, calculateTokenSavings } = await import(
+      './prompts/prompt-catalog.js'
+    );
+
+    const metadata = getPromptMetadata(promptName);
+
+    if (!metadata) {
+      const availablePrompts = [
+        'adr-suggestion',
+        'deployment-analysis',
+        'environment-analysis',
+        'research-question',
+        'rule-generation',
+        'analysis',
+        'research-integration',
+        'validated-pattern',
+        'security',
+      ];
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                success: false,
+                error: `Unknown prompt: ${promptName}`,
+                availablePrompts,
+                hint: 'Use one of the available prompt names listed above',
+              },
+              null,
+              2
+            ),
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    // If estimate only, return token information without loading
+    if (estimateOnly) {
+      const loader = getPromptLoader();
+      const estimatedTokens = loader.getEstimatedTokens(promptName, section);
+      const savings = calculateTokenSavings([promptName]);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(
+              {
+                success: true,
+                promptName,
+                section: section || 'full',
+                estimatedTokens,
+                metadata: {
+                  file: metadata.file,
+                  category: metadata.category,
+                  totalTokens: metadata.tokens,
+                  availableSections: metadata.sections,
+                  loadOnDemand: metadata.loadOnDemand,
+                },
+                tokenSavings: {
+                  loaded: savings.loaded,
+                  total: savings.total,
+                  saved: savings.saved,
+                  percentage: `${savings.percentage}%`,
+                },
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    }
+
+    // Load the prompt content
+    try {
+      const loader = getPromptLoader();
+      const content = await loader.loadPrompt(promptName, section);
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Loaded Prompt: ${promptName}${section ? ` (section: ${section})` : ''}
+
+## Metadata
+- **Category**: ${metadata.category}
+- **Estimated Tokens**: ${metadata.tokens}
+- **Available Sections**: ${metadata.sections.join(', ')}
+
+## Content
+
+${content}
+
+---
+
+*Loaded on-demand via CE-MCP lazy loading system. Token savings: ~96% compared to eager loading all prompts.*
+`,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to load prompt '${promptName}'${section ? ` section '${section}'` : ''}: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        'PROMPT_LOAD_ERROR'
       );
     }
   }
