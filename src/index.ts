@@ -68,6 +68,11 @@ import {
   type RetrieveRelevantMemoriesFunction,
   type CreateToolReflexionConfigFunction,
 } from './types/tool-arguments.js';
+import {
+  executeSearchTools,
+  getSearchToolsDefinition,
+  type SearchToolsArgs,
+} from './tools/tool-dispatcher.js';
 
 /**
  * Get version from package.json
@@ -225,6 +230,8 @@ export class McpAdrAnalysisServer {
     this.server.setRequestHandler(ListToolsRequestSchema, async () => {
       return {
         tools: [
+          // Meta-tool for dynamic tool discovery (CE-MCP Phase 3)
+          getSearchToolsDefinition(),
           {
             name: 'analyze_project_ecosystem',
             description:
@@ -3405,6 +3412,20 @@ export class McpAdrAnalysisServer {
             break;
           case 'get_current_datetime':
             response = await this.getCurrentDatetime(safeArgs);
+            break;
+          case 'search_tools':
+            response = {
+              content: [
+                {
+                  type: 'text',
+                  text: JSON.stringify(
+                    executeSearchTools(safeArgs as unknown as SearchToolsArgs),
+                    null,
+                    2
+                  ),
+                },
+              ],
+            };
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
