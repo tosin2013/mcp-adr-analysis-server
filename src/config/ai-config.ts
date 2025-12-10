@@ -1,10 +1,22 @@
 /**
- * AI Configuration for OpenRouter.ai Integration
+ * AI Configuration for OpenRouter.ai Integration and CE-MCP
  *
  * This module handles configuration for AI execution capabilities,
- * allowing the MCP server to execute prompts internally and return
- * actual results instead of prompts.
+ * supporting both legacy OpenRouter execution and the new CE-MCP
+ * (Code Execution with MCP) paradigm.
+ *
+ * @see ADR-014: CE-MCP Architecture
  */
+
+/**
+ * Execution mode for AI operations
+ *
+ * - 'full': Execute prompts via OpenRouter (legacy)
+ * - 'prompt-only': Return prompts without execution (legacy)
+ * - 'ce-mcp': Return orchestration directives for host LLM (recommended)
+ * - 'hybrid': Support both CE-MCP and OpenRouter fallback
+ */
+export type ExecutionMode = 'full' | 'prompt-only' | 'ce-mcp' | 'hybrid';
 
 export interface AIConfig {
   /** OpenRouter API key for authentication */
@@ -13,8 +25,8 @@ export interface AIConfig {
   baseURL: string;
   /** Default AI model to use for prompt execution */
   defaultModel: string;
-  /** Execution mode: 'full' executes prompts, 'prompt-only' returns prompts */
-  executionMode: 'full' | 'prompt-only';
+  /** Execution mode */
+  executionMode: ExecutionMode;
   /** Site URL for OpenRouter rankings (optional) */
   siteUrl?: string;
   /** Site name for OpenRouter rankings (optional) */
@@ -31,6 +43,28 @@ export interface AIConfig {
   cacheEnabled: boolean;
   /** Cache TTL in seconds */
   cacheTTL: number;
+  /** CE-MCP specific configuration */
+  cemcp?: CEMCPSettings;
+}
+
+/**
+ * CE-MCP specific settings
+ */
+export interface CEMCPSettings {
+  /** Enable sandbox execution */
+  sandboxEnabled: boolean;
+  /** Sandbox execution timeout in ms */
+  sandboxTimeout: number;
+  /** Sandbox memory limit in bytes */
+  sandboxMemoryLimit: number;
+  /** Maximum file system operations */
+  sandboxFsLimit: number;
+  /** Allow network access in sandbox */
+  sandboxNetworkAllowed: boolean;
+  /** Enable lazy prompt loading */
+  lazyPromptLoading: boolean;
+  /** Use OpenRouter as fallback when CE-MCP fails */
+  openRouterFallback: boolean;
 }
 
 export interface ModelConfig {
@@ -93,6 +127,19 @@ export const AVAILABLE_MODELS: Record<string, ModelConfig> = {
 };
 
 /**
+ * Default CE-MCP settings
+ */
+export const DEFAULT_CEMCP_SETTINGS: CEMCPSettings = {
+  sandboxEnabled: true,
+  sandboxTimeout: 30000, // 30 seconds
+  sandboxMemoryLimit: 256 * 1024 * 1024, // 256 MB
+  sandboxFsLimit: 1000,
+  sandboxNetworkAllowed: false,
+  lazyPromptLoading: true,
+  openRouterFallback: true,
+};
+
+/**
  * Default AI configuration
  */
 export const DEFAULT_AI_CONFIG: Omit<AIConfig, 'siteUrl' | 'siteName'> & {
@@ -102,7 +149,7 @@ export const DEFAULT_AI_CONFIG: Omit<AIConfig, 'siteUrl' | 'siteName'> & {
   apiKey: '',
   baseURL: 'https://openrouter.ai/api/v1',
   defaultModel: 'anthropic/claude-3-sonnet',
-  executionMode: 'full',
+  executionMode: 'ce-mcp', // Default to CE-MCP mode (was 'full')
   siteUrl: 'https://github.com/tosin2013/mcp-adr-analysis-server',
   siteName: 'MCP ADR Analysis Server',
   timeout: 60000, // 60 seconds
@@ -111,18 +158,35 @@ export const DEFAULT_AI_CONFIG: Omit<AIConfig, 'siteUrl' | 'siteName'> & {
   maxTokens: 4000,
   cacheEnabled: true,
   cacheTTL: 3600, // 1 hour
+  cemcp: DEFAULT_CEMCP_SETTINGS,
 };
 
 /**
  * Load AI configuration from environment variables
  */
 export function loadAIConfig(): AIConfig {
+  // Load CE-MCP settings
+  const cemcpSettings: CEMCPSettings = {
+    sandboxEnabled: process.env['CEMCP_SANDBOX_ENABLED'] !== 'false',
+    sandboxTimeout:
+      parseInt(process.env['CEMCP_SANDBOX_TIMEOUT'] || '') || DEFAULT_CEMCP_SETTINGS.sandboxTimeout,
+    sandboxMemoryLimit:
+      parseInt(process.env['CEMCP_SANDBOX_MEMORY'] || '') ||
+      DEFAULT_CEMCP_SETTINGS.sandboxMemoryLimit,
+    sandboxFsLimit:
+      parseInt(process.env['CEMCP_SANDBOX_FS_LIMIT'] || '') ||
+      DEFAULT_CEMCP_SETTINGS.sandboxFsLimit,
+    sandboxNetworkAllowed: process.env['CEMCP_SANDBOX_NETWORK'] === 'true',
+    lazyPromptLoading: process.env['CEMCP_LAZY_PROMPTS'] !== 'false',
+    openRouterFallback: process.env['CEMCP_OPENROUTER_FALLBACK'] !== 'false',
+  };
+
   const config: AIConfig = {
     apiKey: process.env['OPENROUTER_API_KEY'] || '',
     baseURL: 'https://openrouter.ai/api/v1',
     defaultModel: process.env['AI_MODEL'] || DEFAULT_AI_CONFIG.defaultModel,
     executionMode:
-      (process.env['EXECUTION_MODE'] as 'full' | 'prompt-only') || DEFAULT_AI_CONFIG.executionMode,
+      (process.env['EXECUTION_MODE'] as ExecutionMode) || DEFAULT_AI_CONFIG.executionMode,
     siteUrl: process.env['SITE_URL'] || DEFAULT_AI_CONFIG.siteUrl,
     siteName: process.env['SITE_NAME'] || DEFAULT_AI_CONFIG.siteName,
     timeout: parseInt(process.env['AI_TIMEOUT'] || '') || DEFAULT_AI_CONFIG.timeout,
@@ -131,6 +195,7 @@ export function loadAIConfig(): AIConfig {
     maxTokens: parseInt(process.env['AI_MAX_TOKENS'] || '') || DEFAULT_AI_CONFIG.maxTokens,
     cacheEnabled: process.env['AI_CACHE_ENABLED'] !== 'false',
     cacheTTL: parseInt(process.env['AI_CACHE_TTL'] || '') || DEFAULT_AI_CONFIG.cacheTTL,
+    cemcp: cemcpSettings,
   };
 
   return config;
@@ -170,10 +235,53 @@ export function getModelConfig(modelId: string): ModelConfig | undefined {
 }
 
 /**
- * Check if AI execution is enabled
+ * Check if AI execution is enabled (legacy OpenRouter mode)
  */
 export function isAIExecutionEnabled(config: AIConfig): boolean {
-  return config.executionMode === 'full' && !!config.apiKey;
+  return (config.executionMode === 'full' || config.executionMode === 'hybrid') && !!config.apiKey;
+}
+
+/**
+ * Check if CE-MCP mode is enabled
+ */
+export function isCEMCPEnabled(config: AIConfig): boolean {
+  return config.executionMode === 'ce-mcp' || config.executionMode === 'hybrid';
+}
+
+/**
+ * Check if OpenRouter fallback is available
+ */
+export function isOpenRouterFallbackAvailable(config: AIConfig): boolean {
+  return (
+    (config.executionMode === 'hybrid' || config.cemcp?.openRouterFallback === true) &&
+    !!config.apiKey
+  );
+}
+
+/**
+ * Get the effective execution mode based on configuration and available resources
+ */
+export function getEffectiveExecutionMode(config: AIConfig): ExecutionMode {
+  if (config.executionMode === 'ce-mcp') {
+    // If CE-MCP is requested but sandbox is disabled, check for fallback
+    if (!config.cemcp?.sandboxEnabled) {
+      if (isOpenRouterFallbackAvailable(config)) {
+        return 'full';
+      }
+      return 'prompt-only';
+    }
+    return 'ce-mcp';
+  }
+
+  if (config.executionMode === 'hybrid') {
+    return 'hybrid';
+  }
+
+  if (config.executionMode === 'full' && !config.apiKey) {
+    return 'prompt-only';
+  }
+
+  return config.executionMode;
 }
 
 /**
