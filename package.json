@@ -29,6 +29,7 @@
     "lint:fix": "eslint . --fix && npm run typecheck",
     "clean": "rm -rf dist coverage .mcp-adr-cache",
     "prepare": "husky",
+    "postinstall": "./scripts/check-ripgrep.sh || true",
     "prepublishOnly": "npm run build && npm run lint",
     "start": "node dist/src/index.js",
     "health": "node dist/src/index.js --test",

@@ -79,6 +79,7 @@ import {
   formatDirectiveResponse,
 } from './tools/ce-mcp-tools.js';
 import { loadAIConfig, isCEMCPEnabled } from './config/ai-config.js';
+import { isRipgrepAvailable } from './utils/ripgrep-wrapper.js';
 
 /**
  * Get version from package.json
@@ -3935,6 +3936,10 @@ export class McpAdrAnalysisServer {
           {
             type: 'text',
             text: `# AI Execution Status Diagnostic
+
+> **Note**: As of Phase 5, this server uses CE-MCP (Claude-Enriched MCP) mode by default.
+> In CE-MCP mode, tools return orchestration directives that the host LLM executes directly,
+> eliminating the need for external API calls. The configuration below applies to legacy mode only.
 
 ## Current Configuration
 - **AI Execution Enabled**: ${status.isEnabled ? '✅ YES' : '❌ NO'}
@@ -8080,6 +8085,24 @@ Please provide:
    * Start the server
    */
   async start(): Promise<void> {
+    // Check for required dependencies
+    const ripgrepAvailable = await isRipgrepAvailable();
+    if (!ripgrepAvailable) {
+      this.logger.error(
+        'ripgrep (rg) is required but not found. Please install it:\n' +
+          '  macOS: brew install ripgrep\n' +
+          '  Ubuntu/Debian: sudo apt install ripgrep\n' +
+          '  RHEL/Fedora: sudo dnf install ripgrep\n' +
+          '  Windows: choco install ripgrep',
+        'McpAdrAnalysisServer'
+      );
+      throw new McpAdrError(
+        'Required dependency ripgrep (rg) is not installed. See https://github.com/BurntSushi/ripgrep#installation',
+        'MISSING_DEPENDENCY'
+      );
+    }
+    this.logger.info('ripgrep dependency verified', 'McpAdrAnalysisServer');
+
     // Validate configuration before starting
     await this.validateConfiguration();
 
