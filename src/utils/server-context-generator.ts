@@ -98,10 +98,55 @@ export class ServerContextGenerator {
 
     await fs.writeFile(outputPath, content, 'utf-8');
 
+    // Ensure .mcp-server-context.md is in .gitignore (auto-generated files shouldn't be tracked)
+    await this.ensureGitignoreEntry(this.config.projectPath, '.mcp-server-context.md');
+
     this.logger.info('Server context file updated', 'ServerContextGenerator', {
       path: outputPath,
       size: content.length,
     });
+  }
+
+  /**
+   * Ensure a file pattern is in .gitignore
+   * Adds the pattern if not already present
+   */
+  private async ensureGitignoreEntry(projectPath: string, pattern: string): Promise<void> {
+    const gitignorePath = path.join(projectPath, '.gitignore');
+
+    try {
+      let gitignoreContent = '';
+
+      // Read existing .gitignore if it exists
+      try {
+        gitignoreContent = await fs.readFile(gitignorePath, 'utf-8');
+      } catch {
+        // .gitignore doesn't exist, will create it
+      }
+
+      // Check if pattern is already in .gitignore
+      const lines = gitignoreContent.split('\n');
+      const patternExists = lines.some(line => line.trim() === pattern);
+
+      if (!patternExists) {
+        // Add pattern with a comment
+        const addition =
+          gitignoreContent.length > 0 && !gitignoreContent.endsWith('\n')
+            ? `\n\n# Auto-generated MCP server context (added automatically)\n${pattern}\n`
+            : `\n# Auto-generated MCP server context (added automatically)\n${pattern}\n`;
+
+        await fs.appendFile(gitignorePath, addition);
+
+        this.logger.info('Added .mcp-server-context.md to .gitignore', 'ServerContextGenerator', {
+          gitignorePath,
+        });
+      }
+    } catch (error) {
+      // Non-fatal: log but don't fail if we can't update .gitignore
+      this.logger.warn('Could not update .gitignore', 'ServerContextGenerator', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
   }
 
   private generateHeader(): string {
