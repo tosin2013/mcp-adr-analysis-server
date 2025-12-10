@@ -40,3 +40,40 @@ Key components:
 - Need for sophisticated error handling and fallback mechanisms
 - Higher computational costs due to advanced prompting techniques
 - Complexity in managing confidence scoring and evidence validation
+
+## Evolution Notes (2025)
+
+> **CE-MCP Paradigm Shift**: This ADR documents the original AI integration strategy with advanced prompting techniques. As of 2025, the CE-MCP paradigm shifts the LLM's role from step-by-step planner to holistic code generator. See **ADR-014** for the complete evolution.
+
+**Key Changes in CE-MCP:**
+
+- LLM generates complete orchestration scripts (Python/TypeScript) instead of sequential tool calls
+- Context assembly moves from upfront composition to sandbox-based lazy loading
+- Intermediate results stay in sandbox memory rather than passing through LLM context
+- Prompt loading becomes on-demand via catalog registry (96% token reduction)
+
+**This ADR Remains Valid For:**
+
+- Knowledge Generation concepts (moved to sandbox operations)
+- Reflexion Learning principles (state managed in sandbox)
+- Confidence Scoring methodology
+- Evidence-Based Analysis requirements
+- Methodological Pragmatism framework
+
+**Token Optimization Context:**
+Analysis revealed inefficiencies in current implementation:
+
+- 6,145 lines of prompts (~28K tokens) loaded upfront
+- 121+ AI call points with intermediate result embedding
+- Sequential context assembly (9K-12K tokens before LLM call)
+
+**Superseded By ADR-014 For:**
+
+- Prompt loading strategy (now lazy-loading registry)
+- Context composition patterns (now sandbox directives)
+- Multi-step AI workflow orchestration (now code-generated)
+
+## Related ADRs
+
+- ADR-001: MCP Protocol Implementation Strategy (foundation)
+- ADR-014: CE-MCP Architecture (evolves this ADR)

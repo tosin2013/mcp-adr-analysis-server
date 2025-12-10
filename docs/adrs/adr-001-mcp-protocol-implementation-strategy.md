@@ -28,3 +28,30 @@ We will implement MCP using Server-Sent Events (SSE) as the primary transport pr
 - Increased complexity in managing tool interaction and lifecycle
 - Additional overhead for plugin management and dependency resolution
 - Requires careful state management in stateless HTTP connections
+
+## Evolution Notes (2025)
+
+> **CE-MCP Paradigm Shift**: This ADR documents the original MCP implementation strategy (November 2024). As of 2025, the CE-MCP (Code Execution with MCP) paradigm has been adopted as a recommended best practice. See **ADR-014** for the evolution of this architecture.
+
+**Key Changes in CE-MCP:**
+
+- MCP's role shifts from direct tool-calling to standardized RPC interface consumed by AI-generated code
+- LLM generates orchestration scripts rather than making sequential tool calls
+- Intermediate results remain in sandbox memory rather than passing through context
+- Progressive tool discovery replaces monolithic upfront loading
+
+**This ADR Remains Valid For:**
+
+- SSE transport protocol selection
+- JSON-RPC message formatting
+- Plugin-based tool architecture foundation
+
+**Superseded By ADR-014 For:**
+
+- Tool loading strategy (now progressive discovery)
+- Context management patterns (now sandbox-based)
+- Tool invocation flow (now code-generated orchestration)
+
+## Related ADRs
+
+- ADR-014: CE-MCP Architecture (evolves this ADR)
