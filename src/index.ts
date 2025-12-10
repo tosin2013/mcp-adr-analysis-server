@@ -3106,6 +3106,34 @@ export class McpAdrAnalysisServer {
               },
             },
           },
+          {
+            name: 'get_current_datetime',
+            description:
+              'Get the current date and time in various formats. Useful for timestamping ADRs, research documents, and other architectural artifacts. Returns ISO 8601, human-readable, and ADR-specific date formats.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                timezone: {
+                  type: 'string',
+                  description:
+                    'Timezone for the datetime (e.g., "UTC", "America/New_York", "Europe/London"). Defaults to UTC.',
+                  default: 'UTC',
+                },
+                format: {
+                  type: 'string',
+                  enum: ['iso', 'human', 'adr', 'all'],
+                  description:
+                    'Output format: "iso" for ISO 8601, "human" for human-readable, "adr" for ADR date format (YYYY-MM-DD), "all" for all formats',
+                  default: 'all',
+                },
+                includeTimestamp: {
+                  type: 'boolean',
+                  description: 'Include Unix timestamp in milliseconds',
+                  default: true,
+                },
+              },
+            },
+          },
         ],
       };
     });
@@ -3374,6 +3402,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'get_server_context':
             response = await this.getServerContext(safeArgs);
+            break;
+          case 'get_current_datetime':
+            response = await this.getCurrentDatetime(safeArgs);
             break;
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
@@ -4097,10 +4128,14 @@ This guidance is tailored to your specific context and goals for maximum effecti
         const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
         const absoluteAdrPath = getAdrDirectoryPath(this.config);
 
-        const discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath, this.config.projectPath, {
-          includeContent: true,
-          includeTimeline: false,
-        });
+        const discoveryResult = await discoverAdrsInDirectory(
+          absoluteAdrPath,
+          this.config.projectPath,
+          {
+            includeContent: true,
+            includeTimeline: false,
+          }
+        );
 
         // Filter ADRs to only those specified for implementation
         const targetAdrs = discoveryResult.adrs.filter(adr =>
@@ -5493,10 +5528,14 @@ The enhanced process maintains full traceability from PRD requirements to genera
       let discoveryResult: unknown = null;
       if (validationType === 'full' || validationType === 'adr-only') {
         const { discoverAdrsInDirectory } = await import('./utils/adr-discovery.js');
-        discoveryResult = await discoverAdrsInDirectory(absoluteAdrPath as string, projectPath as string, {
-          includeContent: true,
-          includeTimeline: false,
-        });
+        discoveryResult = await discoverAdrsInDirectory(
+          absoluteAdrPath as string,
+          projectPath as string,
+          {
+            includeContent: true,
+            includeTimeline: false,
+          }
+        );
       }
       const analysis = await this.performLocalAdrProgressAnalysis({
         todoContent,
@@ -6902,14 +6941,12 @@ Please provide:
       responseText += `**Total ADRs:** ${result.totalAdrs}\n\n`;
 
       // Add timeline summary
-      if (result.adrs.some((adr) => adr.timeline)) {
-        const withTimeline = result.adrs.filter((adr) => adr.timeline).length;
+      if (result.adrs.some(adr => adr.timeline)) {
+        const withTimeline = result.adrs.filter(adr => adr.timeline).length;
         responseText += `## Timeline Data\n\n`;
         responseText += `- **ADRs with Timeline:** ${withTimeline}/${result.totalAdrs}\n`;
 
-        const ages = result.adrs
-          .filter((adr) => adr.timeline)
-          .map((adr) => adr.timeline!.age_days);
+        const ages = result.adrs.filter(adr => adr.timeline).map(adr => adr.timeline!.age_days);
         if (ages.length > 0) {
           const avgAge = Math.floor(ages.reduce((a, b) => a + b, 0) / ages.length);
           const oldestAge = Math.max(...ages);
@@ -8364,6 +8401,131 @@ This tool has been deprecated and replaced with memory-centric health scoring.
       throw new McpAdrError(
         `Server context generation failed: ${error instanceof Error ? error.message : String(error)}`,
         'SERVER_CONTEXT_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Get Current Datetime Tool
+   * Returns the current date and time in various formats for ADR generation and timestamping
+   */
+  private async getCurrentDatetime(args: {
+    timezone?: string;
+    format?: 'iso' | 'human' | 'adr' | 'all';
+    includeTimestamp?: boolean;
+  }): Promise<CallToolResult> {
+    const { timezone = 'UTC', format = 'all', includeTimestamp = true } = args;
+
+    try {
+      const now = new Date();
+
+      // Format date for different timezones
+      const formatOptions: Intl.DateTimeFormatOptions = {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false,
+      };
+
+      // Get date parts for the specified timezone
+      const formatter = new Intl.DateTimeFormat('en-CA', {
+        timeZone: timezone,
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      });
+      const parts = formatter.formatToParts(now);
+      const year = parts.find(p => p.type === 'year')?.value || '';
+      const month = parts.find(p => p.type === 'month')?.value || '';
+      const day = parts.find(p => p.type === 'day')?.value || '';
+
+      // ADR date format: YYYY-MM-DD
+      const adrDate = `${year}-${month}-${day}`;
+
+      // ISO 8601 format
+      const isoDate = now.toISOString();
+
+      // Human-readable format
+      const humanFormatter = new Intl.DateTimeFormat('en-US', {
+        ...formatOptions,
+        weekday: 'long',
+        month: 'long',
+      });
+      const humanDate = humanFormatter.format(now);
+
+      // Build response based on requested format
+      let responseData: Record<string, string | number> = {};
+
+      switch (format) {
+        case 'iso':
+          responseData = { iso: isoDate };
+          break;
+        case 'human':
+          responseData = { human: humanDate };
+          break;
+        case 'adr':
+          responseData = { adr: adrDate };
+          break;
+        case 'all':
+        default:
+          responseData = {
+            iso: isoDate,
+            human: humanDate,
+            adr: adrDate,
+            timezone: timezone,
+          };
+      }
+
+      if (includeTimestamp) {
+        responseData['timestamp'] = now.getTime();
+      }
+
+      const responseText = `# Current Date and Time
+
+## Formats
+${format === 'all' || format === 'iso' ? `- **ISO 8601**: ${isoDate}` : ''}
+${format === 'all' || format === 'human' ? `- **Human Readable**: ${humanDate}` : ''}
+${format === 'all' || format === 'adr' ? `- **ADR Date (YYYY-MM-DD)**: ${adrDate}` : ''}
+${format === 'all' ? `- **Timezone**: ${timezone}` : ''}
+${includeTimestamp ? `- **Unix Timestamp (ms)**: ${now.getTime()}` : ''}
+
+## Usage for ADR Generation
+
+When generating ADRs, use the ADR date format (\`${adrDate}\`) in the Date field:
+
+\`\`\`markdown
+# ADR-XXXX: [Title]
+
+## Date
+${adrDate}
+
+## Status
+Proposed
+\`\`\`
+
+## Raw Data
+
+\`\`\`json
+${JSON.stringify(responseData, null, 2)}
+\`\`\`
+`;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: responseText,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to get current datetime: ${error instanceof Error ? error.message : String(error)}`,
+        'DATETIME_ERROR'
       );
     }
   }
