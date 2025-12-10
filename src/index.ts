@@ -3147,6 +3147,29 @@ export class McpAdrAnalysisServer {
               },
             },
           },
+          // Session management tool for dynamic project switching
+          {
+            name: 'set_project_path',
+            description:
+              'Dynamically set the active project path for the current session. Call this at the start of a session to switch between projects without restarting the server or modifying environment variables. All subsequent tool calls will use this path as the default.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                path: {
+                  type: 'string',
+                  description:
+                    'Absolute path to the project directory. Must be an existing directory.',
+                },
+                validatePath: {
+                  type: 'boolean',
+                  description:
+                    'Whether to validate that the path exists and is a directory (default: true)',
+                  default: true,
+                },
+              },
+              required: ['path'],
+            },
+          },
           // CE-MCP Phase 4: Lazy Prompt Loading Tool
           {
             name: 'load_prompt',
@@ -3486,6 +3509,14 @@ export class McpAdrAnalysisServer {
                 },
               ],
             };
+            break;
+          case 'set_project_path':
+            response = await this.setProjectPath(
+              safeArgs as unknown as {
+                path: string;
+                validatePath?: boolean;
+              }
+            );
             break;
           case 'load_prompt':
             response = await this.loadPrompt(
@@ -8619,6 +8650,77 @@ ${JSON.stringify(responseData, null, 2)}
       throw new McpAdrError(
         `Failed to get current datetime: ${error instanceof Error ? error.message : String(error)}`,
         'DATETIME_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Set Project Path Tool - Dynamic Session Configuration
+   *
+   * @description Dynamically sets the active project path for the current session.
+   * This allows switching between projects without restarting the server or modifying
+   * environment variables. Updates both the config and the RootManager.
+   *
+   * @param args - Set project path arguments
+   * @param args.path - Absolute path to the project directory
+   * @param args.validatePath - Whether to validate the path exists (default: true)
+   * @returns Promise<CallToolResult> - Confirmation of the path change
+   */
+  private async setProjectPath(args: {
+    path: string;
+    validatePath?: boolean;
+  }): Promise<CallToolResult> {
+    const { path: newPath, validatePath = true } = args;
+    const { resolve } = await import('path');
+
+    try {
+      // Resolve to absolute path
+      const absolutePath = resolve(newPath);
+      const previousPath = this.config.projectPath;
+
+      // Validate the path if requested
+      if (validatePath) {
+        await validateProjectPath(absolutePath);
+      }
+
+      // Update the server configuration
+      this.config.projectPath = absolutePath;
+
+      // Re-initialize the RootManager with the new path
+      this.rootManager = new RootManager(absolutePath, this.config.adrDirectory);
+
+      this.logger.info(`Project path changed: ${previousPath} -> ${absolutePath}`);
+
+      const responseText = `# Project Path Updated
+
+## Configuration
+- **Previous Path**: \`${previousPath}\`
+- **New Path**: \`${absolutePath}\`
+- **ADR Directory**: \`${this.config.adrDirectory}\`
+- **Full ADR Path**: \`${resolve(absolutePath, this.config.adrDirectory)}\`
+
+## Status
+✅ Project path successfully updated for this session.
+
+## Note
+All subsequent tool calls will use this path as the default project path.
+You can still override it per-tool by passing \`projectPath\` as an argument.
+
+To make this permanent, set the \`PROJECT_PATH\` environment variable.
+`;
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: responseText,
+          },
+        ],
+      };
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to set project path: ${error instanceof Error ? error.message : String(error)}`,
+        'SET_PROJECT_PATH_ERROR'
       );
     }
   }
