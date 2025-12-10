@@ -88,7 +88,7 @@ describe('AI Configuration', () => {
       expect(DEFAULT_AI_CONFIG.apiKey).toBe('');
       expect(DEFAULT_AI_CONFIG.baseURL).toBe('https://openrouter.ai/api/v1');
       expect(DEFAULT_AI_CONFIG.defaultModel).toBe('anthropic/claude-3-sonnet');
-      expect(DEFAULT_AI_CONFIG.executionMode).toBe('full');
+      expect(DEFAULT_AI_CONFIG.executionMode).toBe('ce-mcp');
       expect(DEFAULT_AI_CONFIG.siteUrl).toBe(
         'https://github.com/tosin2013/mcp-adr-analysis-server'
       );
