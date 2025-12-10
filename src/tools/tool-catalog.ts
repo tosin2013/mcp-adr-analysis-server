@@ -211,7 +211,7 @@ TOOL_CATALOG.set('smart_score', {
   category: 'analysis',
   complexity: 'moderate',
   tokenCost: { min: 3000, max: 6000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.2: CE-MCP directive added
   relatedTools: ['analyze_project_ecosystem', 'validate_all_adrs'],
   keywords: ['score', 'quality', 'metrics', 'analysis'],
   requiresAI: true,
@@ -283,7 +283,7 @@ TOOL_CATALOG.set('generate_adrs_from_prd', {
   category: 'adr',
   complexity: 'complex',
   tokenCost: { min: 4000, max: 8000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.2: CE-MCP directive added
   relatedTools: ['suggest_adrs', 'generate_adr_from_decision'],
   keywords: ['adr', 'prd', 'requirements', 'generate'],
   requiresAI: true,
@@ -446,7 +446,7 @@ TOOL_CATALOG.set('interactive_adr_planning', {
   category: 'adr',
   complexity: 'complex',
   tokenCost: { min: 3000, max: 6000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.2: CE-MCP directive added
   relatedTools: ['suggest_adrs', 'generate_adr_from_decision'],
   keywords: ['adr', 'planning', 'interactive', 'session'],
   requiresAI: true,
@@ -601,7 +601,7 @@ TOOL_CATALOG.set('perform_research', {
   category: 'research',
   complexity: 'complex',
   tokenCost: { min: 4000, max: 10000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.2: CE-MCP directive added
   relatedTools: ['incorporate_research', 'generate_research_questions'],
   keywords: ['research', 'search', 'investigate', 'topic'],
   requiresAI: true,
@@ -859,7 +859,7 @@ TOOL_CATALOG.set('troubleshoot_guided_workflow', {
   category: 'deployment',
   complexity: 'complex',
   tokenCost: { min: 3000, max: 7000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.2: CE-MCP directive added
   relatedTools: ['deployment_readiness', 'analyze_deployment_progress'],
   keywords: ['troubleshoot', 'guided', 'workflow', 'issues'],
   requiresAI: true,
@@ -1221,7 +1221,7 @@ TOOL_CATALOG.set('mcp_planning', {
   category: 'workflow',
   complexity: 'complex',
   tokenCost: { min: 3000, max: 6000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.2: CE-MCP directive added
   relatedTools: ['get_workflow_guidance', 'tool_chain_orchestrator'],
   keywords: ['mcp', 'planning', 'design', 'server'],
   requiresAI: true,
@@ -1354,6 +1354,103 @@ TOOL_CATALOG.set('get_current_datetime', {
     properties: {
       format: { type: 'string', enum: ['iso', 'human', 'adr', 'all'] },
       timezone: { type: 'string' },
+    },
+  },
+});
+
+// CE-MCP Phase 4: Lazy Prompt Loading
+TOOL_CATALOG.set('load_prompt', {
+  name: 'load_prompt',
+  shortDescription: 'Load prompts on-demand (CE-MCP)',
+  fullDescription:
+    'Loads prompts on-demand instead of eagerly loading all prompts at startup. Part of CE-MCP lazy loading system that reduces token usage by ~96%.',
+  category: 'utility',
+  complexity: 'simple',
+  tokenCost: { min: 100, max: 500 },
+  hasCEMCPDirective: true,
+  relatedTools: ['search_tools', 'analyze_project_ecosystem'],
+  keywords: ['prompt', 'load', 'lazy', 'ce-mcp', 'token', 'optimization'],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      promptName: {
+        type: 'string',
+        description: 'Name of the prompt to load',
+        enum: [
+          'adr-suggestion',
+          'deployment-analysis',
+          'environment-analysis',
+          'research-question',
+          'rule-generation',
+          'analysis',
+          'research-integration',
+          'validated-pattern',
+          'security',
+        ],
+      },
+      section: {
+        type: 'string',
+        description: 'Specific section within the prompt to load',
+      },
+      estimateOnly: {
+        type: 'boolean',
+        description: 'Return only token estimate without loading content',
+      },
+    },
+    required: ['promptName'],
+  },
+});
+
+// CE-MCP Meta-Tool: search_tools
+TOOL_CATALOG.set('search_tools', {
+  name: 'search_tools',
+  shortDescription: 'Search and discover tools (CE-MCP)',
+  fullDescription:
+    'Search and discover available tools by category, keyword, or capability. Returns lightweight tool metadata for token-efficient discovery.',
+  category: 'utility',
+  complexity: 'simple',
+  tokenCost: { min: 100, max: 300 },
+  hasCEMCPDirective: true,
+  relatedTools: ['load_prompt'],
+  keywords: ['search', 'discover', 'tools', 'catalog', 'ce-mcp', 'meta'],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      category: {
+        type: 'string',
+        description: 'Filter by tool category',
+        enum: [
+          'analysis',
+          'adr',
+          'content-security',
+          'research',
+          'deployment',
+          'memory',
+          'file-system',
+          'rules',
+          'workflow',
+          'utility',
+        ],
+      },
+      query: {
+        type: 'string',
+        description: 'Search query to match tool names, descriptions, and keywords',
+      },
+      complexity: {
+        type: 'string',
+        enum: ['simple', 'moderate', 'complex'],
+        description: 'Filter by complexity level',
+      },
+      cemcpOnly: {
+        type: 'boolean',
+        description: 'Only return tools with CE-MCP directive support',
+      },
+      limit: {
+        type: 'number',
+        description: 'Maximum number of tools to return',
+      },
     },
   },
 });
