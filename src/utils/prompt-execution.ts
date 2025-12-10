@@ -3,6 +3,17 @@
  *
  * This module provides utilities for executing prompts with AI when enabled,
  * or falling back to returning prompts for external execution.
+ *
+ * @deprecated This module contains legacy OpenRouter execution functions.
+ * As of Phase 4.4 CE-MCP migration, tools should return OrchestrationDirectives
+ * instead of calling these execution functions. See ADR-014 for details.
+ *
+ * Migration guide:
+ * - Replace executePromptWithFallback() with OrchestrationDirective returns
+ * - Replace executeADRSuggestionPrompt() with directive-based ADR generation
+ * - Replace formatMCPResponse() with direct directive returns
+ *
+ * These functions remain for backward compatibility during the hybrid transition period.
  */
 
 import { getAIExecutor, AIExecutionResult } from './ai-executor.js';
@@ -40,6 +51,9 @@ export interface PromptExecutionResult {
 
 /**
  * Execute a prompt with AI if enabled, otherwise return formatted prompt
+ *
+ * @deprecated Use OrchestrationDirective returns instead. This function
+ * will be removed in a future release. See ADR-014 CE-MCP Architecture.
  */
 export async function executePromptWithFallback(
   prompt: string,
@@ -217,6 +231,8 @@ function formatPromptForExternal(
 
 /**
  * Execute a prompt that expects structured ADR suggestions
+ *
+ * @deprecated Use OrchestrationDirective returns instead. See ADR-014.
  */
 export async function executeADRSuggestionPrompt(
   prompt: string,
@@ -242,6 +258,8 @@ Provide clear reasoning for each suggestion and prioritize them by importance.
 
 /**
  * Execute a prompt that expects to generate actual ADRs
+ *
+ * @deprecated Use OrchestrationDirective returns instead. See ADR-014.
  */
 export async function executeADRGenerationPrompt(
   prompt: string,
@@ -267,6 +285,8 @@ Use the standard ADR format with Status, Context, Decision, and Consequences sec
 
 /**
  * Execute a prompt for project ecosystem analysis
+ *
+ * @deprecated Use OrchestrationDirective returns instead. See ADR-014.
  */
 export async function executeEcosystemAnalysisPrompt(
   prompt: string,
@@ -292,6 +312,8 @@ Focus on practical, actionable insights that can guide architectural decisions.
 
 /**
  * Execute a prompt for research question generation
+ *
+ * @deprecated Use OrchestrationDirective returns instead. See ADR-014.
  */
 export async function executeResearchPrompt(
   prompt: string,
@@ -329,6 +351,8 @@ export function isAIExecutionAvailable(): boolean {
 
 /**
  * Get AI execution status for debugging
+ *
+ * @deprecated Legacy OpenRouter status function. Use isCEMCPEnabled() instead.
  */
 export function getAIExecutionStatus(): {
   isEnabled: boolean;
@@ -368,7 +392,9 @@ export function getAIExecutionStatus(): {
 }
 
 /**
- * Get AI execution status and configuration info (legacy)
+ * Get AI execution status and configuration info
+ *
+ * @deprecated Legacy OpenRouter info function. Use isCEMCPEnabled() instead.
  */
 export function getAIExecutionInfo(): {
   available: boolean;
@@ -394,6 +420,8 @@ export function getAIExecutionInfo(): {
 
 /**
  * Format execution result for MCP tool response
+ *
+ * @deprecated Return OrchestrationDirective directly instead. See ADR-014.
  */
 export function formatMCPResponse(result: PromptExecutionResult): {
   content: Array<{ type: 'text'; text: string }>;

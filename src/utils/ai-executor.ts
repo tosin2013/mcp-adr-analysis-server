@@ -3,6 +3,16 @@
  *
  * This service handles the execution of prompts using OpenRouter.ai,
  * transforming the MCP server from returning prompts to returning actual results.
+ *
+ * @deprecated This module is part of the legacy OpenRouter execution path.
+ * As of CE-MCP Phase 4.4, tools should return OrchestrationDirectives instead
+ * of using this executor. This module is retained for:
+ * - Hybrid mode support (CE-MCP with OpenRouter fallback)
+ * - LLM-specific tools (llm_web_search, llm_cloud_management, llm_database_management)
+ *
+ * For new tools, use the directive-based approach defined in ADR-014.
+ * @see src/types/ce-mcp.ts for OrchestrationDirective types
+ * @see docs/adrs/adr-014-ce-mcp-architecture.md
  */
 
 import OpenAI from 'openai';

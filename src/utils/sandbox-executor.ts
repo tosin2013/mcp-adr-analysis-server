@@ -4,10 +4,17 @@
  * Executes orchestration directives in an isolated sandbox environment.
  * Replaces direct OpenRouter calls with local execution of LLM-generated code.
  *
+ * Performance Optimizations (Phase 4.4):
+ * - Parallel operation execution for independent operations
+ * - Batched file system operations
+ * - LRU cache with automatic eviction
+ * - Lazy dependency resolution
+ *
  * @see ADR-014: CE-MCP Architecture
  */
 
-import { readFile, readdir, stat } from 'fs/promises';
+import { readFile, readdir, stat, access } from 'fs/promises';
+import { constants } from 'fs';
 import { join, resolve } from 'path';
 import {
   OrchestrationDirective,
@@ -44,6 +51,21 @@ export const DEFAULT_CEMCP_CONFIG: CEMCPConfig = {
 };
 
 /**
+ * Cache entry with LRU tracking
+ */
+interface CacheEntry<T> {
+  result: T;
+  expiry: number;
+  lastAccess: number;
+}
+
+/**
+ * Maximum cache sizes for memory management (Phase 4.4 optimization)
+ */
+const MAX_OPERATION_CACHE_SIZE = 500;
+const MAX_PROMPT_CACHE_SIZE = 100;
+
+/**
  * Sandbox Executor Class
  *
  * Executes CE-MCP directives in an isolated environment with:
@@ -51,14 +73,36 @@ export const DEFAULT_CEMCP_CONFIG: CEMCPConfig = {
  * - Filesystem restrictions (project path only)
  * - Resource limits (timeout, memory, operations)
  * - State management (results persist across operations)
+ * - LRU cache eviction for memory efficiency (Phase 4.4)
  */
 export class SandboxExecutor {
   private config: CEMCPConfig;
-  private operationCache: Map<string, { result: unknown; expiry: number }> = new Map();
-  private promptCache: Map<string, { content: string; expiry: number }> = new Map();
+  private operationCache: Map<string, CacheEntry<unknown>> = new Map();
+  private promptCache: Map<string, CacheEntry<string>> = new Map();
+  private cacheHits = 0;
+  private cacheMisses = 0;
 
   constructor(config?: Partial<CEMCPConfig>) {
     this.config = { ...DEFAULT_CEMCP_CONFIG, ...config };
+  }
+
+  /**
+   * Evict oldest entries when cache exceeds max size (LRU strategy)
+   */
+  private evictOldestEntries<T>(cache: Map<string, CacheEntry<T>>, maxSize: number): void {
+    if (cache.size <= maxSize) return;
+
+    // Sort by last access time
+    const entries = Array.from(cache.entries()).sort((a, b) => a[1].lastAccess - b[1].lastAccess);
+
+    // Remove oldest 25% of entries
+    const removeCount = Math.ceil(cache.size * 0.25);
+    for (let i = 0; i < removeCount && i < entries.length; i++) {
+      const key = entries[i]?.[0];
+      if (key) {
+        cache.delete(key);
+      }
+    }
   }
 
   /**
@@ -324,11 +368,17 @@ export class SandboxExecutor {
       throw new Error('loadPrompt requires "name" argument');
     }
 
-    // Check prompt cache
+    // Check prompt cache with LRU tracking
     const cacheKey = `prompt:${promptName}:${section || 'full'}`;
     const cached = this.promptCache.get(cacheKey);
     if (cached && Date.now() < cached.expiry) {
-      return cached.content;
+      cached.lastAccess = Date.now();
+      this.cacheHits++;
+      return cached.result;
+    }
+    this.cacheMisses++;
+    if (cached) {
+      this.promptCache.delete(cacheKey);
     }
 
     // Load prompt from file system
@@ -338,10 +388,14 @@ export class SandboxExecutor {
     try {
       const content = await readFile(promptPath, 'utf-8');
 
-      // Cache the result
+      // Evict old entries if cache is full
+      this.evictOldestEntries(this.promptCache, MAX_PROMPT_CACHE_SIZE);
+
+      // Cache the result with LRU tracking
       this.promptCache.set(cacheKey, {
-        content,
+        result: content,
         expiry: Date.now() + this.config.prompts.cacheTTL * 1000,
+        lastAccess: Date.now(),
       });
 
       return content;
@@ -419,6 +473,7 @@ export class SandboxExecutor {
 
   /**
    * Operation: Scan environment configuration
+   * Optimized with parallel file checks (Phase 4.4)
    */
   private async opScanEnvironment(
     _args: Record<string, unknown> | undefined,
@@ -433,15 +488,20 @@ export class SandboxExecutor {
       '.github/workflows',
     ];
 
-    const found: Record<string, boolean> = {};
-
-    for (const file of checkFiles) {
+    // Batch file existence checks in parallel for better performance
+    const checkPromises = checkFiles.map(async file => {
       try {
-        await stat(join(context.projectPath, file));
-        found[file] = true;
+        await access(join(context.projectPath, file), constants.F_OK);
+        return { file, exists: true };
       } catch {
-        found[file] = false;
+        return { file, exists: false };
       }
+    });
+
+    const results = await Promise.all(checkPromises);
+    const found: Record<string, boolean> = {};
+    for (const { file, exists } of results) {
+      found[file] = exists;
     }
 
     // Read package.json for dependencies
@@ -543,6 +603,7 @@ export class SandboxExecutor {
     this.operationCache.set(key, {
       result: input,
       expiry: Date.now() + ttl * 1000,
+      lastAccess: Date.now(),
     });
 
     return true;
@@ -623,23 +684,35 @@ export class SandboxExecutor {
   }
 
   /**
-   * Get cached operation result
+   * Get cached operation result (with LRU tracking)
    */
   private getCachedOperation(key: string): unknown | undefined {
     const cached = this.operationCache.get(key);
     if (cached && Date.now() < cached.expiry) {
+      // Update last access time for LRU
+      cached.lastAccess = Date.now();
+      this.cacheHits++;
       return cached.result;
+    }
+    this.cacheMisses++;
+    // Remove expired entry
+    if (cached) {
+      this.operationCache.delete(key);
     }
     return undefined;
   }
 
   /**
-   * Set cached operation result
+   * Set cached operation result (with LRU eviction)
    */
   private setCachedOperation(key: string, result: unknown): void {
+    // Evict old entries if cache is full
+    this.evictOldestEntries(this.operationCache, MAX_OPERATION_CACHE_SIZE);
+
     this.operationCache.set(key, {
       result,
       expiry: Date.now() + this.config.prompts.cacheTTL * 1000,
+      lastAccess: Date.now(),
     });
   }
 
@@ -676,13 +749,31 @@ export class SandboxExecutor {
   }
 
   /**
-   * Get cache statistics
+   * Get cache statistics (Phase 4.4 enhanced metrics)
    */
-  getCacheStats(): { operations: number; prompts: number } {
+  getCacheStats(): {
+    operations: number;
+    prompts: number;
+    hits: number;
+    misses: number;
+    hitRate: number;
+  } {
+    const total = this.cacheHits + this.cacheMisses;
     return {
       operations: this.operationCache.size,
       prompts: this.promptCache.size,
+      hits: this.cacheHits,
+      misses: this.cacheMisses,
+      hitRate: total > 0 ? Math.round((this.cacheHits / total) * 100) / 100 : 0,
     };
+  }
+
+  /**
+   * Reset cache statistics (useful for testing)
+   */
+  resetCacheStats(): void {
+    this.cacheHits = 0;
+    this.cacheMisses = 0;
   }
 }
 
