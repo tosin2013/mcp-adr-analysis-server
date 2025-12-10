@@ -166,7 +166,7 @@ TOOL_CATALOG.set('get_architectural_context', {
   category: 'analysis',
   complexity: 'moderate',
   tokenCost: { min: 2000, max: 5000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - context assembly
   relatedTools: ['analyze_project_ecosystem', 'discover_existing_adrs'],
   keywords: ['architecture', 'context', 'knowledge', 'graph'],
   requiresAI: false,
@@ -260,7 +260,7 @@ TOOL_CATALOG.set('generate_adr_from_decision', {
   category: 'adr',
   complexity: 'moderate',
   tokenCost: { min: 2000, max: 4000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - document generation
   relatedTools: ['suggest_adrs', 'validate_adr'],
   keywords: ['adr', 'generate', 'decision', 'document'],
   requiresAI: true,
@@ -304,7 +304,7 @@ TOOL_CATALOG.set('discover_existing_adrs', {
   category: 'adr',
   complexity: 'simple',
   tokenCost: { min: 500, max: 1500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - file discovery operation
   relatedTools: ['validate_all_adrs', 'analyze_adr_timeline'],
   keywords: ['adr', 'discover', 'find', 'index'],
   requiresAI: false,
@@ -325,7 +325,7 @@ TOOL_CATALOG.set('validate_adr', {
   category: 'adr',
   complexity: 'simple',
   tokenCost: { min: 500, max: 1500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - single validation operation
   relatedTools: ['validate_all_adrs', 'suggest_adrs'],
   keywords: ['adr', 'validate', 'check', 'structure'],
   requiresAI: false,
@@ -346,7 +346,7 @@ TOOL_CATALOG.set('validate_all_adrs', {
   category: 'adr',
   complexity: 'moderate',
   tokenCost: { min: 1000, max: 3000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - batch validation
   relatedTools: ['validate_adr', 'discover_existing_adrs'],
   keywords: ['adr', 'validate', 'all', 'batch'],
   requiresAI: false,
@@ -365,7 +365,7 @@ TOOL_CATALOG.set('analyze_adr_timeline', {
   category: 'adr',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - timeline analysis
   relatedTools: ['discover_existing_adrs', 'compare_adr_progress'],
   keywords: ['adr', 'timeline', 'history', 'evolution'],
   requiresAI: true,
@@ -385,7 +385,7 @@ TOOL_CATALOG.set('compare_adr_progress', {
   category: 'adr',
   complexity: 'moderate',
   tokenCost: { min: 2000, max: 4000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - progress comparison
   relatedTools: ['analyze_adr_timeline', 'validate_all_adrs'],
   keywords: ['adr', 'compare', 'progress', 'implementation'],
   requiresAI: true,
@@ -404,7 +404,7 @@ TOOL_CATALOG.set('review_existing_adrs', {
   category: 'adr',
   complexity: 'moderate',
   tokenCost: { min: 2000, max: 4000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - ADR review
   relatedTools: ['validate_all_adrs', 'suggest_adrs'],
   keywords: ['adr', 'review', 'analyze', 'update'],
   requiresAI: true,
@@ -425,7 +425,7 @@ TOOL_CATALOG.set('generate_adr_bootstrap', {
   category: 'adr',
   complexity: 'simple',
   tokenCost: { min: 500, max: 1500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - setup/initialization
   relatedTools: ['suggest_adrs', 'generate_adr_from_decision'],
   keywords: ['adr', 'bootstrap', 'setup', 'initialize'],
   requiresAI: false,
@@ -472,7 +472,7 @@ TOOL_CATALOG.set('analyze_content_security', {
   category: 'content-security',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - security analysis
   relatedTools: ['generate_content_masking', 'validate_content_masking'],
   keywords: ['security', 'content', 'analyze', 'secrets', 'sensitive'],
   requiresAI: true,
@@ -493,7 +493,7 @@ TOOL_CATALOG.set('generate_content_masking', {
   category: 'content-security',
   complexity: 'moderate',
   tokenCost: { min: 1000, max: 2500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - masking rule generation
   relatedTools: ['analyze_content_security', 'apply_basic_content_masking'],
   keywords: ['masking', 'generate', 'rules', 'protection'],
   requiresAI: true,
@@ -514,7 +514,7 @@ TOOL_CATALOG.set('apply_basic_content_masking', {
   category: 'content-security',
   complexity: 'simple',
   tokenCost: { min: 200, max: 500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - single masking operation
   relatedTools: ['generate_content_masking', 'configure_custom_patterns'],
   keywords: ['masking', 'apply', 'basic', 'content'],
   requiresAI: false,
@@ -534,7 +534,7 @@ TOOL_CATALOG.set('configure_custom_patterns', {
   category: 'content-security',
   complexity: 'simple',
   tokenCost: { min: 200, max: 500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - pattern configuration
   relatedTools: ['apply_basic_content_masking', 'validate_content_masking'],
   keywords: ['patterns', 'configure', 'custom', 'masking'],
   requiresAI: false,
@@ -555,7 +555,7 @@ TOOL_CATALOG.set('validate_content_masking', {
   category: 'content-security',
   complexity: 'simple',
   tokenCost: { min: 300, max: 800 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - validation operation
   relatedTools: ['apply_basic_content_masking', 'analyze_content_security'],
   keywords: ['validate', 'masking', 'check', 'verify'],
   requiresAI: false,
@@ -576,7 +576,7 @@ TOOL_CATALOG.set('configure_output_masking', {
   category: 'content-security',
   complexity: 'simple',
   tokenCost: { min: 200, max: 400 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - settings configuration
   relatedTools: ['apply_basic_content_masking', 'configure_custom_patterns'],
   keywords: ['configure', 'output', 'masking', 'settings'],
   requiresAI: false,
@@ -623,7 +623,7 @@ TOOL_CATALOG.set('incorporate_research', {
   category: 'research',
   complexity: 'moderate',
   tokenCost: { min: 2000, max: 4000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - research integration
   relatedTools: ['perform_research', 'create_research_template'],
   keywords: ['research', 'incorporate', 'integrate', 'findings'],
   requiresAI: true,
@@ -644,7 +644,7 @@ TOOL_CATALOG.set('generate_research_questions', {
   category: 'research',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - question generation
   relatedTools: ['perform_research', 'create_research_template'],
   keywords: ['research', 'questions', 'generate', 'gaps'],
   requiresAI: true,
@@ -664,7 +664,7 @@ TOOL_CATALOG.set('create_research_template', {
   category: 'research',
   complexity: 'simple',
   tokenCost: { min: 500, max: 1000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - template generation
   relatedTools: ['perform_research', 'incorporate_research'],
   keywords: ['research', 'template', 'create', 'structure'],
   requiresAI: false,
@@ -685,7 +685,7 @@ TOOL_CATALOG.set('llm_web_search', {
   category: 'research',
   complexity: 'moderate',
   tokenCost: { min: 2000, max: 5000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - LLM web search
   relatedTools: ['perform_research', 'llm_cloud_management'],
   keywords: ['search', 'web', 'llm', 'internet'],
   requiresAI: true,
@@ -706,7 +706,7 @@ TOOL_CATALOG.set('llm_cloud_management', {
   category: 'research',
   complexity: 'complex',
   tokenCost: { min: 3000, max: 6000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Complex tool - cloud management orchestration
   relatedTools: ['llm_web_search', 'llm_database_management'],
   keywords: ['cloud', 'management', 'llm', 'aws', 'gcp', 'azure'],
   requiresAI: true,
@@ -727,7 +727,7 @@ TOOL_CATALOG.set('llm_database_management', {
   category: 'research',
   complexity: 'complex',
   tokenCost: { min: 2500, max: 5000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Complex tool - database management orchestration
   relatedTools: ['llm_cloud_management', 'llm_web_search'],
   keywords: ['database', 'management', 'llm', 'sql', 'nosql'],
   requiresAI: true,
@@ -775,7 +775,7 @@ TOOL_CATALOG.set('smart_git_push', {
   category: 'deployment',
   complexity: 'moderate',
   tokenCost: { min: 1000, max: 2500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - git operations
   relatedTools: ['deployment_readiness', 'analyze_deployment_progress'],
   keywords: ['git', 'push', 'smart', 'deployment'],
   requiresAI: false,
@@ -796,7 +796,7 @@ TOOL_CATALOG.set('bootstrap_validation_loop', {
   category: 'deployment',
   complexity: 'complex',
   tokenCost: { min: 3000, max: 6000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Complex tool - state machine validation
   relatedTools: ['deployment_readiness', 'generate_deployment_guidance'],
   keywords: ['bootstrap', 'validation', 'loop', 'deployment', 'patterns'],
   requiresAI: true,
@@ -817,7 +817,7 @@ TOOL_CATALOG.set('analyze_deployment_progress', {
   category: 'deployment',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - deployment tracking
   relatedTools: ['deployment_readiness', 'generate_deployment_guidance'],
   keywords: ['deployment', 'progress', 'analyze', 'status'],
   requiresAI: false,
@@ -838,7 +838,7 @@ TOOL_CATALOG.set('generate_deployment_guidance', {
   category: 'deployment',
   complexity: 'moderate',
   tokenCost: { min: 2000, max: 4000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - guidance generation
   relatedTools: ['deployment_readiness', 'bootstrap_validation_loop'],
   keywords: ['deployment', 'guidance', 'generate', 'best-practices'],
   requiresAI: true,
@@ -884,7 +884,7 @@ TOOL_CATALOG.set('memory_loading', {
   category: 'memory',
   complexity: 'simple',
   tokenCost: { min: 500, max: 2000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - memory retrieval
   relatedTools: ['expand_memory', 'query_conversation_history'],
   keywords: ['memory', 'load', 'context', 'session'],
   requiresAI: false,
@@ -904,7 +904,7 @@ TOOL_CATALOG.set('expand_memory', {
   category: 'memory',
   complexity: 'simple',
   tokenCost: { min: 300, max: 800 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - memory storage
   relatedTools: ['memory_loading', 'get_memory_stats'],
   keywords: ['memory', 'expand', 'add', 'context'],
   requiresAI: false,
@@ -925,7 +925,7 @@ TOOL_CATALOG.set('query_conversation_history', {
   category: 'memory',
   complexity: 'simple',
   tokenCost: { min: 500, max: 1500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - history query
   relatedTools: ['get_conversation_snapshot', 'memory_loading'],
   keywords: ['conversation', 'history', 'query', 'search'],
   requiresAI: false,
@@ -945,7 +945,7 @@ TOOL_CATALOG.set('get_conversation_snapshot', {
   category: 'memory',
   complexity: 'simple',
   tokenCost: { min: 300, max: 800 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - state snapshot
   relatedTools: ['query_conversation_history', 'get_memory_stats'],
   keywords: ['conversation', 'snapshot', 'state'],
   requiresAI: false,
@@ -964,7 +964,7 @@ TOOL_CATALOG.set('get_memory_stats', {
   category: 'memory',
   complexity: 'simple',
   tokenCost: { min: 200, max: 400 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - stats retrieval
   relatedTools: ['memory_loading', 'expand_memory'],
   keywords: ['memory', 'stats', 'statistics', 'usage'],
   requiresAI: false,
@@ -983,7 +983,7 @@ TOOL_CATALOG.set('expand_analysis_section', {
   category: 'memory',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - section expansion
   relatedTools: ['analyze_project_ecosystem', 'memory_loading'],
   keywords: ['expand', 'analysis', 'section', 'detail'],
   requiresAI: true,
@@ -1008,7 +1008,7 @@ TOOL_CATALOG.set('read_file', {
   category: 'file-system',
   complexity: 'simple',
   tokenCost: { min: 100, max: 5000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - file read operation
   relatedTools: ['write_file', 'read_directory'],
   keywords: ['file', 'read', 'contents'],
   requiresAI: false,
@@ -1028,7 +1028,7 @@ TOOL_CATALOG.set('write_file', {
   category: 'file-system',
   complexity: 'simple',
   tokenCost: { min: 100, max: 1000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - file write operation
   relatedTools: ['read_file', 'list_directory'],
   keywords: ['file', 'write', 'save'],
   requiresAI: false,
@@ -1049,7 +1049,7 @@ TOOL_CATALOG.set('read_directory', {
   category: 'file-system',
   complexity: 'simple',
   tokenCost: { min: 100, max: 1000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - directory read
   relatedTools: ['read_file', 'list_directory'],
   keywords: ['directory', 'read', 'list'],
   requiresAI: false,
@@ -1070,7 +1070,7 @@ TOOL_CATALOG.set('list_directory', {
   category: 'file-system',
   complexity: 'simple',
   tokenCost: { min: 100, max: 500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - directory listing
   relatedTools: ['read_directory', 'read_file'],
   keywords: ['directory', 'list', 'files'],
   requiresAI: false,
@@ -1090,7 +1090,7 @@ TOOL_CATALOG.set('list_roots', {
   category: 'file-system',
   complexity: 'simple',
   tokenCost: { min: 50, max: 200 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - root listing
   relatedTools: ['read_directory', 'list_directory'],
   keywords: ['roots', 'list', 'directories'],
   requiresAI: false,
@@ -1133,7 +1133,7 @@ TOOL_CATALOG.set('validate_rules', {
   category: 'rules',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - rule validation
   relatedTools: ['generate_rules', 'create_rule_set'],
   keywords: ['rules', 'validate', 'check', 'violations'],
   requiresAI: false,
@@ -1154,7 +1154,7 @@ TOOL_CATALOG.set('create_rule_set', {
   category: 'rules',
   complexity: 'simple',
   tokenCost: { min: 500, max: 1000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - rule set creation
   relatedTools: ['generate_rules', 'validate_rules'],
   keywords: ['rules', 'create', 'set', 'configuration'],
   requiresAI: false,
@@ -1179,7 +1179,7 @@ TOOL_CATALOG.set('get_workflow_guidance', {
   category: 'workflow',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - workflow guidance
   relatedTools: ['get_development_guidance', 'mcp_planning'],
   keywords: ['workflow', 'guidance', 'help', 'process'],
   requiresAI: true,
@@ -1200,7 +1200,7 @@ TOOL_CATALOG.set('get_development_guidance', {
   category: 'workflow',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Moderate tool - development guidance
   relatedTools: ['get_workflow_guidance', 'mcp_planning'],
   keywords: ['development', 'guidance', 'best-practices'],
   requiresAI: true,
@@ -1242,7 +1242,7 @@ TOOL_CATALOG.set('tool_chain_orchestrator', {
   category: 'workflow',
   complexity: 'complex',
   tokenCost: { min: 2000, max: 5000 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Complex tool - multi-tool orchestration
   relatedTools: ['mcp_planning', 'get_workflow_guidance'],
   keywords: ['orchestrator', 'tools', 'chain', 'workflow'],
   requiresAI: true,
@@ -1263,7 +1263,7 @@ TOOL_CATALOG.set('request_action_confirmation', {
   category: 'workflow',
   complexity: 'simple',
   tokenCost: { min: 100, max: 300 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - confirmation request
   relatedTools: ['tool_chain_orchestrator'],
   keywords: ['confirmation', 'request', 'action', 'approve'],
   requiresAI: false,
@@ -1288,7 +1288,7 @@ TOOL_CATALOG.set('manage_cache', {
   category: 'utility',
   complexity: 'simple',
   tokenCost: { min: 100, max: 500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - cache management
   relatedTools: ['get_server_context', 'get_memory_stats'],
   keywords: ['cache', 'manage', 'clear', 'cleanup'],
   requiresAI: false,
@@ -1309,7 +1309,7 @@ TOOL_CATALOG.set('check_ai_execution_status', {
   category: 'utility',
   complexity: 'simple',
   tokenCost: { min: 100, max: 300 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - status check
   relatedTools: ['get_server_context'],
   keywords: ['ai', 'status', 'check', 'execution'],
   requiresAI: false,
@@ -1326,7 +1326,7 @@ TOOL_CATALOG.set('get_server_context', {
   category: 'utility',
   complexity: 'simple',
   tokenCost: { min: 200, max: 500 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - context retrieval
   relatedTools: ['check_ai_execution_status', 'manage_cache'],
   keywords: ['server', 'context', 'config', 'status'],
   requiresAI: false,
@@ -1345,7 +1345,7 @@ TOOL_CATALOG.set('get_current_datetime', {
   category: 'utility',
   complexity: 'simple',
   tokenCost: { min: 50, max: 100 },
-  hasCEMCPDirective: false,
+  hasCEMCPDirective: true, // Phase 4.3: Simple tool - datetime retrieval
   relatedTools: [],
   keywords: ['datetime', 'time', 'date', 'current'],
   requiresAI: false,
