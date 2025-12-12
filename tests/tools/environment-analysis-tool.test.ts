@@ -173,6 +173,7 @@ describe('environment-analysis-tool', () => {
           analysisType: 'specs',
           knowledgeEnhancement: true,
           enhancedMode: true,
+          enableMemoryIntegration: false,
         });
 
         expect(result).toEqual({
@@ -190,6 +191,7 @@ describe('environment-analysis-tool', () => {
           analysisType: 'specs',
           knowledgeEnhancement: false,
           enhancedMode: false,
+          enableMemoryIntegration: false,
         });
 
         expect(result).toEqual({
@@ -207,6 +209,7 @@ describe('environment-analysis-tool', () => {
           analysisType: 'specs',
           projectPath: '/custom/project',
           adrDirectory: 'custom/adrs',
+          enableMemoryIntegration: false,
         });
 
         expect(result).toEqual({
@@ -222,7 +225,7 @@ describe('environment-analysis-tool', () => {
 
     describe('containerization analysis', () => {
       it('should perform containerization detection analysis', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'containerization' });
+        const result = await analyzeEnvironment({ analysisType: 'containerization', enableMemoryIntegration: false });
 
         expect(result).toEqual({
           content: [
@@ -239,6 +242,7 @@ describe('environment-analysis-tool', () => {
           analysisType: 'containerization',
           knowledgeEnhancement: true,
           enhancedMode: true,
+          enableMemoryIntegration: false,
         });
 
         expect(result.content[0].text).toContain('Generated Knowledge Prompting');
@@ -247,7 +251,7 @@ describe('environment-analysis-tool', () => {
       }, 30000);
 
       it('should provide expected containerization output information', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'containerization' });
+        const result = await analyzeEnvironment({ analysisType: 'containerization', enableMemoryIntegration: false });
 
         expect(result.content[0].text).toContain('Expected Output');
         expect(result.content[0].text).toContain('Dockerfile Analysis');
@@ -258,7 +262,7 @@ describe('environment-analysis-tool', () => {
 
     describe('requirements analysis', () => {
       it('should perform requirements analysis from ADRs', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'requirements' });
+        const result = await analyzeEnvironment({ analysisType: 'requirements', enableMemoryIntegration: false });
 
         expect(result).toEqual({
           content: [
@@ -275,6 +279,7 @@ describe('environment-analysis-tool', () => {
           analysisType: 'requirements',
           knowledgeEnhancement: true,
           enhancedMode: true,
+          enableMemoryIntegration: false,
         });
 
         expect(result.content[0].text).toContain('Requirements engineering');
@@ -283,7 +288,7 @@ describe('environment-analysis-tool', () => {
       });
 
       it('should provide expected requirements output information', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'requirements' });
+        const result = await analyzeEnvironment({ analysisType: 'requirements', enableMemoryIntegration: false });
 
         expect(result.content[0].text).toContain('Infrastructure Requirements');
         expect(result.content[0].text).toContain('Security Requirements');
@@ -359,7 +364,7 @@ describe('environment-analysis-tool', () => {
 
     describe('comprehensive analysis', () => {
       it('should perform comprehensive environment analysis', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'comprehensive' });
+        const result = await analyzeEnvironment({ analysisType: 'comprehensive', enableMemoryIntegration: false });
 
         expect(result).toEqual({
           content: [
@@ -372,7 +377,7 @@ describe('environment-analysis-tool', () => {
       }, 30000);
 
       it('should include all analysis types in comprehensive mode', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'comprehensive' });
+        const result = await analyzeEnvironment({ analysisType: 'comprehensive', enableMemoryIntegration: false });
 
         expect(result.content[0].text).toContain('Environment Specification Analysis');
         expect(result.content[0].text).toContain('Containerization Detection');
@@ -385,6 +390,7 @@ describe('environment-analysis-tool', () => {
           analysisType: 'comprehensive',
           knowledgeEnhancement: true,
           enhancedMode: true,
+          enableMemoryIntegration: false,
         });
 
         expect(result.content[0].text).toContain('Cloud infrastructure');
@@ -394,7 +400,7 @@ describe('environment-analysis-tool', () => {
       }, 30000);
 
       it('should provide comprehensive workflow guidance', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'comprehensive' });
+        const result = await analyzeEnvironment({ analysisType: 'comprehensive', enableMemoryIntegration: false });
 
         expect(result.content[0].text).toContain('Comprehensive Workflow');
         expect(result.content[0].text).toContain('Environment Specification Analysis');
@@ -405,7 +411,7 @@ describe('environment-analysis-tool', () => {
       }, 30000);
 
       it('should provide expected comprehensive outcomes', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'comprehensive' });
+        const result = await analyzeEnvironment({ analysisType: 'comprehensive', enableMemoryIntegration: false });
 
         expect(result.content[0].text).toContain('Expected Outcomes');
         expect(result.content[0].text).toContain('Complete Environment Understanding');
@@ -458,7 +464,7 @@ describe('environment-analysis-tool', () => {
       }, 30000);
 
       it('should use default project path and ADR directory', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'specs' });
+        const result = await analyzeEnvironment({ analysisType: 'specs', enableMemoryIntegration: false });
 
         // Should not throw error and should use defaults
         expect(result).toEqual({
@@ -472,7 +478,7 @@ describe('environment-analysis-tool', () => {
       }, 30000);
 
       it('should enable knowledge enhancement and enhanced mode by default', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'specs' });
+        const result = await analyzeEnvironment({ analysisType: 'specs', enableMemoryIntegration: false });
 
         expect(result.content[0].text).toContain('Generated Knowledge Prompting');
         expect(result.content[0].text).toContain('Enhanced Mode');
@@ -485,6 +491,7 @@ describe('environment-analysis-tool', () => {
           analysisType: 'specs',
           knowledgeEnhancement: true,
           enhancedMode: true,
+          enableMemoryIntegration: false,
         });
 
         expect(result.content[0].text).toContain('✅ Applied');
@@ -495,6 +502,7 @@ describe('environment-analysis-tool', () => {
           analysisType: 'specs',
           knowledgeEnhancement: false,
           enhancedMode: false,
+          enableMemoryIntegration: false,
         });
 
         expect(result.content[0].text).toContain('❌ Disabled');
@@ -505,6 +513,7 @@ describe('environment-analysis-tool', () => {
           analysisType: 'containerization',
           knowledgeEnhancement: true,
           enhancedMode: false,
+          enableMemoryIntegration: false,
         });
 
         expect(result).toEqual({
@@ -523,7 +532,9 @@ describe('environment-analysis-tool', () => {
         const analysisTypes = ['specs', 'containerization', 'requirements', 'comprehensive'];
 
         for (const type of analysisTypes) {
-          const result = await analyzeEnvironment({ analysisType: type as any });
+          const result = await analyzeEnvironment({ analysisType: type as any,
+          enableMemoryIntegration: false,
+        });
           expect(result).toHaveProperty('content');
           expect(Array.isArray(result.content)).toBe(true);
           expect(result.content[0]).toHaveProperty('type', 'text');
@@ -532,9 +543,9 @@ describe('environment-analysis-tool', () => {
       }, 60000); // Increase timeout to 60 seconds for comprehensive analysis
 
       it('should provide different content for different analysis types', async () => {
-        const specsResult = await analyzeEnvironment({ analysisType: 'specs' });
-        const containerResult = await analyzeEnvironment({ analysisType: 'containerization' });
-        const requirementsResult = await analyzeEnvironment({ analysisType: 'requirements' });
+        const specsResult = await analyzeEnvironment({ analysisType: 'specs', enableMemoryIntegration: false });
+        const containerResult = await analyzeEnvironment({ analysisType: 'containerization', enableMemoryIntegration: false });
+        const requirementsResult = await analyzeEnvironment({ analysisType: 'requirements', enableMemoryIntegration: false });
 
         expect(specsResult.content[0].text).toContain('Environment Specification');
         expect(containerResult.content[0].text).toContain('Containerization Technology');
