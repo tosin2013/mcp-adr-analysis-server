@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="30" failures="0" errors="0" time="8.071">
-  <testsuite name="environment-analysis-tool" errors="0" failures="0" skipped="29" timestamp="2025-12-12T15:36:18" time="7.843" tests="30">
-    <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should perform environment specs analysis with default parameters" name="environment-analysis-tool analyzeEnvironment specs analysis should perform environment specs analysis with default parameters" time="6.869">
+<testsuites name="jest tests" tests="30" failures="0" errors="0" time="0.586">
+  <testsuite name="environment-analysis-tool" errors="0" failures="0" skipped="29" timestamp="2025-12-12T15:52:24" time="0.36" tests="30">
+    <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should perform environment specs analysis with default parameters" name="environment-analysis-tool analyzeEnvironment specs analysis should perform environment specs analysis with default parameters" time="0.011">
     </testcase>
     <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should handle specs analysis with knowledge enhancement enabled" name="environment-analysis-tool analyzeEnvironment specs analysis should handle specs analysis with knowledge enhancement enabled" time="0">
       <skipped/>

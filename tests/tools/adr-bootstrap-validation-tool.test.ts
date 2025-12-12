@@ -1,4 +1,53 @@
 import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { jest } from '@jest/globals';
+
+// Mock TreeSitterAnalyzer to prevent native module loading issues
+jest.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
+  TreeSitterAnalyzer: jest.fn(function () {
+    return {
+      initializeParsers: jest.fn().mockResolvedValue(undefined),
+      analyzeCode: jest.fn().mockResolvedValue({
+        functions: [],
+        classes: [],
+        imports: [],
+        exports: [],
+        errors: [],
+      }),
+      analyzeFile: jest.fn().mockResolvedValue({
+        language: 'typescript',
+        hasSecrets: false,
+        secrets: [],
+        imports: [],
+        functions: [],
+        variables: [],
+        infraStructure: [],
+        securityIssues: [],
+        architecturalViolations: [],
+      }),
+    };
+  }),
+  analyzer: {
+    analyzeCode: jest.fn().mockResolvedValue({
+      functions: [],
+      classes: [],
+      imports: [],
+      exports: [],
+      errors: [],
+    }),
+    analyzeFile: jest.fn().mockResolvedValue({
+      language: 'typescript',
+      hasSecrets: false,
+      secrets: [],
+      imports: [],
+      functions: [],
+      variables: [],
+      infraStructure: [],
+      securityIssues: [],
+      architecturalViolations: [],
+    }),
+  },
+}));
+
 import { generateAdrBootstrapScripts } from '../../src/tools/adr-bootstrap-validation-tool.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';

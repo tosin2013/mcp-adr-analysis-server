@@ -10,6 +10,51 @@
 import { jest } from '@jest/globals';
 // import { McpAdrError } from '../../src/types/index.js';
 
+// Mock TreeSitterAnalyzer to prevent native module loading and hanging
+jest.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
+  TreeSitterAnalyzer: jest.fn().mockImplementation(() => ({
+    initializeParsers: jest.fn().mockResolvedValue(undefined),
+    analyzeCode: jest.fn().mockResolvedValue({
+      functions: [],
+      classes: [],
+      imports: [],
+      exports: [],
+      errors: [],
+    }),
+    analyzeFile: jest.fn().mockResolvedValue({
+      language: 'typescript',
+      hasSecrets: false,
+      secrets: [],
+      imports: [],
+      functions: [],
+      variables: [],
+      infraStructure: [],
+      securityIssues: [],
+      architecturalViolations: [],
+    }),
+  })),
+  analyzer: {
+    analyzeCode: jest.fn().mockResolvedValue({
+      functions: [],
+      classes: [],
+      imports: [],
+      exports: [],
+      errors: [],
+    }),
+    analyzeFile: jest.fn().mockResolvedValue({
+      language: 'typescript',
+      hasSecrets: false,
+      secrets: [],
+      imports: [],
+      functions: [],
+      variables: [],
+      infraStructure: [],
+      securityIssues: [],
+      architecturalViolations: [],
+    }),
+  },
+}));
+
 // Mock ResearchOrchestrator to prevent hanging on API calls
 jest.mock('../../src/utils/research-orchestrator.js', () => ({
   ResearchOrchestrator: jest.fn().mockImplementation(() => ({
@@ -86,19 +131,11 @@ jest.mock('../../src/utils/prompt-execution.js', () => ({
   })),
 }));
 
+// Import after all mocks are defined
+import { analyzeEnvironment } from '../../src/tools/environment-analysis-tool.js';
+import { logger } from '../../src/utils/enhanced-logging.js';
+
 describe('environment-analysis-tool', () => {
-  let analyzeEnvironment: any;
-  let logger: any;
-
-  beforeAll(async () => {
-    const module = await import('../../src/tools/environment-analysis-tool.js');
-    analyzeEnvironment = module.analyzeEnvironment;
-
-    // Import logger for cleanup
-    const loggingModule = await import('../../src/utils/enhanced-logging.js');
-    logger = loggingModule.logger;
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
   });
@@ -116,7 +153,10 @@ describe('environment-analysis-tool', () => {
   describe('analyzeEnvironment', () => {
     describe('specs analysis', () => {
       it('should perform environment specs analysis with default parameters', async () => {
-        const result = await analyzeEnvironment({ analysisType: 'specs' });
+        const result = await analyzeEnvironment({ 
+          analysisType: 'specs',
+          enableMemoryIntegration: false // Disable memory to avoid MemoryEntityManager issues
+        });
 
         expect(result).toEqual({
           content: [

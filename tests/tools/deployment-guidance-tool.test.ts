@@ -6,6 +6,53 @@
 import { jest } from '@jest/globals';
 import { McpAdrError } from '../../src/types/index.js';
 
+// Mock TreeSitterAnalyzer to prevent native module loading issues
+jest.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
+  TreeSitterAnalyzer: jest.fn(function () {
+    return {
+      initializeParsers: jest.fn().mockResolvedValue(undefined),
+      analyzeCode: jest.fn().mockResolvedValue({
+        functions: [],
+        classes: [],
+        imports: [],
+        exports: [],
+        errors: [],
+      }),
+      analyzeFile: jest.fn().mockResolvedValue({
+        language: 'typescript',
+        hasSecrets: false,
+        secrets: [],
+        imports: [],
+        functions: [],
+        variables: [],
+        infraStructure: [],
+        securityIssues: [],
+        architecturalViolations: [],
+      }),
+    };
+  }),
+  analyzer: {
+    analyzeCode: jest.fn().mockResolvedValue({
+      functions: [],
+      classes: [],
+      imports: [],
+      exports: [],
+      errors: [],
+    }),
+    analyzeFile: jest.fn().mockResolvedValue({
+      language: 'typescript',
+      hasSecrets: false,
+      secrets: [],
+      imports: [],
+      functions: [],
+      variables: [],
+      infraStructure: [],
+      securityIssues: [],
+      architecturalViolations: [],
+    }),
+  },
+}));
+
 // Pragmatic mocking approach to avoid TypeScript complexity
 jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
   discoverAdrsInDirectory: jest.fn(),

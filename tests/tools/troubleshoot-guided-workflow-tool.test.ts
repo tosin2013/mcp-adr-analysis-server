@@ -78,15 +78,10 @@ jest.mock('../../src/utils/memory-entity-manager.js', () => ({
   })),
 }));
 
+// Import after all mocks are defined
+import { troubleshootGuidedWorkflow } from '../../src/tools/troubleshoot-guided-workflow-tool.js';
+
 describe('Troubleshoot Guided Workflow Tool', () => {
-  let troubleshootGuidedWorkflow: any;
-
-  beforeAll(async () => {
-    // Import after all mocks are set up
-    const module = await import('../../src/tools/troubleshoot-guided-workflow-tool.js');
-    troubleshootGuidedWorkflow = module.troubleshootGuidedWorkflow;
-  });
-
   beforeEach(() => {
     jest.clearAllMocks();
 

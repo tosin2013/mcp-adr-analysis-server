@@ -3,6 +3,53 @@
  */
 
 import { jest } from '@jest/globals';
+
+// Mock TreeSitterAnalyzer to prevent native module loading issues
+jest.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
+  TreeSitterAnalyzer: jest.fn(function () {
+    return {
+      initializeParsers: jest.fn().mockResolvedValue(undefined),
+      analyzeCode: jest.fn().mockResolvedValue({
+        functions: [],
+        classes: [],
+        imports: [],
+        exports: [],
+        errors: [],
+      }),
+      analyzeFile: jest.fn().mockResolvedValue({
+        language: 'typescript',
+        hasSecrets: false,
+        secrets: [],
+        imports: [],
+        functions: [],
+        variables: [],
+        infraStructure: [],
+        securityIssues: [],
+        architecturalViolations: [],
+      }),
+    };
+  }),
+  analyzer: {
+    analyzeCode: jest.fn().mockResolvedValue({
+      functions: [],
+      classes: [],
+      imports: [],
+      exports: [],
+      errors: [],
+    }),
+    analyzeFile: jest.fn().mockResolvedValue({
+      language: 'typescript',
+      hasSecrets: false,
+      secrets: [],
+      imports: [],
+      functions: [],
+      variables: [],
+      infraStructure: [],
+      securityIssues: [],
+      architecturalViolations: [],
+    }),
+  },
+}));
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';

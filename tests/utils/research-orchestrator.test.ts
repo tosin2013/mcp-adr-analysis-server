@@ -4,6 +4,55 @@
  * These tests use the actual file system to test real-world behavior
  */
 
+import { jest } from '@jest/globals';
+
+// Mock TreeSitterAnalyzer to prevent native module loading issues during integration tests
+jest.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
+  TreeSitterAnalyzer: jest.fn(function () {
+    return {
+      initializeParsers: jest.fn().mockResolvedValue(undefined),
+      analyzeCode: jest.fn().mockResolvedValue({
+        functions: [],
+        classes: [],
+        imports: [],
+        exports: [],
+        errors: [],
+      }),
+      analyzeFile: jest.fn().mockResolvedValue({
+        language: 'typescript',
+        hasSecrets: false,
+        secrets: [],
+        imports: [],
+        functions: [],
+        variables: [],
+        infraStructure: [],
+        securityIssues: [],
+        architecturalViolations: [],
+      }),
+    };
+  }),
+  analyzer: {
+    analyzeCode: jest.fn().mockResolvedValue({
+      functions: [],
+      classes: [],
+      imports: [],
+      exports: [],
+      errors: [],
+    }),
+    analyzeFile: jest.fn().mockResolvedValue({
+      language: 'typescript',
+      hasSecrets: false,
+      secrets: [],
+      imports: [],
+      functions: [],
+      variables: [],
+      infraStructure: [],
+      securityIssues: [],
+      architecturalViolations: [],
+    }),
+  },
+}));
+
 import { ResearchOrchestrator } from '../../src/utils/research-orchestrator.js';
 
 describe('ResearchOrchestrator', () => {
