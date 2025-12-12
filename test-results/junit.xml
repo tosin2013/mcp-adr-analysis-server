@@ -1,25 +1,81 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="10" failures="0" errors="0" time="0.508">
-  <testsuite name="Gitleaks Detector" errors="0" failures="0" skipped="0" timestamp="2025-12-12T14:28:33" time="0.28" tests="10">
-    <testcase classname="Gitleaks Detector analyzeSensitiveContent should return empty result when no secrets found" name="Gitleaks Detector analyzeSensitiveContent should return empty result when no secrets found" time="0.005">
+<testsuites name="jest tests" tests="37" failures="0" errors="0" time="1.014">
+  <testsuite name="Smart Git Push Tool" errors="0" failures="0" skipped="0" timestamp="2025-12-12T14:31:24" time="0.484" tests="33">
+    <testcase classname="Smart Git Push Tool Git File Detection should detect staged files correctly" name="Smart Git Push Tool Git File Detection should detect staged files correctly" time="0.096">
     </testcase>
-    <testcase classname="Gitleaks Detector analyzeSensitiveContent should parse gitleaks output when secrets are found" name="Gitleaks Detector analyzeSensitiveContent should parse gitleaks output when secrets are found" time="0.003">
+    <testcase classname="Smart Git Push Tool Git File Detection should handle no staged files" name="Smart Git Push Tool Git File Detection should handle no staged files" time="0.018">
     </testcase>
-    <testcase classname="Gitleaks Detector analyzeSensitiveContent should handle gitleaks execution errors gracefully" name="Gitleaks Detector analyzeSensitiveContent should handle gitleaks execution errors gracefully" time="0.002">
+    <testcase classname="Smart Git Push Tool Git File Detection should map git status codes correctly" name="Smart Git Push Tool Git File Detection should map git status codes correctly" time="0.005">
     </testcase>
-    <testcase classname="Gitleaks Detector analyzeSensitiveContent should categorize rules correctly" name="Gitleaks Detector analyzeSensitiveContent should categorize rules correctly" time="0.002">
+    <testcase classname="Smart Git Push Tool Sensitive Content Detection should detect API keys" name="Smart Git Push Tool Sensitive Content Detection should detect API keys" time="0.002">
     </testcase>
-    <testcase classname="Gitleaks Detector analyzeSensitiveContent should clean up temporary files" name="Gitleaks Detector analyzeSensitiveContent should clean up temporary files" time="0.002">
+    <testcase classname="Smart Git Push Tool Sensitive Content Detection should detect hardcoded passwords" name="Smart Git Push Tool Sensitive Content Detection should detect hardcoded passwords" time="0.002">
     </testcase>
-    <testcase classname="Gitleaks Detector isObviouslySensitive should identify sensitive file names" name="Gitleaks Detector isObviouslySensitive should identify sensitive file names" time="0.002">
+    <testcase classname="Smart Git Push Tool Sensitive Content Detection should detect AWS credentials" name="Smart Git Push Tool Sensitive Content Detection should detect AWS credentials" time="0.001">
     </testcase>
-    <testcase classname="Gitleaks Detector isObviouslySensitive should not flag normal file names" name="Gitleaks Detector isObviouslySensitive should not flag normal file names" time="0.002">
+    <testcase classname="Smart Git Push Tool Sensitive Content Detection should handle false positives correctly" name="Smart Git Push Tool Sensitive Content Detection should handle false positives correctly" time="0.001">
     </testcase>
-    <testcase classname="Gitleaks Detector severity mapping should assign critical severity to important services" name="Gitleaks Detector severity mapping should assign critical severity to important services" time="0.003">
+    <testcase classname="Smart Git Push Tool LLM Artifact Detection should detect debug scripts" name="Smart Git Push Tool LLM Artifact Detection should detect debug scripts" time="0.004">
     </testcase>
-    <testcase classname="Gitleaks Detector suggestions generation should provide appropriate suggestions for different secret types" name="Gitleaks Detector suggestions generation should provide appropriate suggestions for different secret types" time="0.002">
+    <testcase classname="Smart Git Push Tool LLM Artifact Detection should detect test files in wrong location" name="Smart Git Push Tool LLM Artifact Detection should detect test files in wrong location" time="0.001">
     </testcase>
-    <testcase classname="Gitleaks Detector recommendations should provide critical warnings for critical issues" name="Gitleaks Detector recommendations should provide critical warnings for critical issues" time="0.001">
+    <testcase classname="Smart Git Push Tool LLM Artifact Detection should detect mock data files" name="Smart Git Push Tool LLM Artifact Detection should detect mock data files" time="0.001">
+    </testcase>
+    <testcase classname="Smart Git Push Tool LLM Artifact Detection should detect temporary files" name="Smart Git Push Tool LLM Artifact Detection should detect temporary files" time="0.001">
+    </testcase>
+    <testcase classname="Smart Git Push Tool LLM Artifact Detection should detect LLM conversation logs" name="Smart Git Push Tool LLM Artifact Detection should detect LLM conversation logs" time="0.001">
+    </testcase>
+    <testcase classname="Smart Git Push Tool LLM Artifact Detection should allow files in correct locations" name="Smart Git Push Tool LLM Artifact Detection should allow files in correct locations" time="0.001">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Location-Based Filtering should validate file locations correctly" name="Smart Git Push Tool Location-Based Filtering should validate file locations correctly" time="0.004">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Location-Based Filtering should provide appropriate suggestions" name="Smart Git Push Tool Location-Based Filtering should provide appropriate suggestions" time="0.001">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Location-Based Filtering should identify files that should be ignored" name="Smart Git Push Tool Location-Based Filtering should identify files that should be ignored" time="0.001">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Interactive Approval Workflow should handle non-interactive mode correctly" name="Smart Git Push Tool Interactive Approval Workflow should handle non-interactive mode correctly" time="0.002">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Interactive Approval Workflow should auto-approve info-level items" name="Smart Git Push Tool Interactive Approval Workflow should auto-approve info-level items" time="0.001">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Git Push Integration should execute git push with commit message" name="Smart Git Push Tool Git Push Integration should execute git push with commit message" time="0.004">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Git Push Integration should push to specific branch" name="Smart Git Push Tool Git Push Integration should push to specific branch" time="0.003">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Git Push Integration should handle git push errors" name="Smart Git Push Tool Git Push Integration should handle git push errors" time="0.03">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Complete Workflow Integration should perform complete validation and push workflow" name="Smart Git Push Tool Complete Workflow Integration should perform complete validation and push workflow" time="0.008">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Complete Workflow Integration should handle mixed severity levels correctly" name="Smart Git Push Tool Complete Workflow Integration should handle mixed severity levels correctly" time="0.004">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Error Handling and Edge Cases should handle git command failures gracefully" name="Smart Git Push Tool Error Handling and Edge Cases should handle git command failures gracefully" time="0.001">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Error Handling and Edge Cases should handle large files gracefully" name="Smart Git Push Tool Error Handling and Edge Cases should handle large files gracefully" time="0.003">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Error Handling and Edge Cases should handle empty file content" name="Smart Git Push Tool Error Handling and Edge Cases should handle empty file content" time="0.002">
+    </testcase>
+    <testcase classname="Smart Git Push Tool Error Handling and Edge Cases should handle binary files" name="Smart Git Push Tool Error Handling and Edge Cases should handle binary files" time="0.002">
+    </testcase>
+    <testcase classname="MCP Server Integration should register smart_git_push tool correctly" name="MCP Server Integration should register smart_git_push tool correctly" time="0.103">
+    </testcase>
+    <testcase classname="MCP Server Integration should handle tool execution through MCP protocol" name="MCP Server Integration should handle tool execution through MCP protocol" time="0">
+    </testcase>
+    <testcase classname="Release Readiness Integration should include release readiness parameters in tool schema" name="Release Readiness Integration should include release readiness parameters in tool schema" time="0.002">
+    </testcase>
+    <testcase classname="Release Readiness Integration should handle checkReleaseReadiness parameter" name="Release Readiness Integration should handle checkReleaseReadiness parameter" time="0.005">
+    </testcase>
+    <testcase classname="Release Readiness Integration should handle releaseType parameter" name="Release Readiness Integration should handle releaseType parameter" time="0.009">
+    </testcase>
+    <testcase classname="Release Readiness Integration should work without release readiness check" name="Release Readiness Integration should work without release readiness check" time="0.003">
+    </testcase>
+  </testsuite>
+  <testsuite name="Jest ESM child_process Mock Fix" errors="0" failures="0" skipped="0" timestamp="2025-12-12T14:31:24" time="0.29" tests="4">
+    <testcase classname="Jest ESM child_process Mock Fix should allow dynamic import of index.js without module resolution errors" name="Jest ESM child_process Mock Fix should allow dynamic import of index.js without module resolution errors" time="0.12">
+    </testcase>
+    <testcase classname="Jest ESM child_process Mock Fix should allow dynamic import of modules that directly use child_process" name="Jest ESM child_process Mock Fix should allow dynamic import of modules that directly use child_process" time="0.029">
+    </testcase>
+    <testcase classname="Jest ESM child_process Mock Fix should allow dynamic import of tools that use execSync" name="Jest ESM child_process Mock Fix should allow dynamic import of tools that use execSync" time="0.002">
+    </testcase>
+    <testcase classname="Jest ESM child_process Mock Fix should work without jest.unstable_mockModule in individual tests" name="Jest ESM child_process Mock Fix should work without jest.unstable_mockModule in individual tests" time="0">
     </testcase>
   </testsuite>
 </testsuites>
