@@ -68,10 +68,68 @@ export async function reviewExistingAdrs(args: {
     generateUpdatePlan = true,
   } = args;
 
+  // Security: Validate and resolve project path
+  const resolvedProjectPath = path.resolve(projectPath);
+
+  // Security: Ensure project path is not a system directory
+  // Note: We explicitly ALLOW temp directories (/tmp, /var/folders, /private/tmp)
+  // because tests and legitimate workflows use them
+  const systemPaths = ['/Library', '/System', '/usr', '/etc', '/Applications', '/bin', '/sbin'];
+  const allowedVarPaths = ['/var/folders', '/var/tmp']; // macOS temp directories
+  const homeDir = process.env['HOME'] || '';
+  const sensitiveHomePaths = ['Library', 'Applications'];
+
+  // Check for system paths, but allow temp directories
+  const isSystemPath = systemPaths.some(sysPath => resolvedProjectPath.startsWith(sysPath));
+  const isAllowedVarPath = allowedVarPaths.some(varPath => resolvedProjectPath.startsWith(varPath));
+
+  if (isSystemPath) {
+    throw new McpAdrError(
+      'INVALID_INPUT',
+      `Security: Cannot analyze system directory: ${resolvedProjectPath}`,
+      { projectPath: resolvedProjectPath }
+    );
+  }
+
+  // Block /var paths except allowed temp directories
+  if (resolvedProjectPath.startsWith('/var') && !isAllowedVarPath) {
+    throw new McpAdrError(
+      'INVALID_INPUT',
+      `Security: Cannot analyze system directory: ${resolvedProjectPath}`,
+      { projectPath: resolvedProjectPath }
+    );
+  }
+
+  // Block /private paths except /private/tmp (macOS symlink for /tmp)
+  if (
+    resolvedProjectPath.startsWith('/private') &&
+    !resolvedProjectPath.startsWith('/private/tmp') &&
+    !resolvedProjectPath.startsWith('/private/var/folders')
+  ) {
+    throw new McpAdrError(
+      'INVALID_INPUT',
+      `Security: Cannot analyze system directory: ${resolvedProjectPath}`,
+      { projectPath: resolvedProjectPath }
+    );
+  }
+
+  // Check for sensitive paths within home directory
+  if (homeDir.length > 0 && resolvedProjectPath.startsWith(homeDir)) {
+    const relativePath = resolvedProjectPath.slice(homeDir.length + 1);
+    const firstDir = relativePath.split(path.sep)[0];
+    if (firstDir && sensitiveHomePaths.includes(firstDir)) {
+      throw new McpAdrError(
+        'INVALID_INPUT',
+        `Security: Cannot analyze sensitive directory: ${resolvedProjectPath}`,
+        { projectPath: resolvedProjectPath }
+      );
+    }
+  }
+
   try {
     // Step 1: Discover existing ADRs
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
-    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+    const discoveryResult = await discoverAdrsInDirectory(adrDirectory, resolvedProjectPath, {
       includeContent: true,
       includeTimeline: false,
     });
@@ -85,7 +143,7 @@ export async function reviewExistingAdrs(args: {
 
 ## Discovery Results
 - **Directory**: ${adrDirectory}
-- **Project Path**: ${projectPath}
+- **Project Path**: ${resolvedProjectPath}
 - **ADRs Found**: 0
 
 ## Recommendations
@@ -98,7 +156,7 @@ export async function reviewExistingAdrs(args: {
 {
   "tool": "suggest_adrs",
   "args": {
-    "projectPath": "${projectPath}",
+    "projectPath": "${resolvedProjectPath}",
     "analysisType": "comprehensive"
   }
 }
@@ -126,7 +184,7 @@ export async function reviewExistingAdrs(args: {
     let environmentContext = '';
     let researchConfidence = 0;
     try {
-      const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
+      const orchestrator = new ResearchOrchestrator(resolvedProjectPath, adrDirectory);
       const research = await orchestrator.answerResearchQuestion(
         `Analyze ADR implementation status:
 1. What architectural decisions are documented in ADRs?
@@ -159,13 +217,18 @@ ${research.sources.map(s => `- ${s.type}: Consulted`).join('\n')}
     }
 
     // Step 4: Analyze code structure
-    const codeAnalysis = await analyzeCodeStructure(projectPath, includeTreeSitter);
+    const codeAnalysis = await analyzeCodeStructure(resolvedProjectPath, includeTreeSitter);
 
     // Step 5: Review each ADR
     const reviewResults: AdrReviewResult[] = [];
 
     for (const adr of adrsToReview) {
-      const reviewResult = await reviewSingleAdr(adr, codeAnalysis, analysisDepth, projectPath);
+      const reviewResult = await reviewSingleAdr(
+        adr,
+        codeAnalysis,
+        analysisDepth,
+        resolvedProjectPath
+      );
       reviewResults.push(reviewResult);
     }
 
@@ -183,7 +246,11 @@ ${research.sources.map(s => `- ${s.type}: Consulted`).join('\n')}
 
     let updatePlan = '';
     if (generateUpdatePlan) {
-      updatePlan = await generateUpdatePlanContent(reviewResults, codeAnalysis, projectPath);
+      updatePlan = await generateUpdatePlanContent(
+        reviewResults,
+        codeAnalysis,
+        resolvedProjectPath
+      );
     }
 
     return {
@@ -193,7 +260,7 @@ ${research.sources.map(s => `- ${s.type}: Consulted`).join('\n')}
           text: `# ADR Compliance Review Report
 
 ## Overview
-- **Project**: ${path.basename(projectPath)}
+- **Project**: ${path.basename(resolvedProjectPath)}
 - **ADRs Reviewed**: ${reviewResults.length}
 - **Overall Compliance Score**: ${overallScore.toFixed(1)}/10
 - **Research Confidence**: ${(researchConfidence * 100).toFixed(1)}%
@@ -840,23 +907,107 @@ ${compliance.gaps.map((g: string) => `❌ ${g}`).join('\n')}
 
 // Helper functions for code analysis
 
-async function findSourceFiles(projectPath: string): Promise<string[]> {
+// Directories to always exclude for security and performance
+const EXCLUDED_DIRECTORIES = new Set([
+  'node_modules',
+  '.git',
+  '.svn',
+  '.hg',
+  'dist',
+  'build',
+  'coverage',
+  '.cache',
+  '.npm',
+  '.yarn',
+  'vendor',
+  '__pycache__',
+  '.pytest_cache',
+  'target',
+  'bin',
+  'obj',
+  // System directories that should never be traversed
+  'Library',
+  'System',
+  'Applications',
+  'usr',
+  'var',
+  'etc',
+  'private',
+  'cores',
+  'Volumes',
+]);
+
+// Maximum recursion depth for directory traversal
+const MAX_RECURSION_DEPTH = 10;
+
+async function findSourceFiles(
+  projectPath: string,
+  rootPath?: string,
+  currentDepth: number = 0
+): Promise<string[]> {
   const files: string[] = [];
   const extensions = ['.ts', '.js', '.py', '.java', '.cs', '.go', '.rs', '.rb'];
 
+  // Security: Initialize and validate root path on first call
+  if (!rootPath) {
+    rootPath = path.resolve(projectPath);
+    // Ensure we're not starting from a system directory
+    const pathParts = rootPath.split(path.sep);
+    if (
+      pathParts.some(
+        part => EXCLUDED_DIRECTORIES.has(part) && part !== pathParts[pathParts.length - 1]
+      )
+    ) {
+      console.warn(`Security: Refusing to scan potentially sensitive path: ${rootPath}`);
+      return files;
+    }
+  }
+
+  // Security: Enforce maximum recursion depth
+  if (currentDepth > MAX_RECURSION_DEPTH) {
+    console.warn(
+      `Security: Maximum recursion depth (${MAX_RECURSION_DEPTH}) reached at: ${projectPath}`
+    );
+    return files;
+  }
+
+  // Security: Resolve current path and verify it's within root boundary
+  const resolvedPath = path.resolve(projectPath);
+  if (!resolvedPath.startsWith(rootPath)) {
+    console.warn(
+      `Security: Path traversal attempt detected. Path ${resolvedPath} is outside root ${rootPath}`
+    );
+    return files;
+  }
+
   try {
-    const entries = await fs.readdir(projectPath, { withFileTypes: true });
+    const entries = await fs.readdir(resolvedPath, { withFileTypes: true });
 
     for (const entry of entries) {
-      if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'node_modules') {
-        const subFiles = await findSourceFiles(path.join(projectPath, entry.name));
+      // Skip hidden directories and excluded directories
+      if (entry.isDirectory()) {
+        if (entry.name.startsWith('.') || EXCLUDED_DIRECTORIES.has(entry.name)) {
+          continue;
+        }
+        const subFiles = await findSourceFiles(
+          path.join(resolvedPath, entry.name),
+          rootPath,
+          currentDepth + 1
+        );
         files.push(...subFiles);
       } else if (entry.isFile() && extensions.some(ext => entry.name.endsWith(ext))) {
-        files.push(path.join(projectPath, entry.name));
+        files.push(path.join(resolvedPath, entry.name));
       }
     }
   } catch (error) {
-    console.warn('Warning reading directory:', error);
+    // Only log non-permission errors to avoid noise
+    if (
+      error instanceof Error &&
+      !error.message.includes('EPERM') &&
+      !error.message.includes('EACCES')
+    ) {
+      console.warn('Warning reading directory:', error);
+    }
   }
 
   return files;
