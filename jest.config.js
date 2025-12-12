@@ -3,6 +3,10 @@ export default {
   extensionsToTreatAsEsm: ['.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    // Mock child_process to fix Jest ESM dynamic import issues with node: prefix
+    // See: https://github.com/jestjs/jest/issues/12270
+    '^child_process$': '<rootDir>/tests/__mocks__/child_process.ts',
+    '^node:child_process$': '<rootDir>/tests/__mocks__/child_process.ts',
     // Mock tree-sitter native modules that fail in Jest VM environment
     '^tree-sitter$': '<rootDir>/tests/__mocks__/tree-sitter.ts',
     '^tree-sitter-typescript$': '<rootDir>/tests/__mocks__/tree-sitter-typescript.ts',
