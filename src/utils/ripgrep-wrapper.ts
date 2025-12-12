@@ -3,7 +3,7 @@
  * Provides a Node.js interface to the ripgrep command-line tool
  */
 
-import { exec } from 'child_process';
+import { exec } from 'node:child_process';
 import { promisify } from 'util';
 import { FileSystemError } from '../types/index.js';
 
@@ -116,7 +116,14 @@ export async function searchWithRipgrep(options: RipgrepOptions): Promise<string
     }
 
     if (fileType) {
-      args.push(`--type=${fileType}`);
+      // Handle comma-separated file types (e.g., "ts,js,py" -> "--type=ts --type=js --type=py")
+      const types = fileType
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t);
+      for (const type of types) {
+        args.push(`--type=${type}`);
+      }
     }
 
     if (caseInsensitive) {
@@ -210,7 +217,14 @@ export async function searchWithRipgrepDetailed(options: RipgrepOptions): Promis
     }
 
     if (fileType) {
-      args.push(`--type=${fileType}`);
+      // Handle comma-separated file types (e.g., "ts,js,py" -> "--type=ts --type=js --type=py")
+      const types = fileType
+        .split(',')
+        .map(t => t.trim())
+        .filter(t => t);
+      for (const type of types) {
+        args.push(`--type=${type}`);
+      }
     }
 
     if (caseInsensitive) {
