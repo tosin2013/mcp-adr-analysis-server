@@ -53,13 +53,14 @@ jest.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
   },
 }));
 
-// Pragmatic mocking approach to avoid TypeScript complexity
-jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
+// Mock adr-discovery
+jest.mock('../../src/utils/adr-discovery.js', () => ({
   discoverAdrsInDirectory: jest.fn(),
 }));
 
-const { generateDeploymentGuidance } = await import('../../src/tools/deployment-guidance-tool.js');
-const { discoverAdrsInDirectory } = await import('../../src/utils/adr-discovery.js');
+// Import after mocks
+import { generateDeploymentGuidance } from '../../src/tools/deployment-guidance-tool.js';
+import { discoverAdrsInDirectory } from '../../src/utils/adr-discovery.js';
 
 describe('deployment-guidance-tool', () => {
   describe('generateDeploymentGuidance', () => {
