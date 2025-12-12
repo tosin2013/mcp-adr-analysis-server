@@ -1,94 +1,808 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="30" failures="0" errors="0" time="0.586">
-  <testsuite name="environment-analysis-tool" errors="0" failures="0" skipped="29" timestamp="2025-12-12T15:52:24" time="0.36" tests="30">
-    <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should perform environment specs analysis with default parameters" name="environment-analysis-tool analyzeEnvironment specs analysis should perform environment specs analysis with default parameters" time="0.011">
+<testsuites name="jest tests" tests="164" failures="42" errors="0" time="66.766">
+  <testsuite name="ADR Validation Tool" errors="0" failures="1" skipped="0" timestamp="2025-12-12T16:00:02" time="0.53" tests="7">
+    <testcase classname="ADR Validation Tool validateAdr should validate a valid ADR successfully" name="ADR Validation Tool validateAdr should validate a valid ADR successfully" time="0.015">
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should handle specs analysis with knowledge enhancement enabled" name="environment-analysis-tool analyzeEnvironment specs analysis should handle specs analysis with knowledge enhancement enabled" time="0">
-      <skipped/>
+    <testcase classname="ADR Validation Tool validateAdr should detect ADR drift when infrastructure differs" name="ADR Validation Tool validateAdr should detect ADR drift when infrastructure differs" time="0.008">
+      <failure>Error: expect(received).toContain(expected) // indexOf
+
+Expected substring: &quot;drift&quot;
+Received string:    &quot;# ADR Validation Report·
+## ADR Information
+- **Path**: /tmp/adr-test-jHgV1P/docs/adrs/adr-001-docker-swarm.md
+- **Title**: Use Docker Swarm for Container Orchestration
+- **Status**: ⚠️ Needs Review
+- **Confidence**: 85.0%·
+## Validation Method
+- **AI-Powered Analysis**: ✅ Enabled
+- **Research-Driven**: ✅ Enabled
+- **Environment Check**: ✅ Completed·
+## Research Data Used
+- **Sources Consulted**: environment
+- **Research Confidence**: 85.0%
+- **Files Analyzed**: 3
+- **Search Duration**: 150ms
+- **Needs Web Search**: ✅ No·
+## Findings·
+### 🟠 DRIFT
+**Severity**: high
+**Description**: ADR states Docker Swarm but Kubernetes is deployed
+**Evidence**: Found kubectl and K8s manifests, no Swarm evidence··
+## Recommendations·
+- Update ADR to reflect Kubernetes deployment
+- Document migration from Swarm to K8s·
+## Related ADRs·
+No related ADRs found in knowledge graph.·
+## Next Steps·
+1. **Review Findings**: Address critical and high-severity issues first
+2. **Update ADR**: Modify the ADR to reflect current reality
+3. **Verify Implementation**: Ensure code matches updated decision
+4. **Re-validate**: Run validation again after changes·
+## Research Details·
+### Infrastructure Answer
+Found Kubernetes cluster running, no Docker Swarm detected.·
+### Sources Detail
+- **environment**: ✅ Found (confidence: 90.0%)
+&quot;
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/adr-validation-tool.test.ts:237:38)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should handle specs analysis with knowledge enhancement disabled" name="environment-analysis-tool analyzeEnvironment specs analysis should handle specs analysis with knowledge enhancement disabled" time="0">
-      <skipped/>
+    <testcase classname="ADR Validation Tool validateAdr should handle missing evidence gracefully" name="ADR Validation Tool validateAdr should handle missing evidence gracefully" time="0.006">
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should handle custom project path and ADR directory" name="environment-analysis-tool analyzeEnvironment specs analysis should handle custom project path and ADR directory" time="0">
-      <skipped/>
+    <testcase classname="ADR Validation Tool validateAdr should work without AI executor (rule-based fallback)" name="ADR Validation Tool validateAdr should work without AI executor (rule-based fallback)" time="0.006">
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment containerization analysis should perform containerization detection analysis" name="environment-analysis-tool analyzeEnvironment containerization analysis should perform containerization detection analysis" time="0">
-      <skipped/>
+    <testcase classname="ADR Validation Tool validateAdr should handle file read errors" name="ADR Validation Tool validateAdr should handle file read errors" time="0.012">
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment containerization analysis should include containerization knowledge enhancement when enabled" name="environment-analysis-tool analyzeEnvironment containerization analysis should include containerization knowledge enhancement when enabled" time="0">
-      <skipped/>
+    <testcase classname="ADR Validation Tool validateAllAdrs should validate multiple ADRs" name="ADR Validation Tool validateAllAdrs should validate multiple ADRs" time="0.009">
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment containerization analysis should provide expected containerization output information" name="environment-analysis-tool analyzeEnvironment containerization analysis should provide expected containerization output information" time="0">
-      <skipped/>
+    <testcase classname="ADR Validation Tool validateAllAdrs should generate validation summary" name="ADR Validation Tool validateAllAdrs should generate validation summary" time="0.012">
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment requirements analysis should perform requirements analysis from ADRs" name="environment-analysis-tool analyzeEnvironment requirements analysis should perform requirements analysis from ADRs" time="0">
-      <skipped/>
+  </testsuite>
+  <testsuite name="environment-analysis-tool" errors="0" failures="29" skipped="0" timestamp="2025-12-12T16:00:02" time="0.657" tests="30">
+    <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should perform environment specs analysis with default parameters" name="environment-analysis-tool analyzeEnvironment specs analysis should perform environment specs analysis with default parameters" time="0.008">
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment requirements analysis should include requirements knowledge enhancement" name="environment-analysis-tool analyzeEnvironment requirements analysis should include requirements knowledge enhancement" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should handle specs analysis with knowledge enhancement enabled" name="environment-analysis-tool analyzeEnvironment specs analysis should handle specs analysis with knowledge enhancement enabled" time="0.003">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;analysisPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:172:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment requirements analysis should provide expected requirements output information" name="environment-analysis-tool analyzeEnvironment requirements analysis should provide expected requirements output information" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should handle specs analysis with knowledge enhancement disabled" name="environment-analysis-tool analyzeEnvironment specs analysis should handle specs analysis with knowledge enhancement disabled" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;analysisPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:190:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment compliance analysis should perform compliance assessment with required parameters" name="environment-analysis-tool analyzeEnvironment compliance analysis should perform compliance assessment with required parameters" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment specs analysis should handle custom project path and ADR directory" name="environment-analysis-tool analyzeEnvironment specs analysis should handle custom project path and ADR directory" time="0.003">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;analysisPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:208:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment compliance analysis should include compliance knowledge enhancement" name="environment-analysis-tool analyzeEnvironment compliance analysis should include compliance knowledge enhancement" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment containerization analysis should perform containerization detection analysis" name="environment-analysis-tool analyzeEnvironment containerization analysis should perform containerization detection analysis" time="0.003">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;detectionPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:228:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment compliance analysis should provide expected compliance output information" name="environment-analysis-tool analyzeEnvironment compliance analysis should provide expected compliance output information" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment containerization analysis should include containerization knowledge enhancement when enabled" name="environment-analysis-tool analyzeEnvironment containerization analysis should include containerization knowledge enhancement when enabled" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;detectionPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:241:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment compliance analysis should throw error when currentEnvironment is missing" name="environment-analysis-tool analyzeEnvironment compliance analysis should throw error when currentEnvironment is missing" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment containerization analysis should provide expected containerization output information" name="environment-analysis-tool analyzeEnvironment containerization analysis should provide expected containerization output information" time="0.003">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;detectionPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:254:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment compliance analysis should throw error when requirements is missing" name="environment-analysis-tool analyzeEnvironment compliance analysis should throw error when requirements is missing" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment requirements analysis should perform requirements analysis from ADRs" name="environment-analysis-tool analyzeEnvironment requirements analysis should perform requirements analysis from ADRs" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;requirementsPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:265:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment comprehensive analysis should perform comprehensive environment analysis" name="environment-analysis-tool analyzeEnvironment comprehensive analysis should perform comprehensive environment analysis" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment requirements analysis should include requirements knowledge enhancement" name="environment-analysis-tool analyzeEnvironment requirements analysis should include requirements knowledge enhancement" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;requirementsPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:278:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment comprehensive analysis should include all analysis types in comprehensive mode" name="environment-analysis-tool analyzeEnvironment comprehensive analysis should include all analysis types in comprehensive mode" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment requirements analysis should provide expected requirements output information" name="environment-analysis-tool analyzeEnvironment requirements analysis should provide expected requirements output information" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;requirementsPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:291:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment comprehensive analysis should include comprehensive knowledge enhancement" name="environment-analysis-tool analyzeEnvironment comprehensive analysis should include comprehensive knowledge enhancement" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment compliance analysis should perform compliance assessment with required parameters" name="environment-analysis-tool analyzeEnvironment compliance analysis should perform compliance assessment with required parameters" time="0.001">
+      <failure>TypeError: this.memoryManager.initialize is not a function
+    at EnvironmentMemoryManager.initialize (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:26:30)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:499:25)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:302:48)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment comprehensive analysis should provide comprehensive workflow guidance" name="environment-analysis-tool analyzeEnvironment comprehensive analysis should provide comprehensive workflow guidance" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment compliance analysis should include compliance knowledge enhancement" name="environment-analysis-tool analyzeEnvironment compliance analysis should include compliance knowledge enhancement" time="0.001">
+      <failure>TypeError: this.memoryManager.initialize is not a function
+    at EnvironmentMemoryManager.initialize (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:26:30)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:499:25)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:320:48)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment comprehensive analysis should provide expected comprehensive outcomes" name="environment-analysis-tool analyzeEnvironment comprehensive analysis should provide expected comprehensive outcomes" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment compliance analysis should provide expected compliance output information" name="environment-analysis-tool analyzeEnvironment compliance analysis should provide expected compliance output information" time="0.001">
+      <failure>TypeError: this.memoryManager.initialize is not a function
+    at EnvironmentMemoryManager.initialize (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:26:30)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:499:25)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:334:48)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment error handling should throw error for unknown analysis type" name="environment-analysis-tool analyzeEnvironment error handling should throw error for unknown analysis type" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment compliance analysis should throw error when currentEnvironment is missing" name="environment-analysis-tool analyzeEnvironment compliance analysis should throw error when currentEnvironment is missing" time="0.042">
+      <failure>Error: expect(received).rejects.toThrow(expected)
+
+Expected substring: &quot;Current environment and requirements are required&quot;
+Received message:   &quot;this.memoryManager.initialize is not a function&quot;
+
+      24 |
+      25 |   async initialize(): Promise&lt;void&gt; {
+    &gt; 26 |     await this.memoryManager.initialize();
+         |                              ^
+      27 |   }
+      28 |
+      29 |   /**
+
+      at EnvironmentMemoryManager.initialize (src/tools/environment-analysis-tool.ts:26:30)
+      at analyzeEnvironment (src/tools/environment-analysis-tool.ts:499:25)
+      at Object.&lt;anonymous&gt; (tests/tools/environment-analysis-tool.test.ts:348:29)
+    at Object.toThrow (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/expect/build/index.js:2155:20)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:352:19)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment error handling should handle analysis errors gracefully" name="environment-analysis-tool analyzeEnvironment error handling should handle analysis errors gracefully" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment compliance analysis should throw error when requirements is missing" name="environment-analysis-tool analyzeEnvironment compliance analysis should throw error when requirements is missing" time="0.011">
+      <failure>Error: expect(received).rejects.toThrow(expected)
+
+Expected substring: &quot;Current environment and requirements are required&quot;
+Received message:   &quot;this.memoryManager.initialize is not a function&quot;
+
+      24 |
+      25 |   async initialize(): Promise&lt;void&gt; {
+    &gt; 26 |     await this.memoryManager.initialize();
+         |                              ^
+      27 |   }
+      28 |
+      29 |   /**
+
+      at EnvironmentMemoryManager.initialize (src/tools/environment-analysis-tool.ts:26:30)
+      at analyzeEnvironment (src/tools/environment-analysis-tool.ts:499:25)
+      at Object.&lt;anonymous&gt; (tests/tools/environment-analysis-tool.test.ts:357:29)
+    at Object.toThrow (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/expect/build/index.js:2155:20)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:361:19)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment default parameters should use default parameters when not specified" name="environment-analysis-tool analyzeEnvironment default parameters should use default parameters when not specified" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment comprehensive analysis should perform comprehensive environment analysis" name="environment-analysis-tool analyzeEnvironment comprehensive analysis should perform comprehensive environment analysis" time="0.003">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;instructions&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:367:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment default parameters should use default project path and ADR directory" name="environment-analysis-tool analyzeEnvironment default parameters should use default project path and ADR directory" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment comprehensive analysis should include all analysis types in comprehensive mode" name="environment-analysis-tool analyzeEnvironment comprehensive analysis should include all analysis types in comprehensive mode" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;instructions&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:380:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment default parameters should enable knowledge enhancement and enhanced mode by default" name="environment-analysis-tool analyzeEnvironment default parameters should enable knowledge enhancement and enhanced mode by default" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment comprehensive analysis should include comprehensive knowledge enhancement" name="environment-analysis-tool analyzeEnvironment comprehensive analysis should include comprehensive knowledge enhancement" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;instructions&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:389:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle knowledge generation success" name="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle knowledge generation success" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment comprehensive analysis should provide comprehensive workflow guidance" name="environment-analysis-tool analyzeEnvironment comprehensive analysis should provide comprehensive workflow guidance" time="0.001">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;instructions&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:403:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle knowledge generation disabled" name="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle knowledge generation disabled" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment comprehensive analysis should provide expected comprehensive outcomes" name="environment-analysis-tool analyzeEnvironment comprehensive analysis should provide expected comprehensive outcomes" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;instructions&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:414:24)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle mixed enhancement settings" name="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle mixed enhancement settings" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment error handling should throw error for unknown analysis type" name="environment-analysis-tool analyzeEnvironment error handling should throw error for unknown analysis type" time="0.005">
+      <failure>Error: expect(received).rejects.toThrow(expected)
+
+Expected substring: &quot;Unknown analysis type: unknown&quot;
+Received message:   &quot;this.memoryManager.initialize is not a function&quot;
+
+      24 |
+      25 |   async initialize(): Promise&lt;void&gt; {
+    &gt; 26 |     await this.memoryManager.initialize();
+         |                              ^
+      27 |   }
+      28 |
+      29 |   /**
+
+      at EnvironmentMemoryManager.initialize (src/tools/environment-analysis-tool.ts:26:30)
+      at analyzeEnvironment (src/tools/environment-analysis-tool.ts:499:25)
+      at Object.&lt;anonymous&gt; (tests/tools/environment-analysis-tool.test.ts:427:29)
+    at Object.toThrow (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/expect/build/index.js:2155:20)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:430:19)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment analysis type variations should handle all valid analysis types" name="environment-analysis-tool analyzeEnvironment analysis type variations should handle all valid analysis types" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment error handling should handle analysis errors gracefully" name="environment-analysis-tool analyzeEnvironment error handling should handle analysis errors gracefully" time="0.001">
+      <failure>Error: expect(received).resolves.toEqual()
+
+Received promise rejected instead of resolved
+Rejected to value: [TypeError: this.memoryManager.initialize is not a function]
+    at expect (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/expect/build/index.js:2116:15)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:436:15)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
     </testcase>
-    <testcase classname="environment-analysis-tool analyzeEnvironment analysis type variations should provide different content for different analysis types" name="environment-analysis-tool analyzeEnvironment analysis type variations should provide different content for different analysis types" time="0">
-      <skipped/>
+    <testcase classname="environment-analysis-tool analyzeEnvironment default parameters should use default parameters when not specified" name="environment-analysis-tool analyzeEnvironment default parameters should use default parameters when not specified" time="0.001">
+      <failure>TypeError: this.memoryManager.initialize is not a function
+    at EnvironmentMemoryManager.initialize (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:26:30)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:499:25)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:454:48)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="environment-analysis-tool analyzeEnvironment default parameters should use default project path and ADR directory" name="environment-analysis-tool analyzeEnvironment default parameters should use default project path and ADR directory" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;analysisPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:467:24)</failure>
+    </testcase>
+    <testcase classname="environment-analysis-tool analyzeEnvironment default parameters should enable knowledge enhancement and enhanced mode by default" name="environment-analysis-tool analyzeEnvironment default parameters should enable knowledge enhancement and enhanced mode by default" time="0.001">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;analysisPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:481:24)</failure>
+    </testcase>
+    <testcase classname="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle knowledge generation success" name="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle knowledge generation success" time="0.001">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;analysisPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:490:24)</failure>
+    </testcase>
+    <testcase classname="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle knowledge generation disabled" name="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle knowledge generation disabled" time="0.001">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;analysisPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:501:24)</failure>
+    </testcase>
+    <testcase classname="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle mixed enhancement settings" name="environment-analysis-tool analyzeEnvironment knowledge enhancement scenarios should handle mixed enhancement settings" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;detectionPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:512:24)</failure>
+    </testcase>
+    <testcase classname="environment-analysis-tool analyzeEnvironment analysis type variations should handle all valid analysis types" name="environment-analysis-tool analyzeEnvironment analysis type variations should handle all valid analysis types" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;analysisPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:535:26)</failure>
+    </testcase>
+    <testcase classname="environment-analysis-tool analyzeEnvironment analysis type variations should provide different content for different analysis types" name="environment-analysis-tool analyzeEnvironment analysis type variations should provide different content for different analysis types" time="0.002">
+      <failure>McpAdrError: Failed to analyze environment: Cannot read properties of undefined (reading &apos;analysisPrompt&apos;)
+    at analyzeEnvironment (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/environment-analysis-tool.ts:1215:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/environment-analysis-tool.test.ts:546:29)</failure>
+    </testcase>
+  </testsuite>
+  <testsuite name="deployment-guidance-tool" errors="0" failures="0" skipped="0" timestamp="2025-12-12T16:00:03" time="34.623" tests="17">
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance basic functionality should generate deployment guidance with default parameters" name="deployment-guidance-tool generateDeploymentGuidance basic functionality should generate deployment guidance with default parameters" time="3.366">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance basic functionality should handle custom ADR directory and project path" name="deployment-guidance-tool generateDeploymentGuidance basic functionality should handle custom ADR directory and project path" time="0.616">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance basic functionality should handle different environments" name="deployment-guidance-tool generateDeploymentGuidance basic functionality should handle different environments" time="3.303">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance basic functionality should handle development environment specifics" name="deployment-guidance-tool generateDeploymentGuidance basic functionality should handle development environment specifics" time="3.271">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance configuration options should handle all configuration flags enabled" name="deployment-guidance-tool generateDeploymentGuidance configuration options should handle all configuration flags enabled" time="3.265">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance configuration options should handle configuration flags disabled" name="deployment-guidance-tool generateDeploymentGuidance configuration options should handle configuration flags disabled" time="3.236">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance configuration options should handle technology filter" name="deployment-guidance-tool generateDeploymentGuidance configuration options should handle technology filter" time="3.281">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance configuration options should handle custom requirements" name="deployment-guidance-tool generateDeploymentGuidance configuration options should handle custom requirements" time="3.3">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance no ADRs found scenario should provide helpful guidance when no ADRs are found" name="deployment-guidance-tool generateDeploymentGuidance no ADRs found scenario should provide helpful guidance when no ADRs are found" time="0.002">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance no ADRs found scenario should use default paths when no ADRs found" name="deployment-guidance-tool generateDeploymentGuidance no ADRs found scenario should use default paths when no ADRs found" time="0.001">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance error handling should throw McpAdrError when ADR discovery fails" name="deployment-guidance-tool generateDeploymentGuidance error handling should throw McpAdrError when ADR discovery fails" time="0.021">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance error handling should handle non-Error exceptions" name="deployment-guidance-tool generateDeploymentGuidance error handling should handle non-Error exceptions" time="0.001">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance error handling should handle undefined error" name="deployment-guidance-tool generateDeploymentGuidance error handling should handle undefined error" time="0.002">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance comprehensive scenarios should generate comprehensive production deployment guidance" name="deployment-guidance-tool generateDeploymentGuidance comprehensive scenarios should generate comprehensive production deployment guidance" time="3.275">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance comprehensive scenarios should handle complex project structure" name="deployment-guidance-tool generateDeploymentGuidance comprehensive scenarios should handle complex project structure" time="0.702">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance output structure validation should always return proper content structure" name="deployment-guidance-tool generateDeploymentGuidance output structure validation should always return proper content structure" time="3.302">
+    </testcase>
+    <testcase classname="deployment-guidance-tool generateDeploymentGuidance output structure validation should include all required sections in guidance" name="deployment-guidance-tool generateDeploymentGuidance output structure validation should include all required sections in guidance" time="3.258">
+    </testcase>
+  </testsuite>
+  <testsuite name="Review Existing ADRs Tool" errors="0" failures="0" skipped="0" timestamp="2025-12-12T16:00:38" time="7.063" tests="10">
+    <testcase classname="Review Existing ADRs Tool reviewExistingAdrs should review ADRs and analyze code compliance" name="Review Existing ADRs Tool reviewExistingAdrs should review ADRs and analyze code compliance" time="0.779">
+    </testcase>
+    <testcase classname="Review Existing ADRs Tool reviewExistingAdrs should handle no ADRs found scenario" name="Review Existing ADRs Tool reviewExistingAdrs should handle no ADRs found scenario" time="0.007">
+    </testcase>
+    <testcase classname="Review Existing ADRs Tool reviewExistingAdrs should analyze specific ADR when provided" name="Review Existing ADRs Tool reviewExistingAdrs should analyze specific ADR when provided" time="0.662">
+    </testcase>
+    <testcase classname="Review Existing ADRs Tool reviewExistingAdrs should support different analysis depths" name="Review Existing ADRs Tool reviewExistingAdrs should support different analysis depths" time="1.974">
+    </testcase>
+    <testcase classname="Review Existing ADRs Tool reviewExistingAdrs should include compliance analysis" name="Review Existing ADRs Tool reviewExistingAdrs should include compliance analysis" time="0.71">
+    </testcase>
+    <testcase classname="Review Existing ADRs Tool reviewExistingAdrs should generate recommendations" name="Review Existing ADRs Tool reviewExistingAdrs should generate recommendations" time="0.703">
+    </testcase>
+    <testcase classname="Review Existing ADRs Tool reviewExistingAdrs should handle project path not found" name="Review Existing ADRs Tool reviewExistingAdrs should handle project path not found" time="0.005">
+    </testcase>
+    <testcase classname="Review Existing ADRs Tool reviewExistingAdrs should include implementation tracking" name="Review Existing ADRs Tool reviewExistingAdrs should include implementation tracking" time="0.711">
+    </testcase>
+    <testcase classname="Review Existing ADRs Tool reviewExistingAdrs should analyze code patterns against ADRs" name="Review Existing ADRs Tool reviewExistingAdrs should analyze code patterns against ADRs" time="0.721">
+    </testcase>
+    <testcase classname="Review Existing ADRs Tool reviewExistingAdrs should provide gap analysis between ADRs and code" name="Review Existing ADRs Tool reviewExistingAdrs should provide gap analysis between ADRs and code" time="0.591">
+    </testcase>
+  </testsuite>
+  <testsuite name="rule-generation-tool" errors="0" failures="12" skipped="0" timestamp="2025-12-12T16:00:45" time="0.991" tests="17">
+    <testcase classname="rule-generation-tool generateRules should generate rules from ADRs with default parameters" name="rule-generation-tool generateRules should generate rules from ADRs with default parameters" time="0.195">
+      <failure>McpAdrError: Failed to generate rules: Cannot read properties of undefined (reading &apos;extractionPrompt&apos;)
+    at generateRules (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/rule-generation-tool.ts:791:11)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:37:22)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool generateRules should generate rules from patterns" name="rule-generation-tool generateRules should generate rules from patterns" time="0.185">
+      <failure>McpAdrError: Failed to generate rules: Cannot read properties of undefined (reading &apos;generationPrompt&apos;)
+    at generateRules (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/rule-generation-tool.ts:791:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:50:22)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool generateRules should handle unsupported combined source" name="rule-generation-tool generateRules should handle unsupported combined source" time="0.002">
+    </testcase>
+    <testcase classname="rule-generation-tool generateRules should handle knowledge enhancement" name="rule-generation-tool generateRules should handle knowledge enhancement" time="0.002">
+      <failure>McpAdrError: Failed to generate rules: Cannot read properties of undefined (reading &apos;extractionPrompt&apos;)
+    at generateRules (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/rule-generation-tool.ts:791:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:76:22)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool generateRules should handle invalid source type" name="rule-generation-tool generateRules should handle invalid source type" time="0.001">
+    </testcase>
+    <testcase classname="rule-generation-tool generateRules should handle basic error scenarios" name="rule-generation-tool generateRules should handle basic error scenarios" time="0.002">
+      <failure>McpAdrError: Failed to generate rules: Cannot read properties of undefined (reading &apos;extractionPrompt&apos;)
+    at generateRules (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/rule-generation-tool.ts:791:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:99:22)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool validateRules should handle file path validation errors" name="rule-generation-tool validateRules should handle file path validation errors" time="0.124">
+      <failure>Error: expect(received).rejects.toThrow(expected)
+
+Expected substring: &quot;ENOENT: no such file or directory&quot;
+Received message:   &quot;Failed to validate rules: Cannot read properties of undefined (reading &apos;validationPrompt&apos;)&quot;
+
+      1030 |     }
+      1031 |   } catch (error) {
+    &gt; 1032 |     throw new McpAdrError(
+           |           ^
+      1033 |       `Failed to validate rules: ${error instanceof Error ? error.message : String(error)}`,
+      1034 |       &apos;RULE_VALIDATION_ERROR&apos;
+      1035 |     );
+
+      at validateRules (src/tools/rule-generation-tool.ts:1032:11)
+      at Object.&lt;anonymous&gt; (tests/tools/rule-generation-tool.test.ts:125:7)
+    at Object.toThrow (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/expect/build/index.js:2155:20)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:130:17)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool validateRules should validate code using file content" name="rule-generation-tool validateRules should validate code using file content" time="0.001">
+      <failure>McpAdrError: Failed to validate rules: Cannot read properties of undefined (reading &apos;isAIGenerated&apos;)
+    at validateRules (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/rule-generation-tool.ts:1032:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:134:22)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool validateRules should handle validation type with non-existent file" name="rule-generation-tool validateRules should handle validation type with non-existent file" time="0.005">
+      <failure>Error: expect(received).rejects.toThrow(expected)
+
+Expected substring: &quot;ENOENT: no such file or directory&quot;
+Received message:   &quot;Failed to validate rules: Cannot read properties of undefined (reading &apos;validationPrompt&apos;)&quot;
+
+      1030 |     }
+      1031 |   } catch (error) {
+    &gt; 1032 |     throw new McpAdrError(
+           |           ^
+      1033 |       `Failed to validate rules: ${error instanceof Error ? error.message : String(error)}`,
+      1034 |       &apos;RULE_VALIDATION_ERROR&apos;
+      1035 |     );
+
+      at validateRules (src/tools/rule-generation-tool.ts:1032:11)
+      at Object.&lt;anonymous&gt; (tests/tools/rule-generation-tool.test.ts:150:7)
+    at Object.toThrow (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/expect/build/index.js:2155:20)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:156:17)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool validateRules should handle missing file path and content" name="rule-generation-tool validateRules should handle missing file path and content" time="0.001">
+    </testcase>
+    <testcase classname="rule-generation-tool validateRules should handle missing rules" name="rule-generation-tool validateRules should handle missing rules" time="0.001">
+    </testcase>
+    <testcase classname="rule-generation-tool createRuleSet should create rule set with JSON format" name="rule-generation-tool createRuleSet should create rule set with JSON format" time="0.077">
+      <failure>McpAdrError: Failed to create rule set: Cannot read properties of undefined (reading &apos;metadata&apos;)
+    at createRuleSet (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/rule-generation-tool.ts:1178:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:177:22)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool createRuleSet should handle YAML format creation errors" name="rule-generation-tool createRuleSet should handle YAML format creation errors" time="0.009">
+      <failure>Error: expect(received).rejects.toThrow(expected)
+
+Expected substring: &quot;Failed to serialize rule set to YAML&quot;
+Received message:   &quot;Failed to create rule set: Cannot read properties of undefined (reading &apos;metadata&apos;)&quot;
+
+      1176 |     };
+      1177 |   } catch (error) {
+    &gt; 1178 |     throw new McpAdrError(
+           |           ^
+      1179 |       `Failed to create rule set: ${error instanceof Error ? error.message : String(error)}`,
+      1180 |       &apos;RULE_SET_CREATION_ERROR&apos;
+      1181 |     );
+
+      at createRuleSet (src/tools/rule-generation-tool.ts:1178:11)
+      at Object.&lt;anonymous&gt; (tests/tools/rule-generation-tool.test.ts:195:7)
+    at Object.toThrow (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/expect/build/index.js:2155:20)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:200:17)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool createRuleSet should handle both formats creation errors" name="rule-generation-tool createRuleSet should handle both formats creation errors" time="0.006">
+      <failure>Error: expect(received).rejects.toThrow(expected)
+
+Expected substring: &quot;Failed to serialize rule set to YAML&quot;
+Received message:   &quot;Failed to create rule set: Cannot read properties of undefined (reading &apos;metadata&apos;)&quot;
+
+      1176 |     };
+      1177 |   } catch (error) {
+    &gt; 1178 |     throw new McpAdrError(
+           |           ^
+      1179 |       `Failed to create rule set: ${error instanceof Error ? error.message : String(error)}`,
+      1180 |       &apos;RULE_SET_CREATION_ERROR&apos;
+      1181 |     );
+
+      at createRuleSet (src/tools/rule-generation-tool.ts:1178:11)
+      at Object.&lt;anonymous&gt; (tests/tools/rule-generation-tool.test.ts:204:7)
+    at Object.toThrow (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/expect/build/index.js:2155:20)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:209:17)
+    at Promise.finally.completed (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1557:28)
+    at new Promise (&lt;anonymous&gt;)
+    at callAsyncCircusFn (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1497:10)
+    at _callCircusTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1007:40)
+    at _runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:947:3)
+    at /home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:849:7
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:862:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at _runTestsForDescribeBlock (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:857:11)
+    at run (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:761:3)
+    at runAndTransformResultsToJestFormat (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/jestAdapterInit.js:1918:21)
+    at jestAdapter (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-circus/build/runner.js:101:19)
+    at runTestInternal (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:275:16)
+    at runTest (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:343:7)
+    at Object.worker (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/node_modules/jest-runner/build/testWorker.js:497:12)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool createRuleSet should handle custom description and author" name="rule-generation-tool createRuleSet should handle custom description and author" time="0.001">
+      <failure>McpAdrError: Failed to create rule set: Cannot read properties of undefined (reading &apos;metadata&apos;)
+    at createRuleSet (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/rule-generation-tool.ts:1178:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:213:22)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool createRuleSet should combine all rule types" name="rule-generation-tool createRuleSet should combine all rule types" time="0.001">
+      <failure>McpAdrError: Failed to create rule set: Cannot read properties of undefined (reading &apos;metadata&apos;)
+    at createRuleSet (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/src/tools/rule-generation-tool.ts:1178:11)
+    at Object.&lt;anonymous&gt; (/home/runner/work/mcp-adr-analysis-server/mcp-adr-analysis-server/tests/tools/rule-generation-tool.test.ts:233:22)</failure>
+    </testcase>
+    <testcase classname="rule-generation-tool createRuleSet should handle missing rules" name="rule-generation-tool createRuleSet should handle missing rules" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="ADR Bootstrap Validation Tool" errors="0" failures="0" skipped="0" timestamp="2025-12-12T16:00:46" time="1.011" tests="18">
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should generate both bootstrap and validation scripts by default" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should generate both bootstrap and validation scripts by default" time="0.141">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should generate only bootstrap script when specified" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should generate only bootstrap script when specified" time="0.044">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should generate only validation script when specified" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should generate only validation script when specified" time="0.041">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should include environment-specific configurations" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should include environment-specific configurations" time="0.042">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should support custom template generation" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should support custom template generation" time="0.04">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should include validation rules based on existing ADRs" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should include validation rules based on existing ADRs" time="0.041">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should handle CI/CD integration" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should handle CI/CD integration" time="0.044">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should support dependency tracking" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should support dependency tracking" time="0.04">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should generate comprehensive documentation" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should generate comprehensive documentation" time="0.04">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should handle empty ADR directory" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should handle empty ADR directory" time="0.026">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should validate project structure" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should validate project structure" time="0.088">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should handle invalid project path" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should handle invalid project path" time="0.012">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should support interactive mode configuration" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should support interactive mode configuration" time="0.039">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should generate security-focused validation scripts" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should generate security-focused validation scripts" time="0.045">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should support output format customization" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should support output format customization" time="0.041">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should include performance considerations" name="ADR Bootstrap Validation Tool generateAdrBootstrapScripts should include performance considerations" time="0.042">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool Error Handling should handle malformed ADR files gracefully" name="ADR Bootstrap Validation Tool Error Handling should handle malformed ADR files gracefully" time="0.04">
+    </testcase>
+    <testcase classname="ADR Bootstrap Validation Tool Error Handling should handle permission issues gracefully" name="ADR Bootstrap Validation Tool Error Handling should handle permission issues gracefully" time="0.042">
+    </testcase>
+  </testsuite>
+  <testsuite name="Troubleshoot Guided Workflow Tool" errors="0" failures="0" skipped="0" timestamp="2025-12-12T16:00:47" time="0.268" tests="40">
+    <testcase classname="Troubleshoot Guided Workflow Tool Schema Validation should validate analyze_failure operation input" name="Troubleshoot Guided Workflow Tool Schema Validation should validate analyze_failure operation input" time="0.005">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Schema Validation should validate generate_test_plan operation input" name="Troubleshoot Guided Workflow Tool Schema Validation should validate generate_test_plan operation input" time="0.002">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Schema Validation should validate full_workflow operation input" name="Troubleshoot Guided Workflow Tool Schema Validation should validate full_workflow operation input" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Schema Validation should reject invalid operation" name="Troubleshoot Guided Workflow Tool Schema Validation should reject invalid operation" time="0.05">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Schema Validation should reject analyze_failure without failure info" name="Troubleshoot Guided Workflow Tool Schema Validation should reject analyze_failure without failure info" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Schema Validation should reject generate_test_plan without failure info" name="Troubleshoot Guided Workflow Tool Schema Validation should reject generate_test_plan without failure info" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Schema Validation should use default values for optional parameters" name="Troubleshoot Guided Workflow Tool Schema Validation should use default values for optional parameters" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Schema Validation should handle invalid failure type" name="Troubleshoot Guided Workflow Tool Schema Validation should handle invalid failure type" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze test failure correctly" name="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze test failure correctly" time="0.003">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze deployment failure correctly" name="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze deployment failure correctly" time="0.002">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze build failure correctly" name="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze build failure correctly" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze runtime error correctly" name="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze runtime error correctly" time="0.005">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze performance issue correctly" name="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze performance issue correctly" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze security issue correctly" name="Troubleshoot Guided Workflow Tool Failure Analysis Operation should analyze security issue correctly" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Failure Analysis Operation should handle minimal failure information" name="Troubleshoot Guided Workflow Tool Failure Analysis Operation should handle minimal failure information" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Failure Analysis Operation should handle failure without context" name="Troubleshoot Guided Workflow Tool Failure Analysis Operation should handle failure without context" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should generate AI-powered test plan successfully" name="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should generate AI-powered test plan successfully" time="0.002">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should handle AI API errors and fallback to template" name="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should handle AI API errors and fallback to template" time="0">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should use fallback when AI is disabled" name="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should use fallback when AI is disabled" time="0">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should handle invalid AI response" name="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should handle invalid AI response" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should handle AI API HTTP errors" name="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should handle AI API HTTP errors" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should handle empty AI response" name="Troubleshoot Guided Workflow Tool Test Plan Generation Operation should handle empty AI response" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Fallback Test Plan Generation should generate fallback plan for test failure" name="Troubleshoot Guided Workflow Tool Fallback Test Plan Generation should generate fallback plan for test failure" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Fallback Test Plan Generation should generate fallback plan for deployment failure" name="Troubleshoot Guided Workflow Tool Fallback Test Plan Generation should generate fallback plan for deployment failure" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Fallback Test Plan Generation should generate fallback plan for build failure" name="Troubleshoot Guided Workflow Tool Fallback Test Plan Generation should generate fallback plan for build failure" time="0">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Fallback Test Plan Generation should generate fallback plan for runtime error" name="Troubleshoot Guided Workflow Tool Fallback Test Plan Generation should generate fallback plan for runtime error" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Fallback Test Plan Generation should generate fallback plan for unknown failure type" name="Troubleshoot Guided Workflow Tool Fallback Test Plan Generation should generate fallback plan for unknown failure type" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Full Workflow Operation should execute full troubleshooting workflow" name="Troubleshoot Guided Workflow Tool Full Workflow Operation should execute full troubleshooting workflow" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Full Workflow Operation should handle full workflow with minimal input" name="Troubleshoot Guided Workflow Tool Full Workflow Operation should handle full workflow with minimal input" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Error Handling should handle Zod validation errors" name="Troubleshoot Guided Workflow Tool Error Handling should handle Zod validation errors" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Error Handling should handle unknown operation gracefully" name="Troubleshoot Guided Workflow Tool Error Handling should handle unknown operation gracefully" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Error Handling should handle missing required failure info" name="Troubleshoot Guided Workflow Tool Error Handling should handle missing required failure info" time="0">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Error Handling should handle general errors in analysis" name="Troubleshoot Guided Workflow Tool Error Handling should handle general errors in analysis" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool AI Test Plan Formatting should format complex AI test plan correctly" name="Troubleshoot Guided Workflow Tool AI Test Plan Formatting should format complex AI test plan correctly" time="0.001">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool AI Test Plan Formatting should handle AI test plan with missing sections" name="Troubleshoot Guided Workflow Tool AI Test Plan Formatting should handle AI test plan with missing sections" time="0">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Integration and Edge Cases should handle failure with all optional fields populated" name="Troubleshoot Guided Workflow Tool Integration and Edge Cases should handle failure with all optional fields populated" time="0.002">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Integration and Edge Cases should handle non-reproducible failure correctly" name="Troubleshoot Guided Workflow Tool Integration and Edge Cases should handle non-reproducible failure correctly" time="0">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Integration and Edge Cases should handle custom project paths correctly" name="Troubleshoot Guided Workflow Tool Integration and Edge Cases should handle custom project paths correctly" time="0">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Integration and Edge Cases should handle very long error messages" name="Troubleshoot Guided Workflow Tool Integration and Edge Cases should handle very long error messages" time="0.002">
+    </testcase>
+    <testcase classname="Troubleshoot Guided Workflow Tool Integration and Edge Cases should handle empty arrays gracefully" name="Troubleshoot Guided Workflow Tool Integration and Edge Cases should handle empty arrays gracefully" time="0.001">
+    </testcase>
+  </testsuite>
+  <testsuite name="ResearchOrchestrator" errors="0" failures="0" skipped="0" timestamp="2025-12-12T16:00:03" time="65.663" tests="25">
+    <testcase classname="ResearchOrchestrator answerResearchQuestion should return answer with sources and confidence" name="ResearchOrchestrator answerResearchQuestion should return answer with sources and confidence" time="3.324">
+    </testcase>
+    <testcase classname="ResearchOrchestrator answerResearchQuestion should have high confidence when project files are found" name="ResearchOrchestrator answerResearchQuestion should have high confidence when project files are found" time="3.204">
+    </testcase>
+    <testcase classname="ResearchOrchestrator answerResearchQuestion should recommend web search when confidence is low" name="ResearchOrchestrator answerResearchQuestion should recommend web search when confidence is low" time="3.193">
+    </testcase>
+    <testcase classname="ResearchOrchestrator answerResearchQuestion should include metadata about search duration" name="ResearchOrchestrator answerResearchQuestion should include metadata about search duration" time="3.288">
+    </testcase>
+    <testcase classname="ResearchOrchestrator searchProjectFiles should search for Docker-related files when question mentions Docker" name="ResearchOrchestrator searchProjectFiles should search for Docker-related files when question mentions Docker" time="3.288">
+    </testcase>
+    <testcase classname="ResearchOrchestrator searchProjectFiles should search for TypeScript files when question mentions TypeScript" name="ResearchOrchestrator searchProjectFiles should search for TypeScript files when question mentions TypeScript" time="3.173">
+    </testcase>
+    <testcase classname="ResearchOrchestrator searchProjectFiles should always check ADR directory" name="ResearchOrchestrator searchProjectFiles should always check ADR directory" time="3.229">
+    </testcase>
+    <testcase classname="ResearchOrchestrator searchProjectFiles should calculate relevance scores for files" name="ResearchOrchestrator searchProjectFiles should calculate relevance scores for files" time="3.175">
+    </testcase>
+    <testcase classname="ResearchOrchestrator calculateConfidence should return valid confidence for any topic" name="ResearchOrchestrator calculateConfidence should return valid confidence for any topic" time="3.148">
+    </testcase>
+    <testcase classname="ResearchOrchestrator calculateConfidence should increase confidence with multiple sources" name="ResearchOrchestrator calculateConfidence should increase confidence with multiple sources" time="3.195">
+    </testcase>
+    <testcase classname="ResearchOrchestrator setConfidenceThreshold should update confidence threshold" name="ResearchOrchestrator setConfidenceThreshold should update confidence threshold" time="3.056">
+    </testcase>
+    <testcase classname="ResearchOrchestrator setConfidenceThreshold should clamp threshold between 0 and 1" name="ResearchOrchestrator setConfidenceThreshold should clamp threshold between 0 and 1" time="0">
+    </testcase>
+    <testcase classname="ResearchOrchestrator extractKeywords should extract meaningful keywords from questions" name="ResearchOrchestrator extractKeywords should extract meaningful keywords from questions" time="3.089">
+    </testcase>
+    <testcase classname="ResearchOrchestrator synthesizeAnswer should synthesize answer from multiple sources" name="ResearchOrchestrator synthesizeAnswer should synthesize answer from multiple sources" time="3.061">
+    </testcase>
+    <testcase classname="ResearchOrchestrator synthesizeAnswer should mention web search in answer when needed" name="ResearchOrchestrator synthesizeAnswer should mention web search in answer when needed" time="3.215">
+    </testcase>
+    <testcase classname="ResearchOrchestrator file pattern matching should match package.json for dependency questions" name="ResearchOrchestrator file pattern matching should match package.json for dependency questions" time="2.454">
+    </testcase>
+    <testcase classname="ResearchOrchestrator file pattern matching should match test files for testing questions" name="ResearchOrchestrator file pattern matching should match test files for testing questions" time="2.619">
+    </testcase>
+    <testcase classname="ResearchOrchestrator file pattern matching should skip node_modules directory" name="ResearchOrchestrator file pattern matching should skip node_modules directory" time="2.46">
+    </testcase>
+    <testcase classname="ResearchOrchestrator error handling should handle file read errors gracefully" name="ResearchOrchestrator error handling should handle file read errors gracefully" time="0.456">
+    </testcase>
+    <testcase classname="ResearchOrchestrator error handling should handle directory access errors" name="ResearchOrchestrator error handling should handle directory access errors" time="0.438">
+    </testcase>
+    <testcase classname="ResearchOrchestrator knowledge graph integration should query knowledge graph and include results" name="ResearchOrchestrator knowledge graph integration should query knowledge graph and include results" time="2.447">
+    </testcase>
+    <testcase classname="ResearchOrchestrator knowledge graph integration should handle empty knowledge graph gracefully" name="ResearchOrchestrator knowledge graph integration should handle empty knowledge graph gracefully" time="2.52">
+    </testcase>
+    <testcase classname="ResearchOrchestrator knowledge graph integration should include knowledge graph nodes in results when relevant" name="ResearchOrchestrator knowledge graph integration should include knowledge graph nodes in results when relevant" time="2.518">
+    </testcase>
+    <testcase classname="ResearchOrchestrator knowledge graph integration should extract keywords for knowledge graph query" name="ResearchOrchestrator knowledge graph integration should extract keywords for knowledge graph query" time="2.504">
+    </testcase>
+    <testcase classname="ResearchOrchestrator knowledge graph integration should boost confidence when knowledge graph data is found" name="ResearchOrchestrator knowledge graph integration should boost confidence when knowledge graph data is found" time="2.428">
     </testcase>
   </testsuite>
 </testsuites>
