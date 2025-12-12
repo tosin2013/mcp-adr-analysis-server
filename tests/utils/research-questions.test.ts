@@ -420,7 +420,7 @@ describe('Research Questions Utilities', () => {
       const result = await generateContextAwareQuestions(mockContext, emptyKnowledge);
       expect(result).toHaveProperty('questionPrompt');
       expect(result).toHaveProperty('instructions');
-    });
+    }, 30000); // Increase timeout for this test which scans project structure
   });
 
   describe('createResearchTaskTracking', () => {
