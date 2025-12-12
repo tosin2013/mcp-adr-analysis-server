@@ -2,7 +2,6 @@
  * Test to verify that Jest ESM dynamic imports work with child_process modules
  * 
  * This test validates the fix for: "Jest ESM: Dynamic imports fail with node:child_process module resolution"
- * GitHub Issue: https://github.com/tosin2013/mcp-adr-analysis-server/issues/XXX
  * 
  * The fix uses a global mock in jest.config.js to intercept both 'child_process' and 'node:child_process'
  * imports, preventing module resolution failures in Jest's ESM VM environment.

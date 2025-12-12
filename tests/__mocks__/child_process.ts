@@ -7,11 +7,22 @@
  */
 
 /**
+ * Simplified options type for child_process functions
+ * Using a more specific type than 'any' for better type safety
+ */
+interface MockExecOptions {
+  encoding?: 'utf8' | 'utf-8' | 'ascii' | 'base64' | 'hex' | 'buffer';
+  cwd?: string;
+  maxBuffer?: number;
+  [key: string]: unknown;
+}
+
+/**
  * Mock exec function - returns empty result by default
  */
 export function exec(
   command: string,
-  options?: any,
+  options?: MockExecOptions,
   callback?: (error: Error | null, stdout: string, stderr: string) => void
 ): any {
   // If callback is provided, call it asynchronously with empty result
@@ -30,14 +41,14 @@ export function exec(
 /**
  * Mock execSync function - returns empty string by default
  */
-export function execSync(command: string, options?: any): Buffer | string {
-  return options?.encoding ? '' : Buffer.from('');
+export function execSync(command: string, options?: MockExecOptions): Buffer | string {
+  return options?.encoding && options.encoding !== 'buffer' ? '' : Buffer.from('');
 }
 
 /**
  * Mock spawn function - returns mock child process
  */
-export function spawn(_command: string, _args?: readonly string[], _options?: any): any {
+export function spawn(_command: string, _args?: readonly string[], _options?: MockExecOptions): any {
   return {
     stdout: {
       on: () => {},
@@ -62,7 +73,7 @@ export function spawn(_command: string, _args?: readonly string[], _options?: an
 /**
  * Mock fork function - returns mock child process
  */
-export function fork(_modulePath: string, _args?: readonly string[], _options?: any): any {
+export function fork(_modulePath: string, _args?: readonly string[], _options?: MockExecOptions): any {
   return {
     send: () => true,
     on: () => {},
@@ -74,14 +85,23 @@ export function fork(_modulePath: string, _args?: readonly string[], _options?: 
 
 /**
  * Mock execFile function
+ * Handles multiple overload patterns for better compatibility
  */
 export function execFile(
   file: string,
-  args?: readonly string[] | null,
-  options?: any,
+  argsOrOptions?: readonly string[] | MockExecOptions | null,
+  optionsOrCallback?: MockExecOptions | ((error: Error | null, stdout: string, stderr: string) => void),
   callback?: (error: Error | null, stdout: string, stderr: string) => void
 ): any {
-  const cb = typeof options === 'function' ? options : callback;
+  // Determine which parameter is the callback based on the overload pattern
+  let cb: ((error: Error | null, stdout: string, stderr: string) => void) | undefined;
+  
+  if (typeof optionsOrCallback === 'function') {
+    cb = optionsOrCallback;
+  } else if (typeof callback === 'function') {
+    cb = callback;
+  }
+  
   if (cb) {
     process.nextTick(() => cb(null, '', ''));
   }
@@ -96,8 +116,8 @@ export function execFile(
 /**
  * Mock execFileSync function
  */
-export function execFileSync(file: string, args?: readonly string[], options?: any): Buffer | string {
-  return options?.encoding ? '' : Buffer.from('');
+export function execFileSync(file: string, args?: readonly string[], options?: MockExecOptions): Buffer | string {
+  return options?.encoding && options.encoding !== 'buffer' ? '' : Buffer.from('');
 }
 
 // Default export for ES modules
