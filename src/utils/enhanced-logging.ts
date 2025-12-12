@@ -299,6 +299,9 @@ export class EnhancedLogger {
 
   /**
    * Write to console with appropriate formatting
+   *
+   * IMPORTANT: All logging goes to stderr to avoid interfering with
+   * MCP JSON-RPC communication which uses stdout exclusively.
    */
   private writeToConsole(entry: LogEntry): void {
     const timestamp = entry.timestamp.toISOString();
@@ -310,39 +313,15 @@ export class EnhancedLogger {
         timestamp: timestamp,
       };
 
-      switch (entry.level) {
-        case 'critical':
-        case 'error':
-          console.error(prefix, entry.message, logData);
-          break;
-        case 'warn':
-          console.warn(prefix, entry.message, logData);
-          break;
-        case 'debug':
-          console.debug(prefix, entry.message, logData);
-          break;
-        default:
-          console.log(prefix, entry.message, logData);
-      }
+      // All logs go to stderr to preserve stdout for MCP JSON-RPC
+      console.error(prefix, entry.message, logData);
     } else {
       const message = `${prefix} ${entry.message}`;
 
-      switch (entry.level) {
-        case 'critical':
-        case 'error':
-          console.error(message);
-          if (entry.error) {
-            console.error('Error details:', entry.error);
-          }
-          break;
-        case 'warn':
-          console.warn(message);
-          break;
-        case 'debug':
-          console.debug(message);
-          break;
-        default:
-          console.log(message);
+      // All logs go to stderr to preserve stdout for MCP JSON-RPC
+      console.error(message);
+      if (entry.error && (entry.level === 'critical' || entry.level === 'error')) {
+        console.error('Error details:', entry.error);
       }
     }
   }
