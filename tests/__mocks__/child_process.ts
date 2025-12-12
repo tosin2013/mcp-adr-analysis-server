@@ -37,7 +37,7 @@ export function execSync(command: string, options?: any): Buffer | string {
 /**
  * Mock spawn function - returns mock child process
  */
-export function spawn(command: string, args?: readonly string[], options?: any): any {
+export function spawn(_command: string, _args?: readonly string[], _options?: any): any {
   return {
     stdout: {
       on: () => {},
@@ -62,7 +62,7 @@ export function spawn(command: string, args?: readonly string[], options?: any):
 /**
  * Mock fork function - returns mock child process
  */
-export function fork(modulePath: string, args?: readonly string[], options?: any): any {
+export function fork(_modulePath: string, _args?: readonly string[], _options?: any): any {
   return {
     send: () => true,
     on: () => {},
