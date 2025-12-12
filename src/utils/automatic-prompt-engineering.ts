@@ -2,6 +2,11 @@
  * Automatic Prompt Engineering (APE) Utility Module - 100% Prompt-Driven Architecture
  * Generates AI delegation prompts for automatic prompt optimization and evaluation
  * All functions return prompts for AI execution, never execute operations directly
+ *
+ * Optimized per ADR-015:
+ * - Description constants extracted to src/config/ape-descriptions.ts
+ * - Template caching for reduced token generation
+ * - Lazy loading of tool-specific configurations
  */
 
 import { McpAdrError } from '../types/index.js';
@@ -14,6 +19,12 @@ import {
   ToolOptimizationConfig,
 } from '../types/ape-framework.js';
 import { PromptObject } from './prompt-composition.js';
+import {
+  getStrategyDescription,
+  getCriterionDescription,
+  getSelectionStrategyDescription,
+  getToolOptimizationPriorities,
+} from '../config/ape-descriptions.js';
 
 // ============================================================================
 // Configuration and Constants
@@ -128,17 +139,7 @@ Create ${mergedConfig.candidateCount} prompt variations using these strategies:
 Evaluate each candidate on these criteria (0-1 scale):
 
 ${mergedConfig.evaluationCriteria
-  .map(criterion => {
-    const descriptions = {
-      'task-completion': 'How well the prompt achieves the intended task outcome',
-      clarity: 'How clear, unambiguous, and easy to understand the prompt is',
-      specificity: 'How specific, actionable, and detailed the prompt is',
-      robustness: 'How well the prompt handles edge cases and variations',
-      efficiency: 'How concise yet comprehensive the prompt is',
-      'context-awareness': 'How well the prompt fits the specific context and domain',
-    };
-    return `- **${criterion}**: ${descriptions[criterion] || 'Evaluate based on this criterion'}`;
-  })
+  .map(criterion => `- **${criterion}**: ${getCriterionDescription(criterion)}`)
   .join('\n')}
 
 ### Step 3: Apply Selection Strategy (${mergedConfig.selectionStrategy})
@@ -712,96 +713,9 @@ You must:
 // ============================================================================
 // Utility Functions and Helpers
 // ============================================================================
-
-/**
- * Get description for a generation strategy
- */
-function getStrategyDescription(strategy: GenerationStrategy): string {
-  const descriptions = {
-    'template-variation': 'Use different prompt templates and structural formats',
-    'semantic-variation': 'Rephrase while preserving meaning and intent',
-    'style-variation': 'Adjust tone, formality, and communication style',
-    'length-variation': 'Create concise, detailed, and balanced versions',
-    'structure-variation': 'Reorganize content with different patterns',
-    'hybrid-approach': 'Combine multiple strategies for optimal results',
-  };
-  return descriptions[strategy] || 'Apply the specified generation strategy';
-}
-
-/**
- * Get description for an evaluation criterion
- */
-function getCriterionDescription(criterion: EvaluationCriterion): string {
-  const descriptions = {
-    'task-completion': 'How well the prompt achieves the intended task outcome',
-    clarity: 'How clear, unambiguous, and easy to understand the prompt is',
-    specificity: 'How specific, actionable, and detailed the prompt is',
-    robustness: 'How well the prompt handles edge cases and variations',
-    efficiency: 'How concise yet comprehensive the prompt is',
-    'context-awareness': 'How well the prompt fits the specific context and domain',
-  };
-  return descriptions[criterion] || 'Evaluate based on this criterion';
-}
-
-/**
- * Get description for a selection strategy
- */
-function getSelectionStrategyDescription(strategy: SelectionStrategy): string {
-  const descriptions = {
-    'highest-score': 'Select the candidate with the highest overall evaluation score',
-    'multi-criteria': 'Balance multiple evaluation criteria with appropriate weights',
-    ensemble: 'Combine strengths of multiple high-performing candidates',
-    'context-aware': 'Choose based on context-specific suitability and requirements',
-    balanced: 'Balance quality, diversity, and context appropriateness',
-  };
-  return descriptions[strategy] || 'Apply the specified selection strategy';
-}
-
-/**
- * Get tool-specific optimization priorities
- */
-function getToolOptimizationPriorities(toolName: string): string {
-  const priorities: Record<string, string> = {
-    generate_adrs_from_prd: `
-- **Context Analysis**: Better understanding of PRD requirements and constraints
-- **Decision Quality**: Clearer architectural decision rationale and justification
-- **Stakeholder Alignment**: Improved ADR clarity and relevance for stakeholders
-- **Technical Depth**: Appropriate level of technical detail for the context`,
-
-    suggest_adrs: `
-- **Relevance**: Highly relevant ADR suggestions based on project context
-- **Prioritization**: Clear prioritization of suggested ADRs by importance
-- **Feasibility**: Realistic and implementable architectural decisions
-- **Impact Assessment**: Clear understanding of decision impacts and trade-offs`,
-
-    analyze_project_ecosystem: `
-- **Technology Detection**: Accurate identification of technologies and frameworks
-- **Pattern Recognition**: Better identification of architectural patterns
-- **Context Understanding**: Comprehensive project context analysis
-- **Insight Generation**: Valuable and actionable architectural insights`,
-
-    generate_research_questions: `
-- **Question Quality**: High-quality, targeted research questions
-- **Relevance**: Questions directly relevant to project needs
-- **Depth**: Appropriate depth and scope for research objectives
-- **Actionability**: Questions that lead to actionable insights`,
-
-    incorporate_research: `
-- **Integration Quality**: Effective integration of research findings
-- **Synthesis**: Good synthesis of multiple research sources
-- **Relevance**: Focus on most relevant research findings
-- **Actionability**: Clear actionable recommendations from research`,
-  };
-
-  return (
-    priorities[toolName] ||
-    `
-- **Task Effectiveness**: Optimize for the tool's primary task objectives
-- **Context Awareness**: Improve understanding of tool-specific context
-- **Output Quality**: Enhance the quality and relevance of tool outputs
-- **User Experience**: Improve clarity and usability of tool interactions`
-  );
-}
+// Note: getStrategyDescription, getCriterionDescription, getSelectionStrategyDescription,
+// and getToolOptimizationPriorities are now imported from ../config/ape-descriptions.js
+// This reduces code duplication and enables template caching (ADR-015)
 
 /**
  * Generate cache key for APE optimization requests
