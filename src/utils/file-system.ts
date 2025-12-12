@@ -501,7 +501,10 @@ export async function findRelatedCode(
             keywords.slice(0, 10), // Limit keywords for performance
             projectPath,
             {
-              fileType: 'ts,js,py,java,go,rs,cs',
+              // Include programming languages and DevOps/config file types
+              // Note: Use ripgrep's actual type names (e.g., 'rust' not 'rs')
+              fileType:
+                'ts,js,py,java,go,rust,cs,sh,yaml,json,md,tf,docker,make,toml,xml,sql,ruby,php',
               maxMatches: 5,
               caseInsensitive: true,
             }
@@ -560,8 +563,36 @@ export async function findRelatedCode(
         limit: maxFiles,
       });
 
-      // Filter to source code files only
-      const sourceExtensions = ['.ts', '.js', '.tsx', '.jsx', '.py', '.java', '.cs', '.go', '.rs'];
+      // Filter to source code and config files only
+      const sourceExtensions = [
+        '.ts',
+        '.js',
+        '.tsx',
+        '.jsx',
+        '.mjs',
+        '.cjs', // JavaScript/TypeScript
+        '.py', // Python
+        '.java',
+        '.kt',
+        '.scala', // JVM languages
+        '.cs', // C#
+        '.go', // Go
+        '.rs', // Rust
+        '.rb', // Ruby
+        '.php', // PHP
+        '.sh',
+        '.bash',
+        '.zsh', // Shell scripts
+        '.yaml',
+        '.yml', // YAML config
+        '.json', // JSON config
+        '.toml', // TOML config
+        '.xml', // XML config
+        '.tf',
+        '.hcl', // Terraform
+        '.sql', // SQL
+        '.md', // Markdown
+      ];
       relatedFiles = files.filter(file => sourceExtensions.includes(file.extension));
     }
 
