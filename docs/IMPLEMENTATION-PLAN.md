@@ -276,6 +276,53 @@ return {
 
 ---
 
+## Phase 5: OpenRouter Elimination (In Progress)
+
+**Objective:** Eliminate OpenRouter dependency for most operations, making CE-MCP the default execution mode.
+
+**Effort:** 2-4 hours
+
+### Tasks
+
+#### 5.1 Fix CE-MCP Mode Detection Bug
+
+- [x] Fix `shouldUseCEMCPDirective` to check for `'ce-mcp'` mode (was only checking `'directive'`)
+- [x] Verify mode check works with `aiConfig.executionMode`
+
+#### 5.2 Add tool_chain_orchestrator Directive
+
+- [x] Create `CEMCPToolChainOrchestratorArgs` interface
+- [x] Create `createToolChainOrchestratorDirective()` function
+- [x] Add to `cemcpTools` list in `shouldUseCEMCPDirective()`
+- [x] Add case handler in `getCEMCPDirective()`
+
+#### 5.3 Add Deprecation Markers
+
+- [x] Add @deprecated to `tool-chain-orchestrator.ts` module
+- [x] Add @deprecated to `troubleshoot-guided-workflow-tool.ts` module
+- [x] Update OpenRouter status messages in `adr-suggestion-tool.ts`
+- [x] Add CE-MCP note to diagnostic tool in `index.ts`
+
+#### 5.4 Documentation Updates
+
+- [x] Update IMPLEMENTATION-PLAN.md with Phase 5
+
+### Success Metrics
+
+- [x] `shouldUseCEMCPDirective` correctly detects `'ce-mcp'` mode
+- [x] 13 tools now have CE-MCP directives (12 from Phase 4 + tool_chain_orchestrator)
+- [x] Legacy modules marked as deprecated
+- [ ] Full test suite passing
+
+### Exit Criteria
+
+- CE-MCP is the default execution mode
+- No OpenRouter API calls required for standard operations
+- Legacy mode still available via EXECUTION_MODE=full
+- Documentation updated
+
+---
+
 ## Risk Mitigation
 
 ### Technical Risks

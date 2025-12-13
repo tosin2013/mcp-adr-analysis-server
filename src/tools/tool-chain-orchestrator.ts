@@ -1,8 +1,17 @@
 /**
  * Tool Chain Orchestrator - AI-Powered Dynamic Tool Sequencing
  *
- * Uses OpenRouter.ai to intelligently analyze user requests and generate
- * structured tool execution plans for the calling LLM to execute.
+ * @deprecated This module contains legacy OpenRouter execution functions.
+ * As of Phase 5 CE-MCP migration, this tool returns orchestration directives
+ * instead of making direct OpenRouter API calls. The host LLM (Claude) is
+ * better positioned to create execution plans because it has full context.
+ *
+ * For CE-MCP mode, use createToolChainOrchestratorDirective() from
+ * src/tools/ce-mcp-tools.ts instead. See ADR-014 for architecture details.
+ *
+ * This module is retained for:
+ * - Legacy mode support (EXECUTION_MODE=full)
+ * - Hybrid mode fallback (when CE-MCP directive execution fails)
  */
 
 import { z } from 'zod';

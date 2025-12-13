@@ -5,7 +5,7 @@
  * while maintaining compatible interface with existing code
  */
 
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import { writeFileSync, unlinkSync, existsSync, readFileSync } from 'fs';
 import { join, basename } from 'path';
 import { tmpdir } from 'os';

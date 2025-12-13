@@ -22,7 +22,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from 'fs';
 import { join, extname, basename } from 'path';
 import * as os from 'os';

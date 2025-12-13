@@ -5,7 +5,7 @@
  * to select appropriate thresholds for timeline analysis
  */
 
-import { exec } from 'child_process';
+import { exec } from 'node:child_process';
 import { promisify } from 'util';
 import type { ProjectContext, ThresholdProfile, AdrType } from './adr-timeline-types.js';
 import type { DiscoveredAdr } from './adr-discovery.js';

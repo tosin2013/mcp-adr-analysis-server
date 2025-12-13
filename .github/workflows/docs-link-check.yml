@@ -1,0 +1,49 @@
+name: Documentation Link Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci  # Assumes package.json in root or docs/
+
+      - name: Run link check
+        run: npx mcp-documcp check-documentation-links --path docs/ --internal --anchor --format json > link-check-results.json
+
+      - name: Check for broken links
+        if: always()
+        run: |
+          BROKEN=$(jq '.summary.brokenLinks' link-check-results.json)
+          if [ "$BROKEN" -gt 0 ]; then
+            echo "Broken links found: $BROKEN"
+            cat link-check-results.json
+            exit 1
+          fi
+
+      - name: Comment on PR if failed
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const fs = require('fs');
+            const results = JSON.parse(fs.readFileSync('link-check-results.json', 'utf8'));
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `⚠️ Broken links detected: ${results.summary.brokenLinks}\n\nDetails: ${JSON.stringify(results.results, null, 2)}`
+            });

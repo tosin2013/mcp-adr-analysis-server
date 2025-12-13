@@ -3,6 +3,17 @@
  * Provides systematic troubleshooting with ADR/TODO alignment
  * Integrates with other MCP tools for comprehensive analysis
  * Enhanced with memory integration and intelligent decision capabilities
+ *
+ * @deprecated This module contains legacy OpenRouter execution functions.
+ * As of Phase 5 CE-MCP migration, this tool returns state machine directives
+ * instead of making direct OpenRouter API calls.
+ *
+ * For CE-MCP mode, use createTroubleshootGuidedWorkflowDirective() from
+ * src/tools/ce-mcp-tools.ts instead. See ADR-014 for architecture details.
+ *
+ * This module is retained for:
+ * - Legacy mode support (EXECUTION_MODE=full)
+ * - Hybrid mode fallback (when CE-MCP directive execution fails)
  */
 
 import { z } from 'zod';
