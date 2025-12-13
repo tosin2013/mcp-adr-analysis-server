@@ -8,7 +8,7 @@
  * - Red Hat tooling (Ansible, etc.)
  */
 
-import { exec } from 'child_process';
+import { exec } from 'node:child_process';
 import { promisify } from 'util';
 import * as os from 'os';
 import { EnhancedLogger } from './enhanced-logging.js';

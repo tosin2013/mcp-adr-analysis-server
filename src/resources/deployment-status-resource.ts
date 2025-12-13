@@ -6,7 +6,7 @@
 import { URLSearchParams } from 'url';
 import * as fs from 'fs/promises';
 import * as path from 'path';
-import { exec } from 'child_process';
+import { exec } from 'node:child_process';
 import { promisify } from 'util';
 import { resourceCache, generateETag } from './resource-cache.js';
 import { ResourceGenerationResult } from './index.js';

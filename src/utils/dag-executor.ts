@@ -8,7 +8,7 @@
  * - Task-level validation and timeout support
  */
 
-import { exec } from 'child_process';
+import { exec } from 'node:child_process';
 import { promisify } from 'util';
 import { EnhancedLogger } from './enhanced-logging.js';
 import { SystemCardManager } from './system-card-manager.js';

@@ -22,7 +22,7 @@
 
 import { z } from 'zod';
 import { McpAdrError } from '../types/index.js';
-import { execSync } from 'child_process';
+import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
 import { join, basename } from 'path';
 import * as os from 'os';

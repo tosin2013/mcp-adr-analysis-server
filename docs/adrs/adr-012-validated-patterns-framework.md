@@ -1,10 +1,16 @@
-# ADR: Validated Patterns Framework for Multi-Platform Deployments
+# ADR-012: Validated Patterns Framework for Multi-Platform Deployments
 
-**Status**: PROPOSED
+## Status
 
-**Date**: 2025-01-16
+Proposed
 
-**Decision Makers**: Architecture Team, DevOps Team
+## Date
+
+2025-01-16
+
+## Decision Makers
+
+Architecture Team, DevOps Team
 
 ## Context
 
@@ -236,22 +242,28 @@ Each validated pattern includes:
 
 ## Implementation
 
-### Phase 1: Pattern Definitions (COMPLETED)
+### Phase 1: Pattern Definitions (PARTIAL)
 
-- ✅ Created `validated-pattern-definitions.ts` with all 7 patterns
-- ✅ Defined comprehensive pattern structure
-- ✅ Included bill of materials, deployment phases, validation checks
-- ✅ Added environment overrides for each pattern
+- [x] Created YAML pattern definitions in `patterns/infrastructure/`:
+  - `kubernetes.yaml` - Container orchestration
+  - `firebase.yaml` - Firebase serverless deployment
+  - `firebase-emulators.yaml` - Local Firebase testing
+  - `openshift.yaml` - OpenShift deployment
+  - `aws.yaml` - AWS deployment
+- [ ] Create `validated-pattern-definitions.ts` TypeScript interface
+- [ ] Define comprehensive pattern structure in code
+- [ ] Include bill of materials, deployment phases, validation checks
+- [ ] Add environment overrides for each pattern
 
-### Phase 2: Platform Detection (COMPLETED)
+### Phase 2: Platform Detection (PLANNED)
 
-- ✅ Created `platform-detector.ts`
-- ✅ Implemented file-based detection
-- ✅ Added content pattern matching
-- ✅ Implemented confidence scoring
-- ✅ Added recommendation generation
+- [ ] Create `platform-detector.ts`
+- [ ] Implement file-based detection
+- [ ] Add content pattern matching
+- [ ] Implement confidence scoring
+- [ ] Add recommendation generation
 
-### Phase 3: Pattern Application Framework (IN PROGRESS)
+### Phase 3: Pattern Application Framework (PLANNED)
 
 - Pattern loading and selection
 - Prerequisite validation
@@ -352,9 +364,15 @@ Each validated pattern includes:
 
 ### Implementation Files
 
-- `src/utils/validated-pattern-definitions.ts`: Pattern definitions
-- `src/utils/platform-detector.ts`: Platform detection
-- `docs/how-to-guides/validated-patterns-implementation.md`: Implementation guide
+**Existing:**
+- `patterns/infrastructure/*.yaml`: YAML pattern definitions (kubernetes, firebase, openshift, aws)
+- `patterns/schema.json`: Pattern schema definition
+- `patterns/README.md`: Pattern documentation
+
+**Planned:**
+- `src/utils/validated-pattern-definitions.ts`: TypeScript pattern interface (to be created)
+- `src/utils/platform-detector.ts`: Platform detection (to be created)
+- `docs/how-to-guides/validated-patterns-implementation.md`: Implementation guide (to be created)
 
 ## Review and Approval
 
