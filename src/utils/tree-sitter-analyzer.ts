@@ -2,11 +2,15 @@
  * Tree-sitter Integration for Enterprise DevOps Code Analysis
  *
  * Provides intelligent code analysis for multi-language DevOps stacks including:
- * - Ansible playbooks and roles
- * - Terraform/HCL infrastructure
+ * - TypeScript/JavaScript applications
  * - Python microservices
- * - Node.js applications
- * - Container configurations
+ * - Java/Quarkus applications
+ * - Go cloud-native services
+ * - Rust system components
+ * - C/C++ native code
+ * - Ruby scripts and Rails apps
+ * - Ansible playbooks and roles
+ * - Kubernetes/Docker configurations
  * - CI/CD pipelines
  *
  * Enterprise Features:
@@ -14,6 +18,9 @@
  * - Architectural boundary validation
  * - Multi-language dependency analysis
  * - Security pattern recognition
+ *
+ * Note: Uses tree-sitter 0.21.x for maximum language compatibility.
+ * See ADR-017 for version strategy details.
  */
 
 import { readFileSync } from 'fs';
@@ -144,15 +151,21 @@ export class TreeSitterAnalyzer {
     }
 
     try {
-      // Initialize core parsers for enterprise stack
+      // Initialize core parsers for enterprise stack (tree-sitter 0.21.x compatible)
+      // See ADR-017 for version strategy details
       await this.loadParser('typescript', 'tree-sitter-typescript');
       await this.loadParser('javascript', 'tree-sitter-javascript');
       await this.loadParser('python', 'tree-sitter-python');
+      await this.loadParser('java', 'tree-sitter-java');
+      await this.loadParser('go', 'tree-sitter-go');
+      await this.loadParser('rust', 'tree-sitter-rust');
+      await this.loadParser('c', 'tree-sitter-c');
+      await this.loadParser('cpp', 'tree-sitter-cpp');
+      await this.loadParser('ruby', 'tree-sitter-ruby');
       await this.loadParser('yaml', 'tree-sitter-yaml');
       await this.loadParser('json', 'tree-sitter-json');
       await this.loadParser('bash', 'tree-sitter-bash');
-      await this.loadParser('dockerfile', 'tree-sitter-dockerfile');
-      await this.loadParser('hcl', '@tree-sitter-grammars/tree-sitter-hcl');
+      await this.loadParser('css', 'tree-sitter-css');
 
       this.initialized = true;
     } catch (error) {
@@ -173,11 +186,9 @@ export class TreeSitterAnalyzer {
 
       let Parser: any;
       if (language === 'typescript') {
+        // TypeScript parser exports { typescript, tsx } objects
         const tsModule = await import('tree-sitter-typescript');
-        Parser = (tsModule as any).typescript;
-      } else if (language === 'hcl') {
-        const hclModule = await import('@tree-sitter-grammars/tree-sitter-hcl');
-        Parser = (hclModule as any).default || hclModule;
+        Parser = (tsModule as any).typescript || (tsModule as any).default?.typescript;
       } else {
         const module = await import(packageName);
         Parser = (module as any).default || module;
@@ -242,6 +253,27 @@ export class TreeSitterAnalyzer {
       case '.py':
       case '.pyi':
         return 'python';
+      case '.java':
+        return 'java';
+      case '.go':
+        return 'go';
+      case '.rs':
+        return 'rust';
+      case '.c':
+      case '.h':
+        return 'c';
+      case '.cpp':
+      case '.cc':
+      case '.cxx':
+      case '.hpp':
+      case '.hxx':
+        return 'cpp';
+      case '.rb':
+      case '.rake':
+      case '.gemspec':
+        return 'ruby';
+      case '.css':
+        return 'css';
       case '.yml':
       case '.yaml':
         return 'yaml';
@@ -252,6 +284,8 @@ export class TreeSitterAnalyzer {
         return 'bash';
       case '.tf':
       case '.tfvars':
+        // HCL support removed in 0.21.x downgrade - see ADR-017
+        // Falls back to text-based analysis
         return 'hcl';
       default:
         return 'text';
@@ -289,12 +323,32 @@ export class TreeSitterAnalyzer {
       case 'javascript':
         await this.analyzeJavaScript(tree.rootNode, lines, result);
         break;
+      case 'java':
+        await this.analyzeJava(tree.rootNode, lines, result);
+        break;
+      case 'go':
+        await this.analyzeGo(tree.rootNode, lines, result);
+        break;
+      case 'rust':
+        await this.analyzeRust(tree.rootNode, lines, result);
+        break;
+      case 'c':
+      case 'cpp':
+        await this.analyzeCCpp(tree.rootNode, lines, result);
+        break;
+      case 'ruby':
+        await this.analyzeRuby(tree.rootNode, lines, result);
+        break;
+      case 'css':
+        await this.analyzeCSS(tree.rootNode, lines, result);
+        break;
       case 'yaml':
         await this.analyzeYAML(tree.rootNode, lines, result, filePath);
         break;
       case 'hcl':
-        await this.analyzeTerraform(tree.rootNode, lines, result);
-        break;
+        // HCL parser removed in 0.21.x - use fallback regex analysis
+        // See ADR-017 for details
+        return this.fallbackAnalysis(filePath, content, language);
       case 'dockerfile':
         await this.analyzeDockerfile(tree.rootNode, lines, result);
         break;
@@ -483,8 +537,11 @@ export class TreeSitterAnalyzer {
 
   /**
    * Terraform/HCL analysis for infrastructure
+   * Note: HCL parser removed in 0.21.x downgrade - see ADR-017
+   * Kept for potential future use when tree-sitter-hcl becomes 0.21.x compatible
    */
-  private async analyzeTerraform(
+  // @ts-expect-error Intentionally unused - kept for future HCL support
+  private async _analyzeTerraform(
     node: TreeSitterNode,
     _lines: string[],
     result: CodeAnalysisResult
@@ -571,6 +628,470 @@ export class TreeSitterAnalyzer {
           isSensitive: this.isSensitiveVariable(nameNode.text, valueNode.text),
           scope: 'script',
         });
+      }
+    }
+  }
+
+  /**
+   * Java analysis for enterprise applications (Quarkus, Spring)
+   */
+  private async analyzeJava(
+    node: TreeSitterNode,
+    _lines: string[],
+    result: CodeAnalysisResult
+  ): Promise<void> {
+    // Find imports
+    const imports = node.descendantsOfType('import_declaration');
+    for (const importNode of imports) {
+      const moduleNode = importNode.childForFieldName('name');
+      if (moduleNode) {
+        result.imports.push({
+          module: moduleNode.text,
+          type: 'import',
+          location: {
+            line: importNode.startPosition.row + 1,
+            column: importNode.startPosition.column,
+          },
+          isExternal: true,
+          isDangerous: this.checkDangerousImport(moduleNode.text, 'java'),
+        });
+      }
+    }
+
+    // Find method declarations
+    const methods = node.descendantsOfType('method_declaration');
+    for (const methodNode of methods) {
+      const nameNode = methodNode.childForFieldName('name');
+      if (nameNode) {
+        result.functions.push({
+          name: nameNode.text,
+          type: 'method',
+          parameters: this.extractJavaParameters(methodNode),
+          location: {
+            line: methodNode.startPosition.row + 1,
+            column: methodNode.startPosition.column,
+          },
+          complexity: this.calculateComplexity(methodNode),
+          securitySensitive: this.isSecuritySensitive(nameNode.text),
+        });
+      }
+    }
+
+    // Find field declarations (potential secrets)
+    const fields = node.descendantsOfType('field_declaration');
+    for (const field of fields) {
+      const declarator = field.descendantsOfType('variable_declarator')[0];
+      if (declarator) {
+        const nameNode = declarator.childForFieldName('name');
+        const valueNode = declarator.childForFieldName('value');
+        if (nameNode) {
+          const varValue = valueNode?.text || '';
+          result.variables.push({
+            name: nameNode.text,
+            type: 'var',
+            ...(varValue && { value: varValue }),
+            location: {
+              line: field.startPosition.row + 1,
+              column: field.startPosition.column,
+            },
+            isSensitive: this.isSensitiveVariable(nameNode.text, varValue),
+            scope: 'class',
+          });
+        }
+      }
+    }
+  }
+
+  private extractJavaParameters(methodNode: TreeSitterNode): string[] {
+    const paramsNode = methodNode.childForFieldName('parameters');
+    if (!paramsNode) return [];
+    return paramsNode.namedChildren
+      .filter(child => child.type === 'formal_parameter')
+      .map(child => {
+        const nameNode = child.childForFieldName('name');
+        return nameNode?.text || '';
+      })
+      .filter(name => name !== '');
+  }
+
+  /**
+   * Go analysis for cloud-native services
+   */
+  private async analyzeGo(
+    node: TreeSitterNode,
+    _lines: string[],
+    result: CodeAnalysisResult
+  ): Promise<void> {
+    // Find imports
+    const importDecls = node.descendantsOfType('import_declaration');
+    for (const importDecl of importDecls) {
+      const specs = importDecl.descendantsOfType('import_spec');
+      for (const spec of specs) {
+        const pathNode = spec.childForFieldName('path');
+        if (pathNode) {
+          const module = pathNode.text.replace(/"/g, '');
+          result.imports.push({
+            module,
+            type: 'import',
+            location: {
+              line: spec.startPosition.row + 1,
+              column: spec.startPosition.column,
+            },
+            isExternal: !module.startsWith('./') && !module.startsWith('../'),
+            isDangerous: this.checkDangerousImport(module, 'go'),
+          });
+        }
+      }
+    }
+
+    // Find function declarations
+    const functions = node.descendantsOfType('function_declaration');
+    for (const funcNode of functions) {
+      const nameNode = funcNode.childForFieldName('name');
+      if (nameNode) {
+        result.functions.push({
+          name: nameNode.text,
+          type: 'function',
+          parameters: this.extractGoParameters(funcNode),
+          location: {
+            line: funcNode.startPosition.row + 1,
+            column: funcNode.startPosition.column,
+          },
+          complexity: this.calculateComplexity(funcNode),
+          securitySensitive: this.isSecuritySensitive(nameNode.text),
+        });
+      }
+    }
+
+    // Find variable declarations
+    const varDecls = node.descendantsOfType('var_declaration');
+    for (const varDecl of varDecls) {
+      const specs = varDecl.descendantsOfType('var_spec');
+      for (const spec of specs) {
+        const nameNode = spec.childForFieldName('name');
+        const valueNode = spec.childForFieldName('value');
+        if (nameNode) {
+          const varValue = valueNode?.text || '';
+          result.variables.push({
+            name: nameNode.text,
+            type: 'var',
+            ...(varValue && { value: varValue }),
+            location: {
+              line: spec.startPosition.row + 1,
+              column: spec.startPosition.column,
+            },
+            isSensitive: this.isSensitiveVariable(nameNode.text, varValue),
+            scope: 'package',
+          });
+        }
+      }
+    }
+  }
+
+  private extractGoParameters(funcNode: TreeSitterNode): string[] {
+    const paramsNode = funcNode.childForFieldName('parameters');
+    if (!paramsNode) return [];
+    return paramsNode.namedChildren
+      .filter(child => child.type === 'parameter_declaration')
+      .map(child => {
+        const nameNode = child.childForFieldName('name');
+        return nameNode?.text || '';
+      })
+      .filter(name => name !== '');
+  }
+
+  /**
+   * Rust analysis for system components
+   */
+  private async analyzeRust(
+    node: TreeSitterNode,
+    _lines: string[],
+    result: CodeAnalysisResult
+  ): Promise<void> {
+    // Find use declarations (imports)
+    const useDecls = node.descendantsOfType('use_declaration');
+    for (const useDecl of useDecls) {
+      result.imports.push({
+        module: useDecl.text.replace(/^use\s+/, '').replace(/;$/, ''),
+        type: 'import',
+        location: {
+          line: useDecl.startPosition.row + 1,
+          column: useDecl.startPosition.column,
+        },
+        isExternal: !useDecl.text.includes('crate::'),
+        isDangerous: this.checkDangerousImport(useDecl.text, 'rust'),
+      });
+    }
+
+    // Find function declarations
+    const functions = node.descendantsOfType('function_item');
+    for (const funcNode of functions) {
+      const nameNode = funcNode.childForFieldName('name');
+      if (nameNode) {
+        result.functions.push({
+          name: nameNode.text,
+          type: 'function',
+          parameters: this.extractRustParameters(funcNode),
+          location: {
+            line: funcNode.startPosition.row + 1,
+            column: funcNode.startPosition.column,
+          },
+          complexity: this.calculateComplexity(funcNode),
+          securitySensitive:
+            this.isSecuritySensitive(nameNode.text) || funcNode.text.includes('unsafe'),
+        });
+      }
+    }
+
+    // Check for unsafe blocks
+    const unsafeBlocks = node.descendantsOfType('unsafe_block');
+    for (const block of unsafeBlocks) {
+      result.securityIssues.push({
+        type: 'dangerous_function',
+        severity: 'medium',
+        message: 'Unsafe block detected',
+        location: {
+          line: block.startPosition.row + 1,
+          column: block.startPosition.column,
+        },
+        suggestion: 'Review unsafe code for memory safety issues',
+      });
+    }
+  }
+
+  private extractRustParameters(funcNode: TreeSitterNode): string[] {
+    const paramsNode = funcNode.childForFieldName('parameters');
+    if (!paramsNode) return [];
+    return paramsNode.namedChildren
+      .filter(child => child.type === 'parameter')
+      .map(child => {
+        const patternNode = child.childForFieldName('pattern');
+        return patternNode?.text || '';
+      })
+      .filter(name => name !== '');
+  }
+
+  /**
+   * C/C++ analysis for native code
+   */
+  private async analyzeCCpp(
+    node: TreeSitterNode,
+    _lines: string[],
+    result: CodeAnalysisResult
+  ): Promise<void> {
+    // Find includes
+    const includes = node.descendantsOfType('preproc_include');
+    for (const includeNode of includes) {
+      const pathNode =
+        includeNode.descendantsOfType('string_literal')[0] ||
+        includeNode.descendantsOfType('system_lib_string')[0];
+      if (pathNode) {
+        result.imports.push({
+          module: pathNode.text.replace(/[<>"]/g, ''),
+          type: 'include',
+          location: {
+            line: includeNode.startPosition.row + 1,
+            column: includeNode.startPosition.column,
+          },
+          isExternal: pathNode.type === 'system_lib_string',
+          isDangerous: this.checkDangerousImport(pathNode.text, 'c'),
+        });
+      }
+    }
+
+    // Find function definitions
+    const functions = node.descendantsOfType('function_definition');
+    for (const funcNode of functions) {
+      const declaratorNode = funcNode.childForFieldName('declarator');
+      if (declaratorNode) {
+        const nameNode = declaratorNode.childForFieldName('declarator');
+        const name = nameNode?.text || declaratorNode.text.split('(')[0] || 'unknown';
+        result.functions.push({
+          name,
+          type: 'function',
+          parameters: [],
+          location: {
+            line: funcNode.startPosition.row + 1,
+            column: funcNode.startPosition.column,
+          },
+          complexity: this.calculateComplexity(funcNode),
+          securitySensitive: this.isSecuritySensitive(name),
+        });
+      }
+    }
+
+    // Check for dangerous functions
+    const dangerousFunctions = ['strcpy', 'strcat', 'sprintf', 'gets', 'scanf'];
+    const calls = node.descendantsOfType('call_expression');
+    for (const call of calls) {
+      const funcName = call.children[0]?.text;
+      if (funcName && dangerousFunctions.includes(funcName)) {
+        result.securityIssues.push({
+          type: 'dangerous_function',
+          severity: 'high',
+          message: `Dangerous function ${funcName} detected`,
+          location: {
+            line: call.startPosition.row + 1,
+            column: call.startPosition.column,
+          },
+          suggestion: `Use safe alternatives (${funcName}_s or snprintf)`,
+        });
+      }
+    }
+  }
+
+  /**
+   * Ruby analysis for scripts and Rails apps
+   */
+  private async analyzeRuby(
+    node: TreeSitterNode,
+    _lines: string[],
+    result: CodeAnalysisResult
+  ): Promise<void> {
+    // Find requires
+    const calls = node.descendantsOfType('call');
+    for (const call of calls) {
+      const methodNode = call.childForFieldName('method');
+      if (methodNode && (methodNode.text === 'require' || methodNode.text === 'require_relative')) {
+        const argsNode = call.childForFieldName('arguments');
+        const argNode = argsNode?.namedChildren[0];
+        if (argNode) {
+          result.imports.push({
+            module: argNode.text.replace(/['"]/g, ''),
+            type: methodNode.text === 'require' ? 'require' : 'require',
+            location: {
+              line: call.startPosition.row + 1,
+              column: call.startPosition.column,
+            },
+            isExternal: methodNode.text === 'require',
+            isDangerous: this.checkDangerousImport(argNode.text, 'ruby'),
+          });
+        }
+      }
+    }
+
+    // Find method definitions
+    const methods = node.descendantsOfType('method');
+    for (const methodNode of methods) {
+      const nameNode = methodNode.childForFieldName('name');
+      if (nameNode) {
+        result.functions.push({
+          name: nameNode.text,
+          type: 'method',
+          parameters: this.extractRubyParameters(methodNode),
+          location: {
+            line: methodNode.startPosition.row + 1,
+            column: methodNode.startPosition.column,
+          },
+          complexity: this.calculateComplexity(methodNode),
+          securitySensitive: this.isSecuritySensitive(nameNode.text),
+        });
+      }
+    }
+
+    // Find assignments (potential secrets)
+    const assignments = node.descendantsOfType('assignment');
+    for (const assignment of assignments) {
+      const leftNode = assignment.children[0];
+      const rightNode = assignment.children[2];
+      if (leftNode && rightNode) {
+        result.variables.push({
+          name: leftNode.text,
+          type: 'var',
+          value: rightNode.text,
+          location: {
+            line: assignment.startPosition.row + 1,
+            column: assignment.startPosition.column,
+          },
+          isSensitive: this.isSensitiveVariable(leftNode.text, rightNode.text),
+          scope: 'local',
+        });
+      }
+    }
+  }
+
+  private extractRubyParameters(methodNode: TreeSitterNode): string[] {
+    const paramsNode = methodNode.childForFieldName('parameters');
+    if (!paramsNode) return [];
+    return paramsNode.namedChildren
+      .filter(
+        child =>
+          child.type === 'identifier' ||
+          child.type === 'optional_parameter' ||
+          child.type === 'keyword_parameter'
+      )
+      .map(child => child.text)
+      .filter(name => name !== '');
+  }
+
+  /**
+   * CSS analysis for stylesheet security
+   */
+  private async analyzeCSS(
+    node: TreeSitterNode,
+    _lines: string[],
+    result: CodeAnalysisResult
+  ): Promise<void> {
+    // Find @import rules
+    const imports = node.descendantsOfType('import_statement');
+    for (const importNode of imports) {
+      const urlNode = importNode.descendantsOfType('call_expression')[0];
+      const stringNode = importNode.descendantsOfType('string_value')[0];
+      const target = urlNode?.text || stringNode?.text || '';
+      if (target) {
+        result.imports.push({
+          module: target.replace(/['"url()]/g, ''),
+          type: 'import',
+          location: {
+            line: importNode.startPosition.row + 1,
+            column: importNode.startPosition.column,
+          },
+          isExternal: target.includes('http') || target.includes('//'),
+          isDangerous: target.includes('http:') && !target.includes('https:'),
+        });
+      }
+    }
+
+    // Check for potentially dangerous CSS
+    const declarations = node.descendantsOfType('declaration');
+    for (const decl of declarations) {
+      const propNode = decl.childForFieldName('property');
+      const valueNode = decl.childForFieldName('value');
+      if (propNode && valueNode) {
+        const propName = propNode.text;
+        const propValue = valueNode.text;
+
+        // Check for dangerous expressions
+        if (propValue.includes('expression(') || propValue.includes('javascript:')) {
+          result.securityIssues.push({
+            type: 'insecure_config',
+            severity: 'high',
+            message: 'Potentially dangerous CSS expression detected',
+            location: {
+              line: decl.startPosition.row + 1,
+              column: decl.startPosition.column,
+            },
+            suggestion: 'Remove JavaScript expressions from CSS',
+          });
+        }
+
+        // Check for external URLs without HTTPS
+        if (
+          propValue.includes('url(') &&
+          propValue.includes('http:') &&
+          !propValue.includes('https:')
+        ) {
+          result.securityIssues.push({
+            type: 'insecure_config',
+            severity: 'medium',
+            message: `CSS property ${propName} references non-HTTPS URL`,
+            location: {
+              line: decl.startPosition.row + 1,
+              column: decl.startPosition.column,
+            },
+            suggestion: 'Use HTTPS for external resources',
+          });
+        }
       }
     }
   }
@@ -735,12 +1256,24 @@ export class TreeSitterAnalyzer {
 
   // Helper methods
   private checkDangerousImport(importText: string, language: string): boolean {
-    const dangerousModules = {
-      python: ['eval', 'exec', 'subprocess', 'os.system'],
-      javascript: ['eval', 'child_process', 'vm'],
+    const dangerousModules: Record<string, string[]> = {
+      python: ['eval', 'exec', 'subprocess', 'os.system', 'pickle', 'marshal'],
+      javascript: ['eval', 'child_process', 'vm', 'unsafe-eval'],
+      java: [
+        'Runtime.exec',
+        'ProcessBuilder',
+        'ScriptEngine',
+        'Reflection',
+        'javax.script',
+        'java.lang.invoke',
+      ],
+      go: ['os/exec', 'unsafe', 'syscall', 'reflect'],
+      rust: ['std::process::Command', 'libc', 'std::ffi', 'std::mem::transmute'],
+      c: ['system', 'exec', 'popen', 'dlopen'],
+      ruby: ['eval', 'system', 'exec', 'backtick', 'Open3', 'Kernel.system'],
     };
 
-    const dangerous = dangerousModules[language as keyof typeof dangerousModules] || [];
+    const dangerous = dangerousModules[language] || [];
     return dangerous.some(module => importText.includes(module));
   }
 
