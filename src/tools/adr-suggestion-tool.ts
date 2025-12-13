@@ -806,7 +806,7 @@ ${enhancedPrompt}`,
 - **Reflexion Learning**: ${learningEnabled ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 - **Smart Code Linking**: ${existingAdrs && existingAdrs.length > 0 ? '✅ Enabled' : '❌ No existing ADRs'}
-- **AI Execution**: ✅ OpenRouter.ai ${executionResult.metadata?.model || 'enabled'}
+- **AI Execution**: ✅ Enabled (${executionResult.metadata?.model || 'default model'})
 
 ## Project Analysis
 - **Project Path**: ${projectPath}
@@ -871,7 +871,7 @@ This enhanced analysis uses research-driven architecture with live infrastructur
 - **Reflexion Learning**: ${learningEnabled ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 - **Smart Code Linking**: ${existingAdrs && existingAdrs.length > 0 ? '✅ Enabled' : '❌ No existing ADRs'}
-- **AI Execution**: ❌ Disabled (configure OPENROUTER_API_KEY for AI execution)
+- **AI Execution**: ❌ Disabled (set EXECUTION_MODE=full for legacy AI execution)
 
 ## Project Analysis
 - **Project Path**: ${projectPath}
@@ -1121,21 +1121,22 @@ export async function discoverExistingAdrs(args: {
 
   try {
     // INITIALIZE COMPLETE CACHE INFRASTRUCTURE (since this is typically the first command)
-    console.log('🚀 Initializing complete cache infrastructure...');
+    // NOTE: All console output goes to stderr to preserve stdout for MCP JSON-RPC
+    console.error('[ADR-Suggestion] Initializing complete cache infrastructure...');
 
     // 1. TodoJsonManager removed - use mcp-shrimp-task-manager for task management
-    console.warn(
-      '⚠️ TodoJsonManager is deprecated and was removed in memory-centric transformation'
+    console.error(
+      '[ADR-Suggestion] TodoJsonManager is deprecated and was removed in memory-centric transformation'
     );
     // Skip todo initialization - TodoJsonManager removed
-    console.log('✅ Initialized todo-data.json and cache directory');
+    console.error('[ADR-Suggestion] Initialized todo-data.json and cache directory');
 
     // 2. ProjectHealthScoring removed - use relationship-based importance instead
-    console.warn(
-      '⚠️ ProjectHealthScoring is deprecated and was removed in memory-centric transformation'
+    console.error(
+      '[ADR-Suggestion] ProjectHealthScoring is deprecated and was removed in memory-centric transformation'
     );
     // Skip health scoring initialization - ProjectHealthScoring removed
-    console.log('✅ Initialized project-health-scores.json');
+    console.error('[ADR-Suggestion] Initialized project-health-scores.json');
 
     // 3. Initialize KnowledgeGraphManager (creates knowledge-graph-snapshots.json and todo-sync-state.json)
     // Set PROJECT_PATH temporarily for proper initialization
@@ -1145,7 +1146,9 @@ export async function discoverExistingAdrs(args: {
     const { KnowledgeGraphManager } = await import('../utils/knowledge-graph-manager.js');
     const kgManager = new KnowledgeGraphManager();
     await kgManager.loadKnowledgeGraph(); // Creates knowledge-graph-snapshots.json and todo-sync-state.json
-    console.log('✅ Initialized knowledge-graph-snapshots.json and todo-sync-state.json');
+    console.error(
+      '[ADR-Suggestion] Initialized knowledge-graph-snapshots.json and todo-sync-state.json'
+    );
 
     // Restore original config
     if (originalConfig !== undefined) {
@@ -1154,7 +1157,7 @@ export async function discoverExistingAdrs(args: {
       delete process.env['PROJECT_PATH'];
     }
 
-    console.log('🎯 Complete cache infrastructure ready!');
+    console.error('[ADR-Suggestion] Complete cache infrastructure ready!');
 
     // Use the new ADR discovery utility
     const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');

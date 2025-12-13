@@ -103,7 +103,8 @@ export class AIExecutor {
    */
   private initializeClient(): void {
     if (!isAIExecutionEnabled(this.config)) {
-      console.log('AI execution disabled - running in prompt-only mode');
+      // NOTE: All console output goes to stderr to preserve stdout for MCP JSON-RPC
+      console.error('[AI-Executor] AI execution disabled - running in prompt-only mode');
       return;
     }
 
@@ -121,7 +122,9 @@ export class AIExecutor {
         },
       });
 
-      console.log(`AI Executor initialized with model: ${this.config.defaultModel}`);
+      console.error(
+        `[AI-Executor] AI Executor initialized with model: ${this.config.defaultModel}`
+      );
     } catch (error) {
       console.error('Failed to initialize AI Executor:', error);
       this.client = null;
@@ -150,7 +153,7 @@ export class AIExecutor {
       this.config.defaultModel !== currentConfig.defaultModel;
 
     if (configChanged) {
-      console.log('AI configuration changed, reinitializing...');
+      console.error('[AI-Executor] AI configuration changed, reinitializing...');
       this.config = currentConfig;
       this.initializeClient();
     }
