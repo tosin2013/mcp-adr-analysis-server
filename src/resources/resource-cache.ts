@@ -411,7 +411,8 @@ export function startAutomaticCleanup(intervalMs: number = 5 * 60 * 1000): void 
   cleanupInterval = setInterval(() => {
     const removed = resourceCache.cleanup();
     if (removed > 0) {
-      console.log(`[ResourceCache] Cleaned up ${removed} expired entries`);
+      // NOTE: All console output goes to stderr to preserve stdout for MCP JSON-RPC
+      console.error(`[ResourceCache] Cleaned up ${removed} expired entries`);
     }
   }, intervalMs);
 }

@@ -5,7 +5,7 @@
  * content parsing, or filesystem metadata with smart conditional logic
  */
 
-import { exec } from 'child_process';
+import { exec } from 'node:child_process';
 import { promisify } from 'util';
 import { stat } from 'fs/promises';
 import type { BasicTimeline, TimelineExtractionOptions } from './adr-timeline-types.js';
@@ -83,8 +83,9 @@ export async function extractBasicTimeline(
     }
 
     // Log extraction reason for debugging
+    // NOTE: All console output goes to stderr to preserve stdout for MCP JSON-RPC
     if (decision.shouldExtract) {
-      console.log(`[Timeline] Extracting for ${adrPath}: ${decision.reason}`);
+      console.error(`[Timeline] Extracting for ${adrPath}: ${decision.reason}`);
     }
   }
 

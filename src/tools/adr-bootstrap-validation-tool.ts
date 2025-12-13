@@ -67,11 +67,12 @@ export async function generateAdrBootstrapScripts(args: {
 
   try {
     // STEP 0: Detect platform using Validated Patterns framework
-    console.log('🔍 Detecting platform type using Validated Patterns...');
+    // NOTE: All console output goes to stderr to preserve stdout for MCP JSON-RPC
+    console.error('[Bootstrap] Detecting platform type using Validated Patterns...');
     const platformDetection: PlatformDetectionResult = await detectPlatforms(projectPath);
 
-    console.log(
-      `📋 Platform detection complete (confidence: ${(platformDetection.confidence * 100).toFixed(0)}%)`,
+    console.error(
+      `[Bootstrap] Platform detection complete (confidence: ${(platformDetection.confidence * 100).toFixed(0)}%)`,
       {
         primaryPlatform: platformDetection.primaryPlatform,
         detectedPlatforms: platformDetection.detectedPlatforms.map(p => p.type),
@@ -87,7 +88,7 @@ export async function generateAdrBootstrapScripts(args: {
       validatedPattern = getPattern(platformDetection.primaryPlatform);
 
       if (validatedPattern) {
-        console.log(`✅ Loaded validated pattern: ${validatedPattern.name}`);
+        console.error(`[Bootstrap] Loaded validated pattern: ${validatedPattern.name}`);
 
         // Generate research report with base code repository guidance
         patternResearchReport = generatePatternResearchReport(platformDetection.primaryPlatform);
@@ -123,14 +124,14 @@ Then merge the base repository into your project and customize for your needs.
 ---
 `;
 
-        console.log('📚 Generated research report with base code repository guidance');
-        console.log(
-          `⚠️  CRITICAL: LLM should merge ${validatedPattern.baseCodeRepository.url} before generating scripts`
+        console.error('[Bootstrap] Generated research report with base code repository guidance');
+        console.error(
+          `[Bootstrap] CRITICAL: LLM should merge ${validatedPattern.baseCodeRepository.url} before generating scripts`
         );
 
         // Log the research report for debugging (can be removed if not needed)
-        console.log(
-          '[DEBUG] Pattern Research Report Generated:',
+        console.error(
+          '[Bootstrap] Pattern Research Report Generated:',
           patternResearchReport ? 'YES' : 'NO'
         );
       } else {
