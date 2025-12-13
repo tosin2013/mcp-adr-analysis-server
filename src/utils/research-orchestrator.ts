@@ -15,7 +15,6 @@ import { EnhancedLogger } from './enhanced-logging.js';
 import { KnowledgeGraphManager } from './knowledge-graph-manager.js';
 import { findFiles } from './file-system.js';
 import { scanProjectStructure } from './actual-file-operations.js';
-import { searchWithRipgrep, isRipgrepAvailable } from './ripgrep-wrapper.js';
 import { TreeSitterAnalyzer } from './tree-sitter-analyzer.js';
 // import { FirecrawlApp } from '@mendable/firecrawl-js';
 // import { loadAIConfig } from '../config/ai-config.js';
@@ -311,7 +310,7 @@ export class ResearchOrchestrator {
   }
 
   /**
-   * SOURCE 1: Search project files (Enhanced with tree-sitter, ripgrep, and actual file ops)
+   * SOURCE 1: Search project files (Enhanced with tree-sitter and file ops)
    */
   private async searchProjectFiles(question: string): Promise<any> {
     const results = {
@@ -385,29 +384,28 @@ export class ResearchOrchestrator {
         this.logger.warn(`ADR directory not found: ${adrPath}`, 'ResearchOrchestrator');
       }
 
-      // PHASE 4: Use ripgrep for keyword search (if available)
-      const hasRipgrep = await isRipgrepAvailable();
-      if (hasRipgrep && keywords.length > 0) {
-        this.logger.info('Using ripgrep for fast keyword search', 'ResearchOrchestrator');
+      // PHASE 4: Use glob-based file discovery (tree-sitter will analyze content)
+      // Note: Ripgrep removed per ADR-016 - deterministic tools, LLM reasoning
+      if (keywords.length > 0) {
+        this.logger.info('Using file discovery for keyword-based search', 'ResearchOrchestrator');
 
         try {
-          const ripgrepFiles = await searchWithRipgrep({
-            pattern: keywords.join('|'),
-            path: this.projectPath,
-            caseInsensitive: true,
-          });
-
-          relevantFiles.push(...ripgrepFiles);
+          // Search for files with keyword-matching names
+          const keywordPatterns = keywords.slice(0, 5).map(k => `**/*${k}*`);
+          const keywordResults = await findFiles(this.projectPath, keywordPatterns, { limit: 50 });
+          relevantFiles.push(...keywordResults.files.map(f => f.path));
         } catch {
           this.logger.warn(
-            'Ripgrep search failed, continuing with other methods',
+            'Keyword file discovery failed, continuing with other methods',
             'ResearchOrchestrator'
           );
         }
       }
 
-      // Remove duplicates
-      results.files = [...new Set(relevantFiles)];
+      // Remove duplicates and filter out empty/invalid paths
+      results.files = [...new Set(relevantFiles)].filter(
+        f => f && typeof f === 'string' && f.trim().length > 0
+      );
 
       if (results.files.length === 0) {
         this.logger.info('No relevant files found', 'ResearchOrchestrator');
@@ -487,8 +485,14 @@ export class ResearchOrchestrator {
               }
             }
           }
-        } catch {
-          this.logger.warn(`Failed to read file: ${file}`, 'ResearchOrchestrator');
+        } catch (readError) {
+          // Only log if file path is valid - empty paths are filtered but may slip through
+          if (file && file.trim().length > 0) {
+            this.logger.debug(
+              `Failed to read file '${file}': ${readError instanceof Error ? readError.message : 'unknown error'}`,
+              'ResearchOrchestrator'
+            );
+          }
         }
       }
 
@@ -574,9 +578,8 @@ export class ResearchOrchestrator {
   private async queryEnvironment(question: string): Promise<any> {
     try {
       // Import dynamically to avoid circular dependencies
-      const { EnvironmentCapabilityRegistry } = await import(
-        './environment-capability-registry.js'
-      );
+      const { EnvironmentCapabilityRegistry } =
+        await import('./environment-capability-registry.js');
 
       const envRegistry = new EnvironmentCapabilityRegistry(this.projectPath);
 

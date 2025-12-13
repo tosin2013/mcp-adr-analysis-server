@@ -29,7 +29,6 @@
     "lint:fix": "eslint . --fix && npm run typecheck",
     "clean": "rm -rf dist coverage .mcp-adr-cache",
     "prepare": "husky",
-    "postinstall": "./scripts/check-ripgrep.sh || true",
     "prepublishOnly": "npm run build && npm run lint",
     "start": "node dist/src/index.js",
     "health": "node dist/src/index.js --test",
@@ -47,15 +46,20 @@
   "dependencies": {
     "@mendable/firecrawl-js": "^4.4.1",
     "@modelcontextprotocol/sdk": "^1.19.1",
-    "@tree-sitter-grammars/tree-sitter-hcl": "^1.2.0",
     "fast-glob": "^3.3.2",
-    "tree-sitter": "^0.25.0",
-    "tree-sitter-bash": "^0.25.0",
-    "tree-sitter-dockerfile": "^0.0.1-security",
-    "tree-sitter-javascript": "^0.25.0",
-    "tree-sitter-json": "^0.24.8",
-    "tree-sitter-python": "^0.25.0",
-    "tree-sitter-typescript": "^0.23.2",
+    "tree-sitter": "^0.21.1",
+    "tree-sitter-bash": "^0.21.0",
+    "tree-sitter-c": "^0.21.4",
+    "tree-sitter-cpp": "^0.21.0",
+    "tree-sitter-css": "^0.21.1",
+    "tree-sitter-go": "^0.21.2",
+    "tree-sitter-java": "^0.21.0",
+    "tree-sitter-javascript": "^0.21.4",
+    "tree-sitter-json": "^0.21.0",
+    "tree-sitter-python": "^0.21.0",
+    "tree-sitter-ruby": "^0.21.0",
+    "tree-sitter-rust": "^0.21.0",
+    "tree-sitter-typescript": "^0.21.2",
     "tree-sitter-yaml": "^0.5.0",
     "tslib": "^2.8.1",
     "zod": "^4.1.12"
@@ -122,8 +126,5 @@
     "*.ts": [
       "bash -c 'tsc --noEmit --project tsconfig.json || true'"
     ]
-  },
-  "overrides": {
-    "tree-sitter": "^0.25.0"
   }
 }
