@@ -58,7 +58,7 @@
     "tree-sitter-json": "^0.21.0",
     "tree-sitter-python": "^0.21.0",
     "tree-sitter-ruby": "^0.21.0",
-    "tree-sitter-rust": "^0.21.0",
+    "tree-sitter-rust": "^0.24.0",
     "tree-sitter-typescript": "^0.21.2",
     "tree-sitter-yaml": "^0.5.0",
     "tslib": "^2.8.1",
