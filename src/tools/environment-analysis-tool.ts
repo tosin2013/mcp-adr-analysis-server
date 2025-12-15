@@ -16,15 +16,45 @@ import {
 } from '../utils/test-aware-defaults.js';
 
 /**
+ * Interface for research orchestrator dependency (enables DI and mocking)
+ * @see Issue #310 - Dependency injection for improved testability
+ */
+export interface IResearchOrchestrator {
+  answerResearchQuestion(question: string): Promise<{
+    answer: string;
+    confidence: number;
+    sources: any[];
+    metadata: { filesAnalyzed: number; duration: number; sourcesQueried: string[] };
+    needsWebSearch: boolean;
+  }>;
+}
+
+/**
+ * Dependencies for EnvironmentMemoryManager (enables DI and mocking)
+ * Uses concrete types for full compatibility with existing implementations
+ * @see Issue #310 - Dependency injection for improved testability
+ */
+export interface EnvironmentMemoryManagerDeps {
+  memoryManager?: MemoryEntityManager;
+  logger?: EnhancedLogger;
+}
+
+/**
  * Environment Memory Manager for tracking environment snapshots and evolution
+ * Supports dependency injection for improved testability
+ * @see Issue #310 - Dependency injection for improved testability
  */
 class EnvironmentMemoryManager {
   private memoryManager: MemoryEntityManager;
   private logger: EnhancedLogger;
 
-  constructor() {
-    this.memoryManager = new MemoryEntityManager();
-    this.logger = new EnhancedLogger();
+  /**
+   * Constructor with optional dependency injection
+   * @param deps - Optional dependencies for testing (defaults create real instances)
+   */
+  constructor(deps: EnvironmentMemoryManagerDeps = {}) {
+    this.memoryManager = deps.memoryManager ?? new MemoryEntityManager();
+    this.logger = deps.logger ?? new EnhancedLogger();
   }
 
   async initialize(): Promise<void> {
@@ -472,18 +502,39 @@ class EnvironmentMemoryManager {
  * Enhanced with Generated Knowledge Prompting for DevOps and infrastructure expertise
  * Now includes memory integration for environment tracking
  */
-export async function analyzeEnvironment(args: {
-  projectPath?: string;
-  adrDirectory?: string;
-  analysisType?: 'specs' | 'containerization' | 'requirements' | 'compliance' | 'comprehensive';
-  currentEnvironment?: any;
-  requirements?: any;
-  industryStandards?: string[];
-  knowledgeEnhancement?: boolean; // Enable GKP for DevOps and infrastructure knowledge
-  enhancedMode?: boolean; // Enable advanced prompting features
-  enableMemoryIntegration?: boolean; // Enable memory snapshot storage
-  environmentType?: string; // Environment type for memory storage (e.g., 'development', 'staging', 'production')
-}): Promise<any> {
+/**
+ * Dependencies for analyzeEnvironment function (enables DI and mocking)
+ * @see Issue #310 - Dependency injection for improved testability
+ */
+export interface AnalyzeEnvironmentDeps {
+  memoryManager?: EnvironmentMemoryManager;
+  researchOrchestrator?: IResearchOrchestrator;
+}
+
+/**
+ * Factory for creating ResearchOrchestrator instances
+ * Allows injection of mock factory for testing
+ */
+export type ResearchOrchestratorFactory = (
+  projectPath: string,
+  adrDirectory: string
+) => IResearchOrchestrator;
+
+export async function analyzeEnvironment(
+  args: {
+    projectPath?: string;
+    adrDirectory?: string;
+    analysisType?: 'specs' | 'containerization' | 'requirements' | 'compliance' | 'comprehensive';
+    currentEnvironment?: any;
+    requirements?: any;
+    industryStandards?: string[];
+    knowledgeEnhancement?: boolean; // Enable GKP for DevOps and infrastructure knowledge
+    enhancedMode?: boolean; // Enable advanced prompting features
+    enableMemoryIntegration?: boolean; // Enable memory snapshot storage
+    environmentType?: string; // Environment type for memory storage (e.g., 'development', 'staging', 'production')
+  },
+  deps: AnalyzeEnvironmentDeps = {}
+): Promise<any> {
   const {
     projectPath = process.cwd(),
     adrDirectory = 'docs/adrs',
@@ -497,17 +548,18 @@ export async function analyzeEnvironment(args: {
     environmentType = 'development', // Default environment type
   } = args;
 
-  // Initialize memory manager if enabled
+  // Initialize memory manager if enabled (use injected or create new)
   let memoryManager: EnvironmentMemoryManager | null = null;
   if (enableMemoryIntegration) {
-    memoryManager = new EnvironmentMemoryManager();
+    memoryManager = deps.memoryManager ?? new EnvironmentMemoryManager();
     await memoryManager.initialize();
   }
 
-  // Research live environment state using research-orchestrator
+  // Research live environment state using research-orchestrator (use injected or create new)
   let liveEnvironmentData = '';
   try {
-    const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
+    const orchestrator =
+      deps.researchOrchestrator ?? new ResearchOrchestrator(projectPath, adrDirectory);
     const research = await orchestrator.answerResearchQuestion(
       `Analyze ${environmentType} environment state and configuration:
 1. What infrastructure tools are currently available and running?

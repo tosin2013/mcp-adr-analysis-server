@@ -290,15 +290,31 @@ interface DeploymentReadinessResult {
 }
 
 /**
+ * Dependencies for DeploymentMemoryManager (enables DI and mocking)
+ * Uses concrete types for full compatibility with existing implementations
+ * @see Issue #310 - Dependency injection for improved testability
+ */
+export interface DeploymentMemoryManagerDeps {
+  memoryManager?: MemoryEntityManager;
+  logger?: EnhancedLogger;
+}
+
+/**
  * Deployment Memory Manager for tracking deployment assessments and patterns
+ * Supports dependency injection for improved testability
+ * @see Issue #310 - Dependency injection for improved testability
  */
 class DeploymentMemoryManager {
   private memoryManager: MemoryEntityManager;
   private logger: EnhancedLogger;
 
-  constructor() {
-    this.memoryManager = new MemoryEntityManager();
-    this.logger = new EnhancedLogger();
+  /**
+   * Constructor with optional dependency injection
+   * @param deps - Optional dependencies for testing (defaults create real instances)
+   */
+  constructor(deps: DeploymentMemoryManagerDeps = {}) {
+    this.memoryManager = deps.memoryManager ?? new MemoryEntityManager();
+    this.logger = deps.logger ?? new EnhancedLogger();
   }
 
   async initialize(): Promise<void> {

@@ -128,7 +128,20 @@ export interface MissingFileInfo {
 }
 
 /**
+ * Dependencies for BootstrapValidationLoop (enables DI and mocking)
+ * Uses concrete types for full compatibility with existing implementations
+ * @see Issue #310 - Dependency injection for improved testability
+ */
+export interface BootstrapValidationLoopDeps {
+  logger?: EnhancedLogger;
+  researchOrchestrator?: ResearchOrchestrator;
+  memoryManager?: MemoryEntityManager;
+}
+
+/**
  * Bootstrap Validation Loop orchestrator
+ * Supports dependency injection for improved testability
+ * @see Issue #310 - Dependency injection for improved testability
  */
 export class BootstrapValidationLoop {
   private logger: EnhancedLogger;
@@ -159,13 +172,26 @@ export class BootstrapValidationLoop {
   // NEW: SystemCard Resource Tracking
   private systemCardManager: SystemCardManager;
 
-  constructor(projectPath: string, adrDirectory: string, maxIterations: number = 5) {
-    this.logger = new EnhancedLogger();
+  /**
+   * Constructor with optional dependency injection
+   * @param projectPath - Path to the project
+   * @param adrDirectory - Path to ADR directory
+   * @param maxIterations - Maximum validation iterations
+   * @param deps - Optional dependencies for testing (defaults create real instances)
+   */
+  constructor(
+    projectPath: string,
+    adrDirectory: string,
+    maxIterations: number = 5,
+    deps: BootstrapValidationLoopDeps = {}
+  ) {
+    this.logger = deps.logger ?? new EnhancedLogger();
     this.projectPath = projectPath;
     this.adrDirectory = adrDirectory;
     this.maxIterations = maxIterations;
-    this.researchOrchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
-    this.memoryManager = new MemoryEntityManager();
+    this.researchOrchestrator =
+      deps.researchOrchestrator ?? new ResearchOrchestrator(projectPath, adrDirectory);
+    this.memoryManager = deps.memoryManager ?? new MemoryEntityManager();
     this.deploymentIntelligence = new DynamicDeploymentIntelligence(projectPath, adrDirectory);
     this.contextManager = new ToolContextManager(projectPath);
 
