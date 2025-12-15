@@ -1,94 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="30" failures="0" errors="0" time="0.454">
-  <testsuite name="Research Question Tool" errors="0" failures="0" skipped="29" timestamp="2025-12-15T17:54:54" time="0.232" tests="30">
-    <testcase classname="Research Question Tool generateResearchQuestions correlation analysis type should generate correlation analysis when problems and knowledge graph provided" name="Research Question Tool generateResearchQuestions correlation analysis type should generate correlation analysis when problems and knowledge graph provided" time="0">
-      <skipped/>
+<testsuites name="jest tests" tests="5" failures="0" errors="0" time="0.382">
+  <testsuite name="Smoke Test" errors="0" failures="0" skipped="0" timestamp="2025-12-15T18:01:22" time="0.16" tests="5">
+    <testcase classname="Smoke Test should always pass - validates test environment" name="Smoke Test should always pass - validates test environment" time="0.004">
     </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions correlation analysis type should throw error when problems missing for correlation" name="Research Question Tool generateResearchQuestions correlation analysis type should throw error when problems missing for correlation" time="0">
-      <skipped/>
+    <testcase classname="Smoke Test should validate basic Jest functionality" name="Smoke Test should validate basic Jest functionality" time="0.001">
     </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions correlation analysis type should throw error when knowledge graph missing for correlation" name="Research Question Tool generateResearchQuestions correlation analysis type should throw error when knowledge graph missing for correlation" time="0">
-      <skipped/>
+    <testcase classname="Smoke Test should validate environment variables" name="Smoke Test should validate environment variables" time="0.001">
     </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions correlation analysis type should handle knowledge generation with enhanced mode enabled" name="Research Question Tool generateResearchQuestions correlation analysis type should handle knowledge generation with enhanced mode enabled" time="0">
-      <skipped/>
+    <testcase classname="Smoke Test should validate basic module imports work" name="Smoke Test should validate basic module imports work" time="0.001">
     </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions correlation analysis type should handle knowledge generation failure gracefully" name="Research Question Tool generateResearchQuestions correlation analysis type should handle knowledge generation failure gracefully" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions relevance analysis type should generate relevance analysis with provided context" name="Research Question Tool generateResearchQuestions relevance analysis type should generate relevance analysis with provided context" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions relevance analysis type should use intelligent defaults when no research context provided" name="Research Question Tool generateResearchQuestions relevance analysis type should use intelligent defaults when no research context provided" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions questions analysis type should generate context-aware questions when relevant knowledge provided" name="Research Question Tool generateResearchQuestions questions analysis type should generate context-aware questions when relevant knowledge provided" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions questions analysis type should throw error when relevant knowledge missing for questions" name="Research Question Tool generateResearchQuestions questions analysis type should throw error when relevant knowledge missing for questions" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions questions analysis type should use intelligent defaults for research context in questions" name="Research Question Tool generateResearchQuestions questions analysis type should use intelligent defaults for research context in questions" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions questions analysis type should handle AI generation failure and fallback to prompt-only mode" name="Research Question Tool generateResearchQuestions questions analysis type should handle AI generation failure and fallback to prompt-only mode" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions tracking analysis type should create research task tracking when questions provided" name="Research Question Tool generateResearchQuestions tracking analysis type should create research task tracking when questions provided" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions tracking analysis type should throw error when research questions missing for tracking" name="Research Question Tool generateResearchQuestions tracking analysis type should throw error when research questions missing for tracking" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions tracking analysis type should handle current progress when provided" name="Research Question Tool generateResearchQuestions tracking analysis type should handle current progress when provided" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions comprehensive analysis type should generate comprehensive analysis with provided context" name="Research Question Tool generateResearchQuestions comprehensive analysis type should generate comprehensive analysis with provided context" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions comprehensive analysis type should use intelligent defaults for comprehensive analysis" name="Research Question Tool generateResearchQuestions comprehensive analysis type should use intelligent defaults for comprehensive analysis" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions comprehensive analysis type should include all workflow steps in comprehensive analysis" name="Research Question Tool generateResearchQuestions comprehensive analysis type should include all workflow steps in comprehensive analysis" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions error handling should throw error for unknown analysis type" name="Research Question Tool generateResearchQuestions error handling should throw error for unknown analysis type" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions error handling should wrap and rethrow correlation errors" name="Research Question Tool generateResearchQuestions error handling should wrap and rethrow correlation errors" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions error handling should wrap and rethrow relevance errors" name="Research Question Tool generateResearchQuestions error handling should wrap and rethrow relevance errors" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions error handling should wrap and rethrow question generation errors" name="Research Question Tool generateResearchQuestions error handling should wrap and rethrow question generation errors" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions error handling should wrap and rethrow tracking errors" name="Research Question Tool generateResearchQuestions error handling should wrap and rethrow tracking errors" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions default parameter handling should use default values for optional parameters" name="Research Question Tool generateResearchQuestions default parameter handling should use default values for optional parameters" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions default parameter handling should apply default project path when not provided" name="Research Question Tool generateResearchQuestions default parameter handling should apply default project path when not provided" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions default parameter handling should apply default ADR directory when not provided" name="Research Question Tool generateResearchQuestions default parameter handling should apply default ADR directory when not provided" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions default parameter handling should enable enhanced mode and knowledge enhancement by default" name="Research Question Tool generateResearchQuestions default parameter handling should enable enhanced mode and knowledge enhancement by default" time="0.011">
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions response format validation should return proper MCP response format for correlation" name="Research Question Tool generateResearchQuestions response format validation should return proper MCP response format for correlation" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions response format validation should return proper MCP response format for AI-generated questions" name="Research Question Tool generateResearchQuestions response format validation should return proper MCP response format for AI-generated questions" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions configuration options should handle disabled enhanced mode" name="Research Question Tool generateResearchQuestions configuration options should handle disabled enhanced mode" time="0">
-      <skipped/>
-    </testcase>
-    <testcase classname="Research Question Tool generateResearchQuestions configuration options should handle disabled knowledge enhancement only" name="Research Question Tool generateResearchQuestions configuration options should handle disabled knowledge enhancement only" time="0">
-      <skipped/>
+    <testcase classname="Smoke Test should validate TypeScript compilation environment" name="Smoke Test should validate TypeScript compilation environment" time="0.001">
     </testcase>
   </testsuite>
 </testsuites>

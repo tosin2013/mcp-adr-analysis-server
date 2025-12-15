@@ -1,6 +1,6 @@
 # Research: Test Research Topic
 
-**Research ID**: test-research-001  
+**Research ID**: Test-Research@#$%^&*()_001  
 **Category**: architecture  
 **Status**: planned  
 **Priority**: high  
