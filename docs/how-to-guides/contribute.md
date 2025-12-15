@@ -235,7 +235,7 @@ npm run test:integration
 - [README.md](../../../README.md) - Project overview
 - [API Reference](../../reference/api-reference.md) - Technical documentation
 - [Troubleshooting Guide](./troubleshooting.md) - Common issues
-- [Developer Guidance](../../DEVELOPER_GUIDANCE.md) - Development details
+- [Developer Guidance](../notes/DEVELOPER_GUIDANCE.md) - Development details
 
 ### Support
 
@@ -258,6 +258,6 @@ Thank you for contributing to the MCP ADR Analysis Server project!
 
 - [README.md](../../../README.md)
 - [API Reference](../../reference/api-reference.md)
-- [Developer Guidance](../../DEVELOPER_GUIDANCE.md)
-- [Testing Guide](../../TESTING_GUIDE.md)
+- [Developer Guidance](../notes/DEVELOPER_GUIDANCE.md)
+- [Testing Guide](../TESTING_GUIDE.md)
 - [Troubleshooting Guide](./troubleshooting.md)

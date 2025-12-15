@@ -524,8 +524,8 @@ open coverage/lcov-report/index.html
 - **[Jest Documentation](https://jestjs.io/./getting-started)**
 - **[TypeScript Testing Guide](https://typescript-eslint.io/./linting/troubleshooting/)**
 - **[MCP Protocol Testing](https://modelcontextprotocol.io/./testing)**
-- **[Project Architecture](./architecture-overview.md)**
-- **[Contributing Guide](./../../CONTRIBUTING.md)**
+- **[Server Architecture](../explanation/server-architecture.md)**
+- **[Contributing Guide](../../CONTRIBUTING.md)**
 
 ---
 

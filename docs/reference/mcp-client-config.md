@@ -1228,10 +1228,10 @@ EOF
 ## 📚 Related Documentation
 
 - **[Environment Configuration](environment-config.md)** - Complete environment variable reference
-- **[Troubleshooting](.../how-to-guides/troubleshooting.md)** - Common issues and solutions
+- **[Troubleshooting](../how-to-guides/troubleshooting.md)** - Common issues and solutions
 - **[API Reference](api-reference.md)** - Complete tool documentation
-- **[Security Guide](.../how-to-guides/security-analysis.md)** - Security configuration
+- **[Security Guide](../how-to-guides/security-analysis.md)** - Security configuration
 
 ---
 
-**Configuration not working?** → **[Troubleshooting Guide](.../how-to-guides/troubleshooting.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**
+**Configuration not working?** → **[Troubleshooting Guide](../how-to-guides/troubleshooting.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**

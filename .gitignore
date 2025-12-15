@@ -71,6 +71,10 @@ coverage/
 # Test results and generated research files
 test-results/
 
+# Auto-generated research files (from perform_research tool)
+docs/context/research/perform-research-*.md
+docs/context/research/latest.md
+
 # Temporary files
 tmp/
 temp/

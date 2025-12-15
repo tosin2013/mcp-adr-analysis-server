@@ -113,7 +113,7 @@ Use these when you need to solve a specific problem or accomplish a particular t
 
 ### **Workflow Solutions**
 
-- **[Migrate from Manual ADRs](./how-to-guides/migrate-existing-adrs.md)**
+- **[Working with Existing ADRs](./how-to-guides/work-with-existing-adrs.md)**
   - Convert existing documentation, preserve history, establish new processes
 
 - **[Integrate with CI/CD](./how-to-guides/cicd-integration.md)**
@@ -124,10 +124,10 @@ Use these when you need to solve a specific problem or accomplish a particular t
 
 ### **Specific Tasks**
 
-- **[Generate ADRs from Requirements](./how-to-guides/prd-to-adrs.md)**
+- **[Generate ADRs from Requirements](./how-to-guides/generate-adrs-from-prd.md)**
   - Convert PRD documents, structure decisions, maintain traceability
 
-- **[Track Implementation Progress](./how-to-guides/progress-tracking.md)**
+- **[Track Implementation Progress](./how-to-guides/work-with-existing-adrs.md#step-6-validate-implementation-progress)**
   - Monitor ADR implementation, identify blockers, report status
 
 - **[Create Custom Rules](./how-to-guides/custom-rules.md)**
@@ -152,7 +152,7 @@ Complete documentation for when you need exact details about tools, parameters, 
 ### **Complete API Documentation**
 
 - **[Complete API Reference](./reference/api-reference.md)** 📋
-  - All 37 tools with parameters, examples, and usage patterns
+  - All 59 tools with parameters, examples, and usage patterns
   - Quick navigation and search functionality
   - Common usage patterns and workflows
 
@@ -179,10 +179,10 @@ Complete documentation for when you need exact details about tools, parameters, 
 
 ### **Schemas and Formats**
 
-- **[ADR Templates](./reference/adr-templates.md)**
+- **[ADR Examples](../examples/)** - Example ADR files and templates
   - Standard formats, MADR templates, Y-statements
 
-- **[JSON Schemas](./reference/json-schemas.md)**
+- **[API Reference](./reference/api-reference.md)** - Complete tool schemas
   - Tool parameters, response formats, data structures
 
 **🔍 Looking for a specific tool?** Use the [API Reference](./reference/api-reference.md) search.

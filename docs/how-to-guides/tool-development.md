@@ -6,7 +6,7 @@
 
 ## 📋 Overview
 
-The MCP ADR Analysis Server is built on the Model Context Protocol (MCP) and features 37 specialized tools. This guide will teach you how to:
+The MCP ADR Analysis Server is built on the Model Context Protocol (MCP) and features 59 specialized tools. This guide will teach you how to:
 
 - Create new custom tools
 - Follow tool development best practices
@@ -422,7 +422,6 @@ Before submitting your tool:
 - [ ] Written comprehensive unit tests (>80% coverage)
 - [ ] Added integration tests
 - [ ] Documented all parameters with JSDoc
-- [ ] Added tool to `LLM_CONTEXT.md`
 - [ ] Updated API reference documentation
 - [ ] Validated input parameters with Zod
 - [ ] Implemented error handling

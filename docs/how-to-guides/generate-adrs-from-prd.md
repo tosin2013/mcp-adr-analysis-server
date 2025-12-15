@@ -5,6 +5,7 @@ This guide helps you bootstrap architectural decisions for new projects using a 
 ## 📋 Prerequisites
 
 ### Required Software
+
 - **Node.js** ≥18.0.0
 - **MCP Client** (Claude Desktop, Cline, Cursor, or Windsurf)
 - **PRD.md file** with your project requirements
@@ -33,6 +34,7 @@ export CACHE_ENABLED="true"
 ### MCP Client Configuration
 
 #### Claude Desktop
+
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
@@ -61,18 +63,21 @@ Your PRD.md should include these sections for optimal ADR generation:
 # Product Requirements Document
 
 ## Technical Requirements
+
 - Performance requirements
 - Scalability needs
 - Security requirements
 - Integration requirements
 
 ## Architecture Constraints
+
 - Technology preferences
 - Platform requirements
 - Compliance needs
 - Budget constraints
 
 ## Non-Functional Requirements
+
 - Availability requirements
 - Maintainability needs
 - Monitoring requirements
@@ -85,11 +90,13 @@ Your PRD.md should include these sections for optimal ADR generation:
 Transform your requirements into architectural decisions:
 
 **Tool Call:**
+
 ```
 generate_adrs_from_prd
 ```
 
 **Parameters:**
+
 ```json
 {
   "prdPath": "PRD.md",
@@ -98,12 +105,14 @@ generate_adrs_from_prd
 ```
 
 **What this does:**
+
 - Analyzes your PRD.md file
 - Identifies architectural decision points
 - Generates appropriate ADRs for each decision
 - Creates properly formatted ADR files
 
 **Expected Output:**
+
 - Multiple ADR files in `././adrs/` directory
 - Each ADR addresses a specific architectural decision
 - ADRs follow standard format (Context, Decision, Consequences)
@@ -114,22 +123,26 @@ generate_adrs_from_prd
 Ensure the generated ADRs make sense for your project:
 
 **Tool Call:**
+
 ```
 analyze_project_ecosystem
 ```
 
 **Parameters:**
+
 ```json
 {}
 ```
 
 **What this does:**
+
 - Analyzes your project structure (if any exists)
 - Validates ADR decisions against project context
 - Identifies potential conflicts or gaps
 - Suggests refinements
 
 **Expected Output:**
+
 - Validation report for generated ADRs
 - Recommendations for adjustments
 - Technology stack compatibility analysis
@@ -139,11 +152,13 @@ analyze_project_ecosystem
 Generate actionable tasks using the new two-phase TDD approach:
 
 **Tool Call:**
+
 ```
 generate_adr_todo
 ```
 
 **Parameters:**
+
 ```json
 {
   "scope": "pending",
@@ -154,6 +169,7 @@ generate_adr_todo
 ```
 
 **What this does:**
+
 - Extracts implementation tasks from ADRs with TDD approach
 - Links all ADRs to create system-wide test coverage
 - Integrates architectural rules validation
@@ -161,6 +177,7 @@ generate_adr_todo
 - Generates comprehensive development roadmap with validation checkpoints
 
 **Expected Output:**
+
 - `todo.md` file with TDD-focused implementation tasks
 - Test specifications linking all ADRs for comprehensive coverage
 - Implementation tasks with architectural rule compliance checks
@@ -172,11 +189,13 @@ generate_adr_todo
 Let AI orchestrate your implementation workflow based on PRD requirements:
 
 **Tool Call:**
+
 ```
 tool_chain_orchestrator
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "generate_plan",
@@ -187,6 +206,7 @@ tool_chain_orchestrator
 ```
 
 **What this does:**
+
 - AI analyzes PRD-generated ADRs to create optimal implementation sequence
 - Generates comprehensive tool execution plan with dependencies
 - Provides structured workflow preventing implementation gaps
@@ -197,11 +217,13 @@ tool_chain_orchestrator
 Generate comprehensive deployment guidance from your ADRs:
 
 **Tool Call:**
+
 ```
 generate_deployment_guidance
 ```
 
 **Parameters:**
+
 ```json
 {
   "adrDirectory": "./adrs",
@@ -213,6 +235,7 @@ generate_deployment_guidance
 ```
 
 **What this does:**
+
 - Extracts deployment requirements from ADR technology decisions
 - Generates environment-specific deployment procedures
 - Creates comprehensive infrastructure setup guides
@@ -224,11 +247,13 @@ generate_deployment_guidance
 Track implementation progress against PRD goals:
 
 **Tool Call:**
+
 ```
 smart_score
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "sync_scores",
@@ -242,11 +267,13 @@ smart_score
 Set up validation to ensure implementations meet ADR goals from the start:
 
 **Tool Call:**
+
 ```
 compare_adr_progress
 ```
 
 **Parameters:**
+
 ```json
 {
   "todoPath": "todo.md",
@@ -261,6 +288,7 @@ compare_adr_progress
 ```
 
 **What this does:**
+
 - Establishes quality gates for new implementations
 - Sets up mock vs production code detection patterns
 - Creates validation criteria for each ADR goal
@@ -269,6 +297,7 @@ compare_adr_progress
 - Ensures implementations meet original PRD requirements
 
 **Expected Output:**
+
 - Quality validation framework configuration
 - Implementation standards and patterns
 - Validation checkpoints for each development phase
@@ -280,11 +309,13 @@ compare_adr_progress
 For complex decisions, generate research questions:
 
 **Tool Call:**
+
 ```
 generate_research_questions
 ```
 
 **Parameters:**
+
 ```json
 {
   "context": "Database selection for high-traffic application",
@@ -294,6 +325,7 @@ generate_research_questions
 ```
 
 **What this does:**
+
 - Identifies areas needing additional research
 - Generates specific research questions
 - Creates research tracking templates
@@ -304,6 +336,7 @@ generate_research_questions
 ### Refining Generated ADRs
 
 **1. Review and Enhance**
+
 ```
 Tool: suggest_adrs
 Parameters: {
@@ -313,6 +346,7 @@ Parameters: {
 ```
 
 **2. Add Missing Decisions**
+
 ```
 Tool: generate_adr_from_decision
 Parameters: {
@@ -328,11 +362,13 @@ Parameters: {
 ### Incorporating Research Findings
 
 **Tool Call:**
+
 ```
 incorporate_research
 ```
 
 **Parameters:**
+
 ```json
 {
   "researchFindings": "Research results and conclusions",
@@ -348,6 +384,7 @@ incorporate_research
 **PRD Focus:** User interface, API design, data management
 
 **Expected ADRs:**
+
 - Frontend framework selection
 - API architecture (REST/GraphQL)
 - Database choice
@@ -355,6 +392,7 @@ incorporate_research
 - Deployment architecture
 
 **Key Tools:**
+
 1. `generate_adrs_from_prd` - Initial generation
 2. `suggest_adrs` - Fill gaps (caching, monitoring, etc.)
 3. `generate_research_questions` - For complex choices
@@ -364,6 +402,7 @@ incorporate_research
 **PRD Focus:** Scalability, service boundaries, data consistency
 
 **Expected ADRs:**
+
 - Service decomposition strategy
 - Inter-service communication
 - Data management approach
@@ -371,6 +410,7 @@ incorporate_research
 - Monitoring and observability
 
 **Key Tools:**
+
 1. `generate_adrs_from_prd` - Core architecture
 2. `analyze_environment` - Platform constraints
 3. `generate_rules` - Service design principles
@@ -380,6 +420,7 @@ incorporate_research
 **PRD Focus:** Platform support, offline capabilities, performance
 
 **Expected ADRs:**
+
 - Platform strategy (native/cross-platform)
 - State management approach
 - Offline data strategy
@@ -405,6 +446,7 @@ Parameters: {
 ```
 
 **Benefits for PRD-based projects:**
+
 - Validates that all PRD requirements are testable
 - Creates system-wide test coverage based on architectural decisions
 - Establishes clear acceptance criteria for each requirement
@@ -425,6 +467,7 @@ Parameters: {
 ```
 
 **Benefits for PRD-based projects:**
+
 - Ensures implementation directly addresses PRD requirements
 - Maintains traceability from PRD to ADRs to implementation
 - Includes architectural rule compliance for all PRD-driven decisions
@@ -448,6 +491,7 @@ Parameters: {
 ```
 
 **PRD-specific validation patterns:**
+
 - Verifies functional requirements are actually implemented
 - Checks non-functional requirements (performance, security) are met
 - Validates business logic matches PRD specifications
@@ -459,12 +503,14 @@ Parameters: {
 The validation system helps prevent:
 
 **Requirements Drift:**
+
 - Mock implementations that don't meet actual PRD requirements
 - Features that work in isolation but don't integrate properly
 - Performance implementations that don't meet PRD criteria
 - Security implementations that don't address PRD compliance needs
 
 **Traceability Loss:**
+
 - Code that implements features not described in the PRD
 - Missing implementations for critical PRD requirements
 - ADRs that don't align with actual PRD priorities
@@ -477,11 +523,13 @@ The validation system helps prevent:
 When implementing PRD requirements runs into issues:
 
 **Tool Call:**
+
 ```
 troubleshoot_guided_workflow
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "full_workflow",
@@ -492,6 +540,7 @@ troubleshoot_guided_workflow
 ```
 
 **What this does:**
+
 - Systematic analysis of implementation vs PRD requirements
 - AI-generated test plans with specific diagnostic commands
 - Integration with other MCP tools for comprehensive troubleshooting
@@ -502,11 +551,13 @@ troubleshoot_guided_workflow
 When LLMs get confused during complex PRD implementation:
 
 **Tool Call:**
+
 ```
 troubleshoot_guided_workflow
 ```
 
 **Parameters:**
+
 ```json
 {
   "taskDescription": "Implement complex microservices architecture from PRD requirements with full deployment pipeline",
@@ -516,6 +567,7 @@ troubleshoot_guided_workflow
 ```
 
 **What this does:**
+
 - Forces AI-powered planning through OpenRouter.ai
 - Cuts through LLM confusion with structured execution plans
 - Provides clear command schemas for complex PRD implementation
@@ -526,11 +578,13 @@ troubleshoot_guided_workflow
 Validate your PRD implementation is ready for production:
 
 **Tool Call:**
+
 ```
 deployment_readiness
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "full_audit",
@@ -546,6 +600,7 @@ deployment_readiness
 ```
 
 **PRD-specific validation:**
+
 - Validates all PRD requirements have passing tests
 - Ensures test coverage meets requirements
 - Checks deployment history for stability
@@ -553,6 +608,7 @@ deployment_readiness
 - Creates blocking tasks for any gaps
 
 **Expected Output:**
+
 - Deployment readiness score with PRD alignment
 - Test validation covering all PRD requirements
 - Critical blockers linked to specific PRD sections
@@ -563,11 +619,13 @@ deployment_readiness
 Deploy with confidence using deployment-aware git push:
 
 **Tool Call:**
+
 ```
 smart_git_push
 ```
 
 **Parameters:**
+
 ```json
 {
   "message": "Implement core PRD requirements with ADR compliance",
@@ -580,6 +638,7 @@ smart_git_push
 ```
 
 **What this does:**
+
 - Runs deployment readiness checks before push
 - Validates PRD implementation completeness
 - Blocks push if critical PRD requirements are missing
@@ -591,11 +650,13 @@ smart_git_push
 Understand deployment and operational context:
 
 **Tool Call:**
+
 ```
 analyze_environment
 ```
 
 **Parameters:**
+
 ```json
 {
   "environmentType": "cloud",
@@ -608,11 +669,13 @@ analyze_environment
 Create architectural guidelines from your ADRs:
 
 **Tool Call:**
+
 ```
 generate_rules
 ```
 
 **Parameters:**
+
 ```json
 {
   "adrDirectory": "./adrs",
@@ -626,11 +689,13 @@ generate_rules
 For critical implementation steps:
 
 **Tool Call:**
+
 ```
 request_action_confirmation
 ```
 
 **Parameters:**
+
 ```json
 {
   "proposedAction": "Implement database migration strategy",
@@ -644,16 +709,19 @@ request_action_confirmation
 ### Common Issues
 
 **PRD Not Parsed Correctly**
+
 - Ensure PRD.md follows standard markdown format
 - Include clear section headers
 - Provide specific technical requirements
 
 **Generated ADRs Too Generic**
+
 - Add more technical details to PRD
 - Include specific constraints and preferences
 - Use `suggest_adrs` to add missing specifics
 
 **Missing Critical Decisions**
+
 - Review generated ADRs for gaps
 - Use `analyze_project_ecosystem` for validation
 - Manually create ADRs for missed decisions
@@ -669,25 +737,28 @@ request_action_confirmation
 ## 🔄 Next Steps After ADR Generation
 
 ### 1. Team Review
+
 - Share generated ADRs with team
 - Gather feedback and refinements
 - Update ADRs based on team input
 
 ### 2. Implementation Planning
+
 - Use `generate_adr_todo` for detailed tasks
 - Prioritize implementation order
 - Identify dependencies and risks
 
 ### 3. Ongoing Maintenance
+
 - Set up regular ADR reviews
 - Use `suggest_adrs` for new decisions
 - Validate implementation against ADRs
 
 ## 🔗 Related Documentation
 
-- **[Usage Guide](USAGE_GUIDE.md)** - Complete tool reference
-- **[Existing ADRs Guide](getting-started-existing-adrs.md)** - Managing existing decisions
-- **[No ADRs Guide](getting-started-no-adrs.md)** - Starting from scratch
+- **[API Reference](../reference/api-reference.md)** - Complete tool reference
+- **[Working with Existing ADRs](./work-with-existing-adrs.md)** - Managing existing decisions
+- **[First Steps Tutorial](../tutorials/01-first-steps.md)** - Starting from scratch
 
 ---
 

@@ -7,6 +7,7 @@ This guide helps you enhance and maintain projects that already have Architectur
 ## 📋 Prerequisites
 
 ### Required Software
+
 - **Node.js** ≥18.0.0
 - **MCP Client** (Claude Desktop, Cline, Cursor, or Windsurf)
 - **Existing ADRs** in your project
@@ -35,6 +36,7 @@ export CACHE_ENABLED="true"
 ### MCP Client Configuration
 
 #### Claude Desktop
+
 Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
@@ -62,11 +64,13 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 Start by understanding what ADRs you already have:
 
 **Tool Call:**
+
 ```
 discover_existing_adrs
 ```
 
 **Parameters:**
+
 ```json
 {
   "adrDirectory": "./adrs"
@@ -74,6 +78,7 @@ discover_existing_adrs
 ```
 
 **What this does:**
+
 - Scans your ADR directory and initializes the `.mcp-adr-cache` infrastructure
 - Catalogs all existing decisions (or reports none found)
 - Identifies ADR format and structure
@@ -81,6 +86,7 @@ discover_existing_adrs
 - **Always sets up the cache infrastructure, regardless of whether ADRs are found**
 
 **Expected Output:**
+
 - List of all ADRs with titles, numbers, and status (or "No ADRs found" if none exist)
 - Analysis of ADR quality and completeness
 - Identification of any formatting issues
@@ -93,22 +99,26 @@ discover_existing_adrs
 Understand how your project has evolved since the ADRs were written:
 
 **Tool Call:**
+
 ```
 analyze_project_ecosystem
 ```
 
 **Parameters:**
+
 ```json
 {}
 ```
 
 **What this does:**
+
 - Analyzes your current codebase
 - Identifies technology stack and patterns
 - Compares current state with documented decisions
 - Detects architectural drift
 
 **Expected Output:**
+
 - Technology stack analysis
 - Architectural patterns in use
 - Dependencies and frameworks
@@ -119,11 +129,13 @@ analyze_project_ecosystem
 Find gaps in your ADR coverage:
 
 **Tool Call:**
+
 ```
 suggest_adrs
 ```
 
 **Parameters:**
+
 ```json
 {
   "analysisType": "comprehensive",
@@ -136,12 +148,14 @@ suggest_adrs
 ```
 
 **What this does:**
+
 - Analyzes code for undocumented decisions
 - Compares current architecture with existing ADRs
 - Suggests new ADRs for implicit decisions
 - Identifies outdated decisions that need updates
 
 **Expected Output:**
+
 - List of suggested new ADRs
 - Recommendations for updating existing ADRs
 - Priority ranking for each suggestion
@@ -151,11 +165,13 @@ suggest_adrs
 Create a comprehensive roadmap using the new two-phase TDD approach:
 
 **Tool Call:**
+
 ```
 generate_adr_todo
 ```
 
 **Parameters:**
+
 ```json
 {
   "scope": "all",
@@ -166,6 +182,7 @@ generate_adr_todo
 ```
 
 **What this does:**
+
 - Extracts action items from existing ADRs with TDD approach
 - Links all ADRs for system-wide test coverage
 - Integrates architectural rules validation
@@ -173,6 +190,7 @@ generate_adr_todo
 - Generates a prioritized todo list with validation checkpoints
 
 **Expected Output:**
+
 - `todo.md` file with TDD-focused actionable items
 - Test specifications linking all ADRs
 - Implementation tasks with rule compliance checks
@@ -183,11 +201,13 @@ generate_adr_todo
 Use the new TODO management system for complete lifecycle tracking:
 
 **Tool Call:**
+
 ```
 manage_todo
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "analyze_progress",
@@ -198,6 +218,7 @@ manage_todo
 ```
 
 **What this does:**
+
 - Complete TODO.md lifecycle management with smart parsing
 - Task status transitions (pending → in_progress → completed/blocked)
 - Dynamic health scoring integration
@@ -205,6 +226,7 @@ manage_todo
 - Interactive operations with confirmation flows
 
 **Advanced TODO Operations:**
+
 - `update_status` - Update task statuses with notes and assignees
 - `add_tasks` - Add new tasks to specific sections with metadata
 - `merge_adr_updates` - Smart merge with ADR-generated tasks
@@ -215,11 +237,13 @@ manage_todo
 Use the enhanced validation system to ensure quality implementation:
 
 **Tool Call:**
+
 ```
 compare_adr_progress
 ```
 
 **Parameters:**
+
 ```json
 {
   "todoPath": "todo.md",
@@ -231,6 +255,7 @@ compare_adr_progress
 ```
 
 **What this does:**
+
 - Validates that implementations meet ADR goals
 - Distinguishes mock implementations from production code
 - Checks functional correctness in realistic environments
@@ -238,6 +263,7 @@ compare_adr_progress
 - Validates cross-ADR dependencies and consistency
 
 **Expected Output:**
+
 - Comprehensive validation report
 - Mock vs production code analysis
 - ADR goal compliance assessment
@@ -248,6 +274,7 @@ compare_adr_progress
 ### Weekly ADR Review
 
 **1. Check for New Decisions**
+
 ```
 Tool: suggest_adrs
 Parameters: {
@@ -257,6 +284,7 @@ Parameters: {
 ```
 
 **2. Update Todo List with TDD Approach**
+
 ```
 Tool: generate_adr_todo
 Parameters: {
@@ -268,6 +296,7 @@ Parameters: {
 ```
 
 **3. Validate Current Implementation**
+
 ```
 Tool: compare_adr_progress
 Parameters: {
@@ -280,6 +309,7 @@ Parameters: {
 ### Monthly Architecture Audit
 
 **1. Full Project Analysis**
+
 ```
 Tool: analyze_project_ecosystem
 Parameters: {
@@ -288,6 +318,7 @@ Parameters: {
 ```
 
 **2. Generate Compliance Rules**
+
 ```
 Tool: generate_rules
 Parameters: {
@@ -297,6 +328,7 @@ Parameters: {
 ```
 
 **3. Validate Current Code**
+
 ```
 Tool: validate_rules
 Parameters: {
@@ -324,6 +356,7 @@ Parameters: {
 ```
 
 **What this does:**
+
 - Links all existing ADRs to create comprehensive test coverage
 - Generates mock test specifications for each architectural decision
 - Creates system-wide integration tests that validate ADR goals
@@ -344,6 +377,7 @@ Parameters: {
 ```
 
 **What this does:**
+
 - Creates implementation tasks that pass the test specifications
 - Ensures production code meets ADR goals and architectural rules
 - Validates cross-ADR dependencies and consistency
@@ -370,11 +404,13 @@ Parameters: {
 Before deploying any changes based on your ADRs, ensure deployment readiness:
 
 **Tool Call:**
+
 ```
 deployment_readiness
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "full_audit",
@@ -388,6 +424,7 @@ deployment_readiness
 ```
 
 **What this does:**
+
 - Validates all tests are passing (zero tolerance by default)
 - Checks test coverage meets requirements
 - Analyzes deployment history for patterns
@@ -395,6 +432,7 @@ deployment_readiness
 - Creates blocking tasks for any issues found
 
 **Expected Output:**
+
 - Deployment readiness score and confidence level
 - Test validation results with failure analysis
 - Deployment history patterns and recommendations
@@ -406,11 +444,13 @@ deployment_readiness
 Use enhanced git push with deployment readiness checks:
 
 **Tool Call:**
+
 ```
 smart_git_push
 ```
 
 **Parameters:**
+
 ```json
 {
   "message": "Implement ADR-005: API versioning strategy",
@@ -423,6 +463,7 @@ smart_git_push
 ```
 
 **What this does:**
+
 - Runs comprehensive deployment readiness checks
 - Blocks push if tests are failing or coverage is low
 - Validates deployment history success rate
@@ -448,6 +489,7 @@ Parameters: {
 ```
 
 **Mock Detection Patterns:**
+
 - Detects console.log returns, hardcoded values, TODO comments
 - Identifies missing error handling, input validation
 - Validates real database connections vs mock data
@@ -460,11 +502,13 @@ Parameters: {
 When working with complex multi-step tasks, let AI plan the optimal tool sequence:
 
 **Tool Call:**
+
 ```
 tool_chain_orchestrator
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "generate_plan",
@@ -475,6 +519,7 @@ tool_chain_orchestrator
 ```
 
 **What this does:**
+
 - AI analyzes your request to generate optimal tool execution sequence
 - Prevents LLM confusion with reality checks and hallucination detection
 - Provides structured execution plans with dependencies
@@ -485,11 +530,13 @@ tool_chain_orchestrator
 When LLMs get confused or stuck, force AI-powered planning:
 
 **Tool Call:**
+
 ```
 troubleshoot_guided_workflow
 ```
 
 **Parameters:**
+
 ```json
 {
   "taskDescription": "Review and update ADRs after architecture changes",
@@ -503,11 +550,13 @@ troubleshoot_guided_workflow
 For systematic problem solving with ADR/TODO alignment:
 
 **Tool Call:**
+
 ```
 troubleshoot_guided_workflow
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "full_workflow",
@@ -522,11 +571,13 @@ troubleshoot_guided_workflow
 Get comprehensive project health metrics across all dimensions:
 
 **Tool Call:**
+
 ```
 smart_score
 ```
 
 **Parameters:**
+
 ```json
 {
   "operation": "diagnose_scores",
@@ -540,11 +591,13 @@ smart_score
 When updating or creating new ADRs, incorporate research:
 
 **Tool Call:**
+
 ```
 generate_research_questions
 ```
 
 **Parameters:**
+
 ```json
 {
   "context": "Evaluating current database choice",
@@ -558,11 +611,13 @@ generate_research_questions
 Ensure sensitive information is protected in your ADRs:
 
 **Tool Call:**
+
 ```
 analyze_content_security
 ```
 
 **Parameters:**
+
 ```json
 {
   "content": "Your ADR content",
@@ -577,6 +632,7 @@ analyze_content_security
 **Goal:** Help new team members understand architectural decisions
 
 **Workflow:**
+
 1. `discover_existing_adrs` - Get complete ADR inventory
 2. Access `adr://architectural_knowledge_graph` resource
 3. `generate_adr_todo` with scope "all" - Show current priorities
@@ -586,6 +642,7 @@ analyze_content_security
 **Goal:** Ensure refactoring aligns with architectural decisions
 
 **Workflow:**
+
 1. `analyze_project_ecosystem` - Understand current state
 2. `suggest_adrs` with analysis type "comprehensive"
 3. `generate_research_questions` for areas of uncertainty
@@ -596,6 +653,7 @@ analyze_content_security
 **Goal:** Comprehensive review of architectural decisions
 
 **Workflow:**
+
 1. `discover_existing_adrs` - Catalog current decisions
 2. `analyze_project_ecosystem` - Check implementation
 3. `generate_rules` - Extract current architectural rules
@@ -607,16 +665,19 @@ analyze_content_security
 ### Common Issues
 
 **ADRs Not Found**
+
 - Check `ADR_DIRECTORY` environment variable
 - Ensure ADR files follow naming convention (e.g., `001-decision-title.md`)
 - Verify file permissions
 
 **Inconsistent Analysis**
+
 - Clear cache: `manage_cache` with action "clear"
 - Ensure `PROJECT_PATH` points to correct directory
 - Check for recent code changes
 
 **Missing Suggestions**
+
 - Try different `analysisType` values
 - Include more file patterns in analysis
 - Check if existing ADRs list is complete
@@ -631,9 +692,9 @@ analyze_content_security
 
 ## 🔗 Next Steps
 
-- **[Usage Guide](USAGE_GUIDE.md)** - Complete tool reference
-- **[New Projects Guide](getting-started-prd.md)** - Starting from PRD
-- **[No ADRs Guide](getting-started-no-adrs.md)** - Starting from scratch
+- **[API Reference](../reference/api-reference.md)** - Complete tool reference
+- **[Generate ADRs from PRD](./generate-adrs-from-prd.md)** - Starting from PRD
+- **[First Steps Tutorial](../tutorials/01-first-steps.md)** - Starting from scratch
 
 ---
 

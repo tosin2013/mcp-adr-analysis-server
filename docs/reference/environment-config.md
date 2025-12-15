@@ -505,10 +505,10 @@ AI_CACHE_ENABLED="false"
 ## 📚 Related Documentation
 
 - **[MCP Client Configuration](mcp-client-config.md)** - Detailed client setup
-- **[Troubleshooting](.../how-to-guides/troubleshooting.md)** - Common issues and solutions
-- **[Security Guide](.../how-to-guides/security-analysis.md)** - Security configuration
+- **[Troubleshooting](../how-to-guides/troubleshooting.md)** - Common issues and solutions
+- **[Security Guide](../how-to-guides/security-analysis.md)** - Security configuration
 - **[API Reference](api-reference.md)** - Complete tool documentation
 
 ---
 
-**Need help with configuration?** → **[Troubleshooting Guide](.../how-to-guides/troubleshooting.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**
+**Need help with configuration?** → **[Troubleshooting Guide](../how-to-guides/troubleshooting.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**

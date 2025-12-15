@@ -119,7 +119,7 @@ mcp-adr analyze_code_patterns --project-path /path/to/project
 
 - Check the [troubleshooting guide](./troubleshooting.md)
 - Review [API reference](../reference/api-reference.md)
-- Consult [developer guidance](./DEVELOPER_GUIDANCE.md)
+- Consult [developer guidance](../notes/DEVELOPER_GUIDANCE.md)
 
 ## Next Steps
 
@@ -131,6 +131,6 @@ mcp-adr analyze_code_patterns --project-path /path/to/project
 ## Related Documentation
 
 - [Research-Driven Architecture](../notes/RESEARCH-DRIVEN-ARCHITECTURE.md)
-- [Developer Guidance](./DEVELOPER_GUIDANCE.md)
-- [User Guidance](./USER_GUIDANCE.md)
-- [Testing Guide](./TESTING_GUIDE.md)
+- [Developer Guidance](../notes/DEVELOPER_GUIDANCE.md)
+- [User Guidance](../notes/USER_GUIDANCE.md)
+- [Testing Guide](../TESTING_GUIDE.md)

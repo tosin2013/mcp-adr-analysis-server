@@ -43,7 +43,7 @@ npm run docs:build       # Build for production
 
 - **Clear user paths** based on goals (Learn/Solve/Lookup/Understand)
 - **Intuitive sidebar** organized by documentation type
-- **Smart search** across all 37 tools and concepts
+- **Smart search** across all 59 tools and concepts
 
 ### **📱 Professional Design**
 

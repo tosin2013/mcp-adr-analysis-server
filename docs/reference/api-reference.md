@@ -2,7 +2,7 @@
 
 **MCP ADR Analysis Server** - All available tools, parameters, and usage examples
 
-> **Version**: 2.1.11 | **Tools**: 52 comprehensive tools | **Updated**: October 2024
+> **Version**: 2.1.21 | **Tools**: 59 comprehensive tools | **Updated**: December 2024
 
 ---
 
@@ -777,11 +777,11 @@
 
 ## 📚 Additional Resources
 
-- **[Tutorials](.../tutorials/01-first-steps.md)** - Step-by-step guides
-- **[How-To Guides](.../how-to-guides/troubleshooting.md)** - Problem-solving guides
-- **[Explanation](.../explanation/mcp-concepts.md)** - Conceptual documentation
+- **[Tutorials](../tutorials/01-first-steps.md)** - Step-by-step guides
+- **[How-To Guides](../how-to-guides/troubleshooting.md)** - Problem-solving guides
+- **[Explanation](../explanation/mcp-concepts.md)** - Conceptual documentation
 - **[GitHub Repository](https://github.com/tosin2013/mcp-adr-analysis-server)** - Source code and issues
 
 ---
 
-_Last updated: September 2025 | Version 2.1.0_
+_Last updated: December 2024 | Version 2.1.21_
