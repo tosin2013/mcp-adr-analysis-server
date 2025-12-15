@@ -184,7 +184,8 @@ export async function getFileStructure(
 
   function shouldExclude(name: string): boolean {
     if (!includeHidden && name.startsWith('.')) return true;
-    return excludePatterns.some(pattern => name === pattern || name.includes(pattern));
+    // Use exact matching only to avoid excluding directories like "distribution" when "dist" is excluded
+    return excludePatterns.some(pattern => name === pattern);
   }
 
   function walkDirectory(dirPath: string, depth: number): void {
