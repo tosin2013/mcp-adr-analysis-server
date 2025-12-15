@@ -7,7 +7,7 @@
  * @see ADR-014: CE-MCP Architecture
  */
 
-import { jest } from '@jest/globals';
+import { jest as _jest } from '@jest/globals';
 import { join } from 'path';
 import { mkdtemp, rm, mkdir, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';
@@ -20,7 +20,7 @@ import {
 import {
   OrchestrationDirective,
   StateMachineDirective,
-  SandboxOperation,
+  SandboxOperation as _SandboxOperation,
   CEMCPConfig,
 } from '../../src/types/ce-mcp';
 
@@ -355,7 +355,9 @@ describe('SandboxExecutor', () => {
           version: '1.0',
           tool: 'prompt_tool',
           description: 'Load prompt test',
-          sandbox_operations: [{ op: 'loadPrompt', args: { name: 'test-prompt' }, store: 'prompt' }],
+          sandbox_operations: [
+            { op: 'loadPrompt', args: { name: 'test-prompt' }, store: 'prompt' },
+          ],
         };
 
         const result = await executor.executeDirective(directive, testProjectPath);
@@ -397,7 +399,7 @@ describe('SandboxExecutor', () => {
         const files = (result.data as Record<string, unknown>)['files'] as Record<string, unknown>;
         expect(files).toHaveProperty('totalFiles');
         expect(files).toHaveProperty('files');
-        expect((files['totalFiles'] as number)).toBeGreaterThan(0);
+        expect(files['totalFiles'] as number).toBeGreaterThan(0);
       });
 
       it('should respect maxFiles limit', async () => {
@@ -415,7 +417,7 @@ describe('SandboxExecutor', () => {
 
         expect(result.success).toBe(true);
         const files = (result.data as Record<string, unknown>)['files'] as Record<string, unknown>;
-        expect((files['totalFiles'] as number)).toBeLessThanOrEqual(1);
+        expect(files['totalFiles'] as number).toBeLessThanOrEqual(1);
       });
     });
 
@@ -519,7 +521,12 @@ describe('SandboxExecutor', () => {
           description: 'Cache test',
           sandbox_operations: [
             { op: 'loadKnowledge', args: { domain: 'test' }, store: 'data' },
-            { op: 'cacheResult', args: { key: 'test-cache', ttl: 60 }, input: 'data', store: 'cached' },
+            {
+              op: 'cacheResult',
+              args: { key: 'test-cache', ttl: 60 },
+              input: 'data',
+              store: 'cached',
+            },
             { op: 'retrieveCache', args: { key: 'test-cache' }, store: 'retrieved' },
           ],
         };
@@ -747,9 +754,7 @@ describe('SandboxExecutor', () => {
         version: '1.0',
         tool: 'error_tool',
         description: 'Unknown op test',
-        sandbox_operations: [
-          { op: 'unknownOperation' as any, store: 'result' },
-        ],
+        sandbox_operations: [{ op: 'unknownOperation' as any, store: 'result' }],
       };
 
       const result = await executor.executeDirective(directive, testProjectPath);
@@ -818,8 +823,12 @@ describe('SandboxExecutor', () => {
 
     it('should accept config on first call only', () => {
       resetSandboxExecutor();
-      const exec1 = getSandboxExecutor({ sandbox: { ...DEFAULT_CEMCP_CONFIG.sandbox, timeout: 99999 } });
-      const exec2 = getSandboxExecutor({ sandbox: { ...DEFAULT_CEMCP_CONFIG.sandbox, timeout: 11111 } });
+      const exec1 = getSandboxExecutor({
+        sandbox: { ...DEFAULT_CEMCP_CONFIG.sandbox, timeout: 99999 },
+      });
+      const exec2 = getSandboxExecutor({
+        sandbox: { ...DEFAULT_CEMCP_CONFIG.sandbox, timeout: 11111 },
+      });
       // Second config should be ignored
       expect(exec1).toBe(exec2);
       expect(exec1['config'].sandbox.timeout).toBe(99999);
@@ -833,7 +842,9 @@ describe('SandboxExecutor', () => {
         version: '1.0',
         tool: 'security_tool',
         description: 'Security test',
-        sandbox_operations: [{ op: 'analyzeFiles', args: { patterns: ['**/*.ts'] }, store: 'files' }],
+        sandbox_operations: [
+          { op: 'analyzeFiles', args: { patterns: ['**/*.ts'] }, store: 'files' },
+        ],
       };
 
       const result = await executor.executeDirective(directive, testProjectPath);
@@ -853,7 +864,10 @@ describe('SandboxExecutor', () => {
       // Create node_modules and hidden directory
       await mkdir(join(testProjectPath, 'node_modules', 'dep'), { recursive: true });
       await mkdir(join(testProjectPath, '.hidden'), { recursive: true });
-      await writeFile(join(testProjectPath, 'node_modules', 'dep', 'index.ts'), 'export default {};');
+      await writeFile(
+        join(testProjectPath, 'node_modules', 'dep', 'index.ts'),
+        'export default {};'
+      );
       await writeFile(join(testProjectPath, '.hidden', 'secret.ts'), 'const secret = "hidden";');
 
       const directive: OrchestrationDirective = {
@@ -861,7 +875,9 @@ describe('SandboxExecutor', () => {
         version: '1.0',
         tool: 'security_tool',
         description: 'Exclusion test',
-        sandbox_operations: [{ op: 'analyzeFiles', args: { patterns: ['**/*.ts'] }, store: 'files' }],
+        sandbox_operations: [
+          { op: 'analyzeFiles', args: { patterns: ['**/*.ts'] }, store: 'files' },
+        ],
       };
 
       const result = await executor.executeDirective(directive, testProjectPath);
