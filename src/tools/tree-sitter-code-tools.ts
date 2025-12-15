@@ -482,24 +482,25 @@ export async function getClasses(filePath: string): Promise<ClassExtractionResul
       }
     }
   } else if (language === 'python') {
-    // Parse Python classes
-    const classRegex = /^class\s+(\w+)(?:\([^)]*\))?:/gm;
+    // Parse Python classes (including nested classes with indentation)
+    const classRegex = /^(\s*)class\s+(\w+)(?:\([^)]*\))?:/gm;
     let match;
     while ((match = classRegex.exec(content)) !== null) {
       const lineNum = content.substring(0, match.index).split('\n').length;
-      const className = match[1] ?? '';
+      const classIndent = match[1]?.length ?? 0;
+      const className = match[2] ?? '';
 
       if (className) {
-        // Extract methods from class body (simplified - looks for def inside class)
+        // Extract methods from class body, passing the class indentation level
         const classBodyStart = match.index + match[0].length;
-        const methods = extractPythonMethods(content, classBodyStart);
+        const methods = extractPythonMethods(content, classBodyStart, classIndent);
 
         classes.push({
           name: className,
           type: 'class',
           methods,
           properties: [],
-          location: { line: lineNum, column: 0 },
+          location: { line: lineNum, column: classIndent },
           exported: !className.startsWith('_'),
         });
       }
@@ -806,23 +807,51 @@ function extractInterfaceProperties(interfaceBody: string): string[] {
   return [...new Set(properties)];
 }
 
-function extractPythonMethods(content: string, startIndex: number): string[] {
+function extractPythonMethods(
+  content: string,
+  startIndex: number,
+  classIndent: number = 0
+): string[] {
   const methods: string[] = [];
-  const methodRegex = /^\s+def\s+(\w+)\s*\(/gm;
+  // Expected method indentation is one level deeper than class (typically 4 spaces)
+  const expectedMethodIndent = classIndent + 4;
 
-  // Find the end of the class (next unindented class/function or EOF)
-  const classEndRegex = /^(?:class|def)\s+/gm;
-  classEndRegex.lastIndex = startIndex;
-  const classEndMatch = classEndRegex.exec(content);
-  const classEnd = classEndMatch ? classEndMatch.index : content.length;
+  // Split content from startIndex into lines for line-by-line analysis
+  const remainingContent = content.substring(startIndex);
+  const lines = remainingContent.split('\n');
 
-  const classBody = content.substring(startIndex, classEnd);
-  let match;
+  for (const line of lines) {
+    // Skip empty lines and comments
+    if (line.trim() === '' || line.trim().startsWith('#')) {
+      continue;
+    }
 
-  while ((match = methodRegex.exec(classBody)) !== null) {
-    const methodName = match[1];
-    if (methodName) {
-      methods.push(methodName);
+    // Calculate line indentation (count leading spaces)
+    const lineIndent = line.length - line.trimStart().length;
+
+    // If we hit something at class level or less indentation (except empty/comment), class body ends
+    if (lineIndent <= classIndent && line.trim() !== '') {
+      break;
+    }
+
+    // Check for nested class at method level - skip it and its contents
+    const nestedClassMatch = line.match(/^(\s*)class\s+(\w+)/);
+    if (nestedClassMatch) {
+      // Nested class detected - don't include its methods in outer class
+      continue;
+    }
+
+    // Only match methods at exactly one indentation level deeper than the class
+    // This prevents capturing nested class methods
+    const methodMatch = line.match(/^(\s*)def\s+(\w+)\s*\(/);
+    if (methodMatch) {
+      const methodIndent = methodMatch[1]?.length ?? 0;
+      const methodName = methodMatch[2];
+
+      // Only capture methods at the expected indentation level
+      if (methodName && methodIndent === expectedMethodIndent) {
+        methods.push(methodName);
+      }
     }
   }
 
