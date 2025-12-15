@@ -515,6 +515,8 @@ describe('Research Question Tool', () => {
           analysisType: 'correlation',
           problems: sampleProblems,
           knowledgeGraph: sampleKnowledgeGraph,
+          enhancedMode: true,
+          knowledgeEnhancement: true,
         });
 
         expect(mockGenerateArchitecturalKnowledge).toHaveBeenCalled();
