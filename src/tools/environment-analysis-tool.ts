@@ -9,6 +9,11 @@ import { McpAdrError } from '../types/index.js';
 import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import {
+  getEnhancedModeDefault,
+  getKnowledgeEnhancementDefault,
+  getMemoryIntegrationDefault,
+} from '../utils/test-aware-defaults.js';
 
 /**
  * Environment Memory Manager for tracking environment snapshots and evolution
@@ -486,9 +491,9 @@ export async function analyzeEnvironment(args: {
     currentEnvironment,
     requirements,
     industryStandards,
-    knowledgeEnhancement = true, // Default to GKP enabled
-    enhancedMode = true, // Default to enhanced mode
-    enableMemoryIntegration = true, // Default to memory integration enabled
+    knowledgeEnhancement = getKnowledgeEnhancementDefault(), // Environment-aware default
+    enhancedMode = getEnhancedModeDefault(), // Environment-aware default
+    enableMemoryIntegration = getMemoryIntegrationDefault(), // Environment-aware default
     environmentType = 'development', // Default environment type
   } = args;
 
@@ -552,9 +557,8 @@ ${research.needsWebSearch ? '⚠️ **Note**: Local environment data may be inco
         // Generate domain-specific knowledge for environment analysis if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import(
-              '../utils/knowledge-generation.js'
-            );
+            const { generateArchitecturalKnowledge } =
+              await import('../utils/knowledge-generation.js');
             const knowledgeResult = await generateArchitecturalKnowledge(
               {
                 projectPath,
@@ -583,9 +587,8 @@ ${research.needsWebSearch ? '⚠️ **Note**: Local environment data may be inco
         enhancedPrompt = liveEnvironmentData + knowledgeContext + result.analysisPrompt;
 
         // Execute the environment analysis with AI if enabled, otherwise return prompt
-        const { executePromptWithFallback, formatMCPResponse } = await import(
-          '../utils/prompt-execution.js'
-        );
+        const { executePromptWithFallback, formatMCPResponse } =
+          await import('../utils/prompt-execution.js');
         const executionResult = await executePromptWithFallback(
           enhancedPrompt,
           result.instructions,
@@ -774,9 +777,8 @@ ${enhancedPrompt}
         // Generate containerization-specific knowledge if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import(
-              '../utils/knowledge-generation.js'
-            );
+            const { generateArchitecturalKnowledge } =
+              await import('../utils/knowledge-generation.js');
             const knowledgeResult = await generateArchitecturalKnowledge(
               {
                 projectPath,
@@ -871,9 +873,8 @@ Use the detection results to:
         // Generate requirements analysis knowledge if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import(
-              '../utils/knowledge-generation.js'
-            );
+            const { generateArchitecturalKnowledge } =
+              await import('../utils/knowledge-generation.js');
             const knowledgeResult = await generateArchitecturalKnowledge(
               {
                 projectPath,
@@ -974,9 +975,8 @@ Use the extracted requirements to:
         // Generate compliance-specific knowledge if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import(
-              '../utils/knowledge-generation.js'
-            );
+            const { generateArchitecturalKnowledge } =
+              await import('../utils/knowledge-generation.js');
             const knowledgeResult = await generateArchitecturalKnowledge(
               {
                 projectPath,
@@ -1074,9 +1074,8 @@ Use the assessment results to:
         // Generate comprehensive environment knowledge if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import(
-              '../utils/knowledge-generation.js'
-            );
+            const { generateArchitecturalKnowledge } =
+              await import('../utils/knowledge-generation.js');
             const knowledgeResult = await generateArchitecturalKnowledge(
               {
                 projectPath,

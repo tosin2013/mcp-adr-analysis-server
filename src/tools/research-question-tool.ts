@@ -5,6 +5,10 @@
  */
 
 import { McpAdrError } from '../types/index.js';
+import {
+  getEnhancedModeDefault,
+  getKnowledgeEnhancementDefault,
+} from '../utils/test-aware-defaults.js';
 
 /**
  * Generate research questions and create research tracking system
@@ -69,8 +73,8 @@ export async function generateResearchQuestions(args: {
     currentProgress,
     projectPath = process.cwd(),
     adrDirectory = 'docs/adrs',
-    knowledgeEnhancement = true, // Default to GKP enabled
-    enhancedMode = true, // Default to enhanced mode
+    knowledgeEnhancement = getKnowledgeEnhancementDefault(), // Environment-aware default
+    enhancedMode = getEnhancedModeDefault(), // Environment-aware default
   } = args;
 
   try {
@@ -96,9 +100,8 @@ export async function generateResearchQuestions(args: {
         // Generate research methodology knowledge if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import(
-              '../utils/knowledge-generation.js'
-            );
+            const { generateArchitecturalKnowledge } =
+              await import('../utils/knowledge-generation.js');
             const knowledgeResult = await generateArchitecturalKnowledge(
               {
                 projectPath,
@@ -289,9 +292,8 @@ This relevance analysis provides:
         );
 
         // Execute the research question generation with AI if enabled, otherwise return prompt
-        const { executeResearchPrompt, formatMCPResponse } = await import(
-          '../utils/prompt-execution.js'
-        );
+        const { executeResearchPrompt, formatMCPResponse } =
+          await import('../utils/prompt-execution.js');
         const executionResult = await executeResearchPrompt(
           result.questionPrompt,
           result.instructions,

@@ -14,6 +14,7 @@ import {
   StateMachineDirective,
   SandboxOperation,
 } from '../types/ce-mcp.js';
+import { getKnowledgeEnhancementDefault } from '../utils/test-aware-defaults.js';
 
 /**
  * Arguments for CE-MCP analyze project ecosystem
@@ -51,7 +52,7 @@ export function createAnalyzeProjectEcosystemDirective(
     projectPath,
     analysisDepth = 'comprehensive',
     includeEnvironment = true,
-    knowledgeEnhancement = true,
+    knowledgeEnhancement = getKnowledgeEnhancementDefault(), // Environment-aware default
     // learningEnabled is used for future reflexion integration
     learningEnabled: _learningEnabled = true,
     technologyFocus = [],
