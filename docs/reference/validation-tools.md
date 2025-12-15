@@ -698,8 +698,8 @@ interface ValidationKPIs {
 - **[Analysis Tools](analysis-tools.md)** - Project analysis for validation context
 - **[Generation Tools](generation-tools.md)** - Content generation with validation
 - **[Security Tools](security-tools.md)** - Security-focused validation
-- **[Troubleshooting](.../how-to-guides/troubleshooting.md)** - Validation troubleshooting
+- **[Troubleshooting](../how-to-guides/troubleshooting.md)** - Validation troubleshooting
 
 ---
 
-**Need help with validation tools?** → **[Deployment Readiness Guide](.../how-to-guides/deployment-readiness.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**
+**Need help with validation tools?** → **[Deployment Readiness Guide](../how-to-guides/deployment-readiness.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**

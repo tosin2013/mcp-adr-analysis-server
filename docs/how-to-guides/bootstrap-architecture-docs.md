@@ -771,8 +771,8 @@ export CACHE_ENABLED="false"
 
 ### Advanced Workflows
 
-- **[Repository with Existing ADRs](getting-started-existing-adrs.md)** - Learn to enhance existing ADR practices
-- **[Blank Repository with PRD](getting-started-blank-repo.md)** - Start fresh with requirements-driven development
+- **[Working with Existing ADRs](./work-with-existing-adrs.md)** - Learn to enhance existing ADR practices
+- **[Generate ADRs from PRD](./generate-adrs-from-prd.md)** - Start fresh with requirements-driven development
 
 ### Integration with Development Workflow
 
@@ -783,8 +783,8 @@ export CACHE_ENABLED="false"
 ### Related Documentation
 
 - **[Main README](../../README.md)** - Complete feature overview and installation
-- **[NPM Publishing Guide](NPM_PUBLISHING.md)** - Deploy your own MCP server
-- **[Architecture Decisions](./adrs/)** - Example ADRs from this project
+- **[Deploy Your Own Server](./deploy-your-own-server.md)** - Deploy your own MCP server
+- **[Architecture Decisions](../adrs/)** - Example ADRs from this project
 
 ---
 

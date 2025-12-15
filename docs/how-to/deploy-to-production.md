@@ -404,10 +404,10 @@ sudo nano /etc/nginx/sites-available/mcp-adr-analysis-server
 
 ## 📚 Additional Resources
 
-- **[Configuration Guide](./reference/environment-config.md)** - Detailed configuration options
+- **[Configuration Guide](../reference/environment-config.md)** - Detailed configuration options
 - **[Security Guide](../explanation/security-philosophy.md)** - Security best practices
-- **[Troubleshooting Guide](./troubleshooting.md)** - Common issues and solutions
-- **[API Reference](./reference/api-reference.md)** - Complete API documentation
+- **[Troubleshooting Guide](../how-to-guides/troubleshooting.md)** - Common issues and solutions
+- **[API Reference](../reference/api-reference.md)** - Complete API documentation
 
 ---
 
@@ -442,5 +442,5 @@ If you encounter issues:
 
 ## Related Guides
 
-- [Another How-To Guide](./another-guide.md)
-- [Reference Documentation](./reference/)
+- [Deployment Readiness Guide](../how-to-guides/deployment-readiness.md)
+- [Reference Documentation](../reference/)

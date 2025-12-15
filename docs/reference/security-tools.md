@@ -644,8 +644,8 @@ interface ComplianceReport {
 - **[Analysis Tools](analysis-tools.md)** - Project analysis with security focus
 - **[Generation Tools](generation-tools.md)** - Secure content generation
 - **[Validation Tools](validation-tools.md)** - Security validation workflows
-- **[Custom Rules](.../how-to-guides/custom-rules.md)** - Creating security-specific rules
+- **[Custom Rules](../how-to-guides/custom-rules.md)** - Creating security-specific rules
 
 ---
 
-**Need help with security tools?** → **[Security Analysis Guide](.../how-to-guides/security-analysis.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**
+**Need help with security tools?** → **[Security Analysis Guide](../how-to-guides/security-analysis.md)** or **[File an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**

@@ -151,7 +151,6 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://tosin2013.github.io/mcp-adr-analysis-server/how-to-guides/migrate-existing-adrs.html</loc>
     <lastmod>2025-10-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
@@ -163,13 +162,11 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://tosin2013.github.io/mcp-adr-analysis-server/how-to-guides/prd-to-adrs.html</loc>
     <lastmod>2025-10-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://tosin2013.github.io/mcp-adr-analysis-server/how-to-guides/progress-tracking.html</loc>
     <lastmod>2025-10-12</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>

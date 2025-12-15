@@ -80,7 +80,7 @@ mcp-adr-analysis-server --generate-adr --decision "Database Selection"
 
 ### **📚 Reference** - _Technical details_
 
-- **[API Reference](reference/api-reference.md)** - All 37 tools and parameters
+- **[API Reference](reference/api-reference.md)** - All 59 tools and parameters
 - **[Configuration](reference/environment-config.md)** - Environment setup
 - **[Client Configuration](reference/mcp-client-config.md)** - MCP client setup
 - **[Tool Documentation](reference/analysis-tools.md)** - Individual tool guides

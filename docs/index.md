@@ -28,7 +28,7 @@ Understanding-oriented discussions that clarify and illuminate topics. Great for
 
 ## Quick Start
 
-New to this project? Start with our [Getting Started Tutorial](./tutorials/getting-started.md).
+New to this project? Start with our [Getting Started Tutorial](./tutorials/01-first-steps.md).
 
 ## Contributing
 
