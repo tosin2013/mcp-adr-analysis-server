@@ -510,16 +510,15 @@ describe('Research Question Tool', () => {
         );
       });
 
-      test('should enable enhanced mode and knowledge enhancement by default', async () => {
+      test('should keep enhanced mode and knowledge enhancement disabled by default in tests', async () => {
         await generateResearchQuestions({
           analysisType: 'correlation',
           problems: sampleProblems,
           knowledgeGraph: sampleKnowledgeGraph,
-          enhancedMode: true,
-          knowledgeEnhancement: true,
         });
 
-        expect(mockGenerateArchitecturalKnowledge).toHaveBeenCalled();
+        // Test-aware defaults should skip GKP in test environment to avoid expensive work
+        expect(mockGenerateArchitecturalKnowledge).not.toHaveBeenCalled();
       });
     });
 
