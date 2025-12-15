@@ -80,16 +80,32 @@ type TroubleshootArgs = z.infer<typeof TroubleshootSchema>;
 type FailureInfo = z.infer<typeof FailureInfoSchema>;
 
 /**
+ * Dependencies for TroubleshootingMemoryManager (enables DI and mocking)
+ * Uses concrete types for full compatibility with existing implementations
+ * @see Issue #310 - Dependency injection for improved testability
+ */
+export interface TroubleshootingMemoryManagerDeps {
+  memoryManager?: MemoryEntityManager;
+  logger?: EnhancedLogger;
+}
+
+/**
  * Enhanced Troubleshooting Memory Manager with Intelligence
  * Handles memory persistence and intelligent decision-making for troubleshooting
+ * Supports dependency injection for improved testability
+ * @see Issue #310 - Dependency injection for improved testability
  */
 class TroubleshootingMemoryManager {
   private memoryManager: MemoryEntityManager;
   private logger: EnhancedLogger;
 
-  constructor() {
-    this.memoryManager = new MemoryEntityManager();
-    this.logger = new EnhancedLogger();
+  /**
+   * Constructor with optional dependency injection
+   * @param deps - Optional dependencies for testing (defaults create real instances)
+   */
+  constructor(deps: TroubleshootingMemoryManagerDeps = {}) {
+    this.memoryManager = deps.memoryManager ?? new MemoryEntityManager();
+    this.logger = deps.logger ?? new EnhancedLogger();
   }
 
   async initialize(): Promise<void> {
@@ -805,9 +821,8 @@ async function analyzeFailure(
  * Generate AI-powered test plan based on failure analysis
  */
 async function generateTestPlan(failure: FailureInfo, args: TroubleshootArgs): Promise<string> {
-  const { loadAIConfig, isAIExecutionEnabled, getRecommendedModel } = await import(
-    '../config/ai-config.js'
-  );
+  const { loadAIConfig, isAIExecutionEnabled, getRecommendedModel } =
+    await import('../config/ai-config.js');
   const aiConfig = loadAIConfig();
 
   if (!isAIExecutionEnabled(aiConfig)) {
