@@ -40,7 +40,7 @@ describe('PromptCatalog', () => {
     });
 
     it('should have valid metadata for each entry', () => {
-      for (const [name, entry] of Object.entries(PROMPT_CATALOG)) {
+      for (const [_name, entry] of Object.entries(PROMPT_CATALOG)) {
         expect(entry.file).toBeDefined();
         expect(entry.file).toMatch(/\.ts$/);
         expect(entry.tokens).toBeGreaterThan(0);
@@ -69,7 +69,7 @@ describe('PromptCatalog', () => {
 
     it('should mark most prompts as load-on-demand', () => {
       const loadOnDemandPrompts = Object.entries(PROMPT_CATALOG).filter(
-        ([name, entry]) => entry.loadOnDemand
+        ([_name, entry]) => entry.loadOnDemand
       );
       // All except 'index' should be load-on-demand
       expect(loadOnDemandPrompts.length).toBe(Object.keys(PROMPT_CATALOG).length - 1);
