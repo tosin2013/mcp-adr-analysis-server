@@ -17,6 +17,10 @@ import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 import { findRelatedCode } from '../utils/file-system.js';
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 import { getAIExecutor } from '../utils/ai-executor.js';
+import {
+  getEnhancedModeDefault,
+  getKnowledgeEnhancementDefault,
+} from '../utils/test-aware-defaults.js';
 
 /**
  * Suggest ADRs based on project analysis with advanced prompting techniques
@@ -44,17 +48,16 @@ export async function suggestAdrs(args: {
     changeDescription,
     commitMessages,
     existingAdrs,
-    enhancedMode = true, // Default to enhanced mode
+    enhancedMode = getEnhancedModeDefault(), // Environment-aware default
     learningEnabled = true, // Default to learning enabled
-    knowledgeEnhancement = true, // Default to knowledge enhancement
+    knowledgeEnhancement = getKnowledgeEnhancementDefault(), // Environment-aware default
     enableTreeSitterAnalysis = true, // Default to tree-sitter enabled
     conversationContext, // Context from calling LLM
   } = args;
 
   try {
-    const { analyzeImplicitDecisions, analyzeCodeChanges } = await import(
-      '../utils/adr-suggestions.js'
-    );
+    const { analyzeImplicitDecisions, analyzeCodeChanges } =
+      await import('../utils/adr-suggestions.js');
 
     switch (analysisType) {
       case 'implicit_decisions': {
@@ -72,7 +75,6 @@ export async function suggestAdrs(args: {
               projectPath,
               {
                 useAI: true,
-                useRipgrep: true,
                 maxFiles: 10,
                 includeContent: false,
               }
@@ -249,7 +251,6 @@ The enhanced AI analysis will identify implicit architectural decisions and prov
               projectPath || process.cwd(),
               {
                 useAI: true,
-                useRipgrep: true,
                 maxFiles: 8,
                 includeContent: false,
               }
@@ -600,7 +601,6 @@ ${knowledgeResult.prompt}
               projectPath,
               {
                 useAI: true,
-                useRipgrep: true,
                 maxFiles: 15,
                 includeContent: false,
               }
@@ -954,9 +954,8 @@ export async function generateAdrFromDecision(args: {
   } = args;
 
   try {
-    const { generateAdrFromDecision, generateNextAdrNumber, suggestAdrFilename } = await import(
-      '../utils/adr-suggestions.js'
-    );
+    const { generateAdrFromDecision, generateNextAdrNumber, suggestAdrFilename } =
+      await import('../utils/adr-suggestions.js');
 
     if (
       !decisionData.title ||
@@ -1046,9 +1045,8 @@ To save this ADR to your project:
       });
     } else {
       // Fallback to prompt-only mode
-      const { ensureDirectoryCompat: ensureDirectory, writeFileCompat: writeFile } = await import(
-        '../utils/file-system.js'
-      );
+      const { ensureDirectoryCompat: ensureDirectory, writeFileCompat: writeFile } =
+        await import('../utils/file-system.js');
       const ensureDirPrompt = await ensureDirectory(adrDirectory);
       const writeFilePrompt = await writeFile(fullPath, '[ADR_CONTENT_PLACEHOLDER]');
 

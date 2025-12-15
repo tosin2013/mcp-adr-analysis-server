@@ -9,6 +9,11 @@ import { McpAdrError } from '../types/index.js';
 import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
+import {
+  getEnhancedModeDefault,
+  getKnowledgeEnhancementDefault,
+  getMemoryIntegrationDefault,
+} from '../utils/test-aware-defaults.js';
 
 /**
  * Security Memory Manager for tracking security patterns and masking effectiveness
@@ -383,9 +388,9 @@ export async function analyzeContentSecurity(args: {
     content,
     contentType = 'general',
     userDefinedPatterns,
-    knowledgeEnhancement = true, // Default to GKP enabled
-    enhancedMode = true, // Default to enhanced mode
-    enableMemoryIntegration = true, // Default to memory integration enabled
+    knowledgeEnhancement = getKnowledgeEnhancementDefault(), // Environment-aware default
+    enhancedMode = getEnhancedModeDefault(), // Environment-aware default
+    enableMemoryIntegration = getMemoryIntegrationDefault(), // Environment-aware default
     enableTreeSitterAnalysis = true, // Default to tree-sitter enabled
   } = args;
 
@@ -540,9 +545,8 @@ export async function analyzeContentSecurity(args: {
     enhancedPrompt = knowledgeContext + result.analysisPrompt;
 
     // Execute the security analysis with AI if enabled, otherwise return prompt
-    const { executePromptWithFallback, formatMCPResponse } = await import(
-      '../utils/prompt-execution.js'
-    );
+    const { executePromptWithFallback, formatMCPResponse } =
+      await import('../utils/prompt-execution.js');
     const executionResult = await executePromptWithFallback(enhancedPrompt, result.instructions, {
       temperature: 0.1,
       maxTokens: 4000,
@@ -793,9 +797,8 @@ export async function generateContentMasking(args: {
     const result = await generateMaskingInstructions(content, sensitiveItems, maskingStrategy);
 
     // Execute the content masking with AI if enabled, otherwise return prompt
-    const { executePromptWithFallback, formatMCPResponse } = await import(
-      '../utils/prompt-execution.js'
-    );
+    const { executePromptWithFallback, formatMCPResponse } =
+      await import('../utils/prompt-execution.js');
     const executionResult = await executePromptWithFallback(
       result.maskingPrompt,
       result.instructions,

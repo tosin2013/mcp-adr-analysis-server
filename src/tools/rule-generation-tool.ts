@@ -6,6 +6,10 @@
 
 import { McpAdrError } from '../types/index.js';
 import { findFiles, findRelatedCode } from '../utils/file-system.js';
+import {
+  getEnhancedModeDefault,
+  getKnowledgeEnhancementDefault,
+} from '../utils/test-aware-defaults.js';
 
 /**
  * Generate architectural rules from ADRs and code patterns
@@ -30,14 +34,13 @@ export async function generateRules(args: {
     projectPath = process.cwd(),
     existingRules,
     outputFormat = 'json',
-    knowledgeEnhancement = true, // Default to GKP enabled
-    enhancedMode = true, // Default to enhanced mode
+    knowledgeEnhancement = getKnowledgeEnhancementDefault(), // Environment-aware default
+    enhancedMode = getEnhancedModeDefault(), // Environment-aware default
   } = args;
 
   try {
-    const { extractRulesFromAdrs, generateRulesFromPatterns } = await import(
-      '../utils/rule-generation.js'
-    );
+    const { extractRulesFromAdrs, generateRulesFromPatterns } =
+      await import('../utils/rule-generation.js');
 
     switch (source) {
       case 'adrs': {
@@ -47,9 +50,8 @@ export async function generateRules(args: {
         // Generate domain-specific knowledge for rule extraction if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import(
-              '../utils/knowledge-generation.js'
-            );
+            const { generateArchitecturalKnowledge } =
+              await import('../utils/knowledge-generation.js');
             const knowledgeResult = await generateArchitecturalKnowledge(
               {
                 projectPath,
@@ -75,9 +77,8 @@ export async function generateRules(args: {
         enhancedPrompt = knowledgeContext + result.extractionPrompt;
 
         // Execute the rule extraction with AI if enabled, otherwise return prompt
-        const { executePromptWithFallback, formatMCPResponse } = await import(
-          '../utils/prompt-execution.js'
-        );
+        const { executePromptWithFallback, formatMCPResponse } =
+          await import('../utils/prompt-execution.js');
         const executionResult = await executePromptWithFallback(
           enhancedPrompt,
           result.instructions,
@@ -240,7 +241,6 @@ ${enhancedPrompt}
               projectPath,
               {
                 useAI: true,
-                useRipgrep: true,
                 maxFiles: 20,
                 includeContent: false,
               }
@@ -287,9 +287,8 @@ ${enhancedPrompt}
         // Generate domain-specific knowledge for pattern analysis if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import(
-              '../utils/knowledge-generation.js'
-            );
+            const { generateArchitecturalKnowledge } =
+              await import('../utils/knowledge-generation.js');
             const knowledgeResult = await generateArchitecturalKnowledge(
               {
                 projectPath,
@@ -316,9 +315,8 @@ ${enhancedPrompt}
         enhancedPrompt = knowledgeContext + patternImplementationContext + result.generationPrompt;
 
         // Execute the pattern-based rule generation with AI if enabled, otherwise return prompt
-        const { executePromptWithFallback, formatMCPResponse } = await import(
-          '../utils/prompt-execution.js'
-        );
+        const { executePromptWithFallback, formatMCPResponse } =
+          await import('../utils/prompt-execution.js');
         const executionResult = await executePromptWithFallback(
           enhancedPrompt,
           result.instructions,
@@ -499,7 +497,6 @@ The Smart Code Linking enhancement provides:
               projectPath,
               {
                 useAI: true,
-                useRipgrep: true,
                 maxFiles: 30,
                 includeContent: false,
               }
@@ -567,9 +564,8 @@ The Smart Code Linking enhancement provides:
         // Generate comprehensive domain knowledge if enabled
         if (enhancedMode && knowledgeEnhancement) {
           try {
-            const { generateArchitecturalKnowledge } = await import(
-              '../utils/knowledge-generation.js'
-            );
+            const { generateArchitecturalKnowledge } =
+              await import('../utils/knowledge-generation.js');
             const knowledgeResult = await generateArchitecturalKnowledge(
               {
                 projectPath,
@@ -639,9 +635,8 @@ Provide a unified rule set with:
 `;
 
         // Execute the comprehensive rule generation with AI if enabled, otherwise return prompt
-        const { executePromptWithFallback, formatMCPResponse } = await import(
-          '../utils/prompt-execution.js'
-        );
+        const { executePromptWithFallback, formatMCPResponse } =
+          await import('../utils/prompt-execution.js');
         const executionResult = await executePromptWithFallback(
           comprehensivePrompt,
           `${adrResult.instructions}\n\n${patternResult.instructions}`,
@@ -854,7 +849,6 @@ export async function validateRules(args: {
           projectPath,
           {
             useAI: true,
-            useRipgrep: true,
             maxFiles: 12,
             includeContent: false,
           }
@@ -926,9 +920,8 @@ export async function validateRules(args: {
     }
 
     // Execute the rule validation with AI if enabled, otherwise return prompt
-    const { executePromptWithFallback, formatMCPResponse } = await import(
-      '../utils/prompt-execution.js'
-    );
+    const { executePromptWithFallback, formatMCPResponse } =
+      await import('../utils/prompt-execution.js');
     const executionResult = await executePromptWithFallback(
       result.validationPrompt,
       result.instructions,
@@ -1059,9 +1052,8 @@ export async function createRuleSet(args: {
   } = args;
 
   try {
-    const { createRuleSet, serializeRuleSetToJson, serializeRuleSetToYaml } = await import(
-      '../utils/rule-format.js'
-    );
+    const { createRuleSet, serializeRuleSetToJson, serializeRuleSetToYaml } =
+      await import('../utils/rule-format.js');
 
     // Combine all rules
     const allRules = [...adrRules, ...patternRules, ...rules];
