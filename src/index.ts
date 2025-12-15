@@ -38,6 +38,10 @@ import {
   type ServerConfig,
 } from './utils/config.js';
 import { KnowledgeGraphManager } from './utils/knowledge-graph-manager.js';
+import {
+  getEnhancedModeDefault,
+  getKnowledgeEnhancementDefault,
+} from './utils/test-aware-defaults.js';
 import { StateReinforcementManager } from './utils/state-reinforcement-manager.js';
 import { ConversationMemoryManager } from './utils/conversation-memory-manager.js';
 import { MemoryEntityManager } from './utils/memory-entity-manager.js';
@@ -79,7 +83,6 @@ import {
   formatDirectiveResponse,
 } from './tools/ce-mcp-tools.js';
 import { loadAIConfig, isCEMCPEnabled } from './config/ai-config.js';
-import { isRipgrepAvailable } from './utils/ripgrep-wrapper.js';
 
 /**
  * Get version from package.json
@@ -4162,9 +4165,8 @@ Make the guidance **actionable, specific, and outcome-focused** so the user can 
 `;
 
       // Execute the workflow guidance with AI if enabled
-      const { executePromptWithFallback, formatMCPResponse } = await import(
-        './utils/prompt-execution.js'
-      );
+      const { executePromptWithFallback, formatMCPResponse } =
+        await import('./utils/prompt-execution.js');
       const executionResult = await executePromptWithFallback(
         workflowPrompt,
         'Analyze the user context and provide intelligent workflow guidance with specific tool recommendations.',
@@ -4422,9 +4424,8 @@ Make the guidance **actionable, specific, and immediately implementable** so dev
 `;
 
       // Execute the development guidance with AI if enabled
-      const { executePromptWithFallback, formatMCPResponse } = await import(
-        './utils/prompt-execution.js'
-      );
+      const { executePromptWithFallback, formatMCPResponse } =
+        await import('./utils/prompt-execution.js');
       const executionResult = await executePromptWithFallback(
         developmentPrompt,
         'Analyze the development context and provide comprehensive implementation guidance that translates architectural decisions into specific coding tasks and development roadmap.',
@@ -4516,8 +4517,8 @@ This guidance ensures your development work is **architecturally aligned**, **qu
     const projectPath = args.projectPath || this.config.projectPath;
     const {
       includePatterns,
-      enhancedMode = true,
-      knowledgeEnhancement = true,
+      enhancedMode = getEnhancedModeDefault(), // Environment-aware default
+      knowledgeEnhancement = getKnowledgeEnhancementDefault(), // Environment-aware default
       learningEnabled = true,
       technologyFocus = [],
       analysisDepth = 'comprehensive',
@@ -4546,18 +4547,16 @@ This guidance ensures your development work is **architecturally aligned**, **qu
       ctx.report_progress(10, 100);
 
       // Import utilities dynamically to avoid circular dependencies
-      const { analyzeProjectStructureCompat: analyzeProjectStructure } = await import(
-        './utils/file-system.js'
-      );
+      const { analyzeProjectStructureCompat: analyzeProjectStructure } =
+        await import('./utils/file-system.js');
 
       // Initialize ADR knowledge base on first run
       ctx.info('📚 Phase 1.5: Initializing ADR knowledge base');
       ctx.report_progress(15, 100);
 
       try {
-        const { initializeAdrKnowledgeBase, isAdrKnowledgeBaseInitialized } = await import(
-          './utils/adr-knowledge-initializer.js'
-        );
+        const { initializeAdrKnowledgeBase, isAdrKnowledgeBaseInitialized } =
+          await import('./utils/adr-knowledge-initializer.js');
 
         const isInitialized = await isAdrKnowledgeBaseInitialized(this.kgManager);
 
@@ -4763,9 +4762,8 @@ ${environmentResult.content[0].text}
       ctx.info('🤖 Phase 6: Executing AI-powered ecosystem analysis');
       ctx.report_progress(85, 100);
 
-      const { executeEcosystemAnalysisPrompt, formatMCPResponse } = await import(
-        './utils/prompt-execution.js'
-      );
+      const { executeEcosystemAnalysisPrompt, formatMCPResponse } =
+        await import('./utils/prompt-execution.js');
       const executionResult = await executeEcosystemAnalysisPrompt(
         enhancedAnalysisPrompt,
         baseProjectAnalysisPrompt.instructions,
@@ -5139,9 +5137,8 @@ This approach ensures that architectural work is **grounded in measurable outcom
 `;
 
       // Execute the analysis with AI if enabled, otherwise return prompt
-      const { executeEcosystemAnalysisPrompt, formatMCPResponse } = await import(
-        './utils/prompt-execution.js'
-      );
+      const { executeEcosystemAnalysisPrompt, formatMCPResponse } =
+        await import('./utils/prompt-execution.js');
       const executionResult = await executeEcosystemAnalysisPrompt(
         architecturalPrompt,
         projectAnalysisPrompt.instructions,
@@ -5228,9 +5225,9 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
 
     const {
       prdPath,
-      enhancedMode = true,
+      enhancedMode = getEnhancedModeDefault(), // Environment-aware default
       promptOptimization = true,
-      knowledgeEnhancement = true,
+      knowledgeEnhancement = getKnowledgeEnhancementDefault(), // Environment-aware default
       prdType = 'general',
     } = args;
     const outputDirectory = args['outputDirectory'] || this.config.adrDirectory;
@@ -5246,9 +5243,8 @@ This **outcome-focused approach** ensures architectural work delivers **measurab
     try {
       ctx.info('📂 Phase 1: Validating PRD file');
       ctx.report_progress(10, 100);
-      const { readFileContentCompat: readFileContent, fileExistsCompat: fileExists } = await import(
-        './utils/file-system.js'
-      );
+      const { readFileContentCompat: readFileContent, fileExistsCompat: fileExists } =
+        await import('./utils/file-system.js');
 
       // Import advanced prompting utilities if enhanced mode is enabled
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -5420,9 +5416,8 @@ For each generated ADR, create a file creation prompt using the following patter
       ctx.info('🤖 Phase 6: Executing AI-powered ADR generation');
       ctx.report_progress(90, 100);
 
-      const { executeADRGenerationPrompt, formatMCPResponse } = await import(
-        './utils/prompt-execution.js'
-      );
+      const { executeADRGenerationPrompt, formatMCPResponse } =
+        await import('./utils/prompt-execution.js');
       const executionResult = await executeADRGenerationPrompt(
         adrPrompt,
         'Generate comprehensive ADRs from PRD analysis with enhanced domain knowledge and optimization',
@@ -6529,9 +6524,8 @@ To re-run this validation with strict mode:
     const { action, key } = args;
 
     try {
-      const { clearCache, getCacheStats, cleanupCache, invalidateCache } = await import(
-        './utils/cache.js'
-      );
+      const { clearCache, getCacheStats, cleanupCache, invalidateCache } =
+        await import('./utils/cache.js');
 
       switch (action) {
         case 'clear': {
@@ -6991,16 +6985,14 @@ Please provide:
   }
 
   private async generateAdrBootstrap(args: Record<string, unknown>): Promise<CallToolResult> {
-    const { default: generateAdrBootstrapScripts } = await import(
-      './tools/adr-bootstrap-validation-tool.js'
-    );
+    const { default: generateAdrBootstrapScripts } =
+      await import('./tools/adr-bootstrap-validation-tool.js');
     return await generateAdrBootstrapScripts(args);
   }
 
   private async bootstrapValidationLoop(args: Record<string, unknown>): Promise<CallToolResult> {
-    const { default: bootstrapValidationLoop } = await import(
-      './tools/bootstrap-validation-loop-tool.js'
-    );
+    const { default: bootstrapValidationLoop } =
+      await import('./tools/bootstrap-validation-loop-tool.js');
     return await bootstrapValidationLoop(args);
   }
 
@@ -7826,9 +7818,8 @@ Please provide:
         }
 
         case 'research_index': {
-          const { generateResearchIndexResource } = await import(
-            './resources/research-index-resource.js'
-          );
+          const { generateResearchIndexResource } =
+            await import('./resources/research-index-resource.js');
           const result = await generateResearchIndexResource();
 
           return {
@@ -7848,9 +7839,8 @@ Please provide:
         }
 
         case 'rule_catalog': {
-          const { generateRuleCatalogResource } = await import(
-            './resources/rule-catalog-resource.js'
-          );
+          const { generateRuleCatalogResource } =
+            await import('./resources/rule-catalog-resource.js');
           const result = await generateRuleCatalogResource();
 
           return {
@@ -7870,9 +7860,8 @@ Please provide:
         }
 
         case 'rule_generation': {
-          const { generateRuleGenerationResource } = await import(
-            './resources/rule-generation-resource.js'
-          );
+          const { generateRuleGenerationResource } =
+            await import('./resources/rule-generation-resource.js');
           const result = await generateRuleGenerationResource(undefined, url.searchParams);
 
           return {
@@ -7892,9 +7881,8 @@ Please provide:
         }
 
         case 'project_status': {
-          const { generateProjectStatusResource } = await import(
-            './resources/project-status-resource.js'
-          );
+          const { generateProjectStatusResource } =
+            await import('./resources/project-status-resource.js');
           const result = await generateProjectStatusResource();
 
           return {
@@ -7914,9 +7902,8 @@ Please provide:
         }
 
         case 'deployment_status': {
-          const { generateDeploymentStatusResource } = await import(
-            './resources/deployment-status-resource.js'
-          );
+          const { generateDeploymentStatusResource } =
+            await import('./resources/deployment-status-resource.js');
           const result = await generateDeploymentStatusResource(undefined, url.searchParams);
 
           return {
@@ -7936,9 +7923,8 @@ Please provide:
         }
 
         case 'environment_analysis': {
-          const { generateEnvironmentAnalysisResource } = await import(
-            './resources/environment-analysis-resource.js'
-          );
+          const { generateEnvironmentAnalysisResource } =
+            await import('./resources/environment-analysis-resource.js');
           const result = await generateEnvironmentAnalysisResource(undefined, url.searchParams);
 
           return {
@@ -7958,9 +7944,8 @@ Please provide:
         }
 
         case 'memory_snapshots': {
-          const { generateMemorySnapshotsResource } = await import(
-            './resources/memory-snapshots-resource.js'
-          );
+          const { generateMemorySnapshotsResource } =
+            await import('./resources/memory-snapshots-resource.js');
           const result = await generateMemorySnapshotsResource(undefined, url.searchParams);
 
           return {
@@ -7980,9 +7965,8 @@ Please provide:
         }
 
         case 'project_metrics': {
-          const { generateProjectMetricsResource } = await import(
-            './resources/project-metrics-resource.js'
-          );
+          const { generateProjectMetricsResource } =
+            await import('./resources/project-metrics-resource.js');
           const result = await generateProjectMetricsResource();
 
           return {
@@ -8002,9 +7986,8 @@ Please provide:
         }
 
         case 'deployment_history': {
-          const { generateDeploymentHistoryResource } = await import(
-            './resources/deployment-history-resource.js'
-          );
+          const { generateDeploymentHistoryResource } =
+            await import('./resources/deployment-history-resource.js');
           const result = await generateDeploymentHistoryResource(undefined, url.searchParams);
 
           return {
@@ -8024,9 +8007,8 @@ Please provide:
         }
 
         case 'code_quality': {
-          const { generateCodeQualityResource } = await import(
-            './resources/code-quality-resource.js'
-          );
+          const { generateCodeQualityResource } =
+            await import('./resources/code-quality-resource.js');
           const result = await generateCodeQualityResource(undefined, url.searchParams);
 
           return {
@@ -8046,9 +8028,8 @@ Please provide:
         }
 
         case 'validated_patterns': {
-          const { generateValidatedPatternsCatalogResource } = await import(
-            './resources/validated-patterns-catalog-resource.js'
-          );
+          const { generateValidatedPatternsCatalogResource } =
+            await import('./resources/validated-patterns-catalog-resource.js');
           const result = await generateValidatedPatternsCatalogResource();
 
           return {
@@ -8085,24 +8066,6 @@ Please provide:
    * Start the server
    */
   async start(): Promise<void> {
-    // Check for required dependencies
-    const ripgrepAvailable = await isRipgrepAvailable();
-    if (!ripgrepAvailable) {
-      this.logger.error(
-        'ripgrep (rg) is required but not found. Please install it:\n' +
-          '  macOS: brew install ripgrep\n' +
-          '  Ubuntu/Debian: sudo apt install ripgrep\n' +
-          '  RHEL/Fedora: sudo dnf install ripgrep\n' +
-          '  Windows: choco install ripgrep',
-        'McpAdrAnalysisServer'
-      );
-      throw new McpAdrError(
-        'Required dependency ripgrep (rg) is not installed. See https://github.com/BurntSushi/ripgrep#installation',
-        'MISSING_DEPENDENCY'
-      );
-    }
-    this.logger.info('ripgrep dependency verified', 'McpAdrAnalysisServer');
-
     // Validate configuration before starting
     await this.validateConfiguration();
 
@@ -8367,9 +8330,8 @@ Please provide:
 
   private async troubleshootGuidedWorkflow(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
-      const { troubleshootGuidedWorkflow } = await import(
-        './tools/troubleshoot-guided-workflow-tool.js'
-      );
+      const { troubleshootGuidedWorkflow } =
+        await import('./tools/troubleshoot-guided-workflow-tool.js');
       return await troubleshootGuidedWorkflow(args as unknown as TodoManagementV2Args);
     } catch (error) {
       throw new McpAdrError(
@@ -8768,9 +8730,8 @@ To make this permanent, set the \`PROJECT_PATH\` environment variable.
     const { promptName, section, estimateOnly = false } = args;
 
     // Import the prompt catalog dynamically to enable lazy loading
-    const { getPromptLoader, getPromptMetadata, calculateTokenSavings } = await import(
-      './prompts/prompt-catalog.js'
-    );
+    const { getPromptLoader, getPromptMetadata, calculateTokenSavings } =
+      await import('./prompts/prompt-catalog.js');
 
     const metadata = getPromptMetadata(promptName);
 
