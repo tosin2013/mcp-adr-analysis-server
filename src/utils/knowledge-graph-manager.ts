@@ -17,6 +17,19 @@ import { MemoryHealthScoring, MemoryHealthScore } from './memory-health-scoring.
 /**
  * Manages knowledge graph snapshots and todo synchronization state
  * Provides persistent storage and retrieval of architectural knowledge
+ * 
+ * @deprecated This class will be replaced by knowledge://graph Resource and update_knowledge tool (ADR-018).
+ * For reading graph data, use knowledge://graph resource (zero token cost).
+ * For modifying graph data, use update_knowledge tool (simple CRUD operations).
+ * Internal use only - external tools should migrate to new patterns.
+ * 
+ * Migration Path:
+ * - Reading graph: Use knowledge://graph resource instead of queryKnowledgeGraph()
+ * - Adding entities: Use update_knowledge tool with operation='add_entity'
+ * - Removing entities: Use update_knowledge tool with operation='remove_entity'
+ * - Relationships: Use update_knowledge tool with operation='add_relationship'/'remove_relationship'
+ * 
+ * This class will be removed in the next major version (v3.0.0).
  */
 export class KnowledgeGraphManager {
   private cacheDir: string;
