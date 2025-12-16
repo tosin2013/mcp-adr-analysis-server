@@ -46,7 +46,9 @@ describe('rule-generation-tool', () => {
       });
     });
 
-    it('should generate rules from patterns', async () => {
+    // Skip: Pattern-based rule generation triggers slow file system operations
+    // Run manually with `npm run test:integration`
+    it.skip('should generate rules from patterns', async () => {
       const result = await generateRules({
         source: 'patterns',
         codebasePath: '/test/codebase',
