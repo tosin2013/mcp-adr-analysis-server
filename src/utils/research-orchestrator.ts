@@ -51,6 +51,31 @@ interface CachedResearchResult {
 /**
  * Research Orchestrator Class
  *
+ * @deprecated This class is deprecated as of v3.0.0 and will be removed in v4.0.0.
+ * Use atomic tools instead per ADR-018:
+ * - For codebase search: Use `searchCodebase` from `tools/search-codebase-tool.ts`
+ * - For external research: Use `llm-web-search-tool.ts` (if needed)
+ *
+ * **Deprecation Rationale**:
+ * - Sequential execution blocking (2-8 seconds)
+ * - 5,000-6,000 tokens overhead per session
+ * - Causes 14+ tool test failures due to complex mocking
+ * - Conflicts with CE-MCP directive-based architecture (ADR-014)
+ *
+ * **Migration Guide**:
+ * ```typescript
+ * // OLD: Using ResearchOrchestrator
+ * const orchestrator = new ResearchOrchestrator('/path/to/project', 'docs/adrs');
+ * const result = await orchestrator.answerResearchQuestion('Docker configuration');
+ *
+ * // NEW: Using atomic searchCodebase tool
+ * import { searchCodebase } from './tools/search-codebase-tool.js';
+ * const result = await searchCodebase({
+ *   query: 'Docker configuration',
+ *   projectPath: '/path/to/project'
+ * });
+ * ```
+ *
  * @description Coordinates multi-source research with cascading fallback strategy.
  * Implements a hierarchical approach to answering research questions by querying
  * sources in order of preference: project files → knowledge graph → environment → web search.
@@ -92,6 +117,17 @@ export class ResearchOrchestrator {
   private config: any; // ServerConfig type
 
   constructor(projectPath?: string, adrDirectory?: string) {
+    // DEPRECATION WARNING
+    console.warn(
+      '⚠️  WARNING: ResearchOrchestrator is deprecated as of v3.0.0 and will be removed in v4.0.0.\n' +
+      '   Reason: Sequential execution blocking, high token overhead (5K-6K tokens/session),\n' +
+      '           test complexity (14+ failures), and conflicts with CE-MCP architecture (ADR-014).\n' +
+      '   Migration: Use atomic tools instead:\n' +
+      '   - Codebase search: searchCodebase() from tools/search-codebase-tool.ts\n' +
+      '   - External research: llm-web-search-tool.ts\n' +
+      '   See ADR-018 for atomic tools architecture.'
+    );
+
     this.logger = new EnhancedLogger();
     this.projectPath = projectPath || process.cwd();
     this.adrDirectory = adrDirectory || 'docs/adrs';
@@ -117,6 +153,8 @@ export class ResearchOrchestrator {
 
   /**
    * Answer a research question using cascading source hierarchy
+   *
+   * @deprecated Use atomic searchCodebase() tool instead. See class-level @deprecated tag for details.
    *
    * @description Executes comprehensive research using a cascading approach:
    * 1. Project files search (fastest, most relevant)
