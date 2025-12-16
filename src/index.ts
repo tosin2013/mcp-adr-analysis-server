@@ -1501,6 +1501,55 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'search_codebase',
+            description:
+              'Atomic tool for searching codebase files based on query patterns. Returns raw file matches with relevance scores. Extracted from ResearchOrchestrator per ADR-018.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                query: {
+                  type: 'string',
+                  description: 'Search query (e.g., "Docker configuration", "authentication")',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Path to project root',
+                  default: '.',
+                },
+                scope: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Optional file scope patterns (e.g., ["src/**", "config/**"])',
+                },
+                includeContent: {
+                  type: 'boolean',
+                  description: 'Include file content in results',
+                  default: false,
+                },
+                maxFiles: {
+                  type: 'number',
+                  description: 'Maximum files to return',
+                  default: 20,
+                  minimum: 1,
+                  maximum: 100,
+                },
+                enableTreeSitter: {
+                  type: 'boolean',
+                  description: 'Use tree-sitter for enhanced analysis',
+                  default: true,
+                },
+                relevanceThreshold: {
+                  type: 'number',
+                  description: 'Minimum relevance threshold (0-1)',
+                  default: 0.2,
+                  minimum: 0,
+                  maximum: 1,
+                },
+              },
+              required: ['query'],
+            },
+          },
+          {
             name: 'llm_web_search',
             description: 'LLM-managed web search using Firecrawl for cross-platform support',
             inputSchema: {
@@ -3404,6 +3453,9 @@ export class McpAdrAnalysisServer {
             break;
           case 'perform_research':
             response = await this.performResearch(safeArgs, context);
+            break;
+          case 'search_codebase':
+            response = await this.searchCodebase(safeArgs);
             break;
           case 'llm_web_search':
             response = await this.llmWebSearch(safeArgs);
@@ -7232,6 +7284,35 @@ Please provide:
       throw new McpAdrError(
         `Failed to perform research: ${error instanceof Error ? error.message : String(error)}`,
         'RESEARCH_EXECUTION_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Search codebase tool implementation
+   */
+  private async searchCodebase(args: Record<string, unknown>): Promise<CallToolResult> {
+    if (!('query' in args) || typeof args['query'] !== 'string') {
+      throw new McpAdrError('Missing required parameter: query', 'INVALID_ARGUMENTS');
+    }
+
+    try {
+      const { searchCodebaseTool } = await import('./tools/search-codebase-tool.js');
+      return await searchCodebaseTool(
+        args as {
+          query: string;
+          projectPath?: string;
+          scope?: string[];
+          includeContent?: boolean;
+          maxFiles?: number;
+          enableTreeSitter?: boolean;
+          relevanceThreshold?: number;
+        }
+      );
+    } catch (error) {
+      throw new McpAdrError(
+        `Failed to search codebase: ${error instanceof Error ? error.message : String(error)}`,
+        'SEARCH_ERROR'
       );
     }
   }
