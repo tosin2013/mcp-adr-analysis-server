@@ -154,7 +154,7 @@ describe('Conversation Snapshot Resource', () => {
     });
 
     it('should use default when recentTurnCount is invalid', async () => {
-      const result = await generateConversationSnapshotResource(
+      const _result = await generateConversationSnapshotResource(
         {},
         new URLSearchParams('recentTurnCount=invalid'),
         mockMemoryManager
@@ -311,13 +311,15 @@ describe('Conversation Snapshot Resource', () => {
 
   describe('Error Handling', () => {
     it('should throw error when memory manager is not provided', async () => {
-      await expect(
-        generateConversationSnapshotResource({}, new URLSearchParams())
-      ).rejects.toThrow('Conversation snapshot requires initialized memory manager');
+      await expect(generateConversationSnapshotResource({}, new URLSearchParams())).rejects.toThrow(
+        'Conversation snapshot requires initialized memory manager'
+      );
     });
 
     it('should throw error when getContextSnapshot fails', async () => {
-      mockMemoryManager.getContextSnapshot.mockRejectedValue(new Error('Snapshot retrieval failed'));
+      mockMemoryManager.getContextSnapshot.mockRejectedValue(
+        new Error('Snapshot retrieval failed')
+      );
 
       await expect(
         generateConversationSnapshotResource({}, new URLSearchParams(), mockMemoryManager)
