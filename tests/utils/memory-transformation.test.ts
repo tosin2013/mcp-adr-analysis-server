@@ -4,7 +4,16 @@
  * Test coverage for ADR to memory entity transformation
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  type MockInstance,
+  type Mocked,
+} from 'vitest';
 import crypto from 'crypto';
 import { MemoryTransformer } from '../../src/utils/memory-transformation.js';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
@@ -15,15 +24,16 @@ import {
   MemoryRelationship as _MemoryRelationship,
 } from '../../src/types/memory-entities.js';
 
-// Mock enhanced logging
-vi.mock('../../src/utils/enhanced-logging.js', () => ({
-  EnhancedLogger: vi.fn().mockImplementation(() => ({
-    info: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  })),
-}));
+// Mock enhanced logging - define class inline to avoid hoisting issues
+vi.mock('../../src/utils/enhanced-logging.js', () => {
+  const MockEnhancedLogger = class {
+    info = () => {};
+    debug = () => {};
+    warn = () => {};
+    error = () => {};
+  };
+  return { EnhancedLogger: MockEnhancedLogger };
+});
 
 // Mock memory entity manager
 const mockMemoryManager = {
@@ -44,9 +54,7 @@ describe('MemoryTransformer', () => {
     vi.spyOn(crypto, 'randomUUID').mockReturnValue('550e8400-e29b-41d4-a716-446655440000');
 
     // Mock date to be consistent
-    mockDate = jest
-      .spyOn(Date.prototype, 'toISOString')
-      .mockReturnValue('2024-01-01T00:00:00.000Z');
+    mockDate = vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T00:00:00.000Z');
   });
 
   afterEach(() => {
@@ -382,7 +390,7 @@ We chose React.
       expect(result.decisionData.reviewHistory[0].decision).toBe('approve');
 
       // Restore mock for other tests
-      mockDate = jest
+      mockDate = vi
         .spyOn(Date.prototype, 'toISOString')
         .mockReturnValue('2024-01-01T00:00:00.000Z');
     });
