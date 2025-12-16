@@ -1,6 +1,6 @@
 /**
  * Update Knowledge Tool - Simple CRUD operations for knowledge graph
- * 
+ *
  * Provides atomic operations to add/remove entities and relationships in the knowledge graph.
  * This follows ADR-018 atomic tools pattern, replacing stateful KnowledgeGraphManager methods.
  */
@@ -29,15 +29,15 @@ export interface GraphSummary {
 
 /**
  * Update knowledge graph with simple CRUD operations
- * 
+ *
  * This tool provides atomic operations to modify the knowledge graph:
  * - add_entity: Add a new node (intent, ADR, tool, etc.)
  * - remove_entity: Remove an existing node
  * - add_relationship: Add an edge between two nodes
  * - remove_relationship: Remove an edge between two nodes
- * 
+ *
  * All operations are atomic and return the updated graph state.
- * 
+ *
  * @param args - Operation arguments
  * @param args.operation - Type of operation to perform
  * @param args.entity - Entity ID (for add_entity/remove_entity)
@@ -48,17 +48,17 @@ export interface GraphSummary {
  * @param args.metadata - Additional metadata for the entity/relationship
  * @param ctx - Tool execution context
  * @param kgManager - Knowledge graph manager instance
- * 
+ *
  * @returns Promise resolving to tool result with:
  *   - success: Whether operation succeeded
  *   - graphState: Current graph summary after operation
  *   - message: Human-readable result message
- * 
+ *
  * @throws {Error} When:
  *   - Invalid operation type
  *   - Missing required parameters for operation
  *   - Entity/relationship not found (for remove operations)
- * 
+ *
  * @example Add an ADR entity
  * ```typescript
  * await updateKnowledge({
@@ -68,7 +68,7 @@ export interface GraphSummary {
  *   metadata: { title: 'Use GraphQL', status: 'proposed' }
  * }, ctx, kgManager);
  * ```
- * 
+ *
  * @example Add a relationship
  * ```typescript
  * await updateKnowledge({
@@ -78,7 +78,7 @@ export interface GraphSummary {
  *   target: 'src/api/graphql.ts'
  * }, ctx, kgManager);
  * ```
- * 
+ *
  * @example Remove an entity
  * ```typescript
  * await updateKnowledge({
@@ -86,7 +86,7 @@ export interface GraphSummary {
  *   entity: 'adr-015'
  * }, ctx, kgManager);
  * ```
- * 
+ *
  * @since v2.2.0
  */
 export async function updateKnowledge(
@@ -100,7 +100,9 @@ export async function updateKnowledge(
     // Validate operation
     const validOps = ['add_entity', 'remove_entity', 'add_relationship', 'remove_relationship'];
     if (!validOps.includes(args.operation)) {
-      throw new Error(`Invalid operation: ${args.operation}. Must be one of: ${validOps.join(', ')}`);
+      throw new Error(
+        `Invalid operation: ${args.operation}. Must be one of: ${validOps.join(', ')}`
+      );
     }
 
     // Load current knowledge graph
@@ -139,15 +141,15 @@ export async function updateKnowledge(
         // For now, we only support adding intents through existing methods
         // Other entity types would need separate implementation
         if (args.entityType === 'intent') {
-          const title = args.metadata?.title || args.entity;
-          const goals = args.metadata?.goals || [`Add ${args.entity}`];
-          const priority = args.metadata?.priority || 'medium';
+          const title = (args.metadata?.['title'] as string) || args.entity;
+          const goals = (args.metadata?.['goals'] as string[]) || [`Add ${args.entity}`];
+          const priority = (args.metadata?.['priority'] as 'low' | 'medium' | 'high') || 'medium';
 
           await kgManager.createIntent(title, goals, priority);
           modified = true;
         } else {
           // For other entity types, store in metadata for now
-          ctx.warn(`Entity type ${args.entityType} not fully implemented - operation recorded`);
+          ctx.warn?.(`Entity type ${args.entityType} not fully implemented - operation recorded`);
           modified = true;
         }
 
@@ -206,7 +208,9 @@ export async function updateKnowledge(
 
       case 'remove_relationship': {
         if (!args.relationship || !args.source || !args.target) {
-          throw new Error('remove_relationship requires relationship, source, and target parameters');
+          throw new Error(
+            'remove_relationship requires relationship, source, and target parameters'
+          );
         }
 
         ctx.info(`Removing relationship: ${args.source} -[${args.relationship}]-> ${args.target}`);
@@ -240,7 +244,8 @@ export async function updateKnowledge(
       ],
     };
   } catch (error) {
-    ctx.error('Knowledge graph operation failed', error);
+    const errorMessage = `Knowledge graph operation failed: ${error instanceof Error ? error.message : String(error)}`;
+    ctx.error?.(errorMessage);
 
     return {
       content: [
@@ -268,12 +273,9 @@ async function getGraphSummary(kgManager: KnowledgeGraphManager): Promise<GraphS
   const snapshot = await kgManager.loadKnowledgeGraph();
 
   const nodeCount = snapshot.intents.length;
-  const edgeCount = snapshot.intents.reduce(
-    (sum, intent) => sum + intent.toolChain.length,
-    0
-  );
+  const edgeCount = snapshot.intents.reduce((sum, intent) => sum + intent.toolChain.length, 0);
   const intentCount = snapshot.intents.length;
-  
+
   // Count ADRs from intents
   const adrCount = snapshot.intents.reduce((sum, intent) => {
     const adrs = (intent as any).adrsCreated || [];
