@@ -36,7 +36,7 @@
     "format": "prettier --write src/**/*.ts tests/**/*.ts",
     "format:check": "prettier --check src/**/*.ts tests/**/*.ts",
     "typecheck": "tsc --noEmit --incremental false",
-    "validate:patterns": "NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' jest tests/utils/pattern-validation.test.ts tests/utils/pattern-loader.test.ts",
+    "validate:patterns": "vitest run tests/utils/pattern-validation.test.ts tests/utils/pattern-loader.test.ts",
     "prebuild": "npm run clean",
     "test:package": "./scripts/test-npm-package.sh",
     "docs:generate": "typedoc",
