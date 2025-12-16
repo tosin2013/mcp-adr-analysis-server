@@ -4,33 +4,33 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
 
 // Mock ResourceCache
-const mockCacheGet = jest.fn();
-const mockCacheSet = jest.fn();
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
 
-jest.unstable_mockModule('../../src/resources/resource-cache.js', () => ({
-  ResourceCache: jest.fn().mockImplementation(() => ({
+vi.mock('../../src/resources/resource-cache.js', () => ({
+  ResourceCache: vi.fn().mockImplementation(() => ({
     get: mockCacheGet,
     set: mockCacheSet,
   })),
 }));
 
 // Mock deployment-readiness-tool
-const mockDeploymentReadiness = jest.fn();
+const mockDeploymentReadiness = vi.fn();
 
-jest.unstable_mockModule('../../src/tools/deployment-readiness-tool.js', () => ({
+vi.mock('../../src/tools/deployment-readiness-tool.js', () => ({
   deploymentReadiness: mockDeploymentReadiness,
 }));
 
 // Mock file system for fallback
-const mockReadFile = jest.fn();
+const mockReadFile = vi.fn();
 
-jest.unstable_mockModule('fs', () => ({
+vi.mock('fs', () => ({
   promises: {
     readFile: mockReadFile,
-    readdir: jest.fn().mockResolvedValue([]),
+    readdir: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -43,7 +43,7 @@ describe('Deployment History Resource', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default: no cache hit
     mockCacheGet.mockResolvedValue(null);
@@ -80,7 +80,7 @@ MTTR: 15 minutes
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic Resource Generation', () => {

@@ -1,7 +1,7 @@
 /**
  * ESM Mocking Proof of Concept Test
  *
- * This test verifies that jest.unstable_mockModule works correctly
+ * This test verifies that vi.mock works correctly
  * with our ESM setup in Jest 30.x
  *
  * @see Issue #308 - Implement ESM-compatible Jest mocking
@@ -11,22 +11,22 @@
  * - https://world.hey.com/michael.weiner/developer-from-the-future-1-mock-ing-third-party-libraries-in-an-esm-with-jest-unstable-mocking-4741561e
  */
 
-import { jest, describe, it, expect } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 
 describe('ESM Mocking POC', () => {
-  describe('jest.unstable_mockModule basic test', () => {
+  describe('vi.mock basic test', () => {
     // This test verifies the basic pattern works
     it('should mock a module using unstable_mockModule', async () => {
       // Reset modules first
-      jest.resetModules();
+      vi.resetModules();
 
       // Create the mock BEFORE importing the module
-      const mockGenerateArchitecturalKnowledge = jest.fn().mockResolvedValue({
+      const mockGenerateArchitecturalKnowledge = vi.fn().mockResolvedValue({
         prompt: 'MOCKED: Generated Knowledge Prompting',
         confidence: 0.99,
       });
 
-      jest.unstable_mockModule('../../src/utils/knowledge-generation.js', () => ({
+      vi.mock('../../src/utils/knowledge-generation.js', () => ({
         __esModule: true,
         generateArchitecturalKnowledge: mockGenerateArchitecturalKnowledge,
       }));
@@ -51,10 +51,10 @@ describe('ESM Mocking POC', () => {
   describe('Mocking ResearchOrchestrator class', () => {
     it('should mock ResearchOrchestrator class', async () => {
       // Reset modules first
-      jest.resetModules();
+      vi.resetModules();
 
       // Create the mock for ResearchOrchestrator
-      const mockAnswerResearchQuestion = jest.fn().mockResolvedValue({
+      const mockAnswerResearchQuestion = vi.fn().mockResolvedValue({
         answer: 'MOCKED: Research answer',
         confidence: 0.85,
         sources: [{ type: 'mock', data: {} }],
@@ -62,11 +62,11 @@ describe('ESM Mocking POC', () => {
         needsWebSearch: false,
       });
 
-      const MockResearchOrchestrator = jest.fn().mockImplementation(() => ({
+      const MockResearchOrchestrator = vi.fn().mockImplementation(() => ({
         answerResearchQuestion: mockAnswerResearchQuestion,
       }));
 
-      jest.unstable_mockModule('../../src/utils/research-orchestrator.js', () => ({
+      vi.mock('../../src/utils/research-orchestrator.js', () => ({
         __esModule: true,
         ResearchOrchestrator: MockResearchOrchestrator,
       }));
@@ -89,38 +89,38 @@ describe('ESM Mocking POC', () => {
   describe('Mocking a module used by environment-analysis-tool', () => {
     it('should mock knowledge generation when used by environment analysis', async () => {
       // Reset modules to ensure clean state
-      jest.resetModules();
+      vi.resetModules();
 
       // 1. Set up all the mocks BEFORE importing the tool
-      const mockGenerateArchitecturalKnowledge = jest.fn().mockResolvedValue({
+      const mockGenerateArchitecturalKnowledge = vi.fn().mockResolvedValue({
         prompt: 'MOCKED: GKP Knowledge',
         confidence: 0.95,
       });
 
-      jest.unstable_mockModule('../../src/utils/knowledge-generation.js', () => ({
+      vi.mock('../../src/utils/knowledge-generation.js', () => ({
         __esModule: true,
         generateArchitecturalKnowledge: mockGenerateArchitecturalKnowledge,
       }));
 
       // Mock environment analysis utilities
-      jest.unstable_mockModule('../../src/utils/environment-analysis.js', () => ({
+      vi.mock('../../src/utils/environment-analysis.js', () => ({
         __esModule: true,
-        analyzeEnvironmentSpecs: jest.fn().mockResolvedValue({
+        analyzeEnvironmentSpecs: vi.fn().mockResolvedValue({
           analysisPrompt: 'MOCKED: Environment Specification Analysis',
           instructions: 'Mock instructions',
           actualData: {},
         }),
-        detectContainerization: jest.fn().mockResolvedValue({
+        detectContainerization: vi.fn().mockResolvedValue({
           analysisPrompt: 'MOCKED: Containerization',
           instructions: 'Mock instructions',
           actualData: {},
         }),
-        determineEnvironmentRequirements: jest.fn().mockResolvedValue({
+        determineEnvironmentRequirements: vi.fn().mockResolvedValue({
           analysisPrompt: 'MOCKED: Requirements',
           instructions: 'Mock instructions',
           actualData: {},
         }),
-        assessEnvironmentCompliance: jest.fn().mockResolvedValue({
+        assessEnvironmentCompliance: vi.fn().mockResolvedValue({
           analysisPrompt: 'MOCKED: Compliance',
           instructions: 'Mock instructions',
           actualData: {},
@@ -128,37 +128,37 @@ describe('ESM Mocking POC', () => {
       }));
 
       // Mock memory entity manager
-      jest.unstable_mockModule('../../src/utils/memory-entity-manager.js', () => ({
+      vi.mock('../../src/utils/memory-entity-manager.js', () => ({
         __esModule: true,
-        MemoryEntityManager: jest.fn().mockImplementation(() => ({
-          initialize: jest.fn().mockResolvedValue(undefined),
-          upsertEntity: jest.fn().mockResolvedValue({ id: 'mock-id' }),
-          queryEntities: jest.fn().mockResolvedValue({ entities: [] }),
+        MemoryEntityManager: vi.fn().mockImplementation(() => ({
+          initialize: vi.fn().mockResolvedValue(undefined),
+          upsertEntity: vi.fn().mockResolvedValue({ id: 'mock-id' }),
+          queryEntities: vi.fn().mockResolvedValue({ entities: [] }),
         })),
       }));
 
       // Mock enhanced logging
-      jest.unstable_mockModule('../../src/utils/enhanced-logging.js', () => ({
+      vi.mock('../../src/utils/enhanced-logging.js', () => ({
         __esModule: true,
-        EnhancedLogger: jest.fn().mockImplementation(() => ({
-          info: jest.fn(),
-          warn: jest.fn(),
-          error: jest.fn(),
-          debug: jest.fn(),
+        EnhancedLogger: vi.fn().mockImplementation(() => ({
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          debug: vi.fn(),
         })),
         logger: {
-          info: jest.fn(),
-          warn: jest.fn(),
-          error: jest.fn(),
-          debug: jest.fn(),
+          info: vi.fn(),
+          warn: vi.fn(),
+          error: vi.fn(),
+          debug: vi.fn(),
         },
       }));
 
       // Mock research orchestrator
-      jest.unstable_mockModule('../../src/utils/research-orchestrator.js', () => ({
+      vi.mock('../../src/utils/research-orchestrator.js', () => ({
         __esModule: true,
-        ResearchOrchestrator: jest.fn().mockImplementation(() => ({
-          answerResearchQuestion: jest.fn().mockResolvedValue({
+        ResearchOrchestrator: vi.fn().mockImplementation(() => ({
+          answerResearchQuestion: vi.fn().mockResolvedValue({
             answer: 'Mock answer',
             confidence: 0.8,
             sources: [],

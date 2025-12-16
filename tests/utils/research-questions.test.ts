@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 import {
   correlateProblemKnowledge,
   findRelevantAdrPatterns,
@@ -11,16 +11,16 @@ import {
 } from '../../src/utils/research-questions.js';
 
 // Mock dependencies
-jest.mock('../../src/prompts/research-question-prompts.js', () => ({
-  generateProblemKnowledgeCorrelationPrompt: jest.fn().mockReturnValue('correlation prompt'),
+vi.mock('../../src/prompts/research-question-prompts.js', () => ({
+  generateProblemKnowledgeCorrelationPrompt: vi.fn().mockReturnValue('correlation prompt'),
   generateContextAwareResearchQuestionsPrompt: jest
     .fn()
     .mockReturnValue('question generation prompt'),
-  generateResearchTaskTrackingPrompt: jest.fn().mockReturnValue('task tracking prompt'),
+  generateResearchTaskTrackingPrompt: vi.fn().mockReturnValue('task tracking prompt'),
 }));
 
 // Mock the adr-discovery module with unstable_mockModule for ESM compatibility
-const mockDiscoverAdrsInDirectory = jest.fn().mockResolvedValue({
+const mockDiscoverAdrsInDirectory = vi.fn().mockResolvedValue({
   totalAdrs: 2,
   adrs: [
     {
@@ -40,12 +40,12 @@ const mockDiscoverAdrsInDirectory = jest.fn().mockResolvedValue({
   ],
 });
 
-jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
+vi.mock('../../src/utils/adr-discovery.js', () => ({
   discoverAdrsInDirectory: mockDiscoverAdrsInDirectory,
 }));
 
-jest.mock('../../src/utils/actual-file-operations.js', () => ({
-  scanProjectStructure: jest.fn().mockResolvedValue({
+vi.mock('../../src/utils/actual-file-operations.js', () => ({
+  scanProjectStructure: vi.fn().mockResolvedValue({
     files: ['package.json', 'src/index.ts'],
     directories: ['src', 'tests'],
     structure: { type: 'project' },
@@ -54,7 +54,7 @@ jest.mock('../../src/utils/actual-file-operations.js', () => ({
 
 describe('Research Questions Utilities', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockDiscoverAdrsInDirectory.mockClear();
   });
 
@@ -167,7 +167,7 @@ describe('Research Questions Utilities', () => {
     it('should handle import failure gracefully', async () => {
       // Mock the import to fail
       const originalImport = (global as any).__original_import || (global as any).import;
-      (global as any).import = jest.fn().mockRejectedValue(new Error('Import failed'));
+      (global as any).import = vi.fn().mockRejectedValue(new Error('Import failed'));
 
       const result = await correlateProblemKnowledge(mockProblems, mockKnowledgeGraph);
 

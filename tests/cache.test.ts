@@ -3,7 +3,7 @@
  * Tests the prompt-driven caching system that delegates operations to AI agents
  */
 
-import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, test, expect, _beforeEach, _afterEach, _jest } from 'vitest';
 import {
   initializeCache,
   setCache,
@@ -21,7 +21,7 @@ import { loadConfig, getCacheDirectoryPath } from '../src/utils/config.js';
 // Mock console.error to avoid noise in tests
 const originalConsoleError = console.error;
 beforeEach(() => {
-  console.error = jest.fn();
+  console.error = vi.fn();
 });
 
 afterEach(() => {
@@ -469,7 +469,7 @@ describe('Cache System', () => {
   });
 
   describe('getCachedOrGenerate', () => {
-    const mockGenerator = jest.fn<() => Promise<any>>();
+    const mockGenerator = vi.fn<() => Promise<any>>();
 
     beforeEach(() => {
       mockGenerator.mockReset();
@@ -533,7 +533,7 @@ describe('Cache System', () => {
   describe('Error Handling', () => {
     test('should throw McpAdrError with correct error codes', async () => {
       // Test that all functions handle errors gracefully
-      const mockGen = jest.fn<() => Promise<any>>();
+      const mockGen = vi.fn<() => Promise<any>>();
       mockGen.mockResolvedValue({ data: 'test' });
 
       const functions = [
@@ -554,7 +554,7 @@ describe('Cache System', () => {
     });
 
     test('should include error handling in all prompts', async () => {
-      const mockGen = jest.fn<() => Promise<any>>();
+      const mockGen = vi.fn<() => Promise<any>>();
       mockGen.mockResolvedValue({ data: 'test' });
 
       const functions = [
@@ -578,7 +578,7 @@ describe('Cache System', () => {
 
   describe('Security Features', () => {
     test('should include security validation in all operations', async () => {
-      const mockGen = jest.fn<() => Promise<any>>();
+      const mockGen = vi.fn<() => Promise<any>>();
       mockGen.mockResolvedValue({ data: 'test' });
 
       const functions = [
@@ -684,7 +684,7 @@ describe('Cache System', () => {
 
   describe('Context and Metadata', () => {
     test('should include consistent context across operations', async () => {
-      const mockGen = jest.fn<() => Promise<any>>();
+      const mockGen = vi.fn<() => Promise<any>>();
       mockGen.mockResolvedValue({ data: 'test' });
 
       const operations = [

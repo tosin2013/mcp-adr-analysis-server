@@ -4,32 +4,32 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
 
 // Mock conditional-request (needed for generateETag)
-jest.unstable_mockModule('../../src/utils/conditional-request.js', () => ({
-  generateStrongETag: jest.fn((data: any) => `etag-${JSON.stringify(data).length}`),
+vi.mock('../../src/utils/conditional-request.js', () => ({
+  generateStrongETag: vi.fn((data: any) => `etag-${JSON.stringify(data).length}`),
 }));
 
 // Mock ResourceCache
-const mockCacheGet = jest.fn();
-const mockCacheSet = jest.fn();
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
 
-jest.unstable_mockModule('../../src/resources/resource-cache.js', () => ({
+vi.mock('../../src/resources/resource-cache.js', () => ({
   resourceCache: {
     get: mockCacheGet,
     set: mockCacheSet,
   },
   generateETag: (data: any) => `etag-${JSON.stringify(data).length}`,
-  ResourceCache: jest.fn(),
+  ResourceCache: vi.fn(),
 }));
 
 // Mock tool-catalog
-const mockGetCatalogSummary = jest.fn();
-const mockSearchTools = jest.fn();
+const mockGetCatalogSummary = vi.fn();
+const mockSearchTools = vi.fn();
 const mockToolCatalog = new Map();
 
-jest.unstable_mockModule('../../src/tools/tool-catalog.js', () => ({
+vi.mock('../../src/tools/tool-catalog.js', () => ({
   TOOL_CATALOG: mockToolCatalog,
   getCatalogSummary: mockGetCatalogSummary,
   searchTools: mockSearchTools,
@@ -44,7 +44,7 @@ describe('Tool Catalog Resource', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default: no cache hit
     mockCacheGet.mockResolvedValue(null);
@@ -115,7 +115,7 @@ describe('Tool Catalog Resource', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic Resource Generation', () => {
@@ -165,7 +165,10 @@ describe('Tool Catalog Resource', () => {
     });
 
     it('should include schemas when requested', async () => {
-      const result = await generateToolCatalogResource({}, new URLSearchParams('includeSchema=true'));
+      const result = await generateToolCatalogResource(
+        {},
+        new URLSearchParams('includeSchema=true')
+      );
 
       expect(mockSearchTools).toHaveBeenCalledWith({
         includeSchema: true,
@@ -288,11 +291,7 @@ describe('Tool Catalog Resource', () => {
     it('should use category-specific cache key when filtering', async () => {
       await generateToolCatalogResource({}, new URLSearchParams('category=adr'));
 
-      expect(mockCacheSet).toHaveBeenCalledWith(
-        'tool-catalog:adr',
-        expect.anything(),
-        300
-      );
+      expect(mockCacheSet).toHaveBeenCalledWith('tool-catalog:adr', expect.anything(), 300);
     });
 
     it('should use 5-minute TTL for relatively static data', async () => {
@@ -373,7 +372,10 @@ describe('Tool Catalog Resource', () => {
         },
       });
 
-      const result = await generateToolCatalogResource({}, new URLSearchParams('category=workflow'));
+      const result = await generateToolCatalogResource(
+        {},
+        new URLSearchParams('category=workflow')
+      );
 
       expect(result.data.tools).toHaveLength(0);
     });

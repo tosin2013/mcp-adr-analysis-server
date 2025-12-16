@@ -9,7 +9,7 @@ describe('Smoke Test', () => {
     expect(true).toBe(true);
   });
 
-  it('should validate basic Jest functionality', () => {
+  it('should validate basic test framework functionality', () => {
     const result = 1 + 1;
     expect(result).toBe(2);
   });
@@ -23,7 +23,7 @@ describe('Smoke Test', () => {
     // Test that basic Node.js globals and APIs are available
     expect(typeof process).toBe('object');
     expect(typeof global).toBe('object');
-    
+
     // Test that basic Node.js modules are accessible via static imports
     expect(typeof existsSync).toBe('function');
     expect(typeof join).toBe('function');

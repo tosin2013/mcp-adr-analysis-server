@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
 import {
   validateMcpResponse,
   validateJsonRpcSerialization,
@@ -7,10 +7,10 @@ import {
 } from '../../src/utils/mcp-response-validator.js';
 
 describe('MCP Response Validator', () => {
-  let consoleErrorSpy: jest.SpiedFunction<typeof console.error>;
+  let consoleErrorSpy: MockInstance<typeof console.error>;
 
   beforeEach(() => {
-    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
@@ -392,7 +392,7 @@ describe('MCP Response Validator', () => {
       it('should handle serialization errors', () => {
         // Mock JSON.stringify to throw
         const originalStringify = JSON.stringify;
-        jest.spyOn(JSON, 'stringify').mockImplementationOnce(() => {
+        vi.spyOn(JSON, 'stringify').mockImplementationOnce(() => {
           throw new Error('Serialization failed');
         });
 
@@ -438,7 +438,7 @@ describe('MCP Response Validator', () => {
     it('should detect structure corruption after serialization', () => {
       // Mock JSON.parse to return corrupted structure
       const originalParse = JSON.parse;
-      jest.spyOn(JSON, 'parse').mockImplementationOnce(() => ({
+      vi.spyOn(JSON, 'parse').mockImplementationOnce(() => ({
         jsonrpc: '2.0',
         id: 1,
         result: { corrupted: true },
@@ -459,7 +459,7 @@ describe('MCP Response Validator', () => {
 
   describe('safeMcpToolWrapper', () => {
     it('should wrap successful tool execution', async () => {
-      const mockTool = jest.fn().mockResolvedValue({
+      const mockTool = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: 'Success' }],
       });
 
@@ -472,7 +472,7 @@ describe('MCP Response Validator', () => {
     });
 
     it('should handle tool execution errors', async () => {
-      const mockTool = jest.fn().mockRejectedValue(new Error('Tool failed'));
+      const mockTool = vi.fn().mockRejectedValue(new Error('Tool failed'));
 
       const wrappedTool = safeMcpToolWrapper(mockTool, 'test-tool');
       const result = await wrappedTool();
@@ -483,7 +483,7 @@ describe('MCP Response Validator', () => {
     });
 
     it('should handle non-Error exceptions', async () => {
-      const mockTool = jest.fn().mockRejectedValue('String error');
+      const mockTool = vi.fn().mockRejectedValue('String error');
 
       const wrappedTool = safeMcpToolWrapper(mockTool, 'test-tool');
       const result = await wrappedTool();
@@ -493,7 +493,7 @@ describe('MCP Response Validator', () => {
     });
 
     it('should validate tool response', async () => {
-      const mockTool = jest.fn().mockResolvedValue({
+      const mockTool = vi.fn().mockResolvedValue({
         content: [{ type: 'invalid-type', text: 'Invalid' }],
       });
 
@@ -504,7 +504,7 @@ describe('MCP Response Validator', () => {
     });
 
     it('should handle JSON-RPC incompatible responses by checking actual serialization', async () => {
-      const mockTool = jest.fn().mockResolvedValue({
+      const mockTool = vi.fn().mockResolvedValue({
         content: [{ type: 'text', text: 'Valid response' }],
       });
 

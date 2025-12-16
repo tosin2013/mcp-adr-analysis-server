@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 import {
   DAGExecutor,
   TaskNode,
@@ -11,7 +11,7 @@ let retryCallCount = 0;
 
 // Create the mock execAsync function
 const createMockExecAsync = () => {
-  return jest.fn(async (command: string, _options?: any) => {
+  return vi.fn(async (command: string, _options?: any) => {
     let stdout = '';
     let stderr = '';
 
@@ -52,28 +52,28 @@ describe('DAGExecutor', () => {
   let mockLogger: any;
 
   beforeEach(async () => {
-    jest.resetModules();
-    jest.clearAllMocks();
+    vi.resetModules();
+    vi.clearAllMocks();
     retryCallCount = 0;
 
     // Mock both child_process and util to intercept promisify
     const mockExecAsync = createMockExecAsync();
 
-    jest.unstable_mockModule('child_process', () => ({
-      exec: jest.fn(),
+    vi.mock('child_process', () => ({
+      exec: vi.fn(),
     }));
 
-    jest.unstable_mockModule('util', () => ({
-      promisify: jest.fn(() => mockExecAsync),
+    vi.mock('util', () => ({
+      promisify: vi.fn(() => mockExecAsync),
     }));
 
     const dagModule = await import('../../src/utils/dag-executor');
     const DAGExecutor = dagModule.DAGExecutor;
 
     mockLogger = {
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
     } as any;
 
     executor = new DAGExecutor(2);

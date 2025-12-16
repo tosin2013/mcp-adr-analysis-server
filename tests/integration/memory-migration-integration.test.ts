@@ -5,7 +5,7 @@
  * Tests migration from legacy systems to memory entities with rollback capabilities.
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
 import { MemoryMigrationManager } from '../../src/utils/memory-migration-manager.js';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import * as fs from 'fs/promises';
@@ -15,19 +15,19 @@ import { existsSync } from 'fs';
 
 // Mock crypto
 const mockCrypto = {
-  randomUUID: jest.fn(() => 'test-uuid-123'),
+  randomUUID: vi.fn(() => 'test-uuid-123'),
 };
 
-jest.mock('crypto', () => mockCrypto);
+vi.mock('crypto', () => mockCrypto);
 
 describe('Memory Migration Integration', () => {
   let memoryManager: MemoryEntityManager;
   let migrationManager: MemoryMigrationManager;
-  let mockDate: jest.SpyInstance;
+  let mockDate: MockInstance;
   let testTempDir: string;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock date to be consistent
     mockDate = jest
@@ -137,14 +137,14 @@ describe('Memory Migration Integration', () => {
         });
 
       // Mock createCrossToolRelationships
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+      vi.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
 
       // Mock queryEntities for validation
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+      vi.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [
           { id: 'entity-1', type: 'deployment_assessment', title: 'Test' },
           { id: 'entity-2', type: 'deployment_assessment', title: 'Test' },
@@ -234,12 +234,12 @@ describe('Memory Migration Integration', () => {
         });
 
       // Mock other methods
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+      vi.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+      vi.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [],
         totalCount: 0,
         hasMore: false,
@@ -291,12 +291,12 @@ describe('Memory Migration Integration', () => {
         .mockImplementation(async entity => ({ ...entity, id: mockCrypto.randomUUID() }));
 
       // Mock other methods
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+      vi.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+      vi.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [],
         totalCount: 0,
         hasMore: false,
@@ -340,13 +340,13 @@ describe('Memory Migration Integration', () => {
       // Don't create any data files - all sources should be missing
 
       // Mock methods (they shouldn't be called)
-      const upsertEntitySpy = jest.spyOn(memoryManager, 'upsertEntity');
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+      const upsertEntitySpy = vi.spyOn(memoryManager, 'upsertEntity');
+      vi.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+      vi.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [],
         totalCount: 0,
         hasMore: false,
@@ -385,13 +385,13 @@ describe('Memory Migration Integration', () => {
       await fs.writeFile(deploymentHistoryPath, '{ invalid json content');
 
       // Mock methods
-      const upsertEntitySpy = jest.spyOn(memoryManager, 'upsertEntity');
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+      const upsertEntitySpy = vi.spyOn(memoryManager, 'upsertEntity');
+      vi.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+      vi.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [],
         totalCount: 0,
         hasMore: false,
@@ -452,12 +452,12 @@ describe('Memory Migration Integration', () => {
         .mockRejectedValue(new Error('Entity validation failed'));
 
       // Mock other methods
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+      vi.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+      vi.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [],
         totalCount: 0,
         hasMore: false,
@@ -507,12 +507,12 @@ describe('Memory Migration Integration', () => {
         .mockImplementation(async entity => ({ ...entity, id: mockCrypto.randomUUID() }));
 
       // Mock other methods
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+      vi.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+      vi.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [],
         totalCount: 0,
         hasMore: false,
@@ -556,18 +556,18 @@ describe('Memory Migration Integration', () => {
 
       // Track progress
       let progressUpdates = 0;
-      jest.spyOn(memoryManager, 'upsertEntity').mockImplementation(async entity => {
+      vi.spyOn(memoryManager, 'upsertEntity').mockImplementation(async entity => {
         progressUpdates++;
         return { ...entity, id: mockCrypto.randomUUID() };
       });
 
       // Mock other methods
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+      vi.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+      vi.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: [],
         totalCount: 0,
         hasMore: false,

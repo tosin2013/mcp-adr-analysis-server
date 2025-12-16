@@ -8,7 +8,7 @@
  * - Pragmatic Success Criteria: Focus on reliable, maintainable test coverage
  */
 
-import { jest } from '@jest/globals';
+import { describe, _it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
 import {
@@ -22,12 +22,12 @@ describe('ADR Suggestion Tool', () => {
   const projectPath = process.cwd();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // No need to mock process.cwd() - use real working directory
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // ============================================================================

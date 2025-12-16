@@ -12,13 +12,13 @@
  * - Tests verify output structure rather than exact content (content varies by mode)
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 
 // Mock ResearchOrchestrator FIRST to prevent hanging on API calls
 // This must be before any imports that might trigger the module
-jest.mock('../../src/utils/research-orchestrator.js', () => ({
-  ResearchOrchestrator: jest.fn().mockImplementation(() => ({
-    answerResearchQuestion: jest.fn().mockResolvedValue({
+vi.mock('../../src/utils/research-orchestrator.js', () => ({
+  ResearchOrchestrator: vi.fn().mockImplementation(() => ({
+    answerResearchQuestion: vi.fn().mockResolvedValue({
       answer: 'Mock environment research answer',
       confidence: 0.8,
       sources: [
@@ -36,71 +36,71 @@ jest.mock('../../src/utils/research-orchestrator.js', () => ({
 
 // Mock MemoryEntityManager to prevent memory operations from hanging
 // (EnvironmentMemoryManager uses MemoryEntityManager internally)
-jest.mock('../../src/utils/memory-entity-manager.js', () => ({
-  MemoryEntityManager: jest.fn().mockImplementation(() => ({
-    initialize: jest.fn().mockResolvedValue(undefined),
-    upsertEntity: jest.fn().mockResolvedValue({ id: 'mock-entity-id' }),
-    upsertRelationship: jest.fn().mockResolvedValue(undefined),
-    queryEntities: jest.fn().mockResolvedValue({ entities: [] }),
-    updateEntity: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../src/utils/memory-entity-manager.js', () => ({
+  MemoryEntityManager: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn().mockResolvedValue(undefined),
+    upsertEntity: vi.fn().mockResolvedValue({ id: 'mock-entity-id' }),
+    upsertRelationship: vi.fn().mockResolvedValue(undefined),
+    queryEntities: vi.fn().mockResolvedValue({ entities: [] }),
+    updateEntity: vi.fn().mockResolvedValue(undefined),
   })),
 }));
 
 // Mock EnhancedLogger to prevent logging overhead
-jest.mock('../../src/utils/enhanced-logging.js', () => ({
-  EnhancedLogger: jest.fn().mockImplementation(() => ({
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    debug: jest.fn(),
-    clearLogs: jest.fn(),
+vi.mock('../../src/utils/enhanced-logging.js', () => ({
+  EnhancedLogger: vi.fn().mockImplementation(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    clearLogs: vi.fn(),
   })),
   logger: {
-    info: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    debug: jest.fn(),
-    clearLogs: jest.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    clearLogs: vi.fn(),
   },
 }));
 
 // Mock all utility modules with proper implementations
-jest.mock('../../src/utils/environment-analysis.js', () => ({
-  analyzeEnvironmentSpecs: jest.fn().mockResolvedValue({
+vi.mock('../../src/utils/environment-analysis.js', () => ({
+  analyzeEnvironmentSpecs: vi.fn().mockResolvedValue({
     analysisPrompt: 'Environment Specification Analysis\n\nMock analysis prompt',
     instructions: 'Mock instructions',
     actualData: {},
   }),
-  detectContainerization: jest.fn().mockResolvedValue({
+  detectContainerization: vi.fn().mockResolvedValue({
     analysisPrompt: 'Containerization Technology Detection\n\nMock containerization analysis',
     instructions: 'Mock instructions',
     actualData: {},
   }),
-  determineEnvironmentRequirements: jest.fn().mockResolvedValue({
+  determineEnvironmentRequirements: vi.fn().mockResolvedValue({
     analysisPrompt: 'Environment Requirements from ADRs\n\nMock requirements analysis',
     instructions: 'Mock instructions',
     actualData: {},
   }),
-  assessEnvironmentCompliance: jest.fn().mockResolvedValue({
+  assessEnvironmentCompliance: vi.fn().mockResolvedValue({
     analysisPrompt: 'Environment Compliance Assessment\n\nMock compliance analysis',
     instructions: 'Mock instructions',
     actualData: {},
   }),
 }));
 
-jest.mock('../../src/utils/knowledge-generation.js', () => ({
-  generateArchitecturalKnowledge: jest.fn().mockResolvedValue({
+vi.mock('../../src/utils/knowledge-generation.js', () => ({
+  generateArchitecturalKnowledge: vi.fn().mockResolvedValue({
     prompt: 'Generated Knowledge Prompting\n\nMock knowledge enhancement',
     confidence: 0.9,
   }),
 }));
 
-jest.mock('../../src/utils/prompt-execution.js', () => ({
-  executePromptWithFallback: jest.fn().mockResolvedValue({
+vi.mock('../../src/utils/prompt-execution.js', () => ({
+  executePromptWithFallback: vi.fn().mockResolvedValue({
     content: 'Mock prompt execution result',
     isAIGenerated: false,
   }),
-  formatMCPResponse: jest.fn((content: string) => ({
+  formatMCPResponse: vi.fn((content: string) => ({
     content: [
       {
         type: 'text',
@@ -126,7 +126,7 @@ describe('environment-analysis-tool', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(async () => {

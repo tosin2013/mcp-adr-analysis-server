@@ -3,19 +3,19 @@
  * Tests the generateResearchQuestions function and related utilities
  */
 
-import { describe, test, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, test, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
 
 // Mock the dependencies
-const mockCorrelateProblemKnowledge = jest.fn() as jest.MockedFunction<any>;
-const mockFindRelevantAdrPatterns = jest.fn() as jest.MockedFunction<any>;
-const mockGenerateContextAwareQuestions = jest.fn() as jest.MockedFunction<any>;
-const mockCreateResearchTaskTracking = jest.fn() as jest.MockedFunction<any>;
-const mockGenerateArchitecturalKnowledge = jest.fn() as jest.MockedFunction<any>;
-const mockExecuteResearchPrompt = jest.fn() as jest.MockedFunction<any>;
-const mockFormatMCPResponse = jest.fn() as jest.MockedFunction<any>;
+const mockCorrelateProblemKnowledge = vi.fn() as MockedFunction<any>;
+const mockFindRelevantAdrPatterns = vi.fn() as MockedFunction<any>;
+const mockGenerateContextAwareQuestions = vi.fn() as MockedFunction<any>;
+const mockCreateResearchTaskTracking = vi.fn() as MockedFunction<any>;
+const mockGenerateArchitecturalKnowledge = vi.fn() as MockedFunction<any>;
+const mockExecuteResearchPrompt = vi.fn() as MockedFunction<any>;
+const mockFormatMCPResponse = vi.fn() as MockedFunction<any>;
 
 // Mock research-questions utilities
-jest.unstable_mockModule('../src/utils/research-questions.js', () => ({
+vi.mock('../src/utils/research-questions.js', () => ({
   correlateProblemKnowledge: mockCorrelateProblemKnowledge,
   findRelevantAdrPatterns: mockFindRelevantAdrPatterns,
   generateContextAwareQuestions: mockGenerateContextAwareQuestions,
@@ -23,12 +23,12 @@ jest.unstable_mockModule('../src/utils/research-questions.js', () => ({
 }));
 
 // Mock knowledge generation utilities
-jest.unstable_mockModule('../src/utils/knowledge-generation.js', () => ({
+vi.mock('../src/utils/knowledge-generation.js', () => ({
   generateArchitecturalKnowledge: mockGenerateArchitecturalKnowledge,
 }));
 
 // Mock prompt execution utilities
-jest.unstable_mockModule('../src/utils/prompt-execution.js', () => ({
+vi.mock('../src/utils/prompt-execution.js', () => ({
   executeResearchPrompt: mockExecuteResearchPrompt,
   formatMCPResponse: mockFormatMCPResponse,
 }));
@@ -38,7 +38,7 @@ const { generateResearchQuestions } = await import('../src/tools/research-questi
 
 describe('Research Question Tool', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Setup default mock implementations
     mockCorrelateProblemKnowledge.mockResolvedValue({
@@ -81,7 +81,7 @@ describe('Research Question Tool', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('generateResearchQuestions', () => {

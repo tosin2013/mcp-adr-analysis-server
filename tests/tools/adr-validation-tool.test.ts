@@ -2,28 +2,28 @@
  * Tests for ADR Validation Tool
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 
 // Create mock constructors that can be reconfigured per test
-const MockResearchOrchestrator = jest.fn();
-const mockGetAIExecutor = jest.fn();
+const MockResearchOrchestrator = vi.fn();
+const mockGetAIExecutor = vi.fn();
 
 // Mock ResearchOrchestrator with proper constructor
-jest.mock('../../src/utils/research-orchestrator.js', () => ({
+vi.mock('../../src/utils/research-orchestrator.js', () => ({
   __esModule: true,
   ResearchOrchestrator: MockResearchOrchestrator,
 }));
 
 // Mock AI executor
-jest.mock('../../src/utils/ai-executor.js', () => ({
+vi.mock('../../src/utils/ai-executor.js', () => ({
   __esModule: true,
   getAIExecutor: mockGetAIExecutor,
 }));
 
-jest.mock('../../src/utils/knowledge-graph-manager.js');
+vi.mock('../../src/utils/knowledge-graph-manager.js');
 
 // NOW import the module under test after all mocks are set up
 import { validateAdr, validateAllAdrs } from '../../src/tools/adr-validation-tool.js';
@@ -39,19 +39,19 @@ describe('ADR Validation Tool', () => {
     await fs.mkdir(tempAdrDir, { recursive: true });
 
     // Clear mocks AFTER directory setup
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Set up default AI executor mock (can be overridden in specific tests)
     mockGetAIExecutor.mockReturnValue({
       isAvailable: () => false,
-      executeStructuredPrompt: jest.fn(),
+      executeStructuredPrompt: vi.fn(),
     } as any);
 
     // Set up default research orchestrator mock
     MockResearchOrchestrator.mockImplementation(
       () =>
         ({
-          answerResearchQuestion: jest.fn().mockResolvedValue({
+          answerResearchQuestion: vi.fn().mockResolvedValue({
             answer: 'Default research answer',
             confidence: 0.8,
             sources: [],
@@ -96,7 +96,7 @@ We will use Kubernetes for container orchestration.
       MockResearchOrchestrator.mockImplementation(
         () =>
           ({
-            answerResearchQuestion: jest.fn().mockResolvedValue({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
               answer:
                 'Kubernetes is deployed and running. Found kubectl config and deployment manifests.',
               confidence: 0.9,
@@ -117,7 +117,7 @@ We will use Kubernetes for container orchestration.
       // Mock AI executor
       mockGetAIExecutor.mockReturnValue({
         isAvailable: () => true,
-        executeStructuredPrompt: jest.fn().mockResolvedValue({
+        executeStructuredPrompt: vi.fn().mockResolvedValue({
           data: {
             isValid: true,
             confidence: 0.9,
@@ -152,7 +152,7 @@ We will use Docker Swarm for container orchestration.
       MockResearchOrchestrator.mockImplementation(
         () =>
           ({
-            answerResearchQuestion: jest.fn().mockResolvedValue({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
               answer: 'Found Kubernetes cluster running, no Docker Swarm detected.',
               confidence: 0.85,
               sources: [{ type: 'environment', found: true, confidence: 0.9, data: {} }],
@@ -164,7 +164,7 @@ We will use Docker Swarm for container orchestration.
 
       mockGetAIExecutor.mockReturnValue({
         isAvailable: () => true,
-        executeStructuredPrompt: jest.fn().mockResolvedValue({
+        executeStructuredPrompt: vi.fn().mockResolvedValue({
           data: {
             isValid: false,
             confidence: 0.85,
@@ -209,7 +209,7 @@ We will use Redis for caching.
       MockResearchOrchestrator.mockImplementation(
         () =>
           ({
-            answerResearchQuestion: jest.fn().mockResolvedValue({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
               answer: 'No evidence of Redis found in project files or environment.',
               confidence: 0.3,
               sources: [{ type: 'project_files', found: false, confidence: 0.2, data: {} }],
@@ -221,7 +221,7 @@ We will use Redis for caching.
 
       mockGetAIExecutor.mockReturnValue({
         isAvailable: () => true,
-        executeStructuredPrompt: jest.fn().mockResolvedValue({
+        executeStructuredPrompt: vi.fn().mockResolvedValue({
           data: {
             isValid: false,
             confidence: 0.3,
@@ -271,7 +271,7 @@ We will use PostgreSQL as our primary database.
       MockResearchOrchestrator.mockImplementation(
         () =>
           ({
-            answerResearchQuestion: jest.fn().mockResolvedValue({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
               answer: 'Found PostgreSQL in docker-compose.yml and connection strings in config.',
               confidence: 0.8,
               sources: [{ type: 'project_files', found: true, confidence: 0.8, data: {} }],
@@ -283,7 +283,7 @@ We will use PostgreSQL as our primary database.
 
       mockGetAIExecutor.mockReturnValue({
         isAvailable: () => false,
-        executeStructuredPrompt: jest.fn(),
+        executeStructuredPrompt: vi.fn(),
       } as any);
 
       const result = await validateAdr({
@@ -330,7 +330,7 @@ Test decision 2
       MockResearchOrchestrator.mockImplementation(
         () =>
           ({
-            answerResearchQuestion: jest.fn().mockResolvedValue({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
               answer: 'Test answer',
               confidence: 0.8,
               sources: [],
@@ -363,7 +363,7 @@ Test decision 2
       MockResearchOrchestrator.mockImplementation(
         () =>
           ({
-            answerResearchQuestion: jest.fn().mockResolvedValue({
+            answerResearchQuestion: vi.fn().mockResolvedValue({
               answer: 'Test',
               confidence: 0.9,
               sources: [],

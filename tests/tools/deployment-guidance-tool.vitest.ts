@@ -6,7 +6,7 @@
  * @see ADR-019: Vitest Migration
  */
 
-import { describe, it, expect, vi, beforeEach, type MockedFunction } from 'vitest';
+import { describe, it, expect, vi, _beforeEach, type MockedFunction } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
 // Clean Vitest mocking - no unstable_mockModule needed!

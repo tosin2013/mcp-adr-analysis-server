@@ -3,29 +3,29 @@
  * Tests AI-powered dynamic tool sequencing functionality
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
 import { toolChainOrchestrator } from '../../src/tools/tool-chain-orchestrator.js';
 import { McpAdrError } from '../../src/types/index.js';
 
 // Mock fetch globally
-const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+const mockFetch = vi.fn() as MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
 
 // Mock dependencies
-const mockLoadAIConfig = jest.fn() as jest.MockedFunction<any>;
-const mockIsAIExecutionEnabled = jest.fn() as jest.MockedFunction<any>;
-const mockGetRecommendedModel = jest.fn() as jest.MockedFunction<any>;
-const mockCreateIntent = jest.fn() as jest.MockedFunction<any>;
-const mockAddToolExecution = jest.fn() as jest.MockedFunction<any>;
+const mockLoadAIConfig = vi.fn() as MockedFunction<any>;
+const mockIsAIExecutionEnabled = vi.fn() as MockedFunction<any>;
+const mockGetRecommendedModel = vi.fn() as MockedFunction<any>;
+const mockCreateIntent = vi.fn() as MockedFunction<any>;
+const mockAddToolExecution = vi.fn() as MockedFunction<any>;
 
-jest.mock('../../src/config/ai-config.js', () => ({
+vi.mock('../../src/config/ai-config.js', () => ({
   loadAIConfig: mockLoadAIConfig,
   isAIExecutionEnabled: mockIsAIExecutionEnabled,
   getRecommendedModel: mockGetRecommendedModel,
 }));
 
-jest.mock('../../src/utils/knowledge-graph-manager.js', () => ({
-  KnowledgeGraphManager: jest.fn().mockImplementation(() => ({
+vi.mock('../../src/utils/knowledge-graph-manager.js', () => ({
+  KnowledgeGraphManager: vi.fn().mockImplementation(() => ({
     createIntent: mockCreateIntent,
     addToolExecution: mockAddToolExecution,
   })),
@@ -53,7 +53,7 @@ describe('toolChainOrchestrator', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockLoadAIConfig.mockReturnValue(mockAIConfig);
     mockIsAIExecutionEnabled.mockReturnValue(false); // Default to disabled
     mockGetRecommendedModel.mockReturnValue('anthropic/claude-3-sonnet');

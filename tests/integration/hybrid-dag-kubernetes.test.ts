@@ -8,7 +8,7 @@
  * 4. Verifying dependency resolution and task ordering
  */
 
-import { describe, it, expect, beforeAll } from '@jest/globals';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { PatternLoader } from '../../src/utils/pattern-loader.js';
 import { PatternToDAGConverter } from '../../src/utils/pattern-to-dag-converter.js';
 import { DAGExecutor } from '../../src/utils/dag-executor.js';

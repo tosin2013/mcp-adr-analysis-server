@@ -5,19 +5,19 @@
  * without complex file system mocking.
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _jest } from 'vitest';
 import { MemoryMigrationManager } from '../../src/utils/memory-migration-manager.js';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 
 // Mock crypto
 const mockCrypto = {
-  randomUUID: jest.fn(() => 'test-uuid-123'),
+  randomUUID: vi.fn(() => 'test-uuid-123'),
 };
-jest.mock('crypto', () => mockCrypto);
+vi.mock('crypto', () => mockCrypto);
 
 // Mock the loadConfig function to provide test configuration
-jest.mock('../../src/utils/config.js', () => ({
-  loadConfig: jest.fn(() => ({
+vi.mock('../../src/utils/config.js', () => ({
+  loadConfig: vi.fn(() => ({
     projectPath: '/test/project',
     adrDirectory: '/test/project/docs/adrs',
     logLevel: 'info',
@@ -29,7 +29,7 @@ describe('Simple Memory Migration Test', () => {
   let migrationManager: MemoryMigrationManager;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockCrypto.randomUUID.mockReturnValue('test-uuid-123');
 
     memoryManager = new MemoryEntityManager();
@@ -47,8 +47,8 @@ describe('Simple Memory Migration Test', () => {
 
   it('should handle missing data sources gracefully', async () => {
     // Mock all file system calls to return "file not found"
-    const mockExistsSync = jest.fn().mockReturnValue(false);
-    jest.doMock('fs', () => ({
+    const mockExistsSync = vi.fn().mockReturnValue(false);
+    vi.doMock('fs', () => ({
       existsSync: mockExistsSync,
     }));
 

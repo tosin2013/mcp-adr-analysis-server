@@ -42,7 +42,9 @@ export default defineConfig({
     onConsoleLog: () => false, // Suppress console logs in test output
 
     // Setup files (equivalent to Jest's setupFilesAfterEnv)
-    setupFiles: ['./tests/vitest.setup.ts'],
+    // Both files are needed: vitest.setup.ts for Vitest-specific setup,
+    // setup.ts for custom matchers and test infrastructure
+    setupFiles: ['./tests/vitest.setup.ts', './tests/setup.ts'],
   },
 
   // ESBuild configuration for TypeScript

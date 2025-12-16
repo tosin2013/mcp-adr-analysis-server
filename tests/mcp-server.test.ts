@@ -2,46 +2,45 @@
  * Tests for MCP server functionality
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
 
 // Set up mocks before imports
-jest.unstable_mockModule('@modelcontextprotocol/sdk/server/index.js', () => {
+vi.mock('@modelcontextprotocol/sdk/server/index.js', () => {
   const mockServer = {
-    setRequestHandler: jest.fn(),
-    connect: jest.fn(),
-    close: jest.fn(),
+    setRequestHandler: vi.fn(),
+    connect: vi.fn(),
+    close: vi.fn(),
   };
-  
+
   return {
-    Server: jest.fn().mockImplementation(() => mockServer),
+    Server: vi.fn().mockImplementation(() => mockServer),
   };
 });
 
-jest.unstable_mockModule('@modelcontextprotocol/sdk/server/stdio.js', () => {
+vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => {
   const mockTransport = {
-    start: jest.fn(),
-    close: jest.fn(),
+    start: vi.fn(),
+    close: vi.fn(),
   };
-  
+
   return {
-    StdioServerTransport: jest.fn().mockImplementation(() => mockTransport),
+    StdioServerTransport: vi.fn().mockImplementation(() => mockTransport),
   };
 });
 
 describe('MCP ADR Analysis Server Components', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('File System Utilities', () => {
     it('should have file system utilities available', async () => {
-      const { analyzeProjectStructure, findFiles, readFileContent } = await import(
-        '../src/utils/file-system.js'
-      );
+      const { analyzeProjectStructure, findFiles, readFileContent } =
+        await import('../src/utils/file-system.js');
 
       expect(typeof analyzeProjectStructure).toBe('function');
       expect(typeof findFiles).toBe('function');

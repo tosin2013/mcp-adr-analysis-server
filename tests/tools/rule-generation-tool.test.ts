@@ -7,14 +7,14 @@
  * Confidence: 85% - Tests cover core functionality with simplified mocking
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 // import { McpAdrError } from '../../src/types/index.js';
 
 // Mock all utility modules with simple implementations
-jest.mock('../../src/utils/rule-generation.js');
-jest.mock('../../src/utils/rule-format.js');
-jest.mock('../../src/utils/knowledge-generation.js');
-jest.mock('../../src/utils/prompt-execution.js');
+vi.mock('../../src/utils/rule-generation.js');
+vi.mock('../../src/utils/rule-format.js');
+vi.mock('../../src/utils/knowledge-generation.js');
+vi.mock('../../src/utils/prompt-execution.js');
 
 describe('rule-generation-tool', () => {
   let generateRules: any;
@@ -29,7 +29,7 @@ describe('rule-generation-tool', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('generateRules', () => {

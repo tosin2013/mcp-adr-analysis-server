@@ -3,16 +3,25 @@
  * Target: Achieve 80% coverage for comprehensive troubleshooting workflow validation
  */
 
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  _beforeEach,
+  _afterEach,
+  vi,
+  MockedFunction,
+} from 'vitest';
 
 // Mock fetch for AI API calls
-const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
+const mockFetch = vi.fn() as MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
 
 // Mock Smart Code Linking to eliminate complex async operations
-jest.mock('../../src/utils/file-system.js', () => ({
-  findFiles: jest.fn().mockResolvedValue([]),
-  findRelatedCode: jest.fn().mockResolvedValue({
+vi.mock('../../src/utils/file-system.js', () => ({
+  findFiles: vi.fn().mockResolvedValue([]),
+  findRelatedCode: vi.fn().mockResolvedValue({
     relatedFiles: [],
     analysis: '',
     metadata: {
@@ -25,10 +34,10 @@ jest.mock('../../src/utils/file-system.js', () => ({
 }));
 
 // Mock tree-sitter analyzer to eliminate native binary loading issues
-jest.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
-  TreeSitterAnalyzer: jest.fn().mockImplementation(() => ({
-    initializeParsers: jest.fn().mockResolvedValue(undefined),
-    analyzeCode: jest.fn().mockResolvedValue({
+vi.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
+  TreeSitterAnalyzer: vi.fn().mockImplementation(() => ({
+    initializeParsers: vi.fn().mockResolvedValue(undefined),
+    analyzeCode: vi.fn().mockResolvedValue({
       functions: [],
       classes: [],
       imports: [],
@@ -39,9 +48,9 @@ jest.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
 }));
 
 // Mock ResearchOrchestrator to eliminate slow research operations
-jest.mock('../../src/utils/research-orchestrator.js', () => ({
-  ResearchOrchestrator: jest.fn().mockImplementation(() => ({
-    answerResearchQuestion: jest.fn().mockResolvedValue({
+vi.mock('../../src/utils/research-orchestrator.js', () => ({
+  ResearchOrchestrator: vi.fn().mockImplementation(() => ({
+    answerResearchQuestion: vi.fn().mockResolvedValue({
       answer: 'Mock research answer',
       confidence: 0.8,
       sources: [
@@ -69,12 +78,12 @@ jest.mock('../../src/utils/research-orchestrator.js', () => ({
 }));
 
 // Mock MemoryEntityManager to eliminate memory operations
-jest.mock('../../src/utils/memory-entity-manager.js', () => ({
-  MemoryEntityManager: jest.fn().mockImplementation(() => ({
-    initialize: jest.fn().mockResolvedValue(undefined),
-    upsertEntity: jest.fn().mockResolvedValue(undefined),
-    queryEntities: jest.fn().mockResolvedValue([]),
-    updateEntity: jest.fn().mockResolvedValue(undefined),
+vi.mock('../../src/utils/memory-entity-manager.js', () => ({
+  MemoryEntityManager: vi.fn().mockImplementation(() => ({
+    initialize: vi.fn().mockResolvedValue(undefined),
+    upsertEntity: vi.fn().mockResolvedValue(undefined),
+    queryEntities: vi.fn().mockResolvedValue([]),
+    updateEntity: vi.fn().mockResolvedValue(undefined),
   })),
 }));
 
@@ -88,7 +97,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Set environment variables for AI config
     process.env['OPENROUTER_API_KEY'] = 'test-key';
@@ -130,7 +139,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     // Clean up environment variables
     delete process.env['OPENROUTER_API_KEY'];
     delete process.env['EXECUTION_MODE'];
@@ -247,7 +256,7 @@ describe('Troubleshoot Guided Workflow Tool', () => {
 
   describe('Failure Analysis Operation', () => {
     it('should analyze test failure correctly', async () => {
-      jest.setTimeout(30000); // 30 second timeout for this test
+      vi.setConfig(30000); // 30 second timeout for this test
       const input = {
         operation: 'analyze_failure',
         failure: {

@@ -6,7 +6,7 @@
  */
 
 import crypto from 'crypto';
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import { MemoryMigrationManager } from '../../src/utils/memory-migration-manager.js';
 import { MemoryRelationshipMapper } from '../../src/utils/memory-relationship-mapper.js';
@@ -18,30 +18,30 @@ import {
 
 // Mock filesystem operations
 const mockFsPromises = {
-  access: jest.fn(),
-  mkdir: jest.fn(),
-  readdir: jest.fn(),
-  readFile: jest.fn(),
-  writeFile: jest.fn(),
-  copyFile: jest.fn(),
+  access: vi.fn(),
+  mkdir: vi.fn(),
+  readdir: vi.fn(),
+  readFile: vi.fn(),
+  writeFile: vi.fn(),
+  copyFile: vi.fn(),
 };
 
-const mockExistsSync = jest.fn(() => false);
+const mockExistsSync = vi.fn(() => false);
 
-jest.mock('fs', () => ({
+vi.mock('fs', () => ({
   promises: mockFsPromises,
   existsSync: mockExistsSync,
 }));
 
-jest.mock('fs/promises', () => mockFsPromises);
+vi.mock('fs/promises', () => mockFsPromises);
 
 // Mock crypto
 let uuidCounter = 0;
 const mockCrypto = {
-  randomUUID: jest.fn(() => `test-uuid-${++uuidCounter}`),
+  randomUUID: vi.fn(() => `test-uuid-${++uuidCounter}`),
 };
 
-jest.mock('crypto', () => mockCrypto);
+vi.mock('crypto', () => mockCrypto);
 
 describe('Memory System Performance Tests', () => {
   let memoryManager: MemoryEntityManager;
@@ -49,12 +49,12 @@ describe('Memory System Performance Tests', () => {
   let _relationshipMapper: MemoryRelationshipMapper;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     uuidCounter = 0;
 
     // Mock date to be consistent
-    jest.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T00:00:00.000Z');
-    jest.spyOn(Date, 'now').mockReturnValue(1704067200000);
+    vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T00:00:00.000Z');
+    vi.spyOn(Date, 'now').mockReturnValue(1704067200000);
 
     // Mock environment to provide consistent project path
     process.env['PROJECT_PATH'] = '/test/project';
@@ -73,7 +73,7 @@ describe('Memory System Performance Tests', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
     // Clean up environment variables
     delete process.env['PROJECT_PATH'];
   });
@@ -317,7 +317,7 @@ describe('Memory System Performance Tests', () => {
       }
 
       // Mock queryEntities to return the dataset
-      const queryEntitySpy = jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+      const queryEntitySpy = vi.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: entities as any,
         totalCount: entityCount,
         hasMore: false,
@@ -421,7 +421,7 @@ describe('Memory System Performance Tests', () => {
       }
 
       // Mock entity queries for relationship mapping
-      jest.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
+      vi.spyOn(memoryManager, 'queryEntities').mockResolvedValue({
         entities: entities as any,
         totalCount: entityCount,
         hasMore: false,
@@ -429,7 +429,7 @@ describe('Memory System Performance Tests', () => {
 
       // Mock relationship creation
       let _relationshipCount = 0;
-      jest.spyOn(memoryManager, 'upsertRelationship').mockImplementation(async () => {
+      vi.spyOn(memoryManager, 'upsertRelationship').mockImplementation(async () => {
         _relationshipCount++;
         return {
           id: crypto.randomUUID(),
@@ -537,14 +537,14 @@ describe('Memory System Performance Tests', () => {
           } as any;
         });
 
-      jest.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
+      vi.spyOn(memoryManager, 'createCrossToolRelationships').mockResolvedValue({
         suggestedRelationships: [],
         conflicts: [],
         autoCreatedCount: 0,
       });
 
       // Mock queryEntities to return the created entities for validation
-      jest.spyOn(memoryManager, 'queryEntities').mockImplementation(async () => ({
+      vi.spyOn(memoryManager, 'queryEntities').mockImplementation(async () => ({
         entities: Array.from({ length: entityCount }, (_, i) => ({
           id: `entity-${i}`,
           type: 'deployment_assessment',
@@ -556,7 +556,7 @@ describe('Memory System Performance Tests', () => {
 
       // Use performance.now() for accurate timing (unmock Date.now for this test)
       const originalDateNow = Date.now;
-      Date.now = jest.fn(() => performance.now() + 1704067200000); // Add epoch offset
+      Date.now = vi.fn(() => performance.now() + 1704067200000); // Add epoch offset
 
       try {
         // Test migration performance

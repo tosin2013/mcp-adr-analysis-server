@@ -4,7 +4,7 @@
  * Test coverage for ADR to memory entity transformation
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
 import crypto from 'crypto';
 import { MemoryTransformer } from '../../src/utils/memory-transformation.js';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
@@ -16,32 +16,32 @@ import {
 } from '../../src/types/memory-entities.js';
 
 // Mock enhanced logging
-jest.mock('../../src/utils/enhanced-logging.js', () => ({
-  EnhancedLogger: jest.fn().mockImplementation(() => ({
-    info: jest.fn(),
-    debug: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+vi.mock('../../src/utils/enhanced-logging.js', () => ({
+  EnhancedLogger: vi.fn().mockImplementation(() => ({
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   })),
 }));
 
 // Mock memory entity manager
 const mockMemoryManager = {
-  initialize: jest.fn(),
-  upsertEntity: jest.fn(),
-  upsertRelationship: jest.fn(),
-} as unknown as jest.Mocked<MemoryEntityManager>;
+  initialize: vi.fn(),
+  upsertEntity: vi.fn(),
+  upsertRelationship: vi.fn(),
+} as unknown as Mocked<MemoryEntityManager>;
 
 describe('MemoryTransformer', () => {
   let transformer: MemoryTransformer;
-  let mockDate: jest.SpyInstance;
+  let mockDate: MockInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     transformer = new MemoryTransformer(mockMemoryManager);
 
     // Mock crypto randomUUID with proper UUID format
-    jest.spyOn(crypto, 'randomUUID').mockReturnValue('550e8400-e29b-41d4-a716-446655440000');
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue('550e8400-e29b-41d4-a716-446655440000');
 
     // Mock date to be consistent
     mockDate = jest
@@ -495,7 +495,7 @@ We chose React.
 
       // Mock dates for entities
       let callCount = 0;
-      jest.spyOn(Date.prototype, 'toISOString').mockImplementation(() => {
+      vi.spyOn(Date.prototype, 'toISOString').mockImplementation(() => {
         callCount++;
         return callCount <= 6 ? olderDate : newerDate; // First entity gets older date
       });
