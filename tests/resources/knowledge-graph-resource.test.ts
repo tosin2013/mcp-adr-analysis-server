@@ -2,17 +2,23 @@
  * Tests for Knowledge Graph Resource
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 import { URLSearchParams } from 'url';
-import { generateKnowledgeGraphResource, type KnowledgeGraphData } from '../../src/resources/knowledge-graph-resource.js';
+import {
+  generateKnowledgeGraphResource,
+  type KnowledgeGraphData,
+} from '../../src/resources/knowledge-graph-resource.js';
 import { KnowledgeGraphManager } from '../../src/utils/knowledge-graph-manager.js';
 import type { KnowledgeGraphSnapshot } from '../../src/types/knowledge-graph-schemas.js';
+import { resourceCache } from '../../src/resources/resource-cache.js';
 
 describe('Knowledge Graph Resource', () => {
   let mockKgManager: KnowledgeGraphManager;
   let mockSnapshot: KnowledgeGraphSnapshot;
 
   beforeEach(() => {
+    // Clear the cache before each test to ensure isolation
+    resourceCache.clear();
     // Create mock knowledge graph snapshot
     mockSnapshot = {
       version: '1.0.0',
@@ -63,9 +69,7 @@ describe('Knowledge Graph Resource', () => {
         completedIntents: 1,
         activeIntents: 1,
         averageGoalCompletion: 0.5,
-        mostUsedTools: [
-          { toolName: 'analyze_project_ecosystem', usageCount: 1 },
-        ],
+        mostUsedTools: [{ toolName: 'analyze_project_ecosystem', usageCount: 1 }],
         successfulPatterns: [],
       },
     };
@@ -78,18 +82,14 @@ describe('Knowledge Graph Resource', () => {
 
   describe('generateKnowledgeGraphResource', () => {
     it('should generate knowledge graph resource with nodes and edges', async () => {
-      const result = await generateKnowledgeGraphResource(
-        {},
-        new URLSearchParams(),
-        mockKgManager
-      );
+      const result = await generateKnowledgeGraphResource({}, new URLSearchParams(), mockKgManager);
 
       expect(result).toBeDefined();
       expect(result.contentType).toBe('application/json');
       expect(result.data).toBeDefined();
 
       const data = result.data as KnowledgeGraphData;
-      
+
       // Should have intent nodes
       const intentNodes = data.nodes.filter(n => n.type === 'intent');
       expect(intentNodes).toHaveLength(2);
@@ -122,14 +122,10 @@ describe('Knowledge Graph Resource', () => {
     });
 
     it('should include metadata with node and edge counts', async () => {
-      const result = await generateKnowledgeGraphResource(
-        {},
-        new URLSearchParams(),
-        mockKgManager
-      );
+      const result = await generateKnowledgeGraphResource({}, new URLSearchParams(), mockKgManager);
 
       const data = result.data as KnowledgeGraphData;
-      
+
       expect(data.metadata).toBeDefined();
       expect(data.metadata.nodeCount).toBeGreaterThan(0);
       expect(data.metadata.edgeCount).toBeGreaterThan(0);
@@ -141,14 +137,10 @@ describe('Knowledge Graph Resource', () => {
     });
 
     it('should include analytics data', async () => {
-      const result = await generateKnowledgeGraphResource(
-        {},
-        new URLSearchParams(),
-        mockKgManager
-      );
+      const result = await generateKnowledgeGraphResource({}, new URLSearchParams(), mockKgManager);
 
       const data = result.data as KnowledgeGraphData;
-      
+
       expect(data.analytics).toBeDefined();
       expect(data.analytics.totalIntents).toBe(2);
       expect(data.analytics.completedIntents).toBe(1);
@@ -159,11 +151,7 @@ describe('Knowledge Graph Resource', () => {
     });
 
     it('should have cache metadata', async () => {
-      const result = await generateKnowledgeGraphResource(
-        {},
-        new URLSearchParams(),
-        mockKgManager
-      );
+      const result = await generateKnowledgeGraphResource({}, new URLSearchParams(), mockKgManager);
 
       expect(result.cacheKey).toBe('knowledge-graph');
       expect(result.ttl).toBe(60);
@@ -178,24 +166,18 @@ describe('Knowledge Graph Resource', () => {
     });
 
     it('should calculate relevance scores for intents', async () => {
-      const result = await generateKnowledgeGraphResource(
-        {},
-        new URLSearchParams(),
-        mockKgManager
-      );
+      const result = await generateKnowledgeGraphResource({}, new URLSearchParams(), mockKgManager);
 
       const data = result.data as KnowledgeGraphData;
       const intentNodes = data.nodes.filter(n => n.type === 'intent');
-      
+
       // Executing intent should have higher relevance than completed
       const executingIntent = intentNodes.find(n => n.status === 'executing');
       const completedIntent = intentNodes.find(n => n.status === 'completed');
-      
+
       expect(executingIntent?.relevanceScore).toBeDefined();
       expect(completedIntent?.relevanceScore).toBeDefined();
-      expect(executingIntent!.relevanceScore!).toBeGreaterThan(
-        completedIntent!.relevanceScore!
-      );
+      expect(executingIntent!.relevanceScore!).toBeGreaterThan(completedIntent!.relevanceScore!);
     });
 
     it('should handle empty knowledge graph', async () => {
@@ -206,14 +188,10 @@ describe('Knowledge Graph Resource', () => {
 
       mockKgManager.loadKnowledgeGraph = jest.fn().mockResolvedValue(emptySnapshot);
 
-      const result = await generateKnowledgeGraphResource(
-        {},
-        new URLSearchParams(),
-        mockKgManager
-      );
+      const result = await generateKnowledgeGraphResource({}, new URLSearchParams(), mockKgManager);
 
       const data = result.data as KnowledgeGraphData;
-      
+
       expect(data.nodes).toHaveLength(0);
       expect(data.edges).toHaveLength(0);
       expect(data.metadata.nodeCount).toBe(0);

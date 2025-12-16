@@ -2,8 +2,11 @@
  * Tests for Update Knowledge Tool
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
-import { updateKnowledge, type UpdateKnowledgeArgs } from '../../src/tools/update-knowledge-tool.js';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import {
+  updateKnowledge,
+  type UpdateKnowledgeArgs,
+} from '../../src/tools/update-knowledge-tool.js';
 import { KnowledgeGraphManager } from '../../src/utils/knowledge-graph-manager.js';
 import type { KnowledgeGraphSnapshot } from '../../src/types/knowledge-graph-schemas.js';
 import { createNoOpContext } from '../../src/types/tool-context.js';
@@ -15,7 +18,7 @@ describe('Update Knowledge Tool', () => {
 
   beforeEach(() => {
     ctx = createNoOpContext();
-    
+
     // Create mock knowledge graph snapshot
     mockSnapshot = {
       version: '1.0.0',
@@ -85,13 +88,13 @@ describe('Update Knowledge Tool', () => {
 
       expect(result.content).toBeDefined();
       expect(result.content[0].type).toBe('text');
-      
+
       const response = JSON.parse(result.content[0].text as string);
       expect(response.success).toBe(true);
       expect(response.message).toContain('Successfully executed add_entity');
       expect(response.graphState).toBeDefined();
       expect(response.graphState.intentCount).toBeGreaterThan(0);
-      
+
       // Should have called createIntent
       expect(mockKgManager.createIntent).toHaveBeenCalledWith(
         'New feature',
@@ -141,7 +144,7 @@ describe('Update Knowledge Tool', () => {
       const response = JSON.parse(result.content[0].text as string);
       expect(response.success).toBe(true);
       expect(response.message).toContain('Successfully executed remove_entity');
-      
+
       // Should have saved the updated graph
       expect(mockKgManager.saveKnowledgeGraph).toHaveBeenCalled();
     });
