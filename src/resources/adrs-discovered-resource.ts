@@ -128,7 +128,7 @@ export interface AdrsDiscoveredData {
  * @see {@link discoverAdrsInDirectory} for ADR discovery logic
  */
 export async function generateAdrsDiscoveredResource(
-  params: Record<string, string>,
+  _params: Record<string, string>,
   searchParams: URLSearchParams
 ): Promise<ResourceGenerationResult> {
   const projectPath = searchParams.get('projectPath') || process.cwd();
@@ -158,16 +158,30 @@ export async function generateAdrsDiscoveredResource(
     });
 
     // Format ADR list (exclude content for lighter response)
-    const adrs = discoveryResult.adrs.map(adr => ({
-      filename: adr.filename,
-      title: adr.title,
-      status: adr.status,
-      date: adr.date,
-      path: adr.path,
-      number: adr.metadata?.number,
-      category: adr.metadata?.category,
-      tags: adr.metadata?.tags,
-    }));
+    const adrs = discoveryResult.adrs.map(adr => {
+      const formatted: {
+        filename: string;
+        title: string;
+        status: string;
+        date?: string;
+        path: string;
+        number?: string;
+        category?: string;
+        tags?: string[];
+      } = {
+        filename: adr.filename,
+        title: adr.title,
+        status: adr.status,
+        path: adr.path,
+      };
+      
+      if (adr.date !== undefined) formatted.date = adr.date;
+      if (adr.metadata?.number !== undefined) formatted.number = adr.metadata.number;
+      if (adr.metadata?.category !== undefined) formatted.category = adr.metadata.category;
+      if (adr.metadata?.tags !== undefined) formatted.tags = adr.metadata.tags;
+      
+      return formatted;
+    });
 
     const discoveredData: AdrsDiscoveredData = {
       directory: discoveryResult.directory,

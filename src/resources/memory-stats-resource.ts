@@ -80,8 +80,8 @@ export interface MemoryStatsData extends ConversationMemoryStats {
  * @see {@link ConversationMemoryManager.getStats} for stats calculation logic
  */
 export async function generateMemoryStatsResource(
-  params: Record<string, string>,
-  searchParams: URLSearchParams,
+  _params: Record<string, string>,
+  _searchParams: URLSearchParams,
   memoryManager?: ConversationMemoryManager
 ): Promise<ResourceGenerationResult> {
   const cacheKey = 'memory-stats';

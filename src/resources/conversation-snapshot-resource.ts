@@ -95,7 +95,7 @@ export interface ConversationSnapshotData {
  * @see {@link ConversationMemoryManager.getContextSnapshot} for snapshot generation logic
  */
 export async function generateConversationSnapshotResource(
-  params: Record<string, string>,
+  _params: Record<string, string>,
   searchParams: URLSearchParams,
   memoryManager?: ConversationMemoryManager
 ): Promise<ResourceGenerationResult> {

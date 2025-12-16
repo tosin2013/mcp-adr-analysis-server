@@ -72,7 +72,7 @@ export interface ServerContextData {
  * @see {@link ServerContextGenerator} for context generation logic
  */
 export async function generateServerContextResource(
-  params: Record<string, string>,
+  _params: Record<string, string>,
   searchParams: URLSearchParams,
   kgManager?: KnowledgeGraphManager,
   memoryManager?: MemoryEntityManager,

@@ -122,7 +122,7 @@ export interface ToolCatalogData {
  * @see {@link TOOL_CATALOG} for the underlying tool registry
  */
 export async function generateToolCatalogResource(
-  params: Record<string, string>,
+  _params: Record<string, string>,
   searchParams: URLSearchParams
 ): Promise<ResourceGenerationResult> {
   const category = searchParams.get('category');
@@ -139,7 +139,7 @@ export async function generateToolCatalogResource(
 
   try {
     // Dynamically import the tool catalog to avoid circular dependencies
-    const { TOOL_CATALOG, getCatalogSummary, searchTools } = await import('../tools/tool-catalog.js');
+    const { getCatalogSummary, searchTools } = await import('../tools/tool-catalog.js');
 
     // Get summary statistics
     const summary = getCatalogSummary();
