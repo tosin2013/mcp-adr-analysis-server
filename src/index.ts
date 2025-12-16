@@ -7789,6 +7789,12 @@ Please provide:
       await import('./resources/validated-pattern-by-platform-resource.js');
       await import('./resources/pattern-sources-by-platform-resource.js');
       await import('./resources/pattern-base-code-by-platform-resource.js');
+      // Phase 1 & 2 resources (PR #346)
+      await import('./resources/server-context-resource.js');
+      await import('./resources/memory-stats-resource.js');
+      await import('./resources/conversation-snapshot-resource.js');
+      await import('./resources/tool-catalog-resource.js');
+      await import('./resources/adrs-discovered-resource.js');
 
       // Try routing first (handles templated resources)
       if (resourceRouter.canRoute(uri)) {
