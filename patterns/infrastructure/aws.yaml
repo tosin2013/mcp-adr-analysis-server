@@ -133,8 +133,8 @@ baseCodeRepository:
     5. Deploy using AWS CLI or SAM CLI
     6. Set up IAM roles and permissions
   requiredFiles:
-    - 'template.yaml' # SAM template
-    - 'src/' # Application code
+    - 'template.yaml'  # SAM template
+    - 'src/'  # Application code
   scriptEntrypoint: 'sam deploy --guided'
 
 dependencies:
