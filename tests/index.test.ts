@@ -43,9 +43,11 @@ vi.mock('../src/utils/config.js', () => ({
   printConfigSummary: vi.fn(),
 }));
 
-// Mock knowledge graph manager
+// Mock knowledge graph manager with proper class constructor
 vi.mock('../src/utils/knowledge-graph-manager.js', () => ({
-  KnowledgeGraphManager: vi.fn(() => ({})),
+  KnowledgeGraphManager: class MockKnowledgeGraphManager {
+    // Empty mock class - test just verifies it exists
+  },
 }));
 
 // Mock output masking - handle actual behavior
@@ -53,12 +55,15 @@ vi.mock('../src/utils/output-masking.js', () => ({
   createMaskingConfig: vi.fn(() => ({ enabled: true })), // CI shows this returns true
 }));
 
-// Mock MCP SDK
+// Mock MCP SDK with proper class constructor
 vi.mock('@modelcontextprotocol/sdk/server/index.js', () => ({
-  Server: vi.fn(() => ({
-    setRequestHandler: vi.fn(),
-    connect: vi.fn(),
-  })),
+  Server: class MockServer {
+    setRequestHandler = vi.fn();
+    connect = vi.fn();
+    constructor(_serverInfo: any, _options: any) {
+      // Mock constructor
+    }
+  },
 }));
 
 vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({

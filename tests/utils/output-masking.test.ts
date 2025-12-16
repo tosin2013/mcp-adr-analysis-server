@@ -376,7 +376,7 @@ describe('output-masking', () => {
 
   describe('withContentMasking', () => {
     it('should wrap tool function with masking', async () => {
-      const mockTool = jest
+      const mockTool = vi
         .fn()
         .mockResolvedValue({ content: [{ type: 'text', text: 'sensitive' }] });
 
