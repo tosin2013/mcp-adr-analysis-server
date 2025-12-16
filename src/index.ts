@@ -3144,6 +3144,49 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'update_knowledge',
+            description:
+              'ADR-018: Simple CRUD operations for knowledge graph. Add/remove entities (intents, ADRs, tools, code) and relationships. Use knowledge://graph resource to read current state (zero token cost).',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                operation: {
+                  type: 'string',
+                  enum: ['add_entity', 'remove_entity', 'add_relationship', 'remove_relationship'],
+                  description: 'Type of operation to perform on the knowledge graph',
+                },
+                entity: {
+                  type: 'string',
+                  description: 'Entity ID (for add_entity/remove_entity operations)',
+                },
+                entityType: {
+                  type: 'string',
+                  enum: ['intent', 'adr', 'code', 'tool', 'decision'],
+                  description: 'Type of entity (required for add_entity operation)',
+                },
+                relationship: {
+                  type: 'string',
+                  enum: ['implements', 'uses', 'created', 'depends-on', 'supersedes'],
+                  description: 'Relationship type (for add_relationship/remove_relationship)',
+                },
+                source: {
+                  type: 'string',
+                  description: 'Source node ID (for relationship operations)',
+                },
+                target: {
+                  type: 'string',
+                  description: 'Target node ID (for relationship operations)',
+                },
+                metadata: {
+                  type: 'object',
+                  description: 'Additional metadata for the entity or relationship',
+                  additionalProperties: true,
+                },
+              },
+              required: ['operation'],
+            },
+          },
+          {
             name: 'get_server_context',
             description:
               "Generate a comprehensive context file showing the server's current state, memory, and capabilities. Creates .mcp-server-context.md that can be @ referenced in conversations for instant LLM awareness",
@@ -3546,6 +3589,9 @@ export class McpAdrAnalysisServer {
           case 'get_memory_stats':
             response = await this.getMemoryStats();
             break;
+          case 'update_knowledge':
+            response = await this.updateKnowledge(safeArgs);
+            break;
           case 'get_server_context':
             response = await this.getServerContext(safeArgs);
             break;
@@ -3805,6 +3851,14 @@ export class McpAdrAnalysisServer {
             name: 'Pattern Base Code Repository',
             description:
               'Base code repository information for a platform pattern including URL, integration instructions, required files, and script entrypoint',
+            mimeType: 'application/json',
+          },
+          // NEW Knowledge Graph Resource (ADR-018)
+          {
+            uri: 'knowledge://graph',
+            name: 'Knowledge Graph',
+            description:
+              'Read-only knowledge graph structure with nodes (intents, ADRs, tools, code files) and edges (relationships). Zero token cost for querying graph state. Use update_knowledge tool to modify.',
             mimeType: 'application/json',
           },
         ],
@@ -7795,6 +7849,33 @@ Please provide:
       await import('./resources/conversation-snapshot-resource.js');
       await import('./resources/tool-catalog-resource.js');
       await import('./resources/adrs-discovered-resource.js');
+      // Knowledge Graph Resource (ADR-018)
+      const { generateKnowledgeGraphResource } = await import('./resources/knowledge-graph-resource.js');
+      
+      // Handle knowledge://graph specially to inject KnowledgeGraphManager
+      if (uri === 'knowledge://graph') {
+        const url = new globalThis.URL(uri);
+        const result = await generateKnowledgeGraphResource(
+          {},
+          url.searchParams,
+          this.kgManager
+        );
+        
+        return {
+          contents: [
+            {
+              uri,
+              mimeType: result.contentType,
+              text: JSON.stringify(result.data, null, 2),
+            },
+          ],
+          _meta: {
+            lastModified: result.lastModified,
+            etag: result.etag,
+            cacheKey: result.cacheKey,
+          },
+        };
+      }
 
       // Try routing first (handles templated resources)
       if (resourceRouter.canRoute(uri)) {
@@ -8576,6 +8657,22 @@ This tool has been deprecated and replaced with memory-centric health scoring.
       throw new McpAdrError(
         `Memory stats retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
         'MEMORY_STATS_ERROR'
+      );
+    }
+  }
+
+  /**
+   * Update Knowledge Tool (ADR-018)
+   * Simple CRUD operations for knowledge graph
+   */
+  private async updateKnowledge(args: any): Promise<CallToolResult> {
+    try {
+      const { updateKnowledge } = await import('./tools/update-knowledge-tool.js');
+      return await updateKnowledge(args, createNoOpContext(), this.kgManager);
+    } catch (error) {
+      throw new McpAdrError(
+        `Knowledge update failed: ${error instanceof Error ? error.message : String(error)}`,
+        'KNOWLEDGE_UPDATE_ERROR'
       );
     }
   }
