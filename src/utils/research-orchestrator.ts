@@ -19,6 +19,12 @@ import { TreeSitterAnalyzer } from './tree-sitter-analyzer.js';
 // import { FirecrawlApp } from '@mendable/firecrawl-js';
 // import { loadAIConfig } from '../config/ai-config.js';
 import { loadConfig } from './config.js';
+import {
+  createResearchWithDelegation,
+  type ResearchPlan,
+  type ResearchTaskTracker,
+  type CreateResearchTaskOptions,
+} from './research-task-integration.js';
 
 export interface ResearchSource {
   type: 'project_files' | 'knowledge_graph' | 'environment' | 'web_search';
@@ -121,12 +127,12 @@ export class ResearchOrchestrator {
     // DEPRECATION WARNING
     console.warn(
       '⚠️  WARNING: ResearchOrchestrator is deprecated as of v3.0.0 and will be removed in v4.0.0.\n' +
-      '   Reason: Sequential execution blocking, high token overhead (5K-6K tokens/session),\n' +
-      '           test complexity (14+ failures), and conflicts with CE-MCP architecture (ADR-014).\n' +
-      '   Migration: Use atomic tools instead:\n' +
-      '   - Codebase search: searchCodebase() from tools/search-codebase-tool.ts\n' +
-      '   - External research: llm-web-search-tool.ts\n' +
-      '   See ADR-018 for atomic tools architecture.'
+        '   Reason: Sequential execution blocking, high token overhead (5K-6K tokens/session),\n' +
+        '           test complexity (14+ failures), and conflicts with CE-MCP architecture (ADR-014).\n' +
+        '   Migration: Use atomic tools instead:\n' +
+        '   - Codebase search: searchCodebase() from tools/search-codebase-tool.ts\n' +
+        '   - External research: llm-web-search-tool.ts\n' +
+        '   See ADR-018 for atomic tools architecture.'
     );
 
     this.logger = new EnhancedLogger();
@@ -1119,4 +1125,90 @@ export class ResearchOrchestrator {
       entries,
     };
   }
+
+  /**
+   * Create a research plan for LLM delegation (non-blocking)
+   *
+   * This is the recommended method for new code. Instead of executing research
+   * internally (which blocks for 2-8 seconds), this returns a research plan
+   * that the calling LLM should execute using atomic tools.
+   *
+   * Benefits:
+   * - Non-blocking: Returns immediately with a plan
+   * - LLM-controlled: The calling LLM decides execution order
+   * - MCP Tasks: Integrated with MCP Tasks for progress tracking
+   * - Cancellable: Can be cancelled between phases
+   *
+   * @param question - The research question to investigate
+   * @param options - Optional configuration
+   * @returns Task ID, research plan, and tracker for progress updates
+   *
+   * @example
+   * ```typescript
+   * const orchestrator = new ResearchOrchestrator('/path/to/project');
+   * const { taskId, plan, tracker } = await orchestrator.createResearchPlan(
+   *   'How does authentication work in this codebase?'
+   * );
+   *
+   * // LLM receives the plan and executes each phase:
+   * for (const phase of plan.phases) {
+   *   await tracker.startPhase(phase.phase);
+   *   const result = await executeToolCall(phase.tool, phase.params);
+   *   await tracker.storeResult(phase.phase, result);
+   *   await tracker.completePhase(phase.phase);
+   * }
+   *
+   * // Finally, synthesize and complete
+   * const answer = synthesize(results);
+   * await tracker.storeSynthesizedAnswer(answer, confidence);
+   * await tracker.complete({ success: true, data: { answer, confidence } });
+   * ```
+   *
+   * @since 3.1.0
+   */
+  async createResearchPlan(
+    question: string,
+    options?: {
+      includeWebSearch?: boolean;
+      confidenceThreshold?: number;
+    }
+  ): Promise<{
+    taskId: string;
+    plan: ResearchPlan;
+    tracker: ResearchTaskTracker;
+  }> {
+    const taskOptions: CreateResearchTaskOptions = {
+      question,
+      projectPath: this.projectPath,
+      includeWebSearch: options?.includeWebSearch ?? true,
+      confidenceThreshold: options?.confidenceThreshold ?? this.confidenceThreshold,
+    };
+
+    const { taskId, plan, tracker } = await createResearchWithDelegation(taskOptions);
+
+    this.logger.info('Created research plan for LLM delegation', 'ResearchOrchestrator', {
+      taskId,
+      question: question.substring(0, 100),
+      phasesCount: plan.phases.length,
+    });
+
+    return { taskId, plan, tracker };
+  }
+
+  /**
+   * Get the project path used by this orchestrator
+   */
+  getProjectPath(): string {
+    return this.projectPath;
+  }
+
+  /**
+   * Get the ADR directory used by this orchestrator
+   */
+  getAdrDirectory(): string {
+    return this.adrDirectory;
+  }
 }
+
+// Re-export types from research-task-integration for convenience
+export type { ResearchPlan, ResearchTaskTracker, CreateResearchTaskOptions };
