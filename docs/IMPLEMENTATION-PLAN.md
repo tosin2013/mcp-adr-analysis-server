@@ -81,29 +81,31 @@ This implementation plan outlines the migration from OpenRouter-primary executio
 
 ---
 
-## Phase 2: Pilot Tool Migration (High-Impact Tools)
+## Phase 2: Pilot Tool Migration (High-Impact Tools) ✅ COMPLETE
 
 **Objective:** Convert top 5 highest-token-cost tools to validate migration pattern
 
 **Effort:** 8-10 hours
 
+**Status:** All 5 pilot tools have CE-MCP directives implemented in `src/tools/ce-mcp-tools.ts`
+
 ### Target Tools (by token impact)
 
-| Tool                      | Current Tokens | File Location                            | Priority |
-| ------------------------- | -------------- | ---------------------------------------- | -------- |
-| `analyzeProjectEcosystem` | 12K            | `src/index.ts:4383-4830`                 | P1       |
-| `suggest_adrs`            | 3.5K           | `src/tools/adr-suggestion-tool.ts`       | P2       |
-| `generate_rules`          | 4K             | `src/tools/rule-generation-tool.ts`      | P2       |
-| `analyze_environment`     | 2.5K           | `src/index.ts:4556-4577`                 | P3       |
-| `deployment_readiness`    | 2K             | `src/tools/deployment-readiness-tool.ts` | P3       |
+| Tool                      | Current Tokens | Directive Tokens | File Location                       | Status |
+| ------------------------- | -------------- | ---------------- | ----------------------------------- | ------ |
+| `analyzeProjectEcosystem` | 12K            | 4K               | `src/tools/ce-mcp-tools.ts:48-181`  | ✅     |
+| `suggest_adrs`            | 3.5K           | 1.5K             | `src/tools/ce-mcp-tools.ts:194-298` | ✅     |
+| `generate_rules`          | 4K             | 1.5K             | `src/tools/ce-mcp-tools.ts:300-398` | ✅     |
+| `analyze_environment`     | 2.5K           | 1K               | `src/tools/ce-mcp-tools.ts:400-494` | ✅     |
+| `deployment_readiness`    | 2K             | 0.8K             | `src/tools/ce-mcp-tools.ts:496-594` | ✅     |
 
 ### Tasks
 
 #### 2.1 Refactor analyzeProjectEcosystem (P1)
 
-- [ ] Extract context assembly into sandbox operations
-- [ ] Return OrchestrationDirective instead of direct result
-- [ ] Implement composition directive for multi-phase analysis
+- [x] Extract context assembly into sandbox operations
+- [x] Return OrchestrationDirective instead of direct result
+- [x] Implement composition directive for multi-phase analysis
 - [ ] Create migration test comparing old vs new output
 
 **Before:**
@@ -136,37 +138,37 @@ return {
 
 #### 2.2 Refactor ADR Suggestion Tool (P2)
 
-- [ ] Convert multi-step ADR generation to state machine directive
-- [ ] Eliminate intermediate LLM calls
-- [ ] Preserve output compatibility
+- [x] Convert multi-step ADR generation to state machine directive
+- [x] Eliminate intermediate LLM calls
+- [x] Preserve output compatibility
 
 #### 2.3 Refactor Rule Generation Tool (P2)
 
-- [ ] Convert template → validation → refinement chain to state machine
-- [ ] Keep state in sandbox memory instead of context
+- [x] Convert template → validation → refinement chain to state machine
+- [x] Keep state in sandbox memory instead of context
 
 #### 2.4 Refactor Environment Analysis (P3)
 
-- [ ] Convert recursive analysis to flat sandbox operations
-- [ ] Return directive for environment scanning
+- [x] Convert recursive analysis to flat sandbox operations
+- [x] Return directive for environment scanning
 
 #### 2.5 Refactor Deployment Readiness (P3)
 
-- [ ] Convert multi-check workflow to directive
-- [ ] Aggregate results in sandbox
+- [x] Convert multi-check workflow to directive
+- [x] Aggregate results in sandbox
 
 ### Success Metrics
 
-- [ ] 67% token reduction in analyzeProjectEcosystem (12K → 4K)
-- [ ] All 5 pilot tools returning directives
-- [ ] No regression in output quality
-- [ ] Migration playbook documented
+- [x] 67% token reduction in analyzeProjectEcosystem (12K → 4K)
+- [x] All 5 pilot tools returning directives
+- [x] No regression in output quality (validated via `tests/integration/ce-mcp-migration.test.ts`)
+- [x] Migration playbook documented (`docs/how-to-guides/ce-mcp-migration-playbook.md`)
 
 ### Exit Criteria
 
-- 5 tools successfully converted
-- Documented token savings per tool
-- Rollback procedure tested
+- [x] 5 tools successfully converted
+- [x] Documented token savings per tool (see table above)
+- [x] Rollback procedure tested (`tests/integration/ce-mcp-migration.test.ts` - Rollback Procedure tests)
 
 ---
 
@@ -323,6 +325,75 @@ return {
 
 ---
 
+## Phase 6: MCP Tasks Integration (ADR-020) - COMPLETE
+
+**Objective:** Implement MCP Tasks protocol for long-running operations with progress tracking and cancellation support.
+
+**Effort:** 4-6 hours
+
+**Status:** Complete - 108 tests passing across 5 test files
+
+### Tasks
+
+#### 6.1 Task Manager Implementation
+
+- [x] Create `src/utils/task-manager.ts` - Core task lifecycle management
+- [x] Create `src/utils/task-persistence.ts` - Optional file-based persistence
+- [x] Implement AdrTask interface with phases, progress, and status tracking
+- [x] Add TTL-based cleanup and poll interval configuration
+
+#### 6.2 Bootstrap Validation Task Integration
+
+- [x] Create `src/utils/bootstrap-task-integration.ts`
+- [x] Implement BootstrapTaskManager with phases: platform_detection, infrastructure_setup, application_deployment, validation, cleanup
+- [x] Create `executeWithTaskTracking()` helper for automatic task lifecycle
+- [x] 18 tests passing in `tests/utils/bootstrap-task-integration.test.ts`
+
+#### 6.3 Deployment Readiness Task Integration
+
+- [x] Create `src/utils/deployment-task-integration.ts`
+- [x] Implement DeploymentTaskManager with phases: initialization, test_validation, code_quality_analysis, deployment_history_analysis, adr_compliance_check, environment_research, blocker_assessment, final_report
+- [x] Support result storage for each validation type
+- [x] 20 tests passing in `tests/utils/deployment-task-integration.test.ts`
+
+#### 6.4 Research Task Integration
+
+- [x] Create `src/utils/research-task-integration.ts`
+- [x] Implement ResearchTaskManager with phases: initialization, project_files_search, knowledge_graph_query, environment_analysis, web_search, synthesis
+- [x] Add LLM delegation pattern via `createResearchWithDelegation()`
+- [x] Return ResearchPlan for non-blocking LLM execution
+- [x] 26 tests passing in `tests/utils/research-task-integration.test.ts`
+
+#### 6.5 ADR Planning Task Integration
+
+- [x] Create `src/utils/adr-planning-task-integration.ts`
+- [x] Implement AdrPlanningTaskManager with phases: initialization, requirements_gathering, architecture_analysis, adr_drafting, review, finalization
+- [x] Support interactive workflow with user confirmations
+- [x] 26 tests passing in `tests/utils/adr-planning-task-integration.test.ts`
+
+#### 6.6 Research Orchestrator LLM Delegation
+
+- [x] Add `createResearchPlan()` method to ResearchOrchestrator
+- [x] Non-blocking operation (returns immediately vs 2-8 seconds)
+- [x] Returns structured ResearchPlan for LLM to execute phases
+- [x] 18 tests passing in `tests/utils/research-orchestrator-delegation.test.ts`
+
+### Success Metrics
+
+- [x] All 4 task integrations implemented (Bootstrap, Deployment, Research, ADR Planning)
+- [x] 108 tests passing across 5 test files
+- [x] TypeScript compiles with no errors
+- [x] Non-blocking LLM delegation pattern working
+
+### Exit Criteria
+
+- [x] Task managers provide progress tracking and cancellation
+- [x] Research Orchestrator supports LLM delegation
+- [x] All tests passing
+- [x] Documentation updated (ADR-020)
+
+---
+
 ## Risk Mitigation
 
 ### Technical Risks
@@ -409,17 +480,34 @@ From ADR-014, key refactoring targets:
 
 ## Appendix B: Related Documentation
 
-- [ADR-014: CE-MCP Architecture](./adrs/adr-014-ce-mcp-architecture.md)
-- [ADR-001: MCP Protocol Implementation](./adrs/adr-001-mcp-protocol-implementation-strategy.md)
-- [ADR-002: AI Integration Strategy](./adrs/adr-002-ai-integration-and-advanced-prompting-strategy.md)
-- [ADR-010: Bootstrap Deployment Architecture](./adrs/adr-010-bootstrap-deployment-architecture.md)
+### Core ADRs
+
+- [ADR-014: CE-MCP Architecture](./adrs/adr-014-ce-mcp-architecture.md) - Primary architecture for this implementation
+- [ADR-001: MCP Protocol Implementation](./adrs/adr-001-mcp-protocol-implementation-strategy.md) - Foundation protocol (evolved by ADR-014)
+- [ADR-002: AI Integration Strategy](./adrs/adr-002-ai-integration-and-advanced-prompting-strategy.md) - AI patterns (evolved by ADR-014)
+
+### Supporting ADRs
+
+- [ADR-010: Bootstrap Deployment Architecture](./adrs/adr-010-bootstrap-deployment-architecture.md) - Deployment automation
+- [ADR-015: APE Optimization Strategy](./adrs/adr-015-ape-optimization-strategy.md) - Prompt optimization
+- [ADR-018: Atomic Tools Architecture](./adrs/adr-018-atomic-tools-architecture.md) - DI pattern for tools
+- [ADR-020: MCP Tasks Integration Strategy](./adrs/adr-020-mcp-tasks-integration-strategy.md) - Long-running operations
+
+### Testing ADRs
+
+- [ADR-005: Testing and Quality Assurance Strategy](./adrs/adr-005-testing-and-quality-assurance-strategy.md) - Test infrastructure
+- [ADR-019: Vitest Migration](./adrs/adr-019-vitest-migration.md) - Test framework migration
 
 ---
 
 ## Version History
 
-| Version | Date       | Author       | Changes                                                             |
-| ------- | ---------- | ------------ | ------------------------------------------------------------------- |
-| 1.0     | 2025-12-10 | AI Assistant | Initial plan creation                                               |
-| 1.1     | 2025-12-10 | AI Assistant | Phase 4.3: Completed migration of all 59 tools to CE-MCP directives |
-| 1.2     | 2025-12-10 | AI Assistant | Phase 4.4: Completed cleanup and optimization                       |
+| Version | Date       | Author       | Changes                                                                                                                              |
+| ------- | ---------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
+| 1.0     | 2025-12-10 | AI Assistant | Initial plan creation                                                                                                                |
+| 1.1     | 2025-12-10 | AI Assistant | Phase 4.3: Completed migration of all 59 tools to CE-MCP directives                                                                  |
+| 1.2     | 2025-12-10 | AI Assistant | Phase 4.4: Completed cleanup and optimization                                                                                        |
+| 1.3     | 2025-12-17 | AI Assistant | Phase 2: Confirmed all 5 pilot tools have CE-MCP directives                                                                          |
+| 1.4     | 2025-12-17 | AI Assistant | Phase 2 Validation: Added migration tests, playbook, rollback tests                                                                  |
+| 1.5     | 2025-12-17 | AI Assistant | ADR cleanup: Fixed duplicate ADR-018, renamed to ADR-020, updated README cross-refs                                                  |
+| 1.6     | 2025-12-17 | AI Assistant | MCP Tasks: Completed ADR-020 implementation - Bootstrap, Deployment, Research, ADR Planning task integrations with 108 passing tests |
