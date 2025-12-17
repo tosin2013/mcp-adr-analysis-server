@@ -509,7 +509,10 @@ healthChecks:
     unhealthyThreshold: 2
 
   - name: 'HPA Scaling Status'
-    endpoint: 'kubectl get hpa <app-name> -o jsonpath="{.status.conditions[?(@.type==\"AbleToScale\")].status}" | grep -q True'
+    endpoint: >-
+      kubectl get hpa <app-name>
+      -o jsonpath="{.status.conditions[?(@.type==\"AbleToScale\")].status}"
+      | grep -q True
     interval: 60000
     timeout: 5000
     healthyThreshold: 1

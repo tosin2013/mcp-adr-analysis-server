@@ -2,7 +2,7 @@
  * Tests for Knowledge Graph Resource
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _jest } from 'vitest';
 import { URLSearchParams } from 'url';
 import {
   generateKnowledgeGraphResource,
@@ -76,7 +76,7 @@ describe('Knowledge Graph Resource', () => {
 
     // Create mock KnowledgeGraphManager
     mockKgManager = {
-      loadKnowledgeGraph: jest.fn().mockResolvedValue(mockSnapshot),
+      loadKnowledgeGraph: vi.fn().mockResolvedValue(mockSnapshot),
     } as any;
   });
 
@@ -186,7 +186,7 @@ describe('Knowledge Graph Resource', () => {
         intents: [],
       };
 
-      mockKgManager.loadKnowledgeGraph = jest.fn().mockResolvedValue(emptySnapshot);
+      mockKgManager.loadKnowledgeGraph = vi.fn().mockResolvedValue(emptySnapshot);
 
       const result = await generateKnowledgeGraphResource({}, new URLSearchParams(), mockKgManager);
 

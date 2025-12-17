@@ -1,8 +1,8 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 
 describe('Memory Rollback Manager', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Module Loading and Integration', () => {

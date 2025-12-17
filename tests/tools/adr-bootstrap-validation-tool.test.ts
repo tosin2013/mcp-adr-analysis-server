@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach } from 'vitest';
 import { generateAdrBootstrapScripts } from '../../src/tools/adr-bootstrap-validation-tool.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';

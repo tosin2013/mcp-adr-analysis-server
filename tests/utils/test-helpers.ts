@@ -3,7 +3,7 @@
  * Provides utilities for different test types with proper resource management
  */
 
-import { jest } from '@jest/globals';
+import { vi, type Mock } from 'vitest';
 import { testInfrastructure, withTimeout, withResourceTracking } from './test-infrastructure.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -180,10 +180,8 @@ export function generateConcurrentOperations<T>(
 }
 
 // Mock helpers with cleanup
-export function createMockFunction<T extends (...args: any[]) => any>(
-  implementation?: T
-): jest.MockedFunction<T> {
-  const mockFn = jest.fn(implementation) as jest.MockedFunction<T>;
+export function createMockFunction<T extends (...args: any[]) => any>(implementation?: T): Mock<T> {
+  const mockFn = vi.fn(implementation) as Mock<T>;
 
   // Add cleanup callback
   testInfrastructure.addCleanupCallback(async () => {
@@ -193,11 +191,9 @@ export function createMockFunction<T extends (...args: any[]) => any>(
   return mockFn;
 }
 
-export function mockConsoleMethod(
-  method: 'log' | 'warn' | 'error' | 'info' | 'debug'
-): jest.MockedFunction<any> {
+export function mockConsoleMethod(method: 'log' | 'warn' | 'error' | 'info' | 'debug'): Mock<any> {
   const originalMethod = console[method];
-  const mockMethod = jest.fn();
+  const mockMethod = vi.fn();
 
   (console as any)[method] = mockMethod;
 
