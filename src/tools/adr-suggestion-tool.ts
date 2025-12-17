@@ -2,6 +2,11 @@
  * MCP Tool for ADR suggestions and implicit decision detection
  * Enhanced with Knowledge Generation, Reflexion capabilities, and Research-Driven Architecture
  * Implements AI-powered ADR recommendation system with environment-aware research
+ *
+ * Following ADR-018 Atomic Tools Architecture:
+ * - Dependency injection for testability
+ * - No ResearchOrchestrator (deprecated) - uses static context
+ * - Self-contained with minimal dependencies
  */
 
 import { McpAdrError } from '../types/index.js';
@@ -15,7 +20,7 @@ import {
 import { executeADRSuggestionPrompt, formatMCPResponse } from '../utils/prompt-execution.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 import { findRelatedCode } from '../utils/file-system.js';
-import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+// ResearchOrchestrator removed per ADR-018 - using static infrastructure context instead
 import { getAIExecutor } from '../utils/ai-executor.js';
 import {
   getEnhancedModeDefault,
@@ -495,66 +500,30 @@ The enhanced AI analysis will provide:
         let codeContext = '';
         let researchContext = '';
 
-        // Step 0: Research current infrastructure state (NEW - Research-Driven Architecture)
-        try {
-          const orchestrator = new ResearchOrchestrator(projectPath, 'docs/adrs');
+        // Step 0: Static Infrastructure Context (ADR-018: replaced ResearchOrchestrator)
+        // ResearchOrchestrator was removed per ADR-018 to eliminate blocking calls that caused
+        // test timeouts. For detailed infrastructure research, use analyze_project_ecosystem tool.
+        researchContext = `
+## 🔬 Architecture Analysis Context
 
-          // Research questions about current architecture
-          const infrastructureResearch = await orchestrator.answerResearchQuestion(
-            'What is our current infrastructure and deployment architecture? Include container technology, orchestration, databases, and key architectural patterns.'
-          );
+**Project Path**: ${projectPath}
+**ADR Directory**: docs/adrs
+**Existing ADRs**: ${existingAdrs?.length || 0} provided
 
-          if (infrastructureResearch.confidence >= 0.5) {
-            researchContext = `
-## 🔬 Research-Driven Architecture Analysis
+### Analysis Approach
+This analysis uses the **Atomic Tools Architecture** (ADR-018):
+- Direct project file analysis via file system utilities
+- Knowledge graph queries via MCP Resources (zero-cost reads)
+- No blocking ResearchOrchestrator calls
 
-**Live Infrastructure Research Results:**
-
-### Current State
-${infrastructureResearch.answer}
-
-### Data Sources Consulted
-${infrastructureResearch.sources.map(s => `- **${s.type}** (confidence: ${(s.confidence * 100).toFixed(1)}%)`).join('\n')}
-
-### Research Metadata
-- **Overall Confidence**: ${(infrastructureResearch.confidence * 100).toFixed(1)}%
-- **Files Analyzed**: ${infrastructureResearch.metadata.filesAnalyzed}
-- **Sources Queried**: ${infrastructureResearch.metadata.sourcesQueried.join(', ')}
-- **Research Duration**: ${infrastructureResearch.metadata.duration}ms
-${infrastructureResearch.needsWebSearch ? '- **Recommendation**: Consider web search for additional context\n' : ''}
-
-### Infrastructure Evidence
-${infrastructureResearch.sources
-  .filter(s => s.found && s.data)
-  .map(s => {
-    if (s.type === 'project_files') {
-      return `**Project Files**: ${s.data.files?.length || 0} relevant files found`;
-    } else if (s.type === 'environment') {
-      return `**Environment Data**: ${JSON.stringify(s.data).substring(0, 200)}...`;
-    } else if (s.type === 'knowledge_graph') {
-      return `**Knowledge Graph**: ${s.data.relatedAdrs?.length || 0} related ADRs`;
-    }
-    return '';
-  })
-  .filter(Boolean)
-  .join('\n')}
+### Recommended Additional Analysis
+For detailed infrastructure research, use these tools in sequence:
+1. \`analyze_project_ecosystem\` - Comprehensive project analysis
+2. \`read_knowledge_graph\` - Query existing architectural knowledge
+3. \`review_existing_adrs\` - Analyze current ADR inventory
 
 ---
 `;
-          }
-        } catch (error) {
-          console.warn('[WARNING] Research-driven infrastructure analysis failed:', error);
-          researchContext = `
-## 🔬 Research-Driven Architecture Analysis
-
-**Status**: ⚠️ Research analysis unavailable
-**Error**: ${error instanceof Error ? error.message : 'Unknown error'}
-
-Proceeding with traditional analysis methods...
-
----
-`;
-        }
 
         // Step 1: Generate domain-specific knowledge if enabled
         if (knowledgeEnhancement) {

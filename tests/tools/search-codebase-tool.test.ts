@@ -5,7 +5,7 @@
  * No complex ESM mocking required - uses simple dependency injection.
  */
 
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+import { describe, it, expect, _jest, beforeEach } from 'vitest';
 import {
   searchCodebase,
   searchCodebaseTool,
@@ -14,7 +14,7 @@ import {
 
 // Mock dependencies with proper typing
 const createMockDeps = (): SearchCodebaseDependencies => {
-  const mockReadFile = jest.fn();
+  const mockReadFile = vi.fn();
   return {
     fs: {
       readFile: mockReadFile,
@@ -31,15 +31,15 @@ describe('searchCodebase', () => {
 
   describe('input validation', () => {
     it('should throw error when query is empty', async () => {
-      await expect(
-        searchCodebase({ query: '' }, mockDeps)
-      ).rejects.toThrow('Search query is required');
+      await expect(searchCodebase({ query: '' }, mockDeps)).rejects.toThrow(
+        'Search query is required'
+      );
     });
 
     it('should throw error when query is only whitespace', async () => {
-      await expect(
-        searchCodebase({ query: '   ' }, mockDeps)
-      ).rejects.toThrow('Search query is required');
+      await expect(searchCodebase({ query: '   ' }, mockDeps)).rejects.toThrow(
+        'Search query is required'
+      );
     });
 
     it('should accept valid query', async () => {
@@ -396,7 +396,7 @@ describe('searchCodebase', () => {
     it('should continue on file read errors', async () => {
       const failingDeps: SearchCodebaseDependencies = {
         fs: {
-          readFile: jest.fn().mockRejectedValue(new Error('File read error')),
+          readFile: vi.fn().mockRejectedValue(new Error('File read error')),
         } as any,
       };
 

@@ -4,34 +4,48 @@
  * Test coverage for the core memory-centric architecture component
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
 
-// Mock fs module first
-const mockFsPromises = {
-  access: jest.fn(),
-  mkdir: jest.fn(),
-  readFile: jest.fn(),
-  writeFile: jest.fn(),
-};
-
-jest.mock('fs/promises', () => mockFsPromises);
-
-// Also mock fs module directly since some versions may use require
-jest.mock('fs', () => ({
-  promises: mockFsPromises,
-}));
-
-// Mock crypto module first
-const mockRandomUUID = jest.fn(() => 'test-uuid-123');
-jest.mock('crypto', () => {
+// Mock fs/promises module with self-contained factory (vi.mock is hoisted)
+vi.mock('fs/promises', async () => {
+  const { vi } = await import('vitest');
   return {
-    randomUUID: mockRandomUUID,
-    default: {
-      randomUUID: mockRandomUUID,
-    },
-    __esModule: true,
+    access: vi.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue('{}'),
+    writeFile: vi.fn().mockResolvedValue(undefined),
   };
 });
+
+// Also mock fs module directly since some versions may use require
+vi.mock('fs', () => ({
+  promises: {
+    access: vi.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue('{}'),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
+// Mock crypto module with self-contained factory - must return valid UUID format
+// Use a counter to generate unique UUIDs for each call
+let uuidCounter = 0;
+vi.mock('crypto', () => ({
+  randomUUID: vi.fn(() => {
+    uuidCounter++;
+    // Format: 12345678-1234-4XXX-8901-XXXXXXXXXXXX where X is the counter (padded)
+    const paddedCounter = String(uuidCounter).padStart(12, '0');
+    return `12345678-1234-4567-8901-${paddedCounter}`;
+  }),
+  default: {
+    randomUUID: vi.fn(() => {
+      uuidCounter++;
+      const paddedCounter = String(uuidCounter).padStart(12, '0');
+      return `12345678-1234-4567-8901-${paddedCounter}`;
+    }),
+  },
+  __esModule: true,
+}));
 
 // Import after mocking
 import * as path from 'path';
@@ -39,7 +53,7 @@ import * as path from 'path';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 
 // Get the mocked crypto
-// const mockedCrypto = jest.mocked(crypto);
+// const mockedCrypto = vi.mocked(crypto);
 import {
   MemoryEntity,
   // MemoryRelationship,
@@ -49,30 +63,35 @@ import {
   // KnowledgeArtifactMemory,
 } from '../../src/types/memory-entities.js';
 
-const mockFs = mockFsPromises;
-// const mockCrypto = jest.mocked(crypto);
+// Get mock references for fs after imports
+let mockFs: {
+  access: ReturnType<typeof vi.fn>;
+  mkdir: ReturnType<typeof vi.fn>;
+  readFile: ReturnType<typeof vi.fn>;
+  writeFile: ReturnType<typeof vi.fn>;
+};
 
 // Mock config
-jest.mock('../../src/utils/config.js', () => ({
-  loadConfig: jest.fn(() => ({
+vi.mock('../../src/utils/config.js', () => ({
+  loadConfig: vi.fn(() => ({
     projectPath: '/test/project',
     adrDirectory: '/test/project/docs/adrs',
   })),
 }));
 
-// Mock enhanced logging
-jest.mock('../../src/utils/enhanced-logging.js', () => ({
-  EnhancedLogger: jest.fn().mockImplementation(() => ({
-    info: jest.fn(),
-    debug: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  })),
-  createComponentLogger: jest.fn(() => ({
-    info: jest.fn(),
-    debug: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
+// Mock enhanced logging - use class syntax for constructable mock
+vi.mock('../../src/utils/enhanced-logging.js', () => ({
+  EnhancedLogger: class MockEnhancedLogger {
+    info = vi.fn();
+    debug = vi.fn();
+    warn = vi.fn();
+    error = vi.fn();
+  },
+  createComponentLogger: vi.fn(() => ({
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
   })),
 }));
 
@@ -184,10 +203,16 @@ function createValidCodeComponentEntity(overrides: any = {}) {
 
 describe('MemoryEntityManager', () => {
   let memoryManager: MemoryEntityManager;
-  let mockDate: jest.SpyInstance;
+  let mockDate: ReturnType<typeof vi.spyOn>;
+
+  beforeAll(async () => {
+    // Initialize mock references from the mocked modules
+    const fsModule = await import('fs/promises');
+    mockFs = fsModule as typeof mockFs;
+  });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock filesystem operations - ensure fresh mocks each time
     mockFs.access.mockReset();
@@ -207,9 +232,8 @@ describe('MemoryEntityManager', () => {
     mockFs.readFile.mockRejectedValue(new Error('ENOENT')); // No files exist by default
     mockFs.writeFile.mockResolvedValue(undefined);
 
-    // Reset crypto mock
-    mockRandomUUID.mockClear();
-    mockRandomUUID.mockReturnValue('test-uuid-123');
+    // Reset UUID counter for consistent test behavior
+    uuidCounter = 0;
 
     // Create fresh memory manager instance for each test to avoid state pollution
     memoryManager = new MemoryEntityManager({}, true); // Enable test mode
@@ -217,10 +241,8 @@ describe('MemoryEntityManager', () => {
     memoryManager.clearCache();
 
     // Mock date to be consistent
-    mockDate = jest
-      .spyOn(Date.prototype, 'toISOString')
-      .mockReturnValue('2024-01-01T00:00:00.000Z');
-    jest.spyOn(Date, 'now').mockReturnValue(1704067200000); // 2024-01-01
+    mockDate = vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T00:00:00.000Z');
+    vi.spyOn(Date, 'now').mockReturnValue(1704067200000); // 2024-01-01
   });
 
   afterEach(() => {
@@ -228,7 +250,7 @@ describe('MemoryEntityManager', () => {
     if (mockDate) {
       mockDate.mockRestore();
     }
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('initialization', () => {
@@ -243,7 +265,7 @@ describe('MemoryEntityManager', () => {
       const directoryManager = new MemoryEntityManager({}, false);
 
       // Reset all mocks for this test
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       mockFs.access.mockRejectedValue(new Error('ENOENT'));
       mockFs.mkdir.mockResolvedValue(undefined);
       mockFs.readFile.mockRejectedValue(new Error('ENOENT'));
@@ -325,7 +347,7 @@ describe('MemoryEntityManager', () => {
       const errorManager = new MemoryEntityManager({}, false);
 
       // Reset previous mocks and make directory creation fail
-      jest.clearAllMocks();
+      vi.clearAllMocks();
       mockFs.access.mockRejectedValue(new Error('ENOENT'));
       mockFs.mkdir.mockRejectedValue(new Error('Permission denied'));
 
@@ -577,7 +599,7 @@ describe('MemoryEntityManager', () => {
     describe('upsertRelationship', () => {
       it('should create a new relationship', async () => {
         const relationshipData = {
-          id: 'test-uuid-123',
+          id: '12345678-1234-4567-8901-123456789012',
           sourceId: entity1.id,
           targetId: entity2.id,
           type: 'depends_on' as const,
@@ -586,7 +608,7 @@ describe('MemoryEntityManager', () => {
 
         const result = await memoryManager.upsertRelationship(relationshipData);
 
-        expect(result.id).toBe('test-uuid-123');
+        expect(result.id).toBe('12345678-1234-4567-8901-123456789012');
         expect(result.sourceId).toBe(entity1.id);
         expect(result.targetId).toBe(entity2.id);
         expect(result.type).toBe('depends_on');
@@ -1016,7 +1038,7 @@ describe('MemoryEntityManager', () => {
     beforeEach(async () => {
       // Mock Date.now to ensure consistent time
       const baseTime = Date.now();
-      jest.spyOn(Date, 'now').mockReturnValue(baseTime);
+      vi.spyOn(Date, 'now').mockReturnValue(baseTime);
 
       memoryManager.clearCache();
       await memoryManager.initialize();

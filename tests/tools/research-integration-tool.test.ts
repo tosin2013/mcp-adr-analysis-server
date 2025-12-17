@@ -1,8 +1,8 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 
 describe('Research Integration Tool', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Module Loading', () => {
@@ -21,9 +21,8 @@ describe('Research Integration Tool', () => {
 
   describe('Research Template Creation', () => {
     it('should create research template for project analysis', async () => {
-      const { createResearchTemplate } = await import(
-        '../../src/tools/research-integration-tool.js'
-      );
+      const { createResearchTemplate } =
+        await import('../../src/tools/research-integration-tool.js');
 
       const result = await createResearchTemplate({
         projectPath: '/test/project',
@@ -36,9 +35,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should handle different research types', async () => {
-      const { createResearchTemplate } = await import(
-        '../../src/tools/research-integration-tool.js'
-      );
+      const { createResearchTemplate } =
+        await import('../../src/tools/research-integration-tool.js');
 
       const researchTypes = ['architectural', 'security', 'performance', 'scalability'];
 
@@ -54,9 +52,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should integrate with existing project structure', async () => {
-      const { createResearchTemplate } = await import(
-        '../../src/tools/research-integration-tool.js'
-      );
+      const { createResearchTemplate } =
+        await import('../../src/tools/research-integration-tool.js');
 
       const result = await createResearchTemplate({
         projectPath: '/test/project',
@@ -67,9 +64,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should provide technology-specific questions', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -85,9 +81,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should handle conversation context', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -102,9 +97,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should generate focused research for specific domains', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -119,9 +113,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should support multi-language project analysis', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -138,9 +131,8 @@ describe('Research Integration Tool', () => {
 
   describe('Integration with Other Tools', () => {
     it('should integrate with bootstrap validation workflow', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -155,9 +147,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should support memory system integration', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -172,9 +163,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should handle ADR-based research generation', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -191,9 +181,8 @@ describe('Research Integration Tool', () => {
 
   describe('Error Handling', () => {
     it('should handle missing project path gracefully', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -208,9 +197,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should handle invalid research types', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -225,9 +213,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should provide fallback questions when analysis fails', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -244,9 +231,8 @@ describe('Research Integration Tool', () => {
 
   describe('Tree-sitter Integration Gap Analysis', () => {
     it('should acknowledge missing tree-sitter parsing', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {
@@ -276,9 +262,8 @@ describe('Research Integration Tool', () => {
     });
 
     it('should suggest tree-sitter integration for better analysis', async () => {
-      const { generateResearchQuestions } = await import(
-        '../../src/tools/research-question-tool.js'
-      );
+      const { generateResearchQuestions } =
+        await import('../../src/tools/research-question-tool.js');
 
       const result = await generateResearchQuestions({
         researchContext: {

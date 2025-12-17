@@ -1,4 +1,4 @@
-import { jest as _jest } from '@jest/globals';
+import { vi as _vi } from 'vitest';
 import {
   combinePrompts,
   createAIDelegationPrompt,

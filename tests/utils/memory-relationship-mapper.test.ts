@@ -3,7 +3,7 @@
  * Tests cross-tool memory relationship creation and validation
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi, MockInstance } from 'vitest';
 import { MemoryRelationshipMapper } from '../../src/utils/memory-relationship-mapper.js';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import * as fs from 'fs/promises';
@@ -18,12 +18,17 @@ import {
   // FailurePatternMemory,
 } from '../../src/types/memory-entities.js';
 
-// Mock crypto
-const mockCrypto = {
-  randomUUID: jest.fn(() => 'test-uuid-123'),
-};
+// Use vi.hoisted to ensure mockCrypto is available before vi.mock is hoisted
+const { mockCrypto } = vi.hoisted(() => ({
+  mockCrypto: {
+    randomUUID: vi.fn(() => 'test-uuid-123'),
+    default: {
+      randomUUID: vi.fn(() => 'test-uuid-123'),
+    },
+  },
+}));
 
-jest.mock('crypto', () => mockCrypto);
+vi.mock('crypto', () => mockCrypto);
 
 // Helper functions for creating valid test entities
 function _createValidDeploymentAssessmentEntity(overrides: any = {}) {
@@ -184,11 +189,11 @@ function _createValidADREntity(overrides: any = {}) {
 describe('MemoryRelationshipMapper', () => {
   let memoryManager: MemoryEntityManager;
   let mapper: MemoryRelationshipMapper;
-  let mockDate: jest.SpyInstance;
+  let mockDate: MockInstance;
   let testTempDir: string;
 
   beforeEach(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Create a unique temporary directory for this test with high randomness
     const timestamp = Date.now();
@@ -197,10 +202,8 @@ describe('MemoryRelationshipMapper', () => {
     await fs.mkdir(testTempDir, { recursive: true });
 
     // Mock date to be consistent
-    mockDate = jest
-      .spyOn(Date.prototype, 'toISOString')
-      .mockReturnValue('2024-01-01T00:00:00.000Z');
-    jest.spyOn(Date, 'now').mockReturnValue(1704067200000); // 2024-01-01
+    mockDate = vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T00:00:00.000Z');
+    vi.spyOn(Date, 'now').mockReturnValue(1704067200000); // 2024-01-01
 
     // Reset crypto mock
     mockCrypto.randomUUID.mockReturnValue('test-uuid-123');
@@ -683,7 +686,7 @@ describe('MemoryRelationshipMapper', () => {
 
     it('should auto-create high-confidence relationships', async () => {
       // Spy on the upsertRelationship method to track calls (but let it work normally)
-      const upsertRelationshipSpy = jest.spyOn(memoryManager, 'upsertRelationship');
+      const upsertRelationshipSpy = vi.spyOn(memoryManager, 'upsertRelationship');
 
       // Create entities with high similarity for auto-relationship creation
       const session: TroubleshootingSessionMemory = {

@@ -4,30 +4,30 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
 
 // Mock conditional-request (needed for generateETag)
-jest.unstable_mockModule('../../src/utils/conditional-request.js', () => ({
-  generateStrongETag: jest.fn((data: any) => `etag-${JSON.stringify(data).length}`),
+vi.mock('../../src/utils/conditional-request.js', () => ({
+  generateStrongETag: vi.fn((data: any) => `etag-${JSON.stringify(data).length}`),
 }));
 
 // Mock ResourceCache
-const mockCacheGet = jest.fn();
-const mockCacheSet = jest.fn();
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
 
-jest.unstable_mockModule('../../src/resources/resource-cache.js', () => ({
+vi.mock('../../src/resources/resource-cache.js', () => ({
   resourceCache: {
     get: mockCacheGet,
     set: mockCacheSet,
   },
   generateETag: (data: any) => `etag-${JSON.stringify(data).length}`,
-  ResourceCache: jest.fn(),
+  ResourceCache: vi.fn(),
 }));
 
 // Mock adr-discovery
-const mockDiscoverAdrsInDirectory = jest.fn();
+const mockDiscoverAdrsInDirectory = vi.fn();
 
-jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
+vi.mock('../../src/utils/adr-discovery.js', () => ({
   discoverAdrsInDirectory: mockDiscoverAdrsInDirectory,
 }));
 
@@ -40,7 +40,7 @@ describe('ADRs Discovered Resource', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default: no cache hit
     mockCacheGet.mockResolvedValue(null);
@@ -103,7 +103,7 @@ describe('ADRs Discovered Resource', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic Resource Generation', () => {
@@ -164,19 +164,27 @@ describe('ADRs Discovered Resource', () => {
     it('should include content when requested', async () => {
       await generateAdrsDiscoveredResource({}, new URLSearchParams('includeContent=true'));
 
-      expect(mockDiscoverAdrsInDirectory).toHaveBeenCalledWith(expect.any(String), expect.any(String), {
-        includeContent: true,
-        includeTimeline: false,
-      });
+      expect(mockDiscoverAdrsInDirectory).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        {
+          includeContent: true,
+          includeTimeline: false,
+        }
+      );
     });
 
     it('should include timeline when requested', async () => {
       await generateAdrsDiscoveredResource({}, new URLSearchParams('includeTimeline=true'));
 
-      expect(mockDiscoverAdrsInDirectory).toHaveBeenCalledWith(expect.any(String), expect.any(String), {
-        includeContent: false,
-        includeTimeline: true,
-      });
+      expect(mockDiscoverAdrsInDirectory).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.any(String),
+        {
+          includeContent: false,
+          includeTimeline: true,
+        }
+      );
     });
   });
 
@@ -307,11 +315,7 @@ describe('ADRs Discovered Resource', () => {
     it('should use project-specific cache key for custom paths', async () => {
       await generateAdrsDiscoveredResource({}, new URLSearchParams('projectPath=/custom'));
 
-      expect(mockCacheSet).toHaveBeenCalledWith(
-        'adrs-discovered:/custom',
-        expect.anything(),
-        120
-      );
+      expect(mockCacheSet).toHaveBeenCalledWith('adrs-discovered:/custom', expect.anything(), 120);
     });
 
     it('should use 2-minute TTL for occasionally changing data', async () => {

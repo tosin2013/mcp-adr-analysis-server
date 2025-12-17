@@ -4,24 +4,24 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
 
 // Mock conditional-request (needed for generateETag)
-jest.unstable_mockModule('../../src/utils/conditional-request.js', () => ({
-  generateStrongETag: jest.fn((data: any) => `etag-${JSON.stringify(data).length}`),
+vi.mock('../../src/utils/conditional-request.js', () => ({
+  generateStrongETag: vi.fn((data: any) => `etag-${JSON.stringify(data).length}`),
 }));
 
 // Mock ResourceCache
-const mockCacheGet = jest.fn();
-const mockCacheSet = jest.fn();
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
 
-jest.unstable_mockModule('../../src/resources/resource-cache.js', () => ({
+vi.mock('../../src/resources/resource-cache.js', () => ({
   resourceCache: {
     get: mockCacheGet,
     set: mockCacheSet,
   },
   generateETag: (data: any) => `etag-${JSON.stringify(data).length}`,
-  ResourceCache: jest.fn(),
+  ResourceCache: vi.fn(),
 }));
 
 describe('Conversation Snapshot Resource', () => {
@@ -34,14 +34,14 @@ describe('Conversation Snapshot Resource', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default: no cache hit
     mockCacheGet.mockResolvedValue(null);
 
     // Mock memory manager with typical snapshot
     mockMemoryManager = {
-      getContextSnapshot: jest.fn().mockResolvedValue({
+      getContextSnapshot: vi.fn().mockResolvedValue({
         sessionId: 'session-123',
         recentTurns: [
           {
@@ -81,7 +81,7 @@ describe('Conversation Snapshot Resource', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic Resource Generation', () => {
