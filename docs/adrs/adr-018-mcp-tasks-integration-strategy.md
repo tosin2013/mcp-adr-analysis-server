@@ -55,7 +55,14 @@ The mcp-adr-analysis-server currently has several tools that implement custom lo
    - Multi-step research workflows
    - Custom progress tracking
 
-6. **Troubleshoot Guided Workflow Tool** (`src/tools/troubleshoot-guided-workflow-tool.ts`)
+6. **Interactive ADR Planning Tool** (`src/tools/interactive-adr-planning-tool.ts`)
+   - 7-phase guided ADR creation workflow
+   - Phases: problem_definition → research_analysis → option_exploration → decision_making → impact_assessment → implementation_planning → adr_generation
+   - Session-based with persistent state across tool calls
+   - Uses ResearchOrchestrator for context gathering
+   - Generates TODOs from architectural decisions
+
+7. **Troubleshoot Guided Workflow Tool** (`src/tools/troubleshoot-guided-workflow-tool.ts`)
    - Systematic troubleshooting with multiple operations: `analyze_failure`, `generate_test_plan`, `full_workflow`
    - Memory integration via `TroubleshootingMemoryManager` for session persistence
    - Stores troubleshooting sessions with effectiveness tracking
@@ -82,12 +89,13 @@ We will integrate MCP Tasks into the mcp-adr-analysis-server to provide standard
 
 #### High Priority - Replace Custom Implementations
 
-| Tool                           | Current Implementation         | MCP Tasks Benefit                              |
-| ------------------------------ | ------------------------------ | ---------------------------------------------- |
-| `bootstrap_validation_loop`    | Custom `executionId`, phases   | Standardized progress, cancellation support    |
-| `deployment_readiness`         | Custom history tracking        | Protocol-compliant state persistence           |
-| `tool_chain_orchestrator`      | Already deprecated             | Direct replacement with Tasks                  |
-| `troubleshoot_guided_workflow` | Custom memory session tracking | Track full_workflow with session effectiveness |
+| Tool                           | Current Implementation         | MCP Tasks Benefit                                               |
+| ------------------------------ | ------------------------------ | --------------------------------------------------------------- |
+| `bootstrap_validation_loop`    | Custom `executionId`, phases   | Standardized progress, cancellation support                     |
+| `deployment_readiness`         | Custom history tracking        | Protocol-compliant state persistence                            |
+| `tool_chain_orchestrator`      | Already deprecated             | Direct replacement with Tasks                                   |
+| `troubleshoot_guided_workflow` | Custom memory session tracking | Track full_workflow with session effectiveness                  |
+| `interactive_adr_planning`     | Custom 7-phase session state   | Track ADR planning workflow with phase progress (14% per phase) |
 
 #### Medium Priority - Enhance with Tasks
 
@@ -95,7 +103,6 @@ We will integrate MCP Tasks into the mcp-adr-analysis-server to provide standard
 | -------------------------- | --------------------------------------------------- |
 | `perform_research`         | Track multi-step research workflows                 |
 | `adr_bootstrap_validation` | Track script generation progress                    |
-| `interactive_adr_planning` | Track planning session state                        |
 | `adr_validation`           | Track bulk ADR validation with AI analysis progress |
 
 ### Phase 3: DAG Executor Integration
@@ -111,7 +118,7 @@ Integrate `DAGExecutor` with MCP Tasks:
 ```typescript
 interface McpTask {
   taskId: string; // Unique task identifier
-  type: TaskType; // 'bootstrap' | 'deployment' | 'research' | 'orchestration' | 'troubleshooting' | 'validation'
+  type: TaskType; // 'bootstrap' | 'deployment' | 'research' | 'orchestration' | 'troubleshooting' | 'validation' | 'planning'
   state: TaskState; // 'running' | 'completed' | 'failed' | 'cancelled'
   progress: number; // 0-100 percentage
   metadata: {
@@ -222,7 +229,15 @@ server.setRequestHandler('tasks/result', async request => {
 - [ ] Preserve dependency resolution
 - [ ] Remove deprecated orchestrator code
 
-### Step 5: DAG Executor Enhancement (Week 5)
+### Step 5: Interactive ADR Planning Migration (Week 5)
+
+- [ ] Wrap 7-phase planning workflow as a Task
+- [ ] Map phases to progress (0-14-28-42-57-71-85-100%)
+- [ ] Support session persistence across tool calls
+- [ ] Enable cancellation between phases
+- [ ] Track research sub-operations as nested progress
+
+### Step 6: DAG Executor Enhancement (Week 6)
 
 - [ ] Create `tasks/dag` task type
 - [ ] Map DAG nodes to sub-tasks
