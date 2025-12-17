@@ -3,26 +3,26 @@
  * Tests research directory monitoring, topic extraction, impact evaluation, and update suggestions
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
 // Pragmatic mocking approach to avoid TypeScript complexity
-jest.unstable_mockModule('fs/promises', () => ({
-  access: jest.fn(),
-  readdir: jest.fn(),
-  stat: jest.fn(),
-  readFile: jest.fn(),
+vi.mock('fs/promises', () => ({
+  access: vi.fn(),
+  readdir: vi.fn(),
+  stat: vi.fn(),
+  readFile: vi.fn(),
 }));
 
-jest.unstable_mockModule('path', () => ({
-  resolve: jest.fn(),
-  join: jest.fn(),
-  extname: jest.fn(),
-  relative: jest.fn(),
+vi.mock('path', () => ({
+  resolve: vi.fn(),
+  join: vi.fn(),
+  extname: vi.fn(),
+  relative: vi.fn(),
 }));
 
-jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
-  discoverAdrsInDirectory: jest.fn(),
+vi.mock('../../src/utils/adr-discovery.js', () => ({
+  discoverAdrsInDirectory: vi.fn(),
 }));
 
 const {
@@ -40,7 +40,7 @@ const { discoverAdrsInDirectory } = await import('../../src/utils/adr-discovery.
 
 describe('research-integration', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('monitorResearchDirectory', () => {
@@ -50,28 +50,28 @@ describe('research-integration', () => {
         size: 1024,
       };
 
-      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockReturnValue(
+      (path.resolve as MockedFunction<typeof path.resolve>).mockReturnValue(
         '/project/docs/research'
       );
-      (fs.access as jest.MockedFunction<typeof fs.access>).mockResolvedValue(undefined);
-      (fs.readdir as jest.MockedFunction<typeof fs.readdir>).mockResolvedValue([
+      (fs.access as MockedFunction<typeof fs.access>).mockResolvedValue(undefined);
+      (fs.readdir as MockedFunction<typeof fs.readdir>).mockResolvedValue([
         { name: 'research1.md', isDirectory: () => false, isFile: () => true },
         { name: 'research2.txt', isDirectory: () => false, isFile: () => true },
       ] as any);
-      (path.join as jest.MockedFunction<typeof path.join>).mockImplementation((...args) =>
+      (path.join as MockedFunction<typeof path.join>).mockImplementation((...args) =>
         args.join('/')
       );
-      (path.extname as jest.MockedFunction<typeof path.extname>).mockImplementation(filename =>
+      (path.extname as MockedFunction<typeof path.extname>).mockImplementation(filename =>
         filename.includes('.md') ? '.md' : '.txt'
       );
-      (fs.stat as jest.MockedFunction<typeof fs.stat>).mockResolvedValue(mockStats as any);
+      (fs.stat as MockedFunction<typeof fs.stat>).mockResolvedValue(mockStats as any);
       (fs.readFile as any).mockImplementation((filepath: any) => {
         if (filepath.toString().includes('research1.md')) {
           return Promise.resolve('# Research 1\nContent for research 1');
         }
         return Promise.resolve('Research 2 text content');
       });
-      (path.relative as jest.MockedFunction<typeof path.relative>).mockImplementation((from, to) =>
+      (path.relative as MockedFunction<typeof path.relative>).mockImplementation((from, to) =>
         to.replace(from, '').replace(/^\//, '')
       );
 
@@ -99,10 +99,10 @@ describe('research-integration', () => {
     });
 
     it('should handle empty research directory', async () => {
-      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockReturnValue(
+      (path.resolve as MockedFunction<typeof path.resolve>).mockReturnValue(
         '/project/docs/research'
       );
-      (fs.access as jest.MockedFunction<typeof fs.access>).mockRejectedValue(
+      (fs.access as MockedFunction<typeof fs.access>).mockRejectedValue(
         new Error('Directory not found')
       );
 
@@ -116,10 +116,10 @@ describe('research-integration', () => {
     });
 
     it('should use default research path when not specified', async () => {
-      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockReturnValue(
+      (path.resolve as MockedFunction<typeof path.resolve>).mockReturnValue(
         '/project/docs/research'
       );
-      (fs.access as jest.MockedFunction<typeof fs.access>).mockRejectedValue(
+      (fs.access as MockedFunction<typeof fs.access>).mockRejectedValue(
         new Error('Directory not found')
       );
 
@@ -131,11 +131,11 @@ describe('research-integration', () => {
     it('should handle nested directories', async () => {
       const mockStats = { mtime: new Date('2024-01-01T12:00:00Z'), size: 512 };
 
-      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockReturnValue(
+      (path.resolve as MockedFunction<typeof path.resolve>).mockReturnValue(
         '/project/docs/research'
       );
-      (fs.access as jest.MockedFunction<typeof fs.access>).mockResolvedValue(undefined);
-      (fs.readdir as jest.MockedFunction<typeof fs.readdir>).mockImplementation(dirPath => {
+      (fs.access as MockedFunction<typeof fs.access>).mockResolvedValue(undefined);
+      (fs.readdir as MockedFunction<typeof fs.readdir>).mockImplementation(dirPath => {
         if (dirPath === '/project/docs/research') {
           return Promise.resolve([
             { name: 'subdir', isDirectory: () => true, isFile: () => false },
@@ -145,17 +145,13 @@ describe('research-integration', () => {
           { name: 'nested.md', isDirectory: () => false, isFile: () => true },
         ] as any);
       });
-      (path.join as jest.MockedFunction<typeof path.join>).mockImplementation((...args) =>
+      (path.join as MockedFunction<typeof path.join>).mockImplementation((...args) =>
         args.join('/')
       );
-      (path.extname as jest.MockedFunction<typeof path.extname>).mockReturnValue('.md');
-      (fs.stat as jest.MockedFunction<typeof fs.stat>).mockResolvedValue(mockStats as any);
-      (fs.readFile as jest.MockedFunction<typeof fs.readFile>).mockResolvedValue(
-        'Nested file content'
-      );
-      (path.relative as jest.MockedFunction<typeof path.relative>).mockReturnValue(
-        'subdir/nested.md'
-      );
+      (path.extname as MockedFunction<typeof path.extname>).mockReturnValue('.md');
+      (fs.stat as MockedFunction<typeof fs.stat>).mockResolvedValue(mockStats as any);
+      (fs.readFile as MockedFunction<typeof fs.readFile>).mockResolvedValue('Nested file content');
+      (path.relative as MockedFunction<typeof path.relative>).mockReturnValue('subdir/nested.md');
 
       const result = await monitorResearchDirectory('docs/research');
 
@@ -165,7 +161,7 @@ describe('research-integration', () => {
 
     it('should throw McpAdrError on monitoring failure', async () => {
       const monitoringError = new Error('File system error');
-      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockImplementation(() => {
+      (path.resolve as MockedFunction<typeof path.resolve>).mockImplementation(() => {
         throw monitoringError;
       });
 
@@ -179,25 +175,25 @@ describe('research-integration', () => {
   describe('extractResearchTopics', () => {
     it('should extract topics from research files', async () => {
       // Set up proper mocks for the file system operations
-      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockReturnValue(
+      (path.resolve as MockedFunction<typeof path.resolve>).mockReturnValue(
         '/project/docs/research'
       );
-      (fs.access as jest.MockedFunction<typeof fs.access>).mockResolvedValue(undefined);
-      (fs.readdir as jest.MockedFunction<typeof fs.readdir>).mockResolvedValue([
+      (fs.access as MockedFunction<typeof fs.access>).mockResolvedValue(undefined);
+      (fs.readdir as MockedFunction<typeof fs.readdir>).mockResolvedValue([
         { name: 'architecture.md', isDirectory: () => false, isFile: () => true },
       ] as any);
-      (path.join as jest.MockedFunction<typeof path.join>).mockImplementation((...args) =>
+      (path.join as MockedFunction<typeof path.join>).mockImplementation((...args) =>
         args.join('/')
       );
-      (path.extname as jest.MockedFunction<typeof path.extname>).mockReturnValue('.md');
-      (fs.stat as jest.MockedFunction<typeof fs.stat>).mockResolvedValue({
+      (path.extname as MockedFunction<typeof path.extname>).mockReturnValue('.md');
+      (fs.stat as MockedFunction<typeof fs.stat>).mockResolvedValue({
         mtime: new Date('2024-01-01T12:00:00Z'),
         size: 1024,
       } as any);
-      (fs.readFile as jest.MockedFunction<typeof fs.readFile>).mockResolvedValue(
+      (fs.readFile as MockedFunction<typeof fs.readFile>).mockResolvedValue(
         '# Architecture Research\nKey findings about microservices'
       );
-      (path.relative as jest.MockedFunction<typeof path.relative>).mockReturnValue(
+      (path.relative as MockedFunction<typeof path.relative>).mockReturnValue(
         'docs/research/architecture.md'
       );
 
@@ -219,10 +215,10 @@ describe('research-integration', () => {
 
     it('should handle no existing topics', async () => {
       // Set up mocks for empty directory
-      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockReturnValue(
+      (path.resolve as MockedFunction<typeof path.resolve>).mockReturnValue(
         '/project/docs/research'
       );
-      (fs.access as jest.MockedFunction<typeof fs.access>).mockRejectedValue(
+      (fs.access as MockedFunction<typeof fs.access>).mockRejectedValue(
         new Error('Directory not found')
       );
 
@@ -234,7 +230,7 @@ describe('research-integration', () => {
 
     it('should throw McpAdrError on extraction failure', async () => {
       const extractionError = new Error('File system error');
-      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockImplementation(() => {
+      (path.resolve as MockedFunction<typeof path.resolve>).mockImplementation(() => {
         throw extractionError;
       });
 
@@ -280,9 +276,9 @@ describe('research-integration', () => {
         recommendations: [],
       };
 
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockResolvedValue(mockDiscoveryResult as any);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue(
+        mockDiscoveryResult as any
+      );
 
       const result = await evaluateResearchImpact(mockResearchTopics, 'docs/adrs');
 
@@ -329,9 +325,9 @@ describe('research-integration', () => {
         recommendations: [],
       };
 
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockResolvedValue(mockDiscoveryResult as any);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue(
+        mockDiscoveryResult as any
+      );
 
       const result = await evaluateResearchImpact(mockResearchTopics, 'docs/adrs');
 
@@ -341,9 +337,9 @@ describe('research-integration', () => {
 
     it('should throw McpAdrError on evaluation failure', async () => {
       const evaluationError = new Error('ADR discovery failed');
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockRejectedValue(evaluationError);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockRejectedValue(
+        evaluationError
+      );
 
       const mockTopics = [
         {
@@ -395,9 +391,9 @@ describe('research-integration', () => {
         },
       ];
 
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockResolvedValue(mockDiscoveryResult as any);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue(
+        mockDiscoveryResult as any
+      );
 
       const result = await generateAdrUpdateSuggestions(
         '001',
@@ -448,9 +444,9 @@ describe('research-integration', () => {
         },
       ];
 
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockResolvedValue(mockDiscoveryResult as any);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue(
+        mockDiscoveryResult as any
+      );
 
       const result = await generateAdrUpdateSuggestions(
         '999',
@@ -484,9 +480,9 @@ describe('research-integration', () => {
 
       const mockFindings = [{ finding: 'Test', evidence: ['Test'], impact: 'Test' }];
 
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockResolvedValue(mockDiscoveryResult as any);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue(
+        mockDiscoveryResult as any
+      );
 
       const updateTypes = [
         'content',
@@ -504,9 +500,9 @@ describe('research-integration', () => {
 
     it('should throw McpAdrError on update generation failure', async () => {
       const updateError = new Error('Update generation failed');
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockRejectedValue(updateError);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockRejectedValue(
+        updateError
+      );
 
       const mockFindings = [{ finding: 'Test', evidence: ['Test'], impact: 'Test' }];
 

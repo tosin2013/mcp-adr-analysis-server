@@ -2,7 +2,7 @@
  * Tests for Enhanced Test Helper Utilities
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach as _beforeEach, afterEach as _afterEach } from 'vitest';
 import {
   unitTest,
   // integrationTest,
@@ -43,31 +43,35 @@ describe('Test Helper Utilities', () => {
   });
 
   describe('Test Type Decorators', () => {
-    it('should execute unit tests with proper timeout', done => {
+    it('should execute unit tests with proper timeout', async () => {
       let testExecuted = false;
 
       // Create a mock test suite
-      const _mockDescribe = (name: string, fn: () => void) => fn();
-      const mockIt = (name: string, testFn: () => Promise<void>) => {
-        testFn()
-          .then(() => {
-            expect(testExecuted).toBe(true);
-            done();
-          })
-          .catch(done);
-      };
+      const _mockDescribe = (_name: string, fn: () => void) => fn();
 
-      // Temporarily replace global it
-      const originalIt = global.it;
-      (global as any).it = mockIt;
+      // Create a promise that resolves when the test executes
+      await new Promise<void>((resolve, reject) => {
+        const mockIt = (_name: string, testFn: () => Promise<void>) => {
+          testFn()
+            .then(() => {
+              expect(testExecuted).toBe(true);
+              resolve();
+            })
+            .catch(reject);
+        };
 
-      try {
-        unitTest('should execute test', async () => {
-          testExecuted = true;
-        });
-      } finally {
-        (global as any).it = originalIt;
-      }
+        // Temporarily replace global it
+        const originalIt = global.it;
+        (global as any).it = mockIt;
+
+        try {
+          unitTest('should execute test', async () => {
+            testExecuted = true;
+          });
+        } finally {
+          (global as any).it = originalIt;
+        }
+      });
     });
 
     it('should handle test timeouts appropriately', () => {
@@ -260,7 +264,7 @@ describe('Test Helper Utilities', () => {
       const mockFn = createMockFunction((x: number) => x * 2);
 
       expect(mockFn).toBeDefined();
-      expect(jest.isMockFunction(mockFn)).toBe(true);
+      expect(vi.isMockFunction(mockFn)).toBe(true);
 
       const result = mockFn(5);
       expect(result).toBe(10);
@@ -392,13 +396,13 @@ describe('PerformanceBenchmark Class', () => {
   });
 
   it('should track timing correctly', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     benchmark.start();
     const delay = new Promise(resolve => setTimeout(resolve, 100));
 
     // Advance timers by exactly 100ms to simulate the delay
-    jest.advanceTimersByTime(100);
+    vi.advanceTimersByTime(100);
 
     await delay;
     benchmark.end();
@@ -407,7 +411,7 @@ describe('PerformanceBenchmark Class', () => {
     // With fake timers, we get precise timing
     expect(duration).toBe(100);
 
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('should track memory usage', () => {

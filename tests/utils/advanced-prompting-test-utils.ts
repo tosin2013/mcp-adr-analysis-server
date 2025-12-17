@@ -3,7 +3,7 @@
  * Provides common test helpers, mocks, and validation functions
  */
 
-import { jest } from '@jest/globals';
+import { vi as _vi } from 'vitest';
 
 // ============================================================================
 // Test Data Generators

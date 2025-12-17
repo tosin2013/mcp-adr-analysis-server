@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 import {
   createResearchDocument,
   createResearchIndex,
@@ -6,15 +6,15 @@ import {
 } from '../../src/utils/research-documentation.js';
 
 // Mock fs and path modules
-jest.mock('fs', () => ({
+vi.mock('fs', () => ({
   promises: {
-    mkdir: jest.fn().mockResolvedValue(undefined),
-    writeFile: jest.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
   },
 }));
 
-jest.mock('path', () => ({
-  join: jest.fn().mockImplementation((...args: string[]) => args.join('/')),
+vi.mock('path', () => ({
+  join: vi.fn().mockImplementation((...args: string[]) => args.join('/')),
 }));
 
 describe('Research Documentation Utilities', () => {

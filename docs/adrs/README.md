@@ -21,6 +21,8 @@ This directory contains the Architectural Decision Records for the MCP ADR Analy
 | [ADR-013](adr-013-documentation-platform-strategy.md)                  | Documentation Platform Strategy                  | Proposed | 2025-11-21 | Documentation |
 | [ADR-014](adr-014-ce-mcp-architecture.md)                              | CE-MCP Architecture                              | Proposed | 2025-12-09 | Architecture  |
 | [ADR-015](adr-015-ape-optimization-strategy.md)                        | APE Optimization Strategy                        | Accepted | 2025-12-12 | AI/ML         |
+| [ADR-017](adr-017-tree-sitter-version-strategy.md)                     | Tree-Sitter Version Strategy                     | Accepted | 2025-12-13 | Architecture  |
+| [ADR-018](adr-018-atomic-tools-architecture.md)                        | Atomic Tools Architecture                        | Accepted | 2025-12-16 | Architecture  |
 
 ## Legacy ADRs (Sample Project)
 
@@ -41,6 +43,8 @@ The following ADRs exist in the `sample-project/././adrs/` directory and serve a
 - **ADR-006**: Tree-Sitter Integration Strategy
 - **ADR-011**: ADR Timeline Tracking and Context-Aware Analysis
 - **ADR-014**: CE-MCP Architecture (Code Execution with MCP)
+- **ADR-017**: Tree-Sitter Version Strategy
+- **ADR-018**: Atomic Tools Architecture
 
 ### AI/ML
 
@@ -54,6 +58,7 @@ The following ADRs exist in the `sample-project/././adrs/` directory and serve a
 ### Quality
 
 - **ADR-005**: Testing and Quality Assurance Strategy
+- **ADR-018**: Atomic Tools Architecture (Testing Infrastructure)
 
 ### DevOps
 
@@ -118,6 +123,14 @@ ADR-014 (CE-MCP Architecture) ──┬──► ADR-001 (MCP Protocol) [EVOLVES
 ADR-015 (APE Optimization) ─────┬──► ADR-002 (AI Integration) [OPTIMIZES]
                                 │
                                 └──► ADR-014 (CE-MCP) [ALIGNS]
+
+ADR-017 (Tree-Sitter Version) ─────► ADR-006 (Tree-Sitter Integration) [EVOLVES]
+
+ADR-018 (Atomic Tools) ─────────┬──► ADR-003 (Memory Architecture) [EVOLVES]
+                                │
+                                ├──► ADR-005 (Testing Strategy) [EVOLVES]
+                                │
+                                └──► ADR-014 (CE-MCP) [ALIGNS]
 ```
 
 ### Cross-Reference Matrix
@@ -139,6 +152,8 @@ ADR-015 (APE Optimization) ─────┬──► ADR-002 (AI Integration) 
 | ADR-013 | ADR-007, ADR-008          | -                                           |
 | ADR-014 | ADR-001, ADR-002          | ADR-010, ADR-012 (evolves ADR-001, ADR-002) |
 | ADR-015 | ADR-002, ADR-014          | - (optimizes APE from ADR-002)              |
+| ADR-017 | ADR-006                   | - (evolves Tree-Sitter integration)         |
+| ADR-018 | ADR-003, ADR-005, ADR-014 | - (evolves testing and architecture)        |
 
 ## Archived/Test ADRs
 

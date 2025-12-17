@@ -4,7 +4,7 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import {
   parseVersion,
   versionToString,
@@ -163,11 +163,7 @@ describe('Resource Versioning Utilities', () => {
   describe('Resource Metadata Updates', () => {
     it('should update metadata with new version', () => {
       const initial = createResourceMetadata('1.0.0');
-      const updated = updateResourceMetadata(
-        initial,
-        '1.1.0',
-        ['Added new feature'],
-      );
+      const updated = updateResourceMetadata(initial, '1.1.0', ['Added new feature']);
 
       expect(updated.version).toBe('1.1.0');
       expect(updated.changelog).toHaveLength(1);
@@ -181,7 +177,7 @@ describe('Resource Versioning Utilities', () => {
         initial,
         '2.0.0',
         ['Major refactor'],
-        ['Removed old API'],
+        ['Removed old API']
       );
 
       expect(updated.version).toBe('2.0.0');
@@ -215,7 +211,7 @@ describe('Resource Versioning Utilities', () => {
       const deprecated = deprecateResource(
         metadata,
         'Outdated architecture',
-        'Use new-resource instead',
+        'Use new-resource instead'
       );
 
       expect(deprecated.deprecationNotice).toBeDefined();
@@ -230,7 +226,7 @@ describe('Resource Versioning Utilities', () => {
         metadata,
         'Replaced by better alternative',
         'Migrate to v2',
-        '3.0.0',
+        '3.0.0'
       );
 
       expect(deprecated.deprecationNotice!.removedIn).toBe('3.0.0');
@@ -408,12 +404,7 @@ describe('Resource Versioning Utilities', () => {
 
     it('should format deprecation notice', () => {
       let metadata = createResourceMetadata('1.5.0');
-      metadata = deprecateResource(
-        metadata,
-        'Old architecture',
-        'Use v2 API',
-        '3.0.0',
-      );
+      metadata = deprecateResource(metadata, 'Old architecture', 'Use v2 API', '3.0.0');
 
       const formatted = formatMetadata(metadata);
       expect(formatted).toContain('DEPRECATED');
@@ -442,7 +433,7 @@ describe('Resource Versioning Utilities', () => {
         metadata,
         '2.0.0',
         ['Major update'],
-        ['API v1 removed', 'New authentication'],
+        ['API v1 removed', 'New authentication']
       );
 
       const formatted = formatMetadata(metadata);
