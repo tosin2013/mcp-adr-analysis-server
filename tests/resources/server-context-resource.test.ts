@@ -4,30 +4,30 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
 
 // Mock conditional-request (needed for generateETag)
-jest.unstable_mockModule('../../src/utils/conditional-request.js', () => ({
-  generateStrongETag: jest.fn((data: any) => `etag-${JSON.stringify(data).length}`),
+vi.mock('../../src/utils/conditional-request.js', () => ({
+  generateStrongETag: vi.fn((data: any) => `etag-${JSON.stringify(data).length}`),
 }));
 
 // Mock ResourceCache
-const mockCacheGet = jest.fn();
-const mockCacheSet = jest.fn();
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
 
-jest.unstable_mockModule('../../src/resources/resource-cache.js', () => ({
+vi.mock('../../src/resources/resource-cache.js', () => ({
   resourceCache: {
     get: mockCacheGet,
     set: mockCacheSet,
   },
   generateETag: (data: any) => `etag-${JSON.stringify(data).length}`,
-  ResourceCache: jest.fn(),
+  ResourceCache: vi.fn(),
 }));
 
 // Mock ServerContextGenerator
-const mockGenerateContext = jest.fn();
+const mockGenerateContext = vi.fn();
 
-jest.unstable_mockModule('../../src/utils/server-context-generator.js', () => ({
+vi.mock('../../src/utils/server-context-generator.js', () => ({
   ServerContextGenerator: class {
     generateContext = mockGenerateContext;
   },
@@ -45,7 +45,7 @@ describe('Server Context Resource', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default: no cache hit
     mockCacheGet.mockResolvedValue(null);
@@ -71,20 +71,20 @@ describe('Server Context Resource', () => {
 
     // Mock managers
     mockKgManager = {
-      getKnowledgeGraph: jest.fn().mockReturnValue({ nodes: [], edges: [] }),
+      getKnowledgeGraph: vi.fn().mockReturnValue({ nodes: [], edges: [] }),
     };
 
     mockMemoryManager = {
-      getStats: jest.fn().mockReturnValue({ totalEntities: 0 }),
+      getStats: vi.fn().mockReturnValue({ totalEntities: 0 }),
     };
 
     mockConversationManager = {
-      getSessions: jest.fn().mockReturnValue([]),
+      getSessions: vi.fn().mockReturnValue([]),
     };
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic Resource Generation', () => {
@@ -272,9 +272,9 @@ describe('Server Context Resource', () => {
 
   describe('Error Handling', () => {
     it('should throw error when managers are not provided', async () => {
-      await expect(
-        generateServerContextResource({}, new URLSearchParams())
-      ).rejects.toThrow('Server context requires initialized managers');
+      await expect(generateServerContextResource({}, new URLSearchParams())).rejects.toThrow(
+        'Server context requires initialized managers'
+      );
     });
 
     it('should throw error when context generation fails', async () => {

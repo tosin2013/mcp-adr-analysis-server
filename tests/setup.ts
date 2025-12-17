@@ -3,7 +3,7 @@
  * Configures global test environment with proper resource management and cleanup
  */
 
-import { jest } from '@jest/globals';
+import { vi } from 'vitest';
 import { testInfrastructure } from './utils/test-infrastructure.js';
 
 // Set test environment to disable AI execution (force prompt-only mode)
@@ -11,19 +11,8 @@ process.env.EXECUTION_MODE = 'prompt-only';
 
 // Configure timeouts based on test environment
 const config = testInfrastructure.getConfig();
-const isIntegrationTest = process.argv.some(arg => arg.includes('integration'));
-const isPerformanceTest =
-  process.argv.some(arg => arg.includes('performance')) ||
-  process.env.MCP_ADR_PERFORMANCE_TEST === 'true';
 
-let testTimeout = config.timeouts.unit;
-if (isPerformanceTest) {
-  testTimeout = config.timeouts.performance;
-} else if (isIntegrationTest) {
-  testTimeout = config.timeouts.integration;
-}
-
-jest.setTimeout(testTimeout);
+// Note: Vitest uses per-test timeouts via vitest.config.ts, not global setTimeout
 
 // Mock console methods to reduce noise in tests
 const originalConsole = global.console;
@@ -32,11 +21,11 @@ let consoleMocks: any = {};
 beforeAll(async () => {
   // Setup console mocking
   consoleMocks = {
-    log: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-    info: jest.fn(),
-    debug: jest.fn(),
+    log: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    info: vi.fn(),
+    debug: vi.fn(),
   };
 
   global.console = {
@@ -82,9 +71,9 @@ afterAll(async () => {
 
 // Clean up after each test
 afterEach(async () => {
-  // Clear Jest mocks
-  jest.clearAllMocks();
-  jest.restoreAllMocks();
+  // Clear Vitest mocks
+  vi.clearAllMocks();
+  vi.restoreAllMocks();
 
   // Record memory usage with defensive programming
   if (testInfrastructure && typeof testInfrastructure.recordMemoryUsage === 'function') {

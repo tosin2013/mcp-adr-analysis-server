@@ -2,7 +2,7 @@
  * Tests for MCP Planning Tool
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import { join, basename } from 'path';
 import { tmpdir } from 'os';

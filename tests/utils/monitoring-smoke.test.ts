@@ -2,12 +2,8 @@
  * Smoke tests for monitoring.ts - quick verification of core functionality
  */
 
-import { describe, it, expect } from '@jest/globals';
-import {
-  MonitoringManager,
-  MetricType,
-  MetricCategory,
-} from '../../src/utils/monitoring.js';
+import { describe, it, expect } from 'vitest';
+import { MonitoringManager, MetricType, MetricCategory } from '../../src/utils/monitoring.js';
 
 describe('Monitoring Smoke Tests', () => {
   it('should create monitoring manager', () => {
