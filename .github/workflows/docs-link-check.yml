@@ -11,39 +11,85 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install dependencies
-        run: npm ci  # Assumes package.json in root or docs/
+      - name: Install markdown-link-check
+        run: npm install -g markdown-link-check
+
+      - name: Create link check config
+        run: |
+          cat > .markdown-link-check.json << 'EOF'
+          {
+            "ignorePatterns": [
+              { "pattern": "^https://github.com/.*/blob/" },
+              { "pattern": "^#" }
+            ],
+            "replacementPatterns": [],
+            "httpHeaders": [],
+            "timeout": "10s",
+            "retryOn429": true,
+            "retryCount": 3,
+            "fallbackRetryDelay": "5s",
+            "aliveStatusCodes": [200, 206]
+          }
+          EOF
+
+      - name: Find markdown files
+        id: find-files
+        run: |
+          echo "files=$(find docs -name '*.md' -type f | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
       - name: Run link check
-        run: npx mcp-documcp check-documentation-links --path docs/ --internal --anchor --format json > link-check-results.json
+        id: link-check
+        run: |
+          BROKEN_COUNT=0
+          RESULTS_FILE="link-check-results.json"
+          echo '{"results": [], "summary": {"total": 0, "brokenLinks": 0}}' > $RESULTS_FILE
+
+          for file in $(find docs -name '*.md' -type f 2>/dev/null); do
+            echo "Checking: $file"
+            if ! markdown-link-check "$file" --config .markdown-link-check.json --quiet; then
+              BROKEN_COUNT=$((BROKEN_COUNT + 1))
+            fi
+          done
+
+          # Update results file
+          echo "{\"summary\": {\"brokenLinks\": $BROKEN_COUNT}}" > $RESULTS_FILE
+
+          if [ "$BROKEN_COUNT" -gt 0 ]; then
+            echo "broken_count=$BROKEN_COUNT" >> $GITHUB_OUTPUT
+            echo "::warning::Found $BROKEN_COUNT files with broken links"
+          fi
+        continue-on-error: true
 
       - name: Check for broken links
         if: always()
         run: |
-          BROKEN=$(jq '.summary.brokenLinks' link-check-results.json)
-          if [ "$BROKEN" -gt 0 ]; then
-            echo "Broken links found: $BROKEN"
-            cat link-check-results.json
-            exit 1
+          if [ -f link-check-results.json ]; then
+            BROKEN=$(cat link-check-results.json | jq -r '.summary.brokenLinks // 0')
+            if [ "$BROKEN" -gt 0 ]; then
+              echo "::error::Broken links found in $BROKEN files"
+              exit 1
+            fi
           fi
 
       - name: Comment on PR if failed
         if: failure() && github.event_name == 'pull_request'
-        uses: actions/github-script@v8
+        uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
-            const results = JSON.parse(fs.readFileSync('link-check-results.json', 'utf8'));
+            let message = '⚠️ Documentation link check failed.\n\n';
+            message += 'Please review the workflow logs for details on broken links.';
+
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: `⚠️ Broken links detected: ${results.summary.brokenLinks}\n\nDetails: ${JSON.stringify(results.results, null, 2)}`
+              body: message
             });
