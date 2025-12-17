@@ -55,6 +55,13 @@ The mcp-adr-analysis-server currently has several tools that implement custom lo
    - Multi-step research workflows
    - Custom progress tracking
 
+6. **Troubleshoot Guided Workflow Tool** (`src/tools/troubleshoot-guided-workflow-tool.ts`)
+   - Systematic troubleshooting with multiple operations: `analyze_failure`, `generate_test_plan`, `full_workflow`
+   - Memory integration via `TroubleshootingMemoryManager` for session persistence
+   - Stores troubleshooting sessions with effectiveness tracking
+   - Related ADR lookup, follow-up action determination
+   - Already deprecated for CE-MCP (returns state machine directives)
+
 ### SDK Version Consideration
 
 - Current SDK: `@modelcontextprotocol/sdk@^1.19.1`
@@ -75,11 +82,12 @@ We will integrate MCP Tasks into the mcp-adr-analysis-server to provide standard
 
 #### High Priority - Replace Custom Implementations
 
-| Tool                        | Current Implementation       | MCP Tasks Benefit                           |
-| --------------------------- | ---------------------------- | ------------------------------------------- |
-| `bootstrap_validation_loop` | Custom `executionId`, phases | Standardized progress, cancellation support |
-| `deployment_readiness`      | Custom history tracking      | Protocol-compliant state persistence        |
-| `tool_chain_orchestrator`   | Already deprecated           | Direct replacement with Tasks               |
+| Tool                           | Current Implementation         | MCP Tasks Benefit                              |
+| ------------------------------ | ------------------------------ | ---------------------------------------------- |
+| `bootstrap_validation_loop`    | Custom `executionId`, phases   | Standardized progress, cancellation support    |
+| `deployment_readiness`         | Custom history tracking        | Protocol-compliant state persistence           |
+| `tool_chain_orchestrator`      | Already deprecated             | Direct replacement with Tasks                  |
+| `troubleshoot_guided_workflow` | Custom memory session tracking | Track full_workflow with session effectiveness |
 
 #### Medium Priority - Enhance with Tasks
 
@@ -102,7 +110,7 @@ Integrate `DAGExecutor` with MCP Tasks:
 ```typescript
 interface McpTask {
   taskId: string; // Unique task identifier
-  type: TaskType; // 'bootstrap' | 'deployment' | 'research' | 'orchestration'
+  type: TaskType; // 'bootstrap' | 'deployment' | 'research' | 'orchestration' | 'troubleshooting'
   state: TaskState; // 'running' | 'completed' | 'failed' | 'cancelled'
   progress: number; // 0-100 percentage
   metadata: {
