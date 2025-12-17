@@ -6,7 +6,7 @@
  */
 
 import crypto from 'crypto';
-import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
 import { MemoryMigrationManager } from '../../src/utils/memory-migration-manager.js';
 import { MemoryRelationshipMapper } from '../../src/utils/memory-relationship-mapper.js';
@@ -16,41 +16,74 @@ import {
   TroubleshootingSessionMemory,
 } from '../../src/types/memory-entities.js';
 
-// Mock filesystem operations
-const mockFsPromises = {
+// Mock filesystem operations - self-contained factory
+vi.mock('fs', () => ({
+  promises: {
+    access: vi.fn(),
+    mkdir: vi.fn(),
+    readdir: vi.fn(),
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
+    copyFile: vi.fn(),
+  },
+  existsSync: vi.fn(() => false),
+}));
+
+vi.mock('fs/promises', () => ({
   access: vi.fn(),
   mkdir: vi.fn(),
   readdir: vi.fn(),
   readFile: vi.fn(),
   writeFile: vi.fn(),
   copyFile: vi.fn(),
-};
-
-const mockExistsSync = vi.fn(() => false);
-
-vi.mock('fs', () => ({
-  promises: mockFsPromises,
-  existsSync: mockExistsSync,
+  default: {
+    access: vi.fn(),
+    mkdir: vi.fn(),
+    readdir: vi.fn(),
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
+    copyFile: vi.fn(),
+  },
 }));
 
-vi.mock('fs/promises', () => mockFsPromises);
+// Mock crypto with counter-based UUID
+vi.mock('crypto', () => {
+  let counter = 0;
+  const generateUUID = () => {
+    counter++;
+    const paddedCounter = String(counter).padStart(12, '0');
+    return `12345678-1234-4567-8901-${paddedCounter}`;
+  };
+  return {
+    randomUUID: vi.fn(generateUUID),
+    default: {
+      randomUUID: vi.fn(generateUUID),
+    },
+    __esModule: true,
+  };
+});
 
-// Mock crypto
-let uuidCounter = 0;
-const mockCrypto = {
-  randomUUID: vi.fn(() => `test-uuid-${++uuidCounter}`),
-};
-
-vi.mock('crypto', () => mockCrypto);
+// Mock references - will be assigned in beforeAll
+let mockFsPromises: any;
+let mockExistsSync: any;
+let _uuidCounter = 0;
 
 describe('Memory System Performance Tests', () => {
   let memoryManager: MemoryEntityManager;
   let migrationManager: MemoryMigrationManager;
   let _relationshipMapper: MemoryRelationshipMapper;
 
+  // Get mock references after module imports
+  beforeAll(async () => {
+    const fsModule = await import('fs/promises');
+    mockFsPromises = fsModule;
+    const fs = await import('fs');
+    mockExistsSync = fs.existsSync;
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
-    uuidCounter = 0;
+    _uuidCounter = 0;
 
     // Mock date to be consistent
     vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T00:00:00.000Z');

@@ -6,32 +6,46 @@
 
 import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
 
-// Mock fs module first
-const mockFsPromises = {
-  access: vi.fn(),
-  mkdir: vi.fn(),
-  readFile: vi.fn(),
-  writeFile: vi.fn(),
-};
-
-vi.mock('fs/promises', () => mockFsPromises);
+// Mock fs/promises module with self-contained factory (vi.mock is hoisted)
+vi.mock('fs/promises', async () => {
+  const { vi } = await import('vitest');
+  return {
+    access: vi.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue('{}'),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+  };
+});
 
 // Also mock fs module directly since some versions may use require
 vi.mock('fs', () => ({
-  promises: mockFsPromises,
+  promises: {
+    access: vi.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue('{}'),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+  },
 }));
 
-// Mock crypto module first
-const mockRandomUUID = vi.fn(() => 'test-uuid-123');
-vi.mock('crypto', () => {
-  return {
-    randomUUID: mockRandomUUID,
-    default: {
-      randomUUID: mockRandomUUID,
-    },
-    __esModule: true,
-  };
-});
+// Mock crypto module with self-contained factory - must return valid UUID format
+// Use a counter to generate unique UUIDs for each call
+let uuidCounter = 0;
+vi.mock('crypto', () => ({
+  randomUUID: vi.fn(() => {
+    uuidCounter++;
+    // Format: 12345678-1234-4XXX-8901-XXXXXXXXXXXX where X is the counter (padded)
+    const paddedCounter = String(uuidCounter).padStart(12, '0');
+    return `12345678-1234-4567-8901-${paddedCounter}`;
+  }),
+  default: {
+    randomUUID: vi.fn(() => {
+      uuidCounter++;
+      const paddedCounter = String(uuidCounter).padStart(12, '0');
+      return `12345678-1234-4567-8901-${paddedCounter}`;
+    }),
+  },
+  __esModule: true,
+}));
 
 // Import after mocking
 import * as path from 'path';
@@ -49,8 +63,13 @@ import {
   // KnowledgeArtifactMemory,
 } from '../../src/types/memory-entities.js';
 
-const mockFs = mockFsPromises;
-// const mockCrypto = vi.mocked(crypto);
+// Get mock references for fs after imports
+let mockFs: {
+  access: ReturnType<typeof vi.fn>;
+  mkdir: ReturnType<typeof vi.fn>;
+  readFile: ReturnType<typeof vi.fn>;
+  writeFile: ReturnType<typeof vi.fn>;
+};
 
 // Mock config
 vi.mock('../../src/utils/config.js', () => ({
@@ -60,14 +79,14 @@ vi.mock('../../src/utils/config.js', () => ({
   })),
 }));
 
-// Mock enhanced logging
+// Mock enhanced logging - use class syntax for constructable mock
 vi.mock('../../src/utils/enhanced-logging.js', () => ({
-  EnhancedLogger: vi.fn().mockImplementation(() => ({
-    info: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  })),
+  EnhancedLogger: class MockEnhancedLogger {
+    info = vi.fn();
+    debug = vi.fn();
+    warn = vi.fn();
+    error = vi.fn();
+  },
   createComponentLogger: vi.fn(() => ({
     info: vi.fn(),
     debug: vi.fn(),
@@ -184,7 +203,13 @@ function createValidCodeComponentEntity(overrides: any = {}) {
 
 describe('MemoryEntityManager', () => {
   let memoryManager: MemoryEntityManager;
-  let mockDate: MockInstance;
+  let mockDate: ReturnType<typeof vi.spyOn>;
+
+  beforeAll(async () => {
+    // Initialize mock references from the mocked modules
+    const fsModule = await import('fs/promises');
+    mockFs = fsModule as typeof mockFs;
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -207,9 +232,8 @@ describe('MemoryEntityManager', () => {
     mockFs.readFile.mockRejectedValue(new Error('ENOENT')); // No files exist by default
     mockFs.writeFile.mockResolvedValue(undefined);
 
-    // Reset crypto mock
-    mockRandomUUID.mockClear();
-    mockRandomUUID.mockReturnValue('test-uuid-123');
+    // Reset UUID counter for consistent test behavior
+    uuidCounter = 0;
 
     // Create fresh memory manager instance for each test to avoid state pollution
     memoryManager = new MemoryEntityManager({}, true); // Enable test mode
@@ -217,9 +241,7 @@ describe('MemoryEntityManager', () => {
     memoryManager.clearCache();
 
     // Mock date to be consistent
-    mockDate = jest
-      .spyOn(Date.prototype, 'toISOString')
-      .mockReturnValue('2024-01-01T00:00:00.000Z');
+    mockDate = vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T00:00:00.000Z');
     vi.spyOn(Date, 'now').mockReturnValue(1704067200000); // 2024-01-01
   });
 
@@ -577,7 +599,7 @@ describe('MemoryEntityManager', () => {
     describe('upsertRelationship', () => {
       it('should create a new relationship', async () => {
         const relationshipData = {
-          id: 'test-uuid-123',
+          id: '12345678-1234-4567-8901-123456789012',
           sourceId: entity1.id,
           targetId: entity2.id,
           type: 'depends_on' as const,
@@ -586,7 +608,7 @@ describe('MemoryEntityManager', () => {
 
         const result = await memoryManager.upsertRelationship(relationshipData);
 
-        expect(result.id).toBe('test-uuid-123');
+        expect(result.id).toBe('12345678-1234-4567-8901-123456789012');
         expect(result.sourceId).toBe(entity1.id);
         expect(result.targetId).toBe(entity2.id);
         expect(result.type).toBe('depends_on');

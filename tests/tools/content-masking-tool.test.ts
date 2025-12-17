@@ -9,8 +9,18 @@
  * - Cognitive Systematization: Organized test structure covering all exported functions
  */
 
-import { describe, _it, expect, _beforeEach, _afterEach, vi } from 'vitest';
+import { describe, it as _it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
+
+// Use vi.hoisted to ensure mocks are available before vi.mock is hoisted
+const { mockFsPromises } = vi.hoisted(() => ({
+  mockFsPromises: {
+    access: vi.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockRejectedValue(new Error('ENOENT')),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 
 // Mock config to provide test-safe paths
 vi.mock('../../src/utils/config.js', () => ({
@@ -27,22 +37,15 @@ vi.mock('../../src/utils/config.js', () => ({
 
 // Mock enhanced logging to prevent actual logging
 vi.mock('../../src/utils/enhanced-logging.js', () => ({
-  EnhancedLogger: vi.fn().mockImplementation(() => ({
-    info: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  })),
+  EnhancedLogger: class MockEnhancedLogger {
+    info = vi.fn();
+    debug = vi.fn();
+    warn = vi.fn();
+    error = vi.fn();
+  },
 }));
 
 // Mock filesystem operations for memory system
-const mockFsPromises = {
-  access: vi.fn().mockResolvedValue(undefined),
-  mkdir: vi.fn().mockResolvedValue(undefined),
-  readFile: vi.fn().mockRejectedValue(new Error('ENOENT')),
-  writeFile: vi.fn().mockResolvedValue(undefined),
-};
-
 vi.mock('fs', () => ({
   promises: mockFsPromises,
 }));

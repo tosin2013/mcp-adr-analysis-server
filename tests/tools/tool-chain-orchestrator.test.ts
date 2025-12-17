@@ -3,20 +3,28 @@
  * Tests AI-powered dynamic tool sequencing functionality
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
-import { toolChainOrchestrator } from '../../src/tools/tool-chain-orchestrator.js';
+import { describe, it, expect, beforeEach, vi, MockedFunction } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
-// Mock fetch globally
-const mockFetch = vi.fn() as MockedFunction<typeof fetch>;
-global.fetch = mockFetch;
+// Use vi.hoisted to ensure mocks are available before vi.mock is hoisted
+const {
+  mockFetch,
+  mockLoadAIConfig,
+  mockIsAIExecutionEnabled,
+  mockGetRecommendedModel,
+  mockCreateIntent,
+  mockAddToolExecution,
+} = vi.hoisted(() => ({
+  mockFetch: vi.fn() as MockedFunction<typeof fetch>,
+  mockLoadAIConfig: vi.fn() as MockedFunction<any>,
+  mockIsAIExecutionEnabled: vi.fn() as MockedFunction<any>,
+  mockGetRecommendedModel: vi.fn() as MockedFunction<any>,
+  mockCreateIntent: vi.fn() as MockedFunction<any>,
+  mockAddToolExecution: vi.fn() as MockedFunction<any>,
+}));
 
-// Mock dependencies
-const mockLoadAIConfig = vi.fn() as MockedFunction<any>;
-const mockIsAIExecutionEnabled = vi.fn() as MockedFunction<any>;
-const mockGetRecommendedModel = vi.fn() as MockedFunction<any>;
-const mockCreateIntent = vi.fn() as MockedFunction<any>;
-const mockAddToolExecution = vi.fn() as MockedFunction<any>;
+// Mock fetch globally
+global.fetch = mockFetch;
 
 vi.mock('../../src/config/ai-config.js', () => ({
   loadAIConfig: mockLoadAIConfig,
@@ -25,11 +33,14 @@ vi.mock('../../src/config/ai-config.js', () => ({
 }));
 
 vi.mock('../../src/utils/knowledge-graph-manager.js', () => ({
-  KnowledgeGraphManager: vi.fn().mockImplementation(() => ({
-    createIntent: mockCreateIntent,
-    addToolExecution: mockAddToolExecution,
-  })),
+  KnowledgeGraphManager: class MockKnowledgeGraphManager {
+    createIntent = mockCreateIntent;
+    addToolExecution = mockAddToolExecution;
+  },
 }));
+
+// Import after mocking
+import { toolChainOrchestrator } from '../../src/tools/tool-chain-orchestrator.js';
 
 describe('toolChainOrchestrator', () => {
   const mockAIConfig = {

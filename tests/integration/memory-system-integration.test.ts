@@ -4,7 +4,7 @@
  * End-to-end testing of the complete memory-centric architecture system
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 // import * as fs from 'fs/promises';
 // import * as path from 'path';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
@@ -17,17 +17,23 @@ import {
   // ArchitecturalDecisionMemory,
 } from '../../src/types/memory-entities.js';
 
-// Mock filesystem operations for integration tests
-const mockFs = {
+// Mock filesystem operations for integration tests - self-contained factory
+vi.mock('fs/promises', () => ({
   access: vi.fn(),
   mkdir: vi.fn(),
   readFile: vi.fn(),
   writeFile: vi.fn(),
   readdir: vi.fn(),
   stat: vi.fn(),
-};
-
-vi.mock('fs/promises', () => mockFs);
+  default: {
+    access: vi.fn(),
+    mkdir: vi.fn(),
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
+    readdir: vi.fn(),
+    stat: vi.fn(),
+  },
+}));
 
 // Mock config with test directory
 vi.mock('../../src/utils/config.js', () => ({
@@ -37,20 +43,23 @@ vi.mock('../../src/utils/config.js', () => ({
   })),
 }));
 
-// Mock ADR discovery
-const mockDiscoverAdrs = vi.fn();
+// Mock ADR discovery - self-contained factory
 vi.mock('../../src/utils/adr-discovery.js', () => ({
-  discoverAdrsInDirectory: mockDiscoverAdrs,
+  discoverAdrsInDirectory: vi.fn(),
 }));
 
-// Mock enhanced logging
+// Mock references - will be assigned in beforeAll after imports
+let mockFs: any;
+let mockDiscoverAdrs: ReturnType<typeof vi.fn>;
+
+// Mock enhanced logging with proper class constructor
 vi.mock('../../src/utils/enhanced-logging.js', () => ({
-  EnhancedLogger: vi.fn().mockImplementation(() => ({
-    info: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-  })),
+  EnhancedLogger: class MockEnhancedLogger {
+    info = vi.fn();
+    debug = vi.fn();
+    warn = vi.fn();
+    error = vi.fn();
+  },
 }));
 
 // Helper functions for creating valid test entities (matching memory-entity-manager.test.ts)
@@ -272,6 +281,14 @@ describe('Memory System Integration', () => {
   let memoryTransformer: MemoryTransformer;
   let memoryLoadingTool: MemoryLoadingTool;
   let _testMemoryDir: string;
+
+  // Get mock references after module imports
+  beforeAll(async () => {
+    const fsModule = await import('fs/promises');
+    mockFs = fsModule;
+    const adrDiscovery = await import('../../src/utils/adr-discovery.js');
+    mockDiscoverAdrs = adrDiscovery.discoverAdrsInDirectory as ReturnType<typeof vi.fn>;
+  });
 
   beforeEach(async () => {
     vi.clearAllMocks();

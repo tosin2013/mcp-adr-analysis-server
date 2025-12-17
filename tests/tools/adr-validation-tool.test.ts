@@ -2,14 +2,16 @@
  * Tests for ADR Validation Tool
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 
-// Create mock constructors that can be reconfigured per test
-const MockResearchOrchestrator = vi.fn();
-const mockGetAIExecutor = vi.fn();
+// Use vi.hoisted to ensure mock constructors are available before vi.mock is hoisted
+const { MockResearchOrchestrator, mockGetAIExecutor } = vi.hoisted(() => ({
+  MockResearchOrchestrator: vi.fn(),
+  mockGetAIExecutor: vi.fn(),
+}));
 
 // Mock ResearchOrchestrator with proper constructor
 vi.mock('../../src/utils/research-orchestrator.js', () => ({

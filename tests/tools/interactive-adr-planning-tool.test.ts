@@ -7,15 +7,17 @@
  * Tests focus on core logic validation rather than filesystem integration.
  */
 
-import { describe, it, expect, /* beforeAll, */ beforeEach, _afterEach, _jest } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Create filesystem mocks
-const mockFs = {
-  mkdir: vi.fn().mockResolvedValue(undefined),
-  writeFile: vi.fn().mockResolvedValue(undefined),
-  readFile: vi.fn().mockResolvedValue('{}'),
-  rename: vi.fn().mockResolvedValue(undefined),
-};
+// Use vi.hoisted to ensure mocks are available before vi.mock is hoisted
+const { mockFs } = vi.hoisted(() => ({
+  mockFs: {
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue('{}'),
+    rename: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 
 // Mock the fs module before any imports
 vi.mock('fs', () => ({

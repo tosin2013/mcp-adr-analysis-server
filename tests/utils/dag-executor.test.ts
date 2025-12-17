@@ -1,4 +1,4 @@
-import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   DAGExecutor,
   TaskNode,
@@ -6,69 +6,66 @@ import {
   TaskResult,
 } from '../../src/utils/dag-executor';
 
-// Track retry calls for test verification
-let retryCallCount = 0;
+// Track retry calls for test verification (prefixed with _ as it's used by mock internals)
+let _retryCallCount = 0;
 
-// Create the mock execAsync function
-const createMockExecAsync = () => {
-  return vi.fn(async (command: string, _options?: any) => {
-    let stdout = '';
-    let stderr = '';
+// Use vi.hoisted to ensure mockExecAsync is available before vi.mock is hoisted
+const { mockExecAsync } = vi.hoisted(() => {
+  let retryCount = 0;
+  return {
+    mockExecAsync: vi.fn(async (command: string, _options?: any) => {
+      let stdout = '';
+      let stderr = '';
 
-    if (command.includes('fail') || command.includes('exit 1')) {
-      const error: any = new Error('Command failed');
-      error.code = 1;
-      error.stdout = '';
-      error.stderr = 'error output';
-      throw error;
-    } else if (command.includes('retry')) {
-      retryCallCount++;
-      if (retryCallCount > 2) {
-        stdout = 'success after retry';
-      } else {
-        const error: any = new Error('Retry needed');
+      if (command.includes('fail') || command.includes('exit 1')) {
+        const error: any = new Error('Command failed');
         error.code = 1;
         error.stdout = '';
-        error.stderr = 'temporary error';
+        error.stderr = 'error output';
         throw error;
+      } else if (command.includes('retry')) {
+        retryCount++;
+        if (retryCount > 2) {
+          stdout = 'success after retry';
+        } else {
+          const error: any = new Error('Retry needed');
+          error.code = 1;
+          error.stdout = '';
+          error.stderr = 'temporary error';
+          throw error;
+        }
+      } else if (command.includes('sleep')) {
+        // For sleep commands, simulate delay but return success
+        stdout = command.includes('echo') ? command.split('echo')[1].trim() : 'done';
+        stderr = '';
+      } else {
+        // Extract echo output or default to 'success'
+        const echoMatch = command.match(/echo\s+(.+)/);
+        stdout = echoMatch ? echoMatch[1] : 'success';
+        stderr = '';
       }
-    } else if (command.includes('sleep')) {
-      // For sleep commands, simulate delay but return success
-      stdout = command.includes('echo') ? command.split('echo')[1].trim() : 'done';
-      stderr = '';
-    } else {
-      // Extract echo output or default to 'success'
-      const echoMatch = command.match(/echo\s+(.+)/);
-      stdout = echoMatch ? echoMatch[1] : 'success';
-      stderr = '';
-    }
 
-    return { stdout, stderr };
-  });
-};
+      return { stdout, stderr };
+    }),
+  };
+});
+
+// Mock child_process and util at the top level
+vi.mock('child_process', () => ({
+  exec: vi.fn(),
+}));
+
+vi.mock('util', () => ({
+  promisify: vi.fn(() => mockExecAsync),
+}));
 
 describe('DAGExecutor', () => {
   let executor: any;
   let mockLogger: any;
 
   beforeEach(async () => {
-    vi.resetModules();
     vi.clearAllMocks();
-    retryCallCount = 0;
-
-    // Mock both child_process and util to intercept promisify
-    const mockExecAsync = createMockExecAsync();
-
-    vi.mock('child_process', () => ({
-      exec: vi.fn(),
-    }));
-
-    vi.mock('util', () => ({
-      promisify: vi.fn(() => mockExecAsync),
-    }));
-
-    const dagModule = await import('../../src/utils/dag-executor');
-    const DAGExecutor = dagModule.DAGExecutor;
+    _retryCallCount = 0;
 
     mockLogger = {
       info: vi.fn(),
