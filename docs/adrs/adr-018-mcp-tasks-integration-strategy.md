@@ -91,11 +91,12 @@ We will integrate MCP Tasks into the mcp-adr-analysis-server to provide standard
 
 #### Medium Priority - Enhance with Tasks
 
-| Tool                       | Enhancement                         |
-| -------------------------- | ----------------------------------- |
-| `perform_research`         | Track multi-step research workflows |
-| `adr_bootstrap_validation` | Track script generation progress    |
-| `interactive_adr_planning` | Track planning session state        |
+| Tool                       | Enhancement                                         |
+| -------------------------- | --------------------------------------------------- |
+| `perform_research`         | Track multi-step research workflows                 |
+| `adr_bootstrap_validation` | Track script generation progress                    |
+| `interactive_adr_planning` | Track planning session state                        |
+| `adr_validation`           | Track bulk ADR validation with AI analysis progress |
 
 ### Phase 3: DAG Executor Integration
 
@@ -110,7 +111,7 @@ Integrate `DAGExecutor` with MCP Tasks:
 ```typescript
 interface McpTask {
   taskId: string; // Unique task identifier
-  type: TaskType; // 'bootstrap' | 'deployment' | 'research' | 'orchestration' | 'troubleshooting'
+  type: TaskType; // 'bootstrap' | 'deployment' | 'research' | 'orchestration' | 'troubleshooting' | 'validation'
   state: TaskState; // 'running' | 'completed' | 'failed' | 'cancelled'
   progress: number; // 0-100 percentage
   metadata: {
