@@ -3,7 +3,7 @@
  * Tests monitoring, analytics, and health check functionality
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach } from 'vitest';
 import {
   MonitoringManager,
   MetricType,
