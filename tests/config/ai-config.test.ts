@@ -8,7 +8,7 @@
  * - Pragmatic Success Criteria: Focus on reliable, maintainable test coverage
  */
 
-import { jest } from '@jest/globals';
+import { describe, _it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 
 import {
   AIConfig,
@@ -223,7 +223,7 @@ describe('AI Configuration', () => {
     });
 
     test('warns about unknown model but does not throw', () => {
-      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       validConfig.defaultModel = 'unknown/model';
 
       expect(() => validateAIConfig(validConfig)).not.toThrow();

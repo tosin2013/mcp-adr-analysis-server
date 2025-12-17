@@ -3,12 +3,12 @@
  * Tests the generateDeploymentGuidance function with comprehensive scenarios
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
 // Pragmatic mocking approach to avoid TypeScript complexity
-jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
-  discoverAdrsInDirectory: jest.fn(),
+vi.mock('../../src/utils/adr-discovery.js', () => ({
+  discoverAdrsInDirectory: vi.fn(),
 }));
 
 const { generateDeploymentGuidance } = await import('../../src/tools/deployment-guidance-tool.js');
@@ -17,7 +17,7 @@ const { discoverAdrsInDirectory } = await import('../../src/utils/adr-discovery.
 describe('deployment-guidance-tool', () => {
   describe('generateDeploymentGuidance', () => {
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     describe('basic functionality', () => {
@@ -34,7 +34,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },
@@ -71,7 +71,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },
@@ -106,7 +106,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },
@@ -137,7 +137,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },
@@ -173,7 +173,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },
@@ -213,7 +213,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },
@@ -253,7 +253,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },
@@ -286,7 +286,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },
@@ -310,7 +310,7 @@ describe('deployment-guidance-tool', () => {
     describe('no ADRs found scenario', () => {
       it('should provide helpful guidance when no ADRs are found', async () => {
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: [],
           summary: { byStatus: {}, byCategory: {} },
@@ -335,7 +335,7 @@ describe('deployment-guidance-tool', () => {
 
       it('should use default paths when no ADRs found', async () => {
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: [],
           summary: { byStatus: {}, byCategory: {} },
@@ -355,7 +355,7 @@ describe('deployment-guidance-tool', () => {
       it('should throw McpAdrError when ADR discovery fails', async () => {
         const discoveryError = new Error('Failed to access directory');
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockRejectedValue(discoveryError);
 
         await expect(generateDeploymentGuidance({})).rejects.toThrow(McpAdrError);
@@ -366,7 +366,7 @@ describe('deployment-guidance-tool', () => {
 
       it('should handle non-Error exceptions', async () => {
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockRejectedValue('String error');
 
         await expect(generateDeploymentGuidance({})).rejects.toThrow(McpAdrError);
@@ -377,7 +377,7 @@ describe('deployment-guidance-tool', () => {
 
       it('should handle undefined error', async () => {
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockRejectedValue(undefined);
 
         await expect(generateDeploymentGuidance({})).rejects.toThrow(McpAdrError);
@@ -401,7 +401,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },
@@ -459,7 +459,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 2 }, byCategory: {} },
@@ -494,7 +494,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },
@@ -528,7 +528,7 @@ describe('deployment-guidance-tool', () => {
         ];
 
         (
-          discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
+          discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>
         ).mockResolvedValue({
           adrs: mockAdrs,
           summary: { byStatus: { Accepted: 1 }, byCategory: {} },

@@ -51,15 +51,16 @@ interface CachedResearchResult {
 /**
  * Research Orchestrator Class
  *
- * @deprecated This class is deprecated as of v3.0.0 and will be removed in v4.0.0.
- * Use atomic tools instead per ADR-018:
+ * @deprecated This class is deprecated as of v2.2.0 and will be removed in v4.0.0.
+ * Use atomic tools instead per ADR-018 (Atomic Tools Architecture):
  * - For codebase search: Use `searchCodebase` from `tools/search-codebase-tool.ts`
  * - For external research: Use `llm-web-search-tool.ts` (if needed)
  *
- * **Deprecation Rationale**:
- * - Sequential execution blocking (2-8 seconds)
+ * **Deprecation Rationale** (see ADR-018):
+ * - Sequential execution blocking (2-8 seconds per call)
  * - 5,000-6,000 tokens overhead per session
- * - Causes 14+ tool test failures due to complex mocking
+ * - Causes 37+ test timeout failures due to complex ESM mocking
+ * - 850+ second test suite execution time
  * - Conflicts with CE-MCP directive-based architecture (ADR-014)
  *
  * **Migration Guide**:

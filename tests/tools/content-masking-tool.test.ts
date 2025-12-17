@@ -9,12 +9,22 @@
  * - Cognitive Systematization: Organized test structure covering all exported functions
  */
 
-import { jest } from '@jest/globals';
+import { describe, it as _it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
+// Use vi.hoisted to ensure mocks are available before vi.mock is hoisted
+const { mockFsPromises } = vi.hoisted(() => ({
+  mockFsPromises: {
+    access: vi.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockRejectedValue(new Error('ENOENT')),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+  },
+}));
+
 // Mock config to provide test-safe paths
-jest.mock('../../src/utils/config.js', () => ({
-  loadConfig: jest.fn(() => ({
+vi.mock('../../src/utils/config.js', () => ({
+  loadConfig: vi.fn(() => ({
     projectPath: '/tmp/test-project',
     adrDirectory: '/tmp/test-project/docs/adrs',
     logLevel: 'INFO',
@@ -26,30 +36,23 @@ jest.mock('../../src/utils/config.js', () => ({
 }));
 
 // Mock enhanced logging to prevent actual logging
-jest.mock('../../src/utils/enhanced-logging.js', () => ({
-  EnhancedLogger: jest.fn().mockImplementation(() => ({
-    info: jest.fn(),
-    debug: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  })),
+vi.mock('../../src/utils/enhanced-logging.js', () => ({
+  EnhancedLogger: class MockEnhancedLogger {
+    info = vi.fn();
+    debug = vi.fn();
+    warn = vi.fn();
+    error = vi.fn();
+  },
 }));
 
 // Mock filesystem operations for memory system
-const mockFsPromises = {
-  access: jest.fn().mockResolvedValue(undefined),
-  mkdir: jest.fn().mockResolvedValue(undefined),
-  readFile: jest.fn().mockRejectedValue(new Error('ENOENT')),
-  writeFile: jest.fn().mockResolvedValue(undefined),
-};
-
-jest.mock('fs', () => ({
+vi.mock('fs', () => ({
   promises: mockFsPromises,
 }));
 
 // Mock crypto for consistent UUIDs
-jest.mock('crypto', () => ({
-  randomUUID: jest.fn(() => 'test-uuid-123'),
+vi.mock('crypto', () => ({
+  randomUUID: vi.fn(() => 'test-uuid-123'),
 }));
 
 import {
@@ -62,7 +65,7 @@ import {
 
 describe('Content Masking Tool', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Reset filesystem mocks
     mockFsPromises.access.mockResolvedValue(undefined);
@@ -71,11 +74,11 @@ describe('Content Masking Tool', () => {
     mockFsPromises.writeFile.mockResolvedValue(undefined);
 
     // Mock process.cwd() for consistent test environment - use /tmp instead of Users path
-    jest.spyOn(process, 'cwd').mockReturnValue('/tmp/test-workspace/mcp-adr-analysis-server');
+    vi.spyOn(process, 'cwd').mockReturnValue('/tmp/test-workspace/mcp-adr-analysis-server');
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   // ============================================================================

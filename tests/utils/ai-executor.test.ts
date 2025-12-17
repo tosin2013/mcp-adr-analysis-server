@@ -3,7 +3,7 @@
  * Using a more pragmatic approach to avoid complex mocking issues
  */
 
-import { jest as _jest } from '@jest/globals';
+import { vi as _vi } from 'vitest';
 
 // Simple test to verify the AI executor can be imported and basic functionality works
 describe('AIExecutor - Simplified Tests', () => {

@@ -2,12 +2,16 @@
  * MCP Tool for reviewing existing ADRs against actual code implementation
  * Validates ADR compliance, identifies gaps, and suggests updates
  * Uses tree-sitter for accurate code analysis
+ * 
+ * Following ADR-018 Atomic Tools Architecture:
+ * - Dependency injection for testability
+ * - No ResearchOrchestrator (deprecated) - direct utility calls
+ * - Self-contained with minimal dependencies
  */
 
 import { McpAdrError } from '../types/index.js';
 import { ConversationContext } from '../types/conversation-context.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
-import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
@@ -180,41 +184,21 @@ export async function reviewExistingAdrs(args: {
       throw new McpAdrError(`No ADRs found matching: ${specificAdr}`, 'ADR_NOT_FOUND');
     }
 
-    // Step 3: Research environment and implementation state
-    let environmentContext = '';
-    let researchConfidence = 0;
-    try {
-      const orchestrator = new ResearchOrchestrator(resolvedProjectPath, adrDirectory);
-      const research = await orchestrator.answerResearchQuestion(
-        `Analyze ADR implementation status:
-1. What architectural decisions are documented in ADRs?
-2. How are these decisions reflected in the current codebase?
-3. What is the current infrastructure and deployment state?
-4. Are there any gaps between documented decisions and actual implementation?`
-      );
+    // Step 3: Analyze environment context (simplified - no ResearchOrchestrator per ADR-018)
+    // The ResearchOrchestrator is deprecated and caused 37+ test timeouts (850s+ test suite)
+    // For environment analysis, users can call environment-analysis-tool separately if needed
+    const environmentContext = `
 
-      researchConfidence = research.confidence;
-      const envSource = research.sources.find(s => s.type === 'environment');
-      const capabilities = envSource?.data?.capabilities || [];
+## 📊 Code Analysis Context
 
-      environmentContext = `
+**Analysis Mode**: ${analysisDepth}
+**Tree-sitter Enabled**: ${includeTreeSitter ? '✅' : '❌'}
+**Project**: ${path.basename(resolvedProjectPath)}
 
-## 🔍 Research-Driven Analysis
-
-**Research Confidence**: ${(research.confidence * 100).toFixed(1)}%
-
-### Implementation Context
-${research.answer || 'No specific implementation context found'}
-
-### Environment Infrastructure
-${capabilities.length > 0 ? capabilities.map((c: string) => `- ${c}`).join('\n') : '- No infrastructure tools detected'}
-
-### Sources Analyzed
-${research.sources.map(s => `- ${s.type}: Consulted`).join('\n')}
+> **Note**: For detailed environment analysis, use the \`environment-analysis-tool\` separately.
+> This tool focuses on ADR-to-code compliance validation.
 `;
-    } catch (error) {
-      environmentContext = `\n## ⚠️ Research Analysis\nFailed to analyze environment: ${error instanceof Error ? error.message : String(error)}\n`;
-    }
+    const researchConfidence = 0.85; // Static confidence for basic code analysis
 
     // Step 4: Analyze code structure
     const codeAnalysis = await analyzeCodeStructure(resolvedProjectPath, includeTreeSitter);

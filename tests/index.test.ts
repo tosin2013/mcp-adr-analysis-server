@@ -1,73 +1,78 @@
 /**
  * Simplified tests for src/index.ts - MCP ADR Analysis Server
- * 
+ *
  * Basic functionality tests with minimal complexity
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 
 // Mock package.json content
 const mockPackageJson = JSON.stringify({ version: '2.0.2' });
 
 // Mock fs module
-jest.mock('fs', () => ({
-  readFileSync: jest.fn(() => Buffer.from(mockPackageJson))
+vi.mock('fs', () => ({
+  readFileSync: vi.fn(() => Buffer.from(mockPackageJson)),
 }));
 
-// Mock path module  
-jest.mock('path', () => ({
-  join: jest.fn((...args: string[]) => args.join('/')),
-  resolve: jest.fn((...args: string[]) => args.join('/'))
+// Mock path module
+vi.mock('path', () => ({
+  join: vi.fn((...args: string[]) => args.join('/')),
+  resolve: vi.fn((...args: string[]) => args.join('/')),
 }));
 
 // Mock directory compatibility
-jest.mock('../src/utils/directory-compat.js', () => ({
-  getCurrentDirCompat: jest.fn(() => '/test/project')
+vi.mock('../src/utils/directory-compat.js', () => ({
+  getCurrentDirCompat: vi.fn(() => '/test/project'),
 }));
 
 // Mock config utilities
-jest.mock('../src/utils/config.js', () => ({
-  loadConfig: jest.fn(() => ({
+vi.mock('../src/utils/config.js', () => ({
+  loadConfig: vi.fn(() => ({
     projectPath: process.cwd(), // Use actual working directory
     adrDirectory: 'docs/adrs',
     logLevel: 'INFO',
-    cacheEnabled: true
+    cacheEnabled: true,
   })),
-  validateProjectPath: jest.fn(() => Promise.resolve()),
-  createLogger: jest.fn(() => ({
-    info: jest.fn(),
-    warn: jest.fn(), 
-    error: jest.fn(),
-    debug: jest.fn()
+  validateProjectPath: vi.fn(() => Promise.resolve()),
+  createLogger: vi.fn(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
   })),
-  printConfigSummary: jest.fn()
+  printConfigSummary: vi.fn(),
 }));
 
-// Mock knowledge graph manager
-jest.mock('../src/utils/knowledge-graph-manager.js', () => ({
-  KnowledgeGraphManager: jest.fn(() => ({}))
+// Mock knowledge graph manager with proper class constructor
+vi.mock('../src/utils/knowledge-graph-manager.js', () => ({
+  KnowledgeGraphManager: class MockKnowledgeGraphManager {
+    // Empty mock class - test just verifies it exists
+  },
 }));
 
 // Mock output masking - handle actual behavior
-jest.mock('../src/utils/output-masking.js', () => ({
-  createMaskingConfig: jest.fn(() => ({ enabled: true })) // CI shows this returns true
+vi.mock('../src/utils/output-masking.js', () => ({
+  createMaskingConfig: vi.fn(() => ({ enabled: true })), // CI shows this returns true
 }));
 
-// Mock MCP SDK
-jest.mock('@modelcontextprotocol/sdk/server/index.js', () => ({
-  Server: jest.fn(() => ({
-    setRequestHandler: jest.fn(),
-    connect: jest.fn()
-  }))
+// Mock MCP SDK with proper class constructor
+vi.mock('@modelcontextprotocol/sdk/server/index.js', () => ({
+  Server: class MockServer {
+    setRequestHandler = vi.fn();
+    connect = vi.fn();
+    constructor(_serverInfo: any, _options: any) {
+      // Mock constructor
+    }
+  },
 }));
 
-jest.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
-  StdioServerTransport: jest.fn()
+vi.mock('@modelcontextprotocol/sdk/server/stdio.js', () => ({
+  StdioServerTransport: vi.fn(),
 }));
 
 describe('Index.ts - Core Functionality', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('Basic Module Tests', () => {
