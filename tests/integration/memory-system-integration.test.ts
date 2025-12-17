@@ -4,7 +4,7 @@
  * End-to-end testing of the complete memory-centric architecture system
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, vi } from 'vitest';
 // import * as fs from 'fs/promises';
 // import * as path from 'path';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
@@ -17,40 +17,49 @@ import {
   // ArchitecturalDecisionMemory,
 } from '../../src/types/memory-entities.js';
 
-// Mock filesystem operations for integration tests
-const mockFs = {
-  access: jest.fn(),
-  mkdir: jest.fn(),
-  readFile: jest.fn(),
-  writeFile: jest.fn(),
-  readdir: jest.fn(),
-  stat: jest.fn(),
-};
-
-jest.mock('fs/promises', () => mockFs);
+// Mock filesystem operations for integration tests - self-contained factory
+vi.mock('fs/promises', () => ({
+  access: vi.fn(),
+  mkdir: vi.fn(),
+  readFile: vi.fn(),
+  writeFile: vi.fn(),
+  readdir: vi.fn(),
+  stat: vi.fn(),
+  default: {
+    access: vi.fn(),
+    mkdir: vi.fn(),
+    readFile: vi.fn(),
+    writeFile: vi.fn(),
+    readdir: vi.fn(),
+    stat: vi.fn(),
+  },
+}));
 
 // Mock config with test directory
-jest.mock('../../src/utils/config.js', () => ({
-  loadConfig: jest.fn(() => ({
+vi.mock('../../src/utils/config.js', () => ({
+  loadConfig: vi.fn(() => ({
     projectPath: '/test/integration/project',
     adrDirectory: '/test/integration/project/docs/adrs',
   })),
 }));
 
-// Mock ADR discovery
-const mockDiscoverAdrs = jest.fn();
-jest.mock('../../src/utils/adr-discovery.js', () => ({
-  discoverAdrsInDirectory: mockDiscoverAdrs,
+// Mock ADR discovery - self-contained factory
+vi.mock('../../src/utils/adr-discovery.js', () => ({
+  discoverAdrsInDirectory: vi.fn(),
 }));
 
-// Mock enhanced logging
-jest.mock('../../src/utils/enhanced-logging.js', () => ({
-  EnhancedLogger: jest.fn().mockImplementation(() => ({
-    info: jest.fn(),
-    debug: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  })),
+// Mock references - will be assigned in beforeAll after imports
+let mockFs: any;
+let mockDiscoverAdrs: ReturnType<typeof vi.fn>;
+
+// Mock enhanced logging with proper class constructor
+vi.mock('../../src/utils/enhanced-logging.js', () => ({
+  EnhancedLogger: class MockEnhancedLogger {
+    info = vi.fn();
+    debug = vi.fn();
+    warn = vi.fn();
+    error = vi.fn();
+  },
 }));
 
 // Helper functions for creating valid test entities (matching memory-entity-manager.test.ts)
@@ -273,8 +282,16 @@ describe('Memory System Integration', () => {
   let memoryLoadingTool: MemoryLoadingTool;
   let _testMemoryDir: string;
 
+  // Get mock references after module imports
+  beforeAll(async () => {
+    const fsModule = await import('fs/promises');
+    mockFs = fsModule;
+    const adrDiscovery = await import('../../src/utils/adr-discovery.js');
+    mockDiscoverAdrs = adrDiscovery.discoverAdrsInDirectory as ReturnType<typeof vi.fn>;
+  });
+
   beforeEach(async () => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     _testMemoryDir = '/test/integration/project/.mcp-adr-memory';
 
@@ -307,7 +324,7 @@ describe('Memory System Integration', () => {
   afterEach(() => {
     // Clear the memory manager cache to prevent interference between tests
     memoryManager.clearCache();
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('complete ADR-to-memory workflow', () => {
@@ -689,7 +706,7 @@ We will use PostgreSQL as our primary database with proper indexing strategy.
 
       // Mock time progression to trigger persistence
       const now = Date.now();
-      jest.spyOn(Date, 'now').mockReturnValue(now + 31 * 60 * 1000); // 31 minutes later
+      vi.spyOn(Date, 'now').mockReturnValue(now + 31 * 60 * 1000); // 31 minutes later
 
       // Create another entity to trigger persistence (2 entities needed in test mode)
       await memoryManager.upsertEntity(

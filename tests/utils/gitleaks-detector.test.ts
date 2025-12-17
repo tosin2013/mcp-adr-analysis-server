@@ -2,22 +2,22 @@
  * Test suite for gitleaks-detector utility
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 
 // Mock child_process to control gitleaks behavior in tests
-const mockExecSync = jest.fn();
-const mockExistsSync = jest.fn();
-const mockReadFileSync = jest.fn();
-const mockUnlinkSync = jest.fn();
-const mockWriteFileSync = jest.fn();
+const mockExecSync = vi.fn();
+const mockExistsSync = vi.fn();
+const mockReadFileSync = vi.fn();
+const mockUnlinkSync = vi.fn();
+const mockWriteFileSync = vi.fn();
 
 // Set up mocks BEFORE importing the module
-jest.unstable_mockModule('child_process', () => ({
+vi.mock('child_process', () => ({
   execSync: mockExecSync,
-  spawn: jest.fn(),
+  spawn: vi.fn(),
 }));
 
-jest.unstable_mockModule('fs', () => ({
+vi.mock('fs', () => ({
   existsSync: mockExistsSync,
   readFileSync: mockReadFileSync,
   unlinkSync: mockUnlinkSync,
@@ -36,7 +36,7 @@ describe('Gitleaks Detector', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock writeFileSync to avoid actual file operations
     mockWriteFileSync.mockImplementation(() => {});

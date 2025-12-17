@@ -4,38 +4,38 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
 
 // Mock conditional-request (needed for generateETag)
-jest.unstable_mockModule('../../src/utils/conditional-request.js', () => ({
-  generateStrongETag: jest.fn((data: any) => `etag-${JSON.stringify(data).length}`),
+vi.mock('../../src/utils/conditional-request.js', () => ({
+  generateStrongETag: vi.fn((data: any) => `etag-${JSON.stringify(data).length}`),
 }));
 
 // Mock ResourceCache
-const mockCacheGet = jest.fn();
-const mockCacheSet = jest.fn();
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
 
-jest.unstable_mockModule('../../src/resources/resource-cache.js', () => ({
+vi.mock('../../src/resources/resource-cache.js', () => ({
   resourceCache: {
     get: mockCacheGet,
     set: mockCacheSet,
   },
   generateETag: (data: any) => `etag-${JSON.stringify(data).length}`,
-  ResourceCache: jest.fn(),
+  ResourceCache: vi.fn(),
 }));
 
 // Mock path module
-jest.unstable_mockModule('path', () => ({
+vi.mock('path', () => ({
   default: {
-    resolve: jest.fn((...args: string[]) => args.join('/')),
+    resolve: vi.fn((...args: string[]) => args.join('/')),
   },
-  resolve: jest.fn((...args: string[]) => args.join('/')),
+  resolve: vi.fn((...args: string[]) => args.join('/')),
 }));
 
 // Mock ADR discovery
-const mockDiscoverAdrs = jest.fn();
+const mockDiscoverAdrs = vi.fn();
 
-jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
+vi.mock('../../src/utils/adr-discovery.js', () => ({
   discoverAdrsInDirectory: mockDiscoverAdrs,
 }));
 
@@ -49,7 +49,7 @@ describe('Architectural Context Resource', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default: no cache hit
     mockCacheGet.mockResolvedValue(null);
@@ -96,7 +96,7 @@ describe('Architectural Context Resource', () => {
 
     // Mock knowledge graph manager - uses loadKnowledgeGraph, not getKnowledgeGraph
     mockKgManager = {
-      loadKnowledgeGraph: jest.fn().mockResolvedValue({
+      loadKnowledgeGraph: vi.fn().mockResolvedValue({
         intents: [
           {
             id: 'intent-1',
@@ -108,7 +108,7 @@ describe('Architectural Context Resource', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic Resource Generation', () => {

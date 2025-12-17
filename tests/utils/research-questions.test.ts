@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   correlateProblemKnowledge,
   findRelevantAdrPatterns,
@@ -10,52 +10,49 @@ import {
   ResearchQuestion,
 } from '../../src/utils/research-questions.js';
 
-// Mock dependencies
-jest.mock('../../src/prompts/research-question-prompts.js', () => ({
-  generateProblemKnowledgeCorrelationPrompt: jest.fn().mockReturnValue('correlation prompt'),
-  generateContextAwareResearchQuestionsPrompt: jest
-    .fn()
-    .mockReturnValue('question generation prompt'),
-  generateResearchTaskTrackingPrompt: jest.fn().mockReturnValue('task tracking prompt'),
+// Mock dependencies - all mock factories must be self-contained (vi.mock is hoisted)
+vi.mock('../../src/prompts/research-question-prompts.js', () => ({
+  generateProblemKnowledgeCorrelationPrompt: () => 'correlation prompt',
+  generateContextAwareResearchQuestionsPrompt: () => 'question generation prompt',
+  generateResearchTaskTrackingPrompt: () => 'task tracking prompt',
 }));
 
-// Mock the adr-discovery module with unstable_mockModule for ESM compatibility
-const mockDiscoverAdrsInDirectory = jest.fn().mockResolvedValue({
-  totalAdrs: 2,
-  adrs: [
-    {
-      title: 'Test ADR 1',
-      filename: 'adr-001.md',
-      status: 'accepted',
-      path: '/test/adr-001.md',
-      content: 'Test content 1',
-    },
-    {
-      title: 'Test ADR 2',
-      filename: 'adr-002.md',
-      status: 'proposed',
-      path: '/test/adr-002.md',
-      content: 'Test content 2',
-    },
-  ],
-});
-
-jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
-  discoverAdrsInDirectory: mockDiscoverAdrsInDirectory,
+// Mock the adr-discovery module - factory must be self-contained
+vi.mock('../../src/utils/adr-discovery.js', () => ({
+  discoverAdrsInDirectory: () =>
+    Promise.resolve({
+      totalAdrs: 2,
+      adrs: [
+        {
+          title: 'Test ADR 1',
+          filename: 'adr-001.md',
+          status: 'accepted',
+          path: '/test/adr-001.md',
+          content: 'Test content 1',
+        },
+        {
+          title: 'Test ADR 2',
+          filename: 'adr-002.md',
+          status: 'proposed',
+          path: '/test/adr-002.md',
+          content: 'Test content 2',
+        },
+      ],
+    }),
 }));
 
-jest.mock('../../src/utils/actual-file-operations.js', () => ({
-  scanProjectStructure: jest.fn().mockResolvedValue({
-    files: ['package.json', 'src/index.ts'],
-    directories: ['src', 'tests'],
-    structure: { type: 'project' },
-  }),
+vi.mock('../../src/utils/actual-file-operations.js', () => ({
+  scanProjectStructure: () =>
+    Promise.resolve({
+      files: ['package.json', 'src/index.ts'],
+      directories: ['src', 'tests'],
+      structure: { type: 'project' },
+    }),
 }));
 
 describe('Research Questions Utilities', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockDiscoverAdrsInDirectory.mockClear();
+    vi.clearAllMocks();
   });
 
   describe('correlateProblemKnowledge', () => {
@@ -167,7 +164,7 @@ describe('Research Questions Utilities', () => {
     it('should handle import failure gracefully', async () => {
       // Mock the import to fail
       const originalImport = (global as any).__original_import || (global as any).import;
-      (global as any).import = jest.fn().mockRejectedValue(new Error('Import failed'));
+      (global as any).import = vi.fn().mockRejectedValue(new Error('Import failed'));
 
       const result = await correlateProblemKnowledge(mockProblems, mockKnowledgeGraph);
 
@@ -235,7 +232,8 @@ describe('Research Questions Utilities', () => {
       const result = await findRelevantAdrPatterns(mockResearchContext);
 
       expect(result.instructions).toContain('Submit the relevance prompt');
-      expect(result.instructions).toContain('ADRs Found**: 0 files');
+      // Mock returns 2 ADRs, so we expect 2 files found
+      expect(result.instructions).toContain('ADRs Found**: 2 files');
       expect(result.instructions).toContain('relevanceAnalysis');
     });
   });

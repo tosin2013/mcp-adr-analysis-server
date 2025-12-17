@@ -4,7 +4,16 @@
  * Test coverage for ADR to memory entity transformation
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  type MockInstance,
+  type Mocked,
+} from 'vitest';
 import crypto from 'crypto';
 import { MemoryTransformer } from '../../src/utils/memory-transformation.js';
 import { MemoryEntityManager } from '../../src/utils/memory-entity-manager.js';
@@ -15,38 +24,37 @@ import {
   MemoryRelationship as _MemoryRelationship,
 } from '../../src/types/memory-entities.js';
 
-// Mock enhanced logging
-jest.mock('../../src/utils/enhanced-logging.js', () => ({
-  EnhancedLogger: jest.fn().mockImplementation(() => ({
-    info: jest.fn(),
-    debug: jest.fn(),
-    warn: jest.fn(),
-    error: jest.fn(),
-  })),
-}));
+// Mock enhanced logging - define class inline to avoid hoisting issues
+vi.mock('../../src/utils/enhanced-logging.js', () => {
+  const MockEnhancedLogger = class {
+    info = () => {};
+    debug = () => {};
+    warn = () => {};
+    error = () => {};
+  };
+  return { EnhancedLogger: MockEnhancedLogger };
+});
 
 // Mock memory entity manager
 const mockMemoryManager = {
-  initialize: jest.fn(),
-  upsertEntity: jest.fn(),
-  upsertRelationship: jest.fn(),
-} as unknown as jest.Mocked<MemoryEntityManager>;
+  initialize: vi.fn(),
+  upsertEntity: vi.fn(),
+  upsertRelationship: vi.fn(),
+} as unknown as Mocked<MemoryEntityManager>;
 
 describe('MemoryTransformer', () => {
   let transformer: MemoryTransformer;
-  let mockDate: jest.SpyInstance;
+  let mockDate: MockInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     transformer = new MemoryTransformer(mockMemoryManager);
 
     // Mock crypto randomUUID with proper UUID format
-    jest.spyOn(crypto, 'randomUUID').mockReturnValue('550e8400-e29b-41d4-a716-446655440000');
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue('550e8400-e29b-41d4-a716-446655440000');
 
     // Mock date to be consistent
-    mockDate = jest
-      .spyOn(Date.prototype, 'toISOString')
-      .mockReturnValue('2024-01-01T00:00:00.000Z');
+    mockDate = vi.spyOn(Date.prototype, 'toISOString').mockReturnValue('2024-01-01T00:00:00.000Z');
   });
 
   afterEach(() => {
@@ -382,7 +390,7 @@ We chose React.
       expect(result.decisionData.reviewHistory[0].decision).toBe('approve');
 
       // Restore mock for other tests
-      mockDate = jest
+      mockDate = vi
         .spyOn(Date.prototype, 'toISOString')
         .mockReturnValue('2024-01-01T00:00:00.000Z');
     });
@@ -495,7 +503,7 @@ We chose React.
 
       // Mock dates for entities
       let callCount = 0;
-      jest.spyOn(Date.prototype, 'toISOString').mockImplementation(() => {
+      vi.spyOn(Date.prototype, 'toISOString').mockImplementation(() => {
         callCount++;
         return callCount <= 6 ? olderDate : newerDate; // First entity gets older date
       });

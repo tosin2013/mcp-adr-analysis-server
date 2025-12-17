@@ -2,7 +2,7 @@
  * Test suite for LLM artifact detector
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 
 describe('LLM Artifact Detector', () => {
   describe('Debug Script Detection', () => {
@@ -496,9 +496,8 @@ describe('LLM Artifact Detector', () => {
 
   describe('Summary Statistics', () => {
     it('should generate accurate summary statistics', async () => {
-      const { detectLLMArtifacts, getLLMArtifactSummary } = await import(
-        '../../src/utils/llm-artifact-detector.js'
-      );
+      const { detectLLMArtifacts, getLLMArtifactSummary } =
+        await import('../../src/utils/llm-artifact-detector.js');
 
       const results = [
         detectLLMArtifacts('debug_script.py', 'print("debug")'),

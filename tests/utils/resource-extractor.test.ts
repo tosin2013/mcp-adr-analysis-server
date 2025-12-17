@@ -3,7 +3,7 @@
  * Tests command output parsing and resource extraction from kubectl, oc, docker, etc.
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { ResourceExtractor, ExtractionPattern } from '../../src/utils/resource-extractor.js';
 
 describe('ResourceExtractor', () => {

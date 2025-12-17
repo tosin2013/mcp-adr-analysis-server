@@ -3,33 +3,44 @@
  * Tests AI-powered dynamic tool sequencing functionality
  */
 
-import { jest } from '@jest/globals';
-import { toolChainOrchestrator } from '../../src/tools/tool-chain-orchestrator.js';
+import { describe, it, expect, beforeEach, vi, MockedFunction } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
+// Use vi.hoisted to ensure mocks are available before vi.mock is hoisted
+const {
+  mockFetch,
+  mockLoadAIConfig,
+  mockIsAIExecutionEnabled,
+  mockGetRecommendedModel,
+  mockCreateIntent,
+  mockAddToolExecution,
+} = vi.hoisted(() => ({
+  mockFetch: vi.fn() as MockedFunction<typeof fetch>,
+  mockLoadAIConfig: vi.fn() as MockedFunction<any>,
+  mockIsAIExecutionEnabled: vi.fn() as MockedFunction<any>,
+  mockGetRecommendedModel: vi.fn() as MockedFunction<any>,
+  mockCreateIntent: vi.fn() as MockedFunction<any>,
+  mockAddToolExecution: vi.fn() as MockedFunction<any>,
+}));
+
 // Mock fetch globally
-const mockFetch = jest.fn() as jest.MockedFunction<typeof fetch>;
 global.fetch = mockFetch;
 
-// Mock dependencies
-const mockLoadAIConfig = jest.fn() as jest.MockedFunction<any>;
-const mockIsAIExecutionEnabled = jest.fn() as jest.MockedFunction<any>;
-const mockGetRecommendedModel = jest.fn() as jest.MockedFunction<any>;
-const mockCreateIntent = jest.fn() as jest.MockedFunction<any>;
-const mockAddToolExecution = jest.fn() as jest.MockedFunction<any>;
-
-jest.mock('../../src/config/ai-config.js', () => ({
+vi.mock('../../src/config/ai-config.js', () => ({
   loadAIConfig: mockLoadAIConfig,
   isAIExecutionEnabled: mockIsAIExecutionEnabled,
   getRecommendedModel: mockGetRecommendedModel,
 }));
 
-jest.mock('../../src/utils/knowledge-graph-manager.js', () => ({
-  KnowledgeGraphManager: jest.fn().mockImplementation(() => ({
-    createIntent: mockCreateIntent,
-    addToolExecution: mockAddToolExecution,
-  })),
+vi.mock('../../src/utils/knowledge-graph-manager.js', () => ({
+  KnowledgeGraphManager: class MockKnowledgeGraphManager {
+    createIntent = mockCreateIntent;
+    addToolExecution = mockAddToolExecution;
+  },
 }));
+
+// Import after mocking
+import { toolChainOrchestrator } from '../../src/tools/tool-chain-orchestrator.js';
 
 describe('toolChainOrchestrator', () => {
   const mockAIConfig = {
@@ -53,7 +64,7 @@ describe('toolChainOrchestrator', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockLoadAIConfig.mockReturnValue(mockAIConfig);
     mockIsAIExecutionEnabled.mockReturnValue(false); // Default to disabled
     mockGetRecommendedModel.mockReturnValue('anthropic/claude-3-sonnet');

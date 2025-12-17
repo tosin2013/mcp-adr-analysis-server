@@ -4,24 +4,24 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
 
 // Mock conditional-request (needed for generateETag)
-jest.unstable_mockModule('../../src/utils/conditional-request.js', () => ({
-  generateStrongETag: jest.fn((data: any) => `etag-${JSON.stringify(data).length}`),
+vi.mock('../../src/utils/conditional-request.js', () => ({
+  generateStrongETag: vi.fn((data: any) => `etag-${JSON.stringify(data).length}`),
 }));
 
 // Mock ResourceCache
-const mockCacheGet = jest.fn();
-const mockCacheSet = jest.fn();
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
 
-jest.unstable_mockModule('../../src/resources/resource-cache.js', () => ({
+vi.mock('../../src/resources/resource-cache.js', () => ({
   resourceCache: {
     get: mockCacheGet,
     set: mockCacheSet,
   },
   generateETag: (data: any) => `etag-${JSON.stringify(data).length}`,
-  ResourceCache: jest.fn(),
+  ResourceCache: vi.fn(),
 }));
 
 describe('Memory Expand Resource', () => {
@@ -34,14 +34,14 @@ describe('Memory Expand Resource', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default: no cache hit
     mockCacheGet.mockResolvedValue(null);
 
     // Mock memory manager - using correct MemoryEntity schema
     mockMemoryManager = {
-      queryEntities: jest.fn().mockResolvedValue({
+      queryEntities: vi.fn().mockResolvedValue({
         entities: [
           {
             id: 'adr-001',
@@ -69,7 +69,7 @@ describe('Memory Expand Resource', () => {
         totalCount: 1,
         queryTime: 10,
       }),
-      findRelatedEntities: jest.fn().mockResolvedValue({
+      findRelatedEntities: vi.fn().mockResolvedValue({
         // Uses 'findRelatedEntities' not 'findRelated'
         relationshipPaths: [
           {
@@ -106,7 +106,7 @@ describe('Memory Expand Resource', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic Resource Generation', () => {

@@ -2,7 +2,7 @@
  * Basic tests for type definitions and schemas
  */
 
-import { describe, it, expect } from '@jest/globals';
+import { describe, it, expect } from 'vitest';
 import {
   AdrSchema,
   DetectedTechnologySchema,

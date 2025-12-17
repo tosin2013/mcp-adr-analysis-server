@@ -1,21 +1,21 @@
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 
 // Mock child_process to prevent actual git commands during tests
-const mockExecSync = jest.fn();
-const mockExec = jest.fn();
-jest.unstable_mockModule('child_process', () => ({
+const mockExecSync = vi.fn();
+const mockExec = vi.fn();
+vi.mock('child_process', () => ({
   execSync: mockExecSync,
   exec: mockExec,
 }));
 
 // Mock fs functions to prevent actual file system operations
-const mockExistsSync = jest.fn();
-const mockReadFileSync = jest.fn();
-const mockStatSync = jest.fn();
-const mockWriteFileSync = jest.fn();
-const mockMkdirSync = jest.fn();
+const mockExistsSync = vi.fn();
+const mockReadFileSync = vi.fn();
+const mockStatSync = vi.fn();
+const mockWriteFileSync = vi.fn();
+const mockMkdirSync = vi.fn();
 
-jest.unstable_mockModule('fs', () => ({
+vi.mock('fs', () => ({
   existsSync: mockExistsSync,
   readFileSync: mockReadFileSync,
   statSync: mockStatSync,
@@ -23,25 +23,25 @@ jest.unstable_mockModule('fs', () => ({
   mkdirSync: mockMkdirSync,
   // Add promises export for code that uses: import { promises as fs } from 'fs'
   promises: {
-    readFile: jest.fn().mockResolvedValue(''),
-    writeFile: jest.fn().mockResolvedValue(undefined),
-    mkdir: jest.fn().mockResolvedValue(undefined),
-    access: jest.fn().mockResolvedValue(undefined),
-    readdir: jest.fn().mockResolvedValue([]),
-    stat: jest.fn().mockResolvedValue({ size: 1024, isDirectory: () => false, isFile: () => true }),
+    readFile: vi.fn().mockResolvedValue(''),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    access: vi.fn().mockResolvedValue(undefined),
+    readdir: vi.fn().mockResolvedValue([]),
+    stat: vi.fn().mockResolvedValue({ size: 1024, isDirectory: () => false, isFile: () => true }),
   },
 }));
 
 // Mock fs/promises to prevent actual async file system operations
 // Required because deployment-readiness-tool and its dependencies use fs/promises
-const mockPromisesReadFile = jest.fn();
-const mockPromisesWriteFile = jest.fn();
-const mockPromisesMkdir = jest.fn();
-const mockPromisesAccess = jest.fn();
-const mockPromisesReaddir = jest.fn();
-const mockPromisesStat = jest.fn();
+const mockPromisesReadFile = vi.fn();
+const mockPromisesWriteFile = vi.fn();
+const mockPromisesMkdir = vi.fn();
+const mockPromisesAccess = vi.fn();
+const mockPromisesReaddir = vi.fn();
+const mockPromisesStat = vi.fn();
 
-jest.unstable_mockModule('fs/promises', () => ({
+vi.mock('fs/promises', () => ({
   readFile: mockPromisesReadFile,
   writeFile: mockPromisesWriteFile,
   mkdir: mockPromisesMkdir,
@@ -60,7 +60,7 @@ jest.unstable_mockModule('fs/promises', () => ({
 
 describe('Smart Git Push Tool V2', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Mock execSync to return successful git command outputs
     mockExecSync.mockImplementation((command: string) => {

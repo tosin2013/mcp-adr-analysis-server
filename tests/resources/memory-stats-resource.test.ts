@@ -4,24 +4,24 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
 
 // Mock conditional-request (needed for generateETag)
-jest.unstable_mockModule('../../src/utils/conditional-request.js', () => ({
-  generateStrongETag: jest.fn((data: any) => `etag-${JSON.stringify(data).length}`),
+vi.mock('../../src/utils/conditional-request.js', () => ({
+  generateStrongETag: vi.fn((data: any) => `etag-${JSON.stringify(data).length}`),
 }));
 
 // Mock ResourceCache
-const mockCacheGet = jest.fn();
-const mockCacheSet = jest.fn();
+const mockCacheGet = vi.fn();
+const mockCacheSet = vi.fn();
 
-jest.unstable_mockModule('../../src/resources/resource-cache.js', () => ({
+vi.mock('../../src/resources/resource-cache.js', () => ({
   resourceCache: {
     get: mockCacheGet,
     set: mockCacheSet,
   },
   generateETag: (data: any) => `etag-${JSON.stringify(data).length}`,
-  ResourceCache: jest.fn(),
+  ResourceCache: vi.fn(),
 }));
 
 describe('Memory Stats Resource', () => {
@@ -34,14 +34,14 @@ describe('Memory Stats Resource', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default: no cache hit
     mockCacheGet.mockResolvedValue(null);
 
     // Mock memory manager with typical stats
     mockMemoryManager = {
-      getStats: jest.fn().mockResolvedValue({
+      getStats: vi.fn().mockResolvedValue({
         totalSessions: 15,
         activeSessions: 3,
         archivedSessions: 12,
@@ -54,12 +54,16 @@ describe('Memory Stats Resource', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic Resource Generation', () => {
     it('should generate memory stats', async () => {
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result).toBeDefined();
       expect(result.data).toBeDefined();
@@ -73,14 +77,22 @@ describe('Memory Stats Resource', () => {
     });
 
     it('should include timestamp in response', async () => {
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result.data.timestamp).toBeDefined();
       expect(new Date(result.data.timestamp).getTime()).toBeGreaterThan(0);
     });
 
     it('should convert storage bytes to KB', async () => {
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result.data.storageSizeKB).toBe(512);
       expect(result.data.totalStorageBytes).toBe(524288);
@@ -105,7 +117,11 @@ describe('Memory Stats Resource', () => {
         totalStorageBytes: 1024, // 1 KB
       });
 
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result.data.storageSizeKB).toBe(1);
     });
@@ -121,7 +137,11 @@ describe('Memory Stats Resource', () => {
         totalStorageBytes: 10485760, // 10 MB = 10240 KB
       });
 
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result.data.storageSizeKB).toBe(10240);
     });
@@ -137,7 +157,11 @@ describe('Memory Stats Resource', () => {
         totalStorageBytes: 1536, // 1.5 KB
       });
 
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result.data.storageSizeKB).toBe(1.5);
     });
@@ -163,7 +187,11 @@ describe('Memory Stats Resource', () => {
 
       mockCacheGet.mockResolvedValue(cachedResult);
 
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result).toBe(cachedResult);
       expect(mockMemoryManager.getStats).not.toHaveBeenCalled();
@@ -185,7 +213,11 @@ describe('Memory Stats Resource', () => {
     });
 
     it('should use 30-second TTL for moderately changing data', async () => {
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result.ttl).toBe(30);
     });
@@ -217,7 +249,11 @@ describe('Memory Stats Resource', () => {
 
   describe('Response Structure', () => {
     it('should return properly structured ResourceGenerationResult', async () => {
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result).toMatchObject({
         data: expect.objectContaining({
@@ -240,7 +276,11 @@ describe('Memory Stats Resource', () => {
     });
 
     it('should generate valid etag', async () => {
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result.etag).toBeDefined();
       expect(typeof result.etag).toBe('string');
@@ -248,7 +288,11 @@ describe('Memory Stats Resource', () => {
     });
 
     it('should include all original stats fields', async () => {
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result.data).toHaveProperty('totalSessions');
       expect(result.data).toHaveProperty('activeSessions');
@@ -272,7 +316,11 @@ describe('Memory Stats Resource', () => {
         totalStorageBytes: 0,
       });
 
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result.data.totalSessions).toBe(0);
       expect(result.data.storageSizeKB).toBe(0);
@@ -289,7 +337,11 @@ describe('Memory Stats Resource', () => {
         totalStorageBytes: 1073741824, // 1 GB
       });
 
-      const result = await generateMemoryStatsResource({}, new URLSearchParams(), mockMemoryManager);
+      const result = await generateMemoryStatsResource(
+        {},
+        new URLSearchParams(),
+        mockMemoryManager
+      );
 
       expect(result.data.totalSessions).toBe(1000000);
       expect(result.data.storageSizeKB).toBe(1048576); // 1 GB in KB

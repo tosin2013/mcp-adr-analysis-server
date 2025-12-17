@@ -3,25 +3,25 @@
  * Tests the analyzeDeploymentProgress function with comprehensive scenarios
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
 // Pragmatic mocking approach to avoid TypeScript complexity
-jest.unstable_mockModule('../../src/utils/deployment-analysis.js', () => ({
-  identifyDeploymentTasks: jest.fn(),
-  analyzeCiCdStatus: jest.fn(),
-  calculateDeploymentProgress: jest.fn(),
-  verifyDeploymentCompletion: jest.fn(),
+vi.mock('../../src/utils/deployment-analysis.js', () => ({
+  identifyDeploymentTasks: vi.fn(),
+  analyzeCiCdStatus: vi.fn(),
+  calculateDeploymentProgress: vi.fn(),
+  verifyDeploymentCompletion: vi.fn(),
 }));
 
-jest.unstable_mockModule('../../src/utils/prompt-execution.js', () => ({
-  executePromptWithFallback: jest.fn(),
-  formatMCPResponse: jest.fn(),
+vi.mock('../../src/utils/prompt-execution.js', () => ({
+  executePromptWithFallback: vi.fn(),
+  formatMCPResponse: vi.fn(),
 }));
 
-jest.unstable_mockModule('../../src/utils/research-orchestrator.js', () => ({
-  ResearchOrchestrator: jest.fn().mockImplementation(() => ({
-    answerResearchQuestion: jest.fn().mockResolvedValue({
+vi.mock('../../src/utils/research-orchestrator.js', () => ({
+  ResearchOrchestrator: vi.fn().mockImplementation(() => ({
+    answerResearchQuestion: vi.fn().mockResolvedValue({
       answer: 'Mock environment analysis',
       confidence: 0.85,
       sources: [
@@ -44,14 +44,13 @@ const {
   calculateDeploymentProgress,
   verifyDeploymentCompletion,
 } = await import('../../src/utils/deployment-analysis.js');
-const { executePromptWithFallback, formatMCPResponse } = await import(
-  '../../src/utils/prompt-execution.js'
-);
+const { executePromptWithFallback, formatMCPResponse } =
+  await import('../../src/utils/prompt-execution.js');
 
 describe('deployment-analysis-tool', () => {
   describe('analyzeDeploymentProgress', () => {
     beforeEach(() => {
-      jest.clearAllMocks();
+      vi.clearAllMocks();
     });
 
     describe('tasks analysis type', () => {
@@ -77,12 +76,12 @@ describe('deployment-analysis-tool', () => {
         };
 
         (
-          identifyDeploymentTasks as jest.MockedFunction<typeof identifyDeploymentTasks>
+          identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockTaskResult);
         (
-          executePromptWithFallback as jest.MockedFunction<typeof executePromptWithFallback>
+          executePromptWithFallback as MockedFunction<typeof executePromptWithFallback>
         ).mockResolvedValue(mockExecutionResult);
-        (formatMCPResponse as jest.MockedFunction<typeof formatMCPResponse>).mockReturnValue(
+        (formatMCPResponse as MockedFunction<typeof formatMCPResponse>).mockReturnValue(
           mockFormattedResponse
         );
 
@@ -118,10 +117,10 @@ describe('deployment-analysis-tool', () => {
         };
 
         (
-          identifyDeploymentTasks as jest.MockedFunction<typeof identifyDeploymentTasks>
+          identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockTaskResult);
         (
-          executePromptWithFallback as jest.MockedFunction<typeof executePromptWithFallback>
+          executePromptWithFallback as MockedFunction<typeof executePromptWithFallback>
         ).mockResolvedValue(mockExecutionResult);
 
         const result = await analyzeDeploymentProgress({
@@ -148,10 +147,10 @@ describe('deployment-analysis-tool', () => {
         };
 
         (
-          identifyDeploymentTasks as jest.MockedFunction<typeof identifyDeploymentTasks>
+          identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockTaskResult);
         (
-          executePromptWithFallback as jest.MockedFunction<typeof executePromptWithFallback>
+          executePromptWithFallback as MockedFunction<typeof executePromptWithFallback>
         ).mockResolvedValue(mockExecutionResult);
 
         await analyzeDeploymentProgress({ analysisType: 'tasks' });
@@ -180,7 +179,7 @@ describe('deployment-analysis-tool', () => {
           },
         ];
 
-        (analyzeCiCdStatus as jest.MockedFunction<typeof analyzeCiCdStatus>).mockResolvedValue(
+        (analyzeCiCdStatus as MockedFunction<typeof analyzeCiCdStatus>).mockResolvedValue(
           mockCicdResult
         );
 
@@ -222,7 +221,7 @@ describe('deployment-analysis-tool', () => {
           instructions: 'Basic CI/CD analysis instructions',
         };
 
-        (analyzeCiCdStatus as jest.MockedFunction<typeof analyzeCiCdStatus>).mockResolvedValue(
+        (analyzeCiCdStatus as MockedFunction<typeof analyzeCiCdStatus>).mockResolvedValue(
           mockCicdResult
         );
 
@@ -260,7 +259,7 @@ describe('deployment-analysis-tool', () => {
         const mockEnvironmentStatus = { health: 'healthy', services: ['api', 'db'] };
 
         (
-          calculateDeploymentProgress as jest.MockedFunction<typeof calculateDeploymentProgress>
+          calculateDeploymentProgress as MockedFunction<typeof calculateDeploymentProgress>
         ).mockResolvedValue(mockProgressResult);
 
         const result = await analyzeDeploymentProgress({
@@ -315,7 +314,7 @@ describe('deployment-analysis-tool', () => {
         ];
 
         (
-          calculateDeploymentProgress as jest.MockedFunction<typeof calculateDeploymentProgress>
+          calculateDeploymentProgress as MockedFunction<typeof calculateDeploymentProgress>
         ).mockResolvedValue(mockProgressResult);
 
         const result = await analyzeDeploymentProgress({
@@ -371,7 +370,7 @@ describe('deployment-analysis-tool', () => {
         ];
 
         (
-          verifyDeploymentCompletion as jest.MockedFunction<typeof verifyDeploymentCompletion>
+          verifyDeploymentCompletion as MockedFunction<typeof verifyDeploymentCompletion>
         ).mockResolvedValue(mockCompletionResult);
 
         const result = await analyzeDeploymentProgress({
@@ -478,7 +477,7 @@ describe('deployment-analysis-tool', () => {
         ];
 
         (
-          verifyDeploymentCompletion as jest.MockedFunction<typeof verifyDeploymentCompletion>
+          verifyDeploymentCompletion as MockedFunction<typeof verifyDeploymentCompletion>
         ).mockResolvedValue(mockCompletionResult);
 
         const result = await analyzeDeploymentProgress({
@@ -504,7 +503,7 @@ describe('deployment-analysis-tool', () => {
         };
 
         (
-          identifyDeploymentTasks as jest.MockedFunction<typeof identifyDeploymentTasks>
+          identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockTaskResult);
 
         const result = await analyzeDeploymentProgress({
@@ -534,7 +533,7 @@ describe('deployment-analysis-tool', () => {
         };
 
         (
-          identifyDeploymentTasks as jest.MockedFunction<typeof identifyDeploymentTasks>
+          identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockTaskResult);
 
         const result = await analyzeDeploymentProgress({
@@ -552,7 +551,7 @@ describe('deployment-analysis-tool', () => {
         };
 
         (
-          identifyDeploymentTasks as jest.MockedFunction<typeof identifyDeploymentTasks>
+          identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockTaskResult);
 
         const result = await analyzeDeploymentProgress({
@@ -583,7 +582,7 @@ describe('deployment-analysis-tool', () => {
         };
 
         (
-          identifyDeploymentTasks as jest.MockedFunction<typeof identifyDeploymentTasks>
+          identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockTaskResult);
 
         const result = await analyzeDeploymentProgress({});
@@ -610,7 +609,7 @@ describe('deployment-analysis-tool', () => {
       it('should handle utility function errors', async () => {
         const utilityError = new Error('Utility function failed');
         (
-          identifyDeploymentTasks as jest.MockedFunction<typeof identifyDeploymentTasks>
+          identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockRejectedValue(utilityError);
 
         await expect(
@@ -627,7 +626,7 @@ describe('deployment-analysis-tool', () => {
 
       it('should handle non-Error exceptions', async () => {
         (
-          identifyDeploymentTasks as jest.MockedFunction<typeof identifyDeploymentTasks>
+          identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockRejectedValue('String error');
 
         await expect(
@@ -643,7 +642,7 @@ describe('deployment-analysis-tool', () => {
       });
 
       it('should handle undefined error', async () => {
-        (analyzeCiCdStatus as jest.MockedFunction<typeof analyzeCiCdStatus>).mockRejectedValue(
+        (analyzeCiCdStatus as MockedFunction<typeof analyzeCiCdStatus>).mockRejectedValue(
           undefined
         );
 
@@ -670,7 +669,7 @@ describe('deployment-analysis-tool', () => {
         };
 
         (
-          identifyDeploymentTasks as jest.MockedFunction<typeof identifyDeploymentTasks>
+          identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockResult);
 
         const analysisTypes = ['tasks', 'comprehensive'] as const;
@@ -678,7 +677,7 @@ describe('deployment-analysis-tool', () => {
         for (const analysisType of analysisTypes) {
           const mockExecutionResult = { isAIGenerated: false, content: 'test' };
           (
-            executePromptWithFallback as jest.MockedFunction<typeof executePromptWithFallback>
+            executePromptWithFallback as MockedFunction<typeof executePromptWithFallback>
           ).mockResolvedValue(mockExecutionResult);
 
           const result = await analyzeDeploymentProgress({ analysisType });
@@ -700,7 +699,7 @@ describe('deployment-analysis-tool', () => {
           instructions: 'CICD instructions',
         };
 
-        (analyzeCiCdStatus as jest.MockedFunction<typeof analyzeCiCdStatus>).mockResolvedValue(
+        (analyzeCiCdStatus as MockedFunction<typeof analyzeCiCdStatus>).mockResolvedValue(
           mockCicdResult
         );
 
@@ -721,7 +720,7 @@ describe('deployment-analysis-tool', () => {
         };
 
         (
-          calculateDeploymentProgress as jest.MockedFunction<typeof calculateDeploymentProgress>
+          calculateDeploymentProgress as MockedFunction<typeof calculateDeploymentProgress>
         ).mockResolvedValue(mockProgressResult);
 
         const progressResult = await analyzeDeploymentProgress({

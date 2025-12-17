@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach } from 'vitest';
 import { reviewExistingAdrs } from '../../src/tools/review-existing-adrs-tool.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';

@@ -2,7 +2,7 @@
  * ESM Mock Helper
  *
  * Provides utilities for ESM-compatible module mocking in Jest.
- * Uses jest.unstable_mockModule() which works with ES modules.
+ * Uses vi.mock() which works with ES modules.
  *
  * @see Issue #308 - Implement ESM-compatible Jest mocking
  *
@@ -16,7 +16,7 @@
  *   beforeAll(async () => {
  *     await setupESMMocks({
  *       '../../src/utils/some-module.js': {
- *         someFunction: jest.fn().mockReturnValue('mocked')
+ *         someFunction: vi.fn().mockReturnValue('mocked')
  *       }
  *     });
  *     myModule = await import('../../src/tools/my-tool.js');
@@ -29,12 +29,12 @@
  * ```
  */
 
-import { jest } from '@jest/globals';
+import { vi, type Mock } from 'vitest';
 
 /**
  * Type for mock module definitions
  */
-export type MockModuleDefinition = Record<string, jest.Mock | unknown>;
+export type MockModuleDefinition = Record<string, Mock | unknown>;
 
 /**
  * Registry of registered mock modules for cleanup
@@ -42,7 +42,7 @@ export type MockModuleDefinition = Record<string, jest.Mock | unknown>;
 const registeredMocks: Map<string, MockModuleDefinition> = new Map();
 
 /**
- * Setup ESM-compatible mocks using jest.unstable_mockModule
+ * Setup ESM-compatible mocks using vi.mock
  *
  * IMPORTANT: This must be called BEFORE importing the module under test.
  * The order matters in ESM:
@@ -54,14 +54,14 @@ const registeredMocks: Map<string, MockModuleDefinition> = new Map();
  */
 export async function setupESMMocks(mocks: Record<string, MockModuleDefinition>): Promise<void> {
   // Reset modules to ensure clean state
-  jest.resetModules();
+  vi.resetModules();
 
   for (const [modulePath, mockImpl] of Object.entries(mocks)) {
     // Store for later cleanup/reset
     registeredMocks.set(modulePath, mockImpl);
 
     // Use unstable_mockModule for ESM compatibility
-    jest.unstable_mockModule(modulePath, () => ({
+    vi.mock(modulePath, () => ({
       __esModule: true,
       ...mockImpl,
     }));
@@ -76,7 +76,7 @@ export function resetESMMocks(): void {
   for (const mockImpl of registeredMocks.values()) {
     for (const value of Object.values(mockImpl)) {
       if (typeof value === 'function' && 'mockReset' in value) {
-        (value as jest.Mock).mockReset();
+        (value as Mock).mockReset();
       }
     }
   }
@@ -90,7 +90,7 @@ export function clearESMMocks(): void {
   for (const mockImpl of registeredMocks.values()) {
     for (const value of Object.values(mockImpl)) {
       if (typeof value === 'function' && 'mockClear' in value) {
-        (value as jest.Mock).mockClear();
+        (value as Mock).mockClear();
       }
     }
   }
@@ -112,13 +112,13 @@ export const MockFactories = {
    */
   createResearchOrchestrator: (
     overrides?: Partial<{
-      answerResearchQuestion: jest.Mock;
+      answerResearchQuestion: Mock;
     }>
   ) => ({
-    ResearchOrchestrator: jest.fn().mockImplementation(() => ({
+    ResearchOrchestrator: vi.fn().mockImplementation(() => ({
       answerResearchQuestion:
         overrides?.answerResearchQuestion ??
-        jest.fn().mockResolvedValue({
+        vi.fn().mockResolvedValue({
           answer: 'Mock research answer',
           confidence: 0.8,
           sources: [],
@@ -132,12 +132,12 @@ export const MockFactories = {
    * Create a mock MemoryEntityManager
    */
   createMemoryEntityManager: () => ({
-    MemoryEntityManager: jest.fn().mockImplementation(() => ({
-      initialize: jest.fn().mockResolvedValue(undefined),
-      upsertEntity: jest.fn().mockResolvedValue({ id: 'mock-entity-id' }),
-      upsertRelationship: jest.fn().mockResolvedValue(undefined),
-      queryEntities: jest.fn().mockResolvedValue({ entities: [] }),
-      updateEntity: jest.fn().mockResolvedValue(undefined),
+    MemoryEntityManager: vi.fn().mockImplementation(() => ({
+      initialize: vi.fn().mockResolvedValue(undefined),
+      upsertEntity: vi.fn().mockResolvedValue({ id: 'mock-entity-id' }),
+      upsertRelationship: vi.fn().mockResolvedValue(undefined),
+      queryEntities: vi.fn().mockResolvedValue({ entities: [] }),
+      updateEntity: vi.fn().mockResolvedValue(undefined),
     })),
   }),
 
@@ -145,19 +145,19 @@ export const MockFactories = {
    * Create a mock EnhancedLogger
    */
   createEnhancedLogger: () => ({
-    EnhancedLogger: jest.fn().mockImplementation(() => ({
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      debug: jest.fn(),
-      clearLogs: jest.fn(),
+    EnhancedLogger: vi.fn().mockImplementation(() => ({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      clearLogs: vi.fn(),
     })),
     logger: {
-      info: jest.fn(),
-      warn: jest.fn(),
-      error: jest.fn(),
-      debug: jest.fn(),
-      clearLogs: jest.fn(),
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      clearLogs: vi.fn(),
     },
   }),
 
@@ -165,9 +165,9 @@ export const MockFactories = {
    * Create a mock AI executor
    */
   createAIExecutor: (overrides?: { isAvailable?: boolean }) => ({
-    getAIExecutor: jest.fn().mockReturnValue({
+    getAIExecutor: vi.fn().mockReturnValue({
       isAvailable: () => overrides?.isAvailable ?? false,
-      executeStructuredPrompt: jest.fn().mockResolvedValue({
+      executeStructuredPrompt: vi.fn().mockResolvedValue({
         data: { isValid: true, confidence: 0.9, findings: [], recommendations: [] },
         raw: { metadata: {} },
       }),
@@ -178,13 +178,13 @@ export const MockFactories = {
    * Create a mock KnowledgeGraphManager
    */
   createKnowledgeGraphManager: () => ({
-    KnowledgeGraphManager: jest.fn().mockImplementation(() => ({
-      getActiveConnections: jest.fn().mockResolvedValue([]),
-      getPatternHistory: jest.fn().mockResolvedValue([]),
-      addNode: jest.fn(),
-      addEdge: jest.fn(),
-      getNode: jest.fn(),
-      getRelatedNodes: jest.fn().mockReturnValue([]),
+    KnowledgeGraphManager: vi.fn().mockImplementation(() => ({
+      getActiveConnections: vi.fn().mockResolvedValue([]),
+      getPatternHistory: vi.fn().mockResolvedValue([]),
+      addNode: vi.fn(),
+      addEdge: vi.fn(),
+      getNode: vi.fn(),
+      getRelatedNodes: vi.fn().mockReturnValue([]),
     })),
   }),
 
@@ -192,22 +192,22 @@ export const MockFactories = {
    * Create mock environment analysis utilities
    */
   createEnvironmentAnalysis: () => ({
-    analyzeEnvironmentSpecs: jest.fn().mockResolvedValue({
+    analyzeEnvironmentSpecs: vi.fn().mockResolvedValue({
       analysisPrompt: 'Environment Specification Analysis\n\nMock analysis prompt',
       instructions: 'Mock instructions',
       actualData: {},
     }),
-    detectContainerization: jest.fn().mockResolvedValue({
+    detectContainerization: vi.fn().mockResolvedValue({
       analysisPrompt: 'Containerization Technology Detection\n\nMock containerization analysis',
       instructions: 'Mock instructions',
       actualData: {},
     }),
-    determineEnvironmentRequirements: jest.fn().mockResolvedValue({
+    determineEnvironmentRequirements: vi.fn().mockResolvedValue({
       analysisPrompt: 'Environment Requirements from ADRs\n\nMock requirements analysis',
       instructions: 'Mock instructions',
       actualData: {},
     }),
-    assessEnvironmentCompliance: jest.fn().mockResolvedValue({
+    assessEnvironmentCompliance: vi.fn().mockResolvedValue({
       analysisPrompt: 'Environment Compliance Assessment\n\nMock compliance analysis',
       instructions: 'Mock instructions',
       actualData: {},
@@ -218,7 +218,7 @@ export const MockFactories = {
    * Create mock knowledge generation
    */
   createKnowledgeGeneration: () => ({
-    generateArchitecturalKnowledge: jest.fn().mockResolvedValue({
+    generateArchitecturalKnowledge: vi.fn().mockResolvedValue({
       prompt: 'Generated Knowledge Prompting\n\nMock knowledge enhancement',
       confidence: 0.9,
     }),
@@ -228,11 +228,11 @@ export const MockFactories = {
    * Create mock prompt execution
    */
   createPromptExecution: () => ({
-    executePromptWithFallback: jest.fn().mockResolvedValue({
+    executePromptWithFallback: vi.fn().mockResolvedValue({
       content: 'Mock prompt execution result',
       isAIGenerated: false,
     }),
-    formatMCPResponse: jest.fn((content: string) => ({
+    formatMCPResponse: vi.fn((content: string) => ({
       content: [{ type: 'text', text: content }],
     })),
   }),

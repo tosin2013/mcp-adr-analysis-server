@@ -132,7 +132,15 @@ export default [
     files: ['**/*.test.{ts,js}', '**/*.spec.{ts,js}', 'tests/**/*.{ts,js}'],
     languageOptions: {
       globals: {
+        // Vitest globals (primary test framework)
+        vi: 'readonly',
+        Mock: 'readonly',
+        MockedFunction: 'readonly',
+        MockInstance: 'readonly',
+        Mocked: 'readonly',
+        // Jest globals (legacy/fallback)
         jest: 'readonly',
+        // Common test globals
         describe: 'readonly',
         it: 'readonly',
         test: 'readonly',

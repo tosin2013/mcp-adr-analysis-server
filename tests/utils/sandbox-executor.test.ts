@@ -7,7 +7,7 @@
  * @see ADR-014: CE-MCP Architecture
  */
 
-import { jest as _jest } from '@jest/globals';
+import { vi as _vi } from 'vitest';
 import { join } from 'path';
 import { mkdtemp, rm, mkdir, writeFile } from 'fs/promises';
 import { tmpdir } from 'os';

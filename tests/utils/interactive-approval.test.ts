@@ -3,44 +3,43 @@
  * Tests interactive approval workflow, batch operations, and user choice processing
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 
 // Mock readline interface
 const mockRl = {
-  question: jest.fn(),
-  close: jest.fn(),
+  question: vi.fn(),
+  close: vi.fn(),
 };
 
-jest.unstable_mockModule('readline', () => ({
-  createInterface: jest.fn().mockReturnValue(mockRl),
+vi.mock('readline', () => ({
+  createInterface: vi.fn().mockReturnValue(mockRl),
 }));
 
 // Mock fs module with proper implementation
 const mockFs = {
-  readFileSync: jest.fn(),
-  writeFileSync: jest.fn(),
-  existsSync: jest.fn(() => true),
+  readFileSync: vi.fn(),
+  writeFileSync: vi.fn(),
+  existsSync: vi.fn(() => true),
 };
 
-jest.unstable_mockModule('fs', () => mockFs);
+vi.mock('fs', () => mockFs);
 
 // Mock require function for the saveApprovalPreferences function
-(global as any).require = jest.fn().mockImplementation((module: any) => {
+(global as any).require = vi.fn().mockImplementation((module: any) => {
   if (module === 'fs') {
     return mockFs;
   }
   return {};
 });
 
-const { handleInteractiveApproval, batchApproval, saveApprovalPreferences } = await import(
-  '../../src/utils/interactive-approval.js'
-);
+const { handleInteractiveApproval, batchApproval, saveApprovalPreferences } =
+  await import('../../src/utils/interactive-approval.js');
 
 describe('interactive-approval', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Reset console methods
-    jest.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'log').mockImplementation(() => {});
 
     // Reset mock implementations
     mockFs.writeFileSync.mockImplementation(() => {});
@@ -49,7 +48,7 @@ describe('interactive-approval', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('handleInteractiveApproval', () => {
@@ -413,7 +412,7 @@ describe('interactive-approval', () => {
     });
 
     it('should handle file write errors gracefully', async () => {
-      const consoleSpy = jest.spyOn(console, 'log');
+      const consoleSpy = vi.spyOn(console, 'log');
 
       mockFs.writeFileSync.mockImplementation(() => {
         throw new Error('Permission denied');
@@ -428,7 +427,7 @@ describe('interactive-approval', () => {
     });
 
     it('should handle non-Error exceptions', async () => {
-      const consoleSpy = jest.spyOn(console, 'log');
+      const consoleSpy = vi.spyOn(console, 'log');
 
       mockFs.writeFileSync.mockImplementation(() => {
         throw 'String error';

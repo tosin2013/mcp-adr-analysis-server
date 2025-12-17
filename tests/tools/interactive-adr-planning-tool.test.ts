@@ -7,24 +7,26 @@
  * Tests focus on core logic validation rather than filesystem integration.
  */
 
-import { describe, it, expect, /* beforeAll, */ beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// Create filesystem mocks
-const mockFs = {
-  mkdir: jest.fn().mockResolvedValue(undefined),
-  writeFile: jest.fn().mockResolvedValue(undefined),
-  readFile: jest.fn().mockResolvedValue('{}'),
-  rename: jest.fn().mockResolvedValue(undefined),
-};
+// Use vi.hoisted to ensure mocks are available before vi.mock is hoisted
+const { mockFs } = vi.hoisted(() => ({
+  mockFs: {
+    mkdir: vi.fn().mockResolvedValue(undefined),
+    writeFile: vi.fn().mockResolvedValue(undefined),
+    readFile: vi.fn().mockResolvedValue('{}'),
+    rename: vi.fn().mockResolvedValue(undefined),
+  },
+}));
 
 // Mock the fs module before any imports
-jest.mock('fs', () => ({
+vi.mock('fs', () => ({
   promises: mockFs,
 }));
 
 // Mock path module for consistent behavior
-jest.mock('path', () => ({
-  join: jest.fn((...paths: string[]) => paths.join('/')),
+vi.mock('path', () => ({
+  join: vi.fn((...paths: string[]) => paths.join('/')),
 }));
 
 // Import after mocking
@@ -38,7 +40,7 @@ describe('Interactive ADR Planning Tool', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Reset to default successful filesystem mocks
     mockFs.mkdir.mockResolvedValue(undefined);
@@ -48,7 +50,7 @@ describe('Interactive ADR Planning Tool', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Session Management', () => {
@@ -482,7 +484,9 @@ describe('Interactive ADR Planning Tool', () => {
         projectPath: '/test/project',
       };
 
-      await expect(interactiveAdrPlanning(input)).rejects.toThrow(/Invalid option|Invalid enum value/);
+      await expect(interactiveAdrPlanning(input)).rejects.toThrow(
+        /Invalid option|Invalid enum value/
+      );
     });
 
     it('should handle schema validation errors', async () => {
@@ -654,7 +658,7 @@ describe('Interactive ADR Planning Tool', () => {
       });
 
       // Simulate some time passing
-      jest.advanceTimersByTime(120000); // 2 minutes
+      vi.advanceTimersByTime(120000); // 2 minutes
 
       const result = await interactiveAdrPlanning({
         operation: 'complete_session',

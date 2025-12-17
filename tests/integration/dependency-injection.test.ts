@@ -7,7 +7,7 @@
  * @see Issue #310 - Dependency injection for improved testability
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
 
 // Test that the DI interfaces are exported correctly
 describe('Dependency Injection Pattern Tests', () => {
@@ -81,19 +81,19 @@ describe('Dependency Injection Pattern Tests', () => {
       // In actual tests, you would create mock implementations:
 
       const mockMemoryManager = {
-        initialize: jest.fn().mockResolvedValue(undefined),
-        upsertEntity: jest.fn().mockResolvedValue({ id: 'test-id' }),
-        queryEntities: jest.fn().mockResolvedValue({ entities: [] }),
-        upsertRelationship: jest.fn().mockResolvedValue(undefined),
+        initialize: vi.fn().mockResolvedValue(undefined),
+        upsertEntity: vi.fn().mockResolvedValue({ id: 'test-id' }),
+        queryEntities: vi.fn().mockResolvedValue({ entities: [] }),
+        upsertRelationship: vi.fn().mockResolvedValue(undefined),
       };
 
       const mockLogger = {
-        info: jest.fn(),
-        warn: jest.fn(),
-        error: jest.fn(),
-        debug: jest.fn(),
-        setComponent: jest.fn(),
-        clearLogs: jest.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+        setComponent: vi.fn(),
+        clearLogs: vi.fn(),
       };
 
       // Example usage:
@@ -113,7 +113,7 @@ describe('Dependency Injection Pattern Tests', () => {
       // This test demonstrates passing deps to the analyzeEnvironment function
 
       const mockResearchOrchestrator = {
-        answerResearchQuestion: jest.fn().mockResolvedValue({
+        answerResearchQuestion: vi.fn().mockResolvedValue({
           answer: 'Mock research answer for testing',
           confidence: 0.85,
           sources: [{ type: 'test', data: {} }],

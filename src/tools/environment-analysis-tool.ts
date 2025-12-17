@@ -3,12 +3,16 @@
  * Implements prompt-driven environment analysis and compliance assessment
  * Enhanced with Generated Knowledge Prompting (GKP) for DevOps and infrastructure expertise
  * Now includes memory integration for environment snapshot tracking and evolution analysis
+ *
+ * Following ADR-018 Atomic Tools Architecture:
+ * - Dependency injection for testability
+ * - No ResearchOrchestrator (deprecated) - uses direct utility calls
+ * - Self-contained with minimal dependencies
  */
 
 import { McpAdrError } from '../types/index.js';
 import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
-import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 import {
   getEnhancedModeDefault,
   getKnowledgeEnhancementDefault,
@@ -17,6 +21,7 @@ import {
 
 /**
  * Interface for research orchestrator dependency (enables DI and mocking)
+ * @deprecated Use direct utility calls instead per ADR-018. Kept for backward compatibility.
  * @see Issue #310 - Dependency injection for improved testability
  */
 export interface IResearchOrchestrator {
@@ -504,21 +509,18 @@ class EnvironmentMemoryManager {
  */
 /**
  * Dependencies for analyzeEnvironment function (enables DI and mocking)
+ * Following ADR-018 Atomic Tools Architecture pattern.
  * @see Issue #310 - Dependency injection for improved testability
  */
 export interface AnalyzeEnvironmentDeps {
   memoryManager?: EnvironmentMemoryManager;
+  /**
+   * @deprecated ResearchOrchestrator is deprecated per ADR-018. This field is kept
+   * for backward compatibility but is no longer used. The tool now relies on
+   * environment-analysis.js utilities directly.
+   */
   researchOrchestrator?: IResearchOrchestrator;
 }
-
-/**
- * Factory for creating ResearchOrchestrator instances
- * Allows injection of mock factory for testing
- */
-export type ResearchOrchestratorFactory = (
-  projectPath: string,
-  adrDirectory: string
-) => IResearchOrchestrator;
 
 export async function analyzeEnvironment(
   args: {
@@ -555,43 +557,26 @@ export async function analyzeEnvironment(
     await memoryManager.initialize();
   }
 
-  // Research live environment state using research-orchestrator (use injected or create new)
-  let liveEnvironmentData = '';
-  try {
-    const orchestrator =
-      deps.researchOrchestrator ?? new ResearchOrchestrator(projectPath, adrDirectory);
-    const research = await orchestrator.answerResearchQuestion(
-      `Analyze ${environmentType} environment state and configuration:
-1. What infrastructure tools are currently available and running?
-2. What deployment and containerization technologies are in use?
-3. What is the current environment configuration?
-4. Are there any environment-related ADRs or documentation?
-5. What are the current resource utilization and health metrics?`
-    );
-    const envSource = research.sources.find(s => s.type === 'environment');
-    const capabilities = envSource?.data?.capabilities || [];
+  // Static environment context section (ADR-018: replaced ResearchOrchestrator)
+  // Environment details are now gathered by environment-analysis.js utilities below
+  const liveEnvironmentData = `
 
-    liveEnvironmentData = `
+## 🔍 Environment Analysis Context
 
-## 🔍 Live Environment Research
-
-**Research Confidence**: ${(research.confidence * 100).toFixed(1)}%
 **Environment Type**: ${environmentType}
+**Project Path**: ${projectPath}
+**ADR Directory**: ${adrDirectory}
 
-### Current Infrastructure State
-${research.answer || 'No live environment data available'}
+### Analysis Approach
+This environment analysis uses the **Atomic Tools Architecture** (ADR-018):
+- Direct utility calls for environment spec analysis
+- Containerization detection via file system analysis
+- Requirements derivation from project configuration
+- Compliance assessment against industry standards
 
-### Detected Capabilities
-${capabilities.length > 0 ? capabilities.map((c: string) => `- ${c}`).join('\n') : '- No infrastructure tools detected'}
-
-### Research Sources
-${research.sources.map(s => `- ${s.type}: Consulted`).join('\n')}
-
-${research.needsWebSearch ? '⚠️ **Note**: Local environment data may be incomplete - external verification recommended\n' : ''}
+**Note**: For detailed infrastructure research, use \`analyze_project_ecosystem\` tool which provides
+comprehensive project context including dependencies, frameworks, and architectural patterns.
 `;
-  } catch (error) {
-    liveEnvironmentData = `\n## ⚠️ Live Environment Research\nUnavailable: ${error instanceof Error ? error.message : String(error)}\n`;
-  }
 
   try {
     const {

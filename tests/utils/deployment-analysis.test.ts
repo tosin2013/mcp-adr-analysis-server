@@ -3,26 +3,26 @@
  * Tests deployment task identification, CI/CD analysis, progress calculation, and completion verification
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
 // Pragmatic mocking approach to avoid TypeScript complexity
-jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
-  discoverAdrsInDirectory: jest.fn(),
+vi.mock('../../src/utils/adr-discovery.js', () => ({
+  discoverAdrsInDirectory: vi.fn(),
 }));
 
-jest.unstable_mockModule('../../src/prompts/deployment-analysis-prompts.js', () => ({
-  generateCiCdAnalysisPrompt: jest.fn(),
-  generateDeploymentProgressCalculationPrompt: jest.fn(),
-  generateCompletionVerificationPrompt: jest.fn(),
+vi.mock('../../src/prompts/deployment-analysis-prompts.js', () => ({
+  generateCiCdAnalysisPrompt: vi.fn(),
+  generateDeploymentProgressCalculationPrompt: vi.fn(),
+  generateCompletionVerificationPrompt: vi.fn(),
 }));
 
-jest.unstable_mockModule('fs/promises', () => ({
-  readFile: jest.fn(),
+vi.mock('fs/promises', () => ({
+  readFile: vi.fn(),
 }));
 
-jest.unstable_mockModule('path', () => ({
-  resolve: jest.fn(),
+vi.mock('path', () => ({
+  resolve: vi.fn(),
 }));
 
 const {
@@ -41,7 +41,7 @@ const {
 
 describe('deployment-analysis', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe('identifyDeploymentTasks', () => {
@@ -70,9 +70,9 @@ describe('deployment-analysis', () => {
         recommendations: [],
       };
 
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockResolvedValue(mockDiscoveryResult as any);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue(
+        mockDiscoveryResult as any
+      );
 
       const result = await identifyDeploymentTasks('docs/adrs');
 
@@ -127,17 +127,15 @@ describe('deployment-analysis', () => {
 - [ ] Configure monitoring
 - [ ] Deploy to staging environment`;
 
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockResolvedValue(mockDiscoveryResult as any);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue(
+        mockDiscoveryResult as any
+      );
 
       // Mock fs and path modules
       const fs = await import('fs/promises');
       const path = await import('path');
-      (fs.readFile as jest.MockedFunction<typeof fs.readFile>).mockResolvedValue(mockTodoContent);
-      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockReturnValue(
-        '/full/path/TODO.md'
-      );
+      (fs.readFile as MockedFunction<typeof fs.readFile>).mockResolvedValue(mockTodoContent);
+      (path.resolve as MockedFunction<typeof path.resolve>).mockReturnValue('/full/path/TODO.md');
 
       const result = await identifyDeploymentTasks('docs/adrs', 'TODO.md');
 
@@ -162,18 +160,16 @@ describe('deployment-analysis', () => {
         recommendations: [],
       };
 
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockResolvedValue(mockDiscoveryResult as any);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue(
+        mockDiscoveryResult as any
+      );
 
       const fs = await import('fs/promises');
       const path = await import('path');
-      (fs.readFile as jest.MockedFunction<typeof fs.readFile>).mockRejectedValue(
+      (fs.readFile as MockedFunction<typeof fs.readFile>).mockRejectedValue(
         new Error('File not found')
       );
-      (path.resolve as jest.MockedFunction<typeof path.resolve>).mockReturnValue(
-        '/full/path/TODO.md'
-      );
+      (path.resolve as MockedFunction<typeof path.resolve>).mockReturnValue('/full/path/TODO.md');
 
       const result = await identifyDeploymentTasks('docs/adrs', 'TODO.md');
 
@@ -190,9 +186,9 @@ describe('deployment-analysis', () => {
         recommendations: [],
       };
 
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockResolvedValue(mockDiscoveryResult as any);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue(
+        mockDiscoveryResult as any
+      );
 
       const result = await identifyDeploymentTasks('empty/adrs');
 
@@ -212,9 +208,9 @@ describe('deployment-analysis', () => {
         recommendations: [],
       };
 
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockResolvedValue(mockDiscoveryResult as any);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue(
+        mockDiscoveryResult as any
+      );
 
       await identifyDeploymentTasks();
 
@@ -226,9 +222,9 @@ describe('deployment-analysis', () => {
 
     it('should throw McpAdrError on ADR discovery failure', async () => {
       const discoveryError = new Error('Failed to access ADR directory');
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockRejectedValue(discoveryError);
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockRejectedValue(
+        discoveryError
+      );
 
       await expect(identifyDeploymentTasks()).rejects.toThrow(McpAdrError);
       await expect(identifyDeploymentTasks()).rejects.toThrow(
@@ -237,9 +233,9 @@ describe('deployment-analysis', () => {
     });
 
     it('should handle non-Error exceptions', async () => {
-      (
-        discoverAdrsInDirectory as jest.MockedFunction<typeof discoverAdrsInDirectory>
-      ).mockRejectedValue('String error');
+      (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockRejectedValue(
+        'String error'
+      );
 
       await expect(identifyDeploymentTasks()).rejects.toThrow(McpAdrError);
       await expect(identifyDeploymentTasks()).rejects.toThrow(
@@ -263,7 +259,7 @@ describe('deployment-analysis', () => {
       ];
 
       (
-        generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>
+        generateCiCdAnalysisPrompt as MockedFunction<typeof generateCiCdAnalysisPrompt>
       ).mockReturnValue(mockAnalysisPrompt);
 
       const result = await analyzeCiCdStatus(
@@ -293,7 +289,7 @@ describe('deployment-analysis', () => {
       const mockCicdLogs = 'Basic build log';
 
       (
-        generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>
+        generateCiCdAnalysisPrompt as MockedFunction<typeof generateCiCdAnalysisPrompt>
       ).mockReturnValue(mockAnalysisPrompt);
 
       const result = await analyzeCiCdStatus(mockCicdLogs);
@@ -308,7 +304,7 @@ describe('deployment-analysis', () => {
       const mockCicdLogs = 'Log content';
 
       (
-        generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>
+        generateCiCdAnalysisPrompt as MockedFunction<typeof generateCiCdAnalysisPrompt>
       ).mockReturnValue(mockAnalysisPrompt);
 
       const result = await analyzeCiCdStatus(mockCicdLogs, undefined, []);
@@ -320,7 +316,7 @@ describe('deployment-analysis', () => {
     it('should throw McpAdrError on prompt generation failure', async () => {
       const promptError = new Error('Failed to generate prompt');
       (
-        generateCiCdAnalysisPrompt as jest.MockedFunction<typeof generateCiCdAnalysisPrompt>
+        generateCiCdAnalysisPrompt as MockedFunction<typeof generateCiCdAnalysisPrompt>
       ).mockImplementation(() => {
         throw promptError;
       });
@@ -363,7 +359,7 @@ describe('deployment-analysis', () => {
       const mockEnvironmentStatus = { health: 'healthy' };
 
       (
-        generateDeploymentProgressCalculationPrompt as jest.MockedFunction<
+        generateDeploymentProgressCalculationPrompt as MockedFunction<
           typeof generateDeploymentProgressCalculationPrompt
         >
       ).mockReturnValue(mockProgressPrompt);
@@ -422,7 +418,7 @@ describe('deployment-analysis', () => {
       ];
 
       (
-        generateDeploymentProgressCalculationPrompt as jest.MockedFunction<
+        generateDeploymentProgressCalculationPrompt as MockedFunction<
           typeof generateDeploymentProgressCalculationPrompt
         >
       ).mockReturnValue(mockProgressPrompt);
@@ -452,7 +448,7 @@ describe('deployment-analysis', () => {
       const mockProgressPrompt = 'Empty tasks progress prompt';
 
       (
-        generateDeploymentProgressCalculationPrompt as jest.MockedFunction<
+        generateDeploymentProgressCalculationPrompt as MockedFunction<
           typeof generateDeploymentProgressCalculationPrompt
         >
       ).mockReturnValue(mockProgressPrompt);
@@ -466,7 +462,7 @@ describe('deployment-analysis', () => {
     it('should throw McpAdrError on progress calculation failure', async () => {
       const calculationError = new Error('Progress calculation failed');
       (
-        generateDeploymentProgressCalculationPrompt as jest.MockedFunction<
+        generateDeploymentProgressCalculationPrompt as MockedFunction<
           typeof generateDeploymentProgressCalculationPrompt
         >
       ).mockImplementation(() => {
@@ -528,7 +524,7 @@ describe('deployment-analysis', () => {
       ];
 
       (
-        generateCompletionVerificationPrompt as jest.MockedFunction<
+        generateCompletionVerificationPrompt as MockedFunction<
           typeof generateCompletionVerificationPrompt
         >
       ).mockReturnValue(mockVerificationPrompt);
@@ -585,7 +581,7 @@ describe('deployment-analysis', () => {
       ];
 
       (
-        generateCompletionVerificationPrompt as jest.MockedFunction<
+        generateCompletionVerificationPrompt as MockedFunction<
           typeof generateCompletionVerificationPrompt
         >
       ).mockReturnValue(mockVerificationPrompt);
@@ -651,7 +647,7 @@ describe('deployment-analysis', () => {
       ];
 
       (
-        generateCompletionVerificationPrompt as jest.MockedFunction<
+        generateCompletionVerificationPrompt as MockedFunction<
           typeof generateCompletionVerificationPrompt
         >
       ).mockReturnValue(mockVerificationPrompt);
@@ -665,7 +661,7 @@ describe('deployment-analysis', () => {
     it('should throw McpAdrError on verification failure', async () => {
       const verificationError = new Error('Verification failed');
       (
-        generateCompletionVerificationPrompt as jest.MockedFunction<
+        generateCompletionVerificationPrompt as MockedFunction<
           typeof generateCompletionVerificationPrompt
         >
       ).mockImplementation(() => {

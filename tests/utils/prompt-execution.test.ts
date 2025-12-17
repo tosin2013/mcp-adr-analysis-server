@@ -3,13 +3,13 @@
  * Comprehensive test coverage for prompt execution utilities
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
 
 // Mock dependencies with proper typing
 const mockAIExecutor = {
-  executePrompt: jest.fn() as jest.MockedFunction<any>,
-  executeStructuredPrompt: jest.fn() as jest.MockedFunction<any>,
-  isAvailable: jest.fn() as jest.MockedFunction<any>,
+  executePrompt: vi.fn() as MockedFunction<any>,
+  executeStructuredPrompt: vi.fn() as MockedFunction<any>,
+  isAvailable: vi.fn() as MockedFunction<any>,
 };
 
 const mockAIConfig = {
@@ -19,13 +19,13 @@ const mockAIConfig = {
   cacheEnabled: true,
 };
 
-jest.unstable_mockModule('../../src/utils/ai-executor.js', () => ({
-  getAIExecutor: jest.fn().mockReturnValue(mockAIExecutor),
+vi.mock('../../src/utils/ai-executor.js', () => ({
+  getAIExecutor: vi.fn().mockReturnValue(mockAIExecutor),
 }));
 
-jest.unstable_mockModule('../../src/config/ai-config.js', () => ({
-  isAIExecutionEnabled: jest.fn(),
-  loadAIConfig: jest.fn().mockReturnValue(mockAIConfig),
+vi.mock('../../src/config/ai-config.js', () => ({
+  isAIExecutionEnabled: vi.fn(),
+  loadAIConfig: vi.fn().mockReturnValue(mockAIConfig),
 }));
 
 const {
@@ -46,19 +46,19 @@ const { getAIExecutor } = await import('../../src/utils/ai-executor.js');
 describe('prompt-execution', () => {
   // Helper function to setup AI execution mocks
   const setupAIMocks = () => {
-    (isAIExecutionEnabled as jest.Mock).mockReturnValue(true);
-    (loadAIConfig as jest.Mock).mockReturnValue(mockAIConfig);
-    (getAIExecutor as jest.Mock).mockReturnValue(mockAIExecutor);
+    (isAIExecutionEnabled as Mock).mockReturnValue(true);
+    (loadAIConfig as Mock).mockReturnValue(mockAIConfig);
+    (getAIExecutor as Mock).mockReturnValue(mockAIExecutor);
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Reset console methods
-    jest.spyOn(console, 'error').mockImplementation(() => {});
+    vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('executePromptWithFallback', () => {
@@ -177,7 +177,7 @@ describe('prompt-execution', () => {
     });
 
     it('should use prompt-only mode when AI is disabled', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(false);
+      (isAIExecutionEnabled as Mock).mockReturnValue(false);
 
       const result = await executePromptWithFallback('Test prompt', 'Test instructions');
 
@@ -187,7 +187,7 @@ describe('prompt-execution', () => {
     });
 
     it('should format prompt with context placeholders', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(false);
+      (isAIExecutionEnabled as Mock).mockReturnValue(false);
 
       const result = await executePromptWithFallback(
         'Analyze {{userGoals}} and {{focusAreas}}',
@@ -201,7 +201,7 @@ describe('prompt-execution', () => {
     });
 
     it('should format prompt without context placeholders', async () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(false);
+      (isAIExecutionEnabled as Mock).mockReturnValue(false);
 
       const result = await executePromptWithFallback(
         'Simple prompt without placeholders',
@@ -365,7 +365,7 @@ describe('prompt-execution', () => {
 
   describe('isAIExecutionAvailable', () => {
     it('should return true when AI executor is available', () => {
-      (getAIExecutor as jest.Mock).mockReturnValue(mockAIExecutor);
+      (getAIExecutor as Mock).mockReturnValue(mockAIExecutor);
       mockAIExecutor.isAvailable.mockReturnValue(true);
 
       const result = isAIExecutionAvailable();
@@ -383,7 +383,7 @@ describe('prompt-execution', () => {
     });
 
     it('should return false when getAIExecutor throws error', () => {
-      (getAIExecutor as jest.Mock).mockImplementation(() => {
+      (getAIExecutor as Mock).mockImplementation(() => {
         throw new Error('Executor not available');
       });
 
@@ -396,7 +396,7 @@ describe('prompt-execution', () => {
   describe('getAIExecutionStatus', () => {
     it('should return complete status when AI is enabled', () => {
       setupAIMocks();
-      (loadAIConfig as jest.Mock).mockReturnValue({
+      (loadAIConfig as Mock).mockReturnValue({
         apiKey: 'test-key',
         executionMode: 'full',
         defaultModel: 'gpt-4',
@@ -414,8 +414,8 @@ describe('prompt-execution', () => {
     });
 
     it('should return status with reason when API key is missing', () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(false);
-      (loadAIConfig as jest.Mock).mockReturnValue({
+      (isAIExecutionEnabled as Mock).mockReturnValue(false);
+      (loadAIConfig as Mock).mockReturnValue({
         apiKey: '',
         executionMode: 'full',
         defaultModel: 'gpt-4',
@@ -429,8 +429,8 @@ describe('prompt-execution', () => {
     });
 
     it('should return status with reason when execution mode is not full', () => {
-      (isAIExecutionEnabled as jest.Mock).mockReturnValue(false);
-      (loadAIConfig as jest.Mock).mockReturnValue({
+      (isAIExecutionEnabled as Mock).mockReturnValue(false);
+      (loadAIConfig as Mock).mockReturnValue({
         apiKey: 'test-key',
         executionMode: 'prompt-only',
         defaultModel: 'gpt-4',
@@ -444,7 +444,7 @@ describe('prompt-execution', () => {
     });
 
     it('should handle configuration errors', () => {
-      (loadAIConfig as jest.Mock).mockImplementation(() => {
+      (loadAIConfig as Mock).mockImplementation(() => {
         throw new Error('Config load failed');
       });
 
@@ -462,9 +462,9 @@ describe('prompt-execution', () => {
 
   describe('getAIExecutionInfo', () => {
     it('should return execution info when available', () => {
-      (getAIExecutor as jest.Mock).mockReturnValue(mockAIExecutor);
+      (getAIExecutor as Mock).mockReturnValue(mockAIExecutor);
       mockAIExecutor.isAvailable.mockReturnValue(true);
-      (loadAIConfig as jest.Mock).mockReturnValue({
+      (loadAIConfig as Mock).mockReturnValue({
         executionMode: 'full',
         defaultModel: 'gpt-4',
         cacheEnabled: true,
@@ -482,7 +482,7 @@ describe('prompt-execution', () => {
 
     it('should return limited info when not available', () => {
       mockAIExecutor.isAvailable.mockReturnValue(false);
-      (loadAIConfig as jest.Mock).mockReturnValue({
+      (loadAIConfig as Mock).mockReturnValue({
         executionMode: 'prompt-only',
       });
 

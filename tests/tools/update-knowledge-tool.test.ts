@@ -2,7 +2,7 @@
  * Tests for Update Knowledge Tool
  */
 
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _jest } from 'vitest';
 import {
   updateKnowledge,
   type UpdateKnowledgeArgs,
@@ -65,9 +65,9 @@ describe('Update Knowledge Tool', () => {
 
     // Create mock KnowledgeGraphManager
     mockKgManager = {
-      loadKnowledgeGraph: jest.fn().mockResolvedValue(mockSnapshot),
-      saveKnowledgeGraph: jest.fn().mockResolvedValue(undefined),
-      createIntent: jest.fn().mockResolvedValue('new-intent-id'),
+      loadKnowledgeGraph: vi.fn().mockResolvedValue(mockSnapshot),
+      saveKnowledgeGraph: vi.fn().mockResolvedValue(undefined),
+      createIntent: vi.fn().mockResolvedValue('new-intent-id'),
     } as any;
   });
 

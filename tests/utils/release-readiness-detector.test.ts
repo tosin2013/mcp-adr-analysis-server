@@ -2,18 +2,18 @@
  * Test suite for release readiness detector
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
 import { join } from 'path';
 
 // Mock file system operations
-const mockReadFileSync = jest.fn();
-const mockWriteFileSync = jest.fn();
-const mockMkdirSync = jest.fn();
-const mockRmSync = jest.fn();
-const mockExistsSync = jest.fn();
-const mockStatSync = jest.fn();
+const mockReadFileSync = vi.fn();
+const mockWriteFileSync = vi.fn();
+const mockMkdirSync = vi.fn();
+const mockRmSync = vi.fn();
+const mockExistsSync = vi.fn();
+const mockStatSync = vi.fn();
 
-jest.unstable_mockModule('fs', () => ({
+vi.mock('fs', () => ({
   readFileSync: mockReadFileSync,
   writeFileSync: mockWriteFileSync,
   mkdirSync: mockMkdirSync,
@@ -23,8 +23,8 @@ jest.unstable_mockModule('fs', () => ({
 }));
 
 // Mock child_process for git commands
-const mockExecSync = jest.fn();
-jest.unstable_mockModule('child_process', () => ({
+const mockExecSync = vi.fn();
+vi.mock('child_process', () => ({
   execSync: mockExecSync,
 }));
 
@@ -33,7 +33,7 @@ describe('Release Readiness Detector', () => {
 
   beforeEach(() => {
     testDir = '/tmp/test-release-readiness';
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Setup default mocks
     mockExistsSync.mockReturnValue(true);
@@ -43,7 +43,7 @@ describe('Release Readiness Detector', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('TODO.md Analysis', () => {
@@ -69,9 +69,8 @@ describe('Release Readiness Detector', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -109,9 +108,8 @@ describe('Release Readiness Detector', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -135,9 +133,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -151,9 +148,8 @@ No TODO items yet.
     it('should handle missing TODO.md file', async () => {
       mockExistsSync.mockReturnValue(false);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -184,9 +180,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -219,9 +214,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       // Test with 60% threshold
       const result60 = await analyzeReleaseReadiness({
@@ -256,9 +250,8 @@ No TODO items yet.
       mockReadFileSync.mockReturnValue(todoContent);
       mockExecSync.mockReturnValue(''); // Clean git status
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -283,9 +276,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -315,9 +307,8 @@ No TODO items yet.
         .mockReturnValueOnce('M file1.js\n?? debug_temp.js') // Uncommitted changes
         .mockReturnValueOnce('abc123 WIP: temp fix\ndef456 debug: testing'); // Concerning commits
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -341,9 +332,8 @@ No TODO items yet.
         ) // Recent commits
         .mockReturnValueOnce(''); // Clean working directory
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -361,9 +351,8 @@ No TODO items yet.
         .mockReturnValueOnce('abc123 feat: add new feature') // Clean commits
         .mockReturnValueOnce('M file1.js\n?? file2.js'); // Uncommitted changes
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -379,9 +368,8 @@ No TODO items yet.
         throw new Error('git: command not found');
       });
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -411,9 +399,8 @@ No TODO items yet.
 
       mockReadFileSync.mockReturnValue(packageJsonContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -427,9 +414,8 @@ No TODO items yet.
     it('should handle missing package.json', async () => {
       mockExistsSync.mockReturnValue(false);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -454,9 +440,8 @@ No TODO items yet.
       mockReadFileSync.mockReturnValue(todoContent);
       mockExecSync.mockReturnValue(''); // Clean git
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -478,9 +463,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -510,9 +494,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -538,9 +521,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       // Patch release should be more lenient
       const patchResult = await analyzeReleaseReadiness({
@@ -564,7 +546,7 @@ No TODO items yet.
   describe('Integration with MCP Tools', () => {
     it('should integrate with manage_todo tool', async () => {
       // Mock the manage_todo tool - currently disabled in implementation
-      // const mockManageTodo = jest.fn().mockResolvedValue({
+      // const mockManageTodo = vi.fn().mockResolvedValue({
       //   status: 'success',
       //   data: {
       //     completionRate: 0.85,
@@ -572,13 +554,12 @@ No TODO items yet.
       //   }
       // });
 
-      // jest.doMock('../../src/tools/manage-todo-tool.js', () => ({
+      // vi.doMock('../../src/tools/manage-todo-tool.js', () => ({
       //   manageTodo: mockManageTodo
       // }));
 
-      const { integrateWithMcpTools } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { integrateWithMcpTools } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await integrateWithMcpTools(testDir);
 
@@ -591,13 +572,12 @@ No TODO items yet.
 
     it('should fallback gracefully when MCP tools fail', async () => {
       // Mock the manage_todo tool to fail - currently disabled in implementation
-      // jest.doMock('../../src/tools/manage-todo-tool.js', () => ({
-      //   manageTodo: jest.fn().mockRejectedValue(new Error('Tool not available'))
+      // vi.doMock('../../src/tools/manage-todo-tool.js', () => ({
+      //   manageTodo: vi.fn().mockRejectedValue(new Error('Tool not available'))
       // }));
 
-      const { integrateWithMcpTools } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { integrateWithMcpTools } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await integrateWithMcpTools(testDir);
 
@@ -621,9 +601,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(malformedContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -647,9 +626,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(largeContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -664,9 +642,8 @@ No TODO items yet.
         throw new Error('File system error');
       });
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -695,9 +672,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -725,9 +701,8 @@ No TODO items yet.
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockReturnValue(todoContent);
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const result = await analyzeReleaseReadiness({
         projectPath: testDir,
@@ -752,9 +727,8 @@ No TODO items yet.
       mockReadFileSync.mockReturnValue(todoContent);
       mockExecSync.mockReturnValue('');
 
-      const { analyzeReleaseReadiness } = await import(
-        '../../src/utils/release-readiness-detector.js'
-      );
+      const { analyzeReleaseReadiness } =
+        await import('../../src/utils/release-readiness-detector.js');
 
       const startTime = Date.now();
       const result = await analyzeReleaseReadiness({

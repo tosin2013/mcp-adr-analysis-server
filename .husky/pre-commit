@@ -38,6 +38,6 @@ npm run build
 
 # Run a quick smoke test to ensure basic functionality
 echo "🧪 Running smoke test..."
-NODE_ENV=test NODE_OPTIONS='--experimental-vm-modules' npx jest tests/smoke.test.ts --passWithNoTests
+npx vitest run tests/smoke.test.ts --passWithNoTests
 
 echo "✅ Pre-commit checks completed!"

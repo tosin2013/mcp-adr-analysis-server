@@ -2,7 +2,7 @@
  * Tests for Enhanced Test Infrastructure
  */
 
-import { describe, it, expect, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
 import {
   TestInfrastructure,
   withTestInfrastructure,
@@ -297,22 +297,22 @@ describe('TestInfrastructure', () => {
   });
 });
 
-describe('Integration with Jest', () => {
-  it('should work within Jest test environment', () => {
-    expect(jest).toBeDefined();
+describe('Integration with Vitest', () => {
+  it('should work within Vitest test environment', () => {
+    expect(vi).toBeDefined();
     expect(expect).toBeDefined();
 
     const infrastructure = TestInfrastructure.getInstance();
     expect(infrastructure).toBeDefined();
   });
 
-  it('should handle Jest mocks and cleanup', () => {
-    const mockFn = jest.fn();
+  it('should handle Vitest mocks and cleanup', () => {
+    const mockFn = vi.fn();
     mockFn('test');
 
     expect(mockFn).toHaveBeenCalledWith('test');
 
-    // Infrastructure should not interfere with Jest functionality
+    // Infrastructure should not interfere with Vitest functionality
     const testInfra = TestInfrastructure.getInstance();
     const status = testInfra.getResourceStatus();
     expect(status).toBeDefined();

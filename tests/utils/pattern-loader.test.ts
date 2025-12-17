@@ -2,7 +2,7 @@
  * Tests for PatternLoader utility
  */
 
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { PatternLoader } from '../../src/utils/pattern-loader.js';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';

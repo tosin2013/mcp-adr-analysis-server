@@ -1,16 +1,16 @@
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _jest } from 'vitest';
 
 // Use unstable_mockModule for ESM mocking
-const mockDetectPlatforms = jest.fn();
-const mockGetPattern = jest.fn();
-const mockDiscoverAdrs = jest.fn();
+const mockDetectPlatforms = vi.fn();
+const mockGetPattern = vi.fn();
+const mockDiscoverAdrs = vi.fn();
 
-jest.unstable_mockModule('../../src/utils/platform-detector.js', () => ({
+vi.mock('../../src/utils/platform-detector.js', () => ({
   detectPlatforms: mockDetectPlatforms,
   getPattern: mockGetPattern,
 }));
 
-jest.unstable_mockModule('../../src/utils/adr-discovery.js', () => ({
+vi.mock('../../src/utils/adr-discovery.js', () => ({
   discoverAdrs: mockDiscoverAdrs,
 }));
 
@@ -19,31 +19,30 @@ class MockKnowledgeGraphManager {
   static getInstance() {
     return new MockKnowledgeGraphManager();
   }
-  storeBootstrapInsights = jest.fn().mockResolvedValue(undefined);
+  storeBootstrapInsights = vi.fn().mockResolvedValue(undefined);
 }
 
-jest.unstable_mockModule('../../src/utils/knowledge-graph-manager.js', () => ({
+vi.mock('../../src/utils/knowledge-graph-manager.js', () => ({
   KnowledgeGraphManager: MockKnowledgeGraphManager,
 }));
 
 // Mock ToolContextManager to prevent filesystem operations in tests
 class MockToolContextManager {
-  initialize = jest.fn().mockResolvedValue(undefined);
-  saveContext = jest.fn().mockResolvedValue(undefined);
-  listContexts = jest.fn().mockResolvedValue([]);
+  initialize = vi.fn().mockResolvedValue(undefined);
+  saveContext = vi.fn().mockResolvedValue(undefined);
+  listContexts = vi.fn().mockResolvedValue([]);
 }
 
-jest.unstable_mockModule('../../src/utils/context-document-manager.js', () => ({
+vi.mock('../../src/utils/context-document-manager.js', () => ({
   ToolContextManager: MockToolContextManager,
 }));
 
-const { bootstrapValidationLoop } = await import(
-  '../../src/tools/bootstrap-validation-loop-tool.js'
-);
+const { bootstrapValidationLoop } =
+  await import('../../src/tools/bootstrap-validation-loop-tool.js');
 
 describe('Bootstrap Validation Loop Tool', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     mockDiscoverAdrs.mockResolvedValue([]);
   });
 

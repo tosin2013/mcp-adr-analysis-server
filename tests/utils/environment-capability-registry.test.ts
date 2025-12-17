@@ -2,18 +2,16 @@
  * Tests for EnvironmentCapabilityRegistry
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
 import { EnvironmentCapabilityRegistry } from '../../src/utils/environment-capability-registry.js';
 
 describe('EnvironmentCapabilityRegistry', () => {
   let registry: EnvironmentCapabilityRegistry;
-  let mockExecAsync: jest.MockedFunction<
-    (cmd: string) => Promise<{ stdout: string; stderr: string }>
-  >;
+  let mockExecAsync: MockedFunction<(cmd: string) => Promise<{ stdout: string; stderr: string }>>;
 
   beforeEach(() => {
     // Create a fresh mock exec function for each test
-    mockExecAsync = jest.fn<(cmd: string) => Promise<{ stdout: string; stderr: string }>>();
+    mockExecAsync = vi.fn<(cmd: string) => Promise<{ stdout: string; stderr: string }>>();
 
     // Create registry with injected mock executor
     registry = new EnvironmentCapabilityRegistry('/test/project', mockExecAsync);

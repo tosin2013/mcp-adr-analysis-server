@@ -4,33 +4,41 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, beforeEach, afterEach, jest } from '@jest/globals';
+import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
 
-// Mock ResourceCache
-const mockCacheGet = jest.fn();
-const mockCacheSet = jest.fn();
+// Mock ResourceCache with module-level mock functions
+vi.mock('../../src/resources/resource-cache.js', () => {
+  const mockCacheGet = vi.fn().mockResolvedValue(null);
+  const mockCacheSet = vi.fn().mockResolvedValue(undefined);
+  return {
+    ResourceCache: class MockResourceCache {
+      get = mockCacheGet;
+      set = mockCacheSet;
+    },
+    // Expose for test access
+    __mockCacheGet: mockCacheGet,
+    __mockCacheSet: mockCacheSet,
+  };
+});
 
-jest.unstable_mockModule('../../src/resources/resource-cache.js', () => ({
-  ResourceCache: jest.fn().mockImplementation(() => ({
-    get: mockCacheGet,
-    set: mockCacheSet,
-  })),
-}));
+// Get mock references after module import
+let mockCacheGet: ReturnType<typeof vi.fn>;
+let mockCacheSet: ReturnType<typeof vi.fn>;
 
 // Mock deployment-readiness-tool
-const mockDeploymentReadiness = jest.fn();
+const mockDeploymentReadiness = vi.fn();
 
-jest.unstable_mockModule('../../src/tools/deployment-readiness-tool.js', () => ({
+vi.mock('../../src/tools/deployment-readiness-tool.js', () => ({
   deploymentReadiness: mockDeploymentReadiness,
 }));
 
 // Mock file system for fallback
-const mockReadFile = jest.fn();
+const mockReadFile = vi.fn();
 
-jest.unstable_mockModule('fs', () => ({
+vi.mock('fs', () => ({
   promises: {
     readFile: mockReadFile,
-    readdir: jest.fn().mockResolvedValue([]),
+    readdir: vi.fn().mockResolvedValue([]),
   },
 }));
 
@@ -38,12 +46,17 @@ describe('Deployment History Resource', () => {
   let generateDeploymentHistoryResource: any;
 
   beforeAll(async () => {
+    // Get mock references from the mocked module
+    const cacheModule = await import('../../src/resources/resource-cache.js');
+    mockCacheGet = (cacheModule as any).__mockCacheGet;
+    mockCacheSet = (cacheModule as any).__mockCacheSet;
+
     const module = await import('../../src/resources/deployment-history-resource.js');
     generateDeploymentHistoryResource = module.generateDeploymentHistoryResource;
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     // Default: no cache hit
     mockCacheGet.mockResolvedValue(null);
@@ -80,7 +93,7 @@ MTTR: 15 minutes
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('Basic Resource Generation', () => {
