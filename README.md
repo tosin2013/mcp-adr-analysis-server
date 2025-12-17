@@ -38,28 +38,6 @@ The Model Context Protocol enables seamless integration between AI assistants an
 
 📖 **[View Full Capabilities →](docs/explanation/)**
 
-## 📋 Prerequisites
-
-- **Node.js** ≥ 20.0.0
-- **ripgrep** (`rg`) - Required for code search functionality
-
-```bash
-# Install ripgrep
-# macOS
-brew install ripgrep
-
-# Ubuntu/Debian
-sudo apt install ripgrep
-
-# RHEL/Fedora
-sudo dnf install ripgrep
-
-# Windows (with Chocolatey)
-choco install ripgrep
-
-# Windows (with Scoop)
-scoop install ripgrep
-```
 
 ## 📦 Quick Installation
 
