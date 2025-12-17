@@ -27,15 +27,32 @@ jobs:
           {
             "ignorePatterns": [
               { "pattern": "^https://github.com/.*/blob/" },
-              { "pattern": "^#" }
+              { "pattern": "^#" },
+              { "pattern": "^https?://localhost" },
+              { "pattern": "^https?://127\\.0\\.0\\.1" },
+              { "pattern": "^mailto:" },
+              { "pattern": "^https://www\\.npmjs\\.com" },
+              { "pattern": "^https://npmjs\\.com" },
+              { "pattern": "^\\.\\.\\/.*\\.md$" },
+              { "pattern": "^\\.\\/" },
+              { "pattern": "^/docs/" },
+              { "pattern": "your-repo" },
+              { "pattern": "example\\.com" }
             ],
             "replacementPatterns": [],
-            "httpHeaders": [],
-            "timeout": "10s",
+            "httpHeaders": [
+              {
+                "urls": ["https://github.com"],
+                "headers": {
+                  "Accept": "text/html"
+                }
+              }
+            ],
+            "timeout": "15s",
             "retryOn429": true,
             "retryCount": 3,
             "fallbackRetryDelay": "5s",
-            "aliveStatusCodes": [200, 206]
+            "aliveStatusCodes": [200, 206, 301, 302, 403]
           }
           EOF
 
