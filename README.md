@@ -74,6 +74,29 @@ curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/ma
 }
 ```
 
+<details>
+<summary><b>With ADR Aggregator (Optional)</b></summary>
+
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/path/to/your/project",
+        "OPENROUTER_API_KEY": "your_key_here",
+        "EXECUTION_MODE": "full",
+        "ADR_AGGREGATOR_API_KEY": "agg_your_key_here"
+      }
+    }
+  }
+}
+```
+
+Get your API key at [adraggregator.com](https://adraggregator.com)
+
+</details>
+
 📖 **[Full Configuration Guide →](docs/reference/mcp-client-config.md)** | **[Client Setup →](docs/reference/environment-config.md)**
 
 ## 🚀 Usage Examples
