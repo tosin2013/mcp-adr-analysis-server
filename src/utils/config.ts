@@ -21,6 +21,10 @@ const ConfigSchema = z.object({
   firecrawlApiKey: z.string().optional(),
   firecrawlBaseUrl: z.string().default('http://localhost:3000'),
   firecrawlEnabled: z.boolean().default(false),
+  // ADR Aggregator configuration
+  adrAggregatorUrl: z.string().default('https://jvgdaquuggzbkenxnkja.supabase.co'),
+  adrAggregatorApiKey: z.string().optional(),
+  adrAggregatorEnabled: z.boolean().default(false),
 });
 
 export type ServerConfig = z.infer<typeof ConfigSchema>;
@@ -78,6 +82,12 @@ export function loadConfig(): ServerConfig {
     firecrawlBaseUrl: process.env['FIRECRAWL_BASE_URL'] || 'http://localhost:3000',
     firecrawlEnabled:
       process.env['FIRECRAWL_ENABLED'] === 'true' || !!process.env['FIRECRAWL_API_KEY'],
+    // ADR Aggregator configuration
+    adrAggregatorUrl:
+      process.env['ADR_AGGREGATOR_URL'] || 'https://jvgdaquuggzbkenxnkja.supabase.co',
+    adrAggregatorApiKey: process.env['ADR_AGGREGATOR_API_KEY'],
+    adrAggregatorEnabled:
+      process.env['ADR_AGGREGATOR_ENABLED'] === 'true' || !!process.env['ADR_AGGREGATOR_API_KEY'],
   };
 
   try {
@@ -200,5 +210,12 @@ export function printConfigSummary(config: ServerConfig): void {
   if (config.firecrawlEnabled) {
     logger.info(`  Firecrawl Base URL: ${config.firecrawlBaseUrl}`);
     logger.info(`  Firecrawl API Key: ${config.firecrawlApiKey ? '***configured***' : 'not set'}`);
+  }
+  logger.info(`  ADR Aggregator Enabled: ${config.adrAggregatorEnabled}`);
+  if (config.adrAggregatorEnabled) {
+    logger.info(`  ADR Aggregator URL: ${config.adrAggregatorUrl}`);
+    logger.info(
+      `  ADR Aggregator API Key: ${config.adrAggregatorApiKey ? '***configured***' : 'not set'}`
+    );
   }
 }

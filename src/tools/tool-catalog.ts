@@ -16,6 +16,7 @@ import { Tool } from '@modelcontextprotocol/sdk/types.js';
 export type ToolCategory =
   | 'analysis'
   | 'adr'
+  | 'aggregator'
   | 'content-security'
   | 'research'
   | 'deployment'
@@ -1402,6 +1403,275 @@ TOOL_CATALOG.set('load_prompt', {
   },
 });
 
+// ============================================================================
+// ADR AGGREGATOR INTEGRATION TOOLS
+// ============================================================================
+
+TOOL_CATALOG.set('sync_to_aggregator', {
+  name: 'sync_to_aggregator',
+  shortDescription: 'Sync ADRs to ADR Aggregator platform',
+  fullDescription:
+    'Syncs Architecture Decision Records to the ADR Aggregator platform (adraggregator.com) for centralized tracking, visualization, and team collaboration. Auto-detects repository from git remote.',
+  category: 'aggregator',
+  complexity: 'moderate',
+  tokenCost: { min: 1000, max: 3000 },
+  hasCEMCPDirective: true,
+  relatedTools: ['get_adr_context', 'get_staleness_report', 'discover_existing_adrs'],
+  keywords: ['aggregator', 'sync', 'adr', 'dashboard', 'platform', 'push'],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      full_sync: {
+        type: 'boolean',
+        default: false,
+        description: 'Replace all ADRs instead of incremental sync',
+      },
+      include_metadata: {
+        type: 'boolean',
+        default: true,
+        description: 'Include analysis metadata',
+      },
+      include_diagrams: {
+        type: 'boolean',
+        default: false,
+        description: 'Include Mermaid diagrams (Pro+ tier)',
+      },
+      include_timeline: {
+        type: 'boolean',
+        default: true,
+        description: 'Include timeline/staleness data',
+      },
+      include_security_scan: {
+        type: 'boolean',
+        default: true,
+        description: 'Include security scan results',
+      },
+      include_code_links: {
+        type: 'boolean',
+        default: false,
+        description: 'Include AST-based code links (Pro+ tier)',
+      },
+      adr_paths: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Specific ADR paths to sync (optional)',
+      },
+      projectPath: {
+        type: 'string',
+        description: 'Project path (defaults to PROJECT_PATH)',
+      },
+    },
+  },
+});
+
+TOOL_CATALOG.set('get_adr_context', {
+  name: 'get_adr_context',
+  shortDescription: 'Get ADR context from ADR Aggregator',
+  fullDescription:
+    'Retrieves ADR context, metadata, and analytics from the ADR Aggregator platform for the current repository. Useful for LLM-assisted development with architectural awareness.',
+  category: 'aggregator',
+  complexity: 'simple',
+  tokenCost: { min: 500, max: 1500 },
+  hasCEMCPDirective: true,
+  relatedTools: ['sync_to_aggregator', 'get_staleness_report'],
+  keywords: ['aggregator', 'context', 'adr', 'fetch', 'retrieve', 'pull'],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      include_diagrams: {
+        type: 'boolean',
+        default: false,
+        description: 'Include Mermaid diagrams (Pro+ tier)',
+      },
+      include_timeline: {
+        type: 'boolean',
+        default: true,
+        description: 'Include timeline data',
+      },
+      include_code_links: {
+        type: 'boolean',
+        default: false,
+        description: 'Include code links (Pro+ tier)',
+      },
+      include_research: {
+        type: 'boolean',
+        default: false,
+        description: 'Include research context (Pro+ tier)',
+      },
+      staleness_filter: {
+        type: 'string',
+        enum: ['all', 'fresh', 'stale', 'very_stale'],
+        default: 'all',
+        description: 'Filter by staleness level',
+      },
+      graph_depth: {
+        type: 'number',
+        default: 1,
+        description: 'Knowledge graph depth (Team tier)',
+      },
+      projectPath: {
+        type: 'string',
+        description: 'Project path (defaults to PROJECT_PATH)',
+      },
+    },
+  },
+});
+
+TOOL_CATALOG.set('get_staleness_report', {
+  name: 'get_staleness_report',
+  shortDescription: 'Get ADR staleness report from aggregator',
+  fullDescription:
+    'Retrieves a staleness report showing which ADRs need review based on age and code changes. Helps maintain architectural documentation hygiene.',
+  category: 'aggregator',
+  complexity: 'simple',
+  tokenCost: { min: 300, max: 800 },
+  hasCEMCPDirective: true,
+  relatedTools: ['get_adr_context', 'analyze_adr_timeline'],
+  keywords: ['aggregator', 'staleness', 'report', 'governance', 'review', 'freshness'],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      threshold: {
+        type: 'number',
+        default: 90,
+        description: 'Days threshold for staleness',
+      },
+      projectPath: {
+        type: 'string',
+        description: 'Project path (defaults to PROJECT_PATH)',
+      },
+    },
+  },
+});
+
+TOOL_CATALOG.set('get_adr_templates', {
+  name: 'get_adr_templates',
+  shortDescription: 'Get ADR templates from aggregator',
+  fullDescription:
+    'Retrieves domain-specific ADR templates and best practices from the ADR Aggregator platform. Includes anti-patterns to avoid.',
+  category: 'aggregator',
+  complexity: 'simple',
+  tokenCost: { min: 300, max: 1000 },
+  hasCEMCPDirective: true,
+  relatedTools: ['generate_adr_from_decision', 'suggest_adrs'],
+  keywords: ['aggregator', 'templates', 'best-practices', 'domain', 'anti-patterns'],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      domain: {
+        type: 'string',
+        description: 'Domain filter (web_application, microservices, api, etc.)',
+      },
+    },
+  },
+});
+
+TOOL_CATALOG.set('get_adr_diagrams', {
+  name: 'get_adr_diagrams',
+  shortDescription: 'Get Mermaid diagrams from aggregator (Pro+)',
+  fullDescription:
+    'Retrieves Mermaid diagrams for ADR visualization including workflow, relationships, and impact diagrams. Requires Pro+ tier subscription.',
+  category: 'aggregator',
+  complexity: 'simple',
+  tokenCost: { min: 500, max: 1500 },
+  hasCEMCPDirective: true,
+  relatedTools: ['get_adr_context', 'sync_to_aggregator'],
+  keywords: ['aggregator', 'diagrams', 'mermaid', 'visualization', 'pro', 'tier'],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      adr_path: {
+        type: 'string',
+        description: 'Specific ADR path (optional, returns all if not specified)',
+      },
+      projectPath: {
+        type: 'string',
+        description: 'Project path (defaults to PROJECT_PATH)',
+      },
+    },
+  },
+});
+
+TOOL_CATALOG.set('validate_adr_compliance', {
+  name: 'validate_adr_compliance',
+  shortDescription: 'Validate ADR compliance via aggregator (Pro+)',
+  fullDescription:
+    'Validates that ADRs are properly implemented in code using AST analysis from the ADR Aggregator platform. Requires Pro+ tier subscription.',
+  category: 'aggregator',
+  complexity: 'moderate',
+  tokenCost: { min: 1000, max: 2500 },
+  hasCEMCPDirective: true,
+  relatedTools: ['get_adr_context', 'deployment_readiness'],
+  keywords: ['aggregator', 'compliance', 'validation', 'ast', 'pro', 'tier', 'implementation'],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      adr_paths: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Specific ADR paths to validate',
+      },
+      validation_type: {
+        type: 'string',
+        enum: ['implementation', 'architecture', 'security', 'all'],
+        default: 'all',
+        description: 'Type of validation to perform',
+      },
+      projectPath: {
+        type: 'string',
+        description: 'Project path (defaults to PROJECT_PATH)',
+      },
+    },
+  },
+});
+
+TOOL_CATALOG.set('get_knowledge_graph', {
+  name: 'get_knowledge_graph',
+  shortDescription: 'Get knowledge graph from aggregator (Team)',
+  fullDescription:
+    'Retrieves the organizational knowledge graph showing relationships between ADRs, code, patterns, and technologies across repositories. Requires Team tier subscription.',
+  category: 'aggregator',
+  complexity: 'moderate',
+  tokenCost: { min: 1000, max: 3000 },
+  hasCEMCPDirective: true,
+  relatedTools: ['get_architectural_context', 'get_adr_context'],
+  keywords: [
+    'aggregator',
+    'knowledge-graph',
+    'relationships',
+    'team',
+    'organization',
+    'cross-repo',
+  ],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      scope: {
+        type: 'string',
+        enum: ['repository', 'organization'],
+        default: 'repository',
+        description: 'Scope of the knowledge graph',
+      },
+      include_analytics: {
+        type: 'boolean',
+        default: true,
+        description: 'Include graph analytics and insights',
+      },
+      projectPath: {
+        type: 'string',
+        description: 'Project path (defaults to PROJECT_PATH)',
+      },
+    },
+  },
+});
+
 // CE-MCP Meta-Tool: search_tools
 TOOL_CATALOG.set('search_tools', {
   name: 'search_tools',
@@ -1424,6 +1694,7 @@ TOOL_CATALOG.set('search_tools', {
         enum: [
           'analysis',
           'adr',
+          'aggregator',
           'content-security',
           'research',
           'deployment',
@@ -1548,6 +1819,7 @@ export function searchTools(options: ToolSearchOptions = {}): ToolSearchResult {
   const categories: Record<ToolCategory, number> = {
     analysis: 0,
     adr: 0,
+    aggregator: 0,
     'content-security': 0,
     research: 0,
     deployment: 0,

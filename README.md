@@ -38,7 +38,6 @@ The Model Context Protocol enables seamless integration between AI assistants an
 
 📖 **[View Full Capabilities →](docs/explanation/)**
 
-
 ## 📦 Quick Installation
 
 ```bash
@@ -173,6 +172,46 @@ export FIRECRAWL_BASE_URL="http://localhost:3000"
 **Benefits:** Real-time research • Enhanced ADRs • Best practices discovery • Intelligent web scraping
 
 📖 **[Firecrawl Setup Guide →](docs/reference/environment-config.md#firecrawl-configuration)**
+
+## 🌐 ADR Aggregator Integration (Optional)
+
+**Sync your ADRs to [adraggregator.com](https://adraggregator.com) for cross-team visibility, governance dashboards, and organizational knowledge graphs.**
+
+```bash
+# Set your API key (get one at adraggregator.com)
+export ADR_AGGREGATOR_API_KEY="agg_your_key_here"
+```
+
+### Available Tools
+
+| Tool                      | Description                        | Tier |
+| ------------------------- | ---------------------------------- | ---- |
+| `sync_to_aggregator`      | Push local ADRs to platform        | Free |
+| `get_adr_context`         | Pull ADR context from platform     | Free |
+| `get_staleness_report`    | Get ADR governance/health reports  | Free |
+| `get_adr_templates`       | Retrieve domain-specific templates | Free |
+| `get_adr_diagrams`        | Get Mermaid diagrams for ADRs      | Pro+ |
+| `validate_adr_compliance` | Validate ADR implementation        | Pro+ |
+| `get_knowledge_graph`     | Cross-repository knowledge graph   | Team |
+
+### Workflow for New Repos
+
+```bash
+# 1. Analyze codebase for implicit architectural decisions
+suggest_adrs(analysisType: 'implicit_decisions')
+
+# 2. Generate ADR files from suggestions
+generate_adr_from_decision(decisionData)
+
+# 3. Save ADRs to docs/adrs/
+
+# 4. (Optional) Sync to adraggregator.com
+sync_to_aggregator(full_sync: true)
+```
+
+**Benefits:** Cross-team visibility • Staleness alerts • Compliance tracking • Organization-wide knowledge graph
+
+📖 **[ADR Aggregator Guide →](https://adraggregator.com/docs)**
 
 ## 🔧 Development
 

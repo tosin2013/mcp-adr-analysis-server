@@ -276,6 +276,10 @@ export function getToolCategories(): Record<ToolCategory, { count: number; descr
       count: summary.byCategory.utility,
       description: 'Utility functions, server status, datetime',
     },
+    aggregator: {
+      count: summary.byCategory.aggregator,
+      description: 'ADR Aggregator platform integration',
+    },
   };
 }
 
