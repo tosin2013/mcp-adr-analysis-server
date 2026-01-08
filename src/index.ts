@@ -3629,6 +3629,42 @@ export class McpAdrAnalysisServer {
               }
             );
             break;
+          // ADR Aggregator Integration Tools
+          case 'sync_to_aggregator': {
+            const { syncToAggregator } = await import('./tools/adr-aggregator-tools.js');
+            response = { ...(await syncToAggregator(safeArgs, context)) };
+            break;
+          }
+          case 'get_adr_context': {
+            const { getAdrContext } = await import('./tools/adr-aggregator-tools.js');
+            response = { ...(await getAdrContext(safeArgs, context)) };
+            break;
+          }
+          case 'get_staleness_report': {
+            const { getStalenessReport } = await import('./tools/adr-aggregator-tools.js');
+            response = { ...(await getStalenessReport(safeArgs, context)) };
+            break;
+          }
+          case 'get_adr_templates': {
+            const { getAdrTemplates } = await import('./tools/adr-aggregator-tools.js');
+            response = { ...(await getAdrTemplates(safeArgs, context)) };
+            break;
+          }
+          case 'get_adr_diagrams': {
+            const { getAdrDiagrams } = await import('./tools/adr-aggregator-tools.js');
+            response = { ...(await getAdrDiagrams(safeArgs, context)) };
+            break;
+          }
+          case 'validate_adr_compliance': {
+            const { validateAdrCompliance } = await import('./tools/adr-aggregator-tools.js');
+            response = { ...(await validateAdrCompliance(safeArgs, context)) };
+            break;
+          }
+          case 'get_knowledge_graph': {
+            const { getKnowledgeGraph } = await import('./tools/adr-aggregator-tools.js');
+            response = { ...(await getKnowledgeGraph(safeArgs, context)) };
+            break;
+          }
           default:
             throw new McpAdrError(`Unknown tool: ${name}`, 'UNKNOWN_TOOL');
         }
@@ -7850,17 +7886,14 @@ Please provide:
       await import('./resources/tool-catalog-resource.js');
       await import('./resources/adrs-discovered-resource.js');
       // Knowledge Graph Resource (ADR-018)
-      const { generateKnowledgeGraphResource } = await import('./resources/knowledge-graph-resource.js');
-      
+      const { generateKnowledgeGraphResource } =
+        await import('./resources/knowledge-graph-resource.js');
+
       // Handle knowledge://graph specially to inject KnowledgeGraphManager
       if (uri === 'knowledge://graph') {
         const url = new globalThis.URL(uri);
-        const result = await generateKnowledgeGraphResource(
-          {},
-          url.searchParams,
-          this.kgManager
-        );
-        
+        const result = await generateKnowledgeGraphResource({}, url.searchParams, this.kgManager);
+
         return {
           contents: [
             {

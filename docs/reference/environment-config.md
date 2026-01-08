@@ -6,17 +6,18 @@
 
 ## 📋 Quick Reference
 
-| Variable             | Required | Default                     | Description                        |
-| -------------------- | -------- | --------------------------- | ---------------------------------- |
-| `PROJECT_PATH`       | ✅       | -                           | Absolute path to project directory |
-| `OPENROUTER_API_KEY` | ⚡       | -                           | API key for AI-powered analysis    |
-| `EXECUTION_MODE`     | ⚡       | `prompt-only`               | `full` or `prompt-only`            |
-| `AI_MODEL`           | ❌       | `anthropic/claude-3-sonnet` | AI model to use                    |
-| `ADR_DIRECTORY`      | ❌       | `./adrs`                    | Directory for ADR files            |
-| `LOG_LEVEL`          | ❌       | `INFO`                      | Logging verbosity                  |
-| `FIRECRAWL_API_KEY`  | ❌       | -                           | API key for Firecrawl web scraping |
-| `FIRECRAWL_BASE_URL` | ❌       | `https://localhost:3000`    | Base URL for self-hosted Firecrawl |
-| `FIRECRAWL_ENABLED`  | ❌       | `false`                     | Enable Firecrawl integration       |
+| Variable                 | Required | Default                     | Description                         |
+| ------------------------ | -------- | --------------------------- | ----------------------------------- |
+| `PROJECT_PATH`           | ✅       | -                           | Absolute path to project directory  |
+| `OPENROUTER_API_KEY`     | ⚡       | -                           | API key for AI-powered analysis     |
+| `EXECUTION_MODE`         | ⚡       | `prompt-only`               | `full` or `prompt-only`             |
+| `AI_MODEL`               | ❌       | `anthropic/claude-3-sonnet` | AI model to use                     |
+| `ADR_DIRECTORY`          | ❌       | `./adrs`                    | Directory for ADR files             |
+| `LOG_LEVEL`              | ❌       | `INFO`                      | Logging verbosity                   |
+| `FIRECRAWL_API_KEY`      | ❌       | -                           | API key for Firecrawl web scraping  |
+| `FIRECRAWL_BASE_URL`     | ❌       | `https://localhost:3000`    | Base URL for self-hosted Firecrawl  |
+| `FIRECRAWL_ENABLED`      | ❌       | `false`                     | Enable Firecrawl integration        |
+| `ADR_AGGREGATOR_API_KEY` | ❌       | -                           | API key for ADR Aggregator platform |
 
 **Legend**: ✅ Required • ⚡ Required for AI features • ❌ Optional
 
@@ -289,6 +290,26 @@ FIRECRAWL_BASE_URL="https://localhost:3000"
 1. **Cloud Service**: Set `FIRECRAWL_API_KEY` to use Firecrawl cloud service
 2. **Self-Hosted**: Set `FIRECRAWL_BASE_URL` to point to your self-hosted instance
 3. **Disabled**: Leave `FIRECRAWL_ENABLED` unset or set to `false` (default)
+
+### ADR Aggregator Configuration (Optional)
+
+```bash
+# Enable ADR Aggregator integration for cross-team visibility
+# Get your API key at https://adraggregator.com
+ADR_AGGREGATOR_API_KEY="agg_your_key_here"
+```
+
+**ADR Aggregator Configuration Options**:
+
+- **`ADR_AGGREGATOR_API_KEY`**: API key from [adraggregator.com](https://adraggregator.com) (auto-enables integration)
+
+**Available Tiers**:
+
+| Tier | Features                                             |
+| ---- | ---------------------------------------------------- |
+| Free | Sync ADRs, get context, staleness reports, templates |
+| Pro+ | + Mermaid diagrams, compliance validation            |
+| Team | + Cross-repository knowledge graph                   |
 
 ---
 

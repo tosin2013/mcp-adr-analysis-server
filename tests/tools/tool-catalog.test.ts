@@ -52,6 +52,7 @@ describe('Tool Catalog', () => {
       const validCategories: ToolCategory[] = [
         'analysis',
         'adr',
+        'aggregator',
         'content-security',
         'research',
         'deployment',
