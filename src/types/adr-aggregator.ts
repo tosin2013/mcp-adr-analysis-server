@@ -555,12 +555,9 @@ export type GapType = 'adr_to_code' | 'code_to_adr';
 export type GapSeverity = 'error' | 'warning' | 'info';
 
 /**
- * Detected pattern type for code-to-ADR gaps
- */
-export type DetectedPatternType = 'technology' | 'architecture' | 'infrastructure' | 'security';
-
-/**
  * Individual gap item
+ *
+ * @see API: POST /functions/v1/mcp-report-code-gaps
  */
 export interface CodeGap {
   /** Direction of the gap */
@@ -573,8 +570,8 @@ export interface CodeGap {
   adr_path?: string;
   /** Referenced file that doesn't exist (for adr_to_code gaps) */
   referenced_file?: string;
-  /** Type of pattern detected (for code_to_adr gaps) */
-  detected_pattern?: DetectedPatternType;
+  /** Code pattern detected (for code_to_adr gaps) - free-form string, e.g., "ioredis client usage" */
+  detected_pattern?: string;
   /** Code files where the pattern was detected (for code_to_adr gaps) */
   code_files?: string[];
   /** Suggested ADR title (for code_to_adr gaps) */
@@ -611,16 +608,22 @@ export interface ReportCodeGapsRequest extends RepositoryIdentifier {
 
 /**
  * Response from report code gaps endpoint
+ *
+ * @see API: POST /functions/v1/mcp-report-code-gaps
  */
 export interface ReportCodeGapsResponse {
   success: boolean;
-  repository: string;
-  gaps_reported: number;
-  report_id: string;
-  timestamp: string;
-  /** Gaps that were new vs already known */
-  new_gaps?: number;
-  existing_gaps?: number;
+  repository_name: string;
+  summary: {
+    gaps_inserted: number;
+    gaps_updated: number;
+    total_open_gaps: number;
+    adr_to_code_issues: number;
+    code_to_adr_gaps: number;
+    files_scanned: number;
+    adrs_checked: number;
+    technologies_detected: string[];
+  };
   /** Any errors during processing */
   errors?: AggregatorError[];
 }
