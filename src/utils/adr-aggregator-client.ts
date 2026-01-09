@@ -219,7 +219,8 @@ export class AdrAggregatorClient {
    * @returns Report response with gap counts
    */
   public async reportCodeGaps(request: ReportCodeGapsRequest): Promise<ReportCodeGapsResponse> {
-    return this.post<ReportCodeGapsRequest, ReportCodeGapsResponse>(
+    // Gap endpoints use Bearer token authentication
+    return this.postWithBearerAuth<ReportCodeGapsRequest, ReportCodeGapsResponse>(
       '/functions/v1/mcp-report-code-gaps',
       request
     );
@@ -233,7 +234,8 @@ export class AdrAggregatorClient {
    */
   public async getCodeGaps(request: GetCodeGapsRequest): Promise<GetCodeGapsResponse> {
     const params = this.buildQueryParams(request as unknown as Record<string, unknown>);
-    return this.get<GetCodeGapsResponse>(`/functions/v1/mcp-get-gaps?${params}`);
+    // Gap endpoints use Bearer token authentication
+    return this.getWithBearerAuth<GetCodeGapsResponse>(`/functions/v1/mcp-get-gaps?${params}`);
   }
 
   // ============================================================================
@@ -297,6 +299,75 @@ export class AdrAggregatorClient {
     }
 
     return headers;
+  }
+
+  /**
+   * Build headers with Bearer token authentication
+   * Used for gap analysis endpoints
+   */
+  private buildBearerHeaders(): Record<string, string> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+      'User-Agent': 'mcp-adr-analysis-server/2.1.22',
+    };
+
+    if (this.apiKey) {
+      headers['Authorization'] = `Bearer ${this.apiKey}`;
+    }
+
+    return headers;
+  }
+
+  /**
+   * GET request with Bearer token authentication
+   */
+  private async getWithBearerAuth<R>(endpoint: string): Promise<R> {
+    const url = `${this.baseUrl}${endpoint}`;
+    const headers = this.buildBearerHeaders();
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers,
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      return this.handleResponse<R>(response);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * POST request with Bearer token authentication
+   */
+  private async postWithBearerAuth<T, R>(endpoint: string, body: T): Promise<R> {
+    const url = `${this.baseUrl}${endpoint}`;
+    const headers = this.buildBearerHeaders();
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), this.timeout);
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      return this.handleResponse<R>(response);
+    } catch (error) {
+      clearTimeout(timeoutId);
+      throw this.handleError(error);
+    }
   }
 
   private buildQueryParams(params: Record<string, unknown>): string {
