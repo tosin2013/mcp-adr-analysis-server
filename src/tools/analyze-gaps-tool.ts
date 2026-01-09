@@ -11,7 +11,7 @@
  * 3. Report gaps to ADR Aggregator
  */
 
-import { promises as fs } from 'fs';
+import { promises as fs, existsSync } from 'fs';
 import path from 'path';
 import { McpAdrError } from '../types/index.js';
 import type { ToolContext } from '../types/tool-context.js';
@@ -219,10 +219,66 @@ async function discoverLocalAdrs(projectPath: string, adrDirectory: string): Pro
 }
 
 /**
- * Normalize file path by stripping leading ./ prefix
+ * Result of path normalization and verification
+ */
+interface PathVerificationResult {
+  /** Whether the file exists at the resolved path */
+  exists: boolean;
+  /** The normalized path (relative, without leading ./) */
+  normalizedPath: string;
+  /** The full resolved path used for existence check */
+  resolvedPath: string;
+}
+
+/**
+ * Normalize a file path and verify if it exists
+ *
+ * Handles various path formats:
+ * - ./src/file.ts → src/file.ts (strips leading ./)
+ * - ../shared/types.ts → ../shared/types.ts (preserves parent refs)
+ * - src/file.ts → src/file.ts (no change needed)
+ *
+ * @param referencedPath - The path as found in the ADR
+ * @param basePath - The base path to resolve relative paths against (usually repo root)
+ * @returns Object with exists flag and normalized path
+ */
+function normalizeAndVerifyPath(referencedPath: string, basePath: string): PathVerificationResult {
+  // Normalize the path:
+  // - Strip leading ./ (current directory)
+  // - Preserve ../ (parent directory references)
+  // - Handle multiple leading ./
+  const normalized = referencedPath
+    .replace(/^(\.\/)+/, '') // Remove one or more leading ./
+    .trim();
+
+  // If path is empty after normalization, it's invalid
+  if (!normalized) {
+    return {
+      exists: false,
+      normalizedPath: referencedPath,
+      resolvedPath: '',
+    };
+  }
+
+  // Resolve the full path relative to basePath
+  const fullPath = path.resolve(basePath, normalized);
+
+  // Check if file exists
+  const exists = existsSync(fullPath);
+
+  return {
+    exists,
+    normalizedPath: normalized,
+    resolvedPath: fullPath,
+  };
+}
+
+/**
+ * Simple path normalization (for use in extraction)
+ * Strips leading ./ prefix only
  */
 function normalizeFilePath(ref: string): string {
-  return ref.replace(/^\.\//, '');
+  return ref.replace(/^(\.\/)+/, '').trim();
 }
 
 /**
@@ -264,18 +320,6 @@ function extractFileReferences(content: string): string[] {
   }
 
   return Array.from(references);
-}
-
-/**
- * Check if a file exists
- */
-async function fileExists(filePath: string): Promise<boolean> {
-  try {
-    await fs.access(filePath);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -534,17 +578,18 @@ export async function analyzeGaps(
       const fileRefs = extractFileReferences(adr.content);
 
       for (const ref of fileRefs) {
-        const fullPath = path.resolve(resolvedProjectPath, ref);
-        const exists = await fileExists(fullPath);
+        // Normalize path and verify if file exists
+        const { exists, normalizedPath } = normalizeAndVerifyPath(ref, resolvedProjectPath);
 
+        // Only report as a gap if file truly doesn't exist
         if (!exists) {
           gaps.push({
             gap_type: 'adr_to_code',
             severity: 'error',
-            title: 'Missing file reference',
+            title: `Missing referenced file: ${normalizedPath}`,
             adr_path: adr.path,
-            referenced_file: ref,
-            description: `ADR references file "${ref}" which does not exist in the codebase`,
+            referenced_file: normalizedPath,
+            description: `ADR references file "${normalizedPath}" which does not exist in the codebase`,
           });
         }
       }
