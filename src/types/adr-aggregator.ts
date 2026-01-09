@@ -570,6 +570,8 @@ export interface CodeGap {
   adr_path?: string;
   /** Referenced file that doesn't exist (for adr_to_code gaps) */
   referenced_file?: string;
+  /** Whether file existence was verified by the MCP server */
+  verified?: boolean;
   /** Code pattern detected (for code_to_adr gaps) - free-form string, e.g., "ioredis client usage" */
   detected_pattern?: string;
   /** Code files where the pattern was detected (for code_to_adr gaps) */

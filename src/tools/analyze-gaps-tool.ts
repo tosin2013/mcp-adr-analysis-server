@@ -589,6 +589,7 @@ export async function analyzeGaps(
             title: `Missing referenced file: ${normalizedPath}`,
             adr_path: adr.path,
             referenced_file: normalizedPath,
+            verified: true, // File existence was verified by MCP server
             description: `ADR references file "${normalizedPath}" which does not exist in the codebase`,
           });
         }
