@@ -539,3 +539,134 @@ export interface PatternTrend {
   trend: 'increasing' | 'stable' | 'decreasing';
   count: number;
 }
+
+// ============================================================================
+// Report Code Gaps Types (POST /mcp-report-code-gaps)
+// ============================================================================
+
+/**
+ * Gap type indicating direction of the gap
+ */
+export type GapType = 'adr_to_code' | 'code_to_adr';
+
+/**
+ * Gap severity level
+ */
+export type GapSeverity = 'error' | 'warning' | 'info';
+
+/**
+ * Detected pattern type for code-to-ADR gaps
+ */
+export type DetectedPatternType = 'technology' | 'architecture' | 'infrastructure' | 'security';
+
+/**
+ * Individual gap item
+ */
+export interface CodeGap {
+  /** Direction of the gap */
+  gap_type: GapType;
+  /** Severity level */
+  severity: GapSeverity;
+  /** Human-readable title */
+  title: string;
+  /** ADR path (for adr_to_code gaps) */
+  adr_path?: string;
+  /** Referenced file that doesn't exist (for adr_to_code gaps) */
+  referenced_file?: string;
+  /** Type of pattern detected (for code_to_adr gaps) */
+  detected_pattern?: DetectedPatternType;
+  /** Code files where the pattern was detected (for code_to_adr gaps) */
+  code_files?: string[];
+  /** Suggested ADR title (for code_to_adr gaps) */
+  suggested_adr_title?: string;
+  /** Additional context or description */
+  description?: string;
+}
+
+/**
+ * Analysis summary statistics
+ */
+export interface GapAnalysisSummary {
+  /** Number of files scanned */
+  files_scanned: number;
+  /** Number of ADRs checked */
+  adrs_checked: number;
+  /** Technologies detected in the codebase */
+  technologies_detected: string[];
+  /** Architectural patterns detected */
+  patterns_detected?: string[];
+}
+
+/**
+ * Request payload for reporting code gaps
+ */
+export interface ReportCodeGapsRequest extends RepositoryIdentifier {
+  /** ISO timestamp of when analysis was performed */
+  analyzed_at: string;
+  /** Array of detected gaps */
+  gaps: CodeGap[];
+  /** Analysis summary */
+  analysis_summary: GapAnalysisSummary;
+}
+
+/**
+ * Response from report code gaps endpoint
+ */
+export interface ReportCodeGapsResponse {
+  success: boolean;
+  repository: string;
+  gaps_reported: number;
+  report_id: string;
+  timestamp: string;
+  /** Gaps that were new vs already known */
+  new_gaps?: number;
+  existing_gaps?: number;
+  /** Any errors during processing */
+  errors?: AggregatorError[];
+}
+
+/**
+ * Request for getting current gaps
+ */
+export interface GetCodeGapsRequest extends RepositoryIdentifier {
+  /** Filter by gap type */
+  gap_type?: GapType;
+  /** Filter by severity */
+  severity?: GapSeverity;
+  /** Include dismissed gaps */
+  include_dismissed?: boolean;
+  /** Include resolved gaps */
+  include_resolved?: boolean;
+}
+
+/**
+ * Gap with status information
+ */
+export interface CodeGapWithStatus extends CodeGap {
+  /** Unique gap ID */
+  id: string;
+  /** Current status */
+  status: 'open' | 'dismissed' | 'resolved';
+  /** When the gap was first detected */
+  first_detected: string;
+  /** When the gap was last seen */
+  last_seen: string;
+  /** Who dismissed/resolved it (if applicable) */
+  resolved_by?: string;
+  /** Resolution notes */
+  resolution_notes?: string;
+}
+
+/**
+ * Response from get code gaps endpoint
+ */
+export interface GetCodeGapsResponse {
+  repository: string;
+  gaps: CodeGapWithStatus[];
+  summary: {
+    total: number;
+    by_type: Record<GapType, number>;
+    by_severity: Record<GapSeverity, number>;
+    by_status: Record<string, number>;
+  };
+}
