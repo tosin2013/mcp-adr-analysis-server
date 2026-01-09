@@ -3305,6 +3305,204 @@ export class McpAdrAnalysisServer {
               required: ['promptName'],
             },
           },
+          // ADR Aggregator Integration Tools (https://adraggregator.com)
+          {
+            name: 'sync_to_aggregator',
+            description:
+              'Sync ADRs to ADR Aggregator platform (https://adraggregator.com) for centralized tracking, visualization, and team collaboration. Supports incremental and full sync modes with optional metadata.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                full_sync: {
+                  type: 'boolean',
+                  description: 'Replace all ADRs instead of incremental sync',
+                  default: false,
+                },
+                include_metadata: {
+                  type: 'boolean',
+                  description: 'Include analysis metadata in sync',
+                  default: true,
+                },
+                include_diagrams: {
+                  type: 'boolean',
+                  description: 'Include Mermaid diagrams (Pro+ tier)',
+                  default: false,
+                },
+                include_timeline: {
+                  type: 'boolean',
+                  description: 'Include timeline/staleness data',
+                  default: false,
+                },
+                include_security_scan: {
+                  type: 'boolean',
+                  description: 'Include security scan results',
+                  default: false,
+                },
+                include_code_links: {
+                  type: 'boolean',
+                  description: 'Include AST-based code links (Pro+ tier)',
+                  default: false,
+                },
+                adr_paths: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Specific ADR paths to sync (syncs all if not provided)',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project path (defaults to PROJECT_PATH)',
+                },
+              },
+            },
+          },
+          {
+            name: 'get_adr_context',
+            description:
+              'Fetch ADR context from ADR Aggregator including summaries, diagrams, timeline data, and code links. Useful for getting a consolidated view of architectural decisions.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                include_diagrams: {
+                  type: 'boolean',
+                  description: 'Include Mermaid diagrams (Pro+ tier)',
+                  default: false,
+                },
+                include_timeline: {
+                  type: 'boolean',
+                  description: 'Include timeline data',
+                  default: true,
+                },
+                include_code_links: {
+                  type: 'boolean',
+                  description: 'Include code links (Pro+ tier)',
+                  default: false,
+                },
+                include_research: {
+                  type: 'boolean',
+                  description: 'Include research context (Pro+ tier)',
+                  default: false,
+                },
+                staleness_filter: {
+                  type: 'string',
+                  enum: ['all', 'fresh', 'stale', 'very_stale'],
+                  description: 'Filter by staleness level',
+                  default: 'all',
+                },
+                graph_depth: {
+                  type: 'number',
+                  description: 'Knowledge graph depth (Team tier)',
+                  minimum: 1,
+                  maximum: 5,
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project path (defaults to PROJECT_PATH)',
+                },
+              },
+            },
+          },
+          {
+            name: 'get_staleness_report',
+            description:
+              'Get ADR staleness report from ADR Aggregator with review compliance metrics. Identifies stale ADRs that need attention and provides governance insights.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                threshold: {
+                  type: 'number',
+                  description: 'Days threshold for staleness',
+                  default: 90,
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project path (defaults to PROJECT_PATH)',
+                },
+              },
+            },
+          },
+          {
+            name: 'get_adr_templates',
+            description:
+              'Get domain-specific ADR templates and anti-patterns from ADR Aggregator. Includes best practices for web applications, microservices, APIs, and more. No authentication required.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                domain: {
+                  type: 'string',
+                  description:
+                    'Domain filter (web_application, microservices, api, data_platform, etc.)',
+                },
+              },
+            },
+          },
+          {
+            name: 'get_adr_diagrams',
+            description:
+              'Get Mermaid diagrams for ADRs from ADR Aggregator. Includes workflow, relationship, and impact diagrams. Requires Pro+ tier.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                adr_path: {
+                  type: 'string',
+                  description: 'Specific ADR path (returns all if not specified)',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project path (defaults to PROJECT_PATH)',
+                },
+              },
+            },
+          },
+          {
+            name: 'validate_adr_compliance',
+            description:
+              'Validate ADR compliance against implementation via ADR Aggregator. Checks that code actually implements documented decisions. Requires Pro+ tier.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                adr_paths: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Specific ADR paths to validate',
+                },
+                validation_type: {
+                  type: 'string',
+                  enum: ['implementation', 'architecture', 'security', 'all'],
+                  description: 'Type of validation to perform',
+                  default: 'all',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project path (defaults to PROJECT_PATH)',
+                },
+              },
+            },
+          },
+          {
+            name: 'get_knowledge_graph',
+            description:
+              'Get cross-repository knowledge graph from ADR Aggregator with analytics and insights. Visualize ADR relationships across repositories. Requires Team tier.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                scope: {
+                  type: 'string',
+                  enum: ['repository', 'organization'],
+                  description: 'Scope of the graph',
+                  default: 'repository',
+                },
+                include_analytics: {
+                  type: 'boolean',
+                  description: 'Include graph analytics and insights',
+                  default: true,
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project path (defaults to PROJECT_PATH)',
+                },
+              },
+            },
+          },
         ],
       };
     });
