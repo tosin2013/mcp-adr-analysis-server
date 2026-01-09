@@ -3503,6 +3503,69 @@ export class McpAdrAnalysisServer {
               },
             },
           },
+          {
+            name: 'analyze_gaps',
+            description:
+              'Scan local codebase and compare with ADRs to detect bi-directional gaps. Finds: (1) ADR-to-code gaps: file references in ADRs that do not exist, (2) Code-to-ADR gaps: technologies in package.json and architectural patterns without ADR coverage. Reports gaps to ADR Aggregator for tracking.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                projectPath: {
+                  type: 'string',
+                  description: 'Project path (defaults to PROJECT_PATH)',
+                },
+                reportToAggregator: {
+                  type: 'boolean',
+                  description: 'Whether to report gaps to ADR Aggregator',
+                  default: true,
+                },
+                includeDismissed: {
+                  type: 'boolean',
+                  description: 'Include previously dismissed gaps in analysis',
+                  default: false,
+                },
+                scanDirectories: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'Specific directories to scan (defaults to src, lib, app, packages)',
+                },
+                includePatterns: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'File patterns to include in scan (regex)',
+                },
+                excludePatterns: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: 'File patterns to exclude from scan (regex)',
+                },
+              },
+            },
+          },
+          {
+            name: 'get_gaps',
+            description:
+              'Get current code gaps from ADR Aggregator. Returns gaps with their status (open, dismissed, resolved) for tracking and management.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                projectPath: {
+                  type: 'string',
+                  description: 'Project path (defaults to PROJECT_PATH)',
+                },
+                includeDismissed: {
+                  type: 'boolean',
+                  description: 'Include dismissed gaps',
+                  default: false,
+                },
+                includeResolved: {
+                  type: 'boolean',
+                  description: 'Include resolved gaps',
+                  default: false,
+                },
+              },
+            },
+          },
         ],
       };
     });
@@ -3861,6 +3924,16 @@ export class McpAdrAnalysisServer {
           case 'get_knowledge_graph': {
             const { getKnowledgeGraph } = await import('./tools/adr-aggregator-tools.js');
             response = { ...(await getKnowledgeGraph(safeArgs, context)) };
+            break;
+          }
+          case 'analyze_gaps': {
+            const { analyzeGaps } = await import('./tools/analyze-gaps-tool.js');
+            response = { ...(await analyzeGaps(safeArgs, context)) };
+            break;
+          }
+          case 'get_gaps': {
+            const { getGaps } = await import('./tools/analyze-gaps-tool.js');
+            response = { ...(await getGaps(safeArgs, context)) };
             break;
           }
           default:

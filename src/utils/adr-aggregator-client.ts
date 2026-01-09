@@ -23,6 +23,10 @@ import type {
   ValidateComplianceResponse,
   GetKnowledgeGraphRequest,
   GetKnowledgeGraphResponse,
+  ReportCodeGapsRequest,
+  ReportCodeGapsResponse,
+  GetCodeGapsRequest,
+  GetCodeGapsResponse,
   AggregatorError,
 } from '../types/adr-aggregator.js';
 
@@ -206,6 +210,30 @@ export class AdrAggregatorClient {
   ): Promise<GetKnowledgeGraphResponse> {
     const params = this.buildQueryParams(request as unknown as Record<string, unknown>);
     return this.get<GetKnowledgeGraphResponse>(`/functions/v1/mcp-get-knowledge-graph?${params}`);
+  }
+
+  /**
+   * Report code gaps to ADR Aggregator
+   *
+   * @param request - Code gaps report request
+   * @returns Report response with gap counts
+   */
+  public async reportCodeGaps(request: ReportCodeGapsRequest): Promise<ReportCodeGapsResponse> {
+    return this.post<ReportCodeGapsRequest, ReportCodeGapsResponse>(
+      '/functions/v1/mcp-report-code-gaps',
+      request
+    );
+  }
+
+  /**
+   * Get current code gaps from ADR Aggregator
+   *
+   * @param request - Get gaps request with optional filters
+   * @returns Current gaps with status information
+   */
+  public async getCodeGaps(request: GetCodeGapsRequest): Promise<GetCodeGapsResponse> {
+    const params = this.buildQueryParams(request as unknown as Record<string, unknown>);
+    return this.get<GetCodeGapsResponse>(`/functions/v1/mcp-get-gaps?${params}`);
   }
 
   // ============================================================================
