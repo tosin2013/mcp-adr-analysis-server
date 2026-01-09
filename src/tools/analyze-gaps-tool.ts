@@ -24,7 +24,6 @@ import { isGitRepository } from '../utils/git-remote-detector.js';
 import type {
   CodeGap,
   GapSeverity,
-  DetectedPatternType,
   ReportCodeGapsRequest,
   GapAnalysisSummary,
 } from '../types/adr-aggregator.js';
@@ -588,7 +587,7 @@ export async function analyzeGaps(
             gap_type: 'code_to_adr',
             severity,
             title: `Undocumented technology: ${tech.name}`,
-            detected_pattern: 'technology' as DetectedPatternType,
+            detected_pattern: `${tech.packages.join(', ')} usage`,
             code_files: ['package.json', ...tech.packages.map(p => `node_modules/${p}`)],
             suggested_adr_title: tech.suggestedAdrTitle,
             description: `Technology "${tech.name}" is used (packages: ${tech.packages.join(', ')}) but has no ADR documenting the decision`,
@@ -641,7 +640,7 @@ export async function analyzeGaps(
           gap_type: 'code_to_adr',
           severity: 'warning',
           title: `Undocumented pattern: ${pattern.name}`,
-          detected_pattern: 'architecture' as DetectedPatternType,
+          detected_pattern: `${pattern.name} pattern detected`,
           code_files: pattern.evidence.map(e => e.replace('File: ', '')),
           suggested_adr_title: pattern.suggestedAdrTitle,
           description: `Architectural pattern "${pattern.name}" detected but has no ADR documenting the decision`,
@@ -652,7 +651,8 @@ export async function analyzeGaps(
     context?.report_progress(80, 100);
 
     // Step 5: Report to ADR Aggregator if enabled
-    let reportId: string | undefined;
+    let gapsInserted: number | undefined;
+    let totalOpenGaps: number | undefined;
     let repositoryName: string | undefined;
 
     if (reportToAggregator && gaps.length > 0) {
@@ -675,8 +675,11 @@ export async function analyzeGaps(
         };
 
         const response = await client.reportCodeGaps(request);
-        reportId = response.report_id;
-        context?.info(`Reported ${response.gaps_reported} gaps (Report ID: ${reportId})`);
+        gapsInserted = response.summary.gaps_inserted;
+        totalOpenGaps = response.summary.total_open_gaps;
+        context?.info(
+          `Reported gaps: ${gapsInserted} new, ${response.summary.gaps_updated} updated, ${totalOpenGaps} total open`
+        );
       } catch (error) {
         // Log but don't fail if aggregator reporting fails
         const errorMessage = error instanceof Error ? error.message : String(error);
@@ -714,8 +717,8 @@ export async function analyzeGaps(
   - Warnings: ${warningGaps.length}
 - **Technologies Detected:** ${summary.technologies_detected.join(', ') || 'None'}
 - **Patterns Detected:** ${summary.patterns_detected?.join(', ') || 'None'}
-${reportId ? `- **Report ID:** ${reportId}` : ''}
 ${repositoryName ? `- **Repository:** ${repositoryName}` : ''}
+${gapsInserted !== undefined ? `- **Gaps Reported:** ${gapsInserted} new, ${totalOpenGaps} total open` : ''}
 
 ---
 
