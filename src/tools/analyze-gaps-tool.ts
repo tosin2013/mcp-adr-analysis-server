@@ -220,22 +220,31 @@ async function discoverLocalAdrs(projectPath: string, adrDirectory: string): Pro
 }
 
 /**
+ * Normalize file path by stripping leading ./ prefix
+ */
+function normalizeFilePath(ref: string): string {
+  return ref.replace(/^\.\//, '');
+}
+
+/**
  * Extract file references from ADR content
  * Looks for patterns like:
- * - `src/file.ts`
+ * - `src/file.ts` or `./src/file.ts`
  * - [link](./path/to/file.ts)
  * - References to: src/auth/oauth.ts
+ *
+ * Note: All paths are normalized by stripping leading ./ prefix
  */
 function extractFileReferences(content: string): string[] {
   const references: Set<string> = new Set();
 
-  // Match backtick code references: `src/file.ts`
+  // Match backtick code references: `src/file.ts` or `./src/file.ts`
   const backtickPattern = /`([^`]+\.[a-zA-Z]{2,4})`/g;
   let match;
   while ((match = backtickPattern.exec(content)) !== null) {
     const ref = match[1];
     if (ref && !ref.includes(' ') && !ref.startsWith('http')) {
-      references.add(ref);
+      references.add(normalizeFilePath(ref));
     }
   }
 
@@ -244,14 +253,15 @@ function extractFileReferences(content: string): string[] {
   while ((match = linkPattern.exec(content)) !== null) {
     const ref = match[2];
     if (ref && !ref.startsWith('http')) {
-      references.add(ref.replace(/^\.\//, ''));
+      references.add(normalizeFilePath(ref));
     }
   }
 
-  // Match explicit file paths in common patterns
-  const pathPattern = /(?:src|lib|app|packages?)\/[\w\-/.]+\.[a-zA-Z]{2,4}(?=[\s,;:\])]|$)/g;
+  // Match explicit file paths in common patterns (with or without ./ prefix)
+  const pathPattern =
+    /(?:\.\/)?(?:src|lib|app|packages?)\/[\w\-/.]+\.[a-zA-Z]{2,4}(?=[\s,;:\])]|$)/g;
   while ((match = pathPattern.exec(content)) !== null) {
-    references.add(match[0]);
+    references.add(normalizeFilePath(match[0]));
   }
 
   return Array.from(references);
@@ -272,9 +282,7 @@ async function fileExists(filePath: string): Promise<boolean> {
 /**
  * Read and parse package.json
  */
-async function readPackageJson(
-  projectPath: string
-): Promise<{
+async function readPackageJson(projectPath: string): Promise<{
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
 } | null> {
