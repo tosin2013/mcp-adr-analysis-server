@@ -27,6 +27,8 @@ import type {
   ReportCodeGapsResponse,
   GetCodeGapsRequest,
   GetCodeGapsResponse,
+  UpdateImplementationStatusRequest,
+  UpdateImplementationStatusResponse,
   AggregatorError,
 } from '../types/adr-aggregator.js';
 
@@ -236,6 +238,21 @@ export class AdrAggregatorClient {
     const params = this.buildQueryParams(request as unknown as Record<string, unknown>);
     // Gap endpoints use Bearer token authentication
     return this.getWithBearerAuth<GetCodeGapsResponse>(`/functions/v1/mcp-get-gaps?${params}`);
+  }
+
+  /**
+   * Update implementation status of synced ADRs (Pro+ tier)
+   *
+   * @param request - Update request with status changes
+   * @returns Update response with results
+   */
+  public async updateImplementationStatus(
+    request: UpdateImplementationStatusRequest
+  ): Promise<UpdateImplementationStatusResponse> {
+    return this.post<UpdateImplementationStatusRequest, UpdateImplementationStatusResponse>(
+      '/functions/v1/mcp-update-implementation-status',
+      request
+    );
   }
 
   // ============================================================================

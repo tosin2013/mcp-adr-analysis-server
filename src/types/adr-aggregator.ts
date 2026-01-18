@@ -675,3 +675,55 @@ export interface GetCodeGapsResponse {
     by_status: Record<string, number>;
   };
 }
+
+// ============================================================================
+// Update Implementation Status Types (POST /mcp-update-implementation-status) - Pro+ Tier
+// ============================================================================
+
+/**
+ * ADR implementation status values
+ */
+export type ImplementationStatus =
+  | 'not_started'
+  | 'in_progress'
+  | 'implemented'
+  | 'deprecated'
+  | 'blocked';
+
+/**
+ * Individual ADR implementation status update
+ */
+export interface ImplementationStatusUpdate {
+  /** Path to the ADR file relative to project root */
+  adr_path: string;
+  /** New implementation status */
+  implementation_status: ImplementationStatus;
+  /** Optional notes about the status change */
+  notes?: string;
+}
+
+/**
+ * Request payload for updating ADR implementation status
+ *
+ * @see API: POST /functions/v1/mcp-update-implementation-status
+ */
+export interface UpdateImplementationStatusRequest {
+  /** Repository name in format "owner/repo" */
+  repository_name: string;
+  /** Array of status updates to apply */
+  updates: ImplementationStatusUpdate[];
+}
+
+/**
+ * Response from update implementation status endpoint
+ *
+ * @see API: POST /functions/v1/mcp-update-implementation-status
+ */
+export interface UpdateImplementationStatusResponse {
+  success: boolean;
+  repository: string;
+  updated_count: number;
+  errors?: AggregatorError[];
+  timestamp: string;
+  tier?: AggregatorTier;
+}
