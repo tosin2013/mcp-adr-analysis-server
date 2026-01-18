@@ -29,6 +29,8 @@ import type {
   GetCodeGapsResponse,
   UpdateImplementationStatusRequest,
   UpdateImplementationStatusResponse,
+  GetPrioritiesRequest,
+  GetPrioritiesResponse,
   AggregatorError,
 } from '../types/adr-aggregator.js';
 
@@ -253,6 +255,17 @@ export class AdrAggregatorClient {
       '/functions/v1/mcp-update-implementation-status',
       request
     );
+  }
+
+  /**
+   * Get ADR priorities for roadmap/backlog planning
+   *
+   * @param request - Priorities request with optional filters
+   * @returns Prioritized ADRs with scores, dependencies, and blockers
+   */
+  public async getPriorities(request: GetPrioritiesRequest): Promise<GetPrioritiesResponse> {
+    const params = this.buildQueryParams(request as unknown as Record<string, unknown>);
+    return this.get<GetPrioritiesResponse>(`/functions/v1/mcp-get-priorities?${params}`);
   }
 
   // ============================================================================
