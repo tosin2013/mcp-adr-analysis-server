@@ -242,9 +242,29 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '20'
+          node-version: '22' # Node 22 ships with npm 11+ for OIDC Trusted Publishing
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
+
+      - name: Verify npm version for OIDC
+        run: |
+          echo "=== Verifying npm version for OIDC Trusted Publishing ==="
+          NPM_VERSION=$(npm --version)
+          echo "npm version: $NPM_VERSION"
+
+          # Extract major version
+          MAJOR_VERSION=$(echo "$NPM_VERSION" | cut -d. -f1)
+          MINOR_VERSION=$(echo "$NPM_VERSION" | cut -d. -f2)
+
+          # Require npm >= 11.5.1 for OIDC
+          if [[ "$MAJOR_VERSION" -lt 11 ]] || [[ "$MAJOR_VERSION" -eq 11 && "$MINOR_VERSION" -lt 5 ]]; then
+            echo "⚠️ npm version $NPM_VERSION is too old for OIDC Trusted Publishing"
+            echo "Upgrading npm to latest..."
+            npm install -g npm@latest
+            echo "New npm version: $(npm --version)"
+          else
+            echo "✅ npm version $NPM_VERSION supports OIDC Trusted Publishing"
+          fi
 
       - name: Install dependencies
         run: npm ci
