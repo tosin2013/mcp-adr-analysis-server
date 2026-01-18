@@ -35,9 +35,7 @@ on:
         required: false
         default: false
         type: boolean
-    secrets:
-      NPM_TOKEN:
-        required: true
+    # NPM_TOKEN no longer required - using OIDC Trusted Publishing
 
 jobs:
   # First job: Create or update release via Release Drafter (for manual dispatch only)
@@ -202,6 +200,7 @@ jobs:
     permissions:
       contents: write
       packages: write
+      id-token: write # Required for NPM OIDC Trusted Publishing
 
     steps:
       - name: Checkout code
@@ -410,12 +409,13 @@ jobs:
           # Determine npm dist-tag based on version type
           if [[ "${{ github.event.inputs.version_bump }}" == "prerelease" ]] || [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"alpha"* ]] || [[ "$VERSION" == *"rc"* ]]; then
             echo "Publishing prerelease version: $VERSION"
-            npm publish --tag beta
+            npm publish --tag beta --provenance --access public
             PUBLISH_TAG="beta"
           else
             echo "Publishing stable version: $VERSION"
             # Publish with explicit 'latest' tag to ensure it's set correctly
-            npm publish --tag latest
+            # Uses OIDC Trusted Publishing - no token required
+            npm publish --tag latest --provenance --access public
             PUBLISH_TAG="latest"
           fi
 
@@ -427,8 +427,6 @@ jobs:
 
           echo "NPM_PUBLISH_TAG=$PUBLISH_TAG" >> $GITHUB_ENV
           echo "NPM_PACKAGE_URL=https://www.npmjs.com/package/mcp-adr-analysis-server/v/$VERSION" >> $GITHUB_ENV
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Verify NPM dist-tags
         run: |

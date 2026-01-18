@@ -236,5 +236,4 @@ jobs:
     with:
       version: v${{ needs.auto-release.outputs.new-version }}
       skip_tests: false
-    secrets:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    # Using OIDC Trusted Publishing - no token required
