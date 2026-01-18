@@ -1756,6 +1756,54 @@ TOOL_CATALOG.set('get_adr_priorities', {
   },
 });
 
+// Aggregator Tool: analyze_gaps
+TOOL_CATALOG.set('analyze_gaps', {
+  name: 'analyze_gaps',
+  shortDescription: 'Analyze gaps between ADRs and codebase',
+  fullDescription:
+    "Scans local codebase and compares with ADRs to detect bi-directional gaps. Detects ADR-to-code gaps (file references that don't exist) and code-to-ADR gaps (technologies/patterns without ADR coverage).",
+  category: 'aggregator',
+  complexity: 'moderate',
+  tokenCost: { min: 800, max: 3000 },
+  hasCEMCPDirective: true,
+  relatedTools: ['get_adr_priorities', 'get_adr_context', 'suggest_adrs'],
+  keywords: [
+    'gaps',
+    'analysis',
+    'adr',
+    'codebase',
+    'coverage',
+    'technologies',
+    'patterns',
+    'aggregator',
+  ],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      projectPath: {
+        type: 'string',
+        description: 'Project path (defaults to PROJECT_PATH)',
+      },
+      reportToAggregator: {
+        type: 'boolean',
+        description: 'Whether to report gaps to ADR Aggregator',
+        default: true,
+      },
+      includeDismissed: {
+        type: 'boolean',
+        description: 'Include dismissed gaps in analysis',
+        default: false,
+      },
+      scanDirectories: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Specific directories to scan (defaults to common source directories)',
+      },
+    },
+  },
+});
+
 // CE-MCP Meta-Tool: search_tools
 TOOL_CATALOG.set('search_tools', {
   name: 'search_tools',
