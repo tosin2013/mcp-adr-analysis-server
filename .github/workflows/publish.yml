@@ -197,7 +197,6 @@ jobs:
     needs: [create-release]
     # Run if we created a release OR if triggered by tag push OR called from another workflow
     if: always() && (needs.create-release.result == 'success' || github.event_name == 'push' || github.event_name == 'workflow_call')
-    environment: release # Required for NPM OIDC Trusted Publishing
     permissions:
       contents: write
       packages: write
