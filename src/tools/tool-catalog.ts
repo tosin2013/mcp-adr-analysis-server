@@ -1672,6 +1672,62 @@ TOOL_CATALOG.set('get_knowledge_graph', {
   },
 });
 
+TOOL_CATALOG.set('update_implementation_status', {
+  name: 'update_implementation_status',
+  shortDescription: 'Update ADR implementation status (Pro+)',
+  fullDescription:
+    'Update the implementation status of synced ADRs directly from the IDE. Supports statuses: not_started, in_progress, implemented, deprecated, blocked. Requires Pro+ tier subscription.',
+  category: 'aggregator',
+  complexity: 'simple',
+  tokenCost: { min: 300, max: 800 },
+  hasCEMCPDirective: true,
+  relatedTools: ['sync_to_aggregator', 'get_adr_context', 'validate_adr_compliance'],
+  keywords: [
+    'aggregator',
+    'implementation',
+    'status',
+    'update',
+    'pro',
+    'tier',
+    'tracking',
+    'progress',
+  ],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      updates: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: {
+            adr_path: {
+              type: 'string',
+              description: 'Path to the ADR file relative to project root',
+            },
+            implementation_status: {
+              type: 'string',
+              enum: ['not_started', 'in_progress', 'implemented', 'deprecated', 'blocked'],
+              description: 'New implementation status',
+            },
+            notes: {
+              type: 'string',
+              description: 'Optional notes about the status change',
+            },
+          },
+          required: ['adr_path', 'implementation_status'],
+        },
+        description: 'Array of ADR status updates to apply',
+      },
+      projectPath: {
+        type: 'string',
+        description: 'Project path (defaults to PROJECT_PATH)',
+      },
+    },
+    required: ['updates'],
+  },
+});
+
 // CE-MCP Meta-Tool: search_tools
 TOOL_CATALOG.set('search_tools', {
   name: 'search_tools',

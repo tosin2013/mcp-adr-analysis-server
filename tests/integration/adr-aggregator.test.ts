@@ -545,6 +545,144 @@ describe('ADR Aggregator Integration', () => {
         ).rejects.toThrow('This feature requires Team tier');
       });
     });
+
+    describe('updateImplementationStatus (Pro+ tier)', () => {
+      it('should update implementation status successfully', async () => {
+        const mockResponse = {
+          success: true,
+          repository: 'test/repo',
+          updated_count: 2,
+          timestamp: '2025-01-18T12:00:00Z',
+          tier: 'pro',
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => mockResponse,
+        });
+
+        const response = await client.updateImplementationStatus({
+          repository_name: 'test/repo',
+          updates: [
+            {
+              adr_path: 'docs/adrs/001-use-typescript.md',
+              implementation_status: 'implemented',
+              notes: 'Completed migration',
+            },
+            {
+              adr_path: 'docs/adrs/002-api-design.md',
+              implementation_status: 'in_progress',
+            },
+          ],
+        });
+
+        expect(response.success).toBe(true);
+        expect(response.updated_count).toBe(2);
+        expect(response.repository).toBe('test/repo');
+        expect(mockFetch).toHaveBeenCalledWith(
+          'https://test.adraggregator.com/functions/v1/mcp-update-implementation-status',
+          expect.objectContaining({
+            method: 'POST',
+            headers: expect.objectContaining({
+              'x-api-key': 'test-api-key',
+              'Content-Type': 'application/json',
+            }),
+          })
+        );
+      });
+
+      it('should handle tier restriction error', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 403,
+          statusText: 'Forbidden',
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({
+            code: 'TIER_RESTRICTION',
+            message: 'This feature requires Pro+ tier',
+            tier_required: 'pro',
+          }),
+        });
+
+        await expect(
+          client.updateImplementationStatus({
+            repository_name: 'test/repo',
+            updates: [
+              {
+                adr_path: 'docs/adrs/001-test.md',
+                implementation_status: 'implemented',
+              },
+            ],
+          })
+        ).rejects.toThrow('This feature requires Pro+ tier');
+      });
+
+      it('should handle validation errors for invalid status', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 400,
+          statusText: 'Bad Request',
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid implementation_status value',
+          }),
+        });
+
+        await expect(
+          client.updateImplementationStatus({
+            repository_name: 'test/repo',
+            updates: [
+              {
+                adr_path: 'docs/adrs/001-test.md',
+                implementation_status: 'invalid_status' as 'implemented',
+              },
+            ],
+          })
+        ).rejects.toThrow('Invalid implementation_status value');
+      });
+
+      it('should handle partial success with errors', async () => {
+        const mockResponse = {
+          success: true,
+          repository: 'test/repo',
+          updated_count: 1,
+          timestamp: '2025-01-18T12:00:00Z',
+          errors: [
+            {
+              code: 'ADR_NOT_FOUND',
+              message: 'ADR not found: docs/adrs/999-missing.md',
+            },
+          ],
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => mockResponse,
+        });
+
+        const response = await client.updateImplementationStatus({
+          repository_name: 'test/repo',
+          updates: [
+            {
+              adr_path: 'docs/adrs/001-exists.md',
+              implementation_status: 'implemented',
+            },
+            {
+              adr_path: 'docs/adrs/999-missing.md',
+              implementation_status: 'blocked',
+            },
+          ],
+        });
+
+        expect(response.success).toBe(true);
+        expect(response.updated_count).toBe(1);
+        expect(response.errors).toHaveLength(1);
+        expect(response.errors?.[0].code).toBe('ADR_NOT_FOUND');
+      });
+    });
   });
 
   // ============================================================================

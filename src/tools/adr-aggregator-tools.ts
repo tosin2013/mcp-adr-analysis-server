@@ -22,6 +22,8 @@ import type {
   GetDiagramsRequest,
   ValidateComplianceRequest,
   GetKnowledgeGraphRequest,
+  UpdateImplementationStatusRequest,
+  ImplementationStatus,
 } from '../types/adr-aggregator.js';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -890,6 +892,139 @@ ${response.insights.pattern_trends.map(t => `- ${t.pattern}: ${t.trend} (${t.cou
 
 **Error:** ${errorMessage}
 ${tierRequired ? `\n**Note:** This feature requires ${tierRequired} tier. Upgrade at /pricing` : ''}`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+/**
+ * Arguments for update_implementation_status tool (Pro+ tier)
+ */
+export interface UpdateImplementationStatusArgs {
+  /** Array of status updates to apply */
+  updates: Array<{
+    /** Path to the ADR file relative to project root */
+    adr_path: string;
+    /** New implementation status */
+    implementation_status: ImplementationStatus;
+    /** Optional notes about the status change */
+    notes?: string;
+  }>;
+  /** Project path (defaults to PROJECT_PATH) */
+  projectPath?: string;
+}
+
+/**
+ * Update implementation status of synced ADRs (Pro+ tier)
+ *
+ * POST /functions/v1/mcp-update-implementation-status
+ */
+export async function updateAdrImplementationStatus(
+  args: UpdateImplementationStatusArgs,
+  context?: ToolContext
+): Promise<ToolResult> {
+  const client = getAdrAggregatorClient();
+  ensureConfigured(client);
+
+  const config = loadConfig();
+  const resolvedProjectPath = args.projectPath || config.projectPath;
+
+  ensureGitRepo(resolvedProjectPath);
+
+  try {
+    const repositoryName = client.getRepositoryName(resolvedProjectPath);
+
+    context?.info(`Updating implementation status for ${repositoryName}...`);
+    context?.report_progress(30, 100);
+
+    // Validate updates array
+    if (!args.updates || args.updates.length === 0) {
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Update Implementation Status
+
+**Error:** No updates provided. Please specify at least one ADR path and status to update.
+
+## Example Usage
+\`\`\`json
+{
+  "updates": [
+    {
+      "adr_path": "docs/adrs/001-use-typescript.md",
+      "implementation_status": "implemented",
+      "notes": "Completed migration"
+    }
+  ]
+}
+\`\`\`
+
+**Valid Status Values:**
+- \`not_started\` - Implementation has not begun
+- \`in_progress\` - Implementation is underway
+- \`implemented\` - Decision has been fully implemented
+- \`deprecated\` - Decision is no longer relevant
+- \`blocked\` - Implementation is blocked`,
+          },
+        ],
+        isError: true,
+      };
+    }
+
+    const request: UpdateImplementationStatusRequest = {
+      repository_name: repositoryName,
+      updates: args.updates,
+    };
+
+    const response = await client.updateImplementationStatus(request);
+    context?.report_progress(100, 100);
+    context?.info(`Updated ${response.updated_count} ADR status(es) successfully`);
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# ADR Implementation Status Updated
+
+## Summary
+- **Repository:** ${response.repository}
+- **Updates Applied:** ${response.updated_count}
+- **Timestamp:** ${response.timestamp}
+${response.tier ? `- **Tier:** ${response.tier}` : ''}
+
+## Updated ADRs
+${args.updates.map(u => `- **${u.adr_path}**: ${u.implementation_status}${u.notes ? ` (${u.notes})` : ''}`).join('\n')}
+
+${
+  response.errors && response.errors.length > 0
+    ? `## Errors
+${response.errors.map(e => `- ${e.code}: ${e.message}`).join('\n')}`
+    : ''
+}
+
+View in dashboard: ${client.getBaseUrl()}/mcp-dashboard`,
+        },
+      ],
+    };
+  } catch (error) {
+    const errorMessage = error instanceof McpAdrError ? error.message : String(error);
+    const tierRequired = error instanceof McpAdrError && error.details?.['tier_required'];
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# Failed to Update Implementation Status
+
+**Error:** ${errorMessage}
+${tierRequired ? `\n**Note:** This feature requires ${tierRequired} tier. Upgrade at /pricing` : ''}
+
+## Troubleshooting
+1. Ensure ADR_AGGREGATOR_API_KEY is set correctly
+2. Verify you have Pro+ tier subscription
+3. Check that the ADR paths are valid and synced`,
         },
       ],
       isError: true,

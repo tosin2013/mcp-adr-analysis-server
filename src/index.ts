@@ -3504,6 +3504,50 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'update_implementation_status',
+            description:
+              'Update the implementation status of synced ADRs directly from the IDE. Supports statuses: not_started, in_progress, implemented, deprecated, blocked. Requires Pro+ tier.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                updates: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      adr_path: {
+                        type: 'string',
+                        description: 'Path to the ADR file relative to project root',
+                      },
+                      implementation_status: {
+                        type: 'string',
+                        enum: [
+                          'not_started',
+                          'in_progress',
+                          'implemented',
+                          'deprecated',
+                          'blocked',
+                        ],
+                        description: 'New implementation status',
+                      },
+                      notes: {
+                        type: 'string',
+                        description: 'Optional notes about the status change',
+                      },
+                    },
+                    required: ['adr_path', 'implementation_status'],
+                  },
+                  description: 'Array of ADR status updates to apply',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project path (defaults to PROJECT_PATH)',
+                },
+              },
+              required: ['updates'],
+            },
+          },
+          {
             name: 'analyze_gaps',
             description:
               'Scan local codebase and compare with ADRs to detect bi-directional gaps. Finds: (1) ADR-to-code gaps: file references in ADRs that do not exist, (2) Code-to-ADR gaps: technologies in package.json and architectural patterns without ADR coverage. Reports gaps to ADR Aggregator for tracking.',
@@ -3924,6 +3968,17 @@ export class McpAdrAnalysisServer {
           case 'get_knowledge_graph': {
             const { getKnowledgeGraph } = await import('./tools/adr-aggregator-tools.js');
             response = { ...(await getKnowledgeGraph(safeArgs, context)) };
+            break;
+          }
+          case 'update_implementation_status': {
+            const { updateAdrImplementationStatus } =
+              await import('./tools/adr-aggregator-tools.js');
+            response = {
+              ...(await updateAdrImplementationStatus(
+                safeArgs as unknown as Parameters<typeof updateAdrImplementationStatus>[0],
+                context
+              )),
+            };
             break;
           }
           case 'analyze_gaps': {
