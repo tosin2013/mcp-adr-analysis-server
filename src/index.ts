@@ -3548,6 +3548,25 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'get_adr_priorities',
+            description:
+              'Get ADR priorities for roadmap and backlog planning from ADR Aggregator. Returns prioritized ADRs with scores, dependencies, blockers, implementation status, and gap counts.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                include_ai: {
+                  type: 'boolean',
+                  description: 'Include AI-based priority recommendations',
+                  default: false,
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project path (defaults to PROJECT_PATH)',
+                },
+              },
+            },
+          },
+          {
             name: 'analyze_gaps',
             description:
               'Scan local codebase and compare with ADRs to detect bi-directional gaps. Finds: (1) ADR-to-code gaps: file references in ADRs that do not exist, (2) Code-to-ADR gaps: technologies in package.json and architectural patterns without ADR coverage. Reports gaps to ADR Aggregator for tracking.',
@@ -3979,6 +3998,11 @@ export class McpAdrAnalysisServer {
                 context
               )),
             };
+            break;
+          }
+          case 'get_adr_priorities': {
+            const { getAdrPriorities } = await import('./tools/adr-aggregator-tools.js');
+            response = { ...(await getAdrPriorities(safeArgs, context)) };
             break;
           }
           case 'analyze_gaps': {

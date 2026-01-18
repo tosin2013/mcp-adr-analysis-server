@@ -24,6 +24,7 @@ import type {
   GetKnowledgeGraphRequest,
   UpdateImplementationStatusRequest,
   ImplementationStatus,
+  GetPrioritiesRequest,
 } from '../types/adr-aggregator.js';
 import { promises as fs } from 'fs';
 import path from 'path';
@@ -1025,6 +1026,156 @@ ${tierRequired ? `\n**Note:** This feature requires ${tierRequired} tier. Upgrad
 1. Ensure ADR_AGGREGATOR_API_KEY is set correctly
 2. Verify you have Pro+ tier subscription
 3. Check that the ADR paths are valid and synced`,
+        },
+      ],
+      isError: true,
+    };
+  }
+}
+
+/**
+ * Arguments for get_adr_priorities tool
+ */
+export interface GetAdrPrioritiesArgs {
+  /** Include AI-based priority recommendations */
+  include_ai?: boolean;
+  /** Project path (defaults to PROJECT_PATH) */
+  projectPath?: string;
+}
+
+/**
+ * Get ADR priorities for roadmap/backlog planning
+ *
+ * GET /functions/v1/mcp-get-priorities
+ */
+export async function getAdrPriorities(
+  args: GetAdrPrioritiesArgs,
+  context?: ToolContext
+): Promise<ToolResult> {
+  const client = getAdrAggregatorClient();
+  ensureConfigured(client);
+
+  const config = loadConfig();
+  const resolvedProjectPath = args.projectPath || config.projectPath;
+
+  ensureGitRepo(resolvedProjectPath);
+
+  try {
+    const repositoryName = client.getRepositoryName(resolvedProjectPath);
+
+    context?.info(`Fetching ADR priorities for ${repositoryName}...`);
+    context?.report_progress(30, 100);
+
+    const request: GetPrioritiesRequest = {
+      repository_name: repositoryName,
+      ...(args.include_ai !== undefined && { include_ai: args.include_ai }),
+    };
+
+    const response = await client.getPriorities(request);
+    context?.report_progress(100, 100);
+
+    // Sort priorities by score (highest first)
+    const sortedPriorities = [...response.priorities].sort(
+      (a, b) => b.priority_score - a.priority_score
+    );
+
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# ADR Priorities for ${response.repository}
+
+## Summary
+- **Total ADRs:** ${response.summary.total_adrs}
+- **Implemented:** ${response.summary.implemented}
+- **In Progress:** ${response.summary.in_progress}
+- **Not Started:** ${response.summary.not_started}
+- **Blocked:** ${response.summary.blocked}
+- **Total Gaps:** ${response.summary.total_gaps}
+${response.tier ? `- **Tier:** ${response.tier}` : ''}
+
+---
+
+## Prioritized Roadmap
+
+${
+  sortedPriorities.length > 0
+    ? sortedPriorities
+        .map(
+          (p, index) => `
+### ${index + 1}. ${p.title}
+- **Path:** ${p.adr_path}
+- **Priority Score:** ${p.priority_score}/100 ${p.ai_prioritized ? '(AI)' : ''}
+- **Status:** ${p.implementation_status === 'implemented' ? '✅' : p.implementation_status === 'in_progress' ? '🔄' : p.implementation_status === 'blocked' ? '🚫' : '⏳'} ${p.implementation_status}
+- **Dependencies:** ${p.dependencies.length > 0 ? p.dependencies.join(', ') : 'None'}
+- **Blockers:** ${p.blockers.length > 0 ? p.blockers.join(', ') : 'None'}
+- **Gap Count:** ${p.gap_count}
+`
+        )
+        .join('\n')
+    : '*No ADRs found in this repository*'
+}
+
+---
+
+## Recommendations
+
+${
+  sortedPriorities.length === 0
+    ? 'Sync ADRs to the aggregator first using `sync_to_aggregator` to get priority analysis.'
+    : `
+### High Priority Items
+${
+  sortedPriorities
+    .filter(p => p.priority_score >= 70 && p.implementation_status !== 'implemented')
+    .map(
+      p =>
+        `- **${p.title}** (Score: ${p.priority_score}) - ${p.blockers.length > 0 ? 'Blocked by: ' + p.blockers.join(', ') : 'Ready to implement'}`
+    )
+    .join('\n') || '- No high-priority items pending'
+}
+
+### Blocked Items
+${
+  sortedPriorities
+    .filter(p => p.implementation_status === 'blocked' || p.blockers.length > 0)
+    .map(p => `- **${p.title}** blocked by: ${p.blockers.join(', ')}`)
+    .join('\n') || '- No blocked items'
+}
+
+### Items with Gaps
+${
+  sortedPriorities
+    .filter(p => p.gap_count > 0)
+    .map(p => `- **${p.title}** has ${p.gap_count} gap(s) to address`)
+    .join('\n') || '- No items with gaps'
+}
+`
+}
+
+---
+
+*Priority analysis performed at ${new Date().toISOString()}*
+View in dashboard: ${client.getBaseUrl()}/mcp-dashboard`,
+        },
+      ],
+    };
+  } catch (error) {
+    const errorMessage = error instanceof McpAdrError ? error.message : String(error);
+    const tierRequired = error instanceof McpAdrError && error.details?.['tier_required'];
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# Failed to Get ADR Priorities
+
+**Error:** ${errorMessage}
+${tierRequired ? `\n**Note:** This feature requires ${tierRequired} tier. Upgrade at /pricing` : ''}
+
+## Troubleshooting
+1. Ensure ADR_AGGREGATOR_API_KEY is set correctly
+2. Verify you have an active internet connection
+3. Check that ADRs have been synced to the aggregator`,
         },
       ],
       isError: true,

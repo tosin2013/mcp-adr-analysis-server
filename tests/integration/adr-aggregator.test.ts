@@ -683,6 +683,185 @@ describe('ADR Aggregator Integration', () => {
         expect(response.errors?.[0].code).toBe('ADR_NOT_FOUND');
       });
     });
+
+    describe('getPriorities', () => {
+      it('should get ADR priorities successfully', async () => {
+        const mockResponse = {
+          repository: 'test/repo',
+          priorities: [
+            {
+              adr_path: 'docs/adrs/001-use-typescript.md',
+              title: 'Use TypeScript',
+              priority_score: 85,
+              dependencies: [],
+              blockers: [],
+              implementation_status: 'in_progress',
+              gap_count: 2,
+              ai_prioritized: false,
+            },
+            {
+              adr_path: 'docs/adrs/002-api-design.md',
+              title: 'API Design',
+              priority_score: 70,
+              dependencies: ['docs/adrs/001-use-typescript.md'],
+              blockers: [],
+              implementation_status: 'not_started',
+              gap_count: 1,
+              ai_prioritized: true,
+            },
+          ],
+          summary: {
+            total_adrs: 2,
+            implemented: 0,
+            in_progress: 1,
+            not_started: 1,
+            blocked: 0,
+            total_gaps: 3,
+          },
+          tier: 'pro',
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => mockResponse,
+        });
+
+        const response = await client.getPriorities({
+          repository_name: 'test/repo',
+          include_ai: true,
+        });
+
+        expect(response.repository).toBe('test/repo');
+        expect(response.priorities).toHaveLength(2);
+        expect(response.priorities[0].priority_score).toBe(85);
+        expect(response.priorities[0].implementation_status).toBe('in_progress');
+        expect(response.priorities[1].ai_prioritized).toBe(true);
+        expect(response.summary.total_adrs).toBe(2);
+        expect(response.summary.total_gaps).toBe(3);
+        expect(mockFetch).toHaveBeenCalledWith(
+          expect.stringContaining('/functions/v1/mcp-get-priorities?'),
+          expect.objectContaining({
+            method: 'GET',
+          })
+        );
+      });
+
+      it('should handle include_ai parameter', async () => {
+        const mockResponse = {
+          repository: 'test/repo',
+          priorities: [],
+          summary: {
+            total_adrs: 0,
+            implemented: 0,
+            in_progress: 0,
+            not_started: 0,
+            blocked: 0,
+            total_gaps: 0,
+          },
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => mockResponse,
+        });
+
+        await client.getPriorities({
+          repository_name: 'test/repo',
+          include_ai: true,
+        });
+
+        const calledUrl = mockFetch.mock.calls[0][0] as string;
+        expect(calledUrl).toContain('include_ai=true');
+      });
+
+      it('should handle empty priorities response', async () => {
+        const mockResponse = {
+          repository: 'test/repo',
+          priorities: [],
+          summary: {
+            total_adrs: 0,
+            implemented: 0,
+            in_progress: 0,
+            not_started: 0,
+            blocked: 0,
+            total_gaps: 0,
+          },
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => mockResponse,
+        });
+
+        const response = await client.getPriorities({
+          repository_name: 'test/repo',
+        });
+
+        expect(response.priorities).toHaveLength(0);
+        expect(response.summary.total_adrs).toBe(0);
+      });
+
+      it('should handle repository not found error', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          statusText: 'Not Found',
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => ({
+            code: 'NOT_FOUND',
+            message: 'Repository not found or no ADRs synced',
+          }),
+        });
+
+        await expect(
+          client.getPriorities({
+            repository_name: 'nonexistent/repo',
+          })
+        ).rejects.toThrow('Repository not found or no ADRs synced');
+      });
+
+      it('should handle priorities with blockers', async () => {
+        const mockResponse = {
+          repository: 'test/repo',
+          priorities: [
+            {
+              adr_path: 'docs/adrs/003-microservices.md',
+              title: 'Microservices Architecture',
+              priority_score: 90,
+              dependencies: ['docs/adrs/001-use-typescript.md'],
+              blockers: ['docs/adrs/002-api-design.md'],
+              implementation_status: 'blocked',
+              gap_count: 5,
+            },
+          ],
+          summary: {
+            total_adrs: 1,
+            implemented: 0,
+            in_progress: 0,
+            not_started: 0,
+            blocked: 1,
+            total_gaps: 5,
+          },
+        };
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          headers: new Headers({ 'content-type': 'application/json' }),
+          json: async () => mockResponse,
+        });
+
+        const response = await client.getPriorities({
+          repository_name: 'test/repo',
+        });
+
+        expect(response.priorities[0].blockers).toContain('docs/adrs/002-api-design.md');
+        expect(response.priorities[0].implementation_status).toBe('blocked');
+        expect(response.summary.blocked).toBe(1);
+      });
+    });
   });
 
   // ============================================================================

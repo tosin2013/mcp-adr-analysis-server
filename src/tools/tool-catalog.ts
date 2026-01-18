@@ -1728,6 +1728,34 @@ TOOL_CATALOG.set('update_implementation_status', {
   },
 });
 
+TOOL_CATALOG.set('get_adr_priorities', {
+  name: 'get_adr_priorities',
+  shortDescription: 'Get ADR priorities for roadmap/backlog planning',
+  fullDescription:
+    'Get ADR priorities for roadmap and backlog planning from ADR Aggregator. Returns prioritized ADRs with scores, dependencies, blockers, implementation status, and gap counts.',
+  category: 'aggregator',
+  complexity: 'simple',
+  tokenCost: { min: 500, max: 1500 },
+  hasCEMCPDirective: true,
+  relatedTools: ['get_adr_context', 'update_implementation_status', 'analyze_gaps'],
+  keywords: ['aggregator', 'priorities', 'roadmap', 'backlog', 'planning', 'score', 'dependencies'],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      include_ai: {
+        type: 'boolean',
+        description: 'Include AI-based priority recommendations',
+        default: false,
+      },
+      projectPath: {
+        type: 'string',
+        description: 'Project path (defaults to PROJECT_PATH)',
+      },
+    },
+  },
+});
+
 // CE-MCP Meta-Tool: search_tools
 TOOL_CATALOG.set('search_tools', {
   name: 'search_tools',

@@ -727,3 +727,58 @@ export interface UpdateImplementationStatusResponse {
   timestamp: string;
   tier?: AggregatorTier;
 }
+
+// ============================================================================
+// Get Priorities Types (GET /mcp-get-priorities)
+// ============================================================================
+
+/**
+ * Request for getting ADR priorities for roadmap/backlog planning
+ *
+ * @see API: GET /functions/v1/mcp-get-priorities
+ */
+export interface GetPrioritiesRequest extends RepositoryIdentifier {
+  /** Include AI-based priority recommendations */
+  include_ai?: boolean;
+}
+
+/**
+ * Individual ADR priority data
+ */
+export interface AdrPriority {
+  /** Path to the ADR file relative to project root */
+  adr_path: string;
+  /** ADR title */
+  title: string;
+  /** Priority score (0-100, higher = more urgent) */
+  priority_score: number;
+  /** ADR paths this ADR depends on (prerequisites) */
+  dependencies: string[];
+  /** ADR paths that block this ADR from being implemented */
+  blockers: string[];
+  /** Current implementation status */
+  implementation_status: ImplementationStatus;
+  /** Number of code/documentation gaps related to this ADR */
+  gap_count: number;
+  /** Whether this priority was determined by AI analysis */
+  ai_prioritized?: boolean;
+}
+
+/**
+ * Response from get priorities endpoint
+ *
+ * @see API: GET /functions/v1/mcp-get-priorities
+ */
+export interface GetPrioritiesResponse {
+  repository: string;
+  priorities: AdrPriority[];
+  summary: {
+    total_adrs: number;
+    implemented: number;
+    in_progress: number;
+    not_started: number;
+    blocked: number;
+    total_gaps: number;
+  };
+  tier?: AggregatorTier;
+}
