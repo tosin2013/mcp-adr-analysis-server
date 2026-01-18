@@ -282,6 +282,5 @@ jobs:
     with:
       version: ${{ needs.generate-notes.outputs.version }}
       skip_tests: false
-    secrets:
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+    # Using OIDC Trusted Publishing - no token required
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
