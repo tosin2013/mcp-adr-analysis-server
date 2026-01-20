@@ -79,6 +79,20 @@
 - [`check_ai_execution_status`](#check_ai_execution_status) - Check AI execution status
 - [`mcp_planning`](#mcp_planning) - MCP server planning and coordination
 
+### **🌐 ADR Aggregator Integration**
+
+- [`sync_to_aggregator`](#sync_to_aggregator) - Sync ADRs to ADR Aggregator platform (Free)
+- [`get_adr_context`](#get_adr_context) - Get ADR context from aggregator (Free)
+- [`get_staleness_report`](#get_staleness_report) - Get ADR staleness report (Free)
+- [`get_adr_templates`](#get_adr_templates) - Get ADR templates by domain (Free)
+- [`get_adr_diagrams`](#get_adr_diagrams) - Get Mermaid diagrams (Pro+)
+- [`validate_adr_compliance`](#validate_adr_compliance) - Validate ADR compliance (Pro+)
+- [`get_knowledge_graph`](#get_knowledge_graph) - Get cross-repository knowledge graph (Team)
+- [`update_implementation_status`](#update_implementation_status) - Update ADR implementation status (Pro+)
+- [`get_adr_priorities`](#get_adr_priorities) - Get ADR priorities for roadmap planning (Free)
+- [`analyze_gaps`](#analyze_gaps) - Analyze gaps between ADRs and code (Free)
+- [`get_gaps`](#get_gaps) - Get current gaps from aggregator (Free)
+
 ---
 
 ## 🔧 Core Analysis Tools
@@ -784,4 +798,438 @@
 
 ---
 
-_Last updated: December 2024 | Version 2.1.21_
+## 🌐 ADR Aggregator Integration Tools
+
+These tools integrate with [ADR Aggregator](https://adraggregator.com) to provide centralized ADR management, cross-repository insights, and team collaboration features.
+
+> **Prerequisites**: Most tools require `ADR_AGGREGATOR_API_KEY` environment variable. Get your API key at [adraggregator.com](https://adraggregator.com).
+
+### Tier Feature Matrix
+
+| Tool                           | Free | Pro+ | Team |
+| ------------------------------ | ---- | ---- | ---- |
+| `sync_to_aggregator`           | ✅   | ✅   | ✅   |
+| `get_adr_context`              | ✅   | ✅   | ✅   |
+| `get_staleness_report`         | ✅   | ✅   | ✅   |
+| `get_adr_templates`            | ✅   | ✅   | ✅   |
+| `get_adr_priorities`           | ✅   | ✅   | ✅   |
+| `analyze_gaps`                 | ✅   | ✅   | ✅   |
+| `get_gaps`                     | ✅   | ✅   | ✅   |
+| `get_adr_diagrams`             | ❌   | ✅   | ✅   |
+| `validate_adr_compliance`      | ❌   | ✅   | ✅   |
+| `update_implementation_status` | ❌   | ✅   | ✅   |
+| `get_knowledge_graph`          | ❌   | ❌   | ✅   |
+
+---
+
+### `sync_to_aggregator`
+
+**Purpose**: Sync local ADRs to ADR Aggregator platform for centralized management
+
+**Tier**: Free (with limits), Pro+, Team
+
+**Use Cases**:
+
+- Push local ADRs to centralized platform
+- Enable cross-repository insights
+- Track ADR staleness across projects
+- Share ADRs with team members
+
+**Parameters**:
+
+```json
+{
+  "full_sync": "boolean (default: false) - Replace all ADRs instead of incremental",
+  "include_metadata": "boolean (default: true) - Include analysis metadata",
+  "include_diagrams": "boolean (default: false) - Include Mermaid diagrams (Pro+)",
+  "include_timeline": "boolean (default: false) - Include timeline data",
+  "include_security_scan": "boolean (default: false) - Include security scan results",
+  "include_code_links": "boolean (default: false) - Include AST-based code links (Pro+)",
+  "adr_paths": "array (optional) - Specific ADR paths to sync",
+  "projectPath": "string (optional) - Project path (defaults to PROJECT_PATH)"
+}
+```
+
+**Example Usage**:
+
+```json
+{
+  "full_sync": false,
+  "include_metadata": true,
+  "include_timeline": true
+}
+```
+
+**Response Format**:
+
+```markdown
+# ADR Aggregator Sync Complete
+
+## Summary
+
+- **Repository:** owner/repo
+- **ADRs Synced:** 5
+- **Sync ID:** sync_abc123
+- **Timestamp:** 2025-01-20T12:00:00Z
+- **Tier:** pro
+
+## Synced ADRs
+
+- docs/adrs/001-use-typescript.md (accepted)
+- docs/adrs/002-api-design.md (proposed)
+```
+
+---
+
+### `get_adr_context`
+
+**Purpose**: Get ADR context from aggregator for AI-assisted analysis
+
+**Tier**: Free
+
+**Parameters**:
+
+```json
+{
+  "include_diagrams": "boolean (optional) - Include Mermaid diagrams (Pro+)",
+  "include_timeline": "boolean (default: true) - Include timeline data",
+  "include_code_links": "boolean (optional) - Include code links (Pro+)",
+  "include_research": "boolean (optional) - Include research context (Pro+)",
+  "staleness_filter": "string (enum: 'all'|'fresh'|'stale'|'very_stale')",
+  "graph_depth": "number (optional) - Knowledge graph depth (Team)",
+  "projectPath": "string (optional) - Project path"
+}
+```
+
+**Example Usage**:
+
+```json
+{
+  "include_timeline": true,
+  "staleness_filter": "stale"
+}
+```
+
+---
+
+### `get_staleness_report`
+
+**Purpose**: Get comprehensive ADR staleness report for governance
+
+**Tier**: Free
+
+**Parameters**:
+
+```json
+{
+  "threshold": "number (default: 90) - Days threshold for staleness",
+  "projectPath": "string (optional) - Project path"
+}
+```
+
+**Response Format**:
+
+```markdown
+# ADR Staleness Report
+
+## Summary
+
+| Status     | Count |
+| ---------- | ----- |
+| Fresh      | 3     |
+| Recent     | 2     |
+| Stale      | 1     |
+| Very Stale | 0     |
+
+## Governance
+
+- **Review Cycle Compliance:** 85%
+- **Overdue Reviews:** 1
+```
+
+---
+
+### `get_adr_templates`
+
+**Purpose**: Get domain-specific ADR templates with best practices
+
+**Tier**: Free (no API key required)
+
+**Parameters**:
+
+```json
+{
+  "domain": "string (optional) - Domain filter (web_application, microservices, api, etc.)"
+}
+```
+
+**Available Domains**:
+
+- `web_application` - Web application architecture patterns
+- `microservices` - Microservices design decisions
+- `api` - API design and versioning
+- `database` - Database selection and design
+- `security` - Security architecture decisions
+- `infrastructure` - Infrastructure and DevOps
+
+---
+
+### `get_adr_diagrams`
+
+**Purpose**: Get Mermaid diagrams for ADR visualization
+
+**Tier**: Pro+ required
+
+**Parameters**:
+
+```json
+{
+  "adr_path": "string (optional) - Specific ADR path",
+  "projectPath": "string (optional) - Project path"
+}
+```
+
+**Response Includes**:
+
+- Workflow diagrams
+- Relationship diagrams
+- Impact flow diagrams
+
+---
+
+### `validate_adr_compliance`
+
+**Purpose**: Validate ADR compliance with code implementation
+
+**Tier**: Pro+ required
+
+**Parameters**:
+
+```json
+{
+  "adr_paths": "array (optional) - Specific ADR paths to validate",
+  "validation_type": "string (enum: 'implementation'|'architecture'|'security'|'all', default: 'all')",
+  "projectPath": "string (optional) - Project path"
+}
+```
+
+**Response Format**:
+
+```markdown
+## ADR Compliance Results
+
+### docs/adrs/001-use-typescript.md
+
+| Metric           | Value        |
+| ---------------- | ------------ |
+| Compliance Score | **95%**      |
+| Status           | ✅ compliant |
+| Files Validated  | 12           |
+
+### Findings
+
+- ✅ All TypeScript files follow ADR guidelines
+- ⚠️ 2 files using `any` type
+
+### Recommendations
+
+- Review files with `any` usage
+```
+
+---
+
+### `get_knowledge_graph`
+
+**Purpose**: Get cross-repository knowledge graph for enterprise insights
+
+**Tier**: Team required
+
+**Parameters**:
+
+```json
+{
+  "scope": "string (enum: 'repository'|'organization', default: 'repository')",
+  "include_analytics": "boolean (default: true) - Include graph analytics",
+  "projectPath": "string (optional) - Project path"
+}
+```
+
+**Response Includes**:
+
+- Graph nodes and relationships
+- Cross-repository patterns
+- Pattern trends over time
+- Most connected ADRs
+- Orphan decisions (no links)
+
+---
+
+### `update_implementation_status`
+
+**Purpose**: Update implementation status of synced ADRs
+
+**Tier**: Pro+ required
+
+**Parameters**:
+
+```json
+{
+  "updates": [
+    {
+      "adr_path": "string (required) - Path to ADR",
+      "implementation_status": "string (enum: 'not_started'|'in_progress'|'implemented'|'deprecated'|'blocked')",
+      "notes": "string (optional) - Status change notes"
+    }
+  ],
+  "projectPath": "string (optional) - Project path"
+}
+```
+
+**Example Usage**:
+
+```json
+{
+  "updates": [
+    {
+      "adr_path": "docs/adrs/001-use-typescript.md",
+      "implementation_status": "implemented",
+      "notes": "Migration completed in v2.0"
+    },
+    {
+      "adr_path": "docs/adrs/002-api-design.md",
+      "implementation_status": "in_progress"
+    }
+  ]
+}
+```
+
+---
+
+### `get_adr_priorities`
+
+**Purpose**: Get ADR priorities for roadmap and backlog planning
+
+**Tier**: Free
+
+**Parameters**:
+
+```json
+{
+  "include_ai": "boolean (optional) - Include AI-based priority recommendations",
+  "projectPath": "string (optional) - Project path"
+}
+```
+
+**Response Format**:
+
+```markdown
+# ADR Priorities
+
+## Summary
+
+- **Total ADRs:** 5
+- **Implemented:** 2
+- **In Progress:** 1
+- **Not Started:** 2
+
+## Prioritized Roadmap
+
+### 1. Authentication Strategy
+
+- **Priority Score:** 85/100 (AI)
+- **Status:** ⏳ not_started
+- **Dependencies:** None
+- **Gap Count:** 3
+```
+
+---
+
+### `analyze_gaps`
+
+**Purpose**: Analyze gaps between ADRs and codebase
+
+**Tier**: Free
+
+**Use Cases**:
+
+- Detect missing file references in ADRs
+- Find technologies without ADR coverage
+- Identify architectural patterns lacking documentation
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (optional) - Project path",
+  "reportToAggregator": "boolean (default: true) - Report gaps to aggregator",
+  "includeDismissed": "boolean (default: false) - Include dismissed gaps",
+  "scanDirectories": "array (optional) - Directories to scan (default: ['src', 'lib', 'app'])",
+  "includePatterns": "array (optional) - File patterns to include",
+  "excludePatterns": "array (optional) - File patterns to exclude"
+}
+```
+
+**Gap Types**:
+
+- **adr_to_code**: File referenced in ADR doesn't exist
+- **code_to_adr**: Technology/pattern in code without ADR coverage
+
+**Response Format**:
+
+```markdown
+# Gap Analysis Report
+
+## Summary
+
+- **Files Scanned:** 150
+- **ADRs Checked:** 5
+- **Total Gaps Found:** 3
+  - Errors: 1
+  - Warnings: 2
+
+## ADR-to-Code Gaps (1)
+
+### ❌ Missing referenced file: src/auth/oauth.ts
+
+- **ADR:** docs/adrs/003-auth-strategy.md
+- **Description:** ADR references file that doesn't exist
+
+## Code-to-ADR Gaps (2)
+
+### ⚠️ Undocumented technology: redis
+
+- **Pattern Type:** ioredis usage
+- **Suggested ADR Title:** "Caching Strategy with Redis"
+```
+
+---
+
+### `get_gaps`
+
+**Purpose**: Get current gaps from ADR Aggregator
+
+**Tier**: Free
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (optional) - Project path",
+  "includeDismissed": "boolean (optional) - Include dismissed gaps",
+  "includeResolved": "boolean (optional) - Include resolved gaps"
+}
+```
+
+---
+
+## 📚 Additional Resources
+
+- **[Tutorials](../tutorials/01-first-steps.md)** - Step-by-step guides
+- **[How-To Guides](../how-to-guides/troubleshooting.md)** - Problem-solving guides
+- **[ADR Aggregator Integration](../how-to-guides/adr-aggregator-integration.md)** - Complete integration guide
+- **[Explanation](../explanation/mcp-concepts.md)** - Conceptual documentation
+- **[GitHub Repository](https://github.com/tosin2013/mcp-adr-analysis-server)** - Source code and issues
+
+---
+
+_Last updated: January 2025 | Version 2.1.27_
