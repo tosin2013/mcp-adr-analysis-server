@@ -36,6 +36,13 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+      - name: Capture merge commit SHA
+        id: merge-sha
+        run: |
+          MERGE_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+          echo "sha=$MERGE_SHA" >> $GITHUB_OUTPUT
+          echo "Merge commit SHA: $MERGE_SHA"
+
       - name: Check auto-release configuration
         id: config
         run: |
@@ -209,34 +216,21 @@ jobs:
           echo "Generated enhanced release notes:"
           cat enhanced_release_notes.md
 
-      - name: Commit version bump
-        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
-        run: |
-          git add package.json package-lock.json
-          git commit -m "chore: release v${{ env.NEW_VERSION }}
-
-          Auto-release following PR merge:
-          - ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})
-          - Author: @${{ github.event.pull_request.user.login }}
-          - Type: ${{ steps.version-type.outputs.version_type }} version bump
-
-          🤖 Generated with [Claude Code](https://claude.ai/code)
-
-          Co-Authored-By: Claude <noreply@anthropic.com>"
-
-      - name: Push version bump
-        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
-        run: |
-          git push origin main
-
       - name: Create and push tag
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
         run: |
           TAG_NAME="v${{ env.NEW_VERSION }}"
-          echo "Creating tag: $TAG_NAME"
+          MERGE_SHA="${{ steps.merge-sha.outputs.sha }}"
+          echo "Creating tag: $TAG_NAME on commit $MERGE_SHA"
 
-          # Create annotated tag with release info
-          git tag -a "$TAG_NAME" -m "Release $TAG_NAME
+          # Guard: skip if tag already exists
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "⚠️ Tag $TAG_NAME already exists, skipping tag creation"
+            exit 0
+          fi
+
+          # Create annotated tag on the merge commit (not the working tree)
+          git tag -a "$TAG_NAME" "$MERGE_SHA" -m "Release $TAG_NAME
 
           Auto-release following PR merge:
           - ${{ github.event.pull_request.title }}
@@ -250,7 +244,7 @@ jobs:
 
           git push origin "$TAG_NAME"
 
-          echo "✅ Tag $TAG_NAME created and pushed"
+          echo "✅ Tag $TAG_NAME created on $MERGE_SHA and pushed"
           echo "🚀 This will trigger AI release notes generation and NPM publishing"
 
       - name: Publish Release (from Draft or New)
@@ -286,6 +280,43 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create version-bump PR
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        id: version-bump-pr
+        uses: peter-evans/create-pull-request@v8
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: bump version to v${{ env.NEW_VERSION }}'
+          title: 'chore: bump version to v${{ env.NEW_VERSION }}'
+          body: |
+            ## Version Bump
+
+            Automated version bump to **v${{ env.NEW_VERSION }}** following release.
+
+            - **Triggered by**: ${{ github.event.pull_request.title }} (#${{ github.event.pull_request.number }})
+            - **Author**: @${{ github.event.pull_request.user.login }}
+            - **Bump type**: ${{ steps.version-type.outputs.version_type }}
+
+            > This PR updates `package.json` and `package-lock.json` only.
+            > The `no-release` label prevents this merge from triggering another release.
+          branch: chore/version-bump-v${{ env.NEW_VERSION }}
+          base: main
+          delete-branch: true
+          add-paths: |
+            package.json
+            package-lock.json
+          labels: |
+            no-release
+            maintenance
+
+      - name: Enable auto-merge for version-bump PR
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false' && steps.version-bump-pr.outputs.pull-request-number
+        run: |
+          gh pr merge ${{ steps.version-bump-pr.outputs.pull-request-number }} --auto --squash
+          echo "✅ Auto-merge enabled for version-bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Summary
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
         run: |
@@ -304,11 +335,15 @@ jobs:
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Tag v${{ env.NEW_VERSION }} created" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tag v${{ env.NEW_VERSION }} created on merge commit" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Release published" >> $GITHUB_STEP_SUMMARY
           echo "- 🔄 AI release notes enhancement will trigger" >> $GITHUB_STEP_SUMMARY
           echo "- 📦 NPM publishing workflow will trigger" >> $GITHUB_STEP_SUMMARY
           echo "- 📚 Documentation will be updated" >> $GITHUB_STEP_SUMMARY
+
+          if [[ -n "${{ steps.version-bump-pr.outputs.pull-request-number }}" ]]; then
+            echo "- 📝 Version bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }} created" >> $GITHUB_STEP_SUMMARY
+          fi
 
       - name: Skipped Summary
         if: steps.config.outputs.enabled == 'false' || steps.should-skip.outputs.should_skip == 'true'
