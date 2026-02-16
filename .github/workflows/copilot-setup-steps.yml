@@ -17,8 +17,24 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
+      - name: Install build tools for native modules
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y build-essential python3
+
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if ! npm ci; then
+            echo "⚠️ npm ci failed, falling back to npm install..."
+            npm install
+          fi
+
+      - name: Rebuild tree-sitter native bindings
+        run: |
+          echo "🔨 Rebuilding tree-sitter native bindings..."
+          if ! npm rebuild tree-sitter; then
+            echo "⚠️ Tree-sitter rebuild failed, but continuing (tools handle graceful fallback)"
+          fi
 
       - name: Build project
         run: npm run build
