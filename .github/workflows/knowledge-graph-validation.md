@@ -50,6 +50,29 @@ The mcp-adr-analysis-server maintains persistent state through three interconnec
 
 ## Validation Steps
 
+### Step 0: Install Dependencies
+
+Install build tools required for native module compilation (e.g., tree-sitter), then install npm dependencies with error-tolerant fallbacks.
+
+```bash
+# Install build tools for native modules (requires sudo)
+sudo apt-get update -qq && sudo apt-get install -y build-essential python3 || echo "⚠️ Could not install build tools (may already be present)"
+
+# Install npm dependencies with fallback
+if ! npm ci; then
+  echo "⚠️ npm ci failed, falling back to npm install..."
+  npm install
+fi
+
+# Rebuild tree-sitter native bindings (non-blocking)
+echo "🔨 Rebuilding tree-sitter native bindings..."
+if ! npm rebuild tree-sitter; then
+  echo "⚠️ Tree-sitter rebuild failed, but continuing (tests handle graceful fallback)"
+fi
+```
+
+If `npm` is not available or both install commands fail, you can still run the persistence validation steps (Steps 4 and 5) using `node` with pre-built `dist/` if available.
+
 ### Step 1: Knowledge Graph Manager Tests
 
 ```bash

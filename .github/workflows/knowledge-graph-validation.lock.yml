@@ -23,7 +23,7 @@
 #
 # Validates knowledge graph manager, state reinforcement, conversation memory, graph persistence, and session cleanup
 #
-# frontmatter-hash: f2a4ea11e57b307e01c3876b33471e4ea24ad64a4627b83b3974776f700c16dc
+# frontmatter-hash: 1ef52277eb1c3658f9f1344d3524766fcd55392b7f327909da16ce33777a08db
 
 name: 'Knowledge Graph Validation'
 'on':

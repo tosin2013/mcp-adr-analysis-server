@@ -23,7 +23,7 @@
 #
 # Validates MCP server initialization, tool registration, protocol compliance, and Node 20/22 matrix testing
 #
-# frontmatter-hash: abc329b0e5f12cc92a15bac7f6f2805cd47c19ea934ec324f2b02c504aa27bb0
+# frontmatter-hash: 711af8c0cd10bd990bb7382f68b49625e830e319f6520b00c78c3a6d9ff827c3
 
 name: 'MCP Server Validation'
 'on':
