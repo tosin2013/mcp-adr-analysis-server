@@ -7,10 +7,7 @@ import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
 import { KnowledgeGraphManager } from '../../src/utils/knowledge-graph-manager.js';
-import type {
-  KnowledgeGraphSnapshot,
-  IntentSnapshot,
-} from '../../src/types/knowledge-graph-schemas.js';
+import type { KnowledgeGraphSnapshot } from '../../src/types/knowledge-graph-schemas.js';
 
 describe('KnowledgeGraphManager', () => {
   let kgManager: KnowledgeGraphManager;
@@ -196,11 +193,11 @@ describe('KnowledgeGraphManager', () => {
     });
 
     it('should update analytics when intent is created', async () => {
-      const intent1 = await kgManager.createIntent('First intent', ['Goal'], 'low');
+      await kgManager.createIntent('First intent', ['Goal'], 'low');
       const kg1 = await kgManager.loadKnowledgeGraph();
       expect(kg1.analytics.totalIntents).toBeGreaterThanOrEqual(1);
 
-      const intent2 = await kgManager.createIntent('Second intent', ['Goal'], 'medium');
+      await kgManager.createIntent('Second intent', ['Goal'], 'medium');
       const kg2 = await kgManager.loadKnowledgeGraph();
 
       expect(kg2.analytics.totalIntents).toBeGreaterThanOrEqual(2);
@@ -248,13 +245,7 @@ describe('KnowledgeGraphManager', () => {
     it('should update intent status to executing on successful tool execution', async () => {
       const intentId = await kgManager.createIntent('Test intent', ['Goal'], 'medium');
 
-      await kgManager.addToolExecution(
-        intentId,
-        'test_tool',
-        {},
-        { success: true },
-        true
-      );
+      await kgManager.addToolExecution(intentId, 'test_tool', {}, { success: true }, true);
 
       const kg = await kgManager.loadKnowledgeGraph();
       const intent = kg.intents.find(i => i.intentId === intentId);
@@ -285,26 +276,14 @@ describe('KnowledgeGraphManager', () => {
 
     it('should throw error if intent does not exist', async () => {
       await expect(
-        kgManager.addToolExecution(
-          'non-existent-id',
-          'test_tool',
-          {},
-          {},
-          true
-        )
+        kgManager.addToolExecution('non-existent-id', 'test_tool', {}, {}, true)
       ).rejects.toThrow('Intent non-existent-id not found');
     });
 
     it('should record score impact for tool execution', async () => {
       const intentId = await kgManager.createIntent('Test intent', ['Goal'], 'medium');
 
-      await kgManager.addToolExecution(
-        intentId,
-        'test_tool',
-        {},
-        { success: true },
-        true
-      );
+      await kgManager.addToolExecution(intentId, 'test_tool', {}, { success: true }, true);
 
       const kg = await kgManager.loadKnowledgeGraph();
       const intent = kg.intents.find(i => i.intentId === intentId);
@@ -344,9 +323,9 @@ describe('KnowledgeGraphManager', () => {
     });
 
     it('should throw error if intent does not exist', async () => {
-      await expect(
-        kgManager.updateIntentStatus('non-existent-id', 'completed')
-      ).rejects.toThrow('Intent non-existent-id not found');
+      await expect(kgManager.updateIntentStatus('non-existent-id', 'completed')).rejects.toThrow(
+        'Intent non-existent-id not found'
+      );
     });
   });
 
@@ -407,13 +386,9 @@ describe('KnowledgeGraphManager', () => {
 
   describe('addMemoryExecution', () => {
     it('should record memory operation', async () => {
-      await kgManager.addMemoryExecution(
-        'update_knowledge',
-        'add_entity',
-        'decision',
-        true,
-        { entityId: 'test-123' }
-      );
+      await kgManager.addMemoryExecution('update_knowledge', 'add_entity', 'decision', true, {
+        entityId: 'test-123',
+      });
 
       const kg = await kgManager.loadKnowledgeGraph();
 
@@ -427,15 +402,15 @@ describe('KnowledgeGraphManager', () => {
 
     it('should update memory analytics', async () => {
       await kgManager.addMemoryExecution('test_tool', 'add', 'entity', true);
-      
+
       // Wait for first operation to complete
       let kg = await kgManager.loadKnowledgeGraph();
-      
+
       // Check if memoryOperations exists and has at least one entry
       if (kg.memoryOperations && kg.memoryOperations.length > 0) {
         expect(kg.memoryOperations.length).toBeGreaterThanOrEqual(1);
       }
-      
+
       await kgManager.addMemoryExecution('test_tool', 'remove', 'entity', true);
 
       kg = await kgManager.loadKnowledgeGraph();
@@ -443,7 +418,7 @@ describe('KnowledgeGraphManager', () => {
       expect(kg.analytics.memoryOperations).toBeDefined();
       expect(kg.analytics.memoryOperations!.totalOperations).toBeGreaterThanOrEqual(1);
       expect(kg.analytics.memoryOperations!.successRate).toBe(1);
-      
+
       // memoryOperations should exist and have at least one entry
       if (kg.memoryOperations) {
         expect(kg.memoryOperations.length).toBeGreaterThanOrEqual(1);

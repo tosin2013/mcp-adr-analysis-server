@@ -324,11 +324,7 @@ describe('ConversationMemoryManager', () => {
 
       await memoryManager.storeExpandableContent('test-content-1', content);
 
-      const contentFile = path.join(
-        memoryDir,
-        'expandable-content',
-        'test-content-1.json'
-      );
+      const contentFile = path.join(memoryDir, 'expandable-content', 'test-content-1.json');
       const exists = await fs
         .access(contentFile)
         .then(() => true)
@@ -375,11 +371,7 @@ describe('ConversationMemoryManager', () => {
       });
 
       // Delete the file
-      const contentFile = path.join(
-        memoryDir,
-        'expandable-content',
-        'test-content-3.json'
-      );
+      const contentFile = path.join(memoryDir, 'expandable-content', 'test-content-3.json');
       await fs.unlink(contentFile);
 
       // Should still work from cache
@@ -476,7 +468,7 @@ describe('ConversationMemoryManager', () => {
 
       // Don't call any methods that would auto-start a session
       const snapshot = await newManager.getContextSnapshot();
-      
+
       // The method auto-creates a session, so we should check that behavior
       // If this is the intended behavior, we should test it differently
       if (snapshot === null) {
@@ -513,7 +505,7 @@ describe('ConversationMemoryManager', () => {
       });
       await queryManager.initialize();
 
-      const sessionId = await queryManager.startNewSession('/test/project');
+      await queryManager.startNewSession('/test/project');
       await queryManager.recordTurn(
         { userMessage: 'Test', toolName: 'specific_tool' },
         { content: 'Response', tokenCount: 50, cached: false }
