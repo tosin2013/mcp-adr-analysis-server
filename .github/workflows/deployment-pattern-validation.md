@@ -53,19 +53,44 @@ The mcp-adr-analysis-server includes a **Validated Patterns Framework** in `patt
 
 ## Validation Steps
 
+### Step 0: Install Dependencies
+
+Install build tools required for native module compilation (e.g., tree-sitter), then install npm dependencies with error-tolerant fallbacks.
+
+```bash
+# Install build tools for native modules (requires sudo)
+sudo apt-get update -qq && sudo apt-get install -y build-essential python3 || echo "⚠️ Could not install build tools (may already be present)"
+
+# Install npm dependencies with fallback
+if ! npm ci; then
+  echo "⚠️ npm ci failed, falling back to npm install..."
+  npm install
+fi
+
+# Rebuild tree-sitter native bindings (non-blocking)
+echo "🔨 Rebuilding tree-sitter native bindings..."
+if ! npm rebuild tree-sitter; then
+  echo "⚠️ Tree-sitter rebuild failed, but continuing (tests handle graceful fallback)"
+fi
+```
+
+If `npm` is not available or both install commands fail, you can still run the structural validation steps (Steps 3 and 6) using `grep` and shell commands directly.
+
 ### Step 1: Run Pattern Schema Validation
 
 ```bash
 npm run validate:patterns
 ```
 
-If this command is not available, proceed to manual validation in Step 3.
+If this command is not available (e.g., npm install failed), proceed to manual validation in Step 3.
 
 ### Step 2: Test Pattern Detection
 
 ```bash
 npm test -- tests/utils/pattern-loader.test.ts --verbose
 ```
+
+If npm/Jest is unavailable, skip to Step 3 for manual pattern validation.
 
 ### Step 3: Validate All Infrastructure Patterns
 
@@ -128,11 +153,15 @@ node -e "
 npm test -- tests/tools/bootstrap-validation-loop-tool.test.ts --verbose
 ```
 
+If npm/Jest is unavailable, skip to Step 6 for structural validation using shell commands.
+
 ### Step 5: Test Deployment Readiness Tool
 
 ```bash
 npm test -- tests/tools/deployment-readiness-tool.test.ts --verbose
 ```
+
+If npm/Jest is unavailable, skip to Step 6 for structural validation using shell commands.
 
 ### Step 6: Validate Pattern Documentation Completeness
 
