@@ -7,11 +7,14 @@ This repository now supports **automatic releases** when PRs are merged to the m
 When you merge a PR to `main`, the system will:
 
 1. **Analyze the PR** to determine the appropriate version bump
-2. **Update package.json** with the new version
-3. **Create a git tag** (e.g., `v2.0.25`)
-4. **Trigger AI release notes** generation
-5. **Publish to NPM** automatically
-6. **Update documentation**
+2. **Run `npm version` locally** to compute the new version
+3. **Create a git tag** on the merge commit SHA (e.g., `v2.0.25`)
+4. **Publish a GitHub Release** (from Release Drafter draft or new)
+5. **Open a version-bump PR** updating `package.json` and `package-lock.json`
+   - The PR carries a `no-release` label so merging it does **not** trigger another release
+   - Auto-merge is enabled (squash) so it lands without manual intervention
+6. **Trigger AI release notes** generation
+7. **Publish to NPM** automatically
 
 ## Version Bump Logic
 
@@ -102,13 +105,13 @@ To test with PR #146 (the ts-jest update):
 ## Workflow Chain
 
 ```
-PR Merge → Auto Release → AI Release Notes → NPM Publish → Docs Update
+PR Merge → Auto Release → Tag + Release + Version-Bump PR → AI Release Notes → NPM Publish
 ```
 
-1. **Auto Release** (`auto-release-on-merge.yml`): Creates tag and basic release
-2. **AI Release Notes** (`ai-release-notes.yml`): Enhances release with AI-generated notes
-3. **NPM Publish** (`publish.yml`): Publishes package to NPM
-4. **Documentation** (`docs.yml`): Updates project documentation
+1. **Auto Release** (`auto-release-on-merge.yml`): Tags merge commit, publishes release, opens version-bump PR
+2. **Version-Bump PR**: Merges automatically via auto-merge (`no-release` label prevents loop)
+3. **AI Release Notes** (`ai-release-notes.yml`): Enhances release with AI-generated notes
+4. **NPM Publish** (`publish.yml`): Publishes package to NPM
 
 ## Fallback for Issues
 
