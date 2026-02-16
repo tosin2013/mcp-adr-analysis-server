@@ -2,11 +2,7 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as yaml from 'js-yaml';
 import { EnhancedLogger } from './enhanced-logging.js';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+import { getCurrentDirCompat } from './directory-compat.js';
 
 /**
  * Authoritative source definition
@@ -149,7 +145,8 @@ export class PatternLoader {
   constructor(patternsDir?: string) {
     this.logger = new EnhancedLogger();
     // Default to patterns/ directory at project root
-    this.patternsDir = patternsDir || path.join(__dirname, '../../patterns');
+    const currentDir = getCurrentDirCompat(import.meta.url);
+    this.patternsDir = patternsDir || path.join(currentDir, '../../patterns');
   }
 
   /**
