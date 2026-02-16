@@ -41,6 +41,29 @@ The **mcp-adr-analysis-server** exposes 27 tools via `@modelcontextprotocol/sdk`
 
 ## Validation Steps
 
+### Step 0: Install Dependencies
+
+Install build tools required for native module compilation (e.g., tree-sitter), then install npm dependencies with error-tolerant fallbacks.
+
+```bash
+# Install build tools for native modules (requires sudo)
+sudo apt-get update -qq && sudo apt-get install -y build-essential python3 || echo "⚠️ Could not install build tools (may already be present)"
+
+# Install npm dependencies with fallback
+if ! npm ci; then
+  echo "⚠️ npm ci failed, falling back to npm install..."
+  npm install
+fi
+
+# Rebuild tree-sitter native bindings (non-blocking)
+echo "🔨 Rebuilding tree-sitter native bindings..."
+if ! npm rebuild tree-sitter; then
+  echo "⚠️ Tree-sitter rebuild failed, but continuing (tests handle graceful fallback)"
+fi
+```
+
+If `npm` is not available or both install commands fail, Steps 1-4 will not be able to run. Report the dependency installation failure as the root cause.
+
 ### Step 1: Build and Health Check
 
 Run the following commands:
