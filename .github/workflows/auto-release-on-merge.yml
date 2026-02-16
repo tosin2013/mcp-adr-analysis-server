@@ -250,6 +250,13 @@ jobs:
       - name: Publish Release (from Draft or New)
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
         run: |
+          # Guard: skip if a release already exists for this tag
+          EXISTING_RELEASE=$(gh api repos/${{ github.repository }}/releases/tags/v${{ env.NEW_VERSION }} 2>/dev/null || echo "")
+          if [[ -n "$EXISTING_RELEASE" ]]; then
+            echo "⚠️ Release v${{ env.NEW_VERSION }} already exists, skipping release creation"
+            exit 0
+          fi
+
           if [[ "${{ steps.find-draft.outputs.draft_found }}" == "true" ]]; then
             echo "📤 Publishing existing Release Drafter draft..."
 
