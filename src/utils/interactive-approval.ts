@@ -5,7 +5,7 @@
  */
 
 import { createInterface } from 'readline';
-import { writeFileSync } from 'fs';
+import { readFileSync, writeFileSync } from 'fs';
 
 export interface ApprovalItem {
   filePath: string;
@@ -359,8 +359,7 @@ function getMoveTarget(item: ApprovalItem): string {
  */
 function viewFileContent(filePath: string): void {
   try {
-    const fs = require('fs');
-    const content = fs.readFileSync(filePath, 'utf8');
+    const content = readFileSync(filePath, 'utf8');
     const lines = content.split('\n');
 
     console.log(`\n   Content of ${filePath}:`);
