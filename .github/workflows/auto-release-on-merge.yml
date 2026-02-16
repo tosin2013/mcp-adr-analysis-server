@@ -318,12 +318,11 @@ jobs:
       - name: Enable auto-merge for version-bump PR
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false' && steps.version-bump-pr.outputs.pull-request-number
         run: |
-          ALLOWED=$(gh repo view ${{ github.repository }} --json autoMergeAllowed -q '.autoMergeAllowed')
-          if [[ "$ALLOWED" == "true" ]]; then
-            gh pr merge ${{ steps.version-bump-pr.outputs.pull-request-number }} --auto --squash
+          if gh pr merge ${{ steps.version-bump-pr.outputs.pull-request-number }} --auto --squash 2>/dev/null; then
             echo "✅ Auto-merge enabled for version-bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }}"
           else
-            echo "ℹ️ Auto-merge is disabled in repository settings. Version-bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }} will require manual merge."
+            echo "ℹ️ Could not enable auto-merge (may be disabled in repository settings or branch protection)."
+            echo "ℹ️ Version-bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }} will require manual merge."
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
