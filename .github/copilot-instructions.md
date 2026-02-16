@@ -232,6 +232,42 @@ Optional:
 - `FIRECRAWL_API_KEY`: Enable web research tools
 - `LOG_LEVEL`: Adjust logging verbosity
 
+## Agentic Workflows (gh-aw)
+
+This project uses **GitHub Agentic Workflows** (Markdown-based workflows with AI coding agents powered by Copilot) for intelligent CI/CD automation alongside traditional YAML workflows.
+
+### Foundation
+
+- **`copilot-setup-steps.yml`** — Required setup (checkout, Node 20, npm ci, build) that runs before any agentic workflow
+
+### New Agentic Workflows
+
+| Workflow            | File                        | Trigger                       | Purpose                                                                        |
+| ------------------- | --------------------------- | ----------------------------- | ------------------------------------------------------------------------------ |
+| CI Doctor           | `ci-doctor.md`              | workflow_run (on failure)     | Deep CI failure diagnosis with MCP-specific pattern recognition                |
+| Docs Noob Tester    | `docs-noob-tester.md`       | Weekly + manual               | Simulates new developer navigating docs, finds gaps and confusion              |
+| Dependabot Bundler  | `dependabot-bundler.md`     | Weekly + manual               | Groups Dependabot PRs into logical bundles with merge strategies               |
+| AI Release Notes    | `ai-release-notes-agent.md` | Tag push (v\*) + manual       | Generates categorized release notes from commits and PRs                       |
+| MCP Tool Checker    | `mcp-tool-checker.md`       | Weekly (Wed) + manual         | Audits all 27 tools for consistency, ESM compliance, registration              |
+| Docs Site Validator | `docs-site-validator.md`    | Post-deploy + weekly + manual | Validates live GitHub Pages site: links, assets, search, sitemap, mobile, a11y |
+
+### Migrated Validation Agents
+
+These replaced the former `.github/agents/` YAML files with AI-enhanced gh-aw equivalents:
+
+| Workflow                      | File                                    | Validates                                               |
+| ----------------------------- | --------------------------------------- | ------------------------------------------------------- |
+| MCP Server Validation         | `mcp-server-validation.md`              | Server init, tool registration, protocol compliance     |
+| AI Executor Integration       | `ai-executor-integration.md`            | Prompt mode, full mode, AI configuration                |
+| Knowledge Graph Validation    | `knowledge-graph-validation.md`         | KG manager, state reinforcement, conversation memory    |
+| Deployment Pattern Validation | `deployment-pattern-validation.md`      | Pattern schemas, detection, bootstrap tool              |
+| ESM Module Validation         | `esm-module-validation.md`              | .js extensions, no CommonJS, compiled output            |
+| Tool Chain Orchestrator       | `tool-chain-orchestrator-validation.md` | Tool registry, workflow analysis, dependency resolution |
+
+### Traditional YAML Workflows (Unchanged)
+
+These remain as standard GitHub Actions: `lint.yml`, `test.yml`, `build.yml`, `publish.yml`, `deploy-docusaurus.yml`, `codeql-analysis.yml`, `security-scanning.yml`, `validate-patterns.yml`, `dependencies.yml`, `release-drafter.yml`, `auto-release-on-merge.yml`, `dependabot-auto-release.yml`
+
 ## Documentation References
 
 - **Main README**: `README.md` - Installation, quick start, use cases
