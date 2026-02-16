@@ -23,7 +23,7 @@
 #
 # Validates pattern schemas, detection logic, bootstrap tool, deployment readiness, and documentation for all infrastructure patterns
 #
-# frontmatter-hash: cbfb52f3b6bcad934d76ab8622fa1e76c1a22e3816bbb15ceaa3dac737301bd9
+# frontmatter-hash: 368cc2b257e15170276dcf4f98ea277f8b4edceb2242ade8e49d59273f7021e8
 
 name: 'Deployment Pattern Validation'
 'on':
