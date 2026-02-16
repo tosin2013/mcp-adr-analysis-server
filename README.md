@@ -1,4 +1,4 @@
-# MCP ADR Analysis Server
+# MCP ADR (Architectural Decision Record) Analysis Server
 
 [![GitHub](https://img.shields.io/badge/github-tosin2013/mcp--adr--analysis--server-blue.svg?style=flat&logo=github)](https://github.com/tosin2013/mcp-adr-analysis-server)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
@@ -11,7 +11,7 @@
 
 ## TL;DR
 
-**What:** MCP server that provides AI-powered architectural decision analysis and ADR management  
+**What:** MCP server that provides AI-powered architectural decision analysis and ADR (Architectural Decision Record) management  
 **Who:** AI coding assistants (Claude, Cline, Cursor), enterprise architects, development teams  
 **Why:** Get immediate architectural insights instead of prompts, with 95% confidence scoring  
 **How:** `npm install -g mcp-adr-analysis-server` → Configure with OpenRouter API → Start analyzing
@@ -38,6 +38,18 @@ The Model Context Protocol enables seamless integration between AI assistants an
 
 📖 **[View Full Capabilities →](docs/explanation/)**
 
+## Prerequisites
+
+- **Node.js 20.0.0 or higher** — [Download](https://nodejs.org/)
+- **npm 9.0.0 or higher** (included with Node.js)
+
+Verify your versions:
+
+```bash
+node --version  # v20.0.0+
+npm --version   # 9.0.0+
+```
+
 ## 📦 Quick Installation
 
 ```bash
@@ -55,7 +67,7 @@ curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/ma
 
 ## ⚡ Quick Setup (3 Steps)
 
-1. **Get API Key**: [OpenRouter.ai/keys](https://openrouter.ai/keys)
+1. **Get API Key**: Sign up at [OpenRouter.ai/keys](https://openrouter.ai/keys) — OpenRouter is an API gateway that provides access to multiple AI models (Claude, GPT, etc.) through a single key. _No API key? The server still works in prompt-only mode — see [Execution Modes](#execution-modes) below._
 2. **Set Environment**: `OPENROUTER_API_KEY=your_key` + `EXECUTION_MODE=full`
 3. **Configure Client**: Add to Claude Desktop, Cline, Cursor, or Windsurf
 
@@ -73,6 +85,18 @@ curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/ma
   }
 }
 ```
+
+<details>
+<summary><b>Where does this config go?</b></summary>
+
+| Client                       | Config file location                                                          |
+| ---------------------------- | ----------------------------------------------------------------------------- |
+| **Claude Desktop (macOS)**   | `~/Library/Application Support/Claude/claude_desktop_config.json`             |
+| **Claude Desktop (Windows)** | `%APPDATA%\Claude\claude_desktop_config.json`                                 |
+| **Cline (VS Code)**          | VS Code Settings → Cline → MCP Servers (or `.vscode/cline_mcp_settings.json`) |
+| **Cursor**                   | Cursor Settings → MCP → Add Server                                            |
+
+</details>
 
 <details>
 <summary><b>With ADR Aggregator (Optional)</b></summary>
@@ -99,9 +123,20 @@ Get your API key at [adraggregator.com](https://adraggregator.com)
 
 📖 **[Full Configuration Guide →](docs/reference/mcp-client-config.md)** | **[Client Setup →](docs/reference/environment-config.md)**
 
+### Execution Modes
+
+|                       | **Full Mode**                                  | **Prompt-Only Mode**                   |
+| --------------------- | ---------------------------------------------- | -------------------------------------- |
+| **Requires API key?** | Yes (`OPENROUTER_API_KEY`)                     | No                                     |
+| **Returns**           | Actual analysis results with confidence scores | Prompts you can paste into any AI chat |
+| **Set via**           | `EXECUTION_MODE=full`                          | `EXECUTION_MODE=prompt` (default)      |
+| **Best for**          | Production use, automation                     | Trying it out, no-cost exploration     |
+
+**Tip:** Start with prompt-only mode to explore, then add an API key when you're ready for full analysis.
+
 ## 🚀 Usage Examples
 
-**Ask Claude (or any MCP client):**
+Just ask your MCP client in natural language — no code required:
 
 > "Analyze this React project's architecture and suggest ADRs for any implicit decisions"
 
@@ -110,6 +145,11 @@ Get your API key at [adraggregator.com](https://adraggregator.com)
 > "Check this codebase for security issues and provide masking recommendations"
 
 **The server returns actual analysis results** instead of prompts to submit elsewhere!
+
+<details>
+<summary><b>Programmatic Usage (Advanced)</b></summary>
+
+If you're integrating the server into your own tooling via the MCP SDK:
 
 ```typescript
 // Basic project analysis
@@ -138,7 +178,11 @@ const relatedCode = await findRelatedCode(
 );
 ```
 
+</details>
+
 📖 **[Complete Usage Guide →](docs/tutorials/)** | **[API Reference →](docs/reference/)**
+
+> **Try it out:** This repo includes a [`sample-project/`](sample-project/) directory with example ADRs and source code. Point `PROJECT_PATH` at it to experiment without affecting your own codebase.
 
 ## 🎯 Use Cases
 
@@ -152,7 +196,7 @@ const relatedCode = await findRelatedCode(
 ## 🛠️ Technology Stack
 
 **Runtime:** Node.js 20+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Jest (>80% coverage)
-**Search:** ripgrep + fast-glob • **AI Integration:** OpenRouter.ai • **Web Research:** Firecrawl • **Code Analysis:** Smart Code Linking
+**Search:** ripgrep (fast text search) + fast-glob (file matching) • **AI Integration:** OpenRouter.ai • **Web Research:** Firecrawl • **Code Analysis:** tree-sitter (code parser) + Smart Code Linking
 
 📖 **[Technical Details →](docs/explanation/server-architecture.md)**
 
@@ -165,7 +209,7 @@ tests/         # >80% test coverage
 .github/       # CI/CD automation
 ```
 
-📖 **[Full Structure →](docs/diataxis-index.md)**
+📖 **[Full Structure →](docs/tutorials/)**
 
 ## 🧪 Testing
 
@@ -179,6 +223,13 @@ npm run test:coverage # Coverage report
 ## 🔥 Firecrawl Integration (Optional)
 
 **Enhanced web research capabilities for comprehensive architectural analysis.**
+
+**When is this useful?**
+
+- **ADR research** — automatically pull best practices from official docs when generating ADRs
+- **Technology evaluation** — compare frameworks by crawling their documentation and changelogs
+- **Security audits** — check CVE databases and security advisories for your dependencies
+- **Migration planning** — gather migration guides and breaking-change notes from upstream projects
 
 ```bash
 # Option 1: Cloud service (recommended)
@@ -257,7 +308,7 @@ npm install && npm run build && npm test
 - **Module not found**: Run `npm install && npm run build`
 - **Permission denied**: Check file permissions and project path
 
-📖 **[Complete Troubleshooting Guide →](docs/troubleshooting.md)**
+📖 **[Complete Troubleshooting Guide →](docs/how-to-guides/troubleshooting.md)**
 
 ## 🔒 Security & Performance
 
