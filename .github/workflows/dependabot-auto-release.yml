@@ -176,9 +176,8 @@ jobs:
 
       - name: Publish Release (from Draft or New)
         run: |
-          # Guard: skip if a release already exists for this tag
-          EXISTING_RELEASE=$(gh api repos/${{ github.repository }}/releases/tags/v${{ env.NEW_VERSION }} 2>/dev/null || echo "")
-          if [[ -n "$EXISTING_RELEASE" ]]; then
+          # Guard: skip if a release already exists for this tag (check exit code, not output)
+          if gh api repos/${{ github.repository }}/releases/tags/v${{ env.NEW_VERSION }} > /dev/null 2>&1; then
             echo "⚠️ Release v${{ env.NEW_VERSION }} already exists, skipping release creation"
             exit 0
           fi
