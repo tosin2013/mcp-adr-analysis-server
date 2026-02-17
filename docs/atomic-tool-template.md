@@ -7,9 +7,9 @@ This template provides a pattern for creating atomic MCP tools following ADR-018
 ```typescript
 /**
  * MCP Tool: [Tool Name]
- * 
+ *
  * [Brief description of what the tool does]
- * 
+ *
  * Following ADR-018 Atomic Tools Architecture:
  * - Self-contained with minimal external dependencies
  * - Dependency injection for testability
@@ -18,10 +18,10 @@ This template provides a pattern for creating atomic MCP tools following ADR-018
 
 import { McpAdrError } from '../types/index.js';
 import { formatMCPResponse } from '../utils/prompt-execution.js';
-import { 
+import {
   // Import utilities you need directly
-  findFiles, 
-  readFile 
+  findFiles,
+  readFile,
 } from '../utils/file-system.js';
 import { getAIExecutor } from '../utils/ai-executor.js';
 import type { ConversationContext } from '../types/conversation-context.js';
@@ -60,19 +60,13 @@ interface ToolResult {
 
 /**
  * Main tool function
- * 
+ *
  * @param args - Tool arguments
  * @param deps - Injected dependencies (defaults to real implementations)
  * @returns MCP-formatted response
  */
-export async function myAtomicTool(
-  args: ToolArgs,
-  deps: ToolDependencies = {}
-): Promise<any> {
-  const {
-    projectPath = process.cwd(),
-    conversationContext,
-  } = args;
+export async function myAtomicTool(args: ToolArgs, deps: ToolDependencies = {}): Promise<any> {
+  const { projectPath = process.cwd(), conversationContext } = args;
 
   try {
     // Inject dependencies or use real implementations
@@ -81,23 +75,17 @@ export async function myAtomicTool(
 
     // Validate input
     if (!projectPath) {
-      throw new McpAdrError(
-        'INVALID_INPUT',
-        'projectPath is required',
-        { projectPath }
-      );
+      throw new McpAdrError('INVALID_INPUT', 'projectPath is required', { projectPath });
     }
 
     // Main tool logic - direct calls to utilities
     const files = await fs.findFiles(projectPath, '*.ts');
-    const fileContents = await Promise.all(
-      files.map(file => fs.readFile(file))
-    );
+    const fileContents = await Promise.all(files.map(file => fs.readFile(file)));
 
     // Use AI if needed
     const aiAvailable = ai.isAvailable();
     let analysis = 'Basic analysis (AI not available)';
-    
+
     if (aiAvailable) {
       const aiResult = await ai.executeStructuredPrompt({
         prompt: 'Analyze these files...',
@@ -117,21 +105,17 @@ export async function myAtomicTool(
     };
 
     // Format as MCP response
-    return formatMCPResponse(
-      JSON.stringify(result, null, 2)
-    );
-
+    return formatMCPResponse(JSON.stringify(result, null, 2));
   } catch (error) {
     // Error handling
     if (error instanceof McpAdrError) {
       throw error;
     }
-    
-    throw new McpAdrError(
-      'TOOL_ERROR',
-      `Failed to execute myAtomicTool: ${error.message}`,
-      { projectPath, error: error.message }
-    );
+
+    throw new McpAdrError('TOOL_ERROR', `Failed to execute myAtomicTool: ${error.message}`, {
+      projectPath,
+      error: error.message,
+    });
   }
 }
 
@@ -150,7 +134,7 @@ function processData(data: any): any {
 ```typescript
 /**
  * Unit Tests for myAtomicTool
- * 
+ *
  * Following ADR-018 testing pattern with dependency injection
  */
 
@@ -199,10 +183,7 @@ describe('My Atomic Tool', () => {
         executeStructuredPrompt: jest.fn(),
       };
 
-      const result = await myAtomicTool(
-        { projectPath: '/test' },
-        { fs: mockFs, ai: mockAI }
-      );
+      const result = await myAtomicTool({ projectPath: '/test' }, { fs: mockFs, ai: mockAI });
 
       expect(result.content[0].text).toContain('Basic analysis');
       expect(mockAI.executeStructuredPrompt).not.toHaveBeenCalled();
@@ -211,9 +192,7 @@ describe('My Atomic Tool', () => {
 
   describe('input validation', () => {
     it('throws error for invalid projectPath', async () => {
-      await expect(
-        myAtomicTool({ projectPath: '' })
-      ).rejects.toThrow(McpAdrError);
+      await expect(myAtomicTool({ projectPath: '' })).rejects.toThrow(McpAdrError);
     });
   });
 
@@ -224,9 +203,9 @@ describe('My Atomic Tool', () => {
         readFile: jest.fn(),
       };
 
-      await expect(
-        myAtomicTool({ projectPath: '/test' }, { fs: mockFs })
-      ).rejects.toThrow(McpAdrError);
+      await expect(myAtomicTool({ projectPath: '/test' }, { fs: mockFs })).rejects.toThrow(
+        McpAdrError
+      );
     });
   });
 });
@@ -299,7 +278,7 @@ When converting an existing tool:
 - [ ] Replace orchestrator calls with direct utility calls
 - [ ] Update tests to use DI instead of ESM mocks
 - [ ] Remove `setupESMMocks()` calls from tests
-- [ ] Verify tests pass with <10 lines of mock setup
+- [ ] Verify tests pass with `<10 lines` of mock setup
 - [ ] Measure test execution time improvement
 - [ ] Update tool documentation
 
@@ -351,6 +330,7 @@ const result = heavyDependency.process(); // Can't mock
 ## Examples
 
 See these migrated tools for reference:
+
 - `src/tools/search-codebase-tool.ts` (simple tool)
 - `src/resources/knowledge-graph-resource.ts` (resource pattern)
 - `src/tools/update-knowledge-tool.ts` (simple CRUD tool)
