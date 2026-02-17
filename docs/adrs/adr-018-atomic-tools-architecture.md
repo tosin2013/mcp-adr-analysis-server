@@ -22,13 +22,13 @@ The current tool architecture creates significant testing and performance challe
 
 ### Test Suite Metrics (Before)
 
-| Metric | Current State | Impact |
-|--------|--------------|--------|
-| Test suite time | 850+ seconds | Developer productivity loss |
-| Timeout failures | 37+ tests | CI reliability issues |
-| ESM mock setup | 50+ lines/test | High maintenance burden |
-| Test file size | 300-400 lines | Reduced readability |
-| Mock chains | Deep dependency trees | Brittle tests |
+| Metric           | Current State         | Impact                      |
+| ---------------- | --------------------- | --------------------------- |
+| Test suite time  | 850+ seconds          | Developer productivity loss |
+| Timeout failures | 37+ tests             | CI reliability issues       |
+| ESM mock setup   | 50+ lines/test        | High maintenance burden     |
+| Test file size   | 300-400 lines         | Reduced readability         |
+| Mock chains      | Deep dependency trees | Brittle tests               |
 
 ## Decision
 
@@ -44,6 +44,7 @@ We will adopt an **Atomic Tools Architecture** with **Dependency Injection** pat
 ### Architecture Pattern
 
 **Old Pattern (Orchestrator-based)**:
+
 ```typescript
 // Tool with deep dependencies
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
@@ -58,18 +59,18 @@ export async function myTool(args: ToolArgs) {
 // Test requires complex mocking
 beforeAll(async () => {
   await setupESMMocks({
-    '../../src/utils/research-orchestrator.js': { 
-      ResearchOrchestrator: mockClass 
+    '../../src/utils/research-orchestrator.js': {
+      ResearchOrchestrator: mockClass,
     },
-    '../../src/utils/tree-sitter-analyzer.js': { 
-      TreeSitterAnalyzer: mockClass 
+    '../../src/utils/tree-sitter-analyzer.js': {
+      TreeSitterAnalyzer: mockClass,
     },
-    '../../src/utils/file-system.js': { 
-      analyzeProjectStructure: mock, 
-      findRelatedCode: mock 
+    '../../src/utils/file-system.js': {
+      analyzeProjectStructure: mock,
+      findRelatedCode: mock,
     },
-    '../../src/utils/adr-discovery.js': { 
-      discoverAdrsInDirectory: mock 
+    '../../src/utils/adr-discovery.js': {
+      discoverAdrsInDirectory: mock,
     },
     // ... 50+ lines of mocks
   });
@@ -78,6 +79,7 @@ beforeAll(async () => {
 ```
 
 **New Pattern (Atomic with DI)**:
+
 ```typescript
 // Tool with dependency injection
 import { findFiles, readFile } from '../utils/file-system.js';
@@ -89,18 +91,15 @@ interface ToolDependencies {
   };
 }
 
-export async function myTool(
-  args: ToolArgs, 
-  deps: ToolDependencies = {}
-) {
+export async function myTool(args: ToolArgs, deps: ToolDependencies = {}) {
   // Use injected dependencies or real implementations
   const findFilesImpl = deps.fs?.findFiles ?? findFiles;
   const readFileImpl = deps.fs?.readFile ?? readFile;
-  
+
   const files = await findFilesImpl(args.projectPath, '*.ts');
   const content = await readFileImpl(files[0]);
   // ... direct logic without orchestrator
-  
+
   return formatMCPResponse(result);
 }
 
@@ -110,12 +109,9 @@ test('myTool finds files', async () => {
     findFiles: jest.fn().mockResolvedValue(['file1.ts']),
     readFile: jest.fn().mockResolvedValue('content'),
   };
-  
-  const result = await myTool(
-    { projectPath: '/test', query: 'auth' },
-    { fs: mockFs }
-  );
-  
+
+  const result = await myTool({ projectPath: '/test', query: 'auth' }, { fs: mockFs });
+
   expect(result.content[0].text).toContain('file1.ts');
 });
 ```
@@ -123,13 +119,15 @@ test('myTool finds files', async () => {
 ### Resource Pattern for State
 
 **Old Pattern (Stateful Manager)**:
+
 ```typescript
 const kgManager = new KnowledgeGraphManager();
 const snapshot = await kgManager.loadKnowledgeGraph();
-const results = await kgManager.queryKnowledgeGraph("what ADRs exist?");
+const results = await kgManager.queryKnowledgeGraph('what ADRs exist?');
 ```
 
 **New Pattern (Resource + Simple Tool)**:
+
 ```typescript
 // Read graph - zero token cost via MCP Resource
 const graph = await readResource('knowledge://graph');
@@ -140,47 +138,53 @@ await callTool('update_knowledge', {
   operation: 'add_entity',
   entity: 'adr-019',
   entityType: 'adr',
-  metadata: { title: 'New Decision' }
+  metadata: { title: 'New Decision' },
 });
 ```
 
 ## Target State (After Implementation)
 
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Test suite time | 850s | <60s | 93% faster |
-| Timeout failures | 37+ | ~0 | Eliminated |
-| ESM mock setup | 50+ lines | 5-10 lines | 80-90% less |
-| Test file size | 300-400 lines | 50-100 lines | 70-80% smaller |
-| Mock chains | Deep trees | Flat DI | Simplified |
+| Metric           | Before        | After        | Improvement    |
+| ---------------- | ------------- | ------------ | -------------- |
+| Test suite time  | 850s          | `<60s`       | 93% faster     |
+| Timeout failures | 37+           | ~0           | Eliminated     |
+| ESM mock setup   | 50+ lines     | 5-10 lines   | 80-90% less    |
+| Test file size   | 300-400 lines | 50-100 lines | 70-80% smaller |
+| Mock chains      | Deep trees    | Flat DI      | Simplified     |
 
 ## Implementation Strategy
 
 ### Phase 1: Foundation
+
 1. ✅ Document atomic tools pattern (this ADR)
 2. Create atomic tool template with DI examples
 3. Update test documentation
 4. Mark `ResearchOrchestrator` as deprecated
 
 ### Phase 2: High-Priority Tool Migration
+
 Convert tools with heaviest test burden:
+
 1. `review-existing-adrs-tool.ts` - Currently uses ResearchOrchestrator
 2. `adr-suggestion-tool.ts` - Currently uses ResearchOrchestrator
 3. `environment-analysis-tool.ts` - Currently uses ResearchOrchestrator
 4. Remaining tools as needed
 
 ### Phase 3: Test Infrastructure Cleanup
+
 1. Simplify `esm-mock-helper.ts` (reduce to basic DI support)
 2. Remove orchestrator mock factories
 3. Update test setup documentation
 
 ### Phase 4: Validation
-1. Full test suite passes in <60 seconds
+
+1. Full test suite passes in `<60 seconds`
 2. Zero timeout failures in CI
 3. Test coverage maintained or improved (≥85%)
 4. CI reliability >99%
 
 ### Phase 5: Deprecation (Future)
+
 - v3.0.0: Mark orchestrators as deprecated
 - v4.0.0: Remove orchestrator classes entirely
 
@@ -199,7 +203,7 @@ export async function newTool(
     ai?: ReturnType<typeof getAIExecutor>;
   } = {}
 ) {
-  const fs = deps.fs ?? await import('../utils/file-system.js');
+  const fs = deps.fs ?? (await import('../utils/file-system.js'));
   const ai = deps.ai ?? getAIExecutor();
   // ... implementation
 }
@@ -217,14 +221,11 @@ export async function oldTool(args: ToolArgs) {
 // ✅ DO: Simple DI mocking
 test('tool processes files', async () => {
   const mockFs = {
-    readFile: jest.fn().mockResolvedValue('content')
+    readFile: jest.fn().mockResolvedValue('content'),
   };
-  
-  const result = await myTool(
-    { projectPath: '/test' },
-    { fs: mockFs }
-  );
-  
+
+  const result = await myTool({ projectPath: '/test' }, { fs: mockFs });
+
   expect(mockFs.readFile).toHaveBeenCalledWith('/test/file.ts');
 });
 
@@ -253,7 +254,7 @@ Example PR: [See Phase 2 implementations]
 
 ### Positive
 
-1. **Dramatic Test Speed Improvement**: 850s → <60s (93% faster)
+1. **Dramatic Test Speed Improvement**: 850s → `<60s` (93% faster)
 2. **Eliminated Timeout Failures**: 37+ failures → ~0
 3. **Simplified Test Code**: 50+ lines mock setup → 5-10 lines
 4. **Improved Maintainability**: Smaller, clearer test files (50-100 lines vs 300-400)
@@ -278,15 +279,16 @@ Example PR: [See Phase 2 implementations]
 
 ### Success Criteria
 
-1. ✅ Full test suite completes in <60 seconds
+1. ✅ Full test suite completes in `<60 seconds`
 2. ✅ Zero timeout failures in CI pipeline
-3. ✅ New tools can be tested in <20 lines of setup
+3. ✅ New tools can be tested in `<20 lines` of setup
 4. ✅ Test coverage maintained at ≥85%
 5. ✅ CI pipeline reliability >99%
 
 ### Monitoring
 
 Track metrics after each phase:
+
 - Test suite execution time
 - Number of timeout failures
 - Average test file size

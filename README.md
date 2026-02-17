@@ -59,9 +59,15 @@ npm install -g mcp-adr-analysis-server
 # Option 2: Use npx (no installation required)
 npx mcp-adr-analysis-server
 
-# Option 3: RHEL 9/10 systems (special installer)
+# Option 3: From source (for development or customization)
+git clone https://github.com/tosin2013/mcp-adr-analysis-server.git
+cd mcp-adr-analysis-server && npm install && npm run build
+
+# Option 4: RHEL 9/10 systems (special installer)
 curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/main/scripts/install-rhel.sh | bash
 ```
+
+> **Note:** When installing from source, `npm run build` is required before running the server since the `bin` entry points to `./dist/src/index.js`.
 
 📖 **[Detailed Installation Guide →](docs/tutorials/01-first-steps.md)** | **[RHEL Setup →](scripts/install-rhel.sh)**
 
