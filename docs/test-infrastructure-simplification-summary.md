@@ -9,7 +9,7 @@ This document summarizes the test infrastructure improvements achieved through i
 The test suite had severe performance and maintainability issues:
 
 - **850+ second execution time** - Unacceptable for CI/CD
-- **37+ timeout failures** - Unreliable test results  
+- **37+ timeout failures** - Unreliable test results
 - **50+ lines mock setup** - High maintenance burden per test
 - **300-400 line test files** - Hard to read and maintain
 - **Deep dependency chains** - Brittle tests with complex ESM mocking
@@ -17,6 +17,7 @@ The test suite had severe performance and maintainability issues:
 ## Root Cause
 
 The orchestrator pattern (`ResearchOrchestrator`, `KnowledgeGraphManager`) created:
+
 1. Deep dependency chains requiring complex ESM mocking
 2. Sequential execution blocking (2-8 seconds per call)
 3. 5,000-6,000 tokens overhead per session
@@ -34,6 +35,7 @@ The orchestrator pattern (`ResearchOrchestrator`, `KnowledgeGraphManager`) creat
 ### Pattern Transformation
 
 #### Before (Orchestrator-based)
+
 ```typescript
 // Tool
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
@@ -57,6 +59,7 @@ beforeAll(async () => {
 ```
 
 #### After (Atomic with DI)
+
 ```typescript
 // Tool
 import { findFiles, readFile } from '../utils/file-system.js';
@@ -77,7 +80,7 @@ test('myTool finds files', async () => {
     findFiles: jest.fn().mockResolvedValue(['file1.ts']),
     readFile: jest.fn().mockResolvedValue('content'),
   };
-  
+
   const result = await myTool({ projectPath: '/test' }, { fs: mockFs });
   expect(result.content[0].text).toContain('file1.ts');
 });
@@ -88,6 +91,7 @@ test('myTool finds files', async () => {
 ### Phase 1: Foundation ✅ Complete
 
 **Deliverables**:
+
 - ✅ ADR-018: Atomic Tools Architecture document
 - ✅ Atomic tool template with DI patterns
 - ✅ Updated ADR README with relationships
@@ -95,6 +99,7 @@ test('myTool finds files', async () => {
 - ✅ Testing improvements tracking document
 
 **Files Created/Modified**:
+
 - `docs/adrs/adr-018-atomic-tools-architecture.md` (new)
 - `docs/atomic-tool-template.md` (new)
 - `docs/testing-improvements-adr-018.md` (new)
@@ -104,6 +109,7 @@ test('myTool finds files', async () => {
 ### Phase 2: Tool Migration 🚧 In Progress
 
 **Completed**:
+
 - ✅ `review-existing-adrs-tool.ts` - Removed ResearchOrchestrator
   - Eliminated 2-8 second blocking calls
   - Reduced code by ~16 lines
@@ -111,6 +117,7 @@ test('myTool finds files', async () => {
   - Maintained all functionality
 
 **In Progress**:
+
 - ⏳ `adr-suggestion-tool.ts` - Plan to remove ResearchOrchestrator
 - ⏳ `environment-analysis-tool.ts` - Plan to remove ResearchOrchestrator
 
@@ -123,7 +130,7 @@ test('myTool finds files', async () => {
 
 ### Phase 3: Test Infrastructure Cleanup (Planned)
 
-- [ ] Simplify `esm-mock-helper.ts` (<100 lines)
+- [ ] Simplify `esm-mock-helper.ts` (`<100 lines`)
 - [ ] Remove `MockFactories` (obsolete with DI)
 - [ ] Update test documentation
 - [ ] Remove unused mock complexity
@@ -139,23 +146,23 @@ test('myTool finds files', async () => {
 
 ### Performance Improvements
 
-| Metric | Before | Target | Improvement |
-|--------|--------|--------|-------------|
-| Test suite time | 850s | <60s | 93% faster |
-| Timeout failures | 37+ | 0 | Eliminated |
-| Tool blocking time | 2-8s/call | 0s | Instant |
+| Metric             | Before    | Target | Improvement |
+| ------------------ | --------- | ------ | ----------- |
+| Test suite time    | 850s      | `<60s` | 93% faster  |
+| Timeout failures   | 37+       | 0      | Eliminated  |
+| Tool blocking time | 2-8s/call | 0s     | Instant     |
 
 ### Code Quality Improvements
 
-| Metric | Before | Target | Improvement |
-|--------|--------|--------|-------------|
-| Mock setup lines | 50+ | 5-10 | 80-90% less |
-| Test file size | 300-400 | 50-100 | 70-80% smaller |
-| Test complexity | Deep chains | Flat DI | Simplified |
+| Metric           | Before      | Target  | Improvement    |
+| ---------------- | ----------- | ------- | -------------- |
+| Mock setup lines | 50+         | 5-10    | 80-90% less    |
+| Test file size   | 300-400     | 50-100  | 70-80% smaller |
+| Test complexity  | Deep chains | Flat DI | Simplified     |
 
 ### Developer Experience
 
-1. **Faster Feedback**: Tests run in <60s instead of 850+s
+1. **Faster Feedback**: Tests run in `<60s` instead of 850+s
 2. **Easier Onboarding**: Simple DI patterns vs complex ESM mocking
 3. **Reliable CI**: Zero timeout failures improve confidence
 4. **Maintainability**: Smaller, clearer test files
@@ -167,12 +174,14 @@ test('myTool finds files', async () => {
 **Decision**: Mark as deprecated in v2.2.0, remove in v4.0.0
 
 **Rationale**:
+
 - Primary cause of test complexity and timeouts
 - 2-8 second blocking calls per invocation
 - Conflicts with CE-MCP architecture
 - Can be replaced with direct utility calls or separate tools
 
 **Migration Path**:
+
 - For codebase search: Use `searchCodebase` tool
 - For external research: Use `llm-web-search-tool`
 - For environment: Use `environment-analysis-tool`
@@ -182,6 +191,7 @@ test('myTool finds files', async () => {
 **Decision**: Already implemented (PR #353)
 
 **Benefits**:
+
 - Zero token cost for reading graph (MCP Resource)
 - Simple CRUD operations (update_knowledge tool)
 - Better alignment with MCP patterns
@@ -194,6 +204,7 @@ test('myTool finds files', async () => {
 **Decision**: Use optional deps parameter with real implementations as defaults
 
 **Pattern**:
+
 ```typescript
 export async function tool(args, deps = {}) {
   const utils = deps.utils ?? realUtils;
@@ -201,6 +212,7 @@ export async function tool(args, deps = {}) {
 ```
 
 **Benefits**:
+
 - Simple to test (inject mocks)
 - Works in production (uses real implementations)
 - No complex ESM mocking needed
@@ -226,6 +238,7 @@ const MockOrchestrator = jest.fn().mockImplementation(() => ({
 ```
 
 **Problems**:
+
 - 50+ lines of setup
 - Brittle (breaks with dependency changes)
 - Slow (must reset/reload modules)
@@ -237,15 +250,16 @@ const MockOrchestrator = jest.fn().mockImplementation(() => ({
 // Simple DI mocking
 test('tool works', async () => {
   const mockDeps = {
-    fs: { readFile: jest.fn().mockResolvedValue('content') }
+    fs: { readFile: jest.fn().mockResolvedValue('content') },
   };
-  
+
   const result = await tool(args, mockDeps);
   expect(result).toBeDefined();
 });
 ```
 
 **Benefits**:
+
 - 5-10 lines of setup
 - Robust (explicit dependencies)
 - Fast (no module reloading)
@@ -267,9 +281,9 @@ For each tool being migrated:
 
 ### Success Metrics
 
-1. ✅ Test suite completes in <60 seconds
+1. ✅ Test suite completes in `<60 seconds`
 2. ✅ Zero timeout failures in CI
-3. ✅ New tools tested in <20 lines of setup
+3. ✅ New tools tested in `<20 lines` of setup
 4. ✅ Test coverage maintained at ≥85%
 5. ✅ CI pipeline reliability >99%
 
@@ -284,6 +298,7 @@ For each tool being migrated:
 ### Risk: Breaking Existing Functionality
 
 **Mitigation**:
+
 - Incremental migration (one tool at a time)
 - Comprehensive testing after each change
 - Preserve all original capabilities
@@ -292,6 +307,7 @@ For each tool being migrated:
 ### Risk: Test Coverage Reduction
 
 **Mitigation**:
+
 - Run coverage reports after each migration
 - Ensure ≥85% coverage maintained
 - Add tests if coverage drops
@@ -299,6 +315,7 @@ For each tool being migrated:
 ### Risk: Incomplete Migration
 
 **Mitigation**:
+
 - Clear tracking document (this file)
 - Phased approach with defined milestones
 - Regular progress reviews
@@ -306,17 +323,20 @@ For each tool being migrated:
 ## Related Resources
 
 ### Documentation
+
 - [ADR-018: Atomic Tools Architecture](adrs/adr-018-atomic-tools-architecture.md)
 - [Atomic Tool Template](atomic-tool-template.md)
 - [Testing Improvements Tracking](testing-improvements-adr-018.md)
 - [Knowledge Graph Resource Pattern](knowledge-graph-resource-tool.md)
 
 ### Code
+
 - `src/utils/research-orchestrator.ts` - Deprecated orchestrator
 - `src/tools/review-existing-adrs-tool.ts` - Example migration
 - `tests/utils/esm-mock-helper.ts` - Test helper to simplify
 
 ### Issues
+
 - Issue #311: Test Infrastructure Improvements (parent EPIC)
 - Issues #334-337: Current test failures
 - Issue #308: ESM-compatible Jest mocking
@@ -324,16 +344,19 @@ For each tool being migrated:
 ## Next Steps
 
 ### Immediate (Phase 2)
+
 1. Migrate `adr-suggestion-tool.ts`
 2. Migrate `environment-analysis-tool.ts`
 3. Update tests and measure improvements
 
 ### Short-term (Phase 3)
+
 1. Simplify `esm-mock-helper.ts`
 2. Remove obsolete mock factories
 3. Update test documentation
 
 ### Long-term (Phase 4+)
+
 1. Validate all success metrics
 2. Document lessons learned
 3. Consider removing ResearchOrchestrator in v3.0.0
@@ -342,7 +365,8 @@ For each tool being migrated:
 ## Conclusion
 
 ADR-018 provides a clear path to dramatically improve test infrastructure:
-- **93% faster tests** (850s → <60s)
+
+- **93% faster tests** (850s → `<60s`)
 - **Zero timeout failures** (37+ → 0)
 - **80-90% less mock code** (50+ lines → 5-10)
 

@@ -207,7 +207,7 @@ return {
 
 ### Success Metrics
 
-- [ ] ListTools returns <5K tokens (down from 15K)
+- [ ] ListTools returns `<5K tokens` (down from 15K)
 - [ ] search_tools returns relevant tools for queries
 - [ ] No breaking changes for existing clients
 
