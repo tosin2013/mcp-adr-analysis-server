@@ -1,4 +1,4 @@
-# MCP ADR (Architectural Decision Record) Analysis Server
+# MCP (Model Context Protocol) ADR (Architectural Decision Record) Analysis Server
 
 [![GitHub](https://img.shields.io/badge/github-tosin2013/mcp--adr--analysis--server-blue.svg?style=flat&logo=github)](https://github.com/tosin2013/mcp-adr-analysis-server)
 [![License](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
@@ -42,6 +42,7 @@ The Model Context Protocol enables seamless integration between AI assistants an
 
 - **Node.js 20.0.0 or higher** — [Download](https://nodejs.org/)
 - **npm 9.0.0 or higher** (included with Node.js)
+- **An MCP-compatible client** — [Claude Desktop](https://claude.ai/download), [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev), [Cursor](https://cursor.sh/), or [Windsurf](https://codeium.com/windsurf)
 
 Verify your versions:
 
@@ -92,8 +93,10 @@ curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/ma
 }
 ```
 
+> **Claude Desktop users:** Save this JSON to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows).
+
 <details>
-<summary><b>Where does this config go?</b></summary>
+<summary><b>Config locations for other clients</b></summary>
 
 | Client                       | Config file location                                                          |
 | ---------------------------- | ----------------------------------------------------------------------------- |
@@ -135,7 +138,7 @@ Get your API key at [adraggregator.com](https://adraggregator.com)
 | --------------------- | ---------------------------------------------- | -------------------------------------- |
 | **Requires API key?** | Yes (`OPENROUTER_API_KEY`)                     | No                                     |
 | **Returns**           | Actual analysis results with confidence scores | Prompts you can paste into any AI chat |
-| **Set via**           | `EXECUTION_MODE=full`                          | `EXECUTION_MODE=prompt` (default)      |
+| **Set via**           | `EXECUTION_MODE=full`                          | `EXECUTION_MODE=prompt-only` (default) |
 | **Best for**          | Production use, automation                     | Trying it out, no-cost exploration     |
 
 **Tip:** Start with prompt-only mode to explore, then add an API key when you're ready for full analysis.
@@ -188,7 +191,7 @@ const relatedCode = await findRelatedCode(
 
 📖 **[Complete Usage Guide →](docs/tutorials/)** | **[API Reference →](docs/reference/)**
 
-> **Try it out:** This repo includes a [`sample-project/`](sample-project/) directory with example ADRs and source code. Point `PROJECT_PATH` at it to experiment without affecting your own codebase.
+> **Try it out:** This repo includes a [`sample-project/`](sample-project/) directory with example ADRs and source code. Point `PROJECT_PATH` at it to experiment without affecting your own codebase. _(Only available when cloning from source — not included in the npm package.)_
 
 ## 🎯 Use Cases
 
@@ -302,6 +305,19 @@ npm install && npm run build && npm test
 ```
 
 **Quality Standards:** TypeScript strict mode • ESLint • >80% test coverage • Pre-commit hooks
+
+### Viewing Documentation Locally
+
+The documentation site is built with [Docusaurus](https://docusaurus.io/):
+
+```bash
+cd docs
+npm install
+npm run build
+npm run serve
+```
+
+Then open `http://localhost:3000/mcp-adr-analysis-server/` in your browser.
 
 📖 **[Development Guide →](docs/how-to-guides/getting-started-workflow-guidance.md)** | **[Contributing →](CONTRIBUTING.md)**
 

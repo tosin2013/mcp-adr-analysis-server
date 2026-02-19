@@ -5,8 +5,10 @@
 **Prerequisites**:
 
 - Node.js ≥20.0.0 installed
+- An MCP-compatible client — [Claude Desktop](https://claude.ai/download), [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev), [Cursor](https://cursor.sh/), or [Windsurf](https://codeium.com/windsurf)
 - Basic understanding of software architecture
 - Text editor or IDE
+- _(Optional)_ [OpenRouter API key](https://openrouter.ai/keys) for full AI-powered analysis mode
 
 **Time Required**: 30 minutes
 
@@ -507,7 +509,7 @@ Now that you understand the basics, you can:
 
 - **[Troubleshooting Guide](../how-to-guides/troubleshooting.md)** - Solutions to common problems
 - **[GitHub Issues](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** - Report bugs or request features
-- **[Main Documentation](../../README.md)** - Complete project overview
+- **[Main Documentation](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md)** - Complete project overview
 
 ### API Key Issues
 

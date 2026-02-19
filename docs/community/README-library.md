@@ -13,11 +13,13 @@ What it does in 2-3 sentences. Who should use it.
 ## Quick Start
 
 ### Install
+
 ```bash
 npm install package-name
 ```
 
 ### Use
+
 ```javascript
 const lib = require('package-name');
 
@@ -39,6 +41,7 @@ console.log(result);
 Description of the main method.
 
 **Parameters:**
+
 - `options` (Object): Configuration options
   - `param1` (string): Description of parameter
   - `param2` (boolean, optional): Description of optional parameter
@@ -46,10 +49,11 @@ Description of the main method.
 **Returns:** Description of return value
 
 **Example:**
+
 ```javascript
 const result = lib.doSomething({
   param1: 'value',
-  param2: true
+  param2: true,
 });
 ```
 
@@ -59,7 +63,7 @@ const result = lib.doSomething({
 
 ## Contributing
 
-We welcome contributions! Please see [../../CONTRIBUTING.md](../../CONTRIBUTING.md) for guidelines.
+We welcome contributions! Please see [CONTRIBUTING.md](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md) for guidelines.
 
 ## License
 

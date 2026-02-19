@@ -348,4 +348,4 @@ export FIRECRAWL_SANITIZE_CONTENT="true"
 
 **Need help with Firecrawl setup?** → **[Join the Discussion](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**
 
-**Firecrawl issues?** → **[Check Troubleshooting](./troubleshooting.md#firecrawl-integration)**
+**Firecrawl issues?** → **[Check Troubleshooting](./troubleshooting.md#firecrawl-integration-issues)**
