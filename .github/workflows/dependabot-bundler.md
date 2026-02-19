@@ -3,7 +3,7 @@ name: 'Dependabot PR Bundler'
 description: 'Groups open Dependabot PRs into logical bundles with merge strategy recommendations'
 on:
   schedule:
-    - cron: '0 10 * * 1'
+    - cron: '0 10 22 * *' # Monthly on 22nd
   workflow_dispatch:
 permissions:
   issues: read
