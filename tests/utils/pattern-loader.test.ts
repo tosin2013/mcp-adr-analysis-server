@@ -259,21 +259,27 @@ describe('PatternLoader', () => {
 
   describe('error handling', () => {
     it('should handle invalid YAML gracefully', async () => {
-      // Create a temporary invalid pattern file
-      const tempDir = join(__dirname, '../../patterns/infrastructure');
-      const tempFile = join(tempDir, 'invalid-test.yaml');
+      // Use a temp directory to avoid polluting real patterns (which breaks parallel tests)
+      const { tmpdir } = await import('os');
+      const tempPatternsDir = join(tmpdir(), `pattern-loader-test-${Date.now()}`);
+      const tempInfraDir = join(tempPatternsDir, 'infrastructure');
 
       try {
-        await fs.writeFile(tempFile, 'invalid: yaml: content: [[[', 'utf-8');
+        await fs.mkdir(tempInfraDir, { recursive: true });
+        await fs.writeFile(
+          join(tempInfraDir, 'invalid-test.yaml'),
+          'invalid: yaml: content: [[[',
+          'utf-8'
+        );
 
-        const tempLoader = new PatternLoader(patternsDir);
+        const tempLoader = new PatternLoader(tempPatternsDir);
         const pattern = await tempLoader.loadPattern('invalid-test');
 
         expect(pattern).toBeNull();
       } finally {
         // Cleanup
         try {
-          await fs.unlink(tempFile);
+          await fs.rm(tempPatternsDir, { recursive: true });
         } catch {
           // Ignore cleanup errors
         }

@@ -65,7 +65,8 @@
             "serverless",
             "container",
             "immutable",
-            "mutable"
+            "mutable",
+            "emulator-first"
           ],
           "description": "Deployment strategy"
         }
