@@ -201,9 +201,9 @@ const fileStructureRules: FileStructureRule[] = [
     check: (projectPath: string) => {
       const requiredFiles = [
         'README.md',
-        '../../CONTRIBUTING.md',
-        './architectur../../README.md',
-        './ap../../README.md',
+        'CONTRIBUTING.md',
+        'docs/architecture/README.md',
+        'docs/api/README.md',
       ];
 
       const violations: RuleViolation[] = [];

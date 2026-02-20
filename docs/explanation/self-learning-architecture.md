@@ -633,7 +633,7 @@ AI_MODEL=anthropic/claude-3-sonnet  # Default
 
 # Execution mode
 EXECUTION_MODE=full  # Use AI for results
-# EXECUTION_MODE=prompt  # Return prompts only
+# EXECUTION_MODE=prompt-only  # Return prompts only
 
 # Performance tuning
 AI_TEMPERATURE=0.3    # Lower = more consistent
@@ -823,7 +823,7 @@ LOG_LEVEL=debug npm start
 ## Related Documentation
 
 - [Bootstrap Validation Loop Guide](../how-to-guides/interactive-adr-planning.md)
-- [Deployment Readiness Tool](../reference/generation-tools.md#deployment-readiness-tool)
+- [Deployment Readiness Tool](../reference/validation-tools.md#-deployment_readiness)
 - [Knowledge Graph System](./knowledge-graph-architecture.md)
 - [Memory Entity Manager](../reference/api-reference.md#memory-entity-manager)
 

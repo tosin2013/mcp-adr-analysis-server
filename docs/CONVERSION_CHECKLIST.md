@@ -184,7 +184,7 @@ Use this checklist to track your Docusaurus migration progress.
 
 If you encounter issues, check:
 
-- [ ] [Troubleshooting section in DOCUSAURUS_MIGRATION.md](./DOCUSAURUS_MIGRATION.md#troubleshooting)
+- [ ] [Troubleshooting section in DOCUSAURUS_MIGRATION.md](./DOCUSAURUS_MIGRATION.md)
 - [ ] [Docusaurus documentation](https://docusaurus.io/docs)
 - [ ] GitHub Actions logs for deployment errors
 - [ ] Browser console for JavaScript errors
