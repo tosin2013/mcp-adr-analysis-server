@@ -113,16 +113,16 @@ dev: check-deps
 	@echo "Starting development server..."
 	npm run dev
 
-# Check dependencies for vulnerabilities
+# Check production dependencies for vulnerabilities (dev deps checked separately)
 check-deps:
-	@echo "Checking dependencies..."
-	npm audit --audit-level=moderate
+	@echo "Checking production dependencies..."
+	npm audit --omit=dev --audit-level=moderate
 	@echo "Dependency check completed"
 
 # Security validation
 security-check: check-deps
 	@echo "Running security checks..."
-	npm audit --audit-level=high
+	npm audit --omit=dev --audit-level=high
 	@if [ -f ".mcp-adr-cache" ]; then \
 		echo "ERROR: Cache directory should not be committed"; \
 		exit 1; \

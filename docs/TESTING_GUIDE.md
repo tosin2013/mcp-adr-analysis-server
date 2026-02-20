@@ -525,7 +525,7 @@ open coverage/lcov-report/index.html
 - **[TypeScript Testing Guide](https://typescript-eslint.io/./linting/troubleshooting/)**
 - **[MCP Protocol Testing](https://modelcontextprotocol.io/./testing)**
 - **[Server Architecture](../explanation/server-architecture.md)**
-- **[Contributing Guide](../../CONTRIBUTING.md)**
+- **[Contributing Guide](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)**
 
 ---
 

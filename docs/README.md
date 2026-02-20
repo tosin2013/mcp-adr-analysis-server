@@ -245,10 +245,10 @@ export FIRECRAWL_BASE_URL="https://localhost:3000"
 
 ## 🔗 Related Resources
 
-- **[Main Project README](../README.md)** - Project overview and installation
+- **[Main Project README](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md)** - Project overview and installation
 - **[API Documentation](reference/api-reference.md)** - Complete API reference
 - **[Configuration Guide](reference/environment-config.md)** - Environment setup
-- **[Contributing Guide](../CONTRIBUTING.md)** - How to contribute to the project
+- **[Contributing Guide](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)** - How to contribute to the project
 
 ---
 
