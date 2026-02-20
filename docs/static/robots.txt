@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://tosin2013.github.io/mcp-adr-analysis-server/sitemap.xml
