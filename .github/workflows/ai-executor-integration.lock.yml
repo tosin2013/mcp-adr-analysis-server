@@ -23,7 +23,7 @@
 #
 # Tests AI executor in prompt and full modes, validates AI configuration and prompt generation for all tools
 #
-# frontmatter-hash: eaf65da8fc1ca126ac32ec8b52d9a6baa6e6b0339ef87d548ee6bbbbc9350e5f
+# frontmatter-hash: fe84c95e244e8179e89dd0263a05491d6f1e76d01b812b9612c0bbfa9b7ef34f
 
 name: 'AI Executor Integration'
 'on':
