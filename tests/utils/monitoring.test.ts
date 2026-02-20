@@ -3,7 +3,7 @@
  * Tests monitoring, analytics, and health check functionality
  */
 
-import { describe, it, expect, _beforeEach, _afterEach } from 'vitest';
+import { describe, it, expect, vi, _beforeEach, _afterEach } from 'vitest';
 import {
   MonitoringManager,
   MetricType,
@@ -449,10 +449,24 @@ describe('Monitoring and Analytics', () => {
   });
 
   describe('Uptime Tracking', () => {
-    it('should track uptime', async () => {
-      await new Promise(resolve => setTimeout(resolve, 10));
-      const uptime = monitor.getUptime();
-      expect(uptime).toBeGreaterThanOrEqual(10);
+    it('should track uptime', () => {
+      vi.useFakeTimers();
+      try {
+        const timedMonitor = new MonitoringManager({
+          enabled: true,
+          metricsRetentionMs: 60000,
+          aggregationIntervalMs: 10000,
+          maxMetricsInMemory: 1000,
+          enableHealthChecks: false,
+        });
+        vi.advanceTimersByTime(10);
+        const uptime = timedMonitor.getUptime();
+        expect(uptime).toBeGreaterThanOrEqual(10);
+        timedMonitor.stop();
+        timedMonitor.reset();
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 
