@@ -23,7 +23,7 @@
 #
 # Diagnoses CI workflow failures with MCP-specific pattern recognition and creates actionable investigation issues
 #
-# frontmatter-hash: 1ca7b99fd9f53381a6f7ba3651faf92dbe6c89246483fff2b77ed46f94d2f33a
+# frontmatter-hash: 23b95f74f8340e4579d7d026e550c3d2dae7c2fc2f55110e654fc2d2497ce493
 
 name: 'CI Doctor'
 'on':
