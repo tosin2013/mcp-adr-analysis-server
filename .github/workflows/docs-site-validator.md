@@ -133,7 +133,19 @@ Using Playwright with a mobile viewport (iPhone 12 — 390x844):
 2. Verify a custom 404 page is shown (not GitHub's default 404)
 3. Verify the 404 page has navigation back to the main site
 
-### Check 10: Accessibility Basics
+### Check 10: Placeholder / Template Content Detection
+
+While crawling pages, check each page's text content for signs it is an **unpopulated template or scaffold** that was published without real content. Flag a page if it matches **2 or more** of these indicators:
+
+1. **Generic headings**: "Concept 1", "Concept 2", "Alternative 1", "Alternative 2", or numbered placeholders like "[Design Principle 1]"
+2. **Ellipsis stub sentences**: Body text that is a single short sentence ending with "..." (e.g., "We chose this approach because...", "Understanding the architecture requires knowledge of...")
+3. **Bracketed placeholders**: Visible text like "[High-level explanation]", "[Explanation]", "[Process 1]"
+4. **Template table data**: Table cells containing only generic entries like "Pro 1, Pro 2", "Con 1, Con 2", "Benefit vs Cost"
+5. **Extremely low content**: Pages with fewer than 100 words of visible body text (excluding navigation, sidebar, and footer)
+
+This is **Critical** — placeholder pages visible to users on the live site damage project credibility and waste developer time.
+
+### Check 11: Accessibility Basics
 
 Using Playwright, check for:
 
@@ -172,6 +184,7 @@ If any checks fail, create an issue:
 | Mobile Responsive     | {pass/fail}     | {details}       |
 | HTTPS / Mixed Content | {pass/fail}     | {details}       |
 | 404 Page              | {pass/fail}     | {details}       |
+| Placeholder Content   | {pass/fail}     | {count} pages   |
 | Accessibility         | {pass/fail}     | {count} issues  |
 
 ### Broken Links
@@ -185,6 +198,12 @@ If any checks fail, create an issue:
 | Page   | Asset URL   | Type         |
 | ------ | ----------- | ------------ |
 | {page} | {asset_url} | {img/css/js} |
+
+### Placeholder / Template Pages
+
+| Page URL | Page Title | Indicators Found             |
+| -------- | ---------- | ---------------------------- |
+| {url}    | {title}    | {list of matched indicators} |
 
 ### Accessibility Issues
 
