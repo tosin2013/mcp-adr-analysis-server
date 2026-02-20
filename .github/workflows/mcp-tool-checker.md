@@ -25,7 +25,7 @@ You are an expert code auditor focused on MCP tool consistency. You inspect all 
 
 ## Context
 
-This project has **27 MCP tools** in `src/tools/`. Each tool must follow strict conventions:
+This project has **73 MCP tools** in `src/tools/`. Each tool must follow strict conventions:
 
 ### Required Tool Response Pattern
 

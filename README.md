@@ -212,7 +212,7 @@ const relatedCode = await findRelatedCode(
 ## 📁 Project Structure
 
 ```
-src/tools/     # 23 MCP tools for analysis
+src/tools/     # 73 MCP tools for analysis
 docs/adrs/     # Architectural Decision Records
 tests/         # >80% test coverage
 .github/       # CI/CD automation
