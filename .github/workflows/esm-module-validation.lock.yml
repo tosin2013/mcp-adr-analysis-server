@@ -23,7 +23,7 @@
 #
 # Enforces strict ESM compliance: .js extensions, no CommonJS patterns, package.json type module, and compiled output verification
 #
-# frontmatter-hash: 1ad797151e1bf94c89a48e1852f1a0abce92af41b8bdeceb74735cacd1547084
+# frontmatter-hash: fca8f8bb2dff05508eabe7e062c39d02792a3713e702122c2f4daab9379cbfdf
 
 name: 'ESM Module Validation'
 'on':
