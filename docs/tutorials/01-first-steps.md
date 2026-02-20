@@ -596,6 +596,19 @@ Want to master the context file? Check out:
 
 ---
 
+## ✅ Success Checklist
+
+You have successfully completed this tutorial if:
+
+- [ ] MCP server is running (you see `adr-analysis` in your MCP client's server list)
+- [ ] You can run `analyze_project_ecosystem` without errors
+- [ ] Memory system is initialized (`.mcp-adr-memory` directory exists in your project)
+- [ ] You've generated your first ADR (check the `./adrs/` directory for a new `.md` file)
+
+❌ If something isn't working, check the [Troubleshooting Guide](../how-to-guides/troubleshooting.md)
+
+---
+
 **Ready for Tutorial 2?** → **[Working with Existing Projects](./02-existing-projects.md)**
 
 ---
