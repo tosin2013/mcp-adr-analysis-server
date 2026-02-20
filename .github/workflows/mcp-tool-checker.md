@@ -3,7 +3,7 @@ name: 'MCP Tool Consistency Checker'
 description: 'Inspects all MCP tools for response pattern consistency, ESM compliance, registration completeness, and documentation alignment'
 on:
   schedule:
-    - cron: '0 14 * * 3'
+    - cron: '0 14 15 * *' # Monthly on 15th
   workflow_dispatch:
 permissions:
   issues: read

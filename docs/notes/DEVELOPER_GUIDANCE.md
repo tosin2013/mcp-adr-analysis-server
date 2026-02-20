@@ -17,30 +17,33 @@ This document provides technical guidance for developers working on the research
 ```typescript
 export class ResearchOrchestrator {
   private confidenceThreshold: number = 0.6;
-  
+
   async answerResearchQuestion(question: string): Promise<ResearchAnswer> {
     try {
       // 1. Search project files
       const projectData = await this.searchProjectFiles(question);
-      
+
       // 2. Query knowledge graph
       const knowledgeData = await this.queryKnowledgeGraph(question);
-      
+
       // 3. Query environment resources
       const environmentData = await this.queryEnvironmentResources(question);
-      
+
       // 4. Determine if web search needed
       const needsWebSearch = this.calculateConfidence() < this.confidenceThreshold;
-      
+
       return this.synthesizeAnswer(projectData, knowledgeData, environmentData);
     } catch (error) {
-      throw new Error(`Failed to answer research question: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to answer research question: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }
 ```
 
 **Integration Requirements**:
+
 - Must handle cascading fallback gracefully
 - Should provide confidence scoring for each source
 - Must support configurable confidence thresholds
@@ -57,7 +60,7 @@ export class ResearchOrchestrator {
 ```typescript
 export class EnvironmentCapabilityRegistry {
   private capabilities: Map<string, EnvironmentCapability> = new Map();
-  
+
   async discoverCapabilities(): Promise<void> {
     try {
       const capabilityDetectors = [
@@ -65,9 +68,9 @@ export class EnvironmentCapabilityRegistry {
         { name: 'openshift', detector: this.detectOpenShift },
         { name: 'docker', detector: this.detectDocker },
         { name: 'podman', detector: this.detectPodman },
-        { name: 'ansible', detector: this.detectAnsible }
+        { name: 'ansible', detector: this.detectAnsible },
       ];
-      
+
       for (const { name, detector } of capabilityDetectors) {
         try {
           const available = await detector();
@@ -75,29 +78,34 @@ export class EnvironmentCapabilityRegistry {
             this.capabilities.set(name, await this.createCapability(name));
           }
         } catch (error) {
-          this.logger.warn(`Failed to detect ${name}: ${error instanceof Error ? error.message : String(error)}`);
+          this.logger.warn(
+            `Failed to detect ${name}: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
     } catch (error) {
-      throw new Error(`Failed to discover capabilities: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to discover capabilities: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
-  
+
   async query(question: string): Promise<EnvironmentQueryResult> {
     try {
       const relevantCapabilities = this.findRelevantCapabilities(question);
-      const results = await Promise.all(
-        relevantCapabilities.map(cap => cap.query(question))
-      );
+      const results = await Promise.all(relevantCapabilities.map(cap => cap.query(question)));
       return this.mergeResults(results);
     } catch (error) {
-      throw new Error(`Failed to query environment capabilities: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to query environment capabilities: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }
 ```
 
 **Integration Requirements**:
+
 - Must auto-detect available tools without configuration
 - Should gracefully handle missing tools
 - Must provide structured query results
@@ -112,31 +120,25 @@ export async function yourResearchTool(args: YourToolArgs): Promise<any> {
   try {
     // 1. Validate input
     const validatedArgs = YourToolSchema.parse(args);
-    
+
     // 2. Create research orchestrator
     const orchestrator = new ResearchOrchestrator(
       validatedArgs.projectPath,
       validatedArgs.adrDirectory
     );
-    
+
     // 3. Set confidence threshold if provided
     if (validatedArgs.confidenceThreshold) {
       orchestrator.setConfidenceThreshold(validatedArgs.confidenceThreshold);
     }
-    
+
     // 4. Perform research
-    const research = await orchestrator.answerResearchQuestion(
-      validatedArgs.question
-    );
-    
+    const research = await orchestrator.answerResearchQuestion(validatedArgs.question);
+
     // 5. Format response
     return formatResearchResponse(research);
-    
   } catch (error) {
-    throw new McpAdrError(
-      `Research tool failed: ${error.message}`,
-      'RESEARCH_ERROR'
-    );
+    throw new McpAdrError(`Research tool failed: ${error.message}`, 'RESEARCH_ERROR');
   }
 }
 ```
@@ -172,23 +174,22 @@ export async function yourResearchTool(args: YourToolArgs): Promise<any> {
 ```typescript
 async function querySource(question: string, sourceType: string): Promise<SourceResult> {
   const startTime = Date.now();
-  
+
   try {
     this.logger.info(`Querying ${sourceType} for: "${question}"`);
-    
+
     const result = await this.performSourceQuery(question);
-    
+
     const duration = Date.now() - startTime;
     this.logger.info(`${sourceType} query completed in ${duration}ms`);
-    
+
     return {
       found: result.data.length > 0,
       data: result.data,
       confidence: result.confidence,
       duration,
-      sourceType
+      sourceType,
     };
-    
   } catch (error) {
     this.logger.error(`${sourceType} query failed: ${error.message}`);
     return {
@@ -197,7 +198,7 @@ async function querySource(question: string, sourceType: string): Promise<Source
       confidence: 0,
       duration: Date.now() - startTime,
       sourceType,
-      error: error.message
+      error: error.message,
     };
   }
 }
@@ -208,18 +209,18 @@ async function querySource(question: string, sourceType: string): Promise<Source
 ```typescript
 function calculateConfidence(sources: SourceResult[]): number {
   if (sources.length === 0) return 0;
-  
+
   // Weight sources by reliability and speed
   const weights = {
     project_files: 0.4,
     knowledge_graph: 0.3,
     environment: 0.2,
-    web_search: 0.1
+    web_search: 0.1,
   };
-  
+
   let weightedSum = 0;
   let totalWeight = 0;
-  
+
   for (const source of sources) {
     if (source.found) {
       const weight = weights[source.sourceType] || 0.1;
@@ -227,7 +228,7 @@ function calculateConfidence(sources: SourceResult[]): number {
       totalWeight += weight;
     }
   }
-  
+
   return totalWeight > 0 ? weightedSum / totalWeight : 0;
 }
 ```
@@ -257,11 +258,11 @@ ${formatSources(research.sources)}
 - **Overall Confidence**: ${(research.confidence * 100).toFixed(1)}%
 
 ## Next Steps
-${generateNextSteps(research.confidence, research.sources)}`
-      }
-    ]
+${generateNextSteps(research.confidence, research.sources)}`,
+      },
+    ],
   };
-  
+
   return response;
 }
 ```
@@ -305,11 +306,9 @@ async function detectYourCapability(): Promise<boolean> {
 async function queryYourCapability(question: string): Promise<CapabilityResult> {
   // Parse question to determine relevant queries
   const queries = parseQuestion(question);
-  
-  const results = await Promise.all(
-    queries.map(query => executeQuery(query))
-  );
-  
+
+  const results = await Promise.all(queries.map(query => executeQuery(query)));
+
   return {
     found: results.some(r => r.found),
     data: results,
@@ -317,8 +316,8 @@ async function queryYourCapability(question: string): Promise<CapabilityResult> 
     metadata: {
       capability: 'your-capability',
       queries: queries.length,
-      timestamp: new Date().toISOString()
-    }
+      timestamp: new Date().toISOString(),
+    },
   };
 }
 ```
@@ -334,8 +333,8 @@ const yourCapability = {
   executor: queryYourCapability,
   metadata: {
     description: 'Your custom capability description',
-    commands: ['your-tool --version', 'your-tool query']
-  }
+    commands: ['your-tool --version', 'your-tool query'],
+  },
 };
 
 if (await yourCapability.detector()) {
@@ -350,28 +349,24 @@ if (await yourCapability.detector()) {
 ```typescript
 describe('ResearchOrchestrator', () => {
   let orchestrator: ResearchOrchestrator;
-  
+
   beforeEach(() => {
     orchestrator = new ResearchOrchestrator('/test/project', './adrs');
   });
-  
+
   it('should cascade through sources correctly', async () => {
-    const result = await orchestrator.answerResearchQuestion(
-      'What container technology is used?'
-    );
-    
+    const result = await orchestrator.answerResearchQuestion('What container technology is used?');
+
     expect(result.sources).toHaveLength(3); // project, knowledge, environment
     expect(result.confidence).toBeGreaterThan(0);
     expect(result.metadata.sourcesQueried).toContain('project_files');
   });
-  
+
   it('should handle low confidence gracefully', async () => {
     orchestrator.setConfidenceThreshold(0.9);
-    
-    const result = await orchestrator.answerResearchQuestion(
-      'What is the meaning of life?'
-    );
-    
+
+    const result = await orchestrator.answerResearchQuestion('What is the meaning of life?');
+
     expect(result.needsWebSearch).toBe(true);
     expect(result.confidence).toBeLessThan(0.9);
   });
@@ -383,20 +378,20 @@ describe('ResearchOrchestrator', () => {
 ```typescript
 describe('EnvironmentCapabilityRegistry', () => {
   let registry: EnvironmentCapabilityRegistry;
-  
+
   beforeEach(async () => {
     registry = new EnvironmentCapabilityRegistry();
     await registry.discoverCapabilities();
   });
-  
+
   it('should detect available capabilities', () => {
     const capabilities = registry.listCapabilities();
     expect(capabilities.length).toBeGreaterThan(0);
   });
-  
+
   it('should query relevant capabilities', async () => {
     const result = await registry.query('What containers are running?');
-    
+
     expect(result.found).toBe(true);
     expect(result.data).toBeDefined();
   });
@@ -418,7 +413,7 @@ describe('EnvironmentCapabilityRegistry', () => {
 class ResearchCache {
   private cache = new Map<string, CachedResult>();
   private ttl = 5 * 60 * 1000; // 5 minutes
-  
+
   get(key: string): CachedResult | null {
     const cached = this.cache.get(key);
     if (cached && Date.now() - cached.timestamp < this.ttl) {
@@ -427,11 +422,11 @@ class ResearchCache {
     this.cache.delete(key);
     return null;
   }
-  
+
   set(key: string, result: any): void {
     this.cache.set(key, {
       data: result,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 }
@@ -444,11 +439,11 @@ async function queryMultipleSources(question: string): Promise<SourceResult[]> {
   const queries = [
     this.queryProjectFiles(question),
     this.queryKnowledgeGraph(question),
-    this.queryEnvironment(question)
+    this.queryEnvironment(question),
   ];
-  
+
   const results = await Promise.allSettled(queries);
-  
+
   return results
     .filter(result => result.status === 'fulfilled')
     .map(result => (result as PromiseFulfilledResult<SourceResult>).value);
@@ -465,7 +460,7 @@ async function queryWithFallback(question: string): Promise<SourceResult> {
     return await this.primaryQuery(question);
   } catch (error) {
     this.logger.warn(`Primary query failed: ${error.message}`);
-    
+
     try {
       return await this.fallbackQuery(question);
     } catch (fallbackError) {
@@ -474,7 +469,7 @@ async function queryWithFallback(question: string): Promise<SourceResult> {
         found: false,
         data: null,
         confidence: 0,
-        error: 'All query methods failed'
+        error: 'All query methods failed',
       };
     }
   }
@@ -486,20 +481,20 @@ async function queryWithFallback(question: string): Promise<SourceResult> {
 ```typescript
 async function resilientQuery(question: string, maxRetries = 3): Promise<SourceResult> {
   let lastError: Error;
-  
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       return await this.performQuery(question);
     } catch (error) {
       lastError = error;
       this.logger.warn(`Query attempt ${attempt} failed: ${error.message}`);
-      
+
       if (attempt < maxRetries) {
         await this.delay(1000 * attempt); // Exponential backoff
       }
     }
   }
-  
+
   throw new McpAdrError(
     `Query failed after ${maxRetries} attempts: ${lastError.message}`,
     'QUERY_FAILED'
@@ -518,24 +513,20 @@ class ResearchMetrics {
     queriesBySource: new Map<string, number>(),
     averageResponseTime: 0,
     confidenceDistribution: new Map<string, number>(),
-    errorsTotal: 0
+    errorsTotal: 0,
   };
-  
+
   recordQuery(source: string, duration: number, confidence: number, success: boolean): void {
     this.metrics.queriesTotal++;
-    this.metrics.queriesBySource.set(
-      source, 
-      (this.metrics.queriesBySource.get(source) || 0) + 1
-    );
-    
+    this.metrics.queriesBySource.set(source, (this.metrics.queriesBySource.get(source) || 0) + 1);
+
     if (!success) {
       this.metrics.errorsTotal++;
     }
-    
+
     // Update average response time
-    this.metrics.averageResponseTime = 
-      (this.metrics.averageResponseTime + duration) / 2;
-    
+    this.metrics.averageResponseTime = (this.metrics.averageResponseTime + duration) / 2;
+
     // Record confidence distribution
     const confidenceBucket = Math.floor(confidence * 10) / 10;
     this.metrics.confidenceDistribution.set(
@@ -543,12 +534,12 @@ class ResearchMetrics {
       (this.metrics.confidenceDistribution.get(confidenceBucket.toString()) || 0) + 1
     );
   }
-  
+
   getMetrics(): ResearchMetricsData {
     return {
       ...this.metrics,
       queriesBySource: Object.fromEntries(this.metrics.queriesBySource),
-      confidenceDistribution: Object.fromEntries(this.metrics.confidenceDistribution)
+      confidenceDistribution: Object.fromEntries(this.metrics.confidenceDistribution),
     };
   }
 }
@@ -559,23 +550,23 @@ class ResearchMetrics {
 ```typescript
 class ResearchLogger {
   private logger: EnhancedLogger;
-  
+
   constructor() {
     this.logger = new EnhancedLogger();
   }
-  
+
   logResearchStart(question: string): void {
     this.logger.info(`Starting research: "${question}"`, 'ResearchOrchestrator');
   }
-  
+
   logSourceQuery(source: string, question: string, duration: number): void {
-    this.logger.info(
-      `Source query completed: ${source} in ${duration}ms`,
-      'ResearchOrchestrator',
-      { source, question, duration }
-    );
+    this.logger.info(`Source query completed: ${source} in ${duration}ms`, 'ResearchOrchestrator', {
+      source,
+      question,
+      duration,
+    });
   }
-  
+
   logResearchComplete(question: string, confidence: number, sources: string[]): void {
     this.logger.info(
       `Research completed: confidence=${confidence}, sources=[${sources.join(', ')}]`,
@@ -615,7 +606,7 @@ const defaultConfig: ResearchConfig = {
   cacheTtl: 5 * 60 * 1000, // 5 minutes
   maxConcurrentQueries: 3,
   timeoutMs: 30000, // 30 seconds
-  environmentCapabilities: ['kubernetes', 'openshift', 'docker', 'podman', 'ansible']
+  environmentCapabilities: ['kubernetes', 'openshift', 'docker', 'podman', 'ansible'],
 };
 ```
 
@@ -627,26 +618,26 @@ async function healthCheck(): Promise<HealthStatus> {
     checkProjectFiles(),
     checkKnowledgeGraph(),
     checkEnvironmentCapabilities(),
-    checkWebSearch()
+    checkWebSearch(),
   ]);
-  
+
   const status: HealthStatus = {
     healthy: true,
-    checks: {}
+    checks: {},
   };
-  
+
   checks.forEach((check, index) => {
     const checkName = ['project_files', 'knowledge_graph', 'environment', 'web_search'][index];
     status.checks[checkName] = {
       healthy: check.status === 'fulfilled',
-      error: check.status === 'rejected' ? check.reason.message : undefined
+      error: check.status === 'rejected' ? check.reason.message : undefined,
     };
-    
+
     if (check.status === 'rejected') {
       status.healthy = false;
     }
   });
-  
+
   return status;
 }
 ```
@@ -694,4 +685,4 @@ async function healthCheck(): Promise<HealthStatus> {
 - [API Reference](./reference/api-reference.md)
 - [Research Workflow Guide](./how-to-guides/research-driven-workflow.md)
 - [Testing Guide](./TESTING_GUIDE.md)
-- [Contributing Guidelines](../CONTRIBUTING.md)
+- [Contributing Guidelines](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)

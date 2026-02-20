@@ -1205,7 +1205,7 @@ async function findRelevantResearch(topic) {
 - **[MCP Client Configuration](./mcp-client-config.md)** - Client setup
 - **[Environment Configuration](./environment-config.md)** - Environment variables
 - **[Troubleshooting Guide](../how-to-guides/troubleshooting.md)** - Common issues
-- **[Contributing Guide](../../CONTRIBUTING.md)** - How to contribute
+- **[Contributing Guide](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)** - How to contribute
 
 ---
 

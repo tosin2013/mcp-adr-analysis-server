@@ -28,7 +28,7 @@
 name: 'Dependabot PR Bundler'
 'on':
   schedule:
-    - cron: '0 10 * * 1'
+    - cron: '0 10 22 * *'
   workflow_dispatch:
 
 permissions: {}

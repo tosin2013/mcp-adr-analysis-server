@@ -3,7 +3,7 @@ name: 'Documentation Noob Tester'
 description: 'Simulates a brand-new developer navigating the documentation and Docusaurus site to find gaps and confusion'
 on:
   schedule:
-    - cron: '0 9 * * 1'
+    - cron: '0 9 1 * *' # Monthly on 1st
   workflow_dispatch:
 permissions:
   issues: read

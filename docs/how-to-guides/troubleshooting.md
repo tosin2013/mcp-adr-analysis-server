@@ -11,31 +11,31 @@ graph TD
     A[🚨 Problem Encountered] --> B{Quick Fix Available?}
     B -->|Yes| C[Apply Quick Fix]
     B -->|No| D[Identify Problem Type]
-    
+
     C --> E{Fix Successful?}
     E -->|Yes| F[✅ Problem Resolved]
     E -->|No| D
-    
+
     D --> G{Problem Category}
     G -->|Installation| H[Installation Issues]
     G -->|Configuration| I[Configuration Issues]
     G -->|Runtime| J[Runtime Issues]
     G -->|Performance| K[Performance Issues]
-    
+
     H --> L[Check Prerequisites]
     I --> M[Validate Configuration]
     J --> N[Check Logs & Status]
     K --> O[Profile Performance]
-    
+
     L --> P{Issue Resolved?}
     M --> P
     N --> P
     O --> P
-    
+
     P -->|Yes| F
     P -->|No| Q[Advanced Troubleshooting]
     Q --> R[Community Support]
-    
+
     style A fill:#ffebee
     style F fill:#e8f5e8
     style R fill:#e3f2fd
@@ -89,6 +89,20 @@ chmod 755 ./
   }
 }
 ```
+
+### Server installed but nothing happens
+
+**Problem**: You installed the server but don't see any tools or analysis capabilities.
+**Quick Fix**: The MCP ADR Analysis Server is **not** a standalone application — it requires an MCP-compatible client to connect to it.
+
+Install one of the following MCP clients:
+
+- **[Claude Desktop](https://claude.ai/download)** — Anthropic's desktop app with built-in MCP support
+- **[Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev)** — VS Code extension
+- **[Cursor](https://cursor.sh/)** — AI-powered code editor with MCP support
+- **[Windsurf](https://codeium.com/windsurf)** — AI-powered IDE by Codeium
+
+After installing a client, add the server to its MCP configuration (see [Quick Setup](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md#-quick-setup-3-steps)).
 
 ---
 
@@ -542,8 +556,44 @@ export ADR_DIRECTORY="./adrs"
 
 3. **Community Support**
 
-- **Documentation**: [Main README](../../README.md)
+- **Documentation**: [Main README](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md)
 - **API Reference**: [Complete Tool Documentation](../reference/api-reference.md)
+
+---
+
+## 🔥 Firecrawl Integration Issues
+
+Firecrawl is an **optional** dependency for web research capabilities. The server works perfectly without it.
+
+### "Firecrawl connection failed" or timeouts
+
+**Problem**: Web search tools return errors or hang.
+**Solution**:
+
+```bash
+# 1. Verify Firecrawl is enabled
+echo $FIRECRAWL_ENABLED   # Should be "true"
+
+# 2. Check API key (cloud service)
+echo $FIRECRAWL_API_KEY    # Should start with "fc-"
+
+# 3. Check connectivity (self-hosted)
+curl "$FIRECRAWL_BASE_URL/health"
+```
+
+### Missing Firecrawl environment variables
+
+**Problem**: You set `FIRECRAWL_ENABLED=true` but web search tools return empty results.
+**Solution**: Ensure you also set the API key:
+
+```bash
+export FIRECRAWL_ENABLED="true"
+export FIRECRAWL_API_KEY="fc-your-api-key-here"
+```
+
+### Do I need Firecrawl?
+
+**No.** Firecrawl is entirely optional. Without it, the server uses local-only analysis. Enable it only if you need web research capabilities for ADR generation. See the [Firecrawl Setup Guide](./firecrawl-setup.md) for details.
 
 ---
 

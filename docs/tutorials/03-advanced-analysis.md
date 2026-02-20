@@ -901,7 +901,7 @@ You've mastered advanced architectural analysis techniques and are ready to lead
 
 **Want to contribute back?** Consider:
 
-- **[Contributing to the project](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/../../CONTRIBUTING.md)**
+- **[Contributing to the project](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)**
 - **Sharing your experience** through blog posts or presentations
 - **Mentoring others** in architectural decision-making
 - **Building extensions** to the MCP ADR Analysis Server

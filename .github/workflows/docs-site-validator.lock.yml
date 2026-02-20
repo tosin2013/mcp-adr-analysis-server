@@ -28,7 +28,7 @@
 name: 'Docs Site Validator'
 'on':
   schedule:
-    - cron: '0 8 * * 3'
+    - cron: '0 8 8 * *'
   workflow_dispatch:
   workflow_run:
     # zizmor: ignore[dangerous-triggers] - workflow_run trigger is secured with role and fork validation

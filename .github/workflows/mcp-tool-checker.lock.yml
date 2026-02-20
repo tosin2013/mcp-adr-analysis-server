@@ -28,7 +28,7 @@
 name: 'MCP Tool Consistency Checker'
 'on':
   schedule:
-    - cron: '0 14 * * 3'
+    - cron: '0 14 15 * *'
   workflow_dispatch:
 
 permissions: {}

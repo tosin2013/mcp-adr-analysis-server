@@ -5,8 +5,10 @@
 **Prerequisites**:
 
 - Node.js ≥20.0.0 installed
+- An MCP-compatible client — [Claude Desktop](https://claude.ai/download), [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev), [Cursor](https://cursor.sh/), or [Windsurf](https://codeium.com/windsurf)
 - Basic understanding of software architecture
 - Text editor or IDE
+- _(Optional)_ [OpenRouter API key](https://openrouter.ai/keys) for full AI-powered analysis mode
 
 **Time Required**: 30 minutes
 
@@ -242,30 +244,36 @@ Now let's explore the **`perform_research`** tool, which uses the research-orche
 
 ```markdown
 ## Research Results
+
 **Confidence**: 85.0% ✓
 
 ### Answer
+
 The project has Docker and Kubernetes available. Found docker-compose.yml
 configuration for local development and Kubernetes manifests in k8s/ directory.
 
 ### Sources Consulted
+
 ✓ Project Files: Analyzed 45 files
 ✓ Knowledge Graph: Found 2 related ADRs
 ✓ Environment: Detected docker, kubectl
 ✗ Web Search: Not needed (confidence above threshold)
 
 ### Key Findings
+
 - Docker: Container orchestration available
 - Kubernetes: kubectl configured and accessible
 - Infrastructure decisions documented in ADR-003
 ```
 
 **Understanding Confidence Scores:**
+
 - **≥70%**: High confidence, results are reliable
 - **60-69%**: Medium confidence, consider web search fallback
 - **<60%**: Low confidence, automatic web search triggered
 
 **Exercise**: Try asking research questions about:
+
 1. "What database technology is used in this project?"
 2. "Are there any container orchestration tools configured?"
 3. "What testing frameworks are available?"
@@ -358,6 +366,7 @@ Use the new **research-driven ADR validation** to check if your documented decis
 ```
 
 **What This Does:**
+
 1. **Reads your ADR** to understand the documented decision
 2. **Researches live environment** to check actual implementation
 3. **Compares documentation vs reality** with confidence scoring
@@ -371,11 +380,13 @@ Use the new **research-driven ADR validation** to check if your documented decis
 **Research Confidence**: 78.0% ✓
 
 ### Implementation Status: ✓ MATCHES
+
 - Express.js detected in package.json (v4.18.2)
 - Express routes found in src/routes/
 - Middleware patterns consistent with documented decision
 
 ### Environment Check: ✓ PASSED
+
 - Node.js v20.0.0 (meets requirements)
 - npm packages installed correctly
 - No conflicting frameworks detected
@@ -498,7 +509,7 @@ Now that you understand the basics, you can:
 
 - **[Troubleshooting Guide](./how-to-guides/troubleshooting.md)** - Solutions to common problems
 - **[GitHub Issues](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** - Report bugs or request features
-- **[Main Documentation](../../README.md)** - Complete project overview
+- **[Main Documentation](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md)** - Complete project overview
 
 ### API Key Issues
 

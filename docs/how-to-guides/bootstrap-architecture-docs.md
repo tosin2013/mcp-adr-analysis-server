@@ -782,7 +782,7 @@ export CACHE_ENABLED="false"
 
 ### Related Documentation
 
-- **[Main README](../../README.md)** - Complete feature overview and installation
+- **[Main README](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md)** - Complete feature overview and installation
 - **[Deploy Your Own Server](./deploy-your-own-server.md)** - Deploy your own MCP server
 - **[Architecture Decisions](../adrs/)** - Example ADRs from this project
 
@@ -791,5 +791,5 @@ export CACHE_ENABLED="false"
 **Need Help?**
 
 - Check the [troubleshooting section](#troubleshooting) above
-- Review the [main documentation](../../README.md)
+- Review the [main documentation](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md)
 - Open an issue on [GitHub](https://github.com/tosin2013/mcp-adr-analysis-server/issues)

@@ -437,7 +437,7 @@ Before submitting your tool:
 - **[Tool Design Philosophy](../explanation/tool-design.md)** - Architecture patterns
 - **[API Reference](../reference/api-reference.md)** - Complete tool catalog
 - **[Testing Guide](../TESTING_GUIDE.md)** - Testing best practices
-- **[Contributing Guide](../../CONTRIBUTING.md)** - Contribution workflow
+- **[Contributing Guide](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)** - Contribution workflow
 
 ---
 
@@ -488,7 +488,7 @@ export async function generateAdrFromTemplate(options: {
 - **Tool Questions?** → [Open an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)
 - **Architecture Questions?** → Review [Tool Design](../explanation/tool-design.md)
 - **Testing Help?** → See [Testing Guide](../TESTING_GUIDE.md)
-- **Contributing?** → Read [Contributing Guide](../../CONTRIBUTING.md)
+- **Contributing?** → Read [Contributing Guide](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)
 
 ---
 

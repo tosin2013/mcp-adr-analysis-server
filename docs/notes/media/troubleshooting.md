@@ -505,7 +505,7 @@ export ADR_DIRECTORY="./adrs"
 
 3. **Community Support**
 
-- **Documentation**: [Main README](../../README.md)
+- **Documentation**: [Main README](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md)
 - **API Reference**: [Complete Tool Documentation](./reference/api-reference.md)
 
 ---

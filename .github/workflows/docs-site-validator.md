@@ -10,7 +10,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 8 * * 3'
+    - cron: '0 8 8 * *' # Monthly on 8th
   workflow_dispatch:
 permissions:
   actions: read
