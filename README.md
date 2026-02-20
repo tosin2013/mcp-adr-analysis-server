@@ -15,12 +15,25 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 
 ## TL;DR
 
-**What:** MCP server that provides AI-powered architectural decision analysis and ADR (Architectural Decision Record) management  
+**What:** MCP server that provides AI-powered architectural decision analysis and ADR management  
 **Who:** AI coding assistants (Claude, Cline, Cursor), enterprise architects, development teams  
 **Why:** Get immediate architectural insights instead of prompts, with 95% confidence scoring  
 **How:** `npm install -g mcp-adr-analysis-server` → Configure with OpenRouter API → Start analyzing
 
 **Key Features:** Tree-sitter AST analysis • Security content masking • Test-driven development • Deployment readiness validation
+
+<details>
+<summary><b>Key Terms</b></summary>
+
+| Term                   | Definition                                                                                                                                                                                                        |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ADR**                | **Architectural Decision Record** — A document that captures an important architectural decision along with its context, alternatives considered, and consequences.                                               |
+| **MCP**                | **Model Context Protocol** — An open standard enabling AI assistants to connect to external tools and data sources.                                                                                               |
+| **Tree-sitter**        | An incremental parsing library that provides AST (Abstract Syntax Tree) analysis for 50+ languages. Used for semantic code understanding, extracting function signatures, and identifying architectural patterns. |
+| **Knowledge Graph**    | A graph database maintained by the server that tracks relationships between ADRs, code implementations, and architectural decisions. Enables intelligent code linking and impact analysis.                        |
+| **Smart Code Linking** | AI-powered discovery of code files related to ADRs and architectural decisions, using keyword extraction and semantic search.                                                                                     |
+
+</details>
 
 ---
 
@@ -40,16 +53,24 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 
 ## Prerequisites
 
-- **Node.js 20.0.0 or higher** — [Download](https://nodejs.org/)
-- **npm 9.0.0 or higher** (included with Node.js)
-- **An MCP-compatible client** — [Claude Desktop](https://claude.ai/download), [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev), [Cursor](https://cursor.sh/), or [Windsurf](https://codeium.com/windsurf)
-
-Verify your versions:
+Before installing, verify you have:
 
 ```bash
-node --version  # v20.0.0+
-npm --version   # 9.0.0+
+node --version  # Should show v20.0.0 or higher
+npm --version   # Should show 9.0.0 or higher (included with Node.js 20+)
 ```
+
+**Required:**
+
+- **Node.js 20.0.0 or higher** — [Download](https://nodejs.org/) or use [nvm](https://github.com/nvm-sh/nvm)/[fnm](https://github.com/Schniz/fnm)
+- **npm 9.0.0 or higher** (included with Node.js 20+)
+- **An MCP-compatible client** — [Claude Desktop](https://claude.ai/download), [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev), [Cursor](https://cursor.sh/), or [Windsurf](https://codeium.com/windsurf)
+
+### Network Requirements
+
+- **Internet access required** during `npm install` for native module compilation (tree-sitter-yaml, tree-sitter-typescript)
+- If behind a corporate proxy, set `HTTP_PROXY` and `HTTPS_PROXY` environment variables
+- **Offline fallback**: If native builds fail, the server operates in reduced mode without tree-sitter code analysis
 
 ## 📦 Quick Installation
 
@@ -134,14 +155,16 @@ Get your API key at [adraggregator.com](https://adraggregator.com)
 
 ### Execution Modes
 
-|                       | **Full Mode**                                  | **Prompt-Only Mode**                   |
-| --------------------- | ---------------------------------------------- | -------------------------------------- |
-| **Requires API key?** | Yes (`OPENROUTER_API_KEY`)                     | No                                     |
-| **Returns**           | Actual analysis results with confidence scores | Prompts you can paste into any AI chat |
-| **Set via**           | `EXECUTION_MODE=full`                          | `EXECUTION_MODE=prompt-only` (default) |
-| **Best for**          | Production use, automation                     | Trying it out, no-cost exploration     |
+|                          | **Full Mode**                                                                      | **Prompt-Only Mode**                                              |
+| ------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Requires API key?**    | Yes (`OPENROUTER_API_KEY`)                                                         | No                                                                |
+| **Returns**              | Actual analysis results with confidence scores                                     | Prompts you can paste into any AI chat                            |
+| **Set via**              | `EXECUTION_MODE=full`                                                              | `EXECUTION_MODE=prompt-only` (default)                            |
+| **Best for**             | Production use, automation                                                         | Trying it out, no-cost exploration                                |
+| **Available Features**   | All 73 tools, AI analysis, confidence scoring, Smart Code Linking, Knowledge Graph | Analysis prompts, templates, local file operations, ADR discovery |
+| **Unavailable Features** | —                                                                                  | AI execution, confidence scores, Smart Code Linking, web research |
 
-**Tip:** Start with prompt-only mode to explore, then add an API key when you're ready for full analysis.
+**Tip:** Start with prompt-only mode to explore the tool catalog — you can analyze projects, discover ADRs, and generate templates without an API key. Add an API key when you're ready for AI-powered analysis with confidence scoring.
 
 ## 🚀 Usage Examples
 
@@ -191,7 +214,9 @@ const relatedCode = await findRelatedCode(
 
 📖 **[Complete Usage Guide →](docs/tutorials/)** | **[API Reference →](docs/reference/)**
 
-> **Try it out:** This repo includes a [`sample-project/`](sample-project/) directory with example ADRs and source code. Point `PROJECT_PATH` at it to experiment without affecting your own codebase. _(Only available when cloning from source — not included in the npm package.)_
+> **Try it out:** This repo includes a [`sample-project/`](sample-project/) directory with example ADRs and source code. Point `PROJECT_PATH` at it to experiment without affecting your own codebase.
+>
+> **Note:** The sample project is only available when **cloning from source** (Option 3 above). If you installed via npm (Option 1 or 2), create your own test project or clone the repo separately to access the sample: `git clone --depth 1 https://github.com/tosin2013/mcp-adr-analysis-server.git sample-test`
 
 ## 🎯 Use Cases
 
@@ -229,16 +254,21 @@ npm run test:coverage # Coverage report
 
 📖 **[Testing Guide →](docs/how-to-guides/troubleshooting.md)**
 
-## 🔥 Firecrawl Integration (Optional)
+## 🔥 Firecrawl Integration (Optional — Skip for Getting Started)
 
 **Enhanced web research capabilities for comprehensive architectural analysis.**
 
-**When is this useful?**
+> **Note:** You don't need Firecrawl for basic ADR analysis. The server works fully without it. Only configure Firecrawl if you need web research features like the `perform_research` tool with external sources.
+
+<details>
+<summary><b>When is Firecrawl useful?</b></summary>
 
 - **ADR research** — automatically pull best practices from official docs when generating ADRs
 - **Technology evaluation** — compare frameworks by crawling their documentation and changelogs
 - **Security audits** — check CVE databases and security advisories for your dependencies
 - **Migration planning** — gather migration guides and breaking-change notes from upstream projects
+
+</details>
 
 ```bash
 # Option 1: Cloud service (recommended)
@@ -252,13 +282,18 @@ export FIRECRAWL_BASE_URL="http://localhost:3000"
 # Option 3: Disabled (default - server works without web search)
 ```
 
-**Benefits:** Real-time research • Enhanced ADRs • Best practices discovery • Intelligent web scraping
-
 📖 **[Firecrawl Setup Guide →](docs/reference/environment-config.md#firecrawl-configuration)**
 
 ## 🌐 ADR Aggregator Integration (Optional)
 
-**Sync your ADRs to [adraggregator.com](https://adraggregator.com) for cross-team visibility, governance dashboards, and organizational knowledge graphs.**
+[ADR Aggregator](https://adraggregator.com) is a platform for cross-team ADR visibility and governance. It provides:
+
+- **Cross-repository knowledge graphs** — See how architectural decisions relate across projects
+- **Governance dashboards** — Track ADR compliance, staleness, and review cycles
+- **Template library** — Access domain-specific ADR templates (security, API, database, etc.)
+- **Team collaboration** — Share architectural decisions organization-wide
+
+> **Note:** ADR Aggregator is optional. All core analysis features work without it.
 
 ```bash
 # Set your API key (get one at adraggregator.com)
@@ -267,15 +302,15 @@ export ADR_AGGREGATOR_API_KEY="agg_your_key_here"
 
 ### Available Tools
 
-| Tool                      | Description                        | Tier |
-| ------------------------- | ---------------------------------- | ---- |
-| `sync_to_aggregator`      | Push local ADRs to platform        | Free |
-| `get_adr_context`         | Pull ADR context from platform     | Free |
-| `get_staleness_report`    | Get ADR governance/health reports  | Free |
-| `get_adr_templates`       | Retrieve domain-specific templates | Free |
-| `get_adr_diagrams`        | Get Mermaid diagrams for ADRs      | Pro+ |
-| `validate_adr_compliance` | Validate ADR implementation        | Pro+ |
-| `get_knowledge_graph`     | Cross-repository knowledge graph   | Team |
+| Tool                      | Description                        | Free | Pro+ | Team |
+| ------------------------- | ---------------------------------- | ---- | ---- | ---- |
+| `sync_to_aggregator`      | Push local ADRs to platform        | ✅   | ✅   | ✅   |
+| `get_adr_context`         | Pull ADR context from platform     | ✅   | ✅   | ✅   |
+| `get_staleness_report`    | Get ADR governance/health reports  | ✅   | ✅   | ✅   |
+| `get_adr_templates`       | Retrieve domain-specific templates | ✅   | ✅   | ✅   |
+| `get_adr_diagrams`        | Get Mermaid diagrams for ADRs      | —    | ✅   | ✅   |
+| `validate_adr_compliance` | Validate ADR implementation        | —    | ✅   | ✅   |
+| `get_knowledge_graph`     | Cross-repository knowledge graph   | —    | —    | ✅   |
 
 ### Workflow for New Repos
 
