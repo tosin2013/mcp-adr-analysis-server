@@ -89,7 +89,7 @@ This directory will be cleaned up according to the following plan:
 
 ## 📚 Related Documentation
 
-- **[Contributing Guide](../../CONTRIBUTING.md)** - How to contribute
+- **[Contributing Guide](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)** - How to contribute
 - **[Documentation Structure](../diataxis-index.md)** - How docs are organized
 - **[Style Guide](../community/DOCUMENTATION_STYLE_GUIDE.md)** - Writing guidelines
 

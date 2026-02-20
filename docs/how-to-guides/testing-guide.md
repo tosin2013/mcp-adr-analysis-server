@@ -633,7 +633,7 @@ Current test metrics:
 - **[Jest Documentation](https://jestjs.io/./getting-started)** - Testing framework guide
 - **[Testing Best Practices](https://github.com/goldbergyoni/javascript-testing-best-practices)** - Industry standards
 - **[CI/CD Guide](./how-to-guides/cicd-integration.md)** - Continuous integration setup
-- **[Contributing Guide](./../../CONTRIBUTING.md)** - Project contribution guidelines
+- **[Contributing Guide](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)** - Project contribution guidelines
 
 ---
 
