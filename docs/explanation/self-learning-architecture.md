@@ -825,7 +825,7 @@ LOG_LEVEL=debug npm start
 - [Bootstrap Validation Loop Guide](../how-to-guides/interactive-adr-planning.md)
 - [Deployment Readiness Tool](../reference/validation-tools.md#-deployment_readiness)
 - [Knowledge Graph System](./knowledge-graph-architecture.md)
-- [Memory Entity Manager](../reference/api-reference.md#memory-entity-manager)
+- [Memory Loading Tool](../reference/api-reference.md#memory_loading)
 
 ---
 

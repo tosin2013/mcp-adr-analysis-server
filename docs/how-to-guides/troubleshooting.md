@@ -561,7 +561,7 @@ export ADR_DIRECTORY="./adrs"
 
 ---
 
-## 🔥 Firecrawl Integration Issues
+## Firecrawl Integration Issues {#firecrawl-integration-issues}
 
 Firecrawl is an **optional** dependency for web research capabilities. The server works perfectly without it.
 
@@ -594,6 +594,56 @@ export FIRECRAWL_API_KEY="fc-your-api-key-here"
 ### Do I need Firecrawl?
 
 **No.** Firecrawl is entirely optional. Without it, the server uses local-only analysis. Enable it only if you need web research capabilities for ADR generation. See the [Firecrawl Setup Guide](./firecrawl-setup.md) for details.
+
+---
+
+## MCP Client Compatibility {#mcp-client-compatibility}
+
+Issues specific to different MCP clients.
+
+### Claude Desktop not connecting
+
+**Problem**: Claude Desktop doesn't show MCP tools.
+**Solution**:
+
+```bash
+# 1. Verify config file location
+# macOS: ~/Library/Application Support/Claude/claude_desktop_config.json
+# Windows: %APPDATA%\Claude\claude_desktop_config.json
+
+# 2. Validate JSON syntax
+cat ~/Library/Application\ Support/Claude/claude_desktop_config.json | python3 -m json.tool
+
+# 3. Restart Claude Desktop completely (Cmd+Q on macOS, not just close window)
+```
+
+### Cursor/Cline tools not appearing
+
+**Problem**: MCP tools don't show in VS Code-based clients.
+**Solution**:
+
+1. Check the MCP settings in your editor settings
+2. Reload the window (`Cmd+Shift+P` → "Reload Window")
+3. Check the Output panel for MCP-related errors
+
+### "Command not found" in MCP client
+
+**Problem**: The client can't find `mcp-adr-analysis-server`.
+**Solution**:
+
+```bash
+# 1. Use absolute path to the command
+which mcp-adr-analysis-server
+# Use this path in your config
+
+# 2. Or use npx
+{
+  "command": "npx",
+  "args": ["mcp-adr-analysis-server"]
+}
+```
+
+For detailed client-specific setup, see the [MCP Client Compatibility Guide](./mcp-client-compatibility.md).
 
 ---
 

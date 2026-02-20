@@ -47,7 +47,7 @@
 - [`get_workflow_guidance`](#get_workflow_guidance) - Intelligent workflow recommendations
 - [`get_development_guidance`](#get_development_guidance) - Development roadmap guidance
 - [`tool_chain_orchestrator`](#tool_chain_orchestrator) - Orchestrate multiple tool workflows
-- [`smart_git_push`](#smart_git_push) - Intelligent Git operations with validation
+- [`smart_git_push`](#smart_git_push) - Intelligent Git operations with validation (see [`smart_git_push_v2`](#smart_git_push_v2) for latest)
 - [`smart_git_push_v2`](#smart_git_push_v2) - **NEW**: Security-focused Git push with deployment readiness
 
 ### **🔬 Research & Knowledge**
@@ -230,6 +230,57 @@
 
 ## 📝 ADR Generation & Management
 
+### `generate_adr_from_decision`
+
+**Purpose**: Create an ADR from structured decision data
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required) - Path to project root",
+  "decision": "object (required) - Decision data including title, context, and options",
+  "outputDirectory": "string (default: './adrs') - Output directory for ADR",
+  "adrTemplate": "string (enum: 'nygard'|'madr'|'custom', default: 'nygard')"
+}
+```
+
+---
+
+### `generate_adr_todo`
+
+**Purpose**: Extract TODO items and action items from existing ADRs
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "adrDirectory": "string (default: './adrs')",
+  "includeCompleted": "boolean (default: false) - Include completed TODOs",
+  "outputFormat": "string (enum: 'markdown'|'json', default: 'markdown')"
+}
+```
+
+---
+
+### `interactive_adr_planning`
+
+**Purpose**: Interactive workflow for planning and creating ADRs collaboratively
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "sessionId": "string (optional) - Resume existing session",
+  "stakeholders": "array (optional) - List of stakeholders to involve",
+  "decisionContext": "string (optional) - Initial decision context"
+}
+```
+
+---
+
 ### `generate_adrs_from_prd`
 
 **Purpose**: Generate comprehensive ADRs from Product Requirements Document
@@ -321,6 +372,56 @@
 
 ---
 
+### `apply_basic_content_masking`
+
+**Purpose**: Apply content masking patterns to protect sensitive information
+
+**Parameters**:
+
+```json
+{
+  "content": "string (required) - Content to mask",
+  "patterns": "array (required) - Masking patterns to apply",
+  "preserveFormat": "boolean (default: true) - Maintain content structure"
+}
+```
+
+---
+
+### `validate_content_masking`
+
+**Purpose**: Validate that masking was applied correctly and effectively
+
+**Parameters**:
+
+```json
+{
+  "originalContent": "string (required) - Original unmasked content",
+  "maskedContent": "string (required) - Content after masking",
+  "appliedPatterns": "array (required) - Patterns that were applied",
+  "strictValidation": "boolean (default: true) - Enable strict validation"
+}
+```
+
+---
+
+### `configure_custom_patterns`
+
+**Purpose**: Configure custom security detection patterns for content analysis
+
+**Parameters**:
+
+```json
+{
+  "patterns": "array (required) - Custom pattern definitions",
+  "category": "string (optional) - Pattern category",
+  "severity": "string (enum: 'low'|'medium'|'high'|'critical', default: 'medium')",
+  "persist": "boolean (default: true) - Save patterns for future use"
+}
+```
+
+---
+
 ## 📊 Project Health & Deployment
 
 ### `smart_score`
@@ -340,6 +441,23 @@
 
 ---
 
+### `compare_adr_progress`
+
+**Purpose**: Compare and validate ADR progress against implementation milestones
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "adrDirectory": "string (default: './adrs')",
+  "milestones": "array (optional) - Expected milestones to compare against",
+  "includeMetrics": "boolean (default: true)"
+}
+```
+
+---
+
 ### `deployment_readiness`
 
 **Purpose**: Comprehensive deployment readiness analysis with security validation
@@ -353,6 +471,40 @@
   "enableTreeSitterAnalysis": "boolean (default: false)",
   "treeSitterLanguages": "array (optional) - Languages to analyze",
   "strictMode": "boolean (default: true)"
+}
+```
+
+---
+
+### `analyze_deployment_progress`
+
+**Purpose**: Analyze deployment progress and identify blockers
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "deploymentPlan": "object (optional) - Deployment plan to compare against",
+  "checkpoints": "array (optional) - Deployment checkpoints",
+  "includeBlockers": "boolean (default: true)"
+}
+```
+
+---
+
+### `generate_deployment_guidance`
+
+**Purpose**: Generate deployment guidance based on project analysis
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "targetEnvironment": "string (enum: 'development'|'staging'|'production')",
+  "deploymentType": "string (enum: 'initial'|'update'|'rollback', default: 'update')",
+  "includeChecklist": "boolean (default: true)"
 }
 ```
 
@@ -394,6 +546,23 @@
 
 ---
 
+### `get_development_guidance`
+
+**Purpose**: Development roadmap guidance and best practice recommendations
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "focusArea": "string (optional) - Specific area to focus on",
+  "includeEstimates": "boolean (default: true)",
+  "teamContext": "object (optional) - Team context information"
+}
+```
+
+---
+
 ### `tool_chain_orchestrator`
 
 **Purpose**: Orchestrate multiple tool workflows for complex analysis tasks
@@ -406,6 +575,25 @@
   "workflow": "string (enum: 'full_analysis'|'security_audit'|'deployment_prep'|'custom')",
   "tools": "array (required for custom workflow) - Tools to orchestrate",
   "parallelExecution": "boolean (default: false)"
+}
+```
+
+---
+
+### `smart_git_push`
+
+**Purpose**: Intelligent Git operations with validation
+
+> **Note**: This tool has been superseded by [`smart_git_push_v2`](#smart_git_push_v2) which includes additional security features and deployment readiness validation. Use `smart_git_push_v2` for new integrations.
+
+**Parameters**:
+
+```json
+{
+  "branch": "string (optional) - Target branch",
+  "message": "string (optional) - Commit message",
+  "dryRun": "boolean (default: false) - Preview changes without pushing",
+  "projectPath": "string (optional) - Project path"
 }
 ```
 
@@ -577,6 +765,40 @@
 
 ---
 
+### `create_research_template`
+
+**Purpose**: Create structured research templates for architectural investigation
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "researchTopic": "string (required) - Topic for research template",
+  "templateType": "string (enum: 'exploration'|'comparison'|'decision', default: 'exploration')",
+  "includeQuestions": "boolean (default: true)"
+}
+```
+
+---
+
+### `incorporate_research`
+
+**Purpose**: Integrate research findings into ADRs and documentation
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "researchFindings": "object (required) - Research findings to incorporate",
+  "targetAdr": "string (optional) - Specific ADR to update",
+  "createNewAdr": "boolean (default: false) - Create new ADR from findings"
+}
+```
+
+---
+
 ### `memory_loading`
 
 **Purpose**: Load and manage architectural memory for knowledge persistence
@@ -629,6 +851,24 @@
 
 ---
 
+### `create_rule_set`
+
+**Purpose**: Create machine-readable rule sets for automated validation
+
+**Parameters**:
+
+```json
+{
+  "projectPath": "string (required)",
+  "rulesetName": "string (required) - Name for the rule set",
+  "rules": "array (required) - Rules to include in the set",
+  "outputFormat": "string (enum: 'json'|'yaml', default: 'json')",
+  "includeMetadata": "boolean (default: true)"
+}
+```
+
+---
+
 ## 🗂️ File & Cache Management
 
 ### `read_file`
@@ -642,6 +882,41 @@
   "filePath": "string (required) - Path to file",
   "encoding": "string (default: 'utf8') - File encoding",
   "securityCheck": "boolean (default: true) - Enable security validation"
+}
+```
+
+---
+
+### `write_file`
+
+**Purpose**: Write files with safety checks and backup creation
+
+**Parameters**:
+
+```json
+{
+  "filePath": "string (required) - Path to file",
+  "content": "string (required) - Content to write",
+  "encoding": "string (default: 'utf8') - File encoding",
+  "createBackup": "boolean (default: true) - Create backup before overwriting",
+  "validateContent": "boolean (default: true) - Validate content before writing"
+}
+```
+
+---
+
+### `list_directory`
+
+**Purpose**: List directory contents securely with filtering options
+
+**Parameters**:
+
+```json
+{
+  "directoryPath": "string (required) - Path to directory",
+  "recursive": "boolean (default: false) - Include subdirectories",
+  "includeHidden": "boolean (default: false) - Include hidden files",
+  "filePatterns": "array (optional) - File patterns to filter"
 }
 ```
 
@@ -663,6 +938,23 @@
 
 ---
 
+### `manage_todo_json`
+
+**Purpose**: Manage TODO JSON files for task tracking
+
+**Parameters**:
+
+```json
+{
+  "operation": "string (enum: 'read'|'write'|'update'|'delete', required)",
+  "filePath": "string (optional) - Path to TODO JSON file",
+  "todoData": "object (optional) - TODO data for write/update operations",
+  "filter": "object (optional) - Filter criteria for read operations"
+}
+```
+
+---
+
 ## 🔧 Configuration & Utilities
 
 ### `configure_output_masking`
@@ -676,6 +968,53 @@
   "maskingRules": "array (required) - Masking rules configuration",
   "globalSettings": "object (optional) - Global masking settings",
   "testMode": "boolean (default: false) - Enable test mode"
+}
+```
+
+---
+
+### `request_action_confirmation`
+
+**Purpose**: Request user confirmation before performing sensitive actions
+
+**Parameters**:
+
+```json
+{
+  "action": "string (required) - Description of the action",
+  "severity": "string (enum: 'low'|'medium'|'high'|'critical', default: 'medium')",
+  "details": "object (optional) - Additional action details",
+  "timeout": "number (optional) - Confirmation timeout in seconds"
+}
+```
+
+---
+
+### `check_ai_execution_status`
+
+**Purpose**: Check the current AI execution mode and status
+
+**Parameters**:
+
+```json
+{
+  "includeMetrics": "boolean (default: false) - Include execution metrics",
+  "includeConfig": "boolean (default: true) - Include configuration details"
+}
+```
+
+**Response Format**:
+
+```json
+{
+  "mode": "full|prompt",
+  "aiProvider": "openrouter",
+  "model": "anthropic/claude-3-sonnet",
+  "status": "active|inactive",
+  "config": {
+    "temperature": 0.3,
+    "maxTokens": 4096
+  }
 }
 ```
 
