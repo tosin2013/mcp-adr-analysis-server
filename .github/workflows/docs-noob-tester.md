@@ -71,7 +71,28 @@ Scan through the documentation files in `docs/` and flag:
 5. **Stale content**: References to features, files, or APIs that have been removed or renamed
 6. **Missing "Why"**: Explanations of _how_ without explaining _why_ a developer would want to do something
 
-### Phase 4: Tutorial Walkthrough
+### Phase 4: Placeholder and Template Content Detection
+
+Scan every markdown file under `docs/` for pages that are **scaffolds or templates that were never populated with real content**. These pages are published to the live Docusaurus site and confuse users who land on them expecting real documentation.
+
+Detection heuristics — flag a page as a placeholder if it contains **2 or more** of these indicators:
+
+1. **Generic headings**: "Concept 1", "Concept 2", "Alternative 1", "Alternative 2"
+2. **Ellipsis stubs**: Sentences ending with "..." that are clearly unfinished (e.g., "Understanding the architecture requires knowledge of...", "We chose this approach because...")
+3. **Bracketed placeholders**: Text like "[High-level explanation]", "[Design Principle 1]", "[Process 1]", "[Decision 1]", "[Explanation]"
+4. **Template table data**: Table cells containing only "Pro 1", "Pro 2", "Con 1", "Con 2", "Benefit vs Cost"
+5. **Very low word count**: Pages under 100 words of actual content (excluding frontmatter, headings, and markdown syntax)
+6. **No project-specific terms**: Pages that don't mention any of: MCP, ADR, tool names, TypeScript, Node.js, or other project-specific concepts
+
+For each placeholder page found, note:
+
+- The file path
+- Which indicators matched
+- Whether the page is reachable from site navigation (and thus visible to users)
+
+**Severity**: Placeholder pages reachable from navigation are **Critical** (they damage credibility). Unreachable placeholder pages are **Confusing** (they add noise to the repository).
+
+### Phase 5: Tutorial Walkthrough
 
 If there are tutorial documents, attempt to follow them step by step. For each tutorial:
 
@@ -111,6 +132,12 @@ Create an issue with the findings categorized by severity:
 | Link  | Found In | Status            |
 | ----- | -------- | ----------------- |
 | {url} | {file}   | {404/timeout/etc} |
+
+### Placeholder / Template Pages
+
+| File   | Indicators Found             | In Site Navigation? | Severity             |
+| ------ | ---------------------------- | ------------------- | -------------------- |
+| {file} | {list of matched indicators} | {Yes/No}            | {Critical/Confusing} |
 
 ### Jargon Without Definition
 
