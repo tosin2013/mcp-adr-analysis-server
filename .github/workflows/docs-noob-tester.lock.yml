@@ -23,7 +23,7 @@
 #
 # Simulates a brand-new developer navigating the documentation and Docusaurus site to find gaps and confusion
 #
-# frontmatter-hash: 08ba50c1226d9089698848f2fd839dde09c46f1685761f3cf8709eb01ecce491
+# frontmatter-hash: cab440cce7a0a5904cfa7b4d96b119d9bb487a2fbdd88d0a6bf244f95c801b9f
 
 name: 'Documentation Noob Tester'
 'on':

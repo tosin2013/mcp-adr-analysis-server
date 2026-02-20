@@ -23,7 +23,7 @@
 #
 # Validates the live GitHub Pages Docusaurus site for broken links, missing assets, search, sitemap, mobile responsiveness, accessibility, and HTTPS compliance
 #
-# frontmatter-hash: 9dd039e86300f2afe5ce188ebad21dd7b6730c089b53fcbb329f77bc07abab3d
+# frontmatter-hash: b0a2f8f15263749e7b9849e41a773724a87a086f2d7ab7dbf36e7abe7619f18c
 
 name: 'Docs Site Validator'
 'on':
