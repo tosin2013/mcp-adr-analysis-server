@@ -96,7 +96,7 @@ mkdir -p ./architecture/reviews
 mkdir -p ./architecture/proposals
 
 # Create ADR index
-cat > ./architecture/decision../../README.md << 'EOF'
+cat > ./architecture/decisions/README.md << 'EOF'
 # Architectural Decision Records
 
 ## Team Process

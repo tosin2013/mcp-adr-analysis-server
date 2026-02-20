@@ -63,7 +63,7 @@ const result = lib.doSomething({
 
 ## Contributing
 
-We welcome contributions! Please see [../CONTRIBUTING.md](../CONTRIBUTING.md) for guidelines.
+We welcome contributions! Please see [CONTRIBUTING.md](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md) for guidelines.
 
 ## License
 

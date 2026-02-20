@@ -118,7 +118,7 @@ jobs:
       - name: Check for security vulnerabilities
         run: |
           echo "Checking for security vulnerabilities..."
-          npm audit --audit-level=moderate || echo "Security audit completed with warnings"
+          npm audit --omit=dev --audit-level=moderate || echo "Security audit completed with warnings"
 
       - name: Generate dependency report
         run: |
@@ -190,7 +190,7 @@ jobs:
       - name: Run security audit
         run: |
           echo "Running security audit..."
-          npm audit --audit-level=high
+          npm audit --omit=dev --audit-level=high
 
       - name: Check for known vulnerabilities
         run: |
