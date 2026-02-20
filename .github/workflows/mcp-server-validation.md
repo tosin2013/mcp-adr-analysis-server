@@ -32,10 +32,10 @@ You validate the MCP server's core functionality: initialization, tool registrat
 
 ## Context
 
-The **mcp-adr-analysis-server** exposes 27 tools via `@modelcontextprotocol/sdk`. The server must:
+The **mcp-adr-analysis-server** exposes 73 tools via `@modelcontextprotocol/sdk`. The server must:
 
 - Initialize correctly on both Node.js 20 and 22
-- Register all 27 tools in both ListTools and CallTool handlers
+- Register all 73 tools in both ListTools and CallTool handlers
 - Comply with the MCP protocol (JSON-RPC over stdio)
 - Pass health checks (`npm run health`)
 
