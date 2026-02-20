@@ -23,7 +23,7 @@
 #
 # Generates comprehensive release notes by analyzing commits, PRs, and MCP-specific changes since the previous tag
 #
-# frontmatter-hash: 16252e6fe4770c4383daf3d7c015aaab454a36ae92c43646b862877391c731d5
+# frontmatter-hash: acab7b3dc2d21151768d9a94862225dde11eacf4964b05d3912d9e77cf4bc1c7
 
 name: 'AI-Enhanced Release Notes Agent'
 'on':

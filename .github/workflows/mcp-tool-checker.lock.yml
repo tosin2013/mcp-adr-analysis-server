@@ -23,7 +23,7 @@
 #
 # Inspects all MCP tools for response pattern consistency, ESM compliance, registration completeness, and documentation alignment
 #
-# frontmatter-hash: 35b1bd33c45a05fdf85d431bc7feb3f17133401bd40dcefd0709ac3899a5bda2
+# frontmatter-hash: cff3c2115c6aba4a85bb13c96a06f55dd65b5533a7ef132daea9f3b4ed1e0dc7
 
 name: 'MCP Tool Consistency Checker'
 'on':

@@ -23,7 +23,7 @@
 #
 # Groups open Dependabot PRs into logical bundles with merge strategy recommendations
 #
-# frontmatter-hash: 136b4d90239ea3a0e13c6adad61c19ddd8813ca4b541a60c14949ab00a73e97e
+# frontmatter-hash: f75005dc7a0443bbe4fd183fc19b8301502726ca4e480f06af04ed6abf2963de
 
 name: 'Dependabot PR Bundler'
 'on':
