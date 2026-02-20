@@ -4,7 +4,7 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   parseVersion,
   versionToString,
@@ -194,14 +194,19 @@ describe('Resource Versioning Utilities', () => {
       expect(metadata.changelog![1].version).toBe('1.2.0');
     });
 
-    it('should update updatedAt timestamp', async () => {
-      const initial = createResourceMetadata('1.0.0');
-      const initialTime = initial.updatedAt;
+    it('should update updatedAt timestamp', () => {
+      vi.useFakeTimers();
+      try {
+        vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
+        const initial = createResourceMetadata('1.0.0');
+        const initialTime = initial.updatedAt;
 
-      // Wait 1ms to ensure timestamp changes
-      await new Promise(resolve => setTimeout(resolve, 1));
-      const updated = updateResourceMetadata(initial, '1.1.0', ['Update']);
-      expect(updated.updatedAt).not.toBe(initialTime);
+        vi.setSystemTime(new Date('2026-01-01T00:00:01.000Z'));
+        const updated = updateResourceMetadata(initial, '1.1.0', ['Update']);
+        expect(updated.updatedAt).not.toBe(initialTime);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

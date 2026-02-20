@@ -9,6 +9,10 @@
 
 > **AI-powered architectural analysis for intelligent development workflows.** Returns actual analysis results, not prompts to submit elsewhere.
 
+## What is MCP?
+
+The **Model Context Protocol (MCP)** is an open standard that enables seamless integration between AI assistants and external tools and data sources. Think of it as a universal adapter that lets AI assistants like Claude, Cline, and Cursor connect to specialized analysis servers. This server enhances AI assistants with deep architectural analysis capabilities, enabling intelligent code generation, decision tracking, and development workflow automation.
+
 ## TL;DR
 
 **What:** MCP server that provides AI-powered architectural decision analysis and ADR (Architectural Decision Record) management  
@@ -21,10 +25,6 @@
 ---
 
 **Author**: [Tosin Akinosho](https://github.com/tosin2013) | **Repository**: [GitHub](https://github.com/tosin2013/mcp-adr-analysis-server.git)
-
-## What is MCP?
-
-The Model Context Protocol enables seamless integration between AI assistants and external tools. This server enhances AI assistants with deep architectural analysis capabilities, enabling intelligent code generation, decision tracking, and development workflow automation.
 
 ## ✨ Core Capabilities
 
