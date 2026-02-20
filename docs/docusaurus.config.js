@@ -188,19 +188,6 @@ const config = {
         darkTheme: darkCodeTheme,
         additionalLanguages: ['bash', 'json', 'typescript', 'javascript', 'yaml'],
       },
-      algolia: {
-        // The application ID provided by Algolia
-        appId: 'YOUR_APP_ID',
-        // Public API key: it is safe to commit it
-        apiKey: 'YOUR_SEARCH_API_KEY',
-        indexName: 'mcp-adr-analysis-server',
-        // Optional: see doc section below
-        contextualSearch: true,
-        // Optional: Algolia search parameters
-        searchParameters: {},
-        // Optional: path for search page that enabled by default (`false` to disable it)
-        searchPagePath: 'search',
-      },
       colorMode: {
         defaultMode: 'light',
         disableSwitch: false,
@@ -211,7 +198,16 @@ const config = {
   markdown: {
     mermaid: true,
   },
-  themes: ['@docusaurus/theme-mermaid'],
+  themes: [
+    '@docusaurus/theme-mermaid',
+    [
+      require.resolve('@easyops-cn/docusaurus-search-local'),
+      {
+        hashed: true,
+        docsRouteBasePath: '/',
+      },
+    ],
+  ],
 };
 
 module.exports = config;
