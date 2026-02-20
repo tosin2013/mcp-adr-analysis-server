@@ -65,3 +65,11 @@
   text-align: center;
   margin: 1rem 0;
 }
+
+/* Mobile: prevent code blocks from overflowing the viewport */
+@media (max-width: 768px) {
+  pre {
+    overflow-x: auto;
+    max-width: 100%;
+  }
+}
