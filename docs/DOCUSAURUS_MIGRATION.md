@@ -117,7 +117,7 @@ Most markdown files work as-is, but you may need to update:
 2. **Internal links** - Should work the same, but verify:
 
    ```markdown
-   [Link to tutorial](/tutorials/01-first-steps)
+   [Link to tutorial](./tutorials/01-first-steps.md)
    ```
 
 3. **Mermaid diagrams** - Already configured with `@docusaurus/theme-mermaid`

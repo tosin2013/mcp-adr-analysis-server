@@ -7,6 +7,16 @@ description: Learning-oriented guides for newcomers
 
 Learning-oriented guides for newcomers
 
+## Prerequisites
+
+Before starting any tutorial, make sure you have the following:
+
+- **Node.js ≥20.0.0** — [Download](https://nodejs.org/) | Verify: `node --version`
+- **npm ≥9.0.0** (included with Node.js) | Verify: `npm --version`
+- **An MCP-compatible client** — [Claude Desktop](https://claude.ai/download), [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev), [Cursor](https://cursor.sh/), or [Windsurf](https://codeium.com/windsurf)
+- **MCP ADR Analysis Server installed**: `npm install -g mcp-adr-analysis-server`
+- _(Optional)_ [OpenRouter API key](https://openrouter.ai/keys) for full AI-powered analysis (not required — prompt-only mode works without one)
+
 ## Available Guides
 
 This section contains tutorials documentation following the Diataxis framework.
