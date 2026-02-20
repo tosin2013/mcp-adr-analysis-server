@@ -4,7 +4,7 @@
 
 This is a **Model Context Protocol (MCP) server** that provides AI-powered architectural analysis and ADR (Architectural Decision Record) management. The server integrates with AI assistants (Claude, Cline, Cursor) via the MCP protocol and uses OpenRouter.ai for generating actual analysis results instead of prompts.
 
-**Core Architecture**: MCP server (`src/index.ts`) exposes 27 specialized tools through `@modelcontextprotocol/sdk` that call into utilities for AI execution, caching, knowledge graphs, and memory management.
+**Core Architecture**: MCP server (`src/index.ts`) exposes 73 tools through `@modelcontextprotocol/sdk` that call into utilities for AI execution, caching, knowledge graphs, and memory management.
 
 ## Critical Technical Conventions
 
@@ -178,7 +178,7 @@ Authoritative templates for infrastructure deployment that LLMs query for platfo
 ```
 src/
 ├── index.ts              # MCP server entry point (8466 lines - tool/resource/prompt handlers)
-├── tools/                # 27 specialized MCP tools
+├── tools/                # 73 specialized MCP tools
 ├── utils/                # Core utilities (AI, caching, knowledge graph, logging)
 ├── types/                # TypeScript type definitions and schemas
 ├── config/               # Configuration management
@@ -248,7 +248,7 @@ This project uses **GitHub Agentic Workflows** (Markdown-based workflows with AI
 | Docs Noob Tester    | `docs-noob-tester.md`       | Weekly + manual               | Simulates new developer navigating docs, finds gaps and confusion              |
 | Dependabot Bundler  | `dependabot-bundler.md`     | Weekly + manual               | Groups Dependabot PRs into logical bundles with merge strategies               |
 | AI Release Notes    | `ai-release-notes-agent.md` | Tag push (v\*) + manual       | Generates categorized release notes from commits and PRs                       |
-| MCP Tool Checker    | `mcp-tool-checker.md`       | Weekly (Wed) + manual         | Audits all 27 tools for consistency, ESM compliance, registration              |
+| MCP Tool Checker    | `mcp-tool-checker.md`       | Weekly (Wed) + manual         | Audits all 73 tools for consistency, ESM compliance, registration              |
 | Docs Site Validator | `docs-site-validator.md`    | Post-deploy + weekly + manual | Validates live GitHub Pages site: links, assets, search, sitemap, mobile, a11y |
 
 ### Migrated Validation Agents
