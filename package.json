@@ -90,7 +90,7 @@
     "tsx": "^4.6.0",
     "typedoc": "^0.28.13",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.18"
   },
   "keywords": [
     "mcp",
