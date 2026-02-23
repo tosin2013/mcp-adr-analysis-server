@@ -80,7 +80,7 @@
     "@typescript-eslint/parser": "^8.45.0",
     "@vitest/coverage-v8": "^4.0.17",
     "ajv": "^8.17.1",
-    "eslint": "^9.36.0",
+    "eslint": "^10.0.1",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.4",
     "husky": "^9.1.7",
