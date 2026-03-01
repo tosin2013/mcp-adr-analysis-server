@@ -195,7 +195,7 @@ The system automatically detects available capabilities on startup:
 
 1. **Cloud Provider Integration**
    - AWS (ECS, EKS, EC2)
-   - Azure (AKS, Container Instances)
+   - Azure (ASK, Container Instances)
    - GCP (GKE, Cloud Run)
 
 2. **Database Capabilities**

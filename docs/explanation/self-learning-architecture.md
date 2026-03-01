@@ -140,13 +140,13 @@ graph LR
     ENV --> |Not Found| WEB[Web Search]
     WEB --> CONF4[Confidence: 0.6]
 
-    CONF1 --> ANS[Answer]
-    CONF2 --> ANS
-    CONF3 --> ANS
-    CONF4 --> ANS
+    CONF1 --> AND[Answer]
+    CONF2 --> AND
+    CONF3 --> AND
+    CONF4 --> AND
 
     style Q fill:#f9f,stroke:#333,stroke-width:4px
-    style ANS fill:#bfb,stroke:#333,stroke-width:4px
+    style AND fill:#bfb,stroke:#333,stroke-width:4px
 ```
 
 **Example Usage**:

@@ -155,7 +155,7 @@ export default [
         expect: 'readonly',
         beforeAll: 'readonly',
         beforeEach: 'readonly',
-        afterAll: 'readonly',
+        after all: 'readonly',
         afterEach: 'readonly',
         // Node.js timer functions for tests
         setTimeout: 'readonly',
