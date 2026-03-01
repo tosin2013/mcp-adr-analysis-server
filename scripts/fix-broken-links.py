@@ -19,7 +19,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 class DocumentationLinkFixer:
+    """Documentation link fixer class."""
     def __init__(self, docs_dir: str, dry_run: bool = False):
+        """Init."""
         self.docs_dir = Path(docs_dir)
         self.dry_run = dry_run
         self.fixes_applied = 0
@@ -755,6 +757,7 @@ This sample ADR serves as a template and reference for:
 
 
 def main():
+    """Main."""
     parser = argparse.ArgumentParser(description="Fix broken links in MCP ADR Analysis Server documentation")
     parser.add_argument("--docs-dir", default="/docs/docs", help="Documentation directory path")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be done without making changes")

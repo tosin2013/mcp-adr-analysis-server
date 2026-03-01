@@ -400,7 +400,7 @@ If this plan needs changes:
 
 ### Mitigation
 
-- **Setup Complexity**: Use managed Kubernetes (GKE, EKS, AKS) for easier cluster management
+- **Setup Complexity**: Use managed Kubernetes (GKE, EKS, ASK) for easier cluster management
 - **Secrets**: Consider using external secret management (Vault, AWS Secrets Manager)
 - **Network**: Use Kubernetes NetworkPolicies for secure service communication
 
