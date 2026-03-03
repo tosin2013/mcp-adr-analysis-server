@@ -9,6 +9,8 @@ on:
 jobs:
   aggregator-integration:
     runs-on: ubuntu-latest
+    env:
+      HAS_AGG_KEY: ${{ secrets.ADR_AGGREGATOR_API_KEY }}
 
     steps:
       - name: Checkout code
@@ -54,7 +56,7 @@ jobs:
         run: npx vitest run tests/integration/aggregator-endpoint-mapping.test.ts
 
       - name: Run live integration tests
-        if: ${{ secrets.ADR_AGGREGATOR_API_KEY != '' }}
+        if: ${{ env.HAS_AGG_KEY != '' }}
         env:
           ADR_AGGREGATOR_API_KEY: ${{ secrets.ADR_AGGREGATOR_API_KEY }}
         run: npx vitest run tests/integration/aggregator-live.test.ts
