@@ -354,9 +354,16 @@ For organizations with multiple repositories:
 - Share successful ADRs across teams
 - Detect architectural inconsistencies
 
+## Endpoint and Tool Reference
+
+The MCP tool names and API endpoints in this server are aligned with the official [ADR Aggregator MCP Guide](https://adraggregator.com/mcp-guide). A mapping parity test enforces that every documented endpoint has a corresponding MCP tool, client method, and handler.
+
+The default API base URL is `https://jvgdaquuggzbkenxnkja.supabase.co`. All endpoints are at `{baseUrl}/functions/v1/{endpoint-name}`. You can override the base URL with the `ADR_AGGREGATOR_URL` environment variable.
+
 ## Related Documentation
 
 - [Installation Guide](./installation-guide.md)
 - [Work with Existing ADRs](./work-with-existing-adrs.md)
 - [CI/CD Integration](./cicd-integration.md)
 - [Troubleshooting](./troubleshooting.md)
+- [ADR Aggregator MCP Guide](https://adraggregator.com/mcp-guide)

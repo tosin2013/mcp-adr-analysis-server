@@ -1,0 +1,62 @@
+name: ADR Aggregator Integration
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  aggregator-integration:
+    runs-on: ubuntu-latest
+    env:
+      HAS_AGG_KEY: ${{ secrets.ADR_AGGREGATOR_API_KEY }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build project
+        run: npm run build
+
+      - name: Smoke test - MCP guide URL
+        run: |
+          echo "Testing adraggregator.com/mcp-guide is reachable..."
+          STATUS=$(curl -sSL -o /dev/null -w "%{http_code}" https://adraggregator.com/mcp-guide)
+          echo "Response status: $STATUS"
+          if [ "$STATUS" -ge 500 ]; then
+            echo "MCP guide returned 5xx — upstream may be down"
+            exit 1
+          fi
+          echo "MCP guide is reachable (status $STATUS)"
+
+      - name: Smoke test - Supabase templates endpoint
+        run: |
+          echo "Testing Supabase mcp-get-templates endpoint..."
+          STATUS=$(curl -sSL -o /dev/null -w "%{http_code}" \
+            -H "Accept: application/json" \
+            https://jvgdaquuggzbkenxnkja.supabase.co/functions/v1/mcp-get-templates)
+          echo "Response status: $STATUS"
+          if [ "$STATUS" -ge 500 ]; then
+            echo "Supabase templates endpoint returned 5xx"
+            exit 1
+          fi
+          echo "Supabase templates endpoint is reachable (status $STATUS)"
+
+      - name: Run mapping parity tests
+        run: npx vitest run tests/integration/aggregator-endpoint-mapping.test.ts
+
+      - name: Run live integration tests
+        if: ${{ env.HAS_AGG_KEY != '' }}
+        env:
+          ADR_AGGREGATOR_API_KEY: ${{ secrets.ADR_AGGREGATOR_API_KEY }}
+        run: npx vitest run tests/integration/aggregator-live.test.ts
