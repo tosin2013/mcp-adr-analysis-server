@@ -329,7 +329,7 @@ sync_to_aggregator(full_sync: true)
 
 **Benefits:** Cross-team visibility • Staleness alerts • Compliance tracking • Organization-wide knowledge graph
 
-📖 **[ADR Aggregator Guide →](https://adraggregator.com/docs)**
+📖 **[ADR Aggregator Guide →](https://adraggregator.com/docs)** | 📖 **[MCP Integration Guide →](https://adraggregator.com/mcp-guide)**
 
 ## 🔧 Development
 

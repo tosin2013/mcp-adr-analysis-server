@@ -95,11 +95,11 @@ For AI-powered analysis, add your OpenRouter API key:
 
 ### ADR Aggregator
 
-| Variable                 | Description                       | Default                         |
-| ------------------------ | --------------------------------- | ------------------------------- |
-| `ADR_AGGREGATOR_ENABLED` | Enable ADR Aggregator integration | `false`                         |
-| `ADR_AGGREGATOR_API_KEY` | ADR Aggregator API key            | —                               |
-| `ADR_AGGREGATOR_URL`     | ADR Aggregator endpoint           | `https://api.adraggregator.com` |
+| Variable                 | Description                       | Default                                    |
+| ------------------------ | --------------------------------- | ------------------------------------------ |
+| `ADR_AGGREGATOR_ENABLED` | Enable ADR Aggregator integration | `false`                                    |
+| `ADR_AGGREGATOR_API_KEY` | ADR Aggregator API key            | —                                          |
+| `ADR_AGGREGATOR_URL`     | ADR Aggregator endpoint           | `https://jvgdaquuggzbkenxnkja.supabase.co` |
 
 ---
 
