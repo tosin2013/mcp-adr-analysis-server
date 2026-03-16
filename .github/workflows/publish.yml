@@ -58,7 +58,7 @@ jobs:
 
       - name: Update Release Draft
         id: drafter
-        uses: release-drafter/release-drafter@v6
+        uses: release-drafter/release-drafter@v7
         with:
           config-name: release-drafter.yml
           disable-autolabeler: false
