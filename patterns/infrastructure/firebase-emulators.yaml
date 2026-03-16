@@ -28,7 +28,7 @@ authoritativeSources:
 
       This is the PRIMARY source for Firebase emulator knowledge.
 
-  - type: 'tutorial'
+  - type: 'examples'
     url: 'https://github.com/firebase/emulators-codelab'
     purpose: 'Official hands-on codelab for Firebase emulators - step-by-step tutorial'
     priority: 10
