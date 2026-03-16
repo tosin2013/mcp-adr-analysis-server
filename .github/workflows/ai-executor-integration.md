@@ -22,6 +22,10 @@ tools:
   bash: true
   github:
     toolsets: [issues, pull_requests]
+network:
+  allowed:
+    - defaults
+    - node
 ---
 
 # AI Executor Integration

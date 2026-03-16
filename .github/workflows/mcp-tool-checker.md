@@ -17,6 +17,10 @@ tools:
   edit:
   github:
     toolsets: [issues]
+network:
+  allowed:
+    - defaults
+    - node
 ---
 
 # MCP Tool Consistency Checker

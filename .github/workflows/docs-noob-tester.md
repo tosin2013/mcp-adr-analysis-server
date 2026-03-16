@@ -18,6 +18,10 @@ tools:
   edit:
   github:
     toolsets: [issues]
+network:
+  allowed:
+    - defaults
+    - node
 ---
 
 # Documentation Noob Tester
