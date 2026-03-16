@@ -19,6 +19,7 @@ npm run dev
 ## 📋 Two Options for Setup
 
 ### **Option A: npm Scripts (Recommended)**
+
 ```bash
 cd docs
 
@@ -36,6 +37,7 @@ npm run clean
 ```
 
 ### **Option B: Bash Script (Advanced)**
+
 ```bash
 cd docs
 
@@ -62,23 +64,25 @@ cd docs
 
 ## 🎯 What Each Command Does
 
-| Command | npm Version | Script Version | Purpose |
-|---------|-------------|----------------|---------|
-| **Setup** | `npm run setup` | `./setup-website.sh setup` | Install dependencies & check prerequisites |
-| **Development** | `npm run dev` | `./setup-website.sh dev` | Start development server with hot reload |
-| **Build** | `npm run build` | `./setup-website.sh build` | Create production build |
-| **Deploy** | `npm run deploy` | `./setup-website.sh deploy` | Build + deployment guidance |
-| **Clean** | `npm run clean` | `./setup-website.sh clean` | Remove build artifacts |
+| Command         | npm Version      | Script Version              | Purpose                                    |
+| --------------- | ---------------- | --------------------------- | ------------------------------------------ |
+| **Setup**       | `npm run setup`  | `./setup-website.sh setup`  | Install dependencies & check prerequisites |
+| **Development** | `npm run dev`    | `./setup-website.sh dev`    | Start development server with hot reload   |
+| **Build**       | `npm run build`  | `./setup-website.sh build`  | Create production build                    |
+| **Deploy**      | `npm run deploy` | `./setup-website.sh deploy` | Build + deployment guidance                |
+| **Clean**       | `npm run clean`  | `./setup-website.sh clean`  | Remove build artifacts                     |
 
 ---
 
 ## 🌐 Deployment Quick Guide
 
 ### **GitHub Pages (Automatic)**
+
 1. **Push to main branch** - the website deploys automatically
 2. **Access at**: `https://username.github.io/mcp-adr-analysis-server/`
 
 ### **Manual Deploy**
+
 ```bash
 # Build the site
 npm run build
@@ -92,7 +96,9 @@ npm run build
 ## 🎨 Common Customizations
 
 ### **Change Site Colors**
+
 Edit `./.vitepress/config.js`:
+
 ```js
 themeConfig: {
   // Add your branding here
@@ -100,11 +106,14 @@ themeConfig: {
 ```
 
 ### **Add Your Logo**
+
 1. Put logo in `./public/logo.svg`
 2. It's automatically used in the config
 
 ### **Custom Domain**
+
 Update `base` in `config.js`:
+
 ```js
 base: '/', // For custom domain
 // base: '/mcp-adr-analysis-server/', // For GitHub Pages
@@ -115,25 +124,32 @@ base: '/', // For custom domain
 ## 🆘 Troubleshooting
 
 ### **Script Permission Error**
+
 ```bash
 chmod +x ./setup-website.sh
 ```
 
 ### **Node.js Version Error**
-Ensure Node.js ≥18.0.0:
+
+Ensure Node.js ≥20.0.0:
+
 ```bash
-node --version  # Should be v18.0.0+
+node --version  # Should be v20.0.0+
 ```
 
 ### **Port Already in Use**
+
 Kill existing process:
+
 ```bash
 # Find process using port 5173
 lsof -ti:5173 | xargs kill -9
 ```
 
 ### **Build Fails**
+
 Clear cache and reinstall:
+
 ```bash
 npm run clean
 rm -rf node_modules package-lock.json
@@ -149,11 +165,10 @@ npm install
 ✅ **Mobile-Responsive** design  
 ✅ **Auto-Deploy** via GitHub Actions  
 ✅ **Lightning Fast** loading  
-✅ **SEO Optimized** for discoverability  
+✅ **SEO Optimized** for discoverability
 
 ---
 
 **Ready to launch?** → `cd docs && npm run setup && npm run dev`
 
 **Need help?** → Check [WEBSITE_SETUP.md](WEBSITE_SETUP.md) for detailed instructions
-
