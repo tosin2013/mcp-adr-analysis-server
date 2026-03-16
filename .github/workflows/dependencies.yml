@@ -214,7 +214,7 @@ jobs:
           fi
 
       - name: Upload security artifacts
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7.0.0
         with:
           name: security-audit
           path: |
