@@ -245,7 +245,7 @@ This project uses **GitHub Agentic Workflows** (Markdown-based workflows with AI
 | Workflow            | File                        | Trigger                       | Purpose                                                                        |
 | ------------------- | --------------------------- | ----------------------------- | ------------------------------------------------------------------------------ |
 | CI Doctor           | `ci-doctor.md`              | workflow_run (on failure)     | Deep CI failure diagnosis with MCP-specific pattern recognition                |
-| Docs Noob Tester    | `docs-noob-tester.md`       | Weekly + manual               | Simulates new developer navigating docs, finds gaps and confusion              |
+| Docs Noob Tester    | `docs-noob-tester.md`       | Monthly + manual              | Simulates new developer navigating docs and API docs site, finds gaps          |
 | Dependabot Bundler  | `dependabot-bundler.md`     | Weekly + manual               | Groups Dependabot PRs into logical bundles with merge strategies               |
 | AI Release Notes    | `ai-release-notes-agent.md` | Tag push (v\*) + manual       | Generates categorized release notes from commits and PRs                       |
 | MCP Tool Checker    | `mcp-tool-checker.md`       | Weekly (Wed) + manual         | Audits all 73 tools for consistency, ESM compliance, registration              |
