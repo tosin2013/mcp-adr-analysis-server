@@ -1,6 +1,6 @@
 ---
 name: 'Documentation Noob Tester'
-description: 'Simulates a brand-new developer navigating the documentation and Docusaurus site to find gaps and confusion'
+description: 'Simulates a brand-new developer navigating the documentation and API docs site to find gaps and confusion'
 on:
   schedule:
     - cron: '0 9 1 * *' # Monthly on 1st
@@ -26,7 +26,7 @@ You are a brand-new developer who has never seen this project before. Your job i
 
 ## Context
 
-This is the **mcp-adr-analysis-server** — a Model Context Protocol (MCP) server. The documentation lives in the `docs/` directory and is served as a Docusaurus site. There are 160+ documentation files covering tutorials, how-to guides, reference material, and explanations.
+This is the **mcp-adr-analysis-server** — a Model Context Protocol (MCP) server. The documentation lives in the `docs/` directory as markdown files organized into subdirectories: `tutorials/`, `how-to-guides/`, `reference/`, `explanation/`, `adrs/`, `examples/`, `patterns/`, `research/`, and others. API documentation is generated via TypeDoc (`npm run docs:build`) and served locally with a Python HTTP server (`npm run docs:serve` on port 8080). There is no Docusaurus or other static site generator configured.
 
 Key terms a new developer might NOT know:
 
@@ -39,6 +39,8 @@ Key terms a new developer might NOT know:
 
 ## Your testing process
 
+**Important**: Focus on the highest-impact phases first. If time is limited, completing Phases 1-3 well is more valuable than rushing through all five.
+
 ### Phase 1: Quick Start Test
 
 1. Read `README.md` from the repository root
@@ -49,20 +51,19 @@ Key terms a new developer might NOT know:
    - Does it assume you have an OpenRouter API key?
    - Are there missing `npm install` or `npm run build` steps?
 
-### Phase 2: Documentation Site Test
+### Phase 2: API Documentation Site Test
 
-1. Run `npm run docs:build` (or the appropriate Docusaurus build command) to build the docs site
-2. Start the docs site locally using `npm run docs:serve` or equivalent
-3. Use Playwright to navigate the site:
-   - Check that the homepage loads and has clear navigation
-   - Visit every top-level navigation link
+1. Run `npm run docs:build` to generate API documentation via TypeDoc into `docs/api/`
+2. Start the docs site locally using `npm run docs:serve` (serves `docs/api/` on `http://localhost:8080`)
+3. Use Playwright to navigate the generated API docs site:
+   - Check that the index page loads at `http://localhost:8080`
+   - Verify navigation links work (modules, classes, functions)
    - Check for broken internal links (404s)
-   - Check for broken anchor links
-   - Verify all code examples have proper syntax highlighting
+   - Spot-check that key classes and functions have documentation
 
 ### Phase 3: Jargon and Clarity Audit
 
-Scan through the documentation files in `docs/` and flag:
+Scan a representative sample of documentation files in `docs/` (focus on `tutorials/`, `how-to-guides/`, `README.md`, and `QUICK_START.md`) and flag:
 
 1. **Undefined jargon**: MCP-specific terms used before being defined
 2. **Missing prerequisites**: Steps that assume prior setup without saying so
@@ -73,7 +74,7 @@ Scan through the documentation files in `docs/` and flag:
 
 ### Phase 4: Placeholder and Template Content Detection
 
-Scan every markdown file under `docs/` for pages that are **scaffolds or templates that were never populated with real content**. These pages are published to the live Docusaurus site and confuse users who land on them expecting real documentation.
+Scan markdown files under `docs/` (prioritize `tutorials/`, `how-to-guides/`, `explanation/`, and `reference/`) for pages that are **scaffolds or templates that were never populated with real content**.
 
 Detection heuristics — flag a page as a placeholder if it contains **2 or more** of these indicators:
 
@@ -88,13 +89,12 @@ For each placeholder page found, note:
 
 - The file path
 - Which indicators matched
-- Whether the page is reachable from site navigation (and thus visible to users)
 
-**Severity**: Placeholder pages reachable from navigation are **Critical** (they damage credibility). Unreachable placeholder pages are **Confusing** (they add noise to the repository).
+**Severity**: Placeholder pages in key directories (`tutorials/`, `how-to-guides/`) are **Critical**. Others are **Confusing**.
 
 ### Phase 5: Tutorial Walkthrough
 
-If there are tutorial documents, attempt to follow them step by step. For each tutorial:
+If there are tutorial documents in `docs/tutorials/`, attempt to follow them step by step. For each tutorial:
 
 - Can you complete it with only the information provided?
 - Are the expected outputs described so you know if you succeeded?
@@ -135,9 +135,9 @@ Create an issue with the findings categorized by severity:
 
 ### Placeholder / Template Pages
 
-| File   | Indicators Found             | In Site Navigation? | Severity             |
-| ------ | ---------------------------- | ------------------- | -------------------- |
-| {file} | {list of matched indicators} | {Yes/No}            | {Critical/Confusing} |
+| File   | Indicators Found             | Severity             |
+| ------ | ---------------------------- | -------------------- |
+| {file} | {list of matched indicators} | {Critical/Confusing} |
 
 ### Jargon Without Definition
 
