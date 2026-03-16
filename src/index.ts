@@ -3629,57 +3629,6 @@ export class McpAdrAnalysisServer {
               },
             },
           },
-          {
-            name: 'search_tools',
-            description:
-              'Search and discover available MCP tools dynamically. Filter by category, complexity, or query. Returns tools without loading all schemas upfront, reducing token usage.',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                category: {
-                  type: 'string',
-                  enum: [
-                    'analysis',
-                    'adr',
-                    'aggregator',
-                    'content-security',
-                    'research',
-                    'deployment',
-                    'memory',
-                    'file-system',
-                    'rules',
-                    'workflow',
-                    'utility',
-                  ],
-                  description: 'Filter tools by category',
-                },
-                query: {
-                  type: 'string',
-                  description: 'Search query to filter tools by name or description',
-                },
-                complexity: {
-                  type: 'string',
-                  enum: ['simple', 'moderate', 'complex'],
-                  description: 'Filter by tool complexity level',
-                },
-                cemcpOnly: {
-                  type: 'boolean',
-                  description: 'Only return tools with CE-MCP directives',
-                  default: false,
-                },
-                includeSchema: {
-                  type: 'boolean',
-                  description: 'Include full input schemas (increases token count)',
-                  default: false,
-                },
-                limit: {
-                  type: 'number',
-                  description: 'Maximum number of results to return',
-                  default: 20,
-                },
-              },
-            },
-          },
         ],
       };
     });
