@@ -874,7 +874,7 @@ By completing this advanced tutorial, you should have:
 
 ### **Your Advanced Toolkit**
 
-You now have mastery of all 37 MCP tools and can:
+You now have mastery of all 73 MCP tools and can:
 
 - **Conduct comprehensive security analysis** with custom patterns
 - **Implement zero-tolerance deployment validation**

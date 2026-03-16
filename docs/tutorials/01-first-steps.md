@@ -479,7 +479,7 @@ Now that you understand the basics, you can:
 
 ### **Deep Dive into Features**
 
-- **[API Reference](../reference/api-reference.md)** - Complete documentation of all 37 available tools
+- **[API Reference](../reference/api-reference.md)** - Complete documentation of all 73 available tools
 - **[Architecture Concepts](../explanation/mcp-concepts.md)** - Understand the deeper architectural principles
 
 ---

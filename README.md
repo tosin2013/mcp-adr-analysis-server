@@ -68,7 +68,7 @@ npm --version   # Should show 9.0.0 or higher (included with Node.js 20+)
 
 ### Network Requirements
 
-- **Internet access required** during `npm install` for native module compilation (tree-sitter-yaml, tree-sitter-typescript)
+- **Internet access required** during `npm install` for native module compilation ([tree-sitter](https://tree-sitter.github.io/tree-sitter/) incremental code parsers for YAML and TypeScript)
 - If behind a corporate proxy, set `HTTP_PROXY` and `HTTPS_PROXY` environment variables
 - **Offline fallback**: If native builds fail, the server operates in reduced mode without tree-sitter code analysis
 
@@ -230,7 +230,7 @@ const relatedCode = await findRelatedCode(
 ## 🛠️ Technology Stack
 
 **Runtime:** Node.js 20+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Jest (>80% coverage)
-**Search:** ripgrep (fast text search) + fast-glob (file matching) • **AI Integration:** OpenRouter.ai • **Web Research:** Firecrawl • **Code Analysis:** tree-sitter (code parser) + Smart Code Linking
+**Search:** [ripgrep](https://github.com/BurntSushi/ripgrep) (fast recursive text search) + fast-glob (file matching) • **AI Integration:** OpenRouter.ai • **Web Research:** [Firecrawl](https://firecrawl.dev/) (web page extraction API) • **Code Analysis:** [tree-sitter](https://tree-sitter.github.io/tree-sitter/) (incremental code parser) + Smart Code Linking
 
 📖 **[Technical Details →](docs/explanation/server-architecture.md)**
 
@@ -343,16 +343,14 @@ npm install && npm run build && npm test
 
 ### Viewing Documentation Locally
 
-The documentation site is built with [Docusaurus](https://docusaurus.io/):
+API documentation is generated with [TypeDoc](https://typedoc.org/):
 
 ```bash
-cd docs
-npm install
-npm run build
-npm run serve
+npm run docs:build   # Generate API docs into docs/api/
+npm run docs:serve   # Serve locally via Python HTTP server
 ```
 
-Then open `http://localhost:3000/mcp-adr-analysis-server/` in your browser.
+Then open `http://localhost:8080` in your browser. Markdown documentation lives in `docs/` and can be browsed directly on GitHub.
 
 📖 **[Development Guide →](docs/how-to-guides/getting-started-workflow-guidance.md)** | **[Contributing →](CONTRIBUTING.md)**
 
@@ -409,7 +407,7 @@ Use our [**issue templates**](https://github.com/tosin2013/mcp-adr-analysis-serv
 
 **Official:** [MCP Specification](https://modelcontextprotocol.io/) • [MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk)  
 **Community:** [MCP Registry](https://github.com/modelcontextprotocol/servers) • [Discord](https://discord.gg/modelcontextprotocol)  
-**Project:** [ADRs](./docs/adrs/) • [Progress](./docs/release-dashboard.md) • [Publishing Guide](./docs/how-to-guides/NPM_PUBLISHING.md)
+**Project:** [ADRs](./docs/adrs/) • [Progress](./docs/release-dashboard.md) • [Publishing Guide](./docs/how-to-guides/push-tags-to-npm.md)
 
 ## 📄 License
 

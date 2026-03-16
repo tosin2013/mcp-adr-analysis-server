@@ -5,19 +5,10 @@ description: Information-oriented technical descriptions
 
 # Reference
 
-Information-oriented technical descriptions
-
-## Available Guides
-
-This section contains reference documentation following the Diataxis framework.
-
-**Reference** documentation is information-oriented:
-
-- Describe the machinery
-- Be accurate and complete
-- Focus on describing, not explaining
-- Structure content for finding information
+Technical reference documentation for the MCP ADR Analysis Server.
 
 ## Contents
 
-- [Example: api-documentation.md](./api-documentation.md)
+- [API Reference](./api-reference.md) - MCP tools, resources, and prompts
+- [Configuration](./configuration.md) - Environment variables and server settings
+- [CLI Reference](./cli-reference.md) - Command-line usage and options
