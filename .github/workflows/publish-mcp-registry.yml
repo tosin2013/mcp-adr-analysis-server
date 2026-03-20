@@ -1,0 +1,43 @@
+name: Publish to MCP Registry
+
+on:
+  workflow_run:
+    workflows: ['Publish to NPM']
+    types: [completed]
+    branches: [main]
+
+jobs:
+  publish-mcp-registry:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Get current version
+        id: version
+        run: echo "version=$(node -p \"require('./package.json').version\")" >> $GITHUB_OUTPUT
+
+      - name: Update server.json version
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          jq --arg v "$VERSION" '.version = $v | .packages[0].version = $v' server.json > server.json.tmp
+          mv server.json.tmp server.json
+
+      - name: Install mcp-publisher
+        run: |
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_linux_amd64.tar.gz" | tar xz mcp-publisher
+          chmod +x mcp-publisher
+
+      - name: Publish to MCP Registry
+        run: |
+          ./mcp-publisher login github-oidc
+          ./mcp-publisher publish
+
+      - name: Verify publication
+        run: |
+          sleep 5
+          curl -s "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.tosin2013/mcp-adr-analysis-server"
