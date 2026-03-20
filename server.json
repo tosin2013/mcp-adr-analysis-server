@@ -1,0 +1,46 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.tosin2013/mcp-adr-analysis-server",
+  "description": "AI-powered MCP server for analyzing Architectural Decision Records (ADRs) and providing deep architectural analysis capabilities to AI coding assistants.",
+  "repository": {
+    "url": "https://github.com/tosin2013/mcp-adr-analysis-server",
+    "source": "github"
+  },
+  "version": "2.3.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "mcp-adr-analysis-server",
+      "version": "2.3.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "PROJECT_PATH",
+          "description": "Path to the project directory to analyze (defaults to current directory)",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "OPENROUTER_API_KEY",
+          "description": "OpenRouter API key for AI-powered analysis (required for full execution mode)",
+          "isRequired": false,
+          "isSecret": true
+        },
+        {
+          "name": "EXECUTION_MODE",
+          "description": "Execution mode: 'full' for AI results or 'prompt-only' for prompts (default: prompt-only)",
+          "isRequired": false,
+          "isSecret": false
+        },
+        {
+          "name": "ADR_DIRECTORY",
+          "description": "ADR directory relative to project path (default: docs/adrs)",
+          "isRequired": false,
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}
