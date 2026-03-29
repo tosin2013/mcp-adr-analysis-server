@@ -424,3 +424,8 @@ MIT License - see [LICENSE](LICENSE) file for details.
 **Built with ❤️ by [Tosin Akinosho](https://github.com/tosin2013) for AI-driven architectural analysis**
 
 _Empowering AI assistants with deep architectural intelligence and decision-making capabilities._
+
+## Hosted deployment
+
+A hosted deployment is available on [Fronteir AI](https://fronteir.ai/mcp/tosin2013-mcp-adr-analysis-server).
+
