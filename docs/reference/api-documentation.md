@@ -1,49 +1,47 @@
 ---
-title: Api Documentation
+title: API Documentation
 ---
 
-# Api Documentation
+# API Documentation
 
-Technical reference documentation.
+This page explains how API documentation is generated and served in this repository.
 
 ## Overview
 
-This document provides complete reference information for...
+The MCP ADR Analysis Server publishes generated API docs using [TypeDoc](https://typedoc.org/), with output in `docs/api/`.
 
-## API Endpoints
+For tool and resource reference content, use:
 
-### GET /api/resource
+- [API Reference](./api-reference.md)
+- [Comprehensive API Reference](./comprehensive-api-reference.md)
 
-Retrieves...
+## Generate API Docs Locally
 
-**Parameters:**
+From the repository root:
 
-- `param1` (string, required): Description
-- `param2` (number, optional): Description
-
-**Response:**
-
-```json
-{
-  "field1": "value",
-  "field2": 123
-}
+```bash
+npm install
+npm run docs:build
 ```
 
-### POST /api/resource
+This writes output to `docs/api/`.
 
-Creates...
+## Serve API Docs Locally
 
-## Configuration Options
+```bash
+npm run docs:serve
+```
 
-| Option  | Type    | Default   | Description            |
-| ------- | ------- | --------- | ---------------------- |
-| option1 | string  | "default" | Description of option1 |
-| option2 | boolean | false     | Description of option2 |
+Then open `http://localhost:8080`.
 
-## Error Codes
+## Common Notes
 
-| Code | Description       | Resolution |
-| ---- | ----------------- | ---------- |
-| E001 | Error description | How to fix |
-| E002 | Error description | How to fix |
+- `npm install` is required before `docs:build` because `typedoc` is a dev dependency.
+- If TypeDoc reports warnings, review `typedoc.json` and markdown links in `README.md`.
+- Directory links in markdown should be avoided for generated docs to prevent broken `media/*` links.
+
+## Related
+
+- [Quick Start for docs](../QUICK_START.md)
+- [Reference index](./index.md)
+- [README local docs instructions](../../README.md#viewing-documentation-locally)
