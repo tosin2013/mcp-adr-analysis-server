@@ -2269,6 +2269,110 @@ export class McpAdrAnalysisServer {
             },
           },
           {
+            name: 'release_tracking',
+            description:
+              'Track releases mapped to ADR decisions. Generates changelogs, manages milestones, compares releases, and assesses release readiness. Supports greenfield and brownfield projects. Writes CHANGELOG.md, creates GitHub Releases and Milestones.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                operation: {
+                  type: 'string',
+                  enum: [
+                    'detect_releases',
+                    'track_release',
+                    'generate_changelog',
+                    'compare_releases',
+                    'release_summary',
+                    'next_release_preview',
+                    'create_milestone',
+                    'sync_milestones',
+                  ],
+                  description: 'Operation to perform',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project root path (defaults to current working directory)',
+                },
+                version: {
+                  type: 'string',
+                  description: 'Release version to track (e.g., v2.3.0)',
+                },
+                compareFrom: {
+                  type: 'string',
+                  description: 'Starting version for comparison',
+                },
+                compareTo: {
+                  type: 'string',
+                  description: 'Ending version for comparison',
+                },
+                format: {
+                  type: 'string',
+                  enum: ['markdown', 'keep-a-changelog', 'conventional'],
+                  default: 'keep-a-changelog',
+                  description: 'Changelog output format',
+                },
+                includeAdrLinks: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Include ADR references in changelog',
+                },
+                includeCommitHashes: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Include commit hashes in output',
+                },
+                groupByAdr: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Group changelog entries by ADR',
+                },
+                writeToFile: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Write CHANGELOG.md to repo',
+                },
+                includeReadiness: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Include release readiness score',
+                },
+                includeTimeline: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Include mermaid timeline diagram',
+                },
+                milestoneTitle: {
+                  type: 'string',
+                  description: 'GitHub milestone title (for create_milestone)',
+                },
+                milestoneDescription: {
+                  type: 'string',
+                  description: 'GitHub milestone description',
+                },
+                milestoneDueDate: {
+                  type: 'string',
+                  description: 'Milestone due date (YYYY-MM-DD)',
+                },
+                createGithubRelease: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Create a GitHub Release (requires gh CLI)',
+                },
+                syncGithubMilestones: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Sync milestones to GitHub (requires gh CLI)',
+                },
+                updateTodo: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Update TODO.md with milestone status',
+                },
+              },
+              required: ['operation'],
+            },
+          },
+          {
             name: 'troubleshoot_guided_workflow',
             description:
               'Structured failure analysis and test plan generation with memory integration for troubleshooting session tracking and intelligent ADR/research suggestion capabilities - provide JSON failure info to get specific test commands',
@@ -3878,6 +3982,9 @@ export class McpAdrAnalysisServer {
           case 'deployment_readiness':
             response = await this.deploymentReadiness(safeArgs);
             break;
+          case 'release_tracking':
+            response = await this.releaseTracking(safeArgs);
+            break;
           case 'troubleshoot_guided_workflow':
             response = await this.troubleshootGuidedWorkflow(safeArgs);
             break;
@@ -4201,6 +4308,13 @@ export class McpAdrAnalysisServer {
             name: 'Deployment History',
             description:
               'Historical deployment data with trends, failure analysis, and patterns. Supports query parameters: ?period=7d|30d|90d|1y|all, ?environment=production|staging|development|all, ?includeFailures=true|false, ?includeMetrics=true|false, ?format=summary|detailed',
+            mimeType: 'application/json',
+          },
+          {
+            uri: 'adr://release_history',
+            name: 'Release History',
+            description:
+              'Release tracking state with releases mapped to ADRs, milestones, and project metadata. Shows release timeline, ADR-to-release mappings with confidence scores, and unmapped ADRs.',
             mimeType: 'application/json',
           },
           {
@@ -8557,6 +8671,28 @@ Please provide:
           };
         }
 
+        case 'release_history': {
+          const { generateReleaseHistoryResource } =
+            await import('./resources/release-history-resource.js');
+          const releaseProjectPath = process.env['PROJECT_PATH'] || process.cwd();
+          const result = await generateReleaseHistoryResource(releaseProjectPath, url.searchParams);
+
+          return {
+            contents: [
+              {
+                uri,
+                mimeType: result.contentType,
+                text: JSON.stringify(result.data, null, 2),
+              },
+            ],
+            _meta: {
+              lastModified: result.lastModified,
+              etag: result.etag,
+              cacheKey: result.cacheKey,
+            },
+          };
+        }
+
         case 'code_quality': {
           const { generateCodeQualityResource } =
             await import('./resources/code-quality-resource.js');
@@ -8875,6 +9011,18 @@ Please provide:
       throw new McpAdrError(
         `Deployment readiness check failed: ${error instanceof Error ? error.message : String(error)}`,
         'DEPLOYMENT_READINESS_ERROR'
+      );
+    }
+  }
+
+  private async releaseTracking(args: Record<string, unknown>): Promise<CallToolResult> {
+    try {
+      const { releaseTracking } = await import('./tools/release-tracking-tool.js');
+      return await releaseTracking(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `Release tracking failed: ${error instanceof Error ? error.message : String(error)}`,
+        'RELEASE_TRACKING_ERROR'
       );
     }
   }
