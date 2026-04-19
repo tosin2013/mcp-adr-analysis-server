@@ -7,6 +7,7 @@ import {
   ToolExecutionSnapshot,
   TodoSyncState,
   KnowledgeGraphSnapshot,
+  AdrEntity,
   TodoSyncStateSchema,
   KnowledgeGraphSnapshotSchema,
 } from '../types/knowledge-graph-schemas.js';
@@ -17,18 +18,18 @@ import { MemoryHealthScoring, MemoryHealthScore } from './memory-health-scoring.
 /**
  * Manages knowledge graph snapshots and todo synchronization state
  * Provides persistent storage and retrieval of architectural knowledge
- * 
+ *
  * @deprecated This class will be replaced by knowledge://graph Resource and update_knowledge tool (ADR-018).
  * For reading graph data, use knowledge://graph resource (zero token cost).
  * For modifying graph data, use update_knowledge tool (simple CRUD operations).
  * Internal use only - external tools should migrate to new patterns.
- * 
+ *
  * Migration Path:
  * - Reading graph: Use knowledge://graph resource instead of queryKnowledgeGraph()
  * - Adding entities: Use update_knowledge tool with operation='add_entity'
  * - Removing entities: Use update_knowledge tool with operation='remove_entity'
  * - Relationships: Use update_knowledge tool with operation='add_relationship'/'remove_relationship'
- * 
+ *
  * This class will be removed in the next major version (v3.0.0).
  */
 export class KnowledgeGraphManager {
@@ -101,6 +102,24 @@ export class KnowledgeGraphManager {
   async saveKnowledgeGraph(snapshot: KnowledgeGraphSnapshot): Promise<void> {
     await this.ensureCacheDirectory();
     await fs.writeFile(this.snapshotsFile, JSON.stringify(snapshot, null, 2));
+  }
+
+  /**
+   * Register a newly-generated ADR in the knowledge graph.
+   * Idempotent by filename — re-registration updates the existing entry.
+   */
+  async registerAdr(adr: AdrEntity): Promise<void> {
+    const snapshot = await this.loadKnowledgeGraph();
+    const adrs = snapshot.adrs ?? [];
+    const existingIndex = adrs.findIndex(a => a.filename === adr.filename);
+    if (existingIndex >= 0) {
+      adrs[existingIndex] = { ...adrs[existingIndex], ...adr };
+    } else {
+      adrs.push(adr);
+    }
+    snapshot.adrs = adrs;
+    snapshot.timestamp = new Date().toISOString();
+    await this.saveKnowledgeGraph(snapshot);
   }
 
   async createIntent(

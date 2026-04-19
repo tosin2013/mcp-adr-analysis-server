@@ -914,12 +914,16 @@ export async function generateAdrFromDecision(args: {
   templateFormat?: 'nygard' | 'madr' | 'custom';
   existingAdrs?: string[];
   adrDirectory?: string;
+  autoSave?: boolean;
+  projectPath?: string;
 }): Promise<any> {
   const {
     decisionData,
     templateFormat = 'nygard',
     existingAdrs = [],
     adrDirectory = 'docs/adrs',
+    autoSave = true,
+    projectPath = process.cwd(),
   } = args;
 
   try {
@@ -958,22 +962,8 @@ export async function generateAdrFromDecision(args: {
     );
 
     if (executionResult.isAIGenerated) {
-      // AI execution successful - return actual ADR content
-      return formatMCPResponse({
-        ...executionResult,
-        content: `# Generated ADR: ${decisionData.title}
-
-## ADR Metadata
-- **ADR Number**: ${adrNumber}
-- **Filename**: ${filename}
-- **Full Path**: ${fullPath}
-- **Template Format**: ${templateFormat.toUpperCase()}
-
-## Generated ADR Content
-
-${executionResult.content}
-
-## File Creation Instructions
+      // AI execution successful - optionally persist and index the ADR
+      let savedSection = `## File Creation Instructions
 
 To save this ADR to your project:
 
@@ -992,15 +982,106 @@ To save this ADR to your project:
 3. **Verify the file** was created successfully:
    \`\`\`bash
    ls -la "${fullPath}"
-   \`\`\`
+   \`\`\``;
+      let releaseSection = '';
+      let saved = false;
+      let indexed = false;
+
+      if (autoSave) {
+        try {
+          const { writeFile } = await import('../utils/file-system.js');
+          const writeResult = await writeFile(fullPath, executionResult.content);
+          if (writeResult.success) {
+            saved = true;
+
+            // Register in knowledge graph (best-effort)
+            try {
+              const { KnowledgeGraphManager } = await import('../utils/knowledge-graph-manager.js');
+              const kg = new KnowledgeGraphManager();
+              await kg.registerAdr({
+                adrNumber,
+                filename,
+                path: fullPath,
+                title: decisionData.title,
+                status: 'accepted',
+                createdAt: new Date().toISOString(),
+              });
+              indexed = true;
+            } catch {
+              // KG registration is best-effort; do not block user on failure
+            }
+
+            // Preview next release linkage (best-effort)
+            try {
+              const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
+              const { detectReleases, previewNextRelease } =
+                await import('../utils/release-tracker.js');
+              const discovered = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+                includeContent: false,
+                includeTimeline: false,
+              });
+              const releases = await detectReleases(projectPath);
+              const preview = await previewNextRelease(projectPath, discovered.adrs, releases);
+              const queued = preview.pendingAdrs.some(a => a.filename === filename);
+              releaseSection = `## 🔗 Release Linkage
+
+- **Next release (predicted bump)**: ${preview.suggestedVersion}
+- **Queued for next release**: ${queued ? 'yes' : 'no (ADR not yet discoverable — check status is "accepted")'}
+- **Pending ADRs total**: ${preview.pendingAdrs.length}
+- **Unreleased commits**: ${preview.unreleaseCommits.length}
+
+Run \`release_tracking\` with \`next_release_preview\` for full details.
+`;
+            } catch {
+              releaseSection = '';
+            }
+
+            savedSection = `## ✅ File Saved
+
+- **Saved to**: \`${writeResult.filePath}\`
+- **Size**: ${writeResult.metadata?.size ?? 0} bytes
+- **Knowledge graph**: ${indexed ? 'registered' : 'registration skipped (non-fatal)'}
+`;
+          }
+        } catch {
+          // Fallback to manual-instructions output — do not throw
+        }
+      }
+
+      return formatMCPResponse({
+        ...executionResult,
+        content: `# Generated ADR: ${decisionData.title}
+
+## ADR Metadata
+- **ADR Number**: ${adrNumber}
+- **Filename**: ${filename}
+- **Full Path**: ${fullPath}
+- **Template Format**: ${templateFormat.toUpperCase()}
+- **Auto-saved**: ${saved ? 'yes' : 'no'}
+- **Indexed in knowledge graph**: ${indexed ? 'yes' : 'no'}
+
+## Generated ADR Content
+
+${executionResult.content}
+
+${savedSection}
+
+${releaseSection}
 
 ## Next Steps
 
-1. **Review the generated ADR** for accuracy and completeness
+${
+  saved
+    ? `1. **Review the saved ADR** at \`${fullPath}\`
+2. **Share with stakeholders** for review and approval
+3. **Plan implementation** of the architectural decision
+4. **Run \`release_tracking next_release_preview\`** to confirm the ADR is queued for the next release`
+    : `1. **Review the generated ADR** for accuracy and completeness
 2. **Save the file** using the instructions above
 3. **Update your ADR index** or catalog
 4. **Share with stakeholders** for review and approval
-5. **Plan implementation** of the architectural decision
+5. **Plan implementation** of the architectural decision`
+}
 
 ## Quality Checklist
 

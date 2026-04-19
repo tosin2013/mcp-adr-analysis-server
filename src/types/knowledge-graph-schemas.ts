@@ -42,6 +42,17 @@ export const IntentSnapshotSchema = z.object({
     .optional(),
 });
 
+export const AdrEntitySchema = z.object({
+  adrNumber: z.string(),
+  filename: z.string(),
+  path: z.string(),
+  title: z.string(),
+  status: z.string(),
+  createdAt: z.string(),
+  linkedIntentId: z.string().optional(),
+  metadata: z.record(z.string(), z.any()).optional(),
+});
+
 export const TodoSyncStateSchema = z.object({
   lastSyncTimestamp: z.string(),
   todoMdHash: z.string(),
@@ -65,6 +76,7 @@ export const KnowledgeGraphSnapshotSchema = z.object({
   version: z.string(),
   timestamp: z.string(),
   intents: z.array(IntentSnapshotSchema),
+  adrs: z.array(AdrEntitySchema).optional(),
   todoSyncState: TodoSyncStateSchema,
   memoryOperations: z
     .array(
@@ -129,6 +141,7 @@ export const KnowledgeGraphSnapshotSchema = z.object({
 
 export type ToolExecutionSnapshot = z.infer<typeof ToolExecutionSnapshotSchema>;
 export type IntentSnapshot = z.infer<typeof IntentSnapshotSchema>;
+export type AdrEntity = z.infer<typeof AdrEntitySchema>;
 export type TodoSyncState = z.infer<typeof TodoSyncStateSchema>;
 export type KnowledgeGraphSnapshot = z.infer<typeof KnowledgeGraphSnapshotSchema>;
 
