@@ -20,10 +20,10 @@ safe-outputs:
     title-prefix: '[docs-site]'
     max: 3
     expires: '7d'
+  allowed-domains: ['defaults', 'tosin2013.github.io']
   noop:
 tools:
   playwright:
-    allowed_domains: ['defaults', 'tosin2013.github.io']
   bash: true
   web-fetch:
   github:
