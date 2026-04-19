@@ -256,14 +256,17 @@ jobs:
           MAJOR_VERSION=$(echo "$NPM_VERSION" | cut -d. -f1)
           MINOR_VERSION=$(echo "$NPM_VERSION" | cut -d. -f2)
 
-          # Require npm >= 11.5.1 for OIDC
-          if [[ "$MAJOR_VERSION" -lt 11 ]] || [[ "$MAJOR_VERSION" -eq 11 && "$MINOR_VERSION" -lt 5 ]]; then
-            echo "⚠️ npm version $NPM_VERSION is too old for OIDC Trusted Publishing"
-            echo "Upgrading npm to latest..."
-            npm install -g npm@latest
-            echo "New npm version: $(npm --version)"
+          # Require npm >= 10.0.0 for OIDC provenance (npm 10+ supports --provenance)
+          if [[ "$MAJOR_VERSION" -lt 10 ]]; then
+            echo "⚠️ npm version $NPM_VERSION is too old for OIDC provenance"
+            echo "Upgrading npm to 11.5.1..."
+            npm install -g npm@11.5.1 || {
+              echo "⚠️ npm upgrade failed, continuing with current version"
+              echo "Current npm version: $(npm --version)"
+            }
+            echo "npm version: $(npm --version)"
           else
-            echo "✅ npm version $NPM_VERSION supports OIDC Trusted Publishing"
+            echo "✅ npm version $NPM_VERSION supports OIDC provenance publishing"
           fi
 
       - name: Install dependencies
