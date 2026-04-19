@@ -297,3 +297,33 @@ export type CreateToolReflexionConfigFunction = (
   toolName: string,
   customConfig?: Partial<import('./reflexion-framework.js').ReflexionConfig>
 ) => import('./reflexion-framework.js').ReflexionConfig;
+
+// Release Tracking Tool Arguments
+export interface ReleaseTrackingArgs {
+  operation:
+    | 'detect_releases'
+    | 'track_release'
+    | 'generate_changelog'
+    | 'compare_releases'
+    | 'release_summary'
+    | 'next_release_preview'
+    | 'create_milestone'
+    | 'sync_milestones';
+  projectPath?: string;
+  version?: string;
+  compareFrom?: string;
+  compareTo?: string;
+  format?: 'markdown' | 'keep-a-changelog' | 'conventional';
+  includeAdrLinks?: boolean;
+  includeCommitHashes?: boolean;
+  groupByAdr?: boolean;
+  writeToFile?: boolean;
+  includeReadiness?: boolean;
+  includeTimeline?: boolean;
+  milestoneTitle?: string;
+  milestoneDescription?: string;
+  milestoneDueDate?: string;
+  createGithubRelease?: boolean;
+  syncGithubMilestones?: boolean;
+  updateTodo?: boolean;
+}

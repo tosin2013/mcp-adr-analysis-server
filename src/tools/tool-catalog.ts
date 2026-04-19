@@ -768,6 +768,51 @@ TOOL_CATALOG.set('deployment_readiness', {
   },
 });
 
+TOOL_CATALOG.set('release_tracking', {
+  name: 'release_tracking',
+  shortDescription: 'Track releases mapped to ADR decisions',
+  fullDescription:
+    'Tracks software releases and maps them to Architecture Decision Records. Generates changelogs, compares releases, manages milestones, and provides release summaries. Supports greenfield and brownfield projects.',
+  category: 'deployment',
+  complexity: 'moderate',
+  tokenCost: { min: 2000, max: 6000 },
+  hasCEMCPDirective: true,
+  relatedTools: ['deployment_readiness', 'discover_existing_adrs', 'smart_git_push'],
+  keywords: [
+    'release',
+    'changelog',
+    'version',
+    'tracking',
+    'adr',
+    'mapping',
+    'milestone',
+    'history',
+  ],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      operation: {
+        type: 'string',
+        enum: [
+          'detect_releases',
+          'track_release',
+          'generate_changelog',
+          'compare_releases',
+          'release_summary',
+          'next_release_preview',
+          'create_milestone',
+          'sync_milestones',
+        ],
+      },
+      projectPath: { type: 'string' },
+      version: { type: 'string' },
+      format: { type: 'string', enum: ['markdown', 'keep-a-changelog', 'conventional'] },
+    },
+    required: ['operation'],
+  },
+});
+
 TOOL_CATALOG.set('smart_git_push', {
   name: 'smart_git_push',
   shortDescription: 'Intelligent git push operations',
