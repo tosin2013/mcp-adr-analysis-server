@@ -20,4 +20,5 @@ This section contains how-to documentation following the Diataxis framework.
 
 ## Contents
 
-- [Example: deploy-to-production.md](./deploy-to-production.md)
+- [Deploy MCP ADR Analysis Server to Production](./deploy-to-production.md)
+- [How-To Guides Index](../how-to-guides/index.md)
