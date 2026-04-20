@@ -1,174 +1,60 @@
-# 🚀 Quick Start - Documentation Website
+# 🚀 Quick Start - API Documentation (TypeDoc)
 
-**Get your documentation website running in under 2 minutes!**
-
----
-
-## ⚡ Super Quick Start (1 minute)
-
-```bash
-cd docs
-npm run setup
-npm run dev
-```
-
-**→ Open https://localhost:5173 to see your website!**
+This project generates API docs with **TypeDoc** from the root package scripts.
 
 ---
 
-## 📋 Two Options for Setup
-
-### **Option A: npm Scripts (Recommended)**
+## ⚡ Super Quick Start
 
 ```bash
-cd docs
-
-# Setup (installs dependencies)
-npm run setup
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Clean up
-npm run clean
+# From repository root
+npm install
+npm run docs:build
+npm run docs:serve
 ```
 
-### **Option B: Bash Script (Advanced)**
-
-```bash
-cd docs
-
-# First-time setup
-./setup-website.sh setup
-
-# Start development server
-./setup-website.sh dev
-
-# Build for production
-./setup-website.sh build
-
-# Deploy guidance
-./setup-website.sh deploy
-
-# Clean up
-./setup-website.sh clean
-
-# Help
-./setup-website.sh help
-```
+Then open: **http://localhost:8080**
 
 ---
 
 ## 🎯 What Each Command Does
 
-| Command         | npm Version      | Script Version              | Purpose                                    |
-| --------------- | ---------------- | --------------------------- | ------------------------------------------ |
-| **Setup**       | `npm run setup`  | `./setup-website.sh setup`  | Install dependencies & check prerequisites |
-| **Development** | `npm run dev`    | `./setup-website.sh dev`    | Start development server with hot reload   |
-| **Build**       | `npm run build`  | `./setup-website.sh build`  | Create production build                    |
-| **Deploy**      | `npm run deploy` | `./setup-website.sh deploy` | Build + deployment guidance                |
-| **Clean**       | `npm run clean`  | `./setup-website.sh clean`  | Remove build artifacts                     |
-
----
-
-## 🌐 Deployment Quick Guide
-
-### **GitHub Pages (Automatic)**
-
-1. **Push to main branch** - the website deploys automatically
-2. **Access at**: `https://username.github.io/mcp-adr-analysis-server/`
-
-### **Manual Deploy**
-
-```bash
-# Build the site
-npm run build
-
-# Deploy to any hosting service
-# Upload contents of .vitepress/dist/ folder
-```
-
----
-
-## 🎨 Common Customizations
-
-### **Change Site Colors**
-
-Edit `./.vitepress/config.js`:
-
-```js
-themeConfig: {
-  // Add your branding here
-}
-```
-
-### **Add Your Logo**
-
-1. Put logo in `./public/logo.svg`
-2. It's automatically used in the config
-
-### **Custom Domain**
-
-Update `base` in `config.js`:
-
-```js
-base: '/', // For custom domain
-// base: '/mcp-adr-analysis-server/', // For GitHub Pages
-```
+| Command              | Purpose                                                   |
+| -------------------- | --------------------------------------------------------- |
+| `npm install`        | Installs dependencies, including TypeDoc                  |
+| `npm run docs:build` | Generates API docs into `docs/api/`                       |
+| `npm run docs:serve` | Serves `docs/api/` with Python HTTP server on port `8080` |
+| `npm run docs:clean` | Removes generated API docs                                |
 
 ---
 
 ## 🆘 Troubleshooting
 
-### **Script Permission Error**
+### `typedoc: command not found`
+
+Run dependency install first:
 
 ```bash
-chmod +x ./setup-website.sh
-```
-
-### **Node.js Version Error**
-
-Ensure Node.js ≥20.0.0:
-
-```bash
-node --version  # Should be v20.0.0+
-```
-
-### **Port Already in Use**
-
-Kill existing process:
-
-```bash
-# Find process using port 5173
-lsof -ti:5173 | xargs kill -9
-```
-
-### **Build Fails**
-
-Clear cache and reinstall:
-
-```bash
-npm run clean
-rm -rf node_modules package-lock.json
 npm install
 ```
 
+### Port 8080 already in use
+
+Use another port:
+
+```bash
+cd docs/api
+python3 -m http.server 8081
+```
+
+### TypeDoc warnings during build
+
+- `@category` / `@description` warnings are resolved by the current TypeDoc config.
+- If warnings reappear, verify `typedoc.json` is up to date and rebuild.
+
 ---
 
-## 📊 What You Get
+## 📎 Related Docs
 
-✅ **Professional Documentation Website**  
-✅ **Instant Search** across all content  
-✅ **Mobile-Responsive** design  
-✅ **Auto-Deploy** via GitHub Actions  
-✅ **Lightning Fast** loading  
-✅ **SEO Optimized** for discoverability
-
----
-
-**Ready to launch?** → `cd docs && npm run setup && npm run dev`
-
-**Need help?** → Check [WEBSITE_SETUP.md](WEBSITE_SETUP.md) for detailed instructions
+- [README local docs section](../README.md#viewing-documentation-locally)
+- [Reference index](./reference/index.md)
