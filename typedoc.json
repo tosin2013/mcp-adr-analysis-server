@@ -24,15 +24,7 @@
   },
   "categorizeByGroup": true,
   "defaultCategory": "Other",
-  "categoryOrder": [
-    "Tools",
-    "Utilities", 
-    "Types",
-    "Prompts",
-    "Resources",
-    "Configuration",
-    "*"
-  ],
+  "categoryOrder": ["Tools", "Utilities", "Types", "Prompts", "Resources", "Configuration", "*"],
   "sort": ["source-order"],
   "kindSortOrder": [
     "Document",
@@ -65,8 +57,10 @@
   "titleLink": "https://github.com/tosin2013/mcp-adr-analysis-server",
   "customCss": "./docs/api-styles.css",
   "blockTags": [
+    "@category",
+    "@description",
     "@alpha",
-    "@beta", 
+    "@beta",
     "@defaultValue",
     "@decorator",
     "@deprecated",
@@ -81,6 +75,7 @@
     "@param",
     "@privateRemarks",
     "@public",
+    "@private",
     "@readonly",
     "@remarks",
     "@returns",
@@ -91,18 +86,12 @@
     "@typeParam",
     "@virtual"
   ],
-  "inlineTags": [
-    "@inheritDoc",
-    "@label",
-    "@link",
-    "@linkcode",
-    "@linkplain"
-  ],
+  "inlineTags": ["@inheritDoc", "@label", "@link", "@linkcode", "@linkplain"],
   "modifierTags": [
     "@alpha",
     "@beta",
     "@deprecated",
-    "@eventProperty", 
+    "@eventProperty",
     "@experimental",
     "@internal",
     "@override",

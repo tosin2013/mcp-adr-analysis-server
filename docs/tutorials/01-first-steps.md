@@ -66,7 +66,14 @@ npm install -g mcp-adr-analysis-server
 mcp-adr-analysis-server --version
 ```
 
-You should see output like: `MCP ADR Analysis Server v2.1.0`
+You should see output like: `MCP ADR Analysis Server v2.5.0`
+
+If you installed from source instead of globally, run this first from the repository root:
+
+```bash
+npm install
+npm run build
+```
 
 ### Configure Your MCP Client
 
@@ -100,10 +107,24 @@ Add this configuration to your MCP client (e.g., Claude Desktop):
 
 ### Test the Connection
 
-In your MCP client, try this simple command:
+In your MCP client chat (Claude Desktop, Cline, Cursor, or Windsurf), ask the assistant to run the tool:
 
 ```
 analyze_project_ecosystem
+```
+
+Equivalent JSON-RPC request (for programmatic clients):
+
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "analyze_project_ecosystem",
+    "arguments": {
+      "projectPath": "."
+    }
+  }
+}
 ```
 
 If you see detailed analysis output, you're ready to proceed! 🎉
@@ -115,7 +136,7 @@ If you see detailed analysis output, you're ready to proceed! 🎉
 ```json
 {
   "tool": "memory_loading",
-  "parameters": {
+  "arguments": {
     "action": "load_adrs",
     "forceReload": true
   }
@@ -128,9 +149,11 @@ This command will:
 - Transform them into memory entities
 - Build relationship graphs between decisions
 - Enable intelligent pattern recognition
-- Populate the `.mcp-adr-memory` directory
+- Populate the `.mcp-adr-cache` directory
 
 After running this, your memory system will be actively learning from your architectural decisions and providing intelligent insights!
+
+> **Where data is stored:** project analysis cache lives in `.mcp-adr-cache` in your project. Conversation memory snapshots are stored in your OS temp directory under `$TMPDIR/{projectName}/conversation-memory/`.
 
 **Note**: The server works in two modes:
 
@@ -168,14 +191,14 @@ If your project already has ADRs in the `./adrs` directory (or your configured A
 ```json
 {
   "tool": "memory_loading",
-  "parameters": {
+  "arguments": {
     "action": "load_adrs",
     "forceReload": true
   }
 }
 ```
 
-This populates the `.mcp-adr-memory` directory and enables intelligent pattern recognition.
+This populates the `.mcp-adr-cache` directory and enables intelligent pattern recognition.
 
 ### Create a Sample Project
 
@@ -201,7 +224,7 @@ In your MCP client, run:
 ```json
 {
   "tool": "analyze_project_ecosystem",
-  "parameters": {
+  "arguments": {
     "projectPath": ".",
     "enhancedMode": true,
     "recursiveDepth": "comprehensive"
@@ -232,7 +255,7 @@ Now let's explore the **`perform_research`** tool, which uses the research-orche
 ```json
 {
   "tool": "perform_research",
-  "parameters": {
+  "arguments": {
     "question": "What deployment infrastructure is currently available in this project?",
     "projectPath": ".",
     "adrDirectory": "./adrs"
@@ -289,7 +312,7 @@ Now let's create an architectural decision record based on your project analysis
 ```json
 {
   "tool": "suggest_adrs",
-  "parameters": {
+  "arguments": {
     "projectPath": ".",
     "analysisScope": "all",
     "maxSuggestions": 3
@@ -306,7 +329,7 @@ Pick one of the suggested decisions and create an ADR:
 ```json
 {
   "tool": "generate_adr_from_decision",
-  "parameters": {
+  "arguments": {
     "decisionData": {
       "title": "Web Framework Selection",
       "context": "Need to choose a web framework for the HTTP API",
@@ -340,7 +363,7 @@ Now that you've created an ADR, load it into the memory system to enable intelli
 ```json
 {
   "tool": "memory_loading",
-  "parameters": {
+  "arguments": {
     "action": "load_adrs",
     "forceReload": true
   }
@@ -356,7 +379,7 @@ Use the new **research-driven ADR validation** to check if your documented decis
 ```json
 {
   "tool": "validate_adr",
-  "parameters": {
+  "arguments": {
     "adrPath": "././adrs/001-web-framework-selection.md",
     "projectPath": ".",
     "includeEnvironmentCheck": true,
@@ -399,7 +422,7 @@ Use the new **research-driven ADR validation** to check if your documented decis
 ```json
 {
   "tool": "validate_all_adrs",
-  "parameters": {
+  "arguments": {
     "projectPath": ".",
     "adrDirectory": "./adrs",
     "includeEnvironmentCheck": true,
@@ -419,7 +442,7 @@ ADRs aren't just documentation - they're implementation roadmaps.
 ```json
 {
   "tool": "generate_adr_todo",
-  "parameters": {
+  "arguments": {
     "adrDirectory": "./adrs",
     "todoFormat": "both",
     "includePriorities": true
@@ -436,7 +459,7 @@ As you implement the decisions, track progress:
 ```json
 {
   "tool": "compare_adr_progress",
-  "parameters": {
+  "arguments": {
     "todoPath": "TODO.md",
     "adrDirectory": "./adrs"
   }
@@ -491,6 +514,7 @@ Now that you understand the basics, you can:
 **"Tool not found" error**
 
 - Verify MCP server installation: `mcp-adr-analysis-server --version`
+- If using a source install, build first: `npm install && npm run build`
 - Check MCP client configuration
 - Ensure environment variables are set correctly
 
@@ -602,7 +626,7 @@ You have successfully completed this tutorial if:
 
 - [ ] MCP server is running (you see `adr-analysis` in your MCP client's server list)
 - [ ] You can run `analyze_project_ecosystem` without errors
-- [ ] Memory system is initialized (`.mcp-adr-memory` directory exists in your project)
+- [ ] Memory system is initialized (`.mcp-adr-cache` directory exists in your project)
 - [ ] You've generated your first ADR (check the `./adrs/` directory for a new `.md` file)
 
 ❌ If something isn't working, check the [Troubleshooting Guide](../how-to-guides/troubleshooting.md)

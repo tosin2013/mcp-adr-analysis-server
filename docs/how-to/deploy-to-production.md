@@ -1,13 +1,13 @@
 ---
 title: Deploy MCP ADR Analysis Server To Production
-description: Complete guide for production deployment of MCP ADR Analysis Server v2.1.0
+description: Complete guide for production deployment of MCP ADR Analysis Server v2.5.0
 ---
 
 # 🚀 Deploy MCP ADR Analysis Server To Production
 
 **Complete production deployment guide for enterprise environments**
 
-> **Version**: 2.1.0 | **Target**: Production environments | **Security**: Enterprise-grade
+> **Version**: 2.5.0 | **Target**: Production environments | **Security**: Enterprise-grade
 
 ## 📋 Prerequisites
 
@@ -54,11 +54,11 @@ cd /opt/mcp-adr-analysis-server
 
 ```bash
 # Install globally from NPM
-npm install -g mcp-adr-analysis-server@2.1.0
+npm install -g mcp-adr-analysis-server@2.5.0
 
 # Verify installation
 mcp-adr-analysis-server --version
-# Should output: MCP ADR Analysis Server v2.1.0
+# Should output: MCP ADR Analysis Server v2.5.0
 
 # Alternative: Install from source
 git clone https://github.com/tosin2013/mcp-adr-analysis-server.git
@@ -425,22 +425,3 @@ sudo nano /etc/nginx/sites-available/mcp-adr-analysis-server
 - [ ] Team trained on operations
 
 **Your MCP ADR Analysis Server is now production-ready! 🚀**
-
-### 3. Verify results
-
-```bash
-# Verification command
-echo "Verify success"
-```
-
-## Troubleshooting
-
-If you encounter issues:
-
-- Check condition 1
-- Verify setting 2
-
-## Related Guides
-
-- [Deployment Readiness Guide](../how-to-guides/deployment-readiness.md)
-- [Reference Documentation](../reference/)

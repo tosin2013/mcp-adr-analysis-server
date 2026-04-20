@@ -22,6 +22,8 @@ By the end of this tutorial, you'll be able to:
 
 Before starting, ensure you have:
 
+> Source install note: if you're running from a cloned repository, run `npm install && npm run build` first so the `mcp-adr-analysis-server` binary is available.
+
 ```bash
 # 1. MCP server installed and working
 mcp-adr-analysis-server --test
