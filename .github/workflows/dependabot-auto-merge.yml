@@ -1,0 +1,128 @@
+name: Dependabot Auto Merge
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto-merge:
+    # Belt-and-braces: check both the event actor and the PR author.
+    # pull_request_target runs with write perms, so we want defence in depth.
+    if: github.actor == 'dependabot[bot]' && github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if auto-merge is allowed
+        id: check
+        env:
+          DEPENDENCY_NAMES: ${{ steps.metadata.outputs.dependency-names }}
+          DEPENDENCY_TYPE: ${{ steps.metadata.outputs.dependency-type }}
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+        run: |
+          echo "dependency-names=$DEPENDENCY_NAMES" >> $GITHUB_STEP_SUMMARY
+          echo "dependency-type=$DEPENDENCY_TYPE" >> $GITHUB_STEP_SUMMARY
+          echo "update-type=$UPDATE_TYPE" >> $GITHUB_STEP_SUMMARY
+
+          # Skip MCP SDK updates — these require manual review via dependencies.yml
+          if echo "$DEPENDENCY_NAMES" | grep -q "@modelcontextprotocol/sdk"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=MCP SDK updates require manual review" >> $GITHUB_OUTPUT
+            echo "::notice::Skipping auto-merge: MCP SDK updates require manual review"
+            exit 0
+          fi
+
+          # Skip major version bumps
+          if [[ "$UPDATE_TYPE" == "version-update:semver-major" ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=Major version bumps require manual review" >> $GITHUB_OUTPUT
+            echo "::notice::Skipping auto-merge: major version bump"
+            exit 0
+          fi
+
+          # Skip direct production deps — patch bumps on runtime-critical deps
+          # (zod, openai, hono, firecrawl-js, etc.) can break type inference or
+          # runtime behaviour. Auto-merge is limited to dev-deps, transitive
+          # deps, and GitHub Actions.
+          if [[ "$DEPENDENCY_TYPE" == "direct:production" ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=Direct production dependencies require manual review" >> $GITHUB_OUTPUT
+            echo "::notice::Skipping auto-merge: direct:production dependency"
+            exit 0
+          fi
+
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+      - name: Approve PR
+        if: steps.check.outputs.skip != 'true'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+          DEPENDENCY_NAMES: ${{ steps.metadata.outputs.dependency-names }}
+        run: |
+          gh pr review "$PR_URL" --approve \
+            --body "Auto-approved: **${UPDATE_TYPE}** update for \`${DEPENDENCY_NAMES}\`"
+
+      - name: Enable auto-merge
+        id: enable-automerge
+        if: steps.check.outputs.skip != 'true'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Graceful fallback: if auto-merge is disabled at the repo level
+          # (Settings → Pull Requests → Allow auto-merge), `gh pr merge --auto`
+          # exits non-zero. Log it to the step summary instead of failing the
+          # workflow — the PR stays open for manual merge.
+          if gh pr merge "$PR_URL" --auto --squash 2>&1 | tee /tmp/merge.log; then
+            echo "automerge=enabled" >> $GITHUB_OUTPUT
+            echo "::notice::Auto-merge enabled; will merge once required checks pass"
+          else
+            echo "automerge=failed" >> $GITHUB_OUTPUT
+            MSG=$(cat /tmp/merge.log | head -5)
+            echo "::warning::Could not enable auto-merge — PR left open for manual review. Likely cause: repo-level 'Allow auto-merge' is disabled. Details: $MSG"
+          fi
+        continue-on-error: true
+
+      - name: Summary
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          DEPENDENCY_NAMES: ${{ steps.metadata.outputs.dependency-names }}
+          DEPENDENCY_TYPE: ${{ steps.metadata.outputs.dependency-type }}
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+          SKIP: ${{ steps.check.outputs.skip }}
+          SKIP_REASON: ${{ steps.check.outputs.reason }}
+          AUTOMERGE: ${{ steps.enable-automerge.outputs.automerge }}
+        run: |
+          {
+            echo "## Dependabot Auto-Merge"
+            echo ""
+            echo "**PR**: #${PR_NUMBER} — ${PR_TITLE}"
+            echo "**Dependency**: \`${DEPENDENCY_NAMES}\`"
+            echo "**Dependency type**: \`${DEPENDENCY_TYPE}\`"
+            echo "**Update type**: \`${UPDATE_TYPE}\`"
+            echo ""
+            if [[ "$SKIP" == "true" ]]; then
+              echo "**Action**: Skipped — ${SKIP_REASON}"
+            elif [[ "$AUTOMERGE" == "enabled" ]]; then
+              echo "**Action**: Approved and auto-merge enabled (squash)"
+              echo ""
+              echo "Merge will proceed once all required status checks pass."
+            else
+              echo "**Action**: Approved, but auto-merge could NOT be enabled"
+              echo ""
+              echo "This usually means repo-level 'Allow auto-merge' is disabled."
+              echo "Settings → General → Pull Requests → Allow auto-merge."
+              echo "PR left open for manual merge."
+            fi
+          } >> $GITHUB_STEP_SUMMARY
