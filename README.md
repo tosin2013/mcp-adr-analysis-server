@@ -32,6 +32,8 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 | **Tree-sitter**        | An incremental parsing library that provides AST (Abstract Syntax Tree) analysis for 50+ languages. Used for semantic code understanding, extracting function signatures, and identifying architectural patterns. |
 | **Knowledge Graph**    | A graph database maintained by the server that tracks relationships between ADRs, code implementations, and architectural decisions. Enables intelligent code linking and impact analysis.                        |
 | **Smart Code Linking** | AI-powered discovery of code files related to ADRs and architectural decisions, using keyword extraction and semantic search.                                                                                     |
+| **Firecrawl**          | Web page extraction/search service used by optional research tools (`FIRECRAWL_API_KEY`).                                                                                                                         |
+| **ADR Aggregator**     | Optional SaaS integration for syncing and sharing ADR context across teams (`ADR_AGGREGATOR_API_KEY`).                                                                                                            |
 
 </details>
 
@@ -49,7 +51,7 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 🧪 **TDD Integration** - Two-phase Test-Driven Development with validation
 🚀 **Deployment Readiness** - Zero-tolerance test validation with hard blocking
 
-📖 **[View Full Capabilities →](docs/explanation/)**
+📖 **[View Full Capabilities →](docs/explanation/index.md)**
 
 ## Prerequisites
 
@@ -212,9 +214,9 @@ const relatedCode = await findRelatedCode(
 
 </details>
 
-📖 **[Complete Usage Guide →](docs/tutorials/)** | **[API Reference →](docs/reference/)**
+📖 **[Complete Usage Guide →](docs/tutorials/01-first-steps.md)** | **[API Reference →](docs/reference/index.md)**
 
-> **Try it out:** This repo includes a [`sample-project/`](sample-project/) directory with example ADRs and source code. Point `PROJECT_PATH` at it to experiment without affecting your own codebase.
+> **Try it out:** This repo includes a [`sample-project/`](sample-project/README.md) directory with example ADRs and source code. Point `PROJECT_PATH` at it to experiment without affecting your own codebase.
 >
 > **Note:** The sample project is only available when **cloning from source** (Option 3 above). If you installed via npm (Option 1 or 2), create your own test project or clone the repo separately to access the sample: `git clone --depth 1 https://github.com/tosin2013/mcp-adr-analysis-server.git sample-test`
 
@@ -243,7 +245,7 @@ tests/         # >80% test coverage
 .github/       # CI/CD automation
 ```
 
-📖 **[Full Structure →](docs/tutorials/)**
+📖 **[Full Structure →](docs/tutorials/01-first-steps.md)**
 
 ## 🧪 Testing
 
@@ -346,6 +348,7 @@ npm install && npm run build && npm test
 API documentation is generated with [TypeDoc](https://typedoc.org/):
 
 ```bash
+npm install          # Required once after cloning (installs typedoc)
 npm run docs:build   # Generate API docs into docs/api/
 npm run docs:serve   # Serve locally via Python HTTP server
 ```
@@ -407,7 +410,7 @@ Use our [**issue templates**](https://github.com/tosin2013/mcp-adr-analysis-serv
 
 **Official:** [MCP Specification](https://modelcontextprotocol.io/) • [MCP SDK](https://github.com/modelcontextprotocol/typescript-sdk)  
 **Community:** [MCP Registry](https://github.com/modelcontextprotocol/servers) • [Discord](https://discord.gg/modelcontextprotocol)  
-**Project:** [ADRs](./docs/adrs/) • [Progress](./docs/release-dashboard.md) • [Publishing Guide](./docs/how-to-guides/push-tags-to-npm.md)
+**Project:** [ADRs](https://github.com/tosin2013/mcp-adr-analysis-server/tree/main/docs/adrs) • [Progress](./docs/release-dashboard.md) • [Publishing Guide](./docs/how-to-guides/push-tags-to-npm.md)
 
 ## 📄 License
 
