@@ -152,6 +152,20 @@ Reviewers focus on:
 
 _Note: Style and formatting are automated, so reviews focus on substance over syntax._
 
+## Release Process
+
+Releases are fully automated on PR merge. The bump type (major / minor / patch) is inferred from your PR title and labels, so getting these right matters:
+
+- **Major bump**: PR title contains `BREAKING` / `BREAKING CHANGE`, or PR has the `breaking` / `breaking-change` / `major` label. Reserve for genuinely breaking changes — see [RELEASES.md](./RELEASES.md#what-counts-as-breaking) for the definition.
+- **Minor bump**: PR title starts with `feat:` / `feature:`, or PR has the `feature` / `enhancement` / `minor` label.
+- **Patch bump**: Default — any PR without the above markers. Covers fixes, chores, docs, refactors, and dependency bumps.
+
+If your PR should **not** trigger a release (e.g., docs-only or a CI tweak you want to batch), apply the `no-release` label.
+
+Before merging any feature-bearing PR, add a `## [Unreleased]` entry to [`CHANGELOG.md`](./CHANGELOG.md) describing the change in Keep a Changelog format (`### Added / Changed / Deprecated / Removed / Fixed / Security`). The Release Drafter draft will pick it up; once the release is cut, promote the `[Unreleased]` heading to the published version number and date.
+
+See **[RELEASES.md](./RELEASES.md)** for full details on cadence, the deprecation window, backport policy, and the OIDC publish pipeline.
+
 ## Quality Gates
 
 All contributions must pass:

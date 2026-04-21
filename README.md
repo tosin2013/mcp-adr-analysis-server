@@ -51,7 +51,7 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 🧪 **TDD Integration** - Two-phase Test-Driven Development with validation
 🚀 **Deployment Readiness** - Zero-tolerance test validation with hard blocking
 
-📖 **[View Full Capabilities →](docs/explanation/index.md)**
+📖 **[View Full Capabilities →](docs/explanation/index.md)** · 📜 **[Release policy →](RELEASES.md)** · 🗒️ **[Changelog →](CHANGELOG.md)**
 
 ## Prerequisites
 
