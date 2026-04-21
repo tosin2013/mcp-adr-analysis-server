@@ -1,0 +1,83 @@
+name: Dependabot Auto Merge
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  auto-merge:
+    if: github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check if auto-merge is allowed
+        id: check
+        run: |
+          DEPENDENCY_NAMES="${{ steps.metadata.outputs.dependency-names }}"
+          UPDATE_TYPE="${{ steps.metadata.outputs.update-type }}"
+
+          echo "dependency-names=$DEPENDENCY_NAMES" >> $GITHUB_STEP_SUMMARY
+          echo "update-type=$UPDATE_TYPE" >> $GITHUB_STEP_SUMMARY
+
+          # Skip MCP SDK updates — these require manual review via dependencies.yml
+          if echo "$DEPENDENCY_NAMES" | grep -q "@modelcontextprotocol/sdk"; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=MCP SDK updates require manual review" >> $GITHUB_OUTPUT
+            echo "::notice::Skipping auto-merge: MCP SDK updates require manual review"
+            exit 0
+          fi
+
+          # Skip major version bumps
+          if [[ "$UPDATE_TYPE" == "version-update:semver-major" ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "reason=Major version bumps require manual review" >> $GITHUB_OUTPUT
+            echo "::notice::Skipping auto-merge: major version bump"
+            exit 0
+          fi
+
+          echo "skip=false" >> $GITHUB_OUTPUT
+
+      - name: Approve PR
+        if: steps.check.outputs.skip != 'true'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          UPDATE_TYPE: ${{ steps.metadata.outputs.update-type }}
+          DEPENDENCY_NAMES: ${{ steps.metadata.outputs.dependency-names }}
+        run: |
+          gh pr review "$PR_URL" --approve \
+            --body "Auto-approved: **${UPDATE_TYPE}** update for \`${DEPENDENCY_NAMES}\`"
+
+      - name: Enable auto-merge
+        if: steps.check.outputs.skip != 'true'
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr merge "$PR_URL" --auto --squash
+
+      - name: Summary
+        run: |
+          echo "## Dependabot Auto-Merge" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**PR**: #${{ github.event.pull_request.number }} — ${{ github.event.pull_request.title }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Dependency**: \`${{ steps.metadata.outputs.dependency-names }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "**Update type**: ${{ steps.metadata.outputs.update-type }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [[ "${{ steps.check.outputs.skip }}" == "true" ]]; then
+            echo "**Action**: Skipped — ${{ steps.check.outputs.reason }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Action**: Approved and auto-merge enabled (squash)" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Merge will proceed once all required status checks pass." >> $GITHUB_STEP_SUMMARY
+          fi
