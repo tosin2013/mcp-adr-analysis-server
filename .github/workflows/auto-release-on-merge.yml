@@ -439,6 +439,36 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "To enable auto-release, update `.github/auto-release.config.json` or remove skip labels." >> $GITHUB_STEP_SUMMARY
 
+  # Debug: always log what downstream sees. Remove once #787 is confirmed fixed.
+  debug-downstream-outputs:
+    needs: auto-release
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Log needs.auto-release.outputs
+        env:
+          SHOULD_PUBLISH_RAW: ${{ needs.auto-release.outputs.should-publish }}
+          NEW_VERSION_RAW: ${{ needs.auto-release.outputs.new-version }}
+          AUTO_RELEASE_RESULT: ${{ needs.auto-release.result }}
+        run: |
+          echo "auto-release result: '${AUTO_RELEASE_RESULT}'"
+          echo "should-publish raw value: '${SHOULD_PUBLISH_RAW}'"
+          echo "should-publish length: ${#SHOULD_PUBLISH_RAW}"
+          echo "should-publish byte-dump:"
+          printf '%s' "${SHOULD_PUBLISH_RAW}" | od -c | head -5
+          echo ""
+          echo "new-version raw value: '${NEW_VERSION_RAW}'"
+          echo "new-version length: ${#NEW_VERSION_RAW}"
+          echo ""
+          echo "Equality test results:"
+          if [[ "${SHOULD_PUBLISH_RAW}" == "true" ]]; then
+            echo "  bash: SHOULD_PUBLISH_RAW == 'true' → TRUE"
+          else
+            echo "  bash: SHOULD_PUBLISH_RAW == 'true' → FALSE"
+          fi
+          echo ""
+          echo "GHA expression test (on the if: line of this step): ${{ needs.auto-release.outputs.should-publish == 'true' }}"
+
   # Trigger NPM publishing.
   #
   # Do NOT re-check github.event.pull_request.* here — those have been
