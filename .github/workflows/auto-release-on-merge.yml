@@ -46,15 +46,21 @@ jobs:
             MERGE_SHA="${{ github.sha }}"
           fi
 
-          if ! git cat-file -e "${MERGE_SHA}^{commit}" 2>/dev/null; then
-            echo "⚠️ merge_commit_sha not found in local checkout; fetching origin/main"
-            git fetch origin main
-            MERGE_SHA="$(git rev-parse origin/main)"
+          if ! git fetch origin main; then
+            echo "❌ Failed to fetch origin/main. Aborting to avoid tagging an incorrect commit."
+            exit 1
           fi
 
-          if ! git merge-base --is-ancestor "$MERGE_SHA" "origin/main"; then
+          ORIGIN_MAIN_SHA="$(git rev-parse origin/main)"
+
+          if ! git cat-file -e "${MERGE_SHA}^{commit}" 2>/dev/null; then
+            echo "⚠️ merge_commit_sha not found in local checkout; using origin/main HEAD"
+            MERGE_SHA="$ORIGIN_MAIN_SHA"
+          fi
+
+          if [[ "$MERGE_SHA" != "$ORIGIN_MAIN_SHA" ]] && ! git merge-base --is-ancestor "$MERGE_SHA" "$ORIGIN_MAIN_SHA"; then
             echo "⚠️ merge_commit_sha is not on origin/main; using origin/main HEAD instead"
-            MERGE_SHA="$(git rev-parse origin/main)"
+            MERGE_SHA="$ORIGIN_MAIN_SHA"
           fi
 
           echo "sha=$MERGE_SHA" >> $GITHUB_OUTPUT
@@ -397,7 +403,7 @@ jobs:
   # Trigger NPM publishing
   publish-npm:
     needs: auto-release
-    if: github.event.pull_request.merged == true && github.event.pull_request.user.login != 'dependabot[bot]' && fromJSON(needs.auto-release.outputs.should-publish || 'false')
+    if: github.event.pull_request.merged == true && github.event.pull_request.user.login != 'dependabot[bot]' && fromJSON(needs.auto-release.outputs.should-publish)
     uses: ./.github/workflows/publish.yml
     with:
       version: v${{ needs.auto-release.outputs.new-version }}
