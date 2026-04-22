@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       new-version: ${{ steps.bump-version.outputs.version }}
-      should-publish: ${{ steps.should-skip.outputs.should_skip != 'true' }}
+      should-publish: ${{ steps.publish-gate.outputs.should_publish }}
     permissions:
       contents: write
       pull-requests: write
@@ -40,6 +40,23 @@ jobs:
         id: merge-sha
         run: |
           MERGE_SHA="${{ github.event.pull_request.merge_commit_sha }}"
+
+          if [[ -z "$MERGE_SHA" || "$MERGE_SHA" == "null" ]]; then
+            echo "⚠️ merge_commit_sha is missing; falling back to github.sha"
+            MERGE_SHA="${{ github.sha }}"
+          fi
+
+          if ! git cat-file -e "${MERGE_SHA}^{commit}" 2>/dev/null; then
+            echo "⚠️ merge_commit_sha not found in local checkout; fetching origin/main"
+            git fetch origin main
+            MERGE_SHA="$(git rev-parse origin/main)"
+          fi
+
+          if ! git merge-base --is-ancestor "$MERGE_SHA" "origin/main"; then
+            echo "⚠️ merge_commit_sha is not on origin/main; using origin/main HEAD instead"
+            MERGE_SHA="$(git rev-parse origin/main)"
+          fi
+
           echo "sha=$MERGE_SHA" >> $GITHUB_OUTPUT
           echo "Merge commit SHA: $MERGE_SHA"
 
@@ -75,6 +92,15 @@ jobs:
 
           echo "should_skip=false" >> $GITHUB_OUTPUT
           echo "✅ Release should proceed"
+
+      - name: Set publish gate output
+        id: publish-gate
+        run: |
+          if [[ "${{ steps.should-skip.outputs.should_skip }}" == "true" ]]; then
+            echo "should_publish=false" >> $GITHUB_OUTPUT
+          else
+            echo "should_publish=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Determine version bump type
         id: version-type
@@ -371,7 +397,7 @@ jobs:
   # Trigger NPM publishing
   publish-npm:
     needs: auto-release
-    if: github.event.pull_request.merged == true && github.event.pull_request.user.login != 'dependabot[bot]' && needs.auto-release.outputs.should-publish == 'true'
+    if: github.event.pull_request.merged == true && github.event.pull_request.user.login != 'dependabot[bot]' && fromJSON(needs.auto-release.outputs.should-publish || 'false')
     uses: ./.github/workflows/publish.yml
     with:
       version: v${{ needs.auto-release.outputs.new-version }}
