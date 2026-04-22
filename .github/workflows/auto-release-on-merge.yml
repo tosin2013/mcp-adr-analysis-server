@@ -101,12 +101,51 @@ jobs:
 
       - name: Set publish gate output
         id: publish-gate
+        env:
+          SHOULD_SKIP: ${{ steps.should-skip.outputs.should_skip }}
+          CONFIG_ENABLED: ${{ steps.config.outputs.enabled }}
+          PR_MERGED: ${{ github.event.pull_request.merged }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
-          if [[ "${{ steps.should-skip.outputs.should_skip }}" == "true" ]]; then
-            echo "should_publish=false" >> $GITHUB_OUTPUT
+          # Compute the gate explicitly. This is the single source of truth for
+          # whether publish-npm should run. Do NOT re-evaluate github.event
+          # context in the publish-npm job — the downstream evaluation has been
+          # unreliable historically (see #787).
+          if [[ "$CONFIG_ENABLED" != "true" ]]; then
+            GATE="false"
+            REASON="auto-release disabled in .github/auto-release.config.json"
+          elif [[ "$SHOULD_SKIP" == "true" ]]; then
+            GATE="false"
+            REASON="PR carries a skip-release label"
+          elif [[ "$PR_MERGED" != "true" ]]; then
+            GATE="false"
+            REASON="PR was not merged"
+          elif [[ "$PR_AUTHOR" == "dependabot[bot]" ]]; then
+            GATE="false"
+            REASON="Dependabot PRs are handled by dependabot-auto-merge.yml"
           else
-            echo "should_publish=true" >> $GITHUB_OUTPUT
+            GATE="true"
+            REASON="All preconditions met"
           fi
+
+          echo "should_publish=$GATE" >> $GITHUB_OUTPUT
+          echo "gate_reason=$REASON" >> $GITHUB_OUTPUT
+
+          # Surface the decision in workflow logs + step summary so future
+          # debugging does not require guessing at context values.
+          echo "::notice::publish gate = $GATE ($REASON)"
+          {
+            echo "## Publish gate decision"
+            echo ""
+            echo "| Input | Value |"
+            echo "|---|---|"
+            echo "| config.enabled | \`$CONFIG_ENABLED\` |"
+            echo "| should_skip | \`$SHOULD_SKIP\` |"
+            echo "| pr.merged | \`$PR_MERGED\` |"
+            echo "| pr.author | \`$PR_AUTHOR\` |"
+            echo ""
+            echo "**Decision**: \`should_publish=$GATE\` — $REASON"
+          } >> $GITHUB_STEP_SUMMARY
 
       - name: Determine version bump type
         id: version-type
@@ -400,12 +439,23 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "To enable auto-release, update `.github/auto-release.config.json` or remove skip labels." >> $GITHUB_STEP_SUMMARY
 
-  # Trigger NPM publishing
+  # Trigger NPM publishing.
+  #
+  # Do NOT re-check github.event.pull_request.* here — those have been
+  # unreliable in downstream jobs historically (see #787). The
+  # `publish-gate` step in `auto-release` is the single source of truth
+  # and already factors in PR merged state, skip labels, Dependabot
+  # authorship, and the enabled flag.
+  #
+  # Equality check against 'true' is the simplest GHA-safe comparison:
+  # `fromJSON()` had edge cases when the output was an empty string
+  # (the previous attempted fix in #808 used fromJSON and still failed).
   publish-npm:
     needs: auto-release
-    if: github.event.pull_request.merged == true && github.event.pull_request.user.login != 'dependabot[bot]' && fromJSON(needs.auto-release.outputs.should-publish)
+    if: needs.auto-release.outputs.should-publish == 'true'
     uses: ./.github/workflows/publish.yml
     with:
       version: v${{ needs.auto-release.outputs.new-version }}
       skip_tests: false
-    # Using OIDC Trusted Publishing - no token required
+    # Uses OIDC Trusted Publishing — no NPM_TOKEN required.
+    # Trusted Publisher is configured on npmjs.com for this repo + publish.yml.
