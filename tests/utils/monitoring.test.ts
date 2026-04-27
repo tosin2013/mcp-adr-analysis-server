@@ -424,10 +424,11 @@ describe('Monitoring and Analytics', () => {
 
   describe('Recent Requests', () => {
     it('should return recent requests sorted by time', async () => {
+      // 10ms gaps so ms-resolution timestamps don't tie under scheduler jitter
       monitor.startRequest('req1', 'tool', 'tool1');
-      await new Promise(resolve => setTimeout(resolve, 2));
+      await new Promise(resolve => setTimeout(resolve, 10));
       monitor.startRequest('req2', 'tool', 'tool2');
-      await new Promise(resolve => setTimeout(resolve, 2));
+      await new Promise(resolve => setTimeout(resolve, 10));
       monitor.startRequest('req3', 'tool', 'tool3');
 
       const recent = monitor.getRecentRequests(10);

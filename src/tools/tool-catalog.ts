@@ -803,13 +803,44 @@ TOOL_CATALOG.set('release_tracking', {
           'next_release_preview',
           'create_milestone',
           'sync_milestones',
+          'push_local_milestones',
         ],
       },
       projectPath: { type: 'string' },
       version: { type: 'string' },
       format: { type: 'string', enum: ['markdown', 'keep-a-changelog', 'conventional'] },
+      localOnly: { type: 'boolean' },
+      writeReleasePlan: { type: 'boolean' },
+      releasePlanPath: { type: 'string' },
     },
     required: ['operation'],
+  },
+});
+
+TOOL_CATALOG.set('generate_adr_todo', {
+  name: 'generate_adr_todo',
+  shortDescription: 'Generate TODO.md from ADRs with TDD task pairing',
+  fullDescription:
+    'Decomposes ADRs into actionable TODO entries with stable IDs, links each task to its source ADR (and optionally a release milestone), and preserves manual edits via a bounded HTML-comment section. Default emits paired test+production tasks (two-phase TDD). Tasks for deleted/superseded ADRs move to a Stale Tasks section.',
+  category: 'adr',
+  complexity: 'moderate',
+  tokenCost: { min: 800, max: 3000 },
+  hasCEMCPDirective: false,
+  relatedTools: ['discover_existing_adrs', 'release_tracking', 'compare_adr_progress'],
+  keywords: ['todo', 'adr', 'task', 'breakdown', 'tdd', 'milestone', 'planning', 'decomposition'],
+  requiresAI: false,
+  inputSchema: {
+    type: 'object',
+    properties: {
+      adrDirectory: { type: 'string', default: 'docs/adrs' },
+      scope: { type: 'string', enum: ['all', 'pending', 'accepted'], default: 'pending' },
+      projectPath: { type: 'string' },
+      todoPath: { type: 'string', default: 'TODO.md' },
+      phase: { type: 'string', enum: ['both', 'test', 'production'], default: 'both' },
+      linkToMilestones: { type: 'boolean', default: true },
+      dryRun: { type: 'boolean', default: false },
+    },
+    required: [],
   },
 });
 

@@ -36,6 +36,14 @@ import {
   type ReleaseTrackingState,
   type ChangelogOptions,
 } from '../utils/release-tracker.js';
+import {
+  listLocal,
+  markPushed,
+  slugify,
+  upsertLocal,
+  writeReleasePlanFile,
+} from '../utils/local-milestone-store.js';
+import type { MilestoneStatus } from '../utils/release-readiness-detector.js';
 
 // ─── Schema ────────────────────────────────────────────────────────
 
@@ -50,6 +58,7 @@ const ReleaseTrackingSchema = z.object({
       'next_release_preview',
       'create_milestone',
       'sync_milestones',
+      'push_local_milestones',
     ])
     .describe('Operation to perform'),
 
@@ -91,6 +100,20 @@ const ReleaseTrackingSchema = z.object({
     .default(false)
     .describe('Sync milestones to GitHub (requires gh CLI)'),
   updateTodo: z.boolean().default(false).describe('Update TODO.md with milestone status'),
+  localOnly: z
+    .boolean()
+    .default(false)
+    .describe('For create_milestone: persist locally instead of calling gh CLI'),
+  writeReleasePlan: z
+    .boolean()
+    .default(false)
+    .describe(
+      'For create_milestone/push_local_milestones: also render local milestones into RELEASE_PLAN.md (bounded section)'
+    ),
+  releasePlanPath: z
+    .string()
+    .default('RELEASE_PLAN.md')
+    .describe('Path to RELEASE_PLAN.md (relative to projectPath)'),
 });
 
 // ─── Main Export ───────────────────────────────────────────────────
@@ -133,6 +156,9 @@ export async function releaseTracking(args: Record<string, unknown>): Promise<an
 
       case 'sync_milestones':
         return await handleSyncMilestones(projectPath, adrs, validatedArgs);
+
+      case 'push_local_milestones':
+        return await handlePushLocalMilestones(projectPath, validatedArgs);
 
       default:
         throw new McpAdrError('INVALID_ARGS', `Unknown operation: ${validatedArgs.operation}`);
@@ -530,6 +556,32 @@ ${preview.readiness.recommendations.join('\n')}`,
   });
 }
 
+function persistLocalMilestone(
+  projectPath: string,
+  args: z.infer<typeof ReleaseTrackingSchema>,
+  pushed: boolean,
+  githubNumber?: number
+): MilestoneStatus {
+  const id = slugify(args.milestoneTitle!);
+  const milestone: MilestoneStatus = {
+    id,
+    name: args.milestoneTitle!,
+    completed: 0,
+    total: 0,
+    completionRate: 0,
+    criticalTodos: 0,
+    blockers: [],
+    linkedAdrIds: [],
+    linkedTodoIds: [],
+    source: pushed ? 'github' : 'local',
+    pushed,
+    ...(args.milestoneDescription !== undefined ? { description: args.milestoneDescription } : {}),
+    ...(args.milestoneDueDate !== undefined ? { dueDate: args.milestoneDueDate } : {}),
+    ...(githubNumber !== undefined ? { githubNumber } : {}),
+  };
+  return upsertLocal(projectPath, milestone);
+}
+
 async function handleCreateMilestone(
   projectPath: string,
   args: z.infer<typeof ReleaseTrackingSchema>
@@ -541,34 +593,145 @@ async function handleCreateMilestone(
     );
   }
 
-  const result = syncGitHubMilestone(
-    projectPath,
-    args.milestoneTitle,
-    args.milestoneDescription || '',
-    args.milestoneDueDate
-  );
+  let mode: 'github' | 'local-only' | 'local-fallback' = args.localOnly ? 'local-only' : 'github';
+  let ghNumber: number | undefined;
+  let ghError: string | undefined;
+
+  if (!args.localOnly) {
+    const result = syncGitHubMilestone(
+      projectPath,
+      args.milestoneTitle,
+      args.milestoneDescription || '',
+      args.milestoneDueDate
+    );
+    if (result.success) {
+      ghNumber = result.number;
+    } else {
+      mode = 'local-fallback';
+      ghError = result.error;
+    }
+  }
+
+  const stored = persistLocalMilestone(projectPath, args, mode === 'github', ghNumber);
+
+  let releasePlanPath: string | undefined;
+  if (args.writeReleasePlan) {
+    const milestones = listLocal(projectPath);
+    releasePlanPath = writeReleasePlanFile(projectPath, milestones, args.releasePlanPath);
+  }
+
+  const summary: string[] = [];
+  if (mode === 'github') {
+    summary.push(
+      `# Milestone Created/Updated`,
+      ``,
+      `**Title**: ${args.milestoneTitle}`,
+      `**Number**: #${ghNumber}`,
+      `**Local id**: \`${stored.id}\` (cached for offline use)`
+    );
+  } else if (mode === 'local-only') {
+    summary.push(
+      `# Milestone Persisted Locally`,
+      ``,
+      `**Title**: ${args.milestoneTitle}`,
+      `**Local id**: \`${stored.id}\``,
+      `**Storage**: \`.mcp-adr-cache/milestones.local.json\``,
+      ``,
+      `Run \`release_tracking\` with \`operation: "push_local_milestones"\` once \`gh\` auth is configured to publish.`
+    );
+  } else {
+    summary.push(
+      `# Milestone Persisted Locally (gh fallback)`,
+      ``,
+      `**Title**: ${args.milestoneTitle}`,
+      `**Local id**: \`${stored.id}\``,
+      `**Storage**: \`.mcp-adr-cache/milestones.local.json\``,
+      ``,
+      `⚠️ \`gh api\` failed: ${ghError ?? 'unknown error'}.`,
+      ``,
+      `The milestone has been saved locally so the workflow can continue. Resolve gh auth (\`gh auth status\`) then run \`release_tracking\` with \`operation: "push_local_milestones"\` to sync upstream. Pass \`localOnly: true\` to suppress this fallback warning.`
+    );
+  }
+
+  if (args.milestoneDescription) summary.push(`**Description**: ${args.milestoneDescription}`);
+  if (args.milestoneDueDate) summary.push(`**Due Date**: ${args.milestoneDueDate}`);
+  if (releasePlanPath) {
+    summary.push(``, `📝 RELEASE_PLAN.md updated at \`${releasePlanPath}\``);
+  }
 
   return validateMcpResponse({
-    content: [
-      {
-        type: 'text',
-        text: result.success
-          ? `# Milestone Created/Updated
+    content: [{ type: 'text', text: summary.join('\n') }],
+  });
+}
 
-**Title**: ${args.milestoneTitle}
-**Number**: #${result.number}
-${args.milestoneDescription ? `**Description**: ${args.milestoneDescription}` : ''}
-${args.milestoneDueDate ? `**Due Date**: ${args.milestoneDueDate}` : ''}`
-          : `# Milestone Creation Failed
+async function handlePushLocalMilestones(
+  projectPath: string,
+  args: z.infer<typeof ReleaseTrackingSchema>
+): Promise<any> {
+  const local = listLocal(projectPath);
+  if (local.length === 0) {
+    return validateMcpResponse({
+      content: [
+        {
+          type: 'text',
+          text: `# Push Local Milestones\n\nNo local milestones found at \`.mcp-adr-cache/milestones.local.json\`. Create one first via \`release_tracking\` with \`operation: "create_milestone"\` and \`localOnly: true\`.`,
+        },
+      ],
+    });
+  }
 
-**Error**: ${result.error}
+  const lines: string[] = [`# Push Local Milestones`, ``, `**Total**: ${local.length}`, ``];
+  let synced = 0;
+  let skipped = 0;
+  let failed = 0;
 
-Make sure:
-1. \`gh\` CLI is installed and authenticated
-2. You have write access to the repository
-3. Run \`gh auth status\` to verify`,
-      },
-    ],
+  for (const milestone of local) {
+    if (milestone.pushed) {
+      lines.push(
+        `- ⏭️ \`${milestone.id ?? slugify(milestone.name)}\` — already pushed (#${milestone.githubNumber ?? '?'})`
+      );
+      skipped += 1;
+      continue;
+    }
+
+    const result = syncGitHubMilestone(
+      projectPath,
+      milestone.name,
+      milestone.description ?? '',
+      milestone.dueDate
+    );
+
+    if (result.success && result.number !== undefined) {
+      markPushed(projectPath, milestone.id ?? slugify(milestone.name), result.number);
+      lines.push(
+        `- ✅ \`${milestone.id ?? slugify(milestone.name)}\` — pushed (#${result.number})`
+      );
+      synced += 1;
+    } else {
+      lines.push(
+        `- ❌ \`${milestone.id ?? slugify(milestone.name)}\` — failed (${result.error ?? 'unknown error'})`
+      );
+      failed += 1;
+    }
+  }
+
+  lines.push(``, `**Synced**: ${synced} · **Skipped**: ${skipped} · **Failed**: ${failed}`);
+
+  if (args.writeReleasePlan) {
+    const refreshed = listLocal(projectPath);
+    const path = writeReleasePlanFile(projectPath, refreshed, args.releasePlanPath);
+    lines.push(``, `📝 RELEASE_PLAN.md updated at \`${path}\``);
+  }
+
+  if (failed > 0) {
+    lines.push(
+      ``,
+      `⚠️ Some pushes failed. Run \`gh auth status\` to verify auth and re-invoke \`push_local_milestones\` to retry.`
+    );
+  }
+
+  return validateMcpResponse({
+    content: [{ type: 'text', text: lines.join('\n') }],
   });
 }
 
