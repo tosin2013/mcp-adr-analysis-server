@@ -40,6 +40,14 @@ export interface MilestoneStatus {
   completionRate: number;
   criticalTodos: number;
   blockers: string[];
+  id?: string;
+  description?: string;
+  dueDate?: string;
+  linkedAdrIds?: string[];
+  linkedTodoIds?: string[];
+  source?: 'github' | 'local' | 'todo';
+  githubNumber?: number;
+  pushed?: boolean;
 }
 
 export interface ReleaseReadinessOptions {

@@ -18,6 +18,12 @@ export interface TodoTask {
   dependencies?: string[];
   createdAt?: string;
   updatedAt?: string;
+  adrId?: string;
+  linkedAdrs?: string[];
+  milestoneId?: string;
+  tddPhase?: 'test' | 'production';
+  effort?: string;
+  category?: string;
 }
 
 /**
@@ -29,6 +35,43 @@ function parseTodoMarkdown(content: string): TodoTask[] {
 
   let currentTask: Partial<TodoTask> | null = null;
   let taskCounter = 0;
+
+  const pinPatterns: Array<[RegExp, (m: RegExpMatchArray, t: Partial<TodoTask>) => void]> = [
+    [
+      /<!--\s*adr:\s*([^\s>]+)\s*-->/i,
+      (m, t) => {
+        if (m[1]) t.adrId = m[1];
+      },
+    ],
+    [
+      /<!--\s*linked-adrs:\s*([^>]+?)\s*-->/i,
+      (m, t) => {
+        if (m[1])
+          t.linkedAdrs = m[1]
+            .split(',')
+            .map(s => s.trim())
+            .filter(Boolean);
+      },
+    ],
+    [
+      /<!--\s*milestone:\s*([^\s>]+)\s*-->/i,
+      (m, t) => {
+        if (m[1]) t.milestoneId = m[1];
+      },
+    ],
+    [
+      /<!--\s*tdd:\s*(test|production)\s*-->/i,
+      (m, t) => {
+        if (m[1]) t.tddPhase = m[1].toLowerCase() as 'test' | 'production';
+      },
+    ],
+    [
+      /<!--\s*task-id:\s*([^\s>]+)\s*-->/i,
+      (m, t) => {
+        if (m[1]) t.id = m[1];
+      },
+    ],
+  ];
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -47,6 +90,20 @@ function parseTodoMarkdown(content: string): TodoTask[] {
         status: 'pending',
       };
       continue;
+    }
+
+    // Parse inline pin comments
+    if (currentTask) {
+      let pinMatched = false;
+      for (const [pattern, apply] of pinPatterns) {
+        const m = trimmed.match(pattern);
+        if (m) {
+          apply(m, currentTask);
+          pinMatched = true;
+          break;
+        }
+      }
+      if (pinMatched) continue;
     }
 
     // Parse status
@@ -82,6 +139,7 @@ function parseTodoMarkdown(content: string): TodoTask[] {
       currentTask &&
       !trimmed.startsWith('**') &&
       !trimmed.startsWith('#') &&
+      !trimmed.startsWith('<!--') &&
       trimmed.length > 0
     ) {
       currentTask.description = (currentTask.description || '') + '\n' + trimmed;
