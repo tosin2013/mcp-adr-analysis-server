@@ -2286,6 +2286,7 @@ export class McpAdrAnalysisServer {
                     'next_release_preview',
                     'create_milestone',
                     'sync_milestones',
+                    'push_local_milestones',
                   ],
                   description: 'Operation to perform',
                 },
@@ -2368,8 +2369,74 @@ export class McpAdrAnalysisServer {
                   default: false,
                   description: 'Update TODO.md with milestone status',
                 },
+                localOnly: {
+                  type: 'boolean',
+                  default: false,
+                  description:
+                    'For create_milestone: persist locally instead of calling gh CLI. Useful when gh auth is unavailable.',
+                },
+                writeReleasePlan: {
+                  type: 'boolean',
+                  default: false,
+                  description:
+                    'For create_milestone/push_local_milestones: also render local milestones into RELEASE_PLAN.md (bounded section).',
+                },
+                releasePlanPath: {
+                  type: 'string',
+                  default: 'RELEASE_PLAN.md',
+                  description: 'Path to RELEASE_PLAN.md (relative to projectPath).',
+                },
               },
               required: ['operation'],
+            },
+          },
+          {
+            name: 'generate_adr_todo',
+            description:
+              'Generate TODO.md from ADRs with comprehensive task breakdown. Decomposes each ADR into paired test+production tasks (TDD), links tasks to release milestones, and preserves manual edits via a bounded HTML-comment section. Re-runs are idempotent; tasks for deleted/superseded ADRs move to a Stale Tasks section.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                adrDirectory: {
+                  type: 'string',
+                  default: 'docs/adrs',
+                  description: 'Directory containing ADR files (relative to projectPath)',
+                },
+                scope: {
+                  type: 'string',
+                  enum: ['all', 'pending', 'accepted'],
+                  default: 'pending',
+                  description:
+                    'Which ADRs to decompose: all, pending (proposed/draft), or accepted only',
+                },
+                projectPath: {
+                  type: 'string',
+                  description: 'Project root path (defaults to current working directory)',
+                },
+                todoPath: {
+                  type: 'string',
+                  default: 'TODO.md',
+                  description: 'Output TODO file (relative to projectPath)',
+                },
+                phase: {
+                  type: 'string',
+                  enum: ['both', 'test', 'production'],
+                  default: 'both',
+                  description:
+                    'TDD pairing — "both" emits paired test+production tasks (default), "production" or "test" narrows output',
+                },
+                linkToMilestones: {
+                  type: 'boolean',
+                  default: true,
+                  description: 'Link generated tasks to release milestones (local + GitHub merged)',
+                },
+                dryRun: {
+                  type: 'boolean',
+                  default: false,
+                  description: 'Compute changes but do not write TODO.md (preview only)',
+                },
+              },
+              required: [],
             },
           },
           {
@@ -3984,6 +4051,10 @@ export class McpAdrAnalysisServer {
             break;
           case 'release_tracking':
             response = await this.releaseTracking(safeArgs);
+            break;
+
+          case 'generate_adr_todo':
+            response = await this.generateAdrTodo(safeArgs);
             break;
           case 'troubleshoot_guided_workflow':
             response = await this.troubleshootGuidedWorkflow(safeArgs);
@@ -9023,6 +9094,18 @@ Please provide:
       throw new McpAdrError(
         `Release tracking failed: ${error instanceof Error ? error.message : String(error)}`,
         'RELEASE_TRACKING_ERROR'
+      );
+    }
+  }
+
+  private async generateAdrTodo(args: Record<string, unknown>): Promise<CallToolResult> {
+    try {
+      const { generateAdrTodo } = await import('./tools/generate-adr-todo-tool.js');
+      return await generateAdrTodo(args);
+    } catch (error) {
+      throw new McpAdrError(
+        `generate_adr_todo failed: ${error instanceof Error ? error.message : String(error)}`,
+        'GENERATE_ADR_TODO_ERROR'
       );
     }
   }
