@@ -265,31 +265,40 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: '22' # Node 22 ships with npm 11+ for OIDC Trusted Publishing
+          # NOTE: Node 22.x currently ships with npm 10.x, NOT npm 11. The "Verify
+          # npm version" step below force-installs npm@11.5.1+ because OIDC Trusted
+          # Publishing AUTH is only supported on npm >= 11.5.1. (npm 10 can SIGN
+          # provenance, which is why earlier failures showed `Signed provenance
+          # statement` succeed and then `PUT` 404 — npm 10 silently fell back to
+          # legacy auth. See npm/cli#9088 for the misleading-404 symptom.)
+          node-version: '22'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Verify npm version for OIDC
+      - name: Verify npm version for OIDC Trusted Publishing
         run: |
           echo "=== Verifying npm version for OIDC Trusted Publishing ==="
           NPM_VERSION=$(npm --version)
           echo "npm version: $NPM_VERSION"
 
-          # Extract major version
-          MAJOR_VERSION=$(echo "$NPM_VERSION" | cut -d. -f1)
-          MINOR_VERSION=$(echo "$NPM_VERSION" | cut -d. -f2)
-
-          # Require npm >= 10.0.0 for OIDC provenance (npm 10+ supports --provenance)
-          if [[ "$MAJOR_VERSION" -lt 10 ]]; then
-            echo "⚠️ npm version $NPM_VERSION is too old for OIDC provenance"
-            echo "Upgrading npm to 11.5.1..."
-            npm install -g npm@11.5.1 || {
-              echo "⚠️ npm upgrade failed, continuing with current version"
-              echo "Current npm version: $(npm --version)"
-            }
-            echo "npm version: $(npm --version)"
+          # OIDC Trusted Publishing requires npm >= 11.5.1.
+          # https://docs.npmjs.com/trusted-publishers/
+          # https://github.blog/changelog/2025-07-31-npm-trusted-publishing-with-oidc-is-generally-available/
+          # Symptom of running on npm 10: `Signed provenance statement` succeeds,
+          # then `PUT https://registry.npmjs.org/...` returns 404 because TP-OIDC
+          # auth is silently skipped. See npm/cli#9088.
+          REQUIRED_NPM="11.5.1"
+          if [[ "$(printf '%s\n%s' "$REQUIRED_NPM" "$NPM_VERSION" | sort -V | head -n1)" != "$REQUIRED_NPM" ]]; then
+            echo "⚠️ npm $NPM_VERSION is below required $REQUIRED_NPM for Trusted Publishing"
+            # NOTE: Use --force to work around the well-known "npm self-upgrade
+            # MODULE_NOT_FOUND" race where npm 10.x loses access to its own deps
+            # (e.g. promise-retry) mid-upgrade. Pin to a specific known-good
+            # version rather than `@latest` for determinism. See npm/cli#3268.
+            echo "Installing npm@${REQUIRED_NPM}..."
+            npm install -g "npm@${REQUIRED_NPM}" --force --no-audit --no-fund
+            echo "✅ npm upgraded to $(npm --version)"
           else
-            echo "✅ npm version $NPM_VERSION supports OIDC provenance publishing"
+            echo "✅ npm $NPM_VERSION satisfies the >= $REQUIRED_NPM requirement for Trusted Publishing"
           fi
 
       - name: Install dependencies
@@ -446,30 +455,6 @@ jobs:
           fi
 
           echo "✅ Package is ready for publishing"
-
-      - name: Inspect OIDC token claims (diagnostic)
-        # Temporary diagnostic to surface the exact subject claim that npm's
-        # Trusted Publisher will match against. Do NOT remove until OIDC
-        # publishing has been verified end-to-end. See PR #864 + the
-        # `Finish OIDC Trusted Publisher` plan for context.
-        run: |
-          OIDC_TOKEN=$(curl -sLS \
-            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" \
-            | jq -r .value)
-          if [[ -z "$OIDC_TOKEN" || "$OIDC_TOKEN" == "null" ]]; then
-            echo "::error::Failed to obtain OIDC token (id-token: write missing?)"
-            exit 1
-          fi
-          # JWT payload is the second dot-separated segment, base64url-encoded.
-          # Pad to a multiple of 4 so plain base64 -d accepts it.
-          PAYLOAD_RAW=$(echo "$OIDC_TOKEN" | cut -d. -f2)
-          PAD=$(( 4 - ${#PAYLOAD_RAW} % 4 ))
-          [[ "$PAD" -lt 4 ]] && PAYLOAD_RAW="${PAYLOAD_RAW}$(printf '=%.0s' $(seq 1 $PAD))"
-          PAYLOAD=$(echo "$PAYLOAD_RAW" | tr '_-' '/+' | base64 -d 2>/dev/null)
-          echo "::group::OIDC token claims (configure these on npmjs.com)"
-          echo "$PAYLOAD" | jq '{aud, sub, repository, repository_owner, workflow_ref, job_workflow_ref, environment, ref, event_name}'
-          echo "::endgroup::"
 
       - name: Publish to NPM
         run: |
