@@ -5,6 +5,12 @@
     "moduleResolution": "bundler",
     "lib": ["ES2022", "DOM"],
     "types": ["node"],
+    // DO NOT REMOVE rootDir. If it's missing, tsc infers the project root
+    // as the common ancestor of all source files (often the repo root),
+    // producing dist/src/src/index.js instead of dist/src/index.js — and
+    // package.json's "main" then 404s at runtime. This bit us in #784;
+    // the fix landed in #800 and is regression-guarded by
+    // scripts/validate-build.js (Check 7).
     "rootDir": "./src",
     "outDir": "./dist/src",
     "strict": true,

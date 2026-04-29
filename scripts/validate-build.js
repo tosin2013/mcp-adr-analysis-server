@@ -27,7 +27,7 @@ if (!existsSync(mainEntry)) {
   errors.push(`Main entry point not found: ${mainEntry}`);
 } else {
   console.log('✅ Main entry point exists');
-  
+
   // Check if it's a valid JS file with MCP functionality
   try {
     const content = readFileSync(mainEntry, 'utf8');
@@ -61,11 +61,11 @@ if (!existsSync('package.json')) {
   try {
     const pkg = JSON.parse(readFileSync('package.json', 'utf8'));
     console.log(`✅ Package: ${pkg.name}@${pkg.version}`);
-    
+
     if (!pkg.main) {
       warnings.push('package.json missing main field');
     }
-    
+
     if (!pkg.bin) {
       warnings.push('package.json missing bin field');
     }
@@ -86,7 +86,7 @@ if (!existsSync(declarationFile)) {
 const essentialFiles = [
   'dist/src/utils/config.js',
   'dist/src/types/index.js',
-  'dist/src/utils/file-system.js'
+  'dist/src/utils/file-system.js',
 ];
 
 for (const file of essentialFiles) {
@@ -98,11 +98,7 @@ for (const file of essentialFiles) {
 }
 
 // Check 6: Tool files (optional but expected)
-const toolFiles = [
-  'dist/src/tools',
-  'dist/src/resources',
-  'dist/src/prompts'
-];
+const toolFiles = ['dist/src/tools', 'dist/src/resources', 'dist/src/prompts'];
 
 for (const file of toolFiles) {
   if (!existsSync(file)) {
@@ -110,6 +106,26 @@ for (const file of toolFiles) {
   } else {
     console.log(`✅ ${file} directory exists`);
   }
+}
+
+// Check 7: tsconfig.json rootDir is correctly set so output does NOT nest as
+// dist/src/src/. Regression guard for issue #784 (auto-detected by the
+// `esm-module-validation` agentic workflow). When `tsconfig.json.rootDir`
+// is missing or wrong, `tsc` infers the project root as the common ancestor
+// of all source files (often the repo root), producing dist/src/src/index.js
+// instead of dist/src/index.js — at which point package.json's "main" can't
+// be resolved at runtime. Fixed in PR #800 by adding `rootDir: "./src"`;
+// this check makes sure that fix can't silently regress.
+const wrongPath = 'dist/src/src/index.js';
+const wrongDir = 'dist/src/src';
+if (existsSync(wrongPath) || existsSync(wrongDir)) {
+  errors.push(
+    `tsconfig.json rootDir misconfiguration detected: ${wrongPath} exists. ` +
+      `This means tsc inferred the project root as the repo root rather than src/. ` +
+      `Set "rootDir": "./src" in tsconfig.json. See issue #784 / PR #800.`
+  );
+} else {
+  console.log('✅ No dist/src/src/ nesting (rootDir is correctly set)');
 }
 
 // Report results
