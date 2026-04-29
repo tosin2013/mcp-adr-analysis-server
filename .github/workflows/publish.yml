@@ -447,6 +447,30 @@ jobs:
 
           echo "✅ Package is ready for publishing"
 
+      - name: Inspect OIDC token claims (diagnostic)
+        # Temporary diagnostic to surface the exact subject claim that npm's
+        # Trusted Publisher will match against. Do NOT remove until OIDC
+        # publishing has been verified end-to-end. See PR #864 + the
+        # `Finish OIDC Trusted Publisher` plan for context.
+        run: |
+          OIDC_TOKEN=$(curl -sLS \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=npm:registry.npmjs.org" \
+            | jq -r .value)
+          if [[ -z "$OIDC_TOKEN" || "$OIDC_TOKEN" == "null" ]]; then
+            echo "::error::Failed to obtain OIDC token (id-token: write missing?)"
+            exit 1
+          fi
+          # JWT payload is the second dot-separated segment, base64url-encoded.
+          # Pad to a multiple of 4 so plain base64 -d accepts it.
+          PAYLOAD_RAW=$(echo "$OIDC_TOKEN" | cut -d. -f2)
+          PAD=$(( 4 - ${#PAYLOAD_RAW} % 4 ))
+          [[ "$PAD" -lt 4 ]] && PAYLOAD_RAW="${PAYLOAD_RAW}$(printf '=%.0s' $(seq 1 $PAD))"
+          PAYLOAD=$(echo "$PAYLOAD_RAW" | tr '_-' '/+' | base64 -d 2>/dev/null)
+          echo "::group::OIDC token claims (configure these on npmjs.com)"
+          echo "$PAYLOAD" | jq '{aud, sub, repository, repository_owner, workflow_ref, job_workflow_ref, environment, ref, event_name}'
+          echo "::endgroup::"
+
       - name: Publish to NPM
         run: |
           VERSION="${{ steps.version.outputs.version }}"
