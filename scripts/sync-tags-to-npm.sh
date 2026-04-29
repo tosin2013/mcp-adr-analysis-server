@@ -203,6 +203,56 @@ if [[ "$PUBLISH" != "true" ]]; then
 fi
 
 # --publish path
+# ----------------------------------------------------------------------------
+# Pre-validate EVERY missing tag before we publish ANYTHING. The
+# auto-release-on-merge workflow has historically created tags whose
+# `package.json` does NOT match the tag name (e.g. v2.5.5 was tagged on a
+# commit where package.json still said 2.5.4). If we don't catch that now,
+# `npm publish` will silently rebuild the WRONG version, get rejected with
+# "You cannot publish over the previously published versions: X" — and the
+# script will already be partway through its sweep with you in detached HEAD.
+# Fail fast with a clear diagnosis instead.
+echo ""
+echo "================================================"
+echo "Pre-flight: validating tag <-> package.json"
+echo "================================================"
+MISMATCHED=()
+for tag in "${MISSING[@]}"; do
+    expected="${tag#v}"
+    actual=$(git show "$tag:package.json" 2>/dev/null | jq -r '.version' 2>/dev/null || echo "?")
+    if [[ "$expected" == "$actual" ]]; then
+        printf "  ${GREEN}✓${NC} %-12s package.json=%s\n" "$tag" "$actual"
+    else
+        printf "  ${RED}✗${NC} %-12s package.json=%s (expected %s)\n" "$tag" "$actual" "$expected"
+        MISMATCHED+=("$tag (pkg=$actual)")
+    fi
+done
+
+if [[ ${#MISMATCHED[@]} -gt 0 ]]; then
+    echo ""
+    echo -e "${RED}ABORTING:${NC} ${#MISMATCHED[@]} tag(s) point at a commit whose package.json"
+    echo -e "${RED}does NOT match the tag name.${NC} Publishing them would rebuild the wrong"
+    echo "version and either be rejected by npm or, worse, silently overwrite"
+    echo "the wrong version slot."
+    echo ""
+    echo "Mismatched tags:"
+    for entry in "${MISMATCHED[@]}"; do echo "  - $entry"; done
+    echo ""
+    echo "Likely cause: the auto-release-on-merge.yml workflow created the tag"
+    echo "BEFORE its 'git push origin main' of the bump commit succeeded (or"
+    echo "before that bump commit existed at all). Look for a 'chore: bump"
+    echo "version to vX.Y.Z' commit on main — if one exists, re-point the tag:"
+    echo ""
+    echo "  git tag -f vX.Y.Z <bump-commit-sha>"
+    echo "  git push --force origin vX.Y.Z"
+    echo ""
+    echo "If no bump commit exists, the tag is orphaned and should either be"
+    echo "deleted ('git push origin :vX.Y.Z') or backfilled with a manual"
+    echo "bump PR before this script can publish it."
+    git checkout "$ORIGINAL_BRANCH" --quiet 2>/dev/null || true
+    exit 1
+fi
+
 echo ""
 echo "================================================"
 echo "Publishing missing tags"
