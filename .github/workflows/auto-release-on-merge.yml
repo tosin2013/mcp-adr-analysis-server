@@ -308,13 +308,49 @@ jobs:
       # takes (typically 5–10 min). That's a fair price for tags that npm
       # can actually publish.
       # ---------------------------------------------------------------------
+      #
+      # FIX FOR BOT-PR / NO-CI BUG:
+      # GitHub deliberately suppresses workflow runs for events authored by
+      # the default `GITHUB_TOKEN` (to prevent recursive workflow loops). So
+      # if we open the version-bump PR with `secrets.GITHUB_TOKEN`, NO CI
+      # will run on it, branch protection blocks the merge, auto-merge sits
+      # idle, and the wait-for-merge step below times out at 20 minutes —
+      # leaving an orphaned bump PR that someone has to babysit (PR #877 hit
+      # this exact pattern).
+      #
+      # Fix: prefer `secrets.RELEASE_TOKEN` (a PAT or GitHub App token) when
+      # available. PRs created with a non-default token DO trigger CI, which
+      # in turn unblocks auto-merge, which unblocks tagging, end-to-end.
+      #
+      # If `RELEASE_TOKEN` is NOT set, we transparently fall back to
+      # `GITHUB_TOKEN` and emit a clear warning. The bump PR is still
+      # created; CI just won't fire automatically and a maintainer has to
+      # manually close+reopen the PR (or push an empty commit) to kick CI.
+      # See `Token-fallback notice` step below.
+      #
+      # To enable full automation: create a PAT with `repo` scope (or a
+      # fine-grained PAT with `Contents: Read & Write` and `Pull requests:
+      # Read & Write`), then add it as the `RELEASE_TOKEN` repo secret.
+      # ---------------------------------------------------------------------
+
+      - name: Token-fallback notice
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
+        run: |
+          if [[ -n "${{ secrets.RELEASE_TOKEN }}" ]]; then
+            echo "::notice::Using RELEASE_TOKEN (PAT/App) to author the version-bump PR — CI will fire automatically and auto-merge will complete end-to-end."
+          else
+            echo "::warning::RELEASE_TOKEN secret is not set — falling back to GITHUB_TOKEN. The version-bump PR will be opened, but GitHub will NOT trigger CI on it (workflows authored by GITHUB_TOKEN are suppressed). A maintainer will need to either close+reopen the PR or push an empty commit to its branch to kick CI. To enable full automation, create a PAT with 'Contents: Read & Write' + 'Pull requests: Read & Write' and add it as the RELEASE_TOKEN repo secret."
+          fi
 
       - name: Create version-bump PR
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
         id: version-bump-pr
         uses: peter-evans/create-pull-request@v8
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # Prefer RELEASE_TOKEN (a PAT or GitHub App token) so the PR
+          # triggers CI normally. Fall back to GITHUB_TOKEN — see the
+          # Token-fallback notice step above for the consequences.
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           commit-message: 'chore: bump version to v${{ env.NEW_VERSION }}'
           title: 'chore: bump version to v${{ env.NEW_VERSION }}'
           body: |
@@ -334,6 +370,17 @@ jobs:
             > package.json correctly says v${{ env.NEW_VERSION }}). Do not
             > close this PR without merging unless you also intend to abort
             > the release.
+            >
+            > **If CI did not run on this PR**, the parent workflow opened it
+            > with the default `GITHUB_TOKEN` (because the `RELEASE_TOKEN`
+            > repo secret is not set). To kick CI, either:
+            > 1. Close and immediately reopen this PR, OR
+            > 2. Push an empty commit to its branch.
+            >
+            > To enable full hands-off automation in the future, create a
+            > PAT (or GitHub App) with `Contents: Read & Write` and `Pull
+            > requests: Read & Write`, and add it as the `RELEASE_TOKEN`
+            > repo secret.
           branch: chore/version-bump-v${{ env.NEW_VERSION }}
           base: main
           delete-branch: true
@@ -353,13 +400,20 @@ jobs:
             echo "::warning::Could not enable auto-merge for version-bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }} — falling back to wait-for-manual-merge"
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Same token fallback as the PR-creation step. When RELEASE_TOKEN
+          # is present, the auto-merge action is recorded as that identity,
+          # which interacts more cleanly with branch protection in some
+          # configurations.
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Wait for version-bump PR to merge
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false' && steps.version-bump-pr.outputs.pull-request-number
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Read-only checks; either token works. Keep on RELEASE_TOKEN
+          # fallback for symmetry with sibling steps.
+          GITHUB_TOKEN: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ steps.version-bump-pr.outputs.pull-request-number }}
+          USING_PAT: ${{ secrets.RELEASE_TOKEN != '' }}
         run: |
           set -euo pipefail
           echo "Waiting for version-bump PR #$PR_NUMBER to merge (poll every 30s for up to 20 min)..."
@@ -386,7 +440,16 @@ jobs:
             sleep 30
           done
 
-          echo "::error::Version-bump PR #$PR_NUMBER did not merge within 20 min. Check CI status; tag was NOT created."
+          # Timeout. Provide actionable guidance that depends on whether
+          # the maintainer set up RELEASE_TOKEN.
+          if [[ "$USING_PAT" == "true" ]]; then
+            echo "::error::Version-bump PR #$PR_NUMBER did not merge within 20 min."
+            echo "::error::RELEASE_TOKEN is configured, so CI should have run. Check the PR's checks tab — something is failing or the PAT lacks the necessary scopes (needs Contents R/W + Pull requests R/W)."
+          else
+            echo "::error::Version-bump PR #$PR_NUMBER did not merge within 20 min."
+            echo "::error::RELEASE_TOKEN is NOT set. The bump PR was opened with GITHUB_TOKEN, which suppresses CI on the PR. To unblock NOW: close+reopen PR #$PR_NUMBER (or push an empty commit to its branch) — that fires CI, auto-merge then completes, and the tag will need to be created manually at the squash SHA. To avoid this in the future, add a RELEASE_TOKEN repo secret (PAT or GitHub App with Contents R/W + Pull requests R/W)."
+          fi
+          echo "::error::Tag was NOT created."
           exit 1
 
       - name: Create and push tag at version-bump commit
