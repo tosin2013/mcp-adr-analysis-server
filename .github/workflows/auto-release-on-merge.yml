@@ -418,6 +418,11 @@ jobs:
           set -euo pipefail
           echo "Waiting for version-bump PR #$PR_NUMBER to merge (poll every 30s for up to 20 min)..."
 
+          # Track consecutive CLOSED polls so the documented "close+reopen
+          # to kick CI" workaround doesn't trip the abort path. See the
+          # CLOSED-branch comment further down for the full rationale.
+          CLOSED_STREAK=0
+
           # 40 attempts * 30s = 1200s (20 min) — enough for typical CI runs
           for i in $(seq 1 40); do
             STATE=$(gh pr view "$PR_NUMBER" --json state --jq '.state')
@@ -432,8 +437,24 @@ jobs:
               echo "BUMP_SHA=$BUMP_SHA" >> $GITHUB_ENV
               exit 0
             elif [[ "$STATE" == "CLOSED" ]]; then
-              echo "::error::Version-bump PR #$PR_NUMBER was closed without merging — aborting tag creation"
-              exit 1
+              # PR is CLOSED but NOT merged. This is the "close+reopen to kick
+              # CI" workaround documented in the PR body when RELEASE_TOKEN is
+              # not set. Don't abort on the first CLOSED observation — the
+              # maintainer is mid-reopen and the PR will flip back to OPEN
+              # within ~5s. Only give up after 3 consecutive CLOSED polls
+              # (~90s), which is well past any reasonable close+reopen window
+              # but still terminates the run if the PR was genuinely abandoned.
+              CLOSED_STREAK=$((CLOSED_STREAK + 1))
+              if [[ $CLOSED_STREAK -ge 3 ]]; then
+                echo "::error::Version-bump PR #$PR_NUMBER has been CLOSED (not merged) for $CLOSED_STREAK consecutive polls — aborting tag creation"
+                exit 1
+              fi
+              echo "[attempt $i/40] PR state: CLOSED (streak=$CLOSED_STREAK/3) — likely a close+reopen kick to fire CI; waiting 30s..."
+              sleep 30
+              continue
+            else
+              # Any non-CLOSED, non-MERGED state resets the streak.
+              CLOSED_STREAK=0
             fi
 
             echo "[attempt $i/40] PR state: $STATE — waiting 30s..."
