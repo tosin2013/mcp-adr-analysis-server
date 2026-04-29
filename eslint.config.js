@@ -51,6 +51,11 @@ export default [
       // JavaScript recommended rules
       ...js.configs.recommended.rules,
 
+      // ESLint 10 promoted these to error in `recommended`; downgrade to match
+      // the project's existing posture (warnings for stylistic-only issues).
+      'no-useless-assignment': 'warn',
+      'preserve-caught-error': 'warn',
+
       // Basic TypeScript rules (without project)
       '@typescript-eslint/no-unused-vars': [
         'error',
@@ -120,6 +125,8 @@ export default [
     rules: {
       // JavaScript recommended rules only
       ...js.configs.recommended.rules,
+      'no-useless-assignment': 'warn',
+      'preserve-caught-error': 'warn',
       'no-console': 'off',
       'no-debugger': 'error',
       'no-unused-vars': [
