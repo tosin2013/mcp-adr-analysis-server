@@ -228,7 +228,14 @@ jobs:
       - name: Determine version and source
         id: version
         run: |
-          if [[ "${{ github.event_name }}" == "workflow_call" && -n "${{ inputs.version }}" ]]; then
+          # NOTE: Detect the workflow_call path by `inputs.version` being set,
+          # NOT by `github.event_name == 'workflow_call'`. Inside a reusable
+          # workflow, `github.event_name` reflects the CALLER's event (e.g.
+          # `pull_request`), not `workflow_call`. This is the same trap that
+          # silently skipped the outer test-and-publish gate before #814.
+          # `inputs.version` is only populated on the workflow_call path,
+          # making it a reliable discriminator.
+          if [[ -n "${{ inputs.version }}" ]]; then
             # Called from another workflow with version
             TAG_NAME="${{ inputs.version }}"
             VERSION=${TAG_NAME#v}  # Remove 'v' prefix
