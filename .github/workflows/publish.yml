@@ -461,18 +461,49 @@ jobs:
           VERSION="${{ steps.version.outputs.version }}"
           TAG_NAME="${{ steps.version.outputs.tag }}"
 
-          # Determine npm dist-tag based on version type
+          # Determine npm dist-tag.
+          #
+          # Prereleases keep their conventional tag (beta/alpha/rc bucket).
+          #
+          # Stable releases ONLY claim `latest` if they are strictly newer than
+          # the current `latest` on npm. This guards against the silent-downgrade
+          # bug we hit during the v2.6.0/v2.6.1/v2.6.2 backfill: publishing an
+          # older version with `npm publish --tag latest` overwrites `latest`,
+          # causing fresh `npm install <pkg>` to suddenly pull an older release.
+          #
+          # When the version being published is older than (or equal to) the
+          # current `latest`, we publish under the `previous` dist-tag instead.
+          # That keeps the version installable via `npm install <pkg>@previous`
+          # or `@<exact-version>` without touching `latest`.
           if [[ "${{ github.event.inputs.version_bump }}" == "prerelease" ]] || [[ "$VERSION" == *"beta"* ]] || [[ "$VERSION" == *"alpha"* ]] || [[ "$VERSION" == *"rc"* ]]; then
             echo "Publishing prerelease version: $VERSION"
-            npm publish --tag beta --provenance --access public
             PUBLISH_TAG="beta"
           else
-            echo "Publishing stable version: $VERSION"
-            # Publish with explicit 'latest' tag to ensure it's set correctly
-            # Uses OIDC Trusted Publishing - no token required
-            npm publish --tag latest --provenance --access public
-            PUBLISH_TAG="latest"
+            echo "Determining stable dist-tag for $VERSION..."
+            # Query current `latest` on npm. Returns empty if package doesn't
+            # exist yet (first-ever publish) or on transient registry errors.
+            CURRENT_LATEST=$(npm view mcp-adr-analysis-server@latest version 2>/dev/null || echo "")
+
+            if [[ -z "$CURRENT_LATEST" ]]; then
+              echo "  No existing 'latest' on npm — claiming 'latest' for $VERSION"
+              PUBLISH_TAG="latest"
+            else
+              # Semver-aware compare via `sort -V`. If $VERSION sorts last AND
+              # is not equal to $CURRENT_LATEST, it is strictly greater.
+              HIGHEST=$(printf '%s\n%s' "$VERSION" "$CURRENT_LATEST" | sort -V | tail -n1)
+              if [[ "$HIGHEST" == "$VERSION" && "$VERSION" != "$CURRENT_LATEST" ]]; then
+                echo "  $VERSION > current 'latest' ($CURRENT_LATEST) — claiming 'latest'"
+                PUBLISH_TAG="latest"
+              else
+                echo "::warning::Publishing $VERSION which is <= current 'latest' ($CURRENT_LATEST). Using dist-tag 'previous' to avoid downgrading 'latest'. Install via 'npm install mcp-adr-analysis-server@$VERSION' for the exact version."
+                PUBLISH_TAG="previous"
+              fi
+            fi
           fi
+
+          echo "Publishing with --tag $PUBLISH_TAG"
+          # OIDC Trusted Publishing — no token required.
+          npm publish --tag "$PUBLISH_TAG" --provenance --access public
 
           echo "✅ Successfully published to NPM"
           echo "   Version: $VERSION"
