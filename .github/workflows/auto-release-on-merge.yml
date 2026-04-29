@@ -287,75 +287,27 @@ jobs:
           echo "Generated enhanced release notes:"
           cat enhanced_release_notes.md
 
-      - name: Create and push tag
-        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
-        run: |
-          TAG_NAME="v${{ env.NEW_VERSION }}"
-          MERGE_SHA="${{ steps.merge-sha.outputs.sha }}"
-          echo "Creating tag: $TAG_NAME on commit $MERGE_SHA"
-
-          # Guard: skip if tag already exists
-          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-            echo "⚠️ Tag $TAG_NAME already exists, skipping tag creation"
-            exit 0
-          fi
-
-          # Create annotated tag on the merge commit (not the working tree)
-          git tag -a "$TAG_NAME" "$MERGE_SHA" -m "Release $TAG_NAME
-
-          Auto-release following PR merge:
-          - ${{ github.event.pull_request.title }}
-          - PR #${{ github.event.pull_request.number }} by @${{ github.event.pull_request.user.login }}
-          - Type: ${{ steps.version-type.outputs.version_type }} version bump
-
-          This tag will trigger:
-          - AI-enhanced release notes generation
-          - NPM package publishing
-          - Documentation updates"
-
-          git push origin "$TAG_NAME"
-
-          echo "✅ Tag $TAG_NAME created on $MERGE_SHA and pushed"
-          echo "🚀 This will trigger AI release notes generation and NPM publishing"
-
-      - name: Publish Release (from Draft or New)
-        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
-        run: |
-          # Guard: skip if a release already exists for this tag (check exit code, not output)
-          if gh api repos/${{ github.repository }}/releases/tags/v${{ env.NEW_VERSION }} > /dev/null 2>&1; then
-            echo "⚠️ Release v${{ env.NEW_VERSION }} already exists, skipping release creation"
-            exit 0
-          fi
-
-          if [[ "${{ steps.find-draft.outputs.draft_found }}" == "true" ]]; then
-            echo "📤 Publishing existing Release Drafter draft..."
-
-            # Update and publish the existing draft
-            gh api repos/${{ github.repository }}/releases/${{ steps.find-draft.outputs.draft_id }} \
-              --method PATCH \
-              --field tag_name="${{ steps.update-draft.outputs.updated_tag }}" \
-              --field name="${{ steps.update-draft.outputs.updated_name }}" \
-              --field body="$(cat enhanced_release_notes.md)" \
-              --field draft=false \
-              --field prerelease=false
-
-            echo "✅ Successfully published Release Drafter draft as v${{ env.NEW_VERSION }}"
-          else
-            echo "📤 Creating new release..."
-
-            # Create a new release
-            gh api repos/${{ github.repository }}/releases \
-              --method POST \
-              --field tag_name="v${{ env.NEW_VERSION }}" \
-              --field name="Release v${{ env.NEW_VERSION }}" \
-              --field body="$(cat enhanced_release_notes.md)" \
-              --field draft=false \
-              --field prerelease=false
-
-            echo "✅ Successfully created new release v${{ env.NEW_VERSION }}"
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # ---------------------------------------------------------------------
+      # FIX FOR MALFORMED-TAG BUG:
+      # Previously this workflow tagged `steps.merge-sha.outputs.sha` (the
+      # original PR's squash merge commit) IMMEDIATELY, then opened a separate
+      # version-bump PR that merged later. The result was every tag pointed
+      # one commit too early — its package.json still showed the OLD version.
+      # That broke `npm publish` ("You cannot publish over the previously
+      # published versions: X") and silently shipped wrong tarballs.
+      #
+      # New flow:
+      #   1. Open the version-bump PR FIRST (peter-evans/create-pull-request).
+      #   2. Enable auto-merge on it.
+      #   3. Wait synchronously for it to merge (poll up to ~20 min).
+      #   4. THEN tag the version-bump squash SHA — at which point
+      #      package.json on that commit matches the tag name.
+      #   5. Then create the GitHub release on that correct tag.
+      #
+      # Trade-off: workflow runtime grows by however long the bump-PR CI
+      # takes (typically 5–10 min). That's a fair price for tags that npm
+      # can actually publish.
+      # ---------------------------------------------------------------------
 
       - name: Create version-bump PR
         if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false'
@@ -376,6 +328,12 @@ jobs:
 
             > This PR updates `package.json` and `package-lock.json` only.
             > The `no-release` label prevents this merge from triggering another release.
+            >
+            > The auto-release workflow that opened this PR is **waiting**
+            > for it to merge so it can tag the resulting commit (where
+            > package.json correctly says v${{ env.NEW_VERSION }}). Do not
+            > close this PR without merging unless you also intend to abort
+            > the release.
           branch: chore/version-bump-v${{ env.NEW_VERSION }}
           base: main
           delete-branch: true
@@ -392,8 +350,121 @@ jobs:
           if gh pr merge ${{ steps.version-bump-pr.outputs.pull-request-number }} --auto --squash 2>/dev/null; then
             echo "✅ Auto-merge enabled for version-bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }}"
           else
-            echo "ℹ️ Could not enable auto-merge (may be disabled in repository settings or branch protection)."
-            echo "ℹ️ Version-bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }} will require manual merge."
+            echo "::warning::Could not enable auto-merge for version-bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }} — falling back to wait-for-manual-merge"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for version-bump PR to merge
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false' && steps.version-bump-pr.outputs.pull-request-number
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ steps.version-bump-pr.outputs.pull-request-number }}
+        run: |
+          set -euo pipefail
+          echo "Waiting for version-bump PR #$PR_NUMBER to merge (poll every 30s for up to 20 min)..."
+
+          # 40 attempts * 30s = 1200s (20 min) — enough for typical CI runs
+          for i in $(seq 1 40); do
+            STATE=$(gh pr view "$PR_NUMBER" --json state --jq '.state')
+
+            if [[ "$STATE" == "MERGED" ]]; then
+              BUMP_SHA=$(gh pr view "$PR_NUMBER" --json mergeCommit --jq '.mergeCommit.oid')
+              if [[ -z "$BUMP_SHA" || "$BUMP_SHA" == "null" ]]; then
+                echo "::error::PR #$PR_NUMBER is MERGED but mergeCommit.oid is empty"
+                exit 1
+              fi
+              echo "✅ Version-bump PR #$PR_NUMBER merged at $BUMP_SHA"
+              echo "BUMP_SHA=$BUMP_SHA" >> $GITHUB_ENV
+              exit 0
+            elif [[ "$STATE" == "CLOSED" ]]; then
+              echo "::error::Version-bump PR #$PR_NUMBER was closed without merging — aborting tag creation"
+              exit 1
+            fi
+
+            echo "[attempt $i/40] PR state: $STATE — waiting 30s..."
+            sleep 30
+          done
+
+          echo "::error::Version-bump PR #$PR_NUMBER did not merge within 20 min. Check CI status; tag was NOT created."
+          exit 1
+
+      - name: Create and push tag at version-bump commit
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false' && env.BUMP_SHA
+        run: |
+          set -euo pipefail
+          git fetch --quiet origin main
+
+          TAG_NAME="v${{ env.NEW_VERSION }}"
+          BUMP_SHA="${{ env.BUMP_SHA }}"
+
+          echo "Creating tag $TAG_NAME on version-bump commit $BUMP_SHA"
+
+          # Guard: skip if tag already exists
+          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+            echo "⚠️ Tag $TAG_NAME already exists, skipping tag creation"
+            exit 0
+          fi
+
+          # Sanity check: package.json at BUMP_SHA must match TAG_NAME.
+          # If this ever fails we want to know LOUDLY rather than mint another
+          # malformed tag.
+          PKG_AT_BUMP=$(git show "$BUMP_SHA:package.json" | jq -r '.version')
+          if [[ "$PKG_AT_BUMP" != "${{ env.NEW_VERSION }}" ]]; then
+            echo "::error::package.json at $BUMP_SHA = $PKG_AT_BUMP, expected ${{ env.NEW_VERSION }}. Refusing to mint a malformed tag."
+            exit 1
+          fi
+
+          git tag -a "$TAG_NAME" "$BUMP_SHA" -m "Release $TAG_NAME
+
+          Auto-release following PR merge:
+          - ${{ github.event.pull_request.title }}
+          - PR #${{ github.event.pull_request.number }} by @${{ github.event.pull_request.user.login }}
+          - Type: ${{ steps.version-type.outputs.version_type }} version bump
+          - Tagged at version-bump commit $BUMP_SHA (package.json verified to match $TAG_NAME)
+
+          This tag will trigger:
+          - AI-enhanced release notes generation
+          - NPM package publishing
+          - Documentation updates"
+
+          git push origin "$TAG_NAME"
+
+          echo "✅ Tag $TAG_NAME created on $BUMP_SHA and pushed"
+
+      - name: Publish Release (from Draft or New)
+        if: steps.config.outputs.enabled == 'true' && steps.should-skip.outputs.should_skip == 'false' && env.BUMP_SHA
+        run: |
+          # Guard: skip if a release already exists for this tag
+          if gh api repos/${{ github.repository }}/releases/tags/v${{ env.NEW_VERSION }} > /dev/null 2>&1; then
+            echo "⚠️ Release v${{ env.NEW_VERSION }} already exists, skipping release creation"
+            exit 0
+          fi
+
+          if [[ "${{ steps.find-draft.outputs.draft_found }}" == "true" ]]; then
+            echo "📤 Publishing existing Release Drafter draft..."
+
+            gh api repos/${{ github.repository }}/releases/${{ steps.find-draft.outputs.draft_id }} \
+              --method PATCH \
+              --field tag_name="${{ steps.update-draft.outputs.updated_tag }}" \
+              --field name="${{ steps.update-draft.outputs.updated_name }}" \
+              --field body="$(cat enhanced_release_notes.md)" \
+              --field draft=false \
+              --field prerelease=false
+
+            echo "✅ Successfully published Release Drafter draft as v${{ env.NEW_VERSION }}"
+          else
+            echo "📤 Creating new release..."
+
+            gh api repos/${{ github.repository }}/releases \
+              --method POST \
+              --field tag_name="v${{ env.NEW_VERSION }}" \
+              --field name="Release v${{ env.NEW_VERSION }}" \
+              --field body="$(cat enhanced_release_notes.md)" \
+              --field draft=false \
+              --field prerelease=false
+
+            echo "✅ Successfully created new release v${{ env.NEW_VERSION }}"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -416,15 +487,12 @@ jobs:
 
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
-          echo "- ✅ Tag v${{ env.NEW_VERSION }} created on merge commit" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Version-bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }} merged at \`${{ env.BUMP_SHA }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Tag v${{ env.NEW_VERSION }} created on the version-bump commit (package.json verified)" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Release published" >> $GITHUB_STEP_SUMMARY
           echo "- 🔄 AI release notes enhancement will trigger" >> $GITHUB_STEP_SUMMARY
           echo "- 📦 NPM publishing workflow will trigger" >> $GITHUB_STEP_SUMMARY
           echo "- 📚 Documentation will be updated" >> $GITHUB_STEP_SUMMARY
-
-          if [[ -n "${{ steps.version-bump-pr.outputs.pull-request-number }}" ]]; then
-            echo "- 📝 Version bump PR #${{ steps.version-bump-pr.outputs.pull-request-number }} created" >> $GITHUB_STEP_SUMMARY
-          fi
 
       - name: Skipped Summary
         if: steps.config.outputs.enabled == 'false' || steps.should-skip.outputs.should_skip == 'true'
