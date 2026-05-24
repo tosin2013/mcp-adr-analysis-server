@@ -1,0 +1,28 @@
+name: Documentation issue
+description: Report missing, unclear, or incorrect documentation.
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: input
+    id: page
+    attributes:
+      label: Documentation location
+      description: Which README, docs page, or section needs attention?
+      placeholder: "README.md, docs/..., or URL"
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: What should change?
+      description: Describe what is missing, unclear, outdated, or incorrect.
+    validations:
+      required: true
+  - type: textarea
+    id: suggested-fix
+    attributes:
+      label: Suggested fix
+      description: Share wording, examples, or links that would make the documentation clearer.
+    validations:
+      required: false

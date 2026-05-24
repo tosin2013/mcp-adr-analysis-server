@@ -1,0 +1,59 @@
+name: Bug report
+description: Report a reproducible problem with the MCP ADR Analysis Server.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug. Please include enough detail for maintainers to reproduce the problem.
+  - type: input
+    id: mcp-client
+    attributes:
+      label: MCP client
+      description: Which MCP client or host were you using?
+      placeholder: "Claude Desktop, Cursor, VS Code, custom client, etc."
+    validations:
+      required: true
+  - type: input
+    id: server-version
+    attributes:
+      label: Server version
+      description: Which package or commit version is affected?
+      placeholder: "2.6.6 or commit SHA"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: List the smallest steps needed to reproduce the issue.
+      placeholder: |
+        1. Configure...
+        2. Run...
+        3. Observe...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error output
+      description: Paste relevant logs, stack traces, or MCP client output. Remove secrets first.
+      render: shell
+    validations:
+      required: false
