@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and discussions
+    url: https://github.com/tosin2013/mcp-adr-analysis-server/discussions
+    about: Ask usage questions or discuss ideas before filing an issue.
+  - name: Security advisories
+    url: https://github.com/tosin2013/mcp-adr-analysis-server/security/advisories/new
+    about: Report vulnerabilities privately through GitHub Security Advisories.
