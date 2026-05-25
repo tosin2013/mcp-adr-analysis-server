@@ -6,9 +6,9 @@ We actively support the following versions of the MCP ADR Analysis Server:
 
 | Version | Supported          |
 | ------- | ------------------ |
+| 2.6.x   | :white_check_mark: |
 | 2.5.x   | :white_check_mark: |
-| 2.4.x   | :white_check_mark: |
-| < 2.4   | :x:                |
+| < 2.5   | :x:                |
 
 ## Reporting Vulnerabilities
 
@@ -18,8 +18,8 @@ We take security vulnerabilities seriously. If you discover a security vulnerabi
 
 Please **DO NOT** create a public GitHub issue for security vulnerabilities. Instead:
 
-- Use GitHub's [Security Advisory](https://github.com/tosin2013/mcp-adr-analysis-server/security/advisories) feature
-- Or email us directly at security@example.com (replace with actual contact)
+- Use GitHub's [Security Advisory](https://github.com/tosin2013/mcp-adr-analysis-server/security/advisories) feature to report privately
+- Mention `@tosin2013` in the advisory for faster triage
 
 ### 2. What to Include
 
