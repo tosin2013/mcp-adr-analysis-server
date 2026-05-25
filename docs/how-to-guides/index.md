@@ -21,3 +21,7 @@ Task-oriented guides for installation, operations, integration, and troubleshoot
 - [Deployment Readiness](./deployment-readiness.md)
 - [Deploy Your Own Server](./deploy-your-own-server.md)
 - [CI/CD Integration](./cicd-integration.md)
+
+## Architecture & Migration
+
+- [CE-MCP Migration Playbook](./ce-mcp-migration-playbook.md) — migrate tools to directive architecture for 60–70% token reduction
