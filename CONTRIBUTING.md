@@ -2,6 +2,8 @@
 
 Thank you for your interest in contributing! This document provides comprehensive guidelines tailored to our TypeScript/Node.js MCP server architecture.
 
+> **Security vulnerabilities?** Please review our [Security Policy](./SECURITY.md) before opening an issue — do not report vulnerabilities publicly.
+
 ## Prerequisites
 
 - Node.js ≥20.0.0
