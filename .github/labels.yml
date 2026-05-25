@@ -1,0 +1,385 @@
+# Canonical label taxonomy for mcp-adr-analysis-server
+# Managed by .github/workflows/label-sync.yml (EndBug/label-sync@v2)
+# delete-other-labels: false — existing labels not listed here are left intact during migration.
+
+# ── Priority ──────────────────────────────────────────────────────────────────
+# Canonical: priority:critical / priority:high / priority:medium / priority:low
+# Retiring:  critical, high, high-priority, priority-high, priority-medium
+
+- name: 'priority:critical'
+  color: 'B60205'
+  description: 'Highest priority — needs immediate attention'
+
+- name: 'priority:high'
+  color: 'D93F0B'
+  description: 'High priority — should be addressed soon'
+
+- name: 'priority:medium'
+  color: 'FBCA04'
+  description: 'Medium priority — important but not urgent'
+
+- name: 'priority:low'
+  color: 'FEF2C0'
+  description: 'Low priority — nice to have'
+
+# ── Type ──────────────────────────────────────────────────────────────────────
+# Canonical: bug, enhancement, documentation, technical-debt, breaking-change
+# Retiring:  tech-debt, type:bug
+
+- name: 'bug'
+  color: 'd73a4a'
+  description: "Something isn't working"
+
+- name: 'enhancement'
+  color: 'a2eeef'
+  description: 'New feature or request'
+
+- name: 'documentation'
+  color: '0075ca'
+  description: 'Improvements or additions to documentation'
+
+- name: 'technical-debt'
+  color: 'e4e669'
+  description: 'Code quality or architectural cleanup'
+
+- name: 'breaking-change'
+  color: 'B60205'
+  description: 'Introduces a breaking API or behaviour change'
+
+- name: 'refactoring'
+  color: 'c5def5'
+  description: 'Code restructuring without changing external behaviour'
+
+- name: 'performance'
+  color: '0052cc'
+  description: 'Performance improvement or regression'
+
+- name: 'security'
+  color: 'ee0701'
+  description: 'Security fix or hardening'
+
+- name: 'dependencies'
+  color: '0366d6'
+  description: 'Dependency update or removal'
+
+# ── Component ─────────────────────────────────────────────────────────────────
+
+- name: 'component:tools'
+  color: 'bfd4f2'
+  description: 'Affects src/tools/'
+
+- name: 'component:integration'
+  color: 'bfd4f2'
+  description: 'Affects integration layer or MCP protocol handling'
+
+- name: 'component:memory'
+  color: 'bfd4f2'
+  description: 'Affects memory / knowledge-graph subsystem'
+
+- name: 'component:migration'
+  color: 'bfd4f2'
+  description: 'Affects migration tooling or CE-MCP migration path'
+
+- name: 'component:performance'
+  color: 'bfd4f2'
+  description: 'Affects caching, throughput, or latency'
+
+- name: 'mcp-tools'
+  color: 'ededed'
+  description: 'MCP tool implementation'
+
+- name: 'agentic-workflows'
+  color: 'ededed'
+  description: 'GitHub agentic workflow automation'
+
+- name: 'knowledge-graph'
+  color: 'ededed'
+  description: 'Knowledge-graph manager'
+
+# ── CI / Release ──────────────────────────────────────────────────────────────
+# Canonical: ci-cd, no-release, dependabot
+# Retiring:  ci
+
+- name: 'ci-cd'
+  color: 'ededed'
+  description: 'CI/CD pipeline or GitHub Actions'
+
+- name: 'no-release'
+  color: 'ededed'
+  description: 'Merge this PR without triggering a version bump'
+
+- name: 'dependabot'
+  color: 'ededed'
+  description: 'Opened or managed by Dependabot'
+
+- name: 'release-pipeline'
+  color: 'ededed'
+  description: 'Affects the release / publish pipeline'
+
+# ── Status / Workflow ─────────────────────────────────────────────────────────
+
+- name: 'duplicate'
+  color: 'cfd3d7'
+  description: 'This issue or pull request already exists'
+
+- name: 'invalid'
+  color: 'e4e669'
+  description: "This doesn't seem right"
+
+- name: 'wontfix'
+  color: 'ffffff'
+  description: 'This will not be worked on'
+
+- name: 'help wanted'
+  color: '008672'
+  description: 'Extra attention is needed'
+
+- name: 'question'
+  color: 'd876e3'
+  description: 'Further information is requested'
+
+# ── Onboarding ────────────────────────────────────────────────────────────────
+# "good first issue" is the GitHub-reserved spelling (space, not hyphen)
+# Retiring: good-first-issue
+
+- name: 'good first issue'
+  color: '7057ff'
+  description: 'Good for newcomers'
+
+# ── Project-specific (retained as-is) ────────────────────────────────────────
+
+- name: 'ai'
+  color: 'ededed'
+  description: 'AI / LLM integration'
+
+- name: 'ai-enhanced'
+  color: 'ededed'
+  description: 'Uses AI-enhanced capabilities'
+
+- name: 'architecture'
+  color: 'ededed'
+  description: 'Architectural decision or design'
+
+- name: 'audit'
+  color: 'ededed'
+  description: 'Security or dependency audit'
+
+- name: 'automated'
+  color: 'ededed'
+  description: 'Automated process or workflow'
+
+- name: 'automation'
+  color: 'ededed'
+  description: 'Automation tooling'
+
+- name: 'code-quality'
+  color: 'ededed'
+  description: 'Code quality improvement'
+
+- name: 'configuration'
+  color: 'ededed'
+  description: 'Configuration or environment settings'
+
+- name: 'coverage-improvement'
+  color: 'ededed'
+  description: 'Improves test coverage'
+
+- name: 'dashboard'
+  color: 'ededed'
+  description: 'Dashboard or reporting feature'
+
+- name: 'data-integrity'
+  color: 'ededed'
+  description: 'Data integrity or consistency'
+
+- name: 'deprecation'
+  color: 'ededed'
+  description: 'Marks something as deprecated'
+
+- name: 'design'
+  color: 'ededed'
+  description: 'Design or UX'
+
+- name: 'developer-experience'
+  color: 'ededed'
+  description: 'Improves the developer experience'
+
+- name: 'environment'
+  color: 'ededed'
+  description: 'Environment configuration or setup'
+
+- name: 'epic'
+  color: 'ededed'
+  description: 'Large initiative spanning multiple issues'
+
+- name: 'error-handling'
+  color: 'ededed'
+  description: 'Error handling improvement'
+
+- name: 'esm'
+  color: 'ededed'
+  description: 'ESM module system'
+
+- name: 'esm-validation'
+  color: 'ededed'
+  description: 'ESM module validation'
+
+- name: 'implementation'
+  color: 'ededed'
+  description: 'Implementation task'
+
+- name: 'infrastructure'
+  color: 'ededed'
+  description: 'Infrastructure or deployment'
+
+- name: 'initiative'
+  color: 'ededed'
+  description: 'Strategic initiative'
+
+- name: 'integration'
+  color: 'ededed'
+  description: 'Integration with external systems'
+
+- name: 'jest'
+  color: 'ededed'
+  description: 'Jest test framework'
+
+- name: 'logging'
+  color: 'ededed'
+  description: 'Logging or observability'
+
+- name: 'maintenance'
+  color: 'ededed'
+  description: 'Routine maintenance task'
+
+- name: 'mcp-validation'
+  color: 'ededed'
+  description: 'MCP protocol validation'
+
+- name: 'memory-centric'
+  color: 'ededed'
+  description: 'Memory-centric design pattern'
+
+- name: 'memory-system'
+  color: 'ededed'
+  description: 'Memory system feature'
+
+- name: 'meta'
+  color: 'ededed'
+  description: 'Repo or process meta-issue'
+
+- name: 'metrics'
+  color: 'ededed'
+  description: 'Metrics or observability'
+
+- name: 'module-system'
+  color: 'ededed'
+  description: 'Module system changes'
+
+- name: 'monitoring'
+  color: 'ededed'
+  description: 'Monitoring or alerting'
+
+- name: 'pattern-validation'
+  color: 'ededed'
+  description: 'Validated patterns framework'
+
+- name: 'phase-1'
+  color: 'ededed'
+  description: 'Phase 1 work item'
+
+- name: 'phase-2'
+  color: 'ededed'
+  description: 'Phase 2 work item'
+
+- name: 'phase-3'
+  color: 'ededed'
+  description: 'Phase 3 work item'
+
+- name: 'phase-4'
+  color: 'ededed'
+  description: 'Phase 4 work item'
+
+- name: 'planning'
+  color: 'ededed'
+  description: 'Planning or scoping'
+
+- name: 'prompts'
+  color: 'ededed'
+  description: 'MCP prompts'
+
+- name: 'reliability'
+  color: 'ededed'
+  description: 'Reliability or resilience improvement'
+
+- name: 'removal'
+  color: 'ededed'
+  description: 'Removes a feature or capability'
+
+- name: 'research'
+  color: 'ededed'
+  description: 'Research spike or investigation'
+
+- name: 'roadmap'
+  color: 'ededed'
+  description: 'Roadmap planning item'
+
+- name: 'site-validation'
+  color: 'ededed'
+  description: 'Docs site validation'
+
+- name: 'storage'
+  color: 'ededed'
+  description: 'Storage or persistence'
+
+- name: 'supply-chain'
+  color: 'ededed'
+  description: 'Supply-chain security'
+
+- name: 'testing'
+  color: 'ededed'
+  description: 'Test suite or testing infrastructure'
+
+- name: 'todo'
+  color: 'ededed'
+  description: 'TODO item to track'
+
+- name: 'tooling'
+  color: 'ededed'
+  description: 'Build or developer tooling'
+
+- name: 'training'
+  color: 'ededed'
+  description: 'Training data or model training'
+
+- name: 'transformation'
+  color: 'ededed'
+  description: 'Code or data transformation'
+
+- name: 'types'
+  color: 'ededed'
+  description: 'TypeScript types or interfaces'
+
+- name: 'typescript'
+  color: 'ededed'
+  description: 'TypeScript-specific change'
+
+- name: 'utils'
+  color: 'ededed'
+  description: 'Utility functions'
+
+- name: 'vulnerability'
+  color: 'ededed'
+  description: 'Known security vulnerability'
+
+- name: 'workflow'
+  color: 'ededed'
+  description: 'GitHub Actions workflow'
+
+- name: 'workflow-failure'
+  color: 'ededed'
+  description: 'Tracks a failing workflow'
+
+- name: 'zod'
+  color: 'ededed'
+  description: 'Zod schema validation'
