@@ -1,0 +1,26 @@
+name: Label Sync
+
+on:
+  push:
+    branches: [main]
+    paths: ['.github/labels.yml']
+  schedule:
+    - cron: '0 6 * * 1' # weekly Monday 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  label-sync:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: EndBug/label-sync@v2
+        with:
+          config-file: .github/labels.yml
+          # Safe default: existing labels not in labels.yml are left intact.
+          # Set to true once the label migration is confirmed clean.
+          delete-other-labels: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
