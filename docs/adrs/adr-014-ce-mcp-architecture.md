@@ -221,3 +221,4 @@ CE-MCP:
 - CE-MCP Refactoring Assessment: `/tmp/ce_mcp_analysis.md`
 - Anthropic MCP Documentation: Protocol evolution and best practices
 - Token optimization research: 2025 CE-MCP paradigm studies
+- Migration guide: [CE-MCP Migration Playbook](../how-to-guides/ce-mcp-migration-playbook.md)

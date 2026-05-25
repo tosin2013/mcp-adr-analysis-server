@@ -234,7 +234,7 @@ const relatedCode = await findRelatedCode(
 **Runtime:** Node.js 20+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Jest (>80% coverage)
 **Search:** [ripgrep](https://github.com/BurntSushi/ripgrep) (fast recursive text search) + fast-glob (file matching) • **AI Integration:** OpenRouter.ai • **Web Research:** [Firecrawl](https://firecrawl.dev/) (web page extraction API) • **Code Analysis:** [tree-sitter](https://tree-sitter.github.io/tree-sitter/) (incremental code parser) + Smart Code Linking
 
-📖 **[Technical Details →](docs/explanation/server-architecture.md)**
+📖 **[Technical Details →](docs/explanation/server-architecture.md)** | **[CE-MCP Migration Playbook →](docs/how-to-guides/ce-mcp-migration-playbook.md)**
 
 ## 📁 Project Structure
 
