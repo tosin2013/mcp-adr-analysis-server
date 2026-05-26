@@ -2,6 +2,8 @@
 
 Thank you for your interest in contributing! This document provides comprehensive guidelines tailored to our TypeScript/Node.js MCP server architecture.
 
+> **Security vulnerabilities?** Please review our [Security Policy](./SECURITY.md) before opening an issue — do not report vulnerabilities publicly.
+
 ## Prerequisites
 
 - Node.js ≥20.0.0
@@ -165,6 +167,20 @@ If your PR should **not** trigger a release (e.g., docs-only or a CI tweak you w
 Before merging any feature-bearing PR, add a `## [Unreleased]` entry to [`CHANGELOG.md`](./CHANGELOG.md) describing the change in Keep a Changelog format (`### Added / Changed / Deprecated / Removed / Fixed / Security`). The Release Drafter draft will pick it up; once the release is cut, promote the `[Unreleased]` heading to the published version number and date.
 
 See **[RELEASES.md](./RELEASES.md)** for full details on cadence, the deprecation window, backport policy, and the OIDC publish pipeline.
+
+## Labels
+
+All repository labels are defined in [`.github/labels.yml`](.github/labels.yml) and kept in sync by the [Label Sync](.github/workflows/label-sync.yml) workflow (runs on every push to `main` that touches `labels.yml`, weekly on Mondays, and on demand).
+
+| Group      | Examples                                                                   |
+| ---------- | -------------------------------------------------------------------------- |
+| Priority   | `priority:critical`, `priority:high`, `priority:medium`, `priority:low`    |
+| Type       | `bug`, `enhancement`, `documentation`, `technical-debt`, `breaking-change` |
+| Component  | `component:tools`, `component:integration`, `mcp-tools`, `knowledge-graph` |
+| CI/Release | `ci-cd`, `no-release`, `dependabot`, `release-pipeline`                    |
+| Status     | `help wanted`, `good first issue`, `wontfix`, `duplicate`, `question`      |
+
+When opening a PR or issue, apply the most relevant labels from the table above. Use `no-release` to prevent an automatic version bump for documentation-only or CI-only changes.
 
 ## Quality Gates
 
