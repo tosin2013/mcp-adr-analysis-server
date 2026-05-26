@@ -195,7 +195,7 @@ describe('my_tool Migration', () => {
 
 ### Step 6: Update IMPLEMENTATION-PLAN.md
 
-Track migration status in `docs/IMPLEMENTATION-PLAN.md`:
+Track migration status in `docs/planning/IMPLEMENTATION-PLAN.md`:
 
 ```markdown
 | Tool      | Current Tokens | Directive Tokens | Status |
@@ -260,5 +260,5 @@ Before marking migration complete:
 ## Related Documentation
 
 - [ADR-014: CE-MCP Architecture](../adrs/adr-014-ce-mcp-architecture.md)
-- [IMPLEMENTATION-PLAN.md](../IMPLEMENTATION-PLAN.md)
+- [IMPLEMENTATION-PLAN.md](../planning/IMPLEMENTATION-PLAN.md)
 - [ce-mcp-tools.ts](../../src/tools/ce-mcp-tools.ts)

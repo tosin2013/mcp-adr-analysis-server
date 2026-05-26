@@ -1,5 +1,7 @@
 # Documentation Update Plan: Research-Driven Architecture
 
+> **Status: Active** — This plan tracks documentation updates for the research-driven architecture direction. Tasks are ongoing as new features are documented.
+
 ## Overview
 
 This plan outlines the documentation updates needed to communicate the new research-driven architecture direction for the MCP ADR Analysis Server.
