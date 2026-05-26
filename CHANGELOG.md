@@ -12,6 +12,21 @@ _No unreleased changes._
 
 ---
 
+## [2.6.0] — 2026-04-28
+
+### Added
+
+- CE-MCP (Claude-Enriched MCP) directive architecture per ADR-014: new `ce_mcp_execute`, `ce_mcp_validate`, and related tools in `src/tools/ce-mcp-tools.ts` and `src/types/ce-mcp.ts`.
+- CE-MCP migration playbook published at `docs/how-to-guides/ce-mcp-migration-playbook.md` documenting the migration path from OpenRouter-based execution (60–70% token reduction).
+- Integration and migration tests: `tests/integration/ce-mcp-flow.test.ts`, `tests/integration/ce-mcp-migration.test.ts`.
+
+### Fixed
+
+- JSON-RPC compliance: `console.log` and `EnhancedLogger` output redirected to `stderr` to prevent MCP protocol corruption.
+- Directory-traversal hardening in `review_existing_adrs` tool.
+
+---
+
 ## [2.5.0] — 2026-04-19
 
 ### Added
