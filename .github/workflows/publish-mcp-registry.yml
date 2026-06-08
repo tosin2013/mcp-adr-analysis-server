@@ -1,14 +1,20 @@
 name: Publish to MCP Registry
 
 on:
+  # Cascade from a successful "Publish to NPM" run. No branch filter:
+  # the NPM publish runs in tag context (e.g. refs/tags/v2.6.9), so its
+  # workflow_run head_branch is the tag, not "main" — a branches:[main]
+  # filter would (and previously did) silently drop tag-triggered releases.
   workflow_run:
     workflows: ['Publish to NPM']
     types: [completed]
-    branches: [main]
+  # Manual fallback to (re)publish the current main version to the registry.
+  workflow_dispatch:
 
 jobs:
   publish-mcp-registry:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Run on manual dispatch, or when the upstream NPM publish succeeded.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
