@@ -70,7 +70,7 @@
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
     "@commitlint/config-conventional": "^20.0.0",
-    "@commitlint/load": "^20.4.0",
+    "@commitlint/load": "^21.0.1",
     "@eslint/js": "^10.0.1",
     "@floating-ui/dom": "^1.7.5",
     "@gerrit0/mini-shiki": "^3.22.0",
