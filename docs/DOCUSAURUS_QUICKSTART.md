@@ -270,7 +270,7 @@ Docusaurus will warn about broken links during build. Fix them by:
 - [Docusaurus Docs](https://docusaurus.io/docs)
 - [Markdown Features](https://docusaurus.io/docs/markdown-features)
 - [Deployment Guide](https://docusaurus.io/docs/deployment)
-- [Migration Guide](./DOCUSAURUS_MIGRATION.md)
+- [Migration Guide](./planning/DOCUSAURUS_MIGRATION.md)
 
 ## ✅ Verification Checklist
 
@@ -295,4 +295,4 @@ npm run start
 
 ---
 
-**Need Help?** Check the [full migration guide](./DOCUSAURUS_MIGRATION.md) or [Docusaurus documentation](https://docusaurus.io/docs).
+**Need Help?** Check the [full migration guide](./planning/DOCUSAURUS_MIGRATION.md) or [Docusaurus documentation](https://docusaurus.io/docs).
