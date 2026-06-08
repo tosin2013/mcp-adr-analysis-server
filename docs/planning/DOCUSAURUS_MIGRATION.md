@@ -1,5 +1,7 @@
 # VitePress to Docusaurus Migration Guide
 
+> **Status: Completed** — The migration from VitePress to Docusaurus v3 is complete and the docs site is live. This document is retained as a historical reference.
+
 This guide documents the migration from VitePress to Docusaurus for the MCP ADR Analysis Server documentation.
 
 ## 🎯 Migration Overview
