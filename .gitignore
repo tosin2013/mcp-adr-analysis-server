@@ -97,3 +97,8 @@ docs/api/
 
 .kiro
 mcp-shrimp-task-datavenv-ansible/
+
+# MCP Registry publishing tokens (NEVER commit — local secrets)
+.mcpregistry_github_token
+.mcpregistry_registry_token
+.mcpregistry_*token
