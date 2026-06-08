@@ -1,5 +1,7 @@
 # CE-MCP Implementation Plan
 
+> **Status: Superseded by ADR-014** — The CE-MCP directive architecture has been implemented and accepted. See [ADR-014](../adrs/adr-014-ce-mcp-architecture.md) for the authoritative decision record and [CE-MCP Migration Playbook](../how-to-guides/ce-mcp-migration-playbook.md) for the operational guide.
+
 ## Executive Summary
 
 This implementation plan outlines the migration from OpenRouter-primary execution to CE-MCP (Claude-Enriched Model Context Protocol) directive-based architecture. The goal is to achieve **60-70% token reduction** across the MCP ADR Analysis Server while improving composability and aligning with Anthropic's recommended best practices.
