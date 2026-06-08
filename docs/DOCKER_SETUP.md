@@ -374,4 +374,4 @@ docker-compose down
 
 ---
 
-**Need Help?** Check the [Docusaurus Migration Guide](./DOCUSAURUS_MIGRATION.md) or [Quick Start Guide](./DOCUSAURUS_QUICKSTART.md).
+**Need Help?** Check the [Docusaurus Migration Guide](./planning/DOCUSAURUS_MIGRATION.md) or [Quick Start Guide](./DOCUSAURUS_QUICKSTART.md).
