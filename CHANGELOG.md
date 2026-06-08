@@ -12,6 +12,25 @@ _No unreleased changes._
 
 ---
 
+## [2.6.9] — 2026-06-08
+
+### Security
+
+- Bump `@mendable/firecrawl-js` to 4.25.2, resolving two high-severity `axios` advisories pulled in transitively (NO_PROXY bypass, prototype-pollution DoS / header injection, ReDoS via cookie name injection, and Proxy-Authorization credential leaks). This also unblocked the `make check-deps` CI gate, which had been failing repo-wide. (#997)
+
+### Fixed
+
+- Revert `github/gh-aw-actions` to 0.68.3 across all lock files.
+
+### Changed
+
+- CI: bump `actions/checkout` 4 → 6 (#993) and `codecov/codecov-action` 6 → 7 (#995).
+- Update numerous dependencies and dev-dependencies, including `@commitlint/*` to 21.x, `nan` 2.27.0, `tinyexec` 1.2.2, `yaml` 2.9.0, `es-toolkit` 1.47.0, `linkify-it` 5.0.1, `ast-v8-to-istanbul` 1.0.2, `@ungap/structured-clone` 1.3.1, assorted `@babel/*` helpers, and the `@oven/bun-*` platform binaries to 1.3.14.
+- Add MCP Registry publishing tokens to `.gitignore` (#1000) and add a canonical `labels.yml` with a label-sync workflow.
+- Docs: consolidate planning docs, publish the CE-MCP migration playbook, fix SECURITY.md links, and promote ADR-014 to Accepted.
+
+---
+
 ## [2.6.0] — 2026-04-28
 
 ### Added
@@ -721,7 +740,8 @@ Baseline for this changelog. Earlier history is captured only via git tags and r
 
 ---
 
-[Unreleased]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.5.0...HEAD
+[Unreleased]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.6.9...HEAD
+[2.6.9]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.6.8...v2.6.9
 [2.5.0]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.3.1...v2.4.1
 [2.3.1]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.3.0...v2.3.1
