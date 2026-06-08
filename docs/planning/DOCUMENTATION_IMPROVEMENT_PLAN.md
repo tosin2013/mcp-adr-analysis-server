@@ -1,5 +1,7 @@
 # 📋 MCP ADR Analysis Server Documentation Improvement Plan
 
+> **Status: Active** — Ongoing 4-phase initiative targeting 90%+ documentation coverage. See `docs/planning/README.md` for overall planning taxonomy.
+
 **Comprehensive 4-Phase Plan to Achieve 90%+ Documentation Coverage**
 
 > **Current Status**: 35% Documentation Score | **Target**: 90%+ | **Timeline**: 4 Phases
