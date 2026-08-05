@@ -1,12 +1,12 @@
 version: 2
 updates:
   # Enable version updates for npm
-  - package-ecosystem: "npm"
-    directory: "/"
+  - package-ecosystem: 'npm'
+    directory: '/'
     schedule:
-      interval: "daily"
-      time: "09:00"
-      timezone: "UTC"
+      interval: 'daily'
+      time: '09:00'
+      timezone: 'UTC'
     # Security updates get priority
     open-pull-requests-limit: 15
     # Separate MCP SDK updates for enhanced testing
@@ -14,65 +14,74 @@ updates:
       # Critical MCP SDK updates - handled separately with enhanced testing
       mcp-sdk-updates:
         patterns:
-          - "@modelcontextprotocol/sdk"
+          - '@modelcontextprotocol/sdk'
         update-types:
-          - "major"
-          - "minor"
-          - "patch"
+          - 'major'
+          - 'minor'
+          - 'patch'
       # Other production dependencies
       production-dependencies:
         patterns:
-          - "@types/*"
-          - "openai"
-          - "zod"
-          - "fast-glob"
-          - "tslib"
+          - '@types/*'
+          - 'openai'
+          - 'zod'
+          - 'fast-glob'
+          - 'tslib'
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
       # Development dependencies
       development-dependencies:
         patterns:
-          - "jest*"
-          - "ts-jest"
-          - "@types/jest"
-          - "typescript"
-          - "eslint*"
-          - "prettier*"
-          - "tsx"
+          - 'vitest'
+          - '@vitest/*'
+          - 'typescript'
+          - 'eslint*'
+          - 'prettier*'
+          - 'tsx'
         update-types:
-          - "minor"
-          - "patch"
+          - 'minor'
+          - 'patch'
     # Enhanced commit messages for better tracking
     commit-message:
-      prefix: "deps"
-      prefix-development: "deps-dev"
-      include: "scope"
-    # Always allow security updates regardless of schedule
+      prefix: 'deps'
+      prefix-development: 'deps-dev'
+      include: 'scope'
+    # Scheduled VERSION updates: direct dependencies only (production + dev).
+    # Previously "all", which opened a daily PR for every transitive lockfile-only
+    # bump (mdurl, flatted, electron-to-chromium, browserslist, @radix-ui/*) and
+    # kept open-pull-requests-limit permanently saturated.
+    #
+    # This does NOT silence transitive advisories: Dependabot SECURITY updates are
+    # driven by Dependabot alerts, not by this block, and cover the whole tree.
+    # Both "Dependabot alerts" and "Dependabot security updates" must stay enabled
+    # under Settings -> Code security. They were disabled until 2026-08-05, which is
+    # why the hono / ip-address / fast-uri advisories that froze the PR queue before
+    # v2.6.11 only ever surfaced as a side effect of unfiltered version updates.
     allow:
-      - dependency-type: "all"
+      - dependency-type: 'direct'
     # Add labels to make PRs easy to identify
     labels:
-      - "dependencies"
-      - "security"
+      - 'dependencies'
+      - 'security'
     # Add reviewers for critical dependencies
     reviewers:
-      - "tosin2013"
+      - 'tosin2013'
     # Custom PR titles to highlight security updates
     pull-request-branch-name:
-      separator: "/"
+      separator: '/'
 
   # Also check GitHub Actions for security updates
-  - package-ecosystem: "github-actions"
-    directory: "/"
+  - package-ecosystem: 'github-actions'
+    directory: '/'
     schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "09:00"
-      timezone: "UTC"
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'UTC'
     commit-message:
-      prefix: "ci"
-      include: "scope"
+      prefix: 'ci'
+      include: 'scope'
     labels:
-      - "github-actions"
-      - "security"
+      - 'github-actions'
+      - 'security'

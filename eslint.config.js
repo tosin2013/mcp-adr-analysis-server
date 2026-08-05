@@ -153,8 +153,6 @@ export default [
         MockedFunction: 'readonly',
         MockInstance: 'readonly',
         Mocked: 'readonly',
-        // Jest globals (legacy/fallback)
-        jest: 'readonly',
         // Common test globals
         describe: 'readonly',
         it: 'readonly',
@@ -212,7 +210,6 @@ export default [
       'out/**',
       'tmp/**',
       'debug_test.js',
-      'jest.config.js',
     ],
   },
 

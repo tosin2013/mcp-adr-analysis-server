@@ -131,7 +131,7 @@ node -e "
 Run the utility tests to verify runtime ESM behavior:
 
 ```bash
-npm test -- --testPathPattern="utils" --maxWorkers=2
+npx vitest run tests/utils --maxWorkers=2
 ```
 
 ### Step 6: Validate import.meta.url Helper

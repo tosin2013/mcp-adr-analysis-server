@@ -109,7 +109,7 @@ node -e "
 Run prompt-related tests to verify all tools can generate valid prompts:
 
 ```bash
-npm test -- --testPathPattern="prompt.*test" --verbose
+npx vitest run tests/prompts --reporter=verbose
 ```
 
 ### Step 4: Test Full Mode (if API key available)

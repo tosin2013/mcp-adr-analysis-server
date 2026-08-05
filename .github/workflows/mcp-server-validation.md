@@ -111,7 +111,7 @@ npm run test:mcp-functionality
 If this command is not available, fall back to:
 
 ```bash
-npm test -- --testPathPattern="mcp" --verbose
+npx vitest run --reporter=verbose tests/mcp-server.test.ts
 ```
 
 ### Step 5: Verify Tool Count
