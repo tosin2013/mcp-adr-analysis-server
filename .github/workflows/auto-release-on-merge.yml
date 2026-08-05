@@ -50,7 +50,22 @@ jobs:
           # Using RELEASE_TOKEN here also matters for the tag push below: tags pushed
           # with GITHUB_TOKEN do NOT fire publish.yml's `push: tags` trigger, which is
           # why v2.6.11 had to be published by re-pushing its tag by hand.
-          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
+          #
+          # REVERTED to GITHUB_TOKEN for now. Pointing checkout at RELEASE_TOKEN made
+          # run 31038689356 fail at the *checkout* step itself, on all three retries:
+          #
+          #   fatal: could not read Username for 'https://github.com': terminal prompts disabled
+          #
+          # checkout's credential setup was correct (credential file + includeIf entries
+          # all written), and this repository is public — so the header was sent and the
+          # server rejected it, meaning the RELEASE_TOKEN value is expired, malformed, or
+          # not granted access to this repo. Until that is confirmed, checkout must use a
+          # credential that is always valid, otherwise a bad secret breaks every release
+          # run at step 2 instead of failing later with a clearer error.
+          #
+          # NOTE: an invalid RELEASE_TOKEN is worse than an absent one — `||` treats any
+          # non-empty string as truthy, so it never falls back. See #1336.
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
