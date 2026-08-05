@@ -7,14 +7,16 @@ This repository now supports **automatic releases** when PRs are merged to the m
 When you merge a PR to `main`, the system will:
 
 1. **Analyze the PR** to determine the appropriate version bump
-2. **Run `npm version` locally** to compute the new version
-3. **Create a git tag** on the merge commit SHA (e.g., `v2.0.25`)
-4. **Publish a GitHub Release** (from Release Drafter draft or new)
-5. **Open a version-bump PR** updating `package.json` and `package-lock.json`
+2. **Run `npm version --no-git-tag-version`** to compute the new version
+3. **Open a version-bump PR** updating `package.json` and `package-lock.json`
    - The PR carries a `no-release` label so merging it does **not** trigger another release
    - Auto-merge is enabled (squash) so it lands without manual intervention
-6. **Trigger AI release notes** generation
-7. **Publish to NPM** automatically
+4. **Wait for that PR to merge** (polls up to 20 minutes)
+5. **Create a git tag** on the **version-bump commit** (e.g., `v2.0.25`), after verifying
+   that commit's `package.json` matches the tag
+6. **Publish a GitHub Release** (from Release Drafter draft or new)
+7. **Trigger AI release notes** generation
+8. **Publish to NPM**, then to the MCP Registry
 
 ## Version Bump Logic
 
@@ -61,8 +63,12 @@ Add any of these labels to a PR to skip auto-release:
 
 ### Excluded Authors
 
-- `dependabot[bot]` PRs use their own workflow
-- Other bots can be configured in the config file
+None. Every merged PR releases, Dependabot included — `auto-release-on-merge.yml` is
+the single owner of releases. Use a skip label above if you need to suppress one.
+
+(Previously `dependabot[bot]` was excluded here and routed to a dedicated
+`dependabot-auto-release.yml`. That workflow never fired and tagged the wrong commit,
+so the exclusion only ever produced tagged-but-unpublished orphans. Retired; see #1335.)
 
 ## Examples
 
@@ -105,20 +111,31 @@ To test with PR #146 (the ts-jest update):
 ## Workflow Chain
 
 ```
-PR Merge → Auto Release → Tag + Release + Version-Bump PR → AI Release Notes → NPM Publish
+PR Merge → Version-Bump PR → (bump merges) → Tag at bump commit → Release → NPM Publish
 ```
 
-1. **Auto Release** (`auto-release-on-merge.yml`): Tags merge commit, publishes release, opens version-bump PR
-2. **Version-Bump PR**: Merges automatically via auto-merge (`no-release` label prevents loop)
-3. **AI Release Notes** (`ai-release-notes.yml`): Enhances release with AI-generated notes
-4. **NPM Publish** (`publish.yml`): Publishes package to NPM
+1. **Auto Release** (`auto-release-on-merge.yml`): computes the new version and opens a
+   version-bump PR touching only `package.json` / `package-lock.json`
+2. **Version-Bump PR**: merges via auto-merge (`no-release` label prevents a loop)
+3. **Tag**: created on the **version-bump commit**, not the original merge commit, and
+   guarded by a sanity check — `git show "$BUMP_SHA:package.json"` must match the tag,
+   otherwise the workflow fails rather than mint a mismatched tag
+4. **Release**: publishes the Release Drafter draft, or creates a fresh release
+5. **NPM Publish** (`publish.yml`): publishes via OIDC trusted publishing, then
+   `publish-mcp-registry.yml` pushes to the MCP Registry
+
+> Tagging the bump commit (step 3) is deliberate. Tagging the original merge commit
+> would produce a tag whose `package.json` still held the previous version — the bug
+> that `dependabot-auto-release.yml` had when it was retired (#1337).
 
 ## Fallback for Issues
 
 If auto-release fails:
 
-- ✅ **Manual release still works**: Use the existing release workflows
-- ✅ **Dependabot still works**: Has its own dedicated workflow
+- ✅ **Manual release still works**: push the tag yourself to fire `publish.yml`
+  (`git push origin vX.Y.Z`). Verify `git show vX.Y.Z:package.json` matches the tag first.
+- ✅ **Stalled version-bump PR**: if the poll times out because `RELEASE_TOKEN` is not
+  set (#1336), an admin can merge it directly — `gh pr merge <n> --squash --admin`
 - ✅ **Easy to disable**: Just set `"enabled": false` in config
 
 ## Configuration Reference
@@ -140,10 +157,18 @@ If auto-release fails:
       "keywords": ["fix", "patch", "chore", "docs", "refactor"],
       "labels": ["bug", "fix", "patch", "documentation", "maintenance"]
     }
-  },
-  "excludeAuthors": ["dependabot[bot]"]
+  }
 }
 ```
+
+> **No author exclusion.** Dependabot merges release like any other PR. An
+> `excludeAuthors` key used to be listed here, but no workflow ever read it, and the
+> equivalent guard that _was_ live (`PR_AUTHOR == 'dependabot[bot]'` in the publish
+> gate) caused `auto-release-on-merge.yml` to bump the version and create the tag but
+> refuse to publish it — producing orphan tags. Removed; see #1335.
+>
+> Recursion on the workflow's own version-bump PR is prevented by the `no-release`
+> entry in `skipLabels`, not by author.
 
 ## Benefits
 

@@ -15,6 +15,5 @@
       "labels": ["bug", "fix", "patch", "documentation", "maintenance"]
     }
   },
-  "excludeAuthors": ["dependabot[bot]"],
-  "description": "Configuration for automatic releases on PR merge. Set 'enabled' to false to disable auto-releases."
+  "description": "Configuration for automatic releases on PR merge. Set 'enabled' to false to disable auto-releases. Note: there is no author exclusion — Dependabot merges release like any other PR. Recursion on the workflow's own version-bump PR is prevented by the 'no-release' skipLabel above."
 }
