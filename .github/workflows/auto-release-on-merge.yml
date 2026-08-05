@@ -33,7 +33,24 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # MUST match the token given to peter-evans/create-pull-request below.
+          #
+          # checkout@v6 persists credentials for whichever token it is given. If
+          # create-pull-request is handed a *different* token, it hides checkout's
+          # credential file and configures its own auth — and that handoff breaks
+          # against v6's credential-file/includeIf mechanism, leaving the branch push
+          # with no usable credential:
+          #
+          #   fatal: could not read Username for 'https://github.com': No such device
+          #   ##[error]The process '/usr/bin/git' failed with exit code 128
+          #
+          # This stayed hidden while RELEASE_TOKEN was unset, because both sides then
+          # resolved to GITHUB_TOKEN. It surfaced the moment RELEASE_TOKEN was added.
+          #
+          # Using RELEASE_TOKEN here also matters for the tag push below: tags pushed
+          # with GITHUB_TOKEN do NOT fire publish.yml's `push: tags` trigger, which is
+          # why v2.6.11 had to be published by re-pushing its tag by hand.
+          token: ${{ secrets.RELEASE_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
