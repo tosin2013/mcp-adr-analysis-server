@@ -7,8 +7,18 @@ on:
 
 jobs:
   auto-release:
-    # Only run if PR was merged (not just closed) and not already handled by dependabot workflow
-    if: github.event.pull_request.merged == true && github.actor != 'dependabot[bot]'
+    # Only run if the PR was actually merged (not just closed).
+    #
+    # This workflow is the SINGLE owner of releases. It previously excluded
+    # `github.actor == 'dependabot[bot]'` and deferred to dependabot-auto-release.yml,
+    # which was never a working handoff: that workflow gated on the same actor but
+    # concluded `skipped` on every run, and it tagged the pre-bump commit anyway.
+    # Meanwhile a Dependabot-authored PR merged by a human or by auto-merge has
+    # `github.actor == <that user>`, so this workflow DID run, bumped the version and
+    # created the tag — then refused to publish because the gate below keyed off the
+    # PR *author*. The result was a tagged-but-unpublished orphan (v2.6.10, and v2.6.11
+    # until it was published by hand). See #1335, #1336, #1337.
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     outputs:
       new-version: ${{ steps.bump-version.outputs.version }}
@@ -111,6 +121,17 @@ jobs:
           # whether publish-npm should run. Do NOT re-evaluate github.event
           # context in the publish-npm job — the downstream evaluation has been
           # unreliable historically (see #787).
+          #
+          # There is deliberately NO author-based exclusion here. Dependabot PRs
+          # release like any other merge, per RELEASES.md ("patch releases ship
+          # whenever a PR merges to main"). Excluding them was what produced
+          # tagged-but-unpublished orphans — this job would still bump and tag,
+          # then decline to publish. See #1335.
+          #
+          # Recursion is prevented by SHOULD_SKIP, not by author: the version-bump
+          # PR this workflow opens carries the `no-release` label, which is in
+          # skipLabels in .github/auto-release.config.json. Verified in run
+          # 31016611178, which correctly skipped on that label.
           if [[ "$CONFIG_ENABLED" != "true" ]]; then
             GATE="false"
             REASON="auto-release disabled in .github/auto-release.config.json"
@@ -120,9 +141,6 @@ jobs:
           elif [[ "$PR_MERGED" != "true" ]]; then
             GATE="false"
             REASON="PR was not merged"
-          elif [[ "$PR_AUTHOR" == "dependabot[bot]" ]]; then
-            GATE="false"
-            REASON="Dependabot PRs are handled by dependabot-auto-merge.yml"
           else
             GATE="true"
             REASON="All preconditions met"
