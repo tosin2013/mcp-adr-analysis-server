@@ -3,7 +3,7 @@
  * Provides common test helpers, mocks, and validation functions
  */
 
-import { vi as _vi } from 'vitest';
+import { vi } from 'vitest';
 
 // ============================================================================
 // Test Data Generators
@@ -114,7 +114,7 @@ export function createTestMemory(overrides: any = {}) {
  * Mock knowledge generation function
  */
 export function createMockKnowledgeGeneration() {
-  return jest
+  return vi
     .fn<() => Promise<{ prompt: string; instructions: string; context: any }>>()
     .mockResolvedValue({
       prompt: 'Mock generated knowledge prompt',
@@ -131,7 +131,7 @@ export function createMockKnowledgeGeneration() {
  * Mock APE optimization function
  */
 export function createMockAPEOptimization() {
-  return jest
+  return vi
     .fn<() => Promise<{ prompt: string; instructions: string; context: any }>>()
     .mockResolvedValue({
       prompt: 'Mock optimized prompt',
@@ -148,7 +148,7 @@ export function createMockAPEOptimization() {
  * Mock Reflexion execution function
  */
 export function createMockReflexionExecution() {
-  return jest
+  return vi
     .fn<() => Promise<{ prompt: string; instructions: string; context: any }>>()
     .mockResolvedValue({
       prompt: 'Mock reflexion-enhanced prompt',
@@ -165,7 +165,7 @@ export function createMockReflexionExecution() {
  * Mock memory retrieval function
  */
 export function createMockMemoryRetrieval() {
-  return jest
+  return vi
     .fn<() => Promise<{ prompt: string; instructions: string; context: any }>>()
     .mockResolvedValue({
       prompt: 'Mock memory retrieval prompt',

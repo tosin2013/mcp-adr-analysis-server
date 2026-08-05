@@ -50,7 +50,9 @@ jobs:
           node dist/src/index.js --test
 
       - name: Run unit tests
-        run: make test
+        # test-ci omits the npm audit prerequisite on purpose — the audit runs in
+        # the security-scan job. See Makefile.
+        run: make test-ci
 
       - name: Build the project
         run: npm run build

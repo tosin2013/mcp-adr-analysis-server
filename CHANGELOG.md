@@ -8,7 +8,62 @@ For the release cadence and policy, see [RELEASES.md](./RELEASES.md).
 
 ## [Unreleased]
 
-_No unreleased changes._
+> **Note on 2.6.10.** `package.json` was bumped to 2.6.10 in #1003 (2026-06-09) but the release
+> never completed: the auto-release workflow's version-bump PR is authored by `GITHUB_TOKEN`,
+> GitHub suppresses CI on it, the required checks never report, and the 20-minute merge poll times
+> out. No `v2.6.10` tag and no npm publish exist. The next release supersedes it and contains
+> everything that would have shipped as 2.6.10.
+
+### Security
+
+- Bump `@modelcontextprotocol/sdk` to `^1.30.0`. Load-bearing, not cosmetic: SDK 1.29.0 pins
+  `@hono/node-server: ^1.19.9`, which cannot reach the patched 2.0.5. SDK 1.30.0 widens the range
+  to `^1.19.9 || ^2.0.5`, resolving a moderate path-traversal advisory in `@hono/node-server`.
+- Refresh `package-lock.json` to clear three further transitive production advisories:
+  `hono` → 4.13.0 (high), `ip-address` → 10.4.0 (SSRF / trust-boundary bypass, high), and
+  `fast-uri` → 3.1.5 (host confusion, high). None of these are imported directly by `src/`.
+- Enable Dependabot alerts and Dependabot security updates on the repository. Both were disabled,
+  which meant transitive advisories only ever surfaced as a side effect of unfiltered scheduled
+  version updates — and stopped surfacing at all once those were filtered.
+
+### Fixed
+
+- CI: decouple the production `npm audit` gate from the unit-test job. `.github/workflows/test.yml`
+  ran `make test`, which depends on `check-deps` (`npm audit --omit=dev --audit-level=moderate`), so
+  a single moderate advisory failed both required `test (20)` and `test (22)` checks before Vitest
+  even started — freezing the entire PR queue. This is the same repo-wide freeze seen at 2.6.9
+  (#997). Added a `test-ci` Makefile target without the `check-deps` prerequisite, mirroring the
+  existing `lint-ci`, and pointed the workflow at it. The audit is still enforced by the
+  `security-scan` job, which reports without gating merges.
+- `security-scan` now runs the dependency audit after CodeQL analysis instead of before it, so an
+  advisory no longer suppresses code-scanning results.
+- Replace the Jest-only `--testPathPattern` flag in the `ai-executor-integration`,
+  `mcp-server-validation`, and `esm-module-validation` agent prompts, which instructed agents to run
+  a command Vitest does not accept.
+- Convert leftover `jest.fn` / `jest.spyOn` calls in `tests/utils/advanced-prompting-test-utils.ts`
+  and `tests/performance/memory-performance.test.ts` to their `vi` equivalents. The Vitest migration
+  script had renamed the `vi` import to `_vi` without rewriting the call sites, leaving four exported
+  mock factories that would throw `ReferenceError` if invoked.
+
+### Removed
+
+- Remove the vestigial Jest setup. `jest.config.js` forced `moduleResolution: 'node'` through
+  ts-jest, which throws `TS5107` under TypeScript 6, so `npm run test:jest` was permanently broken.
+  Vitest has been the real runner for some time (126 test files, ~3048 tests). Deleted
+  `jest.config.js`, the `test:jest` script, `tests/__mocks__/` (10 files, referenced only by Jest's
+  `moduleNameMapper`), a stale `.backup` test file, the dead `jest` namespace augmentation in
+  `tests/setup.ts`, the `jest` ESLint global and `jest.config.js` ignore entry, and the `jest`,
+  `ts-jest`, `@types/jest`, `@jest/globals`, and `jest-junit` devDependencies.
+  Closes #1060, #1172; addresses most of #751.
+
+### Changed
+
+- `.github/dependabot.yml`: narrow scheduled version updates from `dependency-type: "all"` to
+  `"direct"`. Transitive lockfile-only packages (`mdurl`, `flatted`, `electron-to-chromium`,
+  `browserslist`, `baseline-browser-mapping`, `@radix-ui/*`) were each opening their own daily PR and
+  permanently saturating `open-pull-requests-limit`. Genuine transitive advisories still surface via
+  Dependabot security updates, now enabled. The `development-dependencies` group also drops its
+  now-dead `jest*` patterns and picks up `vitest` / `@vitest/*`.
 
 ---
 
