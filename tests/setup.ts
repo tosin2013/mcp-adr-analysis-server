@@ -105,18 +105,6 @@ afterEach(async () => {
   }
 });
 
-// Global test utilities
-declare global {
-  namespace jest {
-    interface Matchers<R> {
-      toBeValidAdr(): R;
-      toHaveValidSchema(): R;
-      toBeValidPromptObject(): R;
-      toShowSignificantImprovement(threshold?: number): R;
-    }
-  }
-}
-
 // Extend expect interface
 declare module 'expect' {
   interface Matchers<R> {

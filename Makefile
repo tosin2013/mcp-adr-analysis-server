@@ -1,14 +1,15 @@
 # MCP ADR Analysis Server - Makefile
 # Code quality and validation driven build system
 
-.PHONY: help install build test lint clean dev check-deps security-check format
+.PHONY: help install build test test-ci lint lint-ci clean dev check-deps security-check format
 
 # Default target
 help:
 	@echo "MCP ADR Analysis Server - Available targets:"
 	@echo "  install      - Install dependencies"
 	@echo "  build        - Build TypeScript to JavaScript"
-	@echo "  test         - Run Jest tests with coverage"
+	@echo "  test         - Run Vitest tests (checks dependencies first)"
+	@echo "  test-ci      - Run Vitest tests without the audit gate (used by CI)"
 	@echo "  lint         - Run ESLint checks"
 	@echo "  clean        - Clean build artifacts and cache"
 	@echo "  dev          - Start development server"
@@ -44,9 +45,17 @@ build: install
 	npm run build
 	@echo "Build completed successfully"
 
-# Run tests without coverage (for CI)
+# Run tests without coverage (local dev — surfaces advisories via check-deps)
 test: check-deps
 	@echo "Running tests..."
+	npm test
+	@echo "Tests completed successfully"
+
+# CI-safe tests (skips audit check)
+# A transitive advisory must not fail the required test checks and freeze the
+# PR queue; the audit is enforced by the security-scan job instead.
+test-ci:
+	@echo "Running tests (CI)..."
 	npm test
 	@echo "Tests completed successfully"
 
