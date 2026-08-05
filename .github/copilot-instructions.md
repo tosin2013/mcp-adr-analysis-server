@@ -266,7 +266,9 @@ These replaced the former `.github/agents/` YAML files with AI-enhanced gh-aw eq
 
 ### Traditional YAML Workflows (Unchanged)
 
-These remain as standard GitHub Actions: `lint.yml`, `test.yml`, `build.yml`, `publish.yml`, `deploy-docusaurus.yml`, `codeql-analysis.yml`, `security-scanning.yml`, `validate-patterns.yml`, `dependencies.yml`, `release-drafter.yml`, `auto-release-on-merge.yml`, `dependabot-auto-release.yml`
+These remain as standard GitHub Actions: `lint.yml`, `test.yml`, `build.yml`, `publish.yml`, `deploy-docusaurus.yml`, `codeql-analysis.yml`, `security-scanning.yml`, `validate-patterns.yml`, `dependencies.yml`, `release-drafter.yml`, `auto-release-on-merge.yml`
+
+`auto-release-on-merge.yml` is the sole owner of releases for every merge to `main`, Dependabot included. (`dependabot-auto-release.yml` was retired — it never fired, and it tagged the pre-bump commit.)
 
 ## Documentation References
 
