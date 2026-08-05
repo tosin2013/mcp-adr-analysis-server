@@ -8,6 +8,12 @@ For the release cadence and policy, see [RELEASES.md](./RELEASES.md).
 
 ## [Unreleased]
 
+_No unreleased changes._
+
+---
+
+## [2.6.11] — 2026-08-05
+
 > **Note on 2.6.10.** `package.json` was bumped to 2.6.10 in #1003 (2026-06-09) but the release
 > never completed: the auto-release workflow's version-bump PR is authored by `GITHUB_TOKEN`,
 > GitHub suppresses CI on it, the required checks never report, and the 20-minute merge poll times
@@ -795,7 +801,8 @@ Baseline for this changelog. Earlier history is captured only via git tags and r
 
 ---
 
-[Unreleased]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.6.9...HEAD
+[Unreleased]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.6.11...HEAD
+[2.6.11]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.6.9...v2.6.11
 [2.6.9]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.6.8...v2.6.9
 [2.5.0]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.4.1...v2.5.0
 [2.4.1]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.3.1...v2.4.1
