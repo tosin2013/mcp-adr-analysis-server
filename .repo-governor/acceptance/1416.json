@@ -1,0 +1,29 @@
+{
+  "authority_id": "1416",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -rl getToolListForMCP src/ | wc -l) -ge 2'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -cE \"^ +case \" src/index.ts) -lt 10'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(wc -l < src/index.ts) -lt 6000'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -c \"hasCEMCPDirective: true\" src/tools/tool-catalog.ts) -le 15'"
+    },
+    {
+      "check": "command_exit",
+      "target": "npm run typecheck"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npm test"
+    }
+  ]
+}
