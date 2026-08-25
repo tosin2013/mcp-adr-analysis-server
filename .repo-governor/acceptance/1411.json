@@ -1,0 +1,25 @@
+{
+  "authority_id": "1411",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q thresholds vitest.config.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q lcov vitest.config.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"fail_ci_if_error: true\" .github/workflows/test.yml'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"enforced by Jest\" CONTRIBUTING.md'"
+    },
+    {
+      "check": "command_exit",
+      "target": "npm run test:coverage"
+    }
+  ]
+}

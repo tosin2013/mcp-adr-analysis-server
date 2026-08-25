@@ -1,0 +1,17 @@
+{
+  "authority_id": "1412",
+  "criteria": [
+    {
+      "check": "file_exists",
+      "target": "tsconfig.test.json"
+    },
+    {
+      "check": "command_exit",
+      "target": "npx tsc --noEmit -p tsconfig.test.json"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q tsconfig.test.json .github/workflows/lint.yml'"
+    }
+  ]
+}
