@@ -85,3 +85,22 @@ updates:
     labels:
       - 'github-actions'
       - 'security'
+    # The github/gh-aw-actions/* pins live inside .github/workflows/*.lock.yml,
+    # which are COMPILED ARTIFACTS produced by the gh-aw compiler — not files
+    # meant to be hand-edited. Dependabot rewrites the pinned SHA in place
+    # without regenerating the rest of the lock file, which breaks the pairing
+    # between the action and the runtime it expects.
+    #
+    # PR #1330 did exactly that (SHA ba90f21 -> b078ca2) and every agentic
+    # workflow started failing at container startup:
+    #
+    #   [ERROR] Failed to start containers: docker compose up -d --pull never
+    #   Error: Cannot find module '.../gh-aw/actions/detect_copilot_errors.cjs'
+    #
+    # The tell that it did not understand the file: it changed the SHA but left
+    # the adjacent `# v0.68.3` version comment untouched.
+    #
+    # Upgrade gh-aw by re-running its compiler and committing the regenerated
+    # lock files, not by bumping the pin.
+    ignore:
+      - dependency-name: 'github/gh-aw-actions*'
