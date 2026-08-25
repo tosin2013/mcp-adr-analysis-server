@@ -2,8 +2,7 @@
  * Tests for MCP server functionality
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
-
+import { describe, it, expect } from 'vitest';
 // Set up mocks before imports
 vi.mock('@modelcontextprotocol/sdk/server/index.js', () => {
   const mockServer = {

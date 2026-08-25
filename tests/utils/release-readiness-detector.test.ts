@@ -2,7 +2,7 @@
  * Test suite for release readiness detector
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { join } from 'path';
 
 // Mock file system operations

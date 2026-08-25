@@ -5,7 +5,7 @@
  * No complex ESM mocking required - uses simple dependency injection.
  */
 
-import { describe, it, expect, _jest, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import {
   searchCodebase,
   searchCodebaseTool,

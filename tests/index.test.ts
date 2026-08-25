@@ -4,8 +4,7 @@
  * Basic functionality tests with minimal complexity
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
-
+import { describe, it, expect, vi } from 'vitest';
 // Mock package.json content
 const mockPackageJson = JSON.stringify({ version: '2.0.2' });
 

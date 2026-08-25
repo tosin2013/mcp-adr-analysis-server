@@ -3,7 +3,7 @@
  * Tests research directory monitoring, topic extraction, impact evaluation, and update suggestions
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
+import { describe, it, expect, vi, MockedFunction } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
 // Pragmatic mocking approach to avoid TypeScript complexity

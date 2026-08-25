@@ -4,8 +4,7 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
-
+import { describe, it, expect, beforeAll } from 'vitest';
 // Mock conditional-request (needed for generateETag)
 vi.mock('../../src/utils/conditional-request.js', () => ({
   generateStrongETag: vi.fn((data: any) => `etag-${JSON.stringify(data).length}`),

@@ -1,4 +1,4 @@
-import { describe, it, expect, _beforeEach, _afterEach } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { generateAdrBootstrapScripts } from '../../src/tools/adr-bootstrap-validation-tool.js';
 import { promises as fs } from 'fs';
 import { join } from 'path';
