@@ -12,10 +12,18 @@
     {
       "check": "command_exit",
       "target": "npm run typecheck"
+    },
+    {
+      "check": "file_exists",
+      "target": "scripts/verify-packaged-runtime.sh"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/verify-packaged-runtime.sh"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q verify-packaged-runtime.sh .github/workflows/test.yml'"
     }
-  ],
-  "covers": {
-    "declared": "openai resolves at runtime for npm consumers: it is a runtime dependency and is gone from devDependencies",
-    "uncovered": "No check here installs the packed tarball into a clean directory and invokes an AI-path tool. That belongs to the protocol-test issue; until it exists this bar proves the manifest is right, not that the shipped artifact works."
-  }
+  ]
 }

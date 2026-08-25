@@ -83,6 +83,15 @@ jobs:
       - name: Build the project
         run: npm run build
 
+      # Packs the tarball, installs it somewhere with no node_modules of its own,
+      # and imports the AI-path entry points. This is the ONLY check that can
+      # catch a runtime dependency misfiled under devDependencies -- the bug that
+      # shipped in 2.6.13 and broke every AI path for npm consumers (#1409).
+      # `npm run health` cannot: startup never loads those modules.
+      - name: Verify the packaged artifact resolves at runtime
+        if: matrix.node-version == '20'
+        run: bash scripts/verify-packaged-runtime.sh
+
       - name: Test MCP server health check
         run: |
           echo "Testing MCP server health check..."
