@@ -54,6 +54,22 @@ jobs:
         # the security-scan job. See Makefile.
         run: make test-ci
 
+      # MUST run before "Build the project". `npm run build` triggers `prebuild`,
+      # which is `npm run clean` -- `rm -rf dist coverage`. With the upload step
+      # at the end of the job, the build deleted coverage/ before Codecov ever
+      # looked for it:
+      #   Some files were not found --- {"not_found_files": ["coverage/lcov.info"]}
+      # That was latent for as long as lcov.info was never generated at all;
+      # generating it and setting fail_ci_if_error: true is what surfaced it.
+      - name: Upload coverage reports
+        if: matrix.node-version == '20'
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./coverage/lcov.info
+          # Was false while lcov.info was never generated, so a silently missing
+          # report looked like a healthy upload.
+          fail_ci_if_error: true
+
       - name: Build the project
         run: npm run build
 
@@ -134,14 +150,3 @@ jobs:
             echo "📊 MCP Test Results:"
             cat mcp-test-results.json | jq '.' || cat mcp-test-results.json
           fi
-
-      - name: Upload coverage reports
-        if: matrix.node-version == '20'
-        uses: codecov/codecov-action@v7
-        with:
-          files: ./coverage/lcov.info
-          # Was false while lcov.info was never generated, so a silently missing
-          # report looked like a healthy upload. `lcov` is now in the vitest
-          # reporters and make test-ci runs with coverage, so a failure here is
-          # real and should be loud.
-          fail_ci_if_error: true
