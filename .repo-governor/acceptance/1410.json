@@ -1,0 +1,17 @@
+{
+  "authority_id": "1410",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"compiler_version.:.v0.68.3\" .github/workflows/*.lock.yml'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"report-failure-as-issue: false\" .github/workflows/ai-executor-integration.md'"
+    }
+  ],
+  "covers": {
+    "declared": "the 11 lock files no longer pin compiler v0.68.3, and the daily ai-executor-integration no longer files failure issues",
+    "uncovered": "Whether the four validators ACTUALLY ACTIVATE on a src/** change. That is observed on a real run, not asserted by a command, so it stays a manual checklist item on the issue. A bar that passed while the validators still silently skip would be the false green this issue exists to remove."
+  }
+}
