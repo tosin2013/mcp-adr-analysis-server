@@ -71,6 +71,11 @@ jobs:
           # Set it once with:  gh secret set CODECOV_TOKEN
           # (value from codecov.io -> this repo -> Settings)
           token: ${{ secrets.CODECOV_TOKEN }}
+          # Without an explicit slug the upload was rejected with
+          #   {"message":"Repository not found"}
+          # even with a valid 36-char token. Codecov's own setup snippet passes
+          # it, and on a fork-aware CI it cannot always infer the owner/repo.
+          slug: tosin2013/mcp-adr-analysis-server
           # Was false while lcov.info was never generated, so a silently missing
           # report looked like a healthy upload.
           fail_ci_if_error: true
