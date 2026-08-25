@@ -66,6 +66,11 @@ jobs:
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage/lcov.info
+          # Required: tokenless upload is refused on a protected branch --
+          #   {"message":"Token required because branch is protected"}
+          # Set it once with:  gh secret set CODECOV_TOKEN
+          # (value from codecov.io -> this repo -> Settings)
+          token: ${{ secrets.CODECOV_TOKEN }}
           # Was false while lcov.info was never generated, so a silently missing
           # report looked like a healthy upload.
           fail_ci_if_error: true
