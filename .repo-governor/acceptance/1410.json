@@ -12,6 +12,7 @@
   ],
   "covers": {
     "declared": "the 11 lock files no longer pin compiler v0.68.3, and the daily ai-executor-integration no longer files failure issues",
-    "uncovered": "Whether the four validators ACTUALLY ACTIVATE on a src/** change. That is observed on a real run, not asserted by a command, so it stays a manual checklist item on the issue. A bar that passed while the validators still silently skip would be the false green this issue exists to remove."
+    "uncovered": "Whether the four validators ACTUALLY ACTIVATE on a src/** change. That is observed on a real run, not asserted by a command, so it stays a manual checklist item on the issue. A bar that passed while the validators still silently skip would be the false green this issue exists to remove.",
+    "split_to": ["1417"]
   }
 }
