@@ -139,5 +139,9 @@ jobs:
         if: matrix.node-version == '20'
         uses: codecov/codecov-action@v7
         with:
-          file: ./coverage/lcov.info
-          fail_ci_if_error: false
+          files: ./coverage/lcov.info
+          # Was false while lcov.info was never generated, so a silently missing
+          # report looked like a healthy upload. `lcov` is now in the vitest
+          # reporters and make test-ci runs with coverage, so a failure here is
+          # real and should be loud.
+          fail_ci_if_error: true

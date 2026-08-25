@@ -27,9 +27,23 @@ export default defineConfig({
     // Coverage configuration (replaces @vitest/coverage-v8)
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'json', 'html'],
+      // 'lcov' is what Codecov consumes. Without it test.yml uploaded a file
+      // that was never generated, and fail_ci_if_error: false hid the miss.
+      reporter: ['text', 'json', 'html', 'lcov'],
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.d.ts', 'src/**/*.test.ts'],
+      // Set at the MEASURED floor, not an aspiration. README and CONTRIBUTING
+      // claimed 80%/85% "enforced by Jest" -- the framework is Vitest and no
+      // threshold existed anywhere, so the guarantee was fictional. Measured on
+      // 07e883a9: 48.97 stmt / 41.27 branch / 54.69 func / 49.09 lines.
+      // These sit just below that so ordinary noise does not redden CI.
+      // Ratchet them UP as coverage improves; never down to accommodate a drop.
+      thresholds: {
+        statements: 48,
+        branches: 41,
+        functions: 54,
+        lines: 49,
+      },
     },
 
     // Pool configuration for Vitest 4.x (threads is now default)
