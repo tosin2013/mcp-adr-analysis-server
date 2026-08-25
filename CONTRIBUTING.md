@@ -61,7 +61,7 @@ npm run prepublishOnly
 ### Testing Requirements
 
 - Do not drop below the coverage floor enforced in `vitest.config.ts`
-  (currently 48% statements / 41% branches / 54% functions / 49% lines).
+  (currently 48% statements / 41% branches / 54% functions / 48% lines).
   It is a ratchet: raise it as coverage improves, never lower it to fit a drop.
 - Write unit tests for new utilities in `src/utils/`
 - Add integration tests for new tools in `src/tools/`

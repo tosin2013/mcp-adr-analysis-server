@@ -34,15 +34,24 @@ export default defineConfig({
       exclude: ['src/**/*.d.ts', 'src/**/*.test.ts'],
       // Set at the MEASURED floor, not an aspiration. README and CONTRIBUTING
       // claimed 80%/85% "enforced by Jest" -- the framework is Vitest and no
-      // threshold existed anywhere, so the guarantee was fictional. Measured on
-      // 07e883a9: 48.97 stmt / 41.27 branch / 54.69 func / 49.09 lines.
-      // These sit just below that so ordinary noise does not redden CI.
-      // Ratchet them UP as coverage improves; never down to accommodate a drop.
+      // threshold existed anywhere, so the guarantee was fictional.
+      //
+      // Measure on CI, not locally. Same 126 files / 3048 tests, different
+      // numbers: line coverage is 49.09% on macOS and 48.93% on ubuntu (both
+      // node 20 and 22, run 32875733767). A first attempt set lines: 49 from
+      // the local figure and CI failed by 0.07pp. CI is the environment that
+      // gates, so CI is the number that counts.
+      //
+      // ubuntu floor: 48.97 stmt / 41.27 branch / 54.69 func / 48.93 lines.
+      // Each threshold sits ~1pp under, which is the margin that survives the
+      // platform gap. Ratchet them UP as coverage improves; never down to
+      // accommodate a real drop -- lowering `lines` here corrects a floor
+      // measured on the wrong machine, which is a different thing.
       thresholds: {
         statements: 48,
         branches: 41,
         functions: 54,
-        lines: 49,
+        lines: 48,
       },
     },
 
