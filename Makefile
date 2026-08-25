@@ -54,9 +54,13 @@ test: check-deps
 # CI-safe tests (skips audit check)
 # A transitive advisory must not fail the required test checks and freeze the
 # PR queue; the audit is enforced by the security-scan job instead.
+# Runs WITH coverage: this is the only place the coverage thresholds in
+# vitest.config.ts are enforced. `npm run test:coverage` rather than the
+# test-coverage target below, because that one depends on check-deps (npm audit)
+# and this target exists precisely to skip it.
 test-ci:
-	@echo "Running tests (CI)..."
-	npm test
+	@echo "Running tests with coverage (CI)..."
+	npm run test:coverage
 	@echo "Tests completed successfully"
 
 # Run tests with coverage
