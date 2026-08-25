@@ -60,7 +60,9 @@ npm run prepublishOnly
 
 ### Testing Requirements
 
-- Maintain ≥85% coverage threshold (enforced by Jest)
+- Do not drop below the coverage floor enforced in `vitest.config.ts`
+  (currently 48% statements / 41% branches / 54% functions / 48% lines).
+  It is a ratchet: raise it as coverage improves, never lower it to fit a drop.
 - Write unit tests for new utilities in `src/utils/`
 - Add integration tests for new tools in `src/tools/`
 - Use descriptive test names following the pattern: `should [expected behavior] when [condition]`
@@ -188,7 +190,7 @@ All contributions must pass:
 
 - ✅ TypeScript compilation (`npm run typecheck`)
 - ✅ ESLint rules (`npm run lint`)
-- ✅ Test suite with ≥85% coverage (`npm run test:coverage`)
+- ✅ Test suite passes with coverage above the enforced floor (`npm run test:coverage`)
 - ✅ Build process (`npm run build`)
 - ✅ Pre-commit hooks execution
 

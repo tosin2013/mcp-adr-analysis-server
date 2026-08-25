@@ -231,7 +231,7 @@ const relatedCode = await findRelatedCode(
 
 ## 🛠️ Technology Stack
 
-**Runtime:** Node.js 20+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Jest (>80% coverage)
+**Runtime:** Node.js 20+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Vitest (~49% statements, enforced floor)
 **Search:** [ripgrep](https://github.com/BurntSushi/ripgrep) (fast recursive text search) + fast-glob (file matching) • **AI Integration:** OpenRouter.ai • **Web Research:** [Firecrawl](https://firecrawl.dev/) (web page extraction API) • **Code Analysis:** [tree-sitter](https://tree-sitter.github.io/tree-sitter/) (incremental code parser) + Smart Code Linking
 
 📖 **[Technical Details →](docs/explanation/server-architecture.md)** | **[CE-MCP Migration Playbook →](docs/how-to-guides/ce-mcp-migration-playbook.md)**
@@ -241,7 +241,7 @@ const relatedCode = await findRelatedCode(
 ```
 src/tools/     # 73 MCP tools for analysis
 docs/adrs/     # Architectural Decision Records
-tests/         # >80% test coverage
+tests/         # ~49% statement coverage, floor enforced in CI
 .github/       # CI/CD automation
 ```
 
@@ -250,7 +250,7 @@ tests/         # >80% test coverage
 ## 🧪 Testing
 
 ```bash
-npm test              # Run all tests (>80% coverage)
+npm test              # Run all tests
 npm run test:coverage # Coverage report
 ```
 
@@ -341,7 +341,7 @@ cd mcp-adr-analysis-server
 npm install && npm run build && npm test
 ```
 
-**Quality Standards:** TypeScript strict mode • ESLint • >80% test coverage • Pre-commit hooks
+**Quality Standards:** TypeScript strict mode • ESLint • enforced coverage floor • Pre-commit hooks
 
 ### Viewing Documentation Locally
 
@@ -389,7 +389,7 @@ We welcome contributions! Whether you're fixing bugs, adding features, or improv
 2. **Clone** your fork: `git clone https://github.com/YOUR_USERNAME/mcp-adr-analysis-server.git`
 3. **Create** a branch: `git checkout -b feature/your-feature-name`
 4. **Make** your changes with tests
-5. **Test**: `npm test` (maintain >80% coverage)
+5. **Test**: `npm test` (do not drop below the coverage floor)
 6. **Submit** a Pull Request
 
 ### 👶 First Time Contributing?
@@ -402,7 +402,7 @@ Looking for a good first issue? Check out our [**good first issues**](https://gi
 
 Use our [**issue templates**](https://github.com/tosin2013/mcp-adr-analysis-server/issues/new/choose) when reporting bugs or requesting features. Templates help us understand and resolve issues faster.
 
-**Standards:** TypeScript strict • >80% coverage • ESLint • Security validation • MCP compliance
+**Standards:** TypeScript strict • enforced coverage floor • ESLint • Security validation • MCP compliance
 
 📖 **[Full Contributing Guide →](CONTRIBUTING.md)** | **[Code of Conduct →](docs/community/CODE_OF_CONDUCT.md)**
 
