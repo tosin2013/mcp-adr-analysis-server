@@ -1,0 +1,13 @@
+{
+  "authority_id": "1417",
+  "criteria": [
+    {
+      "check": "file_exists",
+      "target": "scripts/check-validator-activation.sh"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/check-validator-activation.sh"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "authority_id": "1413",
+  "criteria": [
+    {
+      "check": "file_exists",
+      "target": "tests/integration/mcp-protocol.test.ts"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/integration/mcp-protocol.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"analyze_project. dist/src/index.js\" .github/workflows/test.yml'"
+    }
+  ]
+}

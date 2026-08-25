@@ -18,6 +18,11 @@ safe-outputs:
   create-issue:
     title-prefix: '[ai-executor]'
   add-comment:
+  # This runs daily on a schedule. Every engine-level failure was being filed as
+  # a new issue -- six of the newest open issues (#1398-#1404) were auto-filed
+  # by this workflow, not real findings. Failures still surface in the Actions
+  # tab; they no longer create tracker noise. See #1410.
+  report-failure-as-issue: false
 tools:
   bash: true
   github:
@@ -109,7 +114,7 @@ node -e "
 Run prompt-related tests to verify all tools can generate valid prompts:
 
 ```bash
-npm test -- --testPathPattern="prompt.*test" --verbose
+npx vitest run tests/prompts --reporter=verbose
 ```
 
 ### Step 4: Test Full Mode (if API key available)

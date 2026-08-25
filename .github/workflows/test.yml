@@ -50,7 +50,35 @@ jobs:
           node dist/src/index.js --test
 
       - name: Run unit tests
-        run: make test
+        # test-ci omits the npm audit prerequisite on purpose — the audit runs in
+        # the security-scan job. See Makefile.
+        run: make test-ci
+
+      # MUST run before "Build the project". `npm run build` triggers `prebuild`,
+      # which is `npm run clean` -- `rm -rf dist coverage`. With the upload step
+      # at the end of the job, the build deleted coverage/ before Codecov ever
+      # looked for it:
+      #   Some files were not found --- {"not_found_files": ["coverage/lcov.info"]}
+      # That was latent for as long as lcov.info was never generated at all;
+      # generating it and setting fail_ci_if_error: true is what surfaced it.
+      - name: Upload coverage reports
+        if: matrix.node-version == '20'
+        uses: codecov/codecov-action@v7
+        with:
+          files: ./coverage/lcov.info
+          # Required: tokenless upload is refused on a protected branch --
+          #   {"message":"Token required because branch is protected"}
+          # Set it once with:  gh secret set CODECOV_TOKEN
+          # (value from codecov.io -> this repo -> Settings)
+          token: ${{ secrets.CODECOV_TOKEN }}
+          # Without an explicit slug the upload was rejected with
+          #   {"message":"Repository not found"}
+          # even with a valid 36-char token. Codecov's own setup snippet passes
+          # it, and on a fork-aware CI it cannot always infer the owner/repo.
+          slug: tosin2013/mcp-adr-analysis-server
+          # Was false while lcov.info was never generated, so a silently missing
+          # report looked like a healthy upload.
+          fail_ci_if_error: true
 
       - name: Build the project
         run: npm run build
@@ -132,10 +160,3 @@ jobs:
             echo "📊 MCP Test Results:"
             cat mcp-test-results.json | jq '.' || cat mcp-test-results.json
           fi
-
-      - name: Upload coverage reports
-        if: matrix.node-version == '20'
-        uses: codecov/codecov-action@v7
-        with:
-          file: ./coverage/lcov.info
-          fail_ci_if_error: false

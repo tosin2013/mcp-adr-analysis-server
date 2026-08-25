@@ -558,7 +558,7 @@ describe('Memory System Performance Tests', () => {
 
       // Track entity creation properly
       let entityCount = 0;
-      const upsertEntitySpy = jest
+      const upsertEntitySpy = vi
         .spyOn(memoryManager, 'upsertEntity')
         .mockImplementation(async entity => {
           entityCount++;
