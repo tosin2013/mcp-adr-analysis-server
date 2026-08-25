@@ -1,0 +1,21 @@
+{
+  "authority_id": "1409",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "node -e \"const p=require('./package.json'); process.exit(p.dependencies && p.dependencies.openai ? 0 : 1)\""
+    },
+    {
+      "check": "command_exit",
+      "target": "node -e \"const p=require('./package.json'); process.exit(p.devDependencies && p.devDependencies.openai ? 1 : 0)\""
+    },
+    {
+      "check": "command_exit",
+      "target": "npm run typecheck"
+    }
+  ],
+  "covers": {
+    "declared": "openai resolves at runtime for npm consumers: it is a runtime dependency and is gone from devDependencies",
+    "uncovered": "No check here installs the packed tarball into a clean directory and invokes an AI-path tool. That belongs to the protocol-test issue; until it exists this bar proves the manifest is right, not that the shipped artifact works."
+  }
+}
