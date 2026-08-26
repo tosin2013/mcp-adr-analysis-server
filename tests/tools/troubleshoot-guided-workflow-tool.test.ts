@@ -3,17 +3,7 @@
  * Target: Achieve 80% coverage for comprehensive troubleshooting workflow validation
  */
 
-import {
-  describe,
-  it,
-  expect,
-  beforeAll,
-  _beforeEach,
-  _afterEach,
-  vi,
-  MockedFunction,
-} from 'vitest';
-
+import { describe, it, expect, beforeAll, vi, MockedFunction } from 'vitest';
 // Mock fetch for AI API calls
 const mockFetch = vi.fn() as MockedFunction<typeof fetch>;
 global.fetch = mockFetch;

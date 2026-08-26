@@ -3,7 +3,6 @@
  */
 
 import { describe, it, expect } from 'vitest';
-
 describe('LLM Artifact Detector', () => {
   describe('Debug Script Detection', () => {
     it('should detect debug scripts by filename', async () => {

@@ -105,13 +105,23 @@ afterEach(async () => {
   }
 });
 
-// Extend expect interface
-declare module 'expect' {
-  interface Matchers<R> {
-    toBeValidAdr(): R;
-    toHaveValidSchema(): R;
-    toBeValidPromptObject(): R;
-    toShowSignificantImprovement(threshold?: number): R;
+// Extend expect interface.
+// Vitest augments `Assertion` on the 'vitest' module -- NOT `Matchers` on
+// 'expect', which is Jest's shape. This block still declared the Jest form after
+// the Vitest migration, so every use of these matchers was an untyped property
+// access. Nothing noticed, because tsconfig.json never included tests/ (#1412).
+declare module 'vitest' {
+  interface Assertion<T = any> {
+    toBeValidAdr(): T;
+    toHaveValidSchema(): T;
+    toBeValidPromptObject(): T;
+    toShowSignificantImprovement(threshold?: number): T;
+  }
+  interface AsymmetricMatchersContaining {
+    toBeValidAdr(): void;
+    toHaveValidSchema(): void;
+    toBeValidPromptObject(): void;
+    toShowSignificantImprovement(threshold?: number): void;
   }
 }
 

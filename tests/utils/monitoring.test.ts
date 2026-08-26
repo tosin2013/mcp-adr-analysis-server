@@ -3,7 +3,7 @@
  * Tests monitoring, analytics, and health check functionality
  */
 
-import { describe, it, expect, vi, _beforeEach, _afterEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   MonitoringManager,
   MetricType,

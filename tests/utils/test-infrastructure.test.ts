@@ -2,7 +2,7 @@
  * Tests for Enhanced Test Infrastructure
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   TestInfrastructure,
   withTestInfrastructure,

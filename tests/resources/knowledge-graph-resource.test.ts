@@ -2,7 +2,7 @@
  * Tests for Knowledge Graph Resource
  */
 
-import { describe, it, expect, _beforeEach, _jest } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { URLSearchParams } from 'url';
 import {
   generateKnowledgeGraphResource,

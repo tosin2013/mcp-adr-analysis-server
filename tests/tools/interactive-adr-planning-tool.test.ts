@@ -8,7 +8,6 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-
 // Use vi.hoisted to ensure mocks are available before vi.mock is hoisted
 const { mockFs } = vi.hoisted(() => ({
   mockFs: {

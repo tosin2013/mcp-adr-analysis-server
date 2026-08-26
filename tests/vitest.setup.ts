@@ -5,8 +5,7 @@
  * Equivalent to Jest's setupFilesAfterEnv.
  */
 
-import { beforeAll, afterAll, _beforeEach, _afterEach } from 'vitest';
-
+import { beforeAll, afterAll } from 'vitest';
 // Set NODE_ENV for tests
 process.env.NODE_ENV = 'test';
 

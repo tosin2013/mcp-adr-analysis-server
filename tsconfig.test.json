@@ -1,0 +1,37 @@
+{
+  "$comment": [
+    "Typechecks the TEST sources, which tsconfig.json does not: its `include` is",
+    "['src/**/*'] only, so `npm run typecheck` has always been checking half the",
+    "TypeScript in this repository. Tests could drift from the code they exercise",
+    "-- wrong argument shapes, stale mock types, removed exports -- and nothing",
+    "caught it until an assertion happened to fail at runtime, or did not. See #1412.",
+    "",
+    "This is a separate project rather than a widened `include` because tests need",
+    "vitest globals and looser rules than shipped source, and relaxing the main",
+    "config to accommodate them would weaken the checks on src/."
+  ],
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": false,
+    // tsconfig.json sets rootDir: "src" for the build. Tests live outside it, so
+    // inheriting it makes every test file "not under rootDir" (TS6059).
+    "rootDir": ".",
+    // `describe` / `it` / `expect` without importing them: vitest.config.ts sets
+    // globals: true, so the tests legitimately use them and the types must match.
+    "types": ["vitest/globals", "node"],
+    // Tests deliberately construct partial fixtures and poke at internals.
+    // Enforcing these here would produce noise, not defects.
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    // Relaxed for TESTS ONLY, and only the ergonomic strictness -- not the
+    // checks that catch drift between tests and the code they exercise.
+    // A fixture indexing arr[0].foo it just built is not a defect; src/ keeps
+    // both of these.
+    "noUncheckedIndexedAccess": false,
+    "noPropertyAccessFromIndexSignature": false,
+    "exactOptionalPropertyTypes": false
+  },
+  "include": ["tests/**/*", "vitest.config.ts", "vitest.setup.ts"],
+  "exclude": ["node_modules", "dist", ".mcp-adr-cache"]
+}

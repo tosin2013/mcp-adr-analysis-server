@@ -2,7 +2,7 @@
  * Tests for EnvironmentCapabilityRegistry
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
+import { describe, it, expect, vi, MockedFunction } from 'vitest';
 import { EnvironmentCapabilityRegistry } from '../../src/utils/environment-capability-registry.js';
 
 describe('EnvironmentCapabilityRegistry', () => {
