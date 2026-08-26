@@ -6,7 +6,7 @@
  * orchestration directives that the host LLM can execute with minimal context.
  *
  * @see ADR-014: CE-MCP Architecture
- * @see docs/IMPLEMENTATION-PLAN.md Phase 2
+ * @see docs/planning/IMPLEMENTATION-PLAN.md Phase 2
  */
 
 import {

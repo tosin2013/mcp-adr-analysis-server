@@ -54,6 +54,13 @@ jobs:
       - name: Typecheck tests (ratchet)
         run: bash scripts/check-test-typecheck.sh
 
+      # Checks ADRs against the code, and the ledger against itself. RATCHET, not a
+      # zero-drift gate: 8 findings remain and most need human judgement (supersede
+      # ADR-001? which file keeps ADR-018?). Demanding zero would mean the check never
+      # lands. The count may fall, never rise. See #1415.
+      - name: Check ADR drift (ratchet)
+        run: bash scripts/check-adr-drift.sh
+
       - name: Check formatting
         run: |
           echo "=== Checking Code Formatting ==="

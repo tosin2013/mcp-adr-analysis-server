@@ -17,12 +17,14 @@ This directory contains the Architectural Decision Records for the MCP ADR Analy
 | [ADR-009](adr-009-package-distribution-strategy.md)                    | Package Distribution Strategy                    | Accepted | 2024-01-15 | Distribution  |
 | [ADR-010](adr-010-bootstrap-deployment-architecture.md)                | Bootstrap Deployment Architecture                | Accepted | 2025-01-23 | Deployment    |
 | [ADR-011](adr-011-adr-timeline-tracking-and-context-aware-analysis.md) | ADR Timeline Tracking and Context-Aware Analysis | Accepted | 2025-11-19 | Architecture  |
-| [ADR-012](adr-012-validated-patterns-framework.md)                     | Validated Patterns Framework                     | Proposed | 2025-01-16 | Deployment    |
-| [ADR-013](adr-013-documentation-platform-strategy.md)                  | Documentation Platform Strategy                  | Proposed | 2025-11-21 | Documentation |
-| [ADR-014](adr-014-ce-mcp-architecture.md)                              | CE-MCP Architecture                              | Proposed | 2025-12-09 | Architecture  |
+| [ADR-012](adr-012-validated-patterns-framework.md)                     | Validated Patterns Framework                     | Accepted | 2025-01-16 | Deployment    |
+| [ADR-013](adr-013-documentation-platform-strategy.md)                  | Documentation Platform Strategy                  | Accepted | 2025-11-21 | Documentation |
+| [ADR-014](adr-014-ce-mcp-architecture.md)                              | CE-MCP Architecture                              | Accepted | 2025-12-09 | Architecture  |
 | [ADR-015](adr-015-ape-optimization-strategy.md)                        | APE Optimization Strategy                        | Accepted | 2025-12-12 | AI/ML         |
 | [ADR-017](adr-017-tree-sitter-version-strategy.md)                     | Tree-Sitter Version Strategy                     | Accepted | 2025-12-13 | Architecture  |
 | [ADR-018](adr-018-atomic-tools-architecture.md)                        | Atomic Tools Architecture                        | Accepted | 2025-12-16 | Architecture  |
+| [ADR-019](adr-019-vitest-migration.md)                                 | Migrate from Jest to Vitest for Testing          | Accepted | 2024-12-16 | Testing       |
+| [ADR-020](adr-020-mcp-tasks-integration-strategy.md)                   | MCP Tasks Integration Strategy                   | Accepted | 2025-12-16 | Architecture  |
 | [ADR-021](adr-021-ai-layer-disposition.md)                             | Disposition of the legacy AI execution layer     | Proposed | 2026-08-26 | Architecture  |
 
 > **This index is known to be out of date and is not corrected here.** It stops at
