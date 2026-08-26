@@ -8484,7 +8484,17 @@ Please provide:
       // Fall back to static resource handling
       // Parse URI to determine resource type and parameters
       const url = new globalThis.URL(uri);
-      const resourceType = url.pathname.replace('/', '');
+      // For a non-special scheme like `adr://adr_list`, WHATWG URL puts the name in
+      // `host`, not `pathname` -- pathname is ''. Reading pathname alone made every one
+      // of the 16 cases below unreachable: resourceType was always '', so the switch fell
+      // straight to `default` and threw "Unknown resource type: " with nothing after the
+      // colon. 16 of the 17 concrete resources advertised in resources/list were dead.
+      //
+      //   adr://adr_list  ->  host 'adr_list', pathname ''
+      //   adr://adr/{id}  ->  host 'adr',      pathname '/%7Bid%7D'
+      //
+      // Prefer the host; fall back to pathname so path-style URIs still resolve.
+      const resourceType = url.host || url.pathname.replace('/', '');
       const params = Object.fromEntries(url.searchParams.entries());
 
       switch (resourceType) {

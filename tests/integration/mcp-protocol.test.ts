@@ -137,6 +137,56 @@ describe('MCP protocol', () => {
     expect(res.content[0]).toHaveProperty('type');
   }, 180_000);
 
+  it('lists resources, and every concrete one dispatches to a handler', async () => {
+    // 16 of the 17 concrete resources advertised here were dead: src/index.ts derived the
+    // resource name from `url.pathname`, but for a non-special scheme like `adr://adr_list`
+    // WHATWG URL puts the name in `host` and leaves pathname empty. Every read fell through
+    // to `default` and threw "Unknown resource type: " -- with nothing after the colon.
+    //
+    // Runs on its OWN connection. A client-side timeout does not stop the server: some
+    // resources do tens of seconds of real work, and on a shared client the next test
+    // queued behind that and timed out. Closing this transport kills the child process and
+    // the in-flight work with it, so the sweep cannot leak into anything else.
+    const ownTransport = new StdioClientTransport({
+      command: process.execPath,
+      args: [SERVER],
+      env: {
+        ...(process.env as Record<string, string>),
+        PROJECT_PATH: process.cwd(),
+        ADR_DIRECTORY: 'docs/adrs',
+        EXECUTION_MODE: 'prompt-only',
+        LOG_LEVEL: 'error',
+      },
+      stderr: 'pipe',
+    });
+    const own = new Client({ name: 'resource-sweep', version: '1.0.0' }, { capabilities: {} });
+    await own.connect(ownTransport);
+
+    try {
+      const { resources } = await own.listResources();
+
+      // Templates cannot be read literally; they belong in resources/templates/list.
+      const concrete = resources.filter(r => !r.uri.includes('{'));
+      expect(concrete.length).toBeGreaterThan(10);
+
+      const unreachable: string[] = [];
+      for (const r of concrete) {
+        try {
+          await own.readResource({ uri: r.uri }, { timeout: 15_000 });
+        } catch (e) {
+          const msg = String((e as Error).message ?? e);
+          // A timeout means the handler was found and is working -- this asserts DISPATCH,
+          // not latency. Only a message naming the URI as unknown means it routed nowhere.
+          if (/[Uu]nknown resource/.test(msg)) unreachable.push(`${r.uri}: ${msg}`);
+        }
+      }
+      expect(unreachable, 'advertised resources that route to no handler').toEqual([]);
+    } finally {
+      await own.close().catch(() => {});
+      await ownTransport.close().catch(() => {});
+    }
+  }, 300_000);
+
   it('rejects an unknown tool instead of failing silently', async () => {
     // A dispatcher that quietly returns success for an unrouted name is the
     // exact regression the #1416 refactor could introduce.

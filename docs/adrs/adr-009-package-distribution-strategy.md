@@ -1,3 +1,8 @@
+---
+tags:
+  - deployment
+---
+
 # ADR-009: Package Distribution Strategy
 
 ## Status

@@ -1,3 +1,8 @@
+---
+tags:
+  - architecture
+---
+
 # ADR-003: Memory-Centric Architecture
 
 ## Status

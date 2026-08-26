@@ -1,3 +1,8 @@
+---
+tags:
+  - protocol
+---
+
 # ADR-018: MCP Tasks Integration Strategy
 
 ## Status

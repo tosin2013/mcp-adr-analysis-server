@@ -1,3 +1,8 @@
+---
+tags:
+  - architecture
+---
+
 # ADR-018: Atomic Tools Architecture
 
 **Status**: Accepted  

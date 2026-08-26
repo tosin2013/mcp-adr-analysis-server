@@ -230,11 +230,10 @@ export async function discoverAdrsInDirectory(
 
     // Generate action items if requested
     let actionQueue: AdrWorkQueue | undefined;
-    if (generateActions && discoveredAdrs.some((adr) => adr.timeline)) {
+    if (generateActions && discoveredAdrs.some(adr => adr.timeline)) {
       try {
-        const { detectProjectContext, selectThresholdProfile } = await import(
-          './adr-context-detector.js'
-        );
+        const { detectProjectContext, selectThresholdProfile } =
+          await import('./adr-context-detector.js');
         const { generateActionItems } = await import('./adr-action-analyzer.js');
 
         // Detect project context or use manual profile
@@ -367,11 +366,45 @@ function parseAdrMetadata(content: string, filename: string, fullPath: string): 
     consequences = consequencesMatch[1].trim();
   }
 
-  // Extract category/tags (if any)
+  // Extract category/tags (if any).
+  //
+  // Three forms occur in the wild, and the idiomatic MADR one used to be the only one
+  // that did NOT work -- a YAML block list returned ["- architecture"], capturing the
+  // dash and dropping every entry after the first. ADR-022 adopted MADR, whose template
+  // uses block lists, so that was the form this needed most.
+  //
+  //   tags:               tags: a, b        tags: [a, b]
+  //     - a
+  //     - b
+  //
+  // Scoped to the leading `---` front-matter block when one is present, so a `tags:`
+  // mention in prose cannot be picked up -- the same discipline scripts/check-adr-drift.sh
+  // and repo-governor's adapters/adr both use after that exact false positive.
   const tags: string[] = [];
-  const tagMatch = content.match(/(?:tags?|categories?):\s*(.+?)(?:\n|$)/i);
-  if (tagMatch && tagMatch[1]) {
-    tags.push(...tagMatch[1].split(',').map(tag => tag.trim()));
+  const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const tagScope = fmMatch?.[1] ?? content;
+
+  const blockMatch = tagScope.match(
+    /^[ \t]*(?:tags?|categories?):[ \t]*\r?\n((?:[ \t]*-[ \t]*\S.*\r?\n?)+)/im
+  );
+  if (blockMatch?.[1]) {
+    tags.push(
+      ...blockMatch[1]
+        .split(/\r?\n/)
+        .map(line => line.replace(/^[ \t]*-[ \t]*/, '').trim())
+        .filter(Boolean)
+    );
+  } else {
+    const inlineMatch = tagScope.match(/^[ \t]*(?:tags?|categories?):[ \t]*(.+?)[ \t]*\r?$/im);
+    if (inlineMatch?.[1]) {
+      tags.push(
+        ...inlineMatch[1]
+          .replace(/^\[|\]$/g, '') // tolerate the bracket form, which used to keep its brackets
+          .split(',')
+          .map(tag => tag.trim().replace(/^['"]|['"]$/g, ''))
+          .filter(Boolean)
+      );
+    }
   }
 
   const metadata: DiscoveredAdr['metadata'] = { tags };

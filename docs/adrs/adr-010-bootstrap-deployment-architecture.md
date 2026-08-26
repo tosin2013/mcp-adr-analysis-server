@@ -1,3 +1,9 @@
+---
+tags:
+  - deployment
+  - architecture
+---
+
 # ADR-010: Bootstrap Deployment Architecture
 
 ## Status

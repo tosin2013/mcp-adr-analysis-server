@@ -1,3 +1,8 @@
+---
+tags:
+  - testing
+---
+
 # ADR-005: Testing and Quality Assurance Strategy
 
 ## Status
