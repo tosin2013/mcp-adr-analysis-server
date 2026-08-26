@@ -4628,8 +4628,24 @@ export class McpAdrAnalysisServer {
 - **AI Model**: ${status.model}
 
 ${
-  status.reason
-    ? `## ⚠️ Issue Detected
+  // CE-MCP is the DEFAULT mode and needs no API key. Reporting the absence of
+  // one as an "Issue Detected" -- immediately after saying no external API call
+  // is needed -- told every new user to go and buy a key they do not need.
+  // Legacy configuration is only a problem for someone who asked for it. (#1414)
+  status.executionMode === 'ce-mcp'
+    ? `## ✅ Running in CE-MCP mode
+
+No API key is required. Tools return orchestration directives that your host LLM
+executes directly, which is why **AI Execution Enabled: NO** above is expected and
+correct rather than a fault.
+
+Note that only some tools currently return a directive; the rest return their
+result directly. See ADR-014 and ADR-021.
+
+Legacy OpenRouter execution is off by design. You only need the configuration
+below if you deliberately want that older path.`
+    : status.reason
+      ? `## ⚠️ Issue Detected
 **Problem**: ${status.reason}
 
 ## Solution
@@ -4672,7 +4688,7 @@ ${
 `
       : ''
 }`
-    : `## ✅ Configuration Looks Good!
+      : `## ✅ Configuration Looks Good!
 
 AI execution is properly configured. Tools should return actual results instead of prompts.
 

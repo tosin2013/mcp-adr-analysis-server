@@ -1370,6 +1370,33 @@ export function shouldUseCEMCPDirective(toolName: string, config: { mode: string
 /**
  * Get CE-MCP directive for a tool
  */
+/**
+ * The tools that `getCEMCPDirective()` below actually implements.
+ *
+ * This exists because `TOOL_CATALOG` carried a hand-maintained
+ * `hasCEMCPDirective` boolean that drifted badly: 70 tools claimed a directive
+ * while 12 had one. That field is surfaced to callers by `search_tools`, the
+ * tool-catalog resource, and the dispatcher's tool list, so the discovery
+ * surface advertised a capability most tools did not have.
+ *
+ * Keep this in sync with the switch below. `tests/tools/ce-mcp-directives.test.ts`
+ * fails if they diverge, and if the catalog disagrees with either.
+ */
+export const CE_MCP_DIRECTIVE_TOOLS: ReadonlySet<string> = new Set([
+  'analyze_environment',
+  'analyze_project_ecosystem',
+  'deployment_readiness',
+  'generate_adrs_from_prd',
+  'generate_rules',
+  'interactive_adr_planning',
+  'mcp_planning',
+  'perform_research',
+  'smart_score',
+  'suggest_adrs',
+  'tool_chain_orchestrator',
+  'troubleshoot_guided_workflow',
+]);
+
 export function getCEMCPDirective(
   toolName: string,
   args: Record<string, unknown>
