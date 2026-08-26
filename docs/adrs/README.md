@@ -23,6 +23,12 @@ This directory contains the Architectural Decision Records for the MCP ADR Analy
 | [ADR-015](adr-015-ape-optimization-strategy.md)                        | APE Optimization Strategy                        | Accepted | 2025-12-12 | AI/ML         |
 | [ADR-017](adr-017-tree-sitter-version-strategy.md)                     | Tree-Sitter Version Strategy                     | Accepted | 2025-12-13 | Architecture  |
 | [ADR-018](adr-018-atomic-tools-architecture.md)                        | Atomic Tools Architecture                        | Accepted | 2025-12-16 | Architecture  |
+| [ADR-021](adr-021-ai-layer-disposition.md)                             | Disposition of the legacy AI execution layer     | Proposed | 2026-08-26 | Architecture  |
+
+> **This index is known to be out of date and is not corrected here.** It stops at
+> ADR-018, omits ADR-019 and ADR-020, and lists ADR-012, ADR-013 and ADR-014 as
+> _Proposed_ while all three files say _Accepted_. Reconciling the ledger is #1415;
+> ADR-021 is added above so this file is not made _more_ wrong by a new entry.
 
 ## Legacy ADRs (Sample Project)
 
