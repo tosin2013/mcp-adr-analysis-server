@@ -397,7 +397,7 @@ We welcome contributions! Whether you're fixing bugs, adding features, or improv
 Work is tracked in GitHub milestones, and milestone membership is what marks an issue as
 admitted:
 
-- [**v2.6**](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/1) — current release line
+- [**Release & docs foundation**](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/1) — shipped as v2.6.20
 - [**v3.0**](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/2) — tool registry consolidation and the CI safety net
 - [**v3.1**](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/3) — work gated on the tool-surface decision in [ADR-023](docs/adrs/adr-023-tool-surface-scope.md)
 
