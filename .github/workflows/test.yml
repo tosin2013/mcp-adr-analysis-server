@@ -112,38 +112,16 @@ jobs:
             node scripts/validate-build.js
           fi
 
-          # Check that the built server contains expected MCP tools (basic validation)
-          echo "Checking for MCP tool implementations..."
-
-          # Check core tools
-          if grep -q "analyze_project" dist/src/index.js; then
-            echo "✅ analyze_project tool found"
-          else
-            echo "❌ analyze_project tool not found"
-            exit 1
-          fi
-
-          # Check new planning tools
-          if grep -q "mcp_planning" dist/src/index.js; then
-            echo "✅ mcp_planning tool found"
-          else
-            echo "❌ mcp_planning tool not found"
-            exit 1
-          fi
-
-          if grep -q "interactive_adr_planning" dist/src/index.js; then
-            echo "✅ interactive_adr_planning tool found"
-          else
-            echo "❌ interactive_adr_planning tool not found"
-            exit 1
-          fi
-
-          if grep -q "ListToolsRequestSchema" dist/src/index.js; then
-            echo "✅ ListToolsRequestSchema handler found"
-          else
-            echo "❌ ListToolsRequestSchema handler not found"
-            exit 1
-          fi
+          # The grep-the-bundle checks that lived here are replaced by
+          # tests/integration/mcp-protocol.test.ts, which boots the built server
+          # over stdio and speaks MCP to it. See #1413.
+          #
+          # Those greps could not detect the failure mode of the refactor they
+          # guarded (#1416) -- a string stays present in the bundle while
+          # dispatch breaks. Worse, one of them was simply wrong:
+          # `grep -q "analyze_project"` passed on the substring of
+          # `analyze_project_ecosystem`, so CI asserted a tool that does not
+          # exist and went green for it.
 
           echo "✅ MCP server functionality validated"
 
