@@ -25,7 +25,7 @@ This directory contains the Architectural Decision Records for the MCP ADR Analy
 | [ADR-018](adr-018-atomic-tools-architecture.md)                        | Atomic Tools Architecture                        | Accepted | 2025-12-16 | Architecture  |
 | [ADR-019](adr-019-vitest-migration.md)                                 | Migrate from Jest to Vitest for Testing          | Accepted | 2024-12-16 | Testing       |
 | [ADR-020](adr-020-mcp-tasks-integration-strategy.md)                   | MCP Tasks Integration Strategy                   | Accepted | 2025-12-16 | Architecture  |
-| [ADR-021](adr-021-ai-layer-disposition.md)                             | Disposition of the legacy AI execution layer     | Proposed | 2026-08-26 | Architecture  |
+| [ADR-021](adr-021-ai-layer-disposition.md)                             | Disposition of the legacy AI execution layer     | Accepted | 2026-08-26 | Architecture  |
 | [ADR-022](adr-022-adopt-madr-format.md)                                | Adopt MADR as the default decision-record format | Proposed | 2026-08-26 | Documentation |
 
 > **This index is known to be out of date and is not corrected here.** It stops at

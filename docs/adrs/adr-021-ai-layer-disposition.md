@@ -2,10 +2,10 @@
 
 ## Status
 
-Proposed
+Accepted
 
-> This ADR presents evidence and options. **The disposition is the owner's and is
-> not recorded here yet.** Section 7 is deliberately unfilled.
+> Disposition recorded 2026-08-26 by the repository owner (#1414). The evidence below
+> was gathered before the decision, not assembled to justify it afterwards.
 
 ## Date
 
@@ -184,11 +184,76 @@ wrong under every option:
 
 ## Decision
 
-_Not yet recorded._ Awaiting the owner's disposition. See #1414.
+**Option B — finish the ADR-014 migration, then delete the legacy AI execution layer.**
+
+Recorded by the repository owner on 2026-08-26 (#1414).
+
+The remaining ~63 tools get CE-MCP directives or deterministic behaviour. Once they do,
+`src/utils/ai-executor.ts`, `src/utils/prompt-execution.ts`, `src/prompts/`, and the
+APE / Reflexion / Knowledge-Generation frameworks are removed, and the `openai`
+dependency is dropped.
+
+**This is admitted as its own milestone with per-batch acceptance criteria, not as a
+single issue.** "Give 63 tools directives" is a research task wearing a checklist's
+clothes, and this project has twice mistaken one for the other inside a single month.
+
+### What changed since the options were written
+
+Two things made B cheaper than it looked when drafted:
+
+- **ADR-022 adopted MADR.** Structured front matter means "what should this tool return
+  instead of a prompt" has a deterministic answer for a meaningful share of the ADR
+  tools, rather than 63 independent judgement calls.
+- **The catalog now reports honestly.** #1456 corrected 58 false `hasCEMCPDirective`
+  claims, so the 12-of-75 reality is visible rather than hidden behind a claim of 70.
+
+And one thing made A less tenable: the prompt-only fallback is not merely dead weight.
+`adr-suggestion-tool.ts:1101` writes `[ADR_CONTENT_PLACEHOLDER]` into the user's real
+ADR directory and returns a prompt telling the caller to fill it in. That path exists
+_because_ prompt-only is live.
 
 ## Consequences
 
-To be completed once the decision is recorded.
+**Good**
+
+- One execution path. The condition that produced false catalog claims, a
+  self-contradicting diagnostic, and deprecated code on the default path is removed
+  rather than relabelled.
+- ~11,152 LOC and the `openai` dependency go once the migration completes.
+- #1416's `ToolDefinition` shape no longer has to model two return contracts.
+
+**Bad**
+
+- The migration is the expensive part and is not mechanical. Sixty-three tools each need
+  a decision about what they return instead.
+- Until it completes both paths remain live, so the repository carries the transition
+  cost on top of the cost of the old state.
+
+**Neutral**
+
+- Nothing is deleted by _this_ decision. It sets direction; removal is gated on the
+  migration and on the retirement provider below.
+
+## Confirmation
+
+Verifiable now:
+
+- This ADR's `## Status` reads `Accepted`.
+- A retirement provider is bound in `.repo-governor.json`, so `retirement.py` no longer
+  returns a blocking `NO_RETIREMENT_EVIDENCE`.
+
+Verifiable at completion, and deliberately **not** claimed yet:
+
+- `grep -rl "ai-executor" src/` returns nothing
+- `src/prompts/` does not exist
+- `openai` is absent from `package.json`
+- every tool in `TOOL_CATALOG` either has a directive or returns a computed result
+
+Binding a retirement provider does **not** authorise deletion. The `retirement-analysis`
+adapter advertises `dynamic_references`, `runtime_usage`, `public_contracts` and
+`migration_obligations` as **false**, and `autonomous_deletion` as false always. Static
+analysis therefore yields `RETIREMENT_REVIEW`, never `REMOVAL_READY` — the correct
+outcome, not a limitation to route around.
 
 ## Related
 
