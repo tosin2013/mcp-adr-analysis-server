@@ -1,0 +1,22 @@
+{
+  "authority_id": "1468",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "node -e \"const p=require('./package.json'); process.exit(p.dependencies && p.dependencies['js-yaml'] ? 0 : 1)\""
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -rq \"from .js-yaml.\" src/ && node -e \"const p=require(process.cwd()+\\\"/package.json\\\"); process.exit(p.dependencies[\\\"js-yaml\\\"]?0:1)\"'"
+    },
+    {
+      "check": "command_exit",
+      "target": "npm run typecheck"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/verify-packaged-runtime.sh"
+    }
+  ],
+  "$comment": "Deliberately NOT declaring `covers`. An earlier draft claimed the uncovered half was 'no other undeclared dependency exists' and pointed at #1469 -- but that conflates two issues. #1468's outcome is that js-yaml ships and the packaged artifact resolves it, which these criteria establish. The systemic weakness in verify-packaged-runtime.sh is #1469's own issue, cross-linked in the issue text rather than made a completion dependency here."
+}
