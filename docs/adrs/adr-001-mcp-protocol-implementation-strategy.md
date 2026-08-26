@@ -1,3 +1,9 @@
+---
+tags:
+  - protocol
+  - architecture
+---
+
 # ADR-001: MCP Protocol Implementation Strategy
 
 ## Status

@@ -1,3 +1,9 @@
+---
+tags:
+  - research
+  - architecture
+---
+
 # ADR-002: AI Integration and Advanced Prompting Strategy
 
 ## Status

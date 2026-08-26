@@ -1,3 +1,8 @@
+---
+tags:
+  - testing
+---
+
 # ADR-019: Migrate from Jest to Vitest for Testing
 
 ## Status

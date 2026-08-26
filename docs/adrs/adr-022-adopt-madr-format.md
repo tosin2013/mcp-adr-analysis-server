@@ -3,6 +3,9 @@ status: proposed
 date: 2026-08-26
 decision-makers: Tosin Akinosho
 consulted: Claude Code (evidence gathering)
+tags:
+  - documentation
+  - process
 ---
 
 # ADR-022: Adopt MADR as the default decision-record format

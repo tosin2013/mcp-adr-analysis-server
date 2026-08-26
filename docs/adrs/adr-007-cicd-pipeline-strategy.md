@@ -1,3 +1,9 @@
+---
+tags:
+  - deployment
+  - process
+---
+
 # ADR-007: CI/CD Pipeline Strategy
 
 ## Status

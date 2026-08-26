@@ -245,41 +245,49 @@ async function runDeploymentChecks(): Promise<
     });
   }
 
-  // Check 2: Build status
+  // Check 2: Build artifact status.
+  //
+  // This used to run `npm run build`. A resources/read is a READ, and that call was
+  // destructive: build triggers `prebuild` -> `npm run clean` -> `rm -rf dist coverage`.
+  // Reading this resource deleted the caller's dist/ and coverage/ directories. In CI it
+  // removed the coverage directory out from under a running Vitest, failing the job with
+  // "Something removed the coverage directory ... Vitest created earlier".
+  //
+  // Nobody ever observed the old behaviour: this resource was unreachable until the
+  // dispatch fix in src/index.ts, because resourceType always evaluated to ''. So there
+  // is no working behaviour being taken away here.
+  //
+  // Inspect the artifact instead of producing it.
   try {
-    await execAsync('npm run build', { timeout: 60000 });
+    const distEntry = path.join(process.cwd(), 'dist', 'src', 'index.js');
+    const distStat = await fs.stat(distEntry);
     checks.push({
-      name: 'Build Process',
+      name: 'Build Artifact',
       status: 'passed' as const,
-      message: 'Build completed successfully',
+      message: `dist/src/index.js present (built ${distStat.mtime.toISOString()})`,
       timestamp,
     });
   } catch {
     checks.push({
-      name: 'Build Process',
-      status: 'failed' as const,
-      message: 'Build failed',
+      name: 'Build Artifact',
+      status: 'warning' as const,
+      message: 'No build artifact found — run `npm run build`',
       timestamp,
     });
   }
 
-  // Check 3: Test suite
-  try {
-    await execAsync('npm test -- --passWithNoTests', { timeout: 120000 });
-    checks.push({
-      name: 'Test Suite',
-      status: 'passed' as const,
-      message: 'All tests passed',
-      timestamp,
-    });
-  } catch {
-    checks.push({
-      name: 'Test Suite',
-      status: 'warning' as const,
-      message: 'Some tests failed or no tests found',
-      timestamp,
-    });
-  }
+  // Check 3: Test suite.
+  //
+  // This used to run `npm test`, which is why reading this resource took ~159 seconds and
+  // recursed when read from inside the test suite. Running a test suite is not a read
+  // either. Reported as not-evaluated rather than silently dropped, so the gap is visible
+  // rather than looking like a pass.
+  checks.push({
+    name: 'Test Suite',
+    status: 'warning' as const,
+    message: 'Not evaluated — reading a resource must not execute the test suite',
+    timestamp,
+  });
 
   return checks;
 }
@@ -581,11 +589,8 @@ function extractDeploymentDataFromToolOutput(toolOutput: string): Partial<Deploy
     if (match[1]) {
       const text = match[1].trim();
       let category:
-        | 'tests'
-        | 'code_quality'
-        | 'dependencies'
-        | 'adr_compliance'
-        | 'deployment_history' = 'tests';
+        'tests' | 'code_quality' | 'dependencies' | 'adr_compliance' | 'deployment_history' =
+        'tests';
 
       if (text.toLowerCase().includes('test')) category = 'tests';
       else if (text.toLowerCase().includes('quality') || text.toLowerCase().includes('code'))

@@ -1,3 +1,9 @@
+---
+tags:
+  - research
+  - architecture
+---
+
 # ADR-021: Disposition of the legacy AI execution layer
 
 ## Status
