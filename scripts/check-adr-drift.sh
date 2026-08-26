@@ -36,14 +36,36 @@ drift=0
 ok()    { printf "  \033[32mOK   \033[0m %s\n" "$1"; }
 bad()   { printf "  \033[31mDRIFT\033[0m %s\n" "$1"; drift=$((drift + 1)); }
 
-# Read an ADR's declared status, handling BOTH formats. Prints empty if absent.
+# Read an ADR's declared status. Four dialects, in the frequency repo-governor's
+# adr adapter measured across 439 real ADRs in 34 collections -- not guessed:
+#
+#     heading  57%   ## Status \n\n Accepted      MADR / Nygard
+#     bullet   19%   - **Status:** Accepted        colon inside the bold
+#     inline   16%   **Status**: Accepted
+#     yaml      2%   --- \n status: accepted      MADR 3.0 front matter
+#
+# An earlier version of this function handled only `heading` and `inline`. That
+# was enough for this repository as it stood, and would have silently reported
+# the bullet form as unparseable -- and YAML front matter too, which matters now
+# that ADR-022 adopts MADR. Fixed rather than left as a latent trap.
+#
+# YAML is checked FIRST: a MADR file has front matter at the top and may also
+# carry a `## Status` heading later in prose.
 adr_status() {
-  local f="$1" s
-  s="$(sed -nE 's/^\*\*Status\*\*:[[:space:]]*(.*[^[:space:]])[[:space:]]*$/\1/p' "$f" | head -1)"
-  if [ -z "$s" ]; then
-    s="$(awk '/^## Status/{f=1;next} f&&NF{gsub(/\r/,"");print;exit}' "$f")"
+  local f="$1" s=""
+  # 1. YAML front matter, only within the leading --- ... --- block.
+  if [ "$(head -1 "$f" | tr -d "\r")" = "---" ]; then
+    s="$(awk 'NR>1{if($0=="---"||$0=="---\r")exit; print}' "$f" \
+          | sed -nE 's/^[[:space:]]*status[[:space:]]*:[[:space:]]*(.*[^[:space:]])[[:space:]]*$/\1/Ip' | head -1)"
   fi
-  printf '%s' "$s" | sed 's/^ *//;s/ *$//'
+  # 2. bullet or inline bold, with the colon inside or outside the asterisks.
+  [ -z "$s" ] && s="$(sed -nE 's/^[[:space:]]*[-*]?[[:space:]]*\*\*Status:?\*\*:?[[:space:]]*(.*[^[:space:]])[[:space:]]*$/\1/p' "$f" | head -1)"
+  # 3. `## Status` heading with the value on a following line.
+  [ -z "$s" ] && s="$(awk '/^#{1,4}[[:space:]]*Status[[:space:]]*$/{f=1;next} f&&NF{gsub(/\r/,"");print;exit}' "$f")"
+  # Normalise MADR's lowercase vocabulary to the corpus's Title Case so index
+  # comparison does not report false drift on `accepted` vs `Accepted`.
+  printf '%s' "$s" | sed 's/^ *//;s/ *$//' \
+    | awk '{ if (length($0)) { $1=toupper(substr($1,1,1)) substr($1,2) } print }'
 }
 
 echo "ADR ledger drift"
@@ -136,10 +158,14 @@ done < <(
   done | awk '{m[$1]=m[$1]" "$2; c[$1]++} END{for(k in m) if(c[k]>1) print k m[k]}' | sort
 )
 
-# 7. Leaked test fixtures.
+# 7. Placeholder stubs written by adr-suggestion-tool.ts:1101 in prompt-only mode.
+#    Must match a file that IS the placeholder, not one that MENTIONS it: ADR-022
+#    discusses the bug in prose and was reported as a 5,616-byte "fixture" by the
+#    first version of this check. Compare the whole body, whitespace stripped.
 for f in "$ADR_DIR"/*.md; do
-  if grep -q 'ADR_CONTENT_PLACEHOLDER' "$f" 2>/dev/null; then
-    bad "$(basename "$f") is a test fixture ($(wc -c < "$f" | tr -d ' ') bytes, ADR_CONTENT_PLACEHOLDER), not an ADR"
+  body="$(tr -d '[:space:]' < "$f" 2>/dev/null)"
+  if [ "$body" = "[ADR_CONTENT_PLACEHOLDER]" ]; then
+    bad "$(basename "$f") is an unfilled placeholder stub ($(wc -c < "$f" | tr -d ' ') bytes), not an ADR"
   fi
 done
 

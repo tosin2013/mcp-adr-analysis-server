@@ -919,7 +919,7 @@ export async function generateAdrFromDecision(args: {
 }): Promise<any> {
   const {
     decisionData,
-    templateFormat = 'nygard',
+    templateFormat = 'madr', // ADR-022: MADR is the default emitted format
     existingAdrs = [],
     adrDirectory = 'docs/adrs',
     autoSave = true,

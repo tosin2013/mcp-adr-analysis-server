@@ -11,6 +11,25 @@
 import { describe, expect, vi } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
+// generateAdrFromDecision's prompt-only branch WRITES to disk
+// (adr-suggestion-tool.ts:1101 -> writeFileCompat(fullPath, '[ADR_CONTENT_PLACEHOLDER]')).
+// Tests that omit `adrDirectory` fall back to 'docs/adrs', so every full suite run
+// created docs/adrs/adr-0001-test-decision.md in THIS repository -- a 25-byte
+// placeholder that was then committed and mistaken for a leaked fixture (#1415).
+// It also broke scripts/check-adr-drift.sh on every run.
+//
+// These tests assert on the returned text, never on the file, so stubbing the
+// writes costs no coverage. The underlying tool behaviour -- writing a
+// placeholder into a real ADR directory -- is a separate product question.
+vi.mock('../../src/utils/file-system.js', async importOriginal => {
+  const actual = await importOriginal<typeof import('../../src/utils/file-system.js')>();
+  return {
+    ...actual,
+    ensureDirectoryCompat: vi.fn().mockResolvedValue('mocked: ensureDirectory'),
+    writeFileCompat: vi.fn().mockResolvedValue('mocked: writeFile'),
+  };
+});
+
 import {
   suggestAdrs,
   generateAdrFromDecision,
@@ -203,7 +222,8 @@ describe('ADR Suggestion Tool', () => {
           decisionData,
         });
 
-        expect(result.content[0].text).toContain('NYGARD');
+        // ADR-022 changed the default emitted format from Nygard to MADR.
+        expect(result.content[0].text).toContain('MADR');
       });
 
       test('uses custom template format', async () => {
@@ -359,7 +379,8 @@ describe('ADR Suggestion Tool', () => {
         });
 
         expect(result.content[0].text).toContain('docs/adrs');
-        expect(result.content[0].text).toContain('NYGARD');
+        // ADR-022 changed the default emitted format from Nygard to MADR.
+        expect(result.content[0].text).toContain('MADR');
       });
     });
   });
