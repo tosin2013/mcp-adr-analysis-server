@@ -1,3 +1,8 @@
+---
+tags:
+  - documentation
+---
+
 # ADR-013: Documentation Platform Strategy
 
 ## Status

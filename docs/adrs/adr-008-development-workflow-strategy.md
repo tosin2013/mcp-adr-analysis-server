@@ -1,3 +1,8 @@
+---
+tags:
+  - process
+---
+
 # ADR-008: Development Workflow Strategy
 
 ## Status

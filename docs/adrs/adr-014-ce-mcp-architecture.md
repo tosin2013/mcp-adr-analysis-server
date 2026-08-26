@@ -1,3 +1,9 @@
+---
+tags:
+  - protocol
+  - architecture
+---
+
 # ADR-014: CE-MCP (Code Execution with MCP) Architecture
 
 ## Status

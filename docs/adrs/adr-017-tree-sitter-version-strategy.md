@@ -1,3 +1,8 @@
+---
+tags:
+  - architecture
+---
+
 # ADR-017: Tree-sitter Version Strategy - Downgrade to 0.21.x for Maximum Language Compatibility
 
 ## Status

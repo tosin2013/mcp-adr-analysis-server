@@ -1,3 +1,8 @@
+---
+tags:
+  - deployment
+---
+
 # ADR-012: Validated Patterns Framework for Multi-Platform Deployments
 
 ## Status

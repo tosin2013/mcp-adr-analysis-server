@@ -1,3 +1,8 @@
+---
+tags:
+  - architecture
+---
+
 # ADR-006: Tree-Sitter Integration Strategy
 
 ## Status

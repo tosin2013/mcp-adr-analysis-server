@@ -1,3 +1,8 @@
+---
+tags:
+  - security
+---
+
 # ADR-004: Security and Content Masking Strategy
 
 ## Status

@@ -137,6 +137,37 @@ describe('MCP protocol', () => {
     expect(res.content[0]).toHaveProperty('type');
   }, 180_000);
 
+  it('lists resources, and every concrete one dispatches to a handler', async () => {
+    // 16 of the 17 concrete resources advertised here were dead: src/index.ts derived the
+    // resource name from `url.pathname`, but for a non-special scheme like `adr://adr_list`
+    // WHATWG URL puts the name in `host` and leaves pathname empty. Every read fell through
+    // to `default` and threw "Unknown resource type: " -- with nothing after the colon.
+    //
+    // This asserts DISPATCH, not latency. Two resources legitimately take 80-160s of real
+    // filesystem work, so a full read of every resource would add minutes to CI. What broke
+    // was routing, so routing is what is guarded: a resource that times out has still been
+    // dispatched; only "Unknown resource type" means it is unreachable. Slowness is tracked
+    // separately -- see the follow-up issue.
+    const { resources } = await client.listResources();
+
+    // Templates cannot be read literally; they belong in resources/templates/list.
+    const concrete = resources.filter(r => !r.uri.includes('{'));
+    expect(concrete.length).toBeGreaterThan(10);
+
+    const unreachable: string[] = [];
+    for (const r of concrete) {
+      try {
+        await client.readResource({ uri: r.uri }, { timeout: 15_000 });
+      } catch (e) {
+        const msg = String((e as Error).message ?? e);
+        // A timeout means the handler was found and is working. Anything naming the URI as
+        // unknown means it was not routed at all -- that is the regression to catch.
+        if (/[Uu]nknown resource/.test(msg)) unreachable.push(`${r.uri}: ${msg}`);
+      }
+    }
+    expect(unreachable, 'advertised resources that route to no handler').toEqual([]);
+  }, 300_000);
+
   it('rejects an unknown tool instead of failing silently', async () => {
     // A dispatcher that quietly returns success for an unrouted name is the
     // exact regression the #1416 refactor could introduce.

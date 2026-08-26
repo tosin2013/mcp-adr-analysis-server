@@ -1,3 +1,8 @@
+---
+tags:
+  - architecture
+---
+
 # ADR-011: ADR Timeline Tracking and Context-Aware Analysis
 
 ## Status
