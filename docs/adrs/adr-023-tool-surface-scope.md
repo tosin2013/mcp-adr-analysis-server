@@ -3,6 +3,9 @@ status: proposed
 date: 2026-08-26
 decision-makers: Tosin Akinosho
 consulted: Claude Code (measurement and external research)
+tags:
+  - architecture
+  - process
 ---
 
 # ADR-023: Which of the 75 tools should still exist
