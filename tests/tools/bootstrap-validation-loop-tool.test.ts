@@ -1,5 +1,4 @@
-import { describe, it, expect, _beforeEach, _jest } from 'vitest';
-
+import { describe, it, expect } from 'vitest';
 // Use unstable_mockModule for ESM mocking
 const mockDetectPlatforms = vi.fn();
 const mockGetPattern = vi.fn();

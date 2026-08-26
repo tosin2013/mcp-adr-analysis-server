@@ -3,8 +3,7 @@
  * Target: Achieve 80% coverage for comprehensive deployment validation
  */
 
-import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
-
+import { describe, it, expect, beforeAll } from 'vitest';
 // Mock child_process execSync
 const mockExecSync = vi.fn();
 vi.mock('child_process', () => ({

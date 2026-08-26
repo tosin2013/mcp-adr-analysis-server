@@ -3,8 +3,7 @@
  * Tests interactive approval workflow, batch operations, and user choice processing
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
-
+import { describe, it, expect, vi } from 'vitest';
 // Mock readline interface
 const mockRl = {
   question: vi.fn(),

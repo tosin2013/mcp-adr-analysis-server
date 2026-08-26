@@ -3,8 +3,7 @@
  * Tests the generateResearchQuestions function and related utilities
  */
 
-import { describe, test, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
-
+import { describe, test, expect, vi, MockedFunction } from 'vitest';
 // Mock the dependencies
 const mockCorrelateProblemKnowledge = vi.fn() as MockedFunction<any>;
 const mockFindRelevantAdrPatterns = vi.fn() as MockedFunction<any>;

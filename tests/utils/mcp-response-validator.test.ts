@@ -1,4 +1,4 @@
-import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   validateMcpResponse,
   validateJsonRpcSerialization,

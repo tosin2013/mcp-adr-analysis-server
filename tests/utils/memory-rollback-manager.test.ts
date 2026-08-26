@@ -1,5 +1,4 @@
-import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
-
+import { describe, it, expect, vi } from 'vitest';
 describe('Memory Rollback Manager', () => {
   beforeEach(() => {
     vi.clearAllMocks();

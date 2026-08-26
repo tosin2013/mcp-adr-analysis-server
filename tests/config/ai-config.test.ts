@@ -8,8 +8,7 @@
  * - Pragmatic Success Criteria: Focus on reliable, maintainable test coverage
  */
 
-import { describe, _it, expect, _beforeEach, _afterEach, vi } from 'vitest';
-
+import { describe, expect, vi } from 'vitest';
 import {
   AIConfig,
   ModelConfig,

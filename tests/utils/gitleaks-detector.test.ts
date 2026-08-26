@@ -2,8 +2,7 @@
  * Test suite for gitleaks-detector utility
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
-
+import { describe, it, expect, vi } from 'vitest';
 // Mock child_process to control gitleaks behavior in tests
 const mockExecSync = vi.fn();
 const mockExistsSync = vi.fn();

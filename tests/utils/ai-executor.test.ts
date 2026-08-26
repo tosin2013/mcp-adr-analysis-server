@@ -4,7 +4,6 @@
  */
 
 import { vi as _vi } from 'vitest';
-
 // Simple test to verify the AI executor can be imported and basic functionality works
 describe('AIExecutor - Simplified Tests', () => {
   it('should be importable without errors', async () => {

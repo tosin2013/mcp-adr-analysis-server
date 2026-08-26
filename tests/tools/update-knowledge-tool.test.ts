@@ -2,7 +2,7 @@
  * Tests for Update Knowledge Tool
  */
 
-import { describe, it, expect, _beforeEach, _jest } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import {
   updateKnowledge,
   type UpdateKnowledgeArgs,

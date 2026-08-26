@@ -4,8 +4,7 @@
  */
 
 import { URLSearchParams } from 'url';
-import { describe, it, expect, beforeAll, _beforeEach, _afterEach, _jest } from 'vitest';
-
+import { describe, it, expect, beforeAll } from 'vitest';
 // Mock ResourceCache with module-level mock functions
 vi.mock('../../src/resources/resource-cache.js', () => {
   const mockCacheGet = vi.fn().mockResolvedValue(null);

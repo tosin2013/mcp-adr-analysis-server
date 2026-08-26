@@ -7,8 +7,7 @@
  * @see Issue #310 - Dependency injection for improved testability
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
-
+import { describe, it, expect, vi } from 'vitest';
 // Test that the DI interfaces are exported correctly
 describe('Dependency Injection Pattern Tests', () => {
   describe('Environment Analysis Tool DI', () => {

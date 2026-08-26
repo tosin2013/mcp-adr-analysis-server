@@ -4,8 +4,7 @@
  * Test coverage for the core memory-centric architecture component
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, _jest } from 'vitest';
-
+import { describe, it, expect } from 'vitest';
 // Mock fs/promises module with self-contained factory (vi.mock is hoisted)
 vi.mock('fs/promises', async () => {
   const { vi } = await import('vitest');

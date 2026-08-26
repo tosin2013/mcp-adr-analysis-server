@@ -12,8 +12,7 @@
  * - Tests verify output structure rather than exact content (content varies by mode)
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, vi } from 'vitest';
-
+import { describe, it, expect, vi } from 'vitest';
 // Mock ResearchOrchestrator FIRST to prevent hanging on API calls
 // This must be before any imports that might trigger the module
 vi.mock('../../src/utils/research-orchestrator.js', () => ({

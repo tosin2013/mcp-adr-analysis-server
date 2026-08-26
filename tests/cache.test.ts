@@ -3,7 +3,7 @@
  * Tests the prompt-driven caching system that delegates operations to AI agents
  */
 
-import { describe, test, expect, _beforeEach, _afterEach, _jest } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import {
   initializeCache,
   setCache,

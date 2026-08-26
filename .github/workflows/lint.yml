@@ -47,6 +47,13 @@ jobs:
           npm run lint
           echo "✅ ESLint and TypeScript checks completed successfully"
 
+      # tsconfig.json includes 'src/**/*' only, so the typecheck above has never
+      # looked at tests/. This is a RATCHET, not a zero-error gate: turning tests
+      # on surfaced 905 errors, and demanding zero would mean the check never
+      # lands at all. The count may fall, never rise. See #1412.
+      - name: Typecheck tests (ratchet)
+        run: bash scripts/check-test-typecheck.sh
+
       - name: Check formatting
         run: |
           echo "=== Checking Code Formatting ==="

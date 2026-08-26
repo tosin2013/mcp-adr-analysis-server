@@ -30,7 +30,6 @@
  */
 
 import { vi, type Mock } from 'vitest';
-
 /**
  * Type for mock module definitions
  */

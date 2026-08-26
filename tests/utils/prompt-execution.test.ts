@@ -3,8 +3,7 @@
  * Comprehensive test coverage for prompt execution utilities
  */
 
-import { describe, it, expect, _beforeEach, _afterEach, vi, MockedFunction } from 'vitest';
-
+import { describe, it, expect, vi, MockedFunction } from 'vitest';
 // Mock dependencies with proper typing
 const mockAIExecutor = {
   executePrompt: vi.fn() as MockedFunction<any>,
