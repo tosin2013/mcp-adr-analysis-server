@@ -5,7 +5,7 @@
  * and enables catalog-based tool listing for token-efficient responses.
  *
  * @see ADR-014: CE-MCP Architecture (Phase 3)
- * @see docs/IMPLEMENTATION-PLAN.md
+ * @see docs/planning/IMPLEMENTATION-PLAN.md
  */
 
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
