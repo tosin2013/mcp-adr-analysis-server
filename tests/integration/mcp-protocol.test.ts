@@ -143,29 +143,48 @@ describe('MCP protocol', () => {
     // WHATWG URL puts the name in `host` and leaves pathname empty. Every read fell through
     // to `default` and threw "Unknown resource type: " -- with nothing after the colon.
     //
-    // This asserts DISPATCH, not latency. Two resources legitimately take 80-160s of real
-    // filesystem work, so a full read of every resource would add minutes to CI. What broke
-    // was routing, so routing is what is guarded: a resource that times out has still been
-    // dispatched; only "Unknown resource type" means it is unreachable. Slowness is tracked
-    // separately -- see the follow-up issue.
-    const { resources } = await client.listResources();
+    // Runs on its OWN connection. A client-side timeout does not stop the server: some
+    // resources do tens of seconds of real work, and on a shared client the next test
+    // queued behind that and timed out. Closing this transport kills the child process and
+    // the in-flight work with it, so the sweep cannot leak into anything else.
+    const ownTransport = new StdioClientTransport({
+      command: process.execPath,
+      args: [SERVER],
+      env: {
+        ...(process.env as Record<string, string>),
+        PROJECT_PATH: process.cwd(),
+        ADR_DIRECTORY: 'docs/adrs',
+        EXECUTION_MODE: 'prompt-only',
+        LOG_LEVEL: 'error',
+      },
+      stderr: 'pipe',
+    });
+    const own = new Client({ name: 'resource-sweep', version: '1.0.0' }, { capabilities: {} });
+    await own.connect(ownTransport);
 
-    // Templates cannot be read literally; they belong in resources/templates/list.
-    const concrete = resources.filter(r => !r.uri.includes('{'));
-    expect(concrete.length).toBeGreaterThan(10);
+    try {
+      const { resources } = await own.listResources();
 
-    const unreachable: string[] = [];
-    for (const r of concrete) {
-      try {
-        await client.readResource({ uri: r.uri }, { timeout: 15_000 });
-      } catch (e) {
-        const msg = String((e as Error).message ?? e);
-        // A timeout means the handler was found and is working. Anything naming the URI as
-        // unknown means it was not routed at all -- that is the regression to catch.
-        if (/[Uu]nknown resource/.test(msg)) unreachable.push(`${r.uri}: ${msg}`);
+      // Templates cannot be read literally; they belong in resources/templates/list.
+      const concrete = resources.filter(r => !r.uri.includes('{'));
+      expect(concrete.length).toBeGreaterThan(10);
+
+      const unreachable: string[] = [];
+      for (const r of concrete) {
+        try {
+          await own.readResource({ uri: r.uri }, { timeout: 15_000 });
+        } catch (e) {
+          const msg = String((e as Error).message ?? e);
+          // A timeout means the handler was found and is working -- this asserts DISPATCH,
+          // not latency. Only a message naming the URI as unknown means it routed nowhere.
+          if (/[Uu]nknown resource/.test(msg)) unreachable.push(`${r.uri}: ${msg}`);
+        }
       }
+      expect(unreachable, 'advertised resources that route to no handler').toEqual([]);
+    } finally {
+      await own.close().catch(() => {});
+      await ownTransport.close().catch(() => {});
     }
-    expect(unreachable, 'advertised resources that route to no handler').toEqual([]);
   }, 300_000);
 
   it('rejects an unknown tool instead of failing silently', async () => {
