@@ -1,0 +1,92 @@
+{
+  "$comment": "PROPOSAL in manifest shape. Review every line, then rename to .repo-governor.json and commit. The engine never reads this file (ADR-010 rule 1). Roles here are the ones a zero-install adapter can serve, plus any detection actually found. Roles absent -- execution, change_signals, retirement -- have no governance function here however reachable the system is (INV-013); add them as you bind them.",
+  "repo_governor": {
+    "version": 1,
+    "engine_min_version": "0.1.0"
+  },
+  "repository": {
+    "id": "tosin2013/mcp-adr-analysis-server"
+  },
+  "condition": {
+    "assessed": "L4",
+    "profile": "GOVERNOR_HIGH_ASSURANCE",
+    "$comment": "Assessed by engine/onboard.py, not defaulted. Floor indicators present (public_api_surface, release_branches, generated_consumers); per the engine's rule this may not be overridden downward."
+  },
+  "permissions": {
+    "$comment": "Deny by default (ADR-005). Read-only, with ONE exception stated here so it is not an escalation buried in generated JSON: decision_history has write=true. CAPTURE_ONLY is the default disposition for every discovery, and `envelope.py --record` cannot persist one without it. Recording a decision is the only act this grant permits; the engine still rules and never changes the repository. Remove it and captures are refused, which is a defensible choice -- it just means nothing remembers what was decided.",
+    "repository": {
+      "read": true,
+      "write": false
+    },
+    "roadmap_authority": {
+      "read": true,
+      "write": false
+    },
+    "acceptance_criteria": {
+      "read": true,
+      "write": false
+    },
+    "decision_history": {
+      "read": true,
+      "write": true
+    },
+    "retirement": {
+      "read": true,
+      "write": false
+    },
+    "architecture": {
+      "read": true,
+      "write": false
+    }
+  },
+  "providers": {
+    "repository": {
+      "type": "git",
+      "adapter": "adapters/git",
+      "contract_version": 1
+    },
+    "roadmap_authority": {
+      "type": "github-projects",
+      "adapter": "adapters/github-projects",
+      "contract_version": 1,
+      "admission": {
+        "signal": "milestone"
+      },
+      "transport": {
+        "kind": "cli",
+        "command": "gh"
+      },
+      "env": {
+        "REPO_GOVERNOR_GH_REPO": "tosin2013/mcp-adr-analysis-server",
+        "REPO_GOVERNOR_GH_ADMISSION": "milestone"
+      }
+    },
+    "acceptance_criteria": {
+      "type": "acceptance-file",
+      "adapter": "adapters/acceptance-file",
+      "contract_version": 1
+    },
+    "decision_history": [
+      {
+        "type": "decision-history-file",
+        "adapter": "adapters/decision-history-file",
+        "contract_version": 1
+      }
+    ],
+    "architecture": [
+      {
+        "type": "adr",
+        "adapter": "adapters/adr",
+        "contract_version": 1
+      }
+    ],
+    "retirement": [
+      {
+        "$comment": "Bound per ADR-021 (option B) and #1492. Read-only, deliberately: this adapter reports EVIDENCE, never deletion authority (INV-007). It implements static_references and leaves dynamic_references, runtime_usage, public_contracts and migration_obligations BLIND -- so static analysis yields RETIREMENT_REVIEW and can never reach REMOVAL_READY on its own. That is intended, not a limitation to route around. A RETIREMENT_REVIEW on an asset with zero static references is the correct result. Binding this does NOT authorise deleting anything; it only replaces a blocking NO_RETIREMENT_EVIDENCE with a verdict a human can act on.",
+        "type": "retirement-analysis",
+        "adapter": "adapters/retirement-analysis",
+        "contract_version": 1
+      }
+    ]
+  }
+}
