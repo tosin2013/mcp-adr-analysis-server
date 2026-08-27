@@ -68,6 +68,62 @@ adr_status() {
     | awk '{ if (length($0)) { $1=toupper(substr($1,1,1)) substr($1,2) } print }'
 }
 
+# Is this ADR still making live claims about the code?
+#
+# A Superseded or Deprecated ADR that contradicts the code is THE RECORD WORKING,
+# not drift. Superseding ADR-001 leaves the word "SSE" in it -- that is what
+# superseding means. Before this existed the code-vs-claim checks below fired on
+# any mention of a keyword, so every honest fix still tripped them and the only
+# way to green them was to delete the history. An ADR ledger that punishes you for
+# keeping history is worse than none.
+#
+# adr_status() has parsed four dialects since this script was written. These checks
+# simply never called it (#1507).
+adr_is_live() {
+  case "$(adr_status "$1")" in
+    Superseded*|Deprecated*|Rejected*) return 1 ;;
+    *) return 0 ;;
+  esac
+}
+
+# The ADR's text with historical sections removed.
+#
+# Within a still-Accepted ADR, "ADR-017 removed HCL and Dockerfile support" is a
+# CORRECTION, not a claim to support them -- but it contains the word "HCL", so a
+# whole-file grep reads it as the very claim it retracts. Text under an Evolution
+# Notes / Corrections / Superseded heading is history; everything else is live.
+#
+# Deliberately NOT a general markdown parser. It strips from such a heading to the
+# next heading of the same or shallower depth, which is all the corpus needs and is
+# small enough to be obviously correct.
+#
+# THE HOLE THIS OPENS, STATED RATHER THAN DISCOVERED LATER. Anything inside a
+# Corrections heading is invisible to these checks, so a live claim MOVED there is
+# laundered. That is not a bug to fix -- the whole point is that a correction
+# mentioning "HCL" is not a claim to support HCL, and no syntactic rule separates
+# "we removed HCL" from "we support HCL" once both sit under the same heading.
+#
+# What limits the damage: the Decision, Context and Consequences sections are never
+# stripped, so a claim has to be deleted from where it belongs before it can be
+# hidden -- which is a visible edit in review, not an oversight. Verified: adding
+# "We will support HCL and Dockerfile grammars." to ADR-006's Decision is still
+# caught with the Corrections section present.
+#
+# If this is ever abused, the fix is a declared Confirmation per ADR (ADR-022's
+# Consequences already argue for it) rather than a cleverer grep.
+adr_live_text() {
+  awk '
+    /^#{1,6}[[:space:]]/ {
+      depth = length($1)
+      if (tolower($0) ~ /^#+[[:space:]]*(evolution note|correction|superseded|historical|amendment)/) {
+        skip = 1; skipdepth = depth; next
+      }
+      if (skip && depth <= skipdepth) skip = 0
+    }
+    !skip { print }
+  ' "$1"
+}
+
 echo "ADR ledger drift"
 echo
 
@@ -75,7 +131,10 @@ echo
 echo "code vs claim"
 
 # 1. ADR-001 decided SSE transport. Anchored to real symbols, never bare "sse".
-if grep -qi 'sse' "$ADR_DIR"/adr-001-*.md 2>/dev/null; then
+adr001="$(ls "$ADR_DIR"/adr-001-*.md 2>/dev/null | head -1)"
+if [ -n "$adr001" ] && ! adr_is_live "$adr001"; then
+  ok "ADR-001 is $(adr_status "$adr001") -- a retired decision may contradict the code"
+elif [ -n "$adr001" ] && adr_live_text "$adr001" | grep -qi 'sse'; then
   sse_hits=$( { grep -rl 'SSEServerTransport' src/ 2>/dev/null
                 grep -rl 'sdk/server/sse' src/ 2>/dev/null
                 grep -ril 'server-sent' src/ 2>/dev/null; } | sort -u | wc -l | tr -d ' ')
@@ -89,7 +148,9 @@ fi
 
 # 2. ADR-006 claims HCL / Dockerfile AST support; ADR-017 removed those grammars.
 adr006="$(ls "$ADR_DIR"/adr-006-*.md 2>/dev/null | head -1)"
-if [ -n "$adr006" ] && grep -qiE 'hcl|dockerfile' "$adr006"; then
+if [ -n "$adr006" ] && ! adr_is_live "$adr006"; then
+  ok "ADR-006 is $(adr_status "$adr006") -- a retired decision may contradict the code"
+elif [ -n "$adr006" ] && adr_live_text "$adr006" | grep -qiE 'hcl|dockerfile'; then
   have=$(node -e "const d=require('./package.json');const a={...d.dependencies,...d.devDependencies};console.log(['tree-sitter-hcl','tree-sitter-dockerfile'].filter(k=>a[k]).length)" 2>/dev/null || echo 0)
   if [ "$have" -eq 0 ]; then
     bad "ADR-006 claims HCL/Dockerfile AST support; neither grammar is a dependency"

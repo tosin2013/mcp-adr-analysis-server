@@ -19,7 +19,8 @@ We will implement comprehensive tree-sitter integration across all analysis tool
 
 Key components:
 
-- **Multi-Language AST Analysis**: Support for TypeScript, Python, YAML, HCL, Dockerfile, and Bash
+- **Multi-Language AST Analysis**: Support for TypeScript, Python, YAML and Bash
+  (see Corrections — two of the originally listed grammars were later removed)
 - **Enterprise DevOps Analysis**: Specialized analysis for Ansible, Kubernetes, Docker Compose
 - **Security-Focused Parsing**: AST-level secret detection and security vulnerability analysis
 - **Architectural Pattern Detection**: Code structure analysis for architectural compliance
@@ -45,6 +46,19 @@ Key components:
 - Maintenance overhead for keeping parsers updated with language evolution
 - Potential parsing failures requiring robust error handling and fallback mechanisms
 - Learning curve for developers working with AST-based analysis logic
+
+## Corrections
+
+**2026-08-27 (#1507) — HCL and Dockerfile AST support was removed by ADR-017.**
+
+This ADR originally listed HCL and Dockerfile among the supported grammars. ADR-017
+downgraded the tree-sitter ecosystem to 0.21.x, and neither `tree-sitter-hcl` nor
+`tree-sitter-dockerfile` is a dependency in `package.json` today. The capability list
+above is corrected; this note records what it used to say and why it changed.
+
+The decision this ADR makes — integrate tree-sitter for AST analysis — still stands, which
+is why the status remains `Accepted` rather than `Deprecated`. Only the grammar inventory
+drifted.
 
 ## Related ADRs
 

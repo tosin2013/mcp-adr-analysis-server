@@ -8,7 +8,19 @@ tags:
 
 ## Status
 
-Accepted
+Deprecated
+
+**Deprecated, not superseded, and the distinction is deliberate.** This ADR decided
+Server-Sent Events. The server has only ever shipped stdio — `src/index.ts:12` imports
+`StdioServerTransport` and `:8904` constructs it; there are zero SSE symbols in `src/`.
+
+Nothing superseded it, because **the replacement decision was never recorded.** Writing
+that ADR now would mean reconstructing rationale nobody wrote down, which is the same
+objection that kept ADR-016 from being back-filled in #1415: an invented record is worse
+than an acknowledged gap. The gap is tracked in #1415.
+
+`Deprecated` says what is true — this decision is not in force — without claiming a
+successor that does not exist.
 
 ## Context
 
@@ -48,7 +60,8 @@ We will implement MCP using Server-Sent Events (SSE) as the primary transport pr
 
 **This ADR Remains Valid For:**
 
-- SSE transport protocol selection
+- ~~SSE transport protocol selection~~ — **never true.** Corrected 2026-08-27 (#1507).
+  The code is stdio-only and always has been.
 - JSON-RPC message formatting
 - Plugin-based tool architecture foundation
 
