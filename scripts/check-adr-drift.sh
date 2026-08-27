@@ -175,7 +175,20 @@ fi
 # 4. ADR-019 (Vitest) migration checkboxes vs the migration being finished.
 adr019="$(ls "$ADR_DIR"/adr-019-*.md 2>/dev/null | head -1)"
 if [ -n "$adr019" ]; then
-  unchecked=$(grep -cE '^- \[ \]' "$adr019" || true)
+  # Count only boxes that are unchecked WITHOUT saying why.
+  #
+  # A box left unticked with an explicit deferral -- naming what blocks it -- is the
+  # ADR being accurate, not under-reporting. ADR-019's "migrate failing test files"
+  # box is exactly that: the framework migration is done, but 70 tests are skipped,
+  # 13 of them on one ESM-mocking root cause that is #751's scope and gated on #1461.
+  # Ticking it would claim a completion those 70 tests contradict.
+  #
+  # Same shape as the fix in #1507: the check conflated "unchecked" with
+  # "unreported". A marker is required, so a box that is merely forgotten -- the
+  # actual defect, twelve of which this check correctly caught -- still fires.
+  unchecked=$(grep -E '^- \[ \]' "$adr019" \
+                | grep -vicE 'deliberately left unchecked|see corrections|tracked in #[0-9]+' \
+                || true)
   jest=$(node -e "const d=require('./package.json');const a={...d.dependencies,...d.devDependencies};console.log(Object.keys(a).filter(k=>k.toLowerCase().includes('jest')).length)" 2>/dev/null || echo 0)
   if [ "$unchecked" -gt 0 ] && [ "$jest" -eq 0 ]; then
     bad "ADR-019 has $unchecked unchecked migration boxes, but no jest package remains -- it under-reports itself"
