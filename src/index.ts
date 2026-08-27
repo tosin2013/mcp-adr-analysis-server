@@ -3881,7 +3881,30 @@ export class McpAdrAnalysisServer {
           const directive = getCEMCPDirective(name, safeArgs);
           if (directive) {
             this.logger.info(`[CE-MCP] Returning directive for tool: ${name}`);
-            return formatDirectiveResponse(directive);
+            const directiveResponse = formatDirectiveResponse(directive);
+
+            // Record BEFORE returning. This early return skips the dispatch
+            // switch below and, with it, the trackToolExecution call on the
+            // success path -- so every tool in CE_MCP_DIRECTIVE_TOOLS was
+            // invisible to usage tracking whenever CE-MCP mode was on. All
+            // twelve of them, including `perform_research`, whose disposition
+            // ADR-023 defers *pending usage data*. See #1489.
+            //
+            // Deliberately not fatal: a directive is the tool's real answer, and
+            // failing to record it must never withhold it. trackToolExecution
+            // already swallows and warns internally; the catch here covers a
+            // throw before that boundary.
+            try {
+              await this.trackToolExecution(name, args, directiveResponse, true);
+            } catch (trackingError) {
+              this.logger.warn(
+                `[CE-MCP] Usage tracking failed for ${name}: ${
+                  trackingError instanceof Error ? trackingError.message : String(trackingError)
+                }`
+              );
+            }
+
+            return directiveResponse;
           }
           // Fall through to legacy execution if no directive available
           this.logger.info(`[CE-MCP] No directive available for ${name}, using legacy path`);

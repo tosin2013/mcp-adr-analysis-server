@@ -20,7 +20,12 @@ describe('KnowledgeGraphManager', () => {
     const projectName = 'test-kg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
     process.env.PROJECT_PATH = path.join(os.tmpdir(), projectName);
     tempDir = path.join(os.tmpdir(), projectName);
-    cacheDir = path.join(tempDir, 'cache');
+    // '.mcp-adr-cache', not 'cache'. The store moved out of os.tmpdir() and into
+    // the project-local cache directory config.ts:17 already defined (#1488) --
+    // it was ephemeral, so the only record of which tools get called never
+    // survived a reboot. tempDir here is still under os.tmpdir() because it is
+    // this test's throwaway PROJECT_PATH, which is a different thing.
+    cacheDir = path.join(tempDir, '.mcp-adr-cache');
     snapshotsFile = path.join(cacheDir, 'knowledge-graph-snapshots.json');
 
     // Initialize manager
@@ -530,6 +535,97 @@ describe('KnowledgeGraphManager', () => {
 
       expect(planningIntents).toHaveLength(1);
       expect(planningIntents[0].intentId).toBe(intent2);
+    });
+  });
+
+  // ---------------------------------------------------------------- #1488
+  // ADR-023 deferred three tool clusters "pending usage data" on the claim that
+  // nothing in src/ recorded which tools are called. It did record them -- and
+  // then threw the record away twice over: truncated to ten entries before
+  // persisting, into a directory the OS deletes. Neither loss had a test.
+  describe('tool usage evidence (#1488)', () => {
+    it('persists usage counts for more than ten distinct tools', async () => {
+      const intentId = await kgManager.createIntent('Usage', ['Goal'], 'medium');
+
+      // Fifteen, deliberately: the old code sliced to ten before writing, so
+      // any count below eleven passes against the bug it is meant to catch.
+      const tools = Array.from({ length: 15 }, (_, i) => `tool_${String(i).padStart(2, '0')}`);
+      for (const name of tools) {
+        await kgManager.addToolExecution(intentId, name, {}, { success: true }, true, [], []);
+      }
+
+      const kg = await kgManager.loadKnowledgeGraph();
+      const recorded = kg.analytics.mostUsedTools.map(t => t.toolName);
+
+      expect(recorded).toHaveLength(15);
+      for (const name of tools) {
+        expect(recorded, `${name} missing -- counts truncated before persistence`).toContain(name);
+      }
+    });
+
+    it('keeps counts across a manager restart', async () => {
+      const intentId = await kgManager.createIntent('Durable', ['Goal'], 'medium');
+      await kgManager.addToolExecution(
+        intentId,
+        'perform_research',
+        {},
+        { success: true },
+        true,
+        [],
+        []
+      );
+      await kgManager.addToolExecution(
+        intentId,
+        'perform_research',
+        {},
+        { success: true },
+        true,
+        [],
+        []
+      );
+      await kgManager.addToolExecution(
+        intentId,
+        'smart_score',
+        {},
+        { success: true },
+        true,
+        [],
+        []
+      );
+
+      // A fresh instance reads from disk. Under the old os.tmpdir() location this
+      // still passed in-process; what it never survived was the OS clearing temp.
+      // Asserting the reload is the closest an in-process test gets, and it pins
+      // the store to a directory that is not swept.
+      const reopened = new KnowledgeGraphManager();
+      const kg = await reopened.loadKnowledgeGraph();
+
+      const counts = Object.fromEntries(
+        kg.analytics.mostUsedTools.map(t => [t.toolName, t.usageCount])
+      );
+      expect(counts['perform_research']).toBe(2);
+      expect(counts['smart_score']).toBe(1);
+    });
+
+    it('writes to the project cache, not the OS temp directory', async () => {
+      const intentId = await kgManager.createIntent('Location', ['Goal'], 'medium');
+      await kgManager.addToolExecution(
+        intentId,
+        'suggest_adrs',
+        {},
+        { success: true },
+        true,
+        [],
+        []
+      );
+
+      // cacheDir is <PROJECT_PATH>/.mcp-adr-cache. In this suite PROJECT_PATH is
+      // itself a throwaway under os.tmpdir(), so asserting "not under tmpdir"
+      // would be wrong -- assert the layout instead.
+      const stats = await fs.stat(snapshotsFile);
+      expect(stats.isFile()).toBe(true);
+      expect(snapshotsFile).toContain('.mcp-adr-cache');
+      expect(path.basename(path.dirname(snapshotsFile))).toBe('.mcp-adr-cache');
     });
   });
 });
