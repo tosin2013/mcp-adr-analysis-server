@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-08-26
 decision-makers: Tosin Akinosho
 consulted: Claude Code (evidence gathering)
@@ -59,6 +59,37 @@ corpus opportunistically as other work touches each file.**
 `templateFormat` in `src/tools/adr-suggestion-tool.ts` already accepts
 `'nygard' | 'madr' | 'custom'`; the default moves from `'nygard'` to `'madr'`. No new
 capability is required to start.
+
+### Where `status` lives
+
+**YAML front matter, for every ADR from this one onward.** MADR puts it there and this ADR
+adopts MADR, so the answer follows — but it is stated rather than left implied, because
+"implied by the format" is how the corpus acquired four dialects in the first place.
+
+```yaml
+---
+status: accepted
+date: 2026-08-27
+---
+```
+
+Lowercase, MADR's own vocabulary. `scripts/check-adr-drift.sh` normalises it to Title Case
+when comparing against `README.md`, so a mixed corpus does not report false drift during
+the transition.
+
+**The existing corpus is grandfathered, not migrated.** ADR-001 through ADR-021 keep their
+`## Status` heading until other work touches the file — which is Option 3 applied to this
+detail rather than a separate policy. Saying so explicitly matters: an unstated
+"we'll get to it" is indistinguishable from an oversight, and this ledger already carries
+one note that announced its own staleness and then went stale (`docs/adrs/README.md`,
+removed in #1415).
+
+Two consequences worth naming:
+
+- The corpus stays mixed, possibly for a long time. That is accepted, not deferred.
+- `adr_status()` in the drift checker must keep parsing all four dialects. It is not
+  transitional scaffolding to be removed once "conversion completes", because conversion
+  may never complete. It is permanent.
 
 ### Why not the others
 

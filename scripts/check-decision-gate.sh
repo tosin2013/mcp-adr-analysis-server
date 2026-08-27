@@ -256,6 +256,38 @@ else
   bad "#1415: check-adr-drift.sh reports drift above baseline"
 fi
 
+# ----------------------------------------------------------- the milestone itself
+# #1485 specified four exit conditions. Three were file assertions and got written.
+# The fourth -- "every issue in the milestone is closed" -- was specified and then
+# NOT IMPLEMENTED, because the script queried no remote state. The result was a gate
+# reporting `failing: 0` while eight issues were open: it would have green-lit closing
+# the milestone with six of them genuinely outstanding.
+#
+# That is this milestone's own defect, produced by the artefact built to prevent it.
+# Added on the commit that noticed it (#1493/#1494) rather than filed for later,
+# because a gate that is wrong in the permissive direction is worse than no gate --
+# it launders "not done" as verified, which is what the other twelve assertions exist
+# to stop.
+#
+# FAILS CLOSED. If gh is missing, unauthenticated, or the API call errors, this
+# reports FAIL rather than skipping. An unverifiable condition is not a satisfied one,
+# and "the check could not run" must never read the same as "the check passed".
+MILESTONE="Record the outstanding dispositions"
+if ! command -v gh >/dev/null 2>&1; then
+  bad "milestone: gh not installed -- cannot verify that every issue is closed"
+else
+  open_issues="$(gh issue list --milestone "$MILESTONE" --state open \
+                   --limit 50 --json number --jq '[.[].number]|join(" ")' 2>/dev/null)"
+  gh_rc=$?
+  if [ "$gh_rc" -ne 0 ]; then
+    bad "milestone: gh query failed (exit $gh_rc) -- cannot verify issue state"
+  elif [ -n "$open_issues" ]; then
+    bad "milestone: issues still open: #${open_issues// / #}"
+  else
+    pass "milestone: every issue closed"
+  fi
+fi
+
 # ------------------------------------------------------------------------------ result
 echo
 echo "checked: $checked   failing: $fail"
