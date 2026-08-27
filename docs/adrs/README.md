@@ -27,7 +27,7 @@ This directory contains the Architectural Decision Records for the MCP ADR Analy
 | [ADR-020](adr-020-mcp-tasks-integration-strategy.md)                   | MCP Tasks Integration Strategy                   | Accepted | 2025-12-16 | Architecture  |
 | [ADR-021](adr-021-ai-layer-disposition.md)                             | Disposition of the legacy AI execution layer     | Accepted | 2026-08-26 | Architecture  |
 | [ADR-022](adr-022-adopt-madr-format.md)                                | Adopt MADR as the default decision-record format | Proposed | 2026-08-26 | Documentation |
-| [ADR-023](adr-023-tool-surface-scope.md)                               | Which of the 75 tools should still exist         | Proposed | 2026-08-26 | Architecture  |
+| [ADR-023](adr-023-tool-surface-scope.md)                               | Which of the 75 tools should still exist         | Accepted | 2026-08-27 | Architecture  |
 
 > **This index is known to be out of date and is not corrected here.** It stops at
 > ADR-018, omits ADR-019 and ADR-020, and lists ADR-012, ADR-013 and ADR-014 as

@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-08-26
 decision-makers: Tosin Akinosho
 consulted: Claude Code (measurement and external research)
@@ -195,20 +195,85 @@ implies.
 
 ## Decision
 
-_Not yet recorded._ Awaiting the owner's disposition. See #1414's successor work.
+**The supported tool surface is 54.** Recorded 2026-08-27 (#1490).
+
+Read the verb precisely, because it is doing work: these tools are **removed from the
+supported surface**, not deleted. Nothing here authorises a deletion, and the
+Confirmation section below explains why it cannot.
+
+### Out of the supported surface — the host now does this (11)
+
+`read_file`, `write_file`, `list_directory`, `read_directory`, `list_roots`,
+`llm_web_search`, `llm_cloud_management`, `llm_database_management`, `search_tools`,
+`load_prompt`, `get_current_datetime`.
+
+`search_tools` and `load_prompt` decide the rest of the list. The argument for them is
+not "a host tool does this too" — it is that the specification assigns progressive
+discovery to the host, and OpenAI and Anthropic ship it natively. A server implementing
+it is reimplementing a host feature, and this server is 3–12× over the threshold at which
+the spec says to stop.
+
+### Dies with the AI layer (1)
+
+`check_ai_execution_status` exists to explain the legacy execution mode. Under ADR-021
+option B it has nothing left to report. It goes when the layer does, not before.
+
+### Out of scope (10)
+
+The aggregator. ADR-021 ruled it "a separate commercial question" and that stands
+unchanged here.
+
+### Deferred — memory (6), workflow (5), research (4)
+
+**Not classified.** This ADR said plainly that this section "is reasoning about code
+shape, not about use", and that limit is respected rather than overridden. Deferred to
+**ADR-024**, whose precondition is usage data.
+
+That precondition is now satisfiable. The correction in #1486 established that the
+evidence was being computed and discarded, and #1488 and #1489 fixed all three losses:
+the `.slice(0, 10)` before persistence, the `os.tmpdir()` store the OS clears, and the
+CE-MCP directive path that recorded nothing for twelve tools. Counts now accumulate in
+`.mcp-adr-cache/` and survive a restart.
+
+So ADR-024 is not blocked on building anything. It is blocked on **elapsed use** — which
+is an honest thing for an ADR to wait on, and a different thing from the indefinite
+deferral this section originally implied.
+
+### What this does not decide
+
+Whether any of the 11 is ever deleted. That is `retirement.py`'s question, asked per
+asset, each with its own admission under the CE-MCP migration milestone.
 
 ## Consequences
 
-To be completed once the decision is recorded. Two are worth stating in advance:
-
-**It resizes queued work.** Removing 11 host-native tools and excluding 10 aggregator
-tools leaves **54**. #1416 builds a registry for 54 entries rather than 75, and option B
-has fewer tools to consider.
+**It resizes queued work.** 75 − 11 host-native − 10 aggregator = **54**. #1416 builds a
+`ToolDefinition[]` for 54 entries rather than 75, and ADR-021 option B has fewer tools to
+migrate. Both were explicitly waiting on this number.
 
 **It sharpens what the product is.** If the market's unmet need is drift detection and
 this repo has already built a working drift checker, then the ADR-generation surface is
 the commodity part and the verification surface is the differentiated part. That is a
 positioning consequence, not only a scope one.
+
+**It unblocks five issues** that were gated on nothing but this section: #1416, #1477,
+#759, #750, and #1461's rule half.
+
+**It creates a deprecation obligation.** Eleven tools are advertised over the wire today
+and clients may be calling them. Removal from the surface means: excluded from #1416's
+registry, marked deprecated in `TOOL_CATALOG` and the docs, and announced in
+`CHANGELOG.md` — before any of them stops responding. `public_contracts` is one of the
+dimensions `retirement.py` deliberately leaves blind, so this obligation is a human one
+and is recorded here rather than assumed.
+
+**It leaves `outputSchema` unaddressed.** This ADR measured zero output schemas across 75
+tools and did not decide anything about them. A 54-tool registry is the moment to add
+them, and #1416 should not close without a position — but that position is not taken
+here, and pretending otherwise would be the same overreach this ADR declined elsewhere.
+
+**Four tools remain uncatalogued** — `get_gaps`, `search_codebase`, `set_project_path`,
+`update_knowledge`. They are dispatchable and absent from `TOOL_CATALOG`, so this
+Decision does not cover them: they are not in the 11, not in the aggregator 10, and not in
+a deferred cluster. #1416 must classify them as it derives the single registry.
 
 ## Confirmation
 
