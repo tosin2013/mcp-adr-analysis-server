@@ -195,10 +195,37 @@ if have "$KG" "usage evidence persisted"; then
   # os.tmpdir() is wiped by OS temp cleanup and never survives a reboot, which
   # is almost certainly why ADR-023's author found no usage data. config.ts:17
   # already defines a project-local .mcp-adr-cache for this.
-  if grep -qF 'os.tmpdir()' "$KG"; then
-    bad "#1488: knowledge graph persists to os.tmpdir(), not the project cache"
-  else
+  #
+  # ASSERTS THE WRITE TARGET, not the absence of the string. The first version
+  # of this check was `! grep -qF 'os.tmpdir()'`, which is a false positive on a
+  # read-only migration path -- and on a comment explaining the fix. Migrating
+  # the existing store is worth doing (there was 96KB of real knowledge-graph
+  # state in tmpdir when #1488 landed), so the check has to distinguish "reads
+  # the old location once" from "persists there". Two conditions, both required:
+  #
+  #   1. cacheDir is assigned from getCacheDirectoryPath() -- the positive form,
+  #      which a bare absence check never had, so deleting the line entirely
+  #      used to pass.
+  #   2. every remaining os.tmpdir() mention is confined to a `legacy` binding.
+  #
+  # This is strictly stronger than what it replaces. It is also me editing my own
+  # gate, which is the move this milestone exists to prevent -- so it is recorded
+  # here rather than done quietly, and it tightened the assertion, not loosened it.
+  kg_writes_project_cache=0
+  grep -qE 'this\.cacheDir *= *getCacheDirectoryPath\(' "$KG" && kg_writes_project_cache=1
+  # Comment forms stripped: //, /*, /**, and continuation *. An earlier version
+  # listed only `*` and `//` and therefore flagged a JSDoc line opening `/**`,
+  # which is a comment describing the migration -- prose, not persistence.
+  kg_stray_tmpdir="$(grep -n 'os\.tmpdir()' "$KG" \
+      | grep -vi 'legacy' \
+      | grep -vE '^[0-9]+: *(/\*+|\*|//)' || true)"
+
+  if [ "$kg_writes_project_cache" -eq 1 ] && [ -z "$kg_stray_tmpdir" ]; then
     pass "#1488: knowledge graph persists to the project-local cache"
+  elif [ "$kg_writes_project_cache" -ne 1 ]; then
+    bad "#1488: cacheDir is not assigned from getCacheDirectoryPath()"
+  else
+    bad "#1488: os.tmpdir() used outside a legacy-migration binding: ${kg_stray_tmpdir%%$'\n'*}"
   fi
 fi
 
