@@ -202,8 +202,10 @@ When tree-sitter-typescript releases a 0.25.x compatible version:
 - [tree-sitter GitHub](https://github.com/tree-sitter/tree-sitter)
 - [tree-sitter-typescript GitHub](https://github.com/tree-sitter/tree-sitter-typescript)
 - [npm tree-sitter](https://www.npmjs.com/package/tree-sitter)
-- [ADR-016: Replace ripgrep with tree-sitter](./adr-016-replace-ripgrep-with-tree-sitter.md)
+- ADR-016: Replace ripgrep with tree-sitter — **never written.** The decision was made
+  and implemented; the record was not. Link removed rather than left pointing at a file
+  that has never existed. See ADR-006 for the tree-sitter integration rationale (#1415).
 
 ## Related ADRs
 
-- ADR-016: Replace ripgrep with tree-sitter (predecessor decision)
+- ADR-016: Replace ripgrep with tree-sitter (predecessor decision) — **file does not exist**; see #1415

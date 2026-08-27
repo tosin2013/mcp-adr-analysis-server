@@ -29,10 +29,16 @@ This directory contains the Architectural Decision Records for the MCP ADR Analy
 | [ADR-022](adr-022-adopt-madr-format.md)                                | Adopt MADR as the default decision-record format | Proposed | 2026-08-26 | Documentation |
 | [ADR-023](adr-023-tool-surface-scope.md)                               | Which of the 75 tools should still exist         | Accepted | 2026-08-27 | Architecture  |
 
-> **This index is known to be out of date and is not corrected here.** It stops at
-> ADR-018, omits ADR-019 and ADR-020, and lists ADR-012, ADR-013 and ADR-014 as
-> _Proposed_ while all three files say _Accepted_. Reconciling the ledger is #1415;
-> ADR-021 is added above so this file is not made _more_ wrong by a new entry.
+> **ADR-016 was never written.** ADR-017 cites it twice as a predecessor decision
+> ("Replace ripgrep with tree-sitter"), and `tree-sitter-code-tools.ts` cited it in an
+> `@see`. The switch was decided and implemented; the record was not. The number is left
+> unused rather than reassigned — renumbering a later ADR into the gap would fabricate a
+> history that did not happen. ADR-006 holds the tree-sitter rationale.
+>
+> The note that stood here claimed this index "stops at ADR-018, omits ADR-019 and
+> ADR-020, and lists ADR-012, ADR-013 and ADR-014 as _Proposed_". None of that is true
+> any more — a note announcing its own staleness, which had itself gone stale. Removed as
+> part of #1415, which is the issue it pointed at.
 
 ## Legacy ADRs (Sample Project)
 
