@@ -1,0 +1,22 @@
+{
+  "authority_id": "1462",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -E \"^- \\[ \\]\" docs/adrs/adr-019-vitest-migration.md | grep -vicE \"deliberately left unchecked|see corrections|tracked in #[0-9]+\") -eq 0'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! test -f scripts/migrate-to-vitest.sh'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -qE \"\\\"(jest|ts-jest|@types/jest)\\\"\" package.json'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/check-adr-drift.sh"
+    }
+  ],
+  "$comment": "Deliberately NOT declaring `covers`, following #1468's precedent. An earlier draft named the 70 skipped tests as the uncovered half and split_to #751 -- which made this issue wait on a v3.0 migration and, through #1415, held milestone 4 open behind it. That conflates two outcomes. #1462's outcome is that ADR-019 STOPS UNDER-REPORTING ITSELF, which these four criteria establish: thirteen boxes ticked against verified evidence, the migration script archived, and the one box that cannot honestly be ticked carrying an explicit deferral that names what blocks it. Leaving that box unticked IS the correct end state, not a shortfall -- ticking it would claim a completion 70 skipped tests contradict. Whether those tests get restored is #751's outcome, gated on #1461's orchestrator decision, and is cross-linked in the issue text and in ADR-019's Corrections rather than made a completion dependency here. A `covers` block that names a RELATED concern rather than an UNDELIVERED part of this item turns every issue into a transitive blocker for every issue it mentions."
+}

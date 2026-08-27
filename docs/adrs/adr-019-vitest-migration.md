@@ -78,29 +78,63 @@ import { generateDeploymentGuidance } from '../../src/tools/...'; // Normal impo
 
 ### Phase 1: Setup (This PR)
 
-- [ ] Install Vitest and dependencies
-- [ ] Create `vitest.config.ts`
-- [ ] Update `package.json` scripts
-- [ ] Migrate one test file as proof-of-concept
+- [x] Install Vitest and dependencies
+- [x] Create `vitest.config.ts`
+- [x] Update `package.json` scripts
+- [x] Migrate one test file as proof-of-concept
 
 ### Phase 2: Core Migration
 
-- [ ] Migrate failing test files first (4 files, ~59 tests)
-- [ ] Migrate tool tests (`tests/tools/`)
-- [ ] Migrate utility tests (`tests/utils/`)
+- [ ] Migrate failing test files first (4 files, ~59 tests) — **deliberately left unchecked.** See Corrections.
+- [x] Migrate tool tests (`tests/tools/`)
+- [x] Migrate utility tests (`tests/utils/`)
 
 ### Phase 3: Complete Migration
 
-- [ ] Migrate integration tests
-- [ ] Migrate performance tests
-- [ ] Remove Jest dependencies
-- [ ] Update CI workflows
+- [x] Migrate integration tests
+- [x] Migrate performance tests
+- [x] Remove Jest dependencies
+- [x] Update CI workflows
 
 ### Phase 4: Cleanup
 
-- [ ] Remove Jest configuration
-- [ ] Update documentation
-- [ ] Archive migration scripts
+- [x] Remove Jest configuration
+- [x] Update documentation
+- [x] Archive migration scripts
+
+## Corrections
+
+**2026-08-27 (#1462) — this ADR under-reported itself by twelve boxes.**
+
+ADR-019 is `Accepted` and every migration box was unchecked, while the migration had in fact
+completed. Verified individually before ticking, not assumed from the status:
+
+| box                                                             | evidence                                                                                                                                             |
+| --------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Vitest installed                                                | `devDependencies.vitest` present                                                                                                                     |
+| `vitest.config.ts`                                              | file exists                                                                                                                                          |
+| `package.json` scripts                                          | `test` is `vitest run`                                                                                                                               |
+| proof-of-concept, tool, utility, integration, performance tests | all present under `tests/`                                                                                                                           |
+| Jest dependencies removed                                       | no `jest` / `ts-jest` / `@types/jest` in `package.json`                                                                                              |
+| CI workflows updated                                            | no `jest` in `.github/workflows/*.yml`                                                                                                               |
+| Jest configuration removed                                      | no `jest.config.*`                                                                                                                                   |
+| migration scripts archived                                      | `scripts/migrate-to-vitest.sh` removed in this change — 73 lines, referenced nowhere, `retirement.py` returned `RETIREMENT_REVIEW`; git preserves it |
+
+Zero files anywhere in `src/` or `tests/` still import from Jest.
+
+### The one box left unchecked, and why
+
+**"Migrate failing test files first (4 files, ~59 tests)."** This is not verifiable as
+written and is not this ADR's to close.
+
+The framework migration is complete, but **70 tests are skipped** across 14 files. #1477
+measured 13 of them sharing one root cause: ESM mocking of `ResearchOrchestrator`, which is
+also the ADR-018a violation in #1461. So the remaining work is not "finish migrating to
+Vitest" — it is "make ESM mocking work in this codebase", which is #751's scope, gated on
+#1461.
+
+Ticking it would claim a completion that 70 skipped tests contradict. Leaving it unchecked
+with the reason stated is the honest record; #751 and #1461 carry the work.
 
 ## Consequences
 

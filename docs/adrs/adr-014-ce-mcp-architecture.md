@@ -21,7 +21,19 @@ Accepted
 
 ## Context
 
-The MCP ADR Analysis Server has evolved into a comprehensive platform with **82 tools** and **6,145 lines of prompt definitions**. Analysis of the current implementation (see `/tmp/ce_mcp_analysis.md`) reveals significant token inefficiencies:
+The MCP ADR Analysis Server has evolved into a comprehensive platform with **82 tools** and
+**6,145 lines of prompt definitions**. Analysis of the current implementation reveals
+significant token inefficiencies:
+
+> **Both figures are as-measured in 2025-12 and are left as written.** On 2026-08-27 the
+> server exposes **75** tools and `src/prompts/` is **6,498** lines. An ADR records what was
+> true when the decision was taken; rewriting its Context to today's numbers would make the
+> reasoning unfalsifiable. See Corrections.
+>
+> The analysis this cited — a CE-MCP refactoring assessment written to a temp path —
+> **no longer exists and never was in the repository.** Nothing can reconstruct it, so the
+> citation is removed rather than left pointing into a void (#1463). The path itself is not
+> repeated here: a dead reference quoted in a note is still a dead reference to a checker.
 
 | Metric                     | Current State           | Impact                      |
 | -------------------------- | ----------------------- | --------------------------- |
@@ -32,9 +44,12 @@ The MCP ADR Analysis Server has evolved into a comprehensive platform with **82 
 
 ### Root Causes of Inefficiency
 
-1. **Monolithic Tool Loading** (`src/index.ts:225-3170`): All 82 tools with full inputSchema returned on every ListTools call
+1. **Monolithic Tool Loading** (the `ListToolsRequestSchema` handler in `src/index.ts`): all
+   tools with full `inputSchema` returned on every ListTools call
 
-2. **Context Over-Assembly** (`src/index.ts:4383-4830`): Sequential context building (knowledge → reflexion → base → environment) assembles 9,000+ tokens BEFORE any LLM call
+2. **Context Over-Assembly** (`analyzeProjectEcosystem`, via `generateArchitecturalKnowledge`
+   and `executeWithReflexion`): sequential context building (knowledge → reflexion → base →
+   environment) assembles 9,000+ tokens BEFORE any LLM call
 
 3. **Intermediate Result Round-Trips**: Pattern of LLM call → embed result in context → LLM call causes token multiplication (3,500 optimal → 10,500 actual)
 
@@ -154,31 +169,60 @@ CE-MCP:
 ### High Priority
 
 1. **analyzeProjectEcosystem main loop**
-   - File: `src/index.ts:4383-4830`
+   - Symbol: `McpAdrAnalysisServer.analyzeProjectEcosystem` (`src/index.ts`)
    - Issue: Sequential context assembly
    - Fix: Return composition directives
 
 2. **Prompt module organization**
    - Files: `src/prompts/*.ts`
-   - Issue: Eager loading of 6,145 lines
+   - Issue: Eager loading of the whole prompt tree
    - Fix: Lazy-loading prompt registry
 
 3. **Tool list in ListTools handler**
-   - File: `src/index.ts:225-3170`
-   - Issue: 82 complete tools returned
+   - Symbol: the `ListToolsRequestSchema` handler (`src/index.ts`)
+   - Issue: every tool returned complete
    - Fix: Return metadata + dynamic discovery
 
 4. **Tool invocation switch statement**
-   - File: `src/index.ts:3209-3409`
-   - Issue: 82-case static routing
+   - Symbol: the `CallToolRequestSchema` handler's `switch (name)` (`src/index.ts`)
+   - Issue: one static case arm per tool
    - Fix: Dynamic tool dispatcher
 
 ### Medium Priority
 
-5. **Environment analysis recursion** (`src/index.ts:4556-4577`)
-6. **Knowledge context assembly** (`src/index.ts:4489-4519`)
+5. **Environment analysis recursion** (`McpAdrAnalysisServer.analyzeEnvironment`)
+6. **Knowledge context assembly** (`generateArchitecturalKnowledge`, loaded dynamically)
 7. **Rule generation tool chain** (`src/tools/rule-generation-tool.ts`)
-8. **ADR suggestion enhancements** (`src/tools/adr-suggestion-tool.ts:95-200`)
+8. **ADR suggestion enhancements** (`suggestAdrs` in `src/tools/adr-suggestion-tool.ts`)
+
+## Corrections
+
+**2026-08-27 (#1463) — every citation in this ADR was dead.**
+
+Five `src/index.ts` line ranges were written when the file was roughly 3,000 lines. It is
+**9,787** today, and all five now point at unrelated code:
+
+| cited        | what is actually there now       |
+| ------------ | -------------------------------- |
+| `:225-3170`  | a comment continuation           |
+| `:3209-3409` | a closing brace                  |
+| `:4383-4830` | a `mimeType` literal             |
+| `:4489-4519` | `const { uri } = request.params` |
+| `:4556-4577` | a comment continuation           |
+
+All five are now **symbol references**, deliberately. #1416 removes roughly 4,000 lines
+from `src/index.ts`; any line number written today would be wrong again within one PR, and
+re-anchoring twice is the mistake this correction exists to stop.
+
+The source-of-truth analysis was written to a temp path, was never in the repository, and
+cannot be recovered. Cited twice; removed both times, and the path is not reproduced even
+in this note — `check-adr-drift.sh` scans for it, and correctly does not care why an ADR
+names a file that does not exist. Same disposition as ADR-016 in #1415: an acknowledged gap
+beats an invented record.
+
+The `82 tools` and `6,145 lines` figures in Context are **left as written**. They were true
+when this decision was taken; today the numbers are 75 and 6,498. An ADR that silently
+updates its own evidence to match the present cannot be checked against anything.
 
 ## Consequences
 
@@ -224,7 +268,8 @@ CE-MCP:
 
 ## References
 
-- CE-MCP Refactoring Assessment: `/tmp/ce_mcp_analysis.md`
+- ~~CE-MCP Refactoring Assessment~~ — **gone.** Written to a temp path, never committed,
+  unrecoverable. Removed 2026-08-27 (#1463).
 - Anthropic MCP Documentation: Protocol evolution and best practices
 - Token optimization research: 2025 CE-MCP paradigm studies
 - Migration guide: [CE-MCP Migration Playbook](../how-to-guides/ce-mcp-migration-playbook.md)
