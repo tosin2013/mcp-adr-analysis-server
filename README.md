@@ -392,6 +392,18 @@ We welcome contributions! Whether you're fixing bugs, adding features, or improv
 5. **Test**: `npm test` (do not drop below the coverage floor)
 6. **Submit** a Pull Request
 
+### 🗺️ Roadmap
+
+Work is tracked in GitHub milestones, and milestone membership is what marks an issue as
+admitted:
+
+- [**Release & docs foundation**](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/1) — shipped as v2.6.20
+- [**v3.0**](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/2) — tool registry consolidation and the CI safety net
+- [**v3.1**](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/3) — work gated on the tool-surface decision in [ADR-023](docs/adrs/adr-023-tool-surface-scope.md)
+
+Architectural direction lives in [`docs/adrs/`](docs/adrs/README.md); release cadence is in
+[`RELEASES.md`](RELEASES.md).
+
 ### 👶 First Time Contributing?
 
 Looking for a good first issue? Check out our [**good first issues**](https://github.com/tosin2013/mcp-adr-analysis-server/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) - these are beginner-friendly tasks perfect for getting started!
