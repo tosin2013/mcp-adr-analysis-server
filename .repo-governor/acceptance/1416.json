@@ -24,6 +24,11 @@
     {
       "check": "tests_pass",
       "target": "npm test"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -c \"conversationContext: CONVERSATION_CONTEXT_SCHEMA\" src/index.ts) -le 1'"
     }
-  ]
+  ],
+  "$comment": "The conversationContext criterion is #742, folded in here 2026-08-27 rather than fixed standalone. #742's finding: 8 tools advertise a 10-field conversationContext in their MCP input schema and exactly 1 (suggest_adrs, via utils/adr-suggestions.ts:165) consumes it; trackToolExecution reads only .humanRequest, generically, for any tool. Four of the seven that ignore it -- get_architectural_context, generate_adr_bootstrap, bootstrap_validation_loop, review_existing_adrs -- are OUT OF THE SUPPORTED SURFACE under ADR-023, so fixing them individually would be work on tools that are leaving. A single ToolDefinition[] is the only place where 'advertised but not consumed' becomes checkable at all, which is why it belongs here. The threshold is <=1, not 0: suggest_adrs genuinely uses it and should keep it."
 }
