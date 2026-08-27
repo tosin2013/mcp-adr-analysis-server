@@ -33,8 +33,10 @@ We do not ship on a fixed calendar. Instead:
 
 - **Patch releases** ship whenever a PR merges to `main`. Expect multiple per week during active development. The [Dependabot auto-merge workflow](./.github/workflows/dependabot-auto-merge.yml) (tracked in PR #783) batches most low-risk dependency bumps automatically.
 - **Minor releases** ship when a feature-bearing PR merges — typically every 2–6 weeks.
-- **Major releases** ship roughly **quarterly**, gated on a tracking milestone. The current major-release milestones are:
-  - **[v2.6](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/1)** — near-term (~2 weeks). Anchor: CE-MCP architecture merge (ADR-014).
+- **Major releases** ship roughly **quarterly**, gated on a tracking milestone. Milestones are named for the
+  work they hold, not the version they land in — a version is an output, and a milestone named `v2.6` that
+  is still open after the tree reaches v2.7.5 is a claim nothing checks. The current milestones are:
+  - **[Release & docs foundation](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/1)** — shipped as v2.6.20 on 2026-08-26. Anchor: CE-MCP architecture merge (ADR-014).
   - **[v3.0](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/2)** — next major (~6–8 weeks). Anchor: MCP Tasks integration (ADR-020), dependency-injection refactor, Vitest migration complete.
 
 A release-planning epic tracks the milestone structure at [#738](https://github.com/tosin2013/mcp-adr-analysis-server/issues/738).
