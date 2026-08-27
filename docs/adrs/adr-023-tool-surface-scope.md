@@ -145,9 +145,37 @@ ADR-021 option B it has nothing left to report.
 
 ### REVIEW — insufficient evidence to classify (the remainder)
 
-**This is the honest gap in this ADR: there is no usage data.** Nothing in `src/`
-records which tools are actually called. Every classification below the line above is
-reasoning about code shape, not about use.
+**This is the honest gap in this ADR: there is no usage data reaching a durable
+store.** Every classification below the line above is reasoning about code shape, not
+about use.
+
+An earlier revision of this ADR said _"nothing in `src/` records which tools are actually
+called."_ That was wrong, and the correction matters, because it changes the gap from a
+project into three edits. Two mechanisms already record every call by name, and one
+already computes exactly the per-tool counts this section needs:
+
+| what exists                                             | where                                                                  | why no usable evidence comes out                                                                                      |
+| ------------------------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| complete per-tool count `Map`, sorted                   | `src/utils/knowledge-graph-manager.ts:406-416`                         | `.slice(0, 10)` truncates it **before persisting** — the full map is built and discarded                              |
+| every execution recorded                                | `trackToolExecution`, `src/index.ts:8219`, called at `:4201` / `:4208` | persists under `os.tmpdir()` (`knowledge-graph-manager.ts:44-52`) — wiped by OS temp cleanup, never survives a reboot |
+| distinct tools per session                              | `src/utils/conversation-memory-manager.ts:131,163`                     | same `os.tmpdir()` problem; a dedup'd list, no counts                                                                 |
+| complete `MonitoringManager` with `MetricCategory.TOOL` | `src/utils/monitoring.ts`                                              | **zero production call sites** — built, tested, never wired                                                           |
+
+And one blind spot that bears directly on this section: the CE-MCP directive path at
+`src/index.ts:3875-3888` returns before the dispatch switch and before
+`trackToolExecution`, so **all twelve `CE_MCP_DIRECTIVE_TOOLS` are unrecorded** whenever
+CE-MCP mode is on. `perform_research` is one of them — a tool whose disposition this
+section defers _pending data that this bug guarantees will never exist for it_.
+
+So the evidence is computed and thrown away, not absent. Ten entries survive out of 75,
+into a directory the OS deletes. Every cluster below falls beyond that cut.
+
+> Every line reference in the table above was verified against `0d3817b7` on 2026-08-27
+> and will drift. #1416 collapses four registries and removes roughly 4,000 lines from
+> `src/index.ts`; the `:3875`, `:4201`, `:8219` citations will all be wrong afterwards.
+> They are given because they are checkable **today** and the argument depends on being
+> checkable. When #1416 lands, re-anchor them to symbol names — which is #1463's whole
+> point about ADR-014, and the reason this note exists rather than the same mistake.
 
 Clusters that look consolidatable but should not be cut on inference alone:
 
@@ -195,8 +223,15 @@ that, and it advertises `dynamic_references`, `runtime_usage`, `public_contracts
 `REMOVAL_READY`, from static analysis. Any removal needs its own admission.
 
 **And the largest gap is not technical.** Without usage data, the REVIEW section is
-opinion. Instrumenting tool calls before deleting anything in that section would convert
-guesswork into evidence.
+opinion. Converting it to evidence does not require instrumenting anything — the
+instrumentation exists. It requires lifting a `.slice(0, 10)`, moving a store out of
+`os.tmpdir()` into the project-local `.mcp-adr-cache` that `src/utils/config.ts:17`
+already defines, and recording the CE-MCP directive path. Tracked as #1487, #1488 and
+#1489.
+
+That correction is itself an instance of what this ADR argues. The claim that no usage
+data was recorded went unchecked into a document meant to decide the fate of 75 tools,
+and it was wrong in the direction that made the problem look bigger than it is.
 
 ## More Information
 
