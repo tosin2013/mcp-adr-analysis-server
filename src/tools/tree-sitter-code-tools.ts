@@ -10,7 +10,12 @@
  * - LLM handles reasoning and semantic matching
  * - Same input always produces same output
  *
- * @see docs/adrs/adr-016-replace-ripgrep-with-tree-sitter.md
+ * @see docs/adrs/adr-006-tree-sitter-integration-strategy.md
+ *
+ * NOTE: this previously cited adr-016-replace-ripgrep-with-tree-sitter.md, which has
+ * never existed. ADR-017 references it twice as a 'predecessor decision', so the
+ * ripgrep -> tree-sitter switch was decided and implemented but never recorded.
+ * ADR-006 is the closest real record. The gap itself is tracked in #1415.
  */
 
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs';
