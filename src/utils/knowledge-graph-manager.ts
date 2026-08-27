@@ -11,7 +11,7 @@ import {
   TodoSyncStateSchema,
   KnowledgeGraphSnapshotSchema,
 } from '../types/knowledge-graph-schemas.js';
-import { loadConfig } from './config.js';
+import { loadConfig, getCacheDirectoryPath } from './config.js';
 // Using new MemoryHealthScoring instead of deprecated ProjectHealthScoring
 import { MemoryHealthScoring, MemoryHealthScore } from './memory-health-scoring.js';
 
@@ -36,6 +36,8 @@ export class KnowledgeGraphManager {
   private cacheDir: string;
   private snapshotsFile: string;
   private syncStateFile: string;
+  /** Pre-#1488 location under os.tmpdir(); read once for migration, never written. */
+  private legacyCacheDir: string;
   private memoryScoring: MemoryHealthScoring;
 
   /**
@@ -43,11 +45,18 @@ export class KnowledgeGraphManager {
    */
   constructor() {
     const config = loadConfig();
-    // Use OS temp directory for cache
-    const projectName = path.basename(config.projectPath);
-    this.cacheDir = path.join(os.tmpdir(), projectName, 'cache');
+    // Project-local, NOT os.tmpdir(). This store holds the only record of which
+    // tools are actually called, and os.tmpdir() is cleared by the OS -- so the
+    // evidence never survived a reboot. ADR-023 deferred three tool clusters
+    // "pending usage data" partly because of this; see #1488.
+    //
+    // Several docstrings already documented `.mcp-adr-cache/knowledge-graph-
+    // snapshots.json` as the location (adr-suggestion-tool.ts, mcp-planning-tool.ts,
+    // index.ts). They described the fix rather than the code. Now they are right.
+    this.cacheDir = getCacheDirectoryPath(config);
     this.snapshotsFile = path.join(this.cacheDir, 'knowledge-graph-snapshots.json');
     this.syncStateFile = path.join(this.cacheDir, 'todo-sync-state.json');
+    this.legacyCacheDir = path.join(os.tmpdir(), path.basename(config.projectPath), 'cache');
     this.memoryScoring = new MemoryHealthScoring();
   }
 
@@ -59,6 +68,37 @@ export class KnowledgeGraphManager {
       await fs.access(this.cacheDir);
     } catch {
       await fs.mkdir(this.cacheDir, { recursive: true });
+    }
+    // Outside the try/catch on purpose. On the first run after #1488 the new
+    // directory does not exist, so a migration hooked into the success branch
+    // would never fire on the one run that needs it.
+    await this.migrateLegacyCache();
+  }
+
+  /**
+   * One-time move of pre-#1488 state out of os.tmpdir() into the project cache.
+   *
+   * Best-effort and non-fatal by design: this runs on the read path of every
+   * knowledge-graph operation, and a server that cannot start because an old
+   * temp file is unreadable would be a worse bug than the one being fixed.
+   * A missing legacy directory is the common case, not an error.
+   */
+  private async migrateLegacyCache(): Promise<void> {
+    if (this.legacyCacheDir === this.cacheDir) return;
+    for (const file of ['knowledge-graph-snapshots.json', 'todo-sync-state.json']) {
+      const from = path.join(this.legacyCacheDir, file);
+      const to = path.join(this.cacheDir, file);
+      try {
+        await fs.access(to);
+        continue; // destination already populated -- never overwrite live state
+      } catch {
+        /* not yet migrated */
+      }
+      try {
+        await fs.copyFile(from, to);
+      } catch {
+        /* no legacy file, or unreadable: nothing to carry forward */
+      }
     }
   }
 
@@ -410,10 +450,14 @@ export class KnowledgeGraphManager {
       });
     });
 
+    // Every tool, not a top-10. This used to truncate before persisting, which
+    // discarded the full map it had just built -- and every cluster ADR-023 defers
+    // (memory 6, workflow 5, research 4) falls beyond a 10-entry cut of 75 tools.
+    // Display caps belong at the read path: server-context-generator.ts:557 already
+    // does its own .slice(0, 5). See #1488.
     kg.analytics.mostUsedTools = Array.from(toolUsage.entries())
       .map(([toolName, usageCount]) => ({ toolName, usageCount }))
-      .sort((a, b) => b.usageCount - a.usageCount)
-      .slice(0, 10);
+      .sort((a, b) => b.usageCount - a.usageCount);
   }
 
   async calculateTodoMdHash(todoPath: string): Promise<string> {
