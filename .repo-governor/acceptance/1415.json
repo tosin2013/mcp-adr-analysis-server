@@ -1,0 +1,39 @@
+{
+  "authority_id": "1415",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash scripts/check-adr-drift.sh"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(ls docs/adrs/adr-018*.md | wc -l) -eq 1'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -rE \"@see .*adr-016-replace-ripgrep\" src/'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -qx \"Accepted\" <(sed -n \"/^## Status/,/^## /p\" docs/adrs/adr-001-*.md)'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -qiE \"hcl|dockerfile\" <(awk \"/^#+ Corrections/{s=1} /^## Related/{s=0} !s\" docs/adrs/adr-006-*.md)'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"is known to be out of date and is not corrected here\" docs/adrs/README.md'"
+    },
+    {
+      "check": "file_exists",
+      "target": "docs/adrs/README.md"
+    }
+  ],
+  "covers": {
+    "declared": "The ledger's own internal consistency: one file claims ADR-018, no source @see points at the ADR-016 that was never written, ADR-001's retired SSE decision is no longer Accepted, ADR-006 makes no live HCL/Dockerfile claim, and the index no longer carries a staleness note that had itself gone stale. Plus the ratchet: drift may not rise.",
+    "uncovered": "THREE DRIFT FINDINGS REMAIN AND ARE NOT THIS ISSUE'S. `check-adr-drift.sh` passing at baseline 3 does NOT mean zero drift -- the baseline contains exactly the three delegated below. Anyone reading criterion 1 as 'the ledger is clean' would be reading a false green, which is why the specific checks 2-6 exist alongside it: they establish #1415's own outcome, and criterion 1 only guarantees nothing regressed while doing so. Also uncovered: whether the ADR corpus is CORRECT, as opposed to self-consistent. A ledger can agree with itself and still describe a system nobody built. Only the code-vs-claim checks test that, and only for ADR-001, ADR-006, ADR-018a and ADR-019 -- four ADRs out of twenty-two. The rest have never been checked against anything.",
+    "split_to": ["1461", "1462", "1463"]
+  },
+  "$comment": "Written 2026-08-27 under #1415, which is the only umbrella issue in this repo without an acceptance bar -- envelope.py reported 0 of 5 dimensions filled, THIN, NO_CRITERIA_DECLARED. That is why a necessity claim for the drift-checker work failed closed to CAPTURE_ONLY and had to become its own issue (#1507): with no declared in_scope, no claim can be substantiated against it. Criterion 3 is anchored to `@see` rather than the bare filename on purpose. The first draft grepped for 'adr-016-replace-ripgrep' anywhere in src/ and FAILED, because the comment explaining that the ADR does not exist mentions it by name -- the same mentions-vs-claims confusion #1507 had just removed from the drift checker, reproduced one file away while writing the bar for it."
+}
