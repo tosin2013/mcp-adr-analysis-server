@@ -7,7 +7,16 @@ tags:
 
 ## Status
 
-Accepted
+Superseded in part (2026-08-28) — see the note below
+
+> **Superseded in part by [ADR-025](adr-025-retire-the-bootstrap-pattern-engine.md)
+> (2026-08-28).** `patterns/infrastructure/*.yaml`, `PatternLoader`, `PatternToDAGConverter` and `PatternContributionHelper` are deleted. `validated-pattern-definitions.ts`, `platform-detector.ts` and `pattern-research-utility.ts` are NOT affected — they remain live and serve the guided path.
+>
+> The YAML was never in `package.json` `files`, and `PatternLoader` resolves `<pkg-root>/patterns`, so `loadPattern` returned `null` for every npm consumer this package has ever had. Its only call site was inside code with no callers. ADR-025 also records the positive argument: pattern definitions are procedural reference material, which is a Skill's shape rather than an MCP server's.
+>
+> The rest of this ADR stands. It is left unedited below so the original decision remains
+> readable; ADR-025 carries the measurements and the reasoning.
+
 
 ## Date
 
@@ -247,14 +256,14 @@ Each validated pattern includes:
 
 ## Implementation
 
-### Phase 1: Pattern Definitions (✅ COMPLETE)
+### Phase 1: Pattern Definitions (✅ COMPLETE, YAML half RETIRED 2026-08-28)
 
-- [x] Created YAML pattern definitions in `patterns/infrastructure/`:
-  - `kubernetes.yaml` - Container orchestration
-  - `firebase.yaml` - Firebase serverless deployment
-  - `firebase-emulators.yaml` - Local Firebase testing
-  - `openshift.yaml` - OpenShift deployment
-  - `aws.yaml` - AWS deployment
+- [x] ~~Created YAML pattern definitions in `patterns/infrastructure/`~~ — **retired by
+      ADR-025.** The five files (`kubernetes`, `firebase`, `firebase-emulators`,
+      `openshift`, `aws`) were created as recorded, and deleted on 2026-08-28. They were
+      never in `package.json` `files`, so no installed copy of this package ever
+      contained them, and their only loader sat inside code with no callers. The box is
+      struck rather than unticked: the work was done, then undone.
 - [x] Created `validated-pattern-definitions.ts` TypeScript interface
 - [x] Defined comprehensive pattern structure in code
 - [x] Included bill of materials, deployment phases, validation checks
@@ -262,8 +271,8 @@ Each validated pattern includes:
 
 **Implementation Files:**
 
-- `src/utils/validated-pattern-definitions.ts` - Complete TypeScript interface (1,851 lines)
-- `patterns/infrastructure/*.yaml` - 5 pattern definitions
+- `src/utils/validated-pattern-definitions.ts` - Complete TypeScript interface (1,851 lines) — **still live**; this is what `getPattern()` reads
+- ~~`patterns/infrastructure/*.yaml` - 5 pattern definitions~~ — deleted, ADR-025
 
 ### Phase 2: Platform Detection (✅ COMPLETE)
 
@@ -398,7 +407,7 @@ Each validated pattern includes:
 
 **Existing:**
 
-- `patterns/infrastructure/*.yaml`: YAML pattern definitions (kubernetes, firebase, openshift, aws)
+- ~~`patterns/infrastructure/*.yaml`: YAML pattern definitions (kubernetes, firebase, openshift, aws)~~ — deleted, ADR-025
 - `patterns/schema.json`: Pattern schema definition
 - `patterns/README.md`: Pattern documentation
 

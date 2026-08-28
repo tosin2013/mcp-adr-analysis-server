@@ -562,3 +562,22 @@ describe('Bootstrap Validation Loop Tool', () => {
     });
   });
 });
+
+/**
+ * #1538 retired `BootstrapValidationLoop`. The class was constructed on every
+ * call and handed to `generateGuidedExecutionInstructions`, which never read it
+ * — and behind it sat every `execAsync` call site in the file. This guards
+ * against resurrecting a shell-executing engine the guided path does not use.
+ */
+describe('bootstrap-validation-loop-tool — retired surface', () => {
+  it('exports no orchestrator class and no shell-executing engine', async () => {
+    const mod: Record<string, unknown> =
+      await import('../../src/tools/bootstrap-validation-loop-tool.js');
+
+    expect(mod['BootstrapValidationLoop']).toBeUndefined();
+    expect(Object.keys(mod).filter(k => typeof mod[k] === 'function')).toEqual([
+      'bootstrapValidationLoop',
+      'default',
+    ]);
+  });
+});
