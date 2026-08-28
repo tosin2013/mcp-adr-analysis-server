@@ -411,4 +411,96 @@ describe('ToolContextManager', () => {
       expect(markdown).not.toContain('## Raw Data');
     });
   });
+  /**
+   * The output-path override (#1528).
+   *
+   * perform_research advertised no output path and wrote to
+   * docs/context/research/ regardless -- a directory no caller could set,
+   * discover from the tool schema, or predict from the docs. 187 files
+   * accumulated there while docs/research/, which the docs describe, held only
+   * a README. Callers that genuinely produce context documents still pass
+   * nothing and keep the default, so both paths are pinned.
+   */
+  describe('saveContext with an explicit outputDir', () => {
+    const minimalDoc = (): ToolContextDocument => ({
+      metadata: {
+        toolName: 'perform_research',
+        toolVersion: '1.0.0',
+        generated: new Date().toISOString(),
+        projectPath: testProjectPath,
+        projectName: 'test-project',
+        status: 'success',
+      },
+      quickReference: 'Research reference',
+      executionSummary: { status: 'Success', keyFindings: ['Finding'] },
+      detectedContext: {},
+    });
+
+    it('writes the document to outputDir, not docs/context/<category>', async () => {
+      const outputDir = path.join(testProjectPath, 'docs', 'research');
+
+      const filePath = await manager.saveContext('research', minimalDoc(), outputDir);
+
+      expect(path.dirname(filePath)).toBe(outputDir);
+      await expect(fs.readFile(filePath, 'utf-8')).resolves.toContain(
+        '# Tool Context: perform_research'
+      );
+    });
+
+    it('leaves no orphan under docs/context/ when outputDir is given', async () => {
+      // saveContext must not touch the default location as a side effect. The
+      // other half of the orphan -- perform_research calling initialize(), which
+      // mkdir -p'd every category -- is fixed at that call site, not here.
+      const outputDir = path.join(testProjectPath, 'docs', 'research');
+
+      await manager.saveContext('research', minimalDoc(), outputDir);
+
+      await expect(fs.access(path.join(contextDir, 'research'))).rejects.toThrow();
+    });
+
+    it('puts latest.md beside the document it points at', async () => {
+      const outputDir = path.join(testProjectPath, 'docs', 'research');
+
+      await manager.saveContext('research', minimalDoc(), outputDir);
+
+      const latest = await fs.readFile(path.join(outputDir, 'latest.md'), 'utf-8');
+      expect(latest).toContain('# Tool Context: perform_research');
+    });
+
+    it('tells the reader where the document actually is', async () => {
+      // The "How to Reference This Context" line was built from the tool name --
+      // docs/context/perform_research/latest.md -- a path that has never existed
+      // for any tool. A document that misdirects its reader is the same defect
+      // as writing to an undocumented directory, one line further on.
+      const outputDir = path.join(testProjectPath, 'docs', 'research');
+
+      const filePath = await manager.saveContext('research', minimalDoc(), outputDir);
+      const content = await fs.readFile(filePath, 'utf-8');
+
+      expect(content).toContain('docs/research/latest.md');
+      expect(content).not.toContain('docs/context/perform_research');
+    });
+
+    it('resolves a relative outputDir rather than writing one literally', async () => {
+      const outputDir = path.join(testProjectPath, 'docs', '..', 'docs', 'research');
+
+      const filePath = await manager.saveContext('research', minimalDoc(), outputDir);
+
+      expect(filePath).toBe(
+        path.join(testProjectPath, 'docs', 'research', path.basename(filePath))
+      );
+    });
+
+    it('still uses docs/context/<category> when no outputDir is passed', async () => {
+      const filePath = await manager.saveContext('research', minimalDoc());
+
+      expect(path.dirname(filePath)).toBe(path.join(contextDir, 'research'));
+      await expect(fs.readFile(filePath, 'utf-8')).resolves.toContain(
+        'docs/context/research/latest.md'
+      );
+      await expect(
+        fs.readFile(path.join(contextDir, 'research', 'latest.md'), 'utf-8')
+      ).resolves.toContain('# Tool Context: perform_research');
+    });
+  });
 });

@@ -1484,6 +1484,12 @@ export class McpAdrAnalysisServer {
                   description: 'Directory containing ADR files',
                   default: 'docs/adrs',
                 },
+                researchDirectory: {
+                  type: 'string',
+                  description:
+                    'Directory the research document is written to. Previously unset and unsettable: output went to docs/context/research/ regardless (#1528).',
+                  default: 'docs/research',
+                },
                 confidenceThreshold: {
                   type: 'number',
                   description: 'Minimum confidence threshold (0-1) before suggesting web search',

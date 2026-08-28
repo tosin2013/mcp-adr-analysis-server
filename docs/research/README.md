@@ -1,20 +1,26 @@
 # Research Documentation Index
 
-This directory contains research documentation for the project. Research files are generated dynamically and stored in `docs/context/research/`.
+This directory contains research documentation for the project, written by the
+`perform_research` MCP tool.
 
-**Last Updated**: 2025-12-15
+**Last Updated**: 2026-08-28
 
 ## Research Files Location
 
-All research documentation is stored in:
+- **Location**: `docs/research/` — this directory, and the tool's `researchDirectory` default
+- **Format**: `perform-research-{ISO timestamp}.md`, plus `latest.md` mirroring the most recent
+- **Configurable**: pass `researchDirectory` to `perform_research` to write elsewhere
 
-- **Location**: `docs/context/research/`
-- **Format**: `perform-research-{timestamp}.md`
-- **Example**: `perform-research-2025-12-15T16-45-17-448Z.md`
-
-## Available Research Files
-
-See the [context/research directory](../context/research/) for actual research files.
+> **Corrected 2026-08-28 (#1528).** This file previously stated that research lived in
+> `docs/context/research/`. That was true of the code and false of the tool schema, which
+> advertised `docs/research` — and `perform_research` accepted no output parameter at all, so
+> callers could neither choose nor discover the destination. 187 files accumulated in the
+> undocumented path, untracked by git, while this directory held only this README.
+>
+> The tool now honours `researchDirectory` and defaults to `docs/research/`. The files under
+> `docs/context/research/` are artifacts of the old behaviour; see #1528 for their disposition.
+> `docs/context/` remains in use by the _context-document_ system for other tools, which is a
+> different thing from research output.
 
 ## Research Process
 
