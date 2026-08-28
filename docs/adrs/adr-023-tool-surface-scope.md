@@ -244,6 +244,20 @@ deferral this section originally implied.
 Whether any of the 11 is ever deleted. That is `retirement.py`'s question, asked per
 asset, each with its own admission under the CE-MCP migration milestone.
 
+> **Correction (2026-08-28).** That routing was unworkable as written. The CE-MCP
+> migration milestone's own description says it _"stays empty until #1416 lands: the
+> batches are defined BY the registry"_ — so a retirement admitted there would have
+> been blocked behind an unassigned issue. Acting on the sentence above, #1537 and
+> #1538 were filed into that milestone and broke its precondition within the hour.
+>
+> Retirement admissions now go to the **Cleanup** milestone, which has no such
+> precondition. The CE-MCP milestone keeps only what ADR-021 requires of it: the
+> per-batch migration, still empty until #1416.
+>
+> The substance is unchanged — per asset, `retirement.py` first, its own admission,
+> and `RETIREMENT_REVIEW` is the expected verdict rather than a blocker. Only the
+> container moves.
+
 ## Consequences
 
 **It resizes queued work.** 75 − 11 host-native − 10 aggregator = **54**. #1416 builds a
