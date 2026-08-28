@@ -2,8 +2,10 @@ import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    // Include both .test.ts and .vitest.ts files during migration
-    include: ['tests/**/*.test.ts', 'tests/**/*.vitest.ts'],
+    // #1517: the `.vitest.ts` half of this pattern existed for the Jest->Vitest
+    // migration and matched exactly one file, a duplicate of its own `.test.ts`
+    // twin. With that file gone the pattern only invites the duplicate back.
+    include: ['tests/**/*.test.ts'],
     exclude: ['**/node_modules/**', '**/dist/**', '**/*.backup'],
 
     // Environment

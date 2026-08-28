@@ -4,24 +4,53 @@
  */
 
 import { McpAdrError } from '../types/index.js';
-import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import { ResearchOrchestrator, type ResearchAnswer } from '../utils/research-orchestrator.js';
+
+/**
+ * Dependencies for generateDeploymentGuidance (injectable for testing)
+ *
+ * The tool used to construct its own `ResearchOrchestrator`, which meant every
+ * test ran a real one against the working tree and raced the per-test timeout
+ * (#1459). Construction now happens in `defaultDeps` and nowhere else, so tests
+ * substitute the research step instead of performing it. ADR-018 marks the
+ * orchestrator for removal; when #1461 lands, this seam is where it is cut.
+ */
+export interface DeploymentGuidanceDependencies {
+  /** Answers a research question about the deployment environment */
+  researchEnvironment: (
+    question: string,
+    projectPath: string,
+    adrDirectory: string
+  ) => Promise<ResearchAnswer>;
+}
+
+/**
+ * Default dependencies for production use
+ */
+export const defaultDeps: DeploymentGuidanceDependencies = {
+  researchEnvironment: (question, projectPath, adrDirectory) =>
+    new ResearchOrchestrator(projectPath, adrDirectory).answerResearchQuestion(question),
+};
 
 /**
  * Generate deployment guidance from ADRs using AI-driven analysis
  */
-export async function generateDeploymentGuidance(args: {
-  adrDirectory?: string;
-  environment?: 'development' | 'staging' | 'production' | 'all';
-  format?: 'markdown' | 'scripts' | 'structured' | 'all';
-  projectPath?: string;
-  includeScripts?: boolean;
-  includeConfigs?: boolean;
-  includeValidation?: boolean;
-  technologyFilter?: string[];
-  customRequirements?: string[];
-  includeRollback?: boolean;
-  generateFiles?: boolean;
-}): Promise<any> {
+export async function generateDeploymentGuidance(
+  args: {
+    adrDirectory?: string;
+    environment?: 'development' | 'staging' | 'production' | 'all';
+    format?: 'markdown' | 'scripts' | 'structured' | 'all';
+    projectPath?: string;
+    includeScripts?: boolean;
+    includeConfigs?: boolean;
+    includeValidation?: boolean;
+    technologyFilter?: string[];
+    customRequirements?: string[];
+    includeRollback?: boolean;
+    generateFiles?: boolean;
+  },
+  deps: DeploymentGuidanceDependencies = defaultDeps
+): Promise<any> {
   const {
     adrDirectory = 'docs/adrs',
     environment = 'production',
@@ -88,13 +117,14 @@ Use Docker containers with docker-compose for orchestration.
     // Research current deployment environment
     let environmentContext = '';
     try {
-      const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
-      const research = await orchestrator.answerResearchQuestion(
+      const research = await deps.researchEnvironment(
         `Analyze deployment requirements for ${environment} environment:
 1. What deployment infrastructure is currently available?
 2. What deployment patterns are documented in ADRs?
 3. Are there existing deployment scripts or configurations?
-4. What are the deployment constraints or requirements?`
+4. What are the deployment constraints or requirements?`,
+        projectPath,
+        adrDirectory
       );
 
       const envSource = research.sources.find(s => s.type === 'environment');

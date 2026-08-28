@@ -1,18 +1,71 @@
 /**
  * Unit tests for deployment-guidance-tool.ts
  * Tests the generateDeploymentGuidance function with comprehensive scenarios
+ *
+ * Mocking style: `vi.mock` + normal static imports. This file previously used
+ * top-level `await import()` after `vi.mock`; the duplicate that #1517 removed
+ * (`deployment-guidance-tool.vitest.ts`) used static imports. The two files had
+ * byte-identical test names and the same 90 assertions, so the choice was
+ * mocking style alone — static imports win because `vi.mock` hoisting already
+ * makes them correct, and they type without a cast at every call site.
  */
 
-import { describe, it, expect, vi, MockedFunction } from 'vitest';
+import { describe, it, expect, vi, type MockedFunction } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
-// Pragmatic mocking approach to avoid TypeScript complexity
+const { answerResearchQuestionSpy } = vi.hoisted(() => ({
+  answerResearchQuestionSpy: vi.fn(),
+}));
+
 vi.mock('../../src/utils/adr-discovery.js', () => ({
   discoverAdrsInDirectory: vi.fn(),
 }));
 
-const { generateDeploymentGuidance } = await import('../../src/tools/deployment-guidance-tool.js');
-const { discoverAdrsInDirectory } = await import('../../src/utils/adr-discovery.js');
+vi.mock('../../src/utils/research-orchestrator.js', () => ({
+  ResearchOrchestrator: vi.fn(function (this: any) {
+    this.answerResearchQuestion = answerResearchQuestionSpy;
+  }),
+}));
+
+import {
+  generateDeploymentGuidance as generateDeploymentGuidanceImpl,
+  defaultDeps,
+} from '../../src/tools/deployment-guidance-tool.js';
+import { discoverAdrsInDirectory } from '../../src/utils/adr-discovery.js';
+import { ResearchOrchestrator } from '../../src/utils/research-orchestrator.js';
+
+/**
+ * #1459: the tool used to construct a real `ResearchOrchestrator`, so each of
+ * these tests scanned the working tree and sat ~3.3s against a 30s per-test
+ * timeout — a loaded CI runner tipped it over. Every call below goes through the
+ * injected seam instead, so nothing here touches the real filesystem.
+ */
+const researchEnvironment = vi.fn();
+
+const generateDeploymentGuidance = (args: Parameters<typeof generateDeploymentGuidanceImpl>[0]) =>
+  generateDeploymentGuidanceImpl(args, { researchEnvironment });
+
+const stubResearch = (overrides: Record<string, unknown> = {}) => ({
+  question: 'stub',
+  sources: [
+    {
+      type: 'environment' as const,
+      data: { capabilities: ['kubectl 1.29', 'helm 3.14'] },
+      confidence: 0.5,
+      timestamp: '2026-01-01T00:00:00.000Z',
+    },
+  ],
+  confidence: 0.42,
+  needsWebSearch: false,
+  answer: 'INJECTED_DEPLOYMENT_CONTEXT',
+  metadata: { duration: 1, sourcesQueried: ['environment'], filesAnalyzed: 0 },
+  ...overrides,
+});
+
+beforeEach(() => {
+  researchEnvironment.mockReset();
+  researchEnvironment.mockResolvedValue(stubResearch());
+});
 
 describe('deployment-guidance-tool', () => {
   describe('generateDeploymentGuidance', () => {
@@ -56,7 +109,7 @@ describe('deployment-guidance-tool', () => {
         expect(result.content[0].text).toContain('Found 1 ADRs');
         expect(result.content[0].text).toContain('**Target Environment**: production');
         expect(result.content[0].text).toContain('Use Docker for Containerization');
-      }, 30000); // Increased timeout to 30s for Node.js 22 compatibility
+      });
 
       it('should handle custom ADR directory and project path', async () => {
         const mockAdrs = [
@@ -122,7 +175,7 @@ describe('deployment-guidance-tool', () => {
         expect(result.content[0].text).toContain('**Target Environment**: staging');
         expect(result.content[0].text).toContain('Testing**: Staging-specific configurations');
         expect(result.content[0].text).toContain('Load Balancer Configuration');
-      }, 30000);
+      });
 
       it('should handle development environment specifics', async () => {
         const mockAdrs = [
@@ -555,5 +608,83 @@ describe('deployment-guidance-tool', () => {
         expect(content).toContain('Troubleshooting');
       });
     });
+  });
+});
+
+/**
+ * #1459 regression cover: the injected seam is the only research path.
+ */
+describe('deployment-guidance-tool — injected environment research', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (discoverAdrsInDirectory as MockedFunction<typeof discoverAdrsInDirectory>).mockResolvedValue({
+      adrs: [
+        {
+          title: 'Use Docker for Containerization',
+          filename: 'ADR-001-docker.md',
+          status: 'Accepted',
+          content: 'We will use Docker containers.',
+          date: '2024-01-01',
+          path: '/test/ADR-001-docker.md',
+        },
+      ],
+      summary: { byStatus: { Accepted: 1 }, byCategory: {} },
+      directory: 'docs/adrs',
+      totalAdrs: 1,
+      recommendations: [],
+    } as any);
+  });
+
+  it('renders the injected research rather than researching the real project', async () => {
+    const injected = vi.fn().mockResolvedValue(stubResearch());
+
+    const result = await generateDeploymentGuidanceImpl(
+      { projectPath: '/nonexistent/project', adrDirectory: 'docs/adrs' },
+      { researchEnvironment: injected }
+    );
+    const content = result.content[0].text;
+
+    expect(injected).toHaveBeenCalledTimes(1);
+    expect(injected).toHaveBeenCalledWith(
+      expect.stringContaining('production'),
+      '/nonexistent/project',
+      'docs/adrs'
+    );
+    expect(content).toContain('INJECTED_DEPLOYMENT_CONTEXT');
+    expect(content).toContain('42.0%');
+    expect(content).toContain('kubectl 1.29');
+  });
+
+  it('reports research failure instead of dropping the section silently', async () => {
+    const injected = vi.fn().mockRejectedValue(new Error('BOOM_NO_ENVIRONMENT'));
+
+    const result = await generateDeploymentGuidanceImpl({}, { researchEnvironment: injected });
+
+    expect(result.content[0].text).toContain('Environment Analysis Failed');
+    expect(result.content[0].text).toContain('BOOM_NO_ENVIRONMENT');
+  });
+});
+
+/**
+ * `defaultDeps` is the one place a `ResearchOrchestrator` is still constructed.
+ * Every other test injects past it, so without this the production wiring is
+ * the only line in the file nothing executes — and a transposed argument would
+ * ship: the seam takes (question, projectPath, adrDirectory) while the
+ * constructor takes (projectPath, adrDirectory).
+ */
+describe('defaultDeps.researchEnvironment', () => {
+  it('constructs the orchestrator with the project path and delegates the question', async () => {
+    vi.clearAllMocks();
+    answerResearchQuestionSpy.mockResolvedValue({ answer: 'WIRED', sources: [], confidence: 0.1 });
+
+    const research = await defaultDeps.researchEnvironment(
+      'what infrastructure is available?',
+      '/some/project',
+      'custom/adrs'
+    );
+
+    expect(ResearchOrchestrator).toHaveBeenCalledWith('/some/project', 'custom/adrs');
+    expect(answerResearchQuestionSpy).toHaveBeenCalledWith('what infrastructure is available?');
+    expect(research.answer).toBe('WIRED');
   });
 });
