@@ -85,14 +85,6 @@ For AI-powered analysis, add your OpenRouter API key:
 | ------------------ | -------------------------------------- | ------- |
 | `ANALYSIS_TIMEOUT` | Tool execution timeout in milliseconds | `30000` |
 
-### Firecrawl (Web Research)
-
-| Variable             | Description                       | Default                 |
-| -------------------- | --------------------------------- | ----------------------- |
-| `FIRECRAWL_ENABLED`  | Enable Firecrawl integration      | `false`                 |
-| `FIRECRAWL_API_KEY`  | Firecrawl API key (cloud service) | —                       |
-| `FIRECRAWL_BASE_URL` | Firecrawl base URL (self-hosted)  | `http://localhost:3000` |
-
 ### ADR Aggregator
 
 | Variable                 | Description                       | Default                                    |
@@ -251,8 +243,6 @@ All options with recommended values:
         "CACHE_DIRECTORY": ".mcp-adr-cache",
         "MAX_CACHE_SIZE": "104857600",
         "ANALYSIS_TIMEOUT": "30000",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "fc-xxxxx",
         "ADR_AGGREGATOR_ENABLED": "true",
         "ADR_AGGREGATOR_API_KEY": "agg_xxxxx"
       }
@@ -279,7 +269,6 @@ The server logs configuration details on startup:
 [INFO]   ADR Directory: docs/adrs
 [INFO]   Log Level: DEBUG
 [INFO]   Cache Enabled: true
-[INFO]   Firecrawl Enabled: false
 [INFO]   ADR Aggregator Enabled: false
 ```
 

@@ -32,7 +32,6 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 | **Tree-sitter**        | An incremental parsing library that provides AST (Abstract Syntax Tree) analysis for 50+ languages. Used for semantic code understanding, extracting function signatures, and identifying architectural patterns. |
 | **Knowledge Graph**    | A graph database maintained by the server that tracks relationships between ADRs, code implementations, and architectural decisions. Enables intelligent code linking and impact analysis.                        |
 | **Smart Code Linking** | AI-powered discovery of code files related to ADRs and architectural decisions, using keyword extraction and semantic search.                                                                                     |
-| **Firecrawl**          | Web page extraction/search service used by optional research tools (`FIRECRAWL_API_KEY`).                                                                                                                         |
 | **ADR Aggregator**     | Optional SaaS integration for syncing and sharing ADR context across teams (`ADR_AGGREGATOR_API_KEY`).                                                                                                            |
 
 </details>
@@ -232,7 +231,7 @@ const relatedCode = await findRelatedCode(
 ## 🛠️ Technology Stack
 
 **Runtime:** Node.js 20+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Vitest (~49% statements, enforced floor)
-**Search:** [ripgrep](https://github.com/BurntSushi/ripgrep) (fast recursive text search) + fast-glob (file matching) • **AI Integration:** OpenRouter.ai • **Web Research:** [Firecrawl](https://firecrawl.dev/) (web page extraction API) • **Code Analysis:** [tree-sitter](https://tree-sitter.github.io/tree-sitter/) (incremental code parser) + Smart Code Linking
+**Search:** [ripgrep](https://github.com/BurntSushi/ripgrep) (fast recursive text search) + fast-glob (file matching) • **AI Integration:** OpenRouter.ai • **Code Analysis:** [tree-sitter](https://tree-sitter.github.io/tree-sitter/) (incremental code parser) + Smart Code Linking
 
 📖 **[Technical Details →](docs/explanation/server-architecture.md)** | **[CE-MCP Migration Playbook →](docs/how-to-guides/ce-mcp-migration-playbook.md)**
 
@@ -255,36 +254,6 @@ npm run test:coverage # Coverage report
 ```
 
 📖 **[Testing Guide →](docs/how-to-guides/troubleshooting.md)**
-
-## 🔥 Firecrawl Integration (Optional — Skip for Getting Started)
-
-**Enhanced web research capabilities for comprehensive architectural analysis.**
-
-> **Note:** You don't need Firecrawl for basic ADR analysis. The server works fully without it. Only configure Firecrawl if you need web research features like the `perform_research` tool with external sources.
-
-<details>
-<summary><b>When is Firecrawl useful?</b></summary>
-
-- **ADR research** — automatically pull best practices from official docs when generating ADRs
-- **Technology evaluation** — compare frameworks by crawling their documentation and changelogs
-- **Security audits** — check CVE databases and security advisories for your dependencies
-- **Migration planning** — gather migration guides and breaking-change notes from upstream projects
-
-</details>
-
-```bash
-# Option 1: Cloud service (recommended)
-export FIRECRAWL_ENABLED="true"
-export FIRECRAWL_API_KEY="fc-your-api-key-here"
-
-# Option 2: Self-hosted
-export FIRECRAWL_ENABLED="true"
-export FIRECRAWL_BASE_URL="http://localhost:3000"
-
-# Option 3: Disabled (default - server works without web search)
-```
-
-📖 **[Firecrawl Setup Guide →](docs/reference/environment-config.md#firecrawl-configuration)**
 
 ## 🌐 ADR Aggregator Integration (Optional)
 

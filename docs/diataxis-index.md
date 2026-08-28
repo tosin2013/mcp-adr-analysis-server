@@ -22,7 +22,6 @@ Practical guides that help you accomplish specific tasks. Best for **practitione
 
 - [Installation Guide](./how-to-guides/installation-guide.md) - Detailed installation instructions
 - [MCP Client Setup](./how-to-guides/mcp-client-compatibility.md) - Configure Claude, Cursor, Cline, and more
-- [Firecrawl Integration](./how-to-guides/firecrawl-setup.md) - Enable web content analysis
 - [Troubleshooting](./how-to-guides/troubleshooting.md) - Common issues and solutions
 - [Deployment Readiness](./how-to-guides/deployment-readiness.md) - Validate deployment readiness
 

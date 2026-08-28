@@ -39,18 +39,7 @@ npm install -g mcp-adr-analysis-server
 }
 ```
 
-### **3. Configure Firecrawl (Optional but Recommended)**
-
-```bash
-# Enable web search capabilities for enhanced research
-export FIRECRAWL_ENABLED="true"
-export FIRECRAWL_API_KEY="fc-your-api-key-here"
-
-# Or use self-hosted Firecrawl
-export FIRECRAWL_BASE_URL="https://localhost:3000"
-```
-
-### **4. First Analysis**
+### **3. First Analysis**
 
 ```bash
 # Run comprehensive project analysis
@@ -151,7 +140,6 @@ graph TD
 - **Content Security** - Automatic sensitive data masking
 - **Multi-Format Support** - TypeScript, Python, Java, Go, and more
 - **CI/CD Integration** - Automated validation and deployment workflows
-- **Firecrawl Integration** - Web search and research capabilities for enhanced analysis
 
 ---
 
@@ -164,60 +152,8 @@ graph TD
 | **Security Scanning**    | 1-3 seconds   | 100%     |
 | **Content Masking**      | 0.5-1 seconds | 95%      |
 | **Knowledge Graph**      | Real-time     | 90%      |
-| **Firecrawl Web Search** | 2-5 seconds   | 85%      |
 
 ---
-
-## 🔥 Firecrawl Integration
-
-**Enhanced web research capabilities for comprehensive architectural analysis.**
-
-### **What is Firecrawl?**
-
-Firecrawl provides intelligent web scraping and content extraction, enabling the MCP ADR Analysis Server to research best practices, gather current information, and enhance architectural decision-making with real-time web data.
-
-### **Key Benefits**
-
-- **Real-time Research** - Access current best practices and architectural patterns
-- **Enhanced ADRs** - Generate more comprehensive decision records with external context
-- **Intelligent Scraping** - Extract relevant content from technical documentation and blogs
-- **Fallback Support** - Graceful degradation when web search is unavailable
-
-### **Setup Options**
-
-#### **Option 1: Cloud Service (Recommended)**
-
-```bash
-# Get your API key from https://firecrawl.dev
-export FIRECRAWL_ENABLED="true"
-export FIRECRAWL_API_KEY="fc-your-api-key-here"
-```
-
-#### **Option 2: Self-Hosted**
-
-```bash
-# Run your own Firecrawl instance
-docker run -p 3000:3000 firecrawl/firecrawl
-
-# Configure the server
-export FIRECRAWL_ENABLED="true"
-export FIRECRAWL_BASE_URL="https://localhost:3000"
-```
-
-#### **Option 3: Disabled (Default)**
-
-```bash
-# Firecrawl is disabled by default
-# Server will work without web search capabilities
-```
-
-### **Firecrawl-Enhanced Tools**
-
-- **`llm_web_search`** - Intelligent web search with relevance scoring
-- **`llm_cloud_management`** - Cloud provider research and best practices
-- **`llm_database_management`** - Database technology research and recommendations
-
-**Learn more**: **[Firecrawl Configuration Guide](reference/environment-config.md#firecrawl-configuration)**
 
 ---
 

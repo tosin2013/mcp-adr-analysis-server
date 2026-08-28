@@ -99,9 +99,15 @@ describe('MCP protocol', () => {
   it('exposes no duplicate tool names', async () => {
     // Four hand-maintained registries feed this list today (#1416). A merge that
     // double-registers a tool is invisible to a grep and breaks dispatch.
-    const dupes = toolNames.filter((n, i) => toolNames.indexOf(n) !== i);
+    //
+    // Fetched here rather than reusing the shared `toolNames`: that is populated
+    // by an earlier test, so under a `-t` filter this asserted against an empty
+    // array and passed without checking anything (#1526).
+    const names = (await client.listTools()).tools.map(t => t.name);
+    expect(names.length).toBeGreaterThan(20);
+    const dupes = names.filter((n, i) => names.indexOf(n) !== i);
     expect(dupes).toEqual([]);
-  });
+  }, 60_000);
 
   it('still exposes the tools the old grep guard checked for', async () => {
     // The literals test.yml grepped the bundle for, asserted as real registry
@@ -113,15 +119,39 @@ describe('MCP protocol', () => {
     // the presence of a tool this server has never exposed, and passing.
     // That is not a hypothetical weakness in the grep guard -- it is the guard
     // being wrong today, found by the first run of this test.
+    //
+    // Fetched here rather than reusing the shared `toolNames`, for the same
+    // reason as the test above: an empty array satisfies every assertion in this
+    // block except the `toContain` ones, and those would then fail for the wrong
+    // reason (#1526).
+    const names = (await client.listTools()).tools.map(t => t.name);
     for (const name of ['mcp_planning', 'interactive_adr_planning']) {
-      expect(toolNames, `${name} is missing from tools/list`).toContain(name);
+      expect(names, `${name} is missing from tools/list`).toContain(name);
     }
     // The real tool the guard was presumably reaching for.
-    expect(toolNames).toContain('analyze_project_ecosystem');
+    expect(names).toContain('analyze_project_ecosystem');
     // And the tool it literally named does not exist -- pinned so that if it is
     // ever added, this test says so rather than quietly passing.
-    expect(toolNames).not.toContain('analyze_project');
-  });
+    expect(names).not.toContain('analyze_project');
+  }, 60_000);
+
+  it('does not advertise llm_web_search', async () => {
+    // #1526: retired with @mendable/firecrawl-js. ADR-023 declassified it --
+    // "native web search in every frontier host" -- and the implementation could
+    // not have served it anyway: `this.firecrawl` was assigned null on both
+    // branches, so the only reachable path fabricated example.com URLs that
+    // `performWebSearch` then discarded on a missing `found` field. The tool
+    // returned "Search Results (0 found)" while reporting "Provider: Firecrawl"
+    // and a 57.5% confidence borrowed from a different measurement.
+    //
+    // Asserted over the wire because a grep cannot tell a registry entry from a
+    // string in a comment. Fetched here rather than reusing the shared
+    // `toolNames`: that is populated by another test, so under a `-t` filter
+    // this would assert against an empty array and pass without checking
+    // anything. It did exactly that on first run.
+    const res = await client.listTools();
+    expect(res.tools.map(t => t.name)).not.toContain('llm_web_search');
+  }, 60_000);
 
   it('dispatches tools/call and returns a well-formed result', async () => {
     // One call that actually reaches a handler. This is what the grep could

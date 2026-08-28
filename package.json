@@ -45,7 +45,6 @@
     "docs:clean": "rm -rf docs/api"
   },
   "dependencies": {
-    "@mendable/firecrawl-js": "^4.25.2",
     "@modelcontextprotocol/sdk": "^1.30.0",
     "fast-glob": "^3.3.2",
     "js-yaml": "^4.1.0",

@@ -14,10 +14,6 @@ A short document that captures an important architectural decision, including th
 
 A tree representation of the syntactic structure of source code. The server uses AST analysis (via tree-sitter) to understand code patterns, detect architectural decisions embedded in code, and perform intelligent code linking.
 
-## Firecrawl
-
-An optional web scraping and content extraction service that enhances the server's research capabilities. When enabled, it allows tools like `llm_web_search` to gather real-time information from the web for more comprehensive ADR generation. See the [Firecrawl Setup Guide](../how-to-guides/firecrawl-setup.md).
-
 ## Knowledge Graph
 
 An in-memory data structure maintained by the server that models relationships between ADRs, code implementations, technology decisions, and their impacts. It powers intelligent features like pattern recognition and cross-ADR dependency analysis.

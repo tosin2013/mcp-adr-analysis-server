@@ -679,27 +679,6 @@ TOOL_CATALOG.set('create_research_template', {
   },
 });
 
-TOOL_CATALOG.set('llm_web_search', {
-  name: 'llm_web_search',
-  shortDescription: 'Web search via LLM',
-  fullDescription: 'Performs web searches with LLM-enhanced result analysis.',
-  category: 'research',
-  complexity: 'moderate',
-  tokenCost: { min: 2000, max: 5000 },
-  hasCEMCPDirective: false, // Phase 4.3: Moderate tool - LLM web search
-  relatedTools: ['perform_research', 'llm_cloud_management'],
-  keywords: ['search', 'web', 'llm', 'internet'],
-  requiresAI: true,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      query: { type: 'string', description: 'Search query' },
-      maxResults: { type: 'number', default: 10 },
-    },
-    required: ['query'],
-  },
-});
-
 TOOL_CATALOG.set('llm_cloud_management', {
   name: 'llm_cloud_management',
   shortDescription: 'Cloud management via LLM',
@@ -708,7 +687,7 @@ TOOL_CATALOG.set('llm_cloud_management', {
   complexity: 'complex',
   tokenCost: { min: 3000, max: 6000 },
   hasCEMCPDirective: false, // Phase 4.3: Complex tool - cloud management orchestration
-  relatedTools: ['llm_web_search', 'llm_database_management'],
+  relatedTools: ['llm_database_management'],
   keywords: ['cloud', 'management', 'llm', 'aws', 'gcp', 'azure'],
   requiresAI: true,
   inputSchema: {
@@ -729,7 +708,7 @@ TOOL_CATALOG.set('llm_database_management', {
   complexity: 'complex',
   tokenCost: { min: 2500, max: 5000 },
   hasCEMCPDirective: false, // Phase 4.3: Complex tool - database management orchestration
-  relatedTools: ['llm_cloud_management', 'llm_web_search'],
+  relatedTools: ['llm_cloud_management'],
   keywords: ['database', 'management', 'llm', 'sql', 'nosql'],
   requiresAI: true,
   inputSchema: {
