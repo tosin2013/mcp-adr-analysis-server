@@ -895,16 +895,6 @@ export class KnowledgeGraphManager {
   }
 
   /**
-   * Get relationships from knowledge graph
-   * @deprecated Use queryKnowledgeGraph for actual queries
-   */
-  getRelationships(_nodeType: string, _relationType?: string): Array<any> {
-    // This is a synchronous method that requires async data
-    // Return empty array for now - use queryKnowledgeGraph for actual queries
-    return [];
-  }
-
-  /**
    * Calculate memory-based health score from knowledge graph
    */
   private async calculateMemoryScore(kg: KnowledgeGraphSnapshot): Promise<MemoryHealthScore> {
