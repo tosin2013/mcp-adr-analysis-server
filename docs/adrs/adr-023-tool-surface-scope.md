@@ -159,7 +159,7 @@ already computes exactly the per-tool counts this section needs:
 | complete per-tool count `Map`, sorted                   | `src/utils/knowledge-graph-manager.ts:406-416`                         | `.slice(0, 10)` truncates it **before persisting** — the full map is built and discarded                              |
 | every execution recorded                                | `trackToolExecution`, `src/index.ts:8219`, called at `:4201` / `:4208` | persists under `os.tmpdir()` (`knowledge-graph-manager.ts:44-52`) — wiped by OS temp cleanup, never survives a reboot |
 | distinct tools per session                              | `src/utils/conversation-memory-manager.ts:131,163`                     | same `os.tmpdir()` problem; a dedup'd list, no counts                                                                 |
-| complete `MonitoringManager` with `MetricCategory.TOOL` | `src/utils/monitoring.ts`                                              | **zero production call sites** — built, tested, never wired                                                           |
+| complete `MonitoringManager` with `MetricCategory.TOOL` | ~~`src/utils/monitoring.ts`~~ — **retired**, #1487                     | had zero production call sites and no persistence; it could not have served this need. Retired 2026-08-27             |
 
 And one blind spot that bears directly on this section: the CE-MCP directive path at
 `src/index.ts:3875-3888` returns before the dispatch switch and before

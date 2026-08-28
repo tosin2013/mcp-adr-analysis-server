@@ -175,41 +175,30 @@ async function analyzeLargeFile(filePath: string) {
 
 ## 📈 Monitoring Performance
 
-### 1. Enable Performance Monitoring
+> **This section previously documented an API that never existed.** It showed
+> `MonitoringManager.getInstance()`, `monitor.trackOperation(...)` and
+> `monitor.getPerformanceReport()` — none of which were ever methods on that class — plus
+> `ENABLE_MONITORING`, `MONITORING_LEVEL` and `PERFORMANCE_LOG_PATH` env vars and an
+> `npm run monitor:dashboard` script, none of which appear anywhere in `src/` or
+> `package.json`. The class itself was retired in #1487: 725 lines, zero production call
+> sites, no persistence, and a health-check registry that was an empty stub.
 
-```bash
-# .env
-ENABLE_MONITORING=true
-MONITORING_LEVEL=detailed
-PERFORMANCE_LOG_PATH=./logs/performance.json
-```
+What actually exists today, and is wired:
 
-### 2. Collect Metrics
+- **Structured logging with operation timing** — `src/utils/enhanced-logging.ts`, imported by
+  31 modules. `logOperationStart` / `logOperationComplete` / `logOperationFailure` are the
+  timing surface.
+- **Per-tool execution telemetry** — `trackToolExecution` in `src/index.ts` records every tool
+  call, including the CE-MCP directive path, into the knowledge graph at
+  `.mcp-adr-cache/knowledge-graph-snapshots.json`. Per-tool call counts survive a restart
+  (#1488, #1489).
+- **Cache hit/miss accounting** — `ResourceCache` in `src/resources/resource-cache.ts` tracks
+  hits, misses and hit rate live.
 
-```typescript
-import { MonitoringManager } from './utils/monitoring';
-
-const monitor = MonitoringManager.getInstance();
-
-// Track operation performance
-monitor.trackOperation('adr-analysis', async () => {
-  return await analyzeAdr(path);
-});
-
-// Get performance report
-const report = monitor.getPerformanceReport();
-console.log(report);
-```
-
-### 3. Performance Dashboard
-
-View real-time metrics:
-
-```bash
-npm run monitor:dashboard
-```
-
----
+**If you want real metrics — latency percentiles, error rates, traces — use OpenTelemetry.**
+Off-the-shelf instrumentation packages patch `StdioServerTransport`, which is the transport
+this server uses, and emit RPC spans and tool-latency histograms without any bespoke code.
+That is the supported path; nothing in this repository should be hand-rolled to replace it.
 
 ## 🔧 Profiling Tools
 
