@@ -1,0 +1,31 @@
+{
+  "authority_id": "1526",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"@mendable/firecrawl-js\" package.json package-lock.json'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -ril firecrawl src/ | wc -l) -eq 0'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -rq \"FIRECRAWL_\" src/ docs/reference docs/how-to-guides docs/explanation README.md'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "tests/integration/mcp-protocol.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/verify-packaged-runtime.sh"
+    }
+  ],
+  "covers": {
+    "declared": "@mendable/firecrawl-js and every trace of its integration: the dependency, the dead chain in research-orchestrator.ts, the three config fields and env vars, the llm_web_search tool and its four registrations, and the documentation describing a capability that never worked.",
+    "uncovered": "llm_cloud_management and llm_database_management remain registered.",
+    "split_to": "1537"
+  },
+  "$comment": "The tools/list criterion is a real MCP session against the BUILT server, not a grep -- the issue asked for that explicitly, and it earned its place: the first draft of the assertion reused a `toolNames` variable populated by a different test in the same file, so under a `-t` filter it compared against an empty array and passed while checking nothing. It reported green on a tool that was still registered. Fetching the list inside the test is what made it red. Two neighbouring tests in that file share the same latent flaw and were fixed alongside. Note also what this does NOT claim: the inherited description of this defect said fabricated example.com URLs reached users carrying 0.85 confidence. They did not. `performWebSearch` filtered its results on a `found` field the fabricated objects never had, so every one was discarded. The real defect, verified by calling the tool, is that llm_web_search returned 'Search Results (0 found)' while reporting 'Provider: Firecrawl' and 57.5% confidence borrowed from a different measurement."
+}

@@ -561,42 +561,6 @@ export ADR_DIRECTORY="./adrs"
 
 ---
 
-## Firecrawl Integration Issues {#firecrawl-integration-issues}
-
-Firecrawl is an **optional** dependency for web research capabilities. The server works perfectly without it.
-
-### "Firecrawl connection failed" or timeouts
-
-**Problem**: Web search tools return errors or hang.
-**Solution**:
-
-```bash
-# 1. Verify Firecrawl is enabled
-echo $FIRECRAWL_ENABLED   # Should be "true"
-
-# 2. Check API key (cloud service)
-echo $FIRECRAWL_API_KEY    # Should start with "fc-"
-
-# 3. Check connectivity (self-hosted)
-curl "$FIRECRAWL_BASE_URL/health"
-```
-
-### Missing Firecrawl environment variables
-
-**Problem**: You set `FIRECRAWL_ENABLED=true` but web search tools return empty results.
-**Solution**: Ensure you also set the API key:
-
-```bash
-export FIRECRAWL_ENABLED="true"
-export FIRECRAWL_API_KEY="fc-your-api-key-here"
-```
-
-### Do I need Firecrawl?
-
-**No.** Firecrawl is entirely optional. Without it, the server uses local-only analysis. Enable it only if you need web research capabilities for ADR generation. See the [Firecrawl Setup Guide](./firecrawl-setup.md) for details.
-
----
-
 ## MCP Client Compatibility {#mcp-client-compatibility}
 
 Issues specific to different MCP clients.

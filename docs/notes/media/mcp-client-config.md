@@ -147,9 +147,7 @@
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "your_firecrawl_api_key"
+        "LOG_LEVEL": "ERROR"
       }
     }
   }
@@ -172,9 +170,7 @@
         "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "DEBUG",
         "AI_CACHE_ENABLED": "true",
-        "TIMING_ENABLED": "true",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "your_firecrawl_key"
+        "TIMING_ENABLED": "true"
       }
     }
   }
@@ -196,9 +192,7 @@ Create `.vscode/cline_mcp_settings.json`:
         "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
         "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "architecture/adrs",
-        "LOG_LEVEL": "INFO",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
+        "LOG_LEVEL": "INFO"
       }
     }
   }
@@ -401,7 +395,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
 const client = new Client({
   name: 'adr-analysis-client',
-  version: '1.0.0',
+  version: '1.0.0'
 });
 
 await client.connect({
@@ -409,8 +403,8 @@ await client.connect({
   env: {
     PROJECT_PATH: '/path/to/project',
     OPENROUTER_API_KEY: 'your_key_here',
-    EXECUTION_MODE: 'full',
-  },
+    EXECUTION_MODE: 'full'
+  }
 });
 ```
 

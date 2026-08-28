@@ -52,7 +52,6 @@ flowchart TB
 
     subgraph External[External Services]
         E1[OpenRouter AI]
-        E2[Firecrawl]
         E3[ADR Aggregator]
     end
 
@@ -67,7 +66,6 @@ flowchart TB
     H --> TL1 & TL2 & TL3 & TL4
     TL1 & TL2 & TL3 & TL4 --> U1 & U2 & U3 & U4
     U1 --> E1
-    U1 --> E2
     TL2 --> E3
     U4 --> P1
     TL2 --> P2
