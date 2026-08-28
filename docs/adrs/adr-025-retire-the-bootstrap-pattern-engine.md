@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-08-28
 decision-makers: Tosin Akinosho
 consulted: Claude Code (measurement)
@@ -14,10 +14,9 @@ supersedes-in-part:
 
 # ADR-025: Retire the bootstrap pattern-execution engine
 
-> **Proposed.** Nothing in this ADR may be relied on until it is ratified, and no code
-> is deleted on its authority yet. It exists because retiring these assets contradicts
-> three Accepted decisions, and the only honest route from `Accepted` is a superseding
-> decision that says why — not a quiet deletion.
+> **Accepted 2026-08-28 by Tosin Akinosho.** It was drafted `Proposed` because retiring
+> these assets contradicts three Accepted decisions, and the only honest route from
+> `Accepted` is a superseding decision that says why — not a quiet deletion.
 
 ## Context and Problem Statement
 
@@ -95,7 +94,49 @@ safe.
 
 ## Decision
 
-> Unfilled, as in ADR-021 and ADR-023. The disposition is the owner's.
+**Option 1: retire the engine.** Delete `BootstrapValidationLoop` and everything
+reachable only through it, delete `patterns/infrastructure/*.yaml` with their loader, and
+correct the records that describe them.
+
+The disposition adds a reason this ADR did not originally carry, and it is the stronger
+one: **bootstrap pattern-execution is a Skill, not an MCP server.**
+
+That is the same principle ADR-023 used to scope the tool surface — *the host does what
+the host can do* — applied one level down. The distinction in the ecosystem is now
+explicit: an MCP server answers **what can this agent reach**; a Skill answers **how
+should this agent do the work**. MCP is for data that changes between invocations and for
+systems the agent cannot otherwise touch. Skills are for procedural knowledge — "the
+steps to cut a release" is the canonical example, and "the phases, validation checks and
+remediation steps for deploying to Kubernetes" is the same shape.
+
+Everything this engine held is procedure and reference material, not reach:
+
+| what it is | why a Skill fits better |
+| --- | --- |
+| `patterns/infrastructure/*.yaml` — phases, validation checks, remediation steps | reference material loaded on demand. Progressive disclosure means a skill costs its name and description until it is triggered, so 128K of pattern definitions cost nothing until a deployment is actually happening |
+| `deploymentPhases`, `validationChecks` | step-by-step procedure — the documented core Skill use case |
+| script generation and execution | a Skill bundles scripts that run in the agent's own session; the code never enters context, only its output does |
+| `detectAvailableDeploymentPlatforms` probing twelve binaries | the agent already has shell access to its own machine |
+
+Three consequences follow, and each is a defect this repository already has:
+
+1. **Context.** ADR-023 measured `tools/list` at 94,571 bytes (~24K tokens) across 75
+   tools, against Cursor's 40-tool cap. A tool pays that cost on every session. A Skill
+   pays it only when invoked.
+2. **Distribution.** The patterns were never in `package.json` `files`, so they have
+   never reached a single npm consumer. A Skill is a directory that ships as itself —
+   the failure mode is structurally absent.
+3. **Privilege.** This is the decisive one. An MCP server executing `docker ps`,
+   `kubectl get all --all-namespaces` and `bash` runs them with the *server's*
+   privileges, not the requesting user's — the documented confused-deputy failure, and
+   the top-listed hazard for MCP servers that shell out. A Skill's scripts run in the
+   agent's session under the user's own credentials, with the host's existing approval
+   flow in front of them. Retiring the engine removes the exposure rather than
+   mitigating it; #1536 had already been reduced to making one emitted command safer.
+
+**Not decided here:** whether such a Skill gets written. This ADR retires the engine. If
+the capability is wanted, ADR-023's declassification route applies — publish it as a
+Skill, or point at an existing deployment MCP server, rather than rebuilding it here.
 
 ## Consequences
 
@@ -117,6 +158,31 @@ safe.
 **If option 2 is ratified:** the confused-deputy exposure becomes real rather than
 latent, and it needs a threat model before it ships — the server would run privileged
 cluster commands on behalf of a caller it cannot authenticate.
+
+## Research
+
+Consulted 2026-08-28. The Skill-versus-MCP boundary is stated consistently across
+sources: *"An MCP server answers 'what can this agent reach,' and a Skill answers 'how
+should this agent do the work.'"* Skills are recommended for procedural knowledge and
+tool-agnostic workflow logic and cost near-zero context until triggered; MCP is
+recommended for live system access and data that changes between invocations. Skills load
+by progressive disclosure — name and description at discovery, full `SKILL.md` only on
+activation, bundled scripts and references only at execution.
+
+On privilege, the MCP security literature is direct: a server exposing shell execution
+creates a confused deputy, because *"the MCP server executes actions with its own (often
+broad) privileges, not the requesting user's permissions."* The stated remedy is least
+privilege and user-scoped execution — which a Skill gets for free by running inside the
+agent's own session.
+
+Sources:
+
+- [Skills vs MCP servers: when to pick which — The Circuit](https://metacircuits.substack.com/p/the-285-billion-question-skills-vs)
+- [MCP Servers vs Agent Skills: Which to Build in 2026 — Developers Digest](https://www.developersdigest.tech/blog/mcp-servers-vs-agent-skills-2026)
+- [Agent Skills vs MCP: Architecture and Decision Guide — Atlan](https://atlan.com/know/ai-agent/ai-agent-skills/agent-skills-vs-mcp/)
+- [AI Agent Skills Explained: The Missing Procedural Memory Layer](https://aicloudweekly.substack.com/p/ai-agent-skills-explained-the-missing)
+- [MCP Security Cheat Sheet — OWASP](https://cheatsheetseries.owasp.org/cheatsheets/MCP_Security_Cheat_Sheet.html)
+- [Model Context Protocol — Security Best Practices](https://modelcontextprotocol.io/docs/2026-07-28/tutorials/security/security_best_practices)
 
 ## Related
 
