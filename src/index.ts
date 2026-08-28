@@ -874,6 +874,11 @@ export class McpAdrAnalysisServer {
                     'Set to true to request deployment cleanup/teardown guidance (for CI/CD workflows that need to delete and restart deployments).',
                   default: false,
                 },
+                appSelector: {
+                  type: 'string',
+                  description:
+                    'Label selector scoping every destructive teardown command, e.g. "app=checkout-api". Required before any kubectl/oc delete is offered — the tool will not guess a selector, and without this it returns discovery instructions instead of a delete.',
+                },
                 conversationContext: CONVERSATION_CONTEXT_SCHEMA,
               },
             },
