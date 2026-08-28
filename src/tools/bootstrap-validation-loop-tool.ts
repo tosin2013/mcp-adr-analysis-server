@@ -2162,6 +2162,11 @@ async function generateGuidedExecutionInstructions(params: {
   previousExecutionOutput: string;
   previousExecutionSuccess: boolean;
   deploymentCleanupRequested: boolean;
+  /**
+   * Label selector scoping every destructive teardown command, e.g. `app=checkout-api`.
+   * Supplied by the caller; never guessed. Without it no delete is emitted. (#1536)
+   */
+  appSelector?: string | undefined;
 }): Promise<any> {
   const {
     projectPath,
@@ -2170,6 +2175,7 @@ async function generateGuidedExecutionInstructions(params: {
     currentIteration,
     previousExecutionOutput,
     previousExecutionSuccess,
+    appSelector,
   } = params;
 
   // PHASE 0: Environment Validation (Iteration 0)
@@ -2279,27 +2285,46 @@ ${platformDetection.evidence
     const platformDetection = await detectPlatforms(projectPath);
     const detectedPlatform = platformDetection.primaryPlatform || 'unknown';
 
+    // Every command below is handed to a calling agent to run, so scope is the
+    // whole safety property. Two rules, both learned the hard way (#1536):
+    //
+    //   1. A destructive selector is never guessed. The table used to hardcode
+    //      `app=myapp`, which for almost every user matched nothing -- deleting
+    //      nothing and reporting success, a false green in a validation tool --
+    //      and for anyone who did use that label, destroyed their workload.
+    //   2. Nothing reaches outside the project. `docker system prune -f` removed
+    //      stopped containers, unused networks and dangling images belonging to
+    //      every other project on the host.
+    //
+    // Without a selector the tool emits DISCOVERY steps instead of a delete. That
+    // is the deterministic contract the rest of this server follows: the server
+    // does not invent the input, it says how to obtain it.
+    const kubeCleanup = (cli: 'kubectl' | 'oc') =>
+      appSelector
+        ? {
+            teardown: `${cli} delete deployment,service,configmap,secret -l ${appSelector}`,
+            verify: `${cli} get all -l ${appSelector}`,
+            restart: './bootstrap.sh',
+          }
+        : {
+            teardown: `${cli} get all --show-labels`,
+            verify: `echo "No teardown run: re-invoke with appSelector once the label is known."`,
+            restart: './bootstrap.sh',
+          };
+
     const cleanupCommands: {
       [key: string]: { teardown: string; verify: string; restart: string };
     } = {
-      openshift: {
-        teardown:
-          'oc delete all --selector app=myapp && oc delete configmap --selector app=myapp && oc delete secret --selector app=myapp',
-        verify: 'oc get all --selector app=myapp',
-        restart: './bootstrap.sh',
-      },
-      kubernetes: {
-        teardown: 'kubectl delete deployment,service,configmap,secret -l app=myapp',
-        verify: 'kubectl get all -l app=myapp',
-        restart: './bootstrap.sh',
-      },
+      openshift: kubeCleanup('oc'),
+      kubernetes: kubeCleanup('kubectl'),
+      // `down -v` is scoped to the compose project; a bare `prune` is not.
       docker: {
-        teardown: 'docker-compose down -v && docker system prune -f',
+        teardown: 'docker-compose down -v',
         verify: 'docker ps -a',
         restart: 'docker-compose up -d',
       },
       'docker-compose': {
-        teardown: 'docker-compose down -v && docker system prune -f',
+        teardown: 'docker-compose down -v',
         verify: 'docker ps -a && docker volume ls',
         restart: 'docker-compose up -d',
       },
@@ -2310,6 +2335,8 @@ ${platformDetection.evidence
       verify: 'echo "Manual verification required"',
       restart: './bootstrap.sh',
     };
+
+    const needsSelector = !appSelector && ['kubernetes', 'openshift'].includes(detectedPlatform);
 
     return {
       content: [
@@ -2324,9 +2351,22 @@ ${platformDetection.evidence
 
 This workflow is designed for CI/CD pipelines that need to completely tear down and restart deployments.
 
-### Step 1: Teardown Current Deployment
+### Step 1: ${needsSelector ? 'Identify what to tear down' : 'Teardown Current Deployment'}
 
-**IMPORTANT**: This will DELETE all resources. Confirm with human before proceeding.
+${
+  needsSelector
+    ? `**No teardown command is offered yet.** This tool was not told which workload it may
+delete, and it will not guess a label selector: a guess either matches nothing and reports a
+successful cleanup that removed nothing, or matches somebody else's workload and destroys it.
+
+Run this to see what is deployed and how it is labelled:
+\`\`\`bash
+${cleanup.teardown}
+\`\`\`
+
+Then call this tool again with \`appSelector\` set, e.g. \`"appSelector": "app=checkout-api"\`,
+and the scoped delete command will be provided.`
+    : `**IMPORTANT**: This will DELETE all resources matching \`${appSelector}\`. Confirm with human before proceeding.
 
 Run:
 \`\`\`bash
@@ -2334,9 +2374,9 @@ ${cleanup.teardown}
 \`\`\`
 
 **What this does**:
-- Deletes all deployments, services, and resources
-- Removes configuration and secrets
-- Cleans up volumes and persistent data
+- Deletes deployments, services, configmaps and secrets matching \`${appSelector}\`
+- Leaves everything outside that selector untouched`
+}
 
 ### Step 2: Verify Cleanup
 
@@ -2525,6 +2565,11 @@ export async function bootstrapValidationLoop(args: {
   previousExecutionOutput?: string;
   previousExecutionSuccess?: boolean;
   deploymentCleanupRequested?: boolean;
+  /**
+   * Label selector scoping destructive teardown commands, e.g. `app=checkout-api`.
+   * Required before any delete is offered; never inferred from the project. (#1536)
+   */
+  appSelector?: string;
 }): Promise<any> {
   const {
     projectPath = process.cwd(),
@@ -2537,6 +2582,7 @@ export async function bootstrapValidationLoop(args: {
     previousExecutionOutput = '',
     previousExecutionSuccess = false,
     deploymentCleanupRequested = false,
+    appSelector,
   } = args;
 
   const loop = new BootstrapValidationLoop(projectPath, adrDirectory, maxIterations);
@@ -2556,6 +2602,7 @@ export async function bootstrapValidationLoop(args: {
     previousExecutionOutput,
     previousExecutionSuccess,
     deploymentCleanupRequested,
+    appSelector,
   });
 }
 
