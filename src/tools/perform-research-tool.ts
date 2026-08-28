@@ -10,6 +10,7 @@ import type { ToolContext } from '../types/tool-context.js';
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 import { ToolContextManager, type ToolContextDocument } from '../utils/context-document-manager.js';
 import * as path from 'path';
+import { existsSync } from 'fs';
 
 /**
  * Perform research using the orchestrated multi-source approach
@@ -63,8 +64,14 @@ import * as path from 'path';
  * Derived from the project_files source rather than re-globbing the directory:
  * listing every ADR that exists would assert a link the research never made, and
  * an over-broad citation is worse than none -- it makes the link unfalsifiable.
+ *
+ * Exported for test. The citation rule is the whole substance of #1528 -- if it
+ * silently stopped matching, every generated document would go back to citing
+ * nothing and the file would still be written, so the failure is invisible from
+ * the outside. Reaching it through performResearch() would mean standing up the
+ * orchestrator, so the rule is tested directly.
  */
-function collectConsultedAdrs(
+export function collectConsultedAdrs(
   sources: Array<{ type: string; data?: any }>,
   projectPath: string,
   adrDirectory: string
@@ -77,10 +84,28 @@ function collectConsultedAdrs(
   const seen = new Set<string>();
   for (const f of files) {
     if (typeof f !== 'string') continue;
-    const abs = path.resolve(projectPath, f);
-    if (!abs.startsWith(adrRoot + path.sep)) continue;
-    if (!abs.endsWith('.md')) continue;
-    if (path.basename(abs).toLowerCase() === 'readme.md') continue;
+    if (!f.endsWith('.md')) continue;
+    if (path.basename(f).toLowerCase() === 'readme.md') continue;
+
+    // Two path conventions arrive in this one list, because the orchestrator
+    // builds it from two different roots:
+    //
+    //   PHASE 4  findFiles(projectPath, ['**/*<keyword>*'])  -> 'docs/adrs/adr-001.md'
+    //   PHASE 3  findFiles(adrPath,     ['**/*.md'])         -> 'adr-001.md'
+    //
+    // Resolving only against projectPath dropped every PHASE 3 entry -- the
+    // "Always include ADRs" pass, which is the source this citation was written
+    // to read. It looked correct against this repository only because PHASE 4's
+    // keyword search happens to match ADR filenames here.
+    //
+    // Existence is checked rather than inferred: the adrRoot-relative reading of
+    // an arbitrary 'docs/planning/x.md' also lands under adrRoot, so a path test
+    // alone would invent citations. A cited ADR is one that is on disk, which is
+    // also what the link check in #1527 will require.
+    const abs = [path.resolve(projectPath, f), path.resolve(adrRoot, f)].find(
+      candidate => candidate.startsWith(adrRoot + path.sep) && existsSync(candidate)
+    );
+    if (!abs) continue;
     seen.add(path.relative(projectPath, abs));
   }
   return [...seen].sort();

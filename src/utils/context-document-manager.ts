@@ -67,9 +67,11 @@ export interface ToolContextDocument {
  */
 export class ToolContextManager {
   private contextDir: string;
+  private projectPath: string;
   private logger: EnhancedLogger;
 
   constructor(projectPath: string) {
+    this.projectPath = path.resolve(projectPath);
     this.contextDir = path.join(projectPath, 'docs', 'context');
     this.logger = new EnhancedLogger();
   }
@@ -143,7 +145,18 @@ export class ToolContextManager {
       const filePath = path.join(categoryDir, filename);
 
       // Generate markdown content
-      const markdown = this.generateMarkdown(document);
+      // The document tells its reader where to find itself. Before #1528 that
+      // sentence was built from the tool name -- docs/context/perform_research/,
+      // a directory that has never existed for any tool -- so every generated
+      // document pointed at nothing. Same defect as the write path, one line
+      // further on: it must name the file that was actually written.
+      const markdown = this.generateMarkdown(
+        document,
+        path
+          .relative(this.projectPath, path.join(categoryDir, 'latest.md'))
+          .split(path.sep)
+          .join('/')
+      );
 
       // Write the file
       await fs.writeFile(filePath, markdown, 'utf-8');
@@ -328,7 +341,7 @@ export class ToolContextManager {
    * @param document - Context document to convert
    * @returns Markdown string
    */
-  generateMarkdown(document: ToolContextDocument): string {
+  generateMarkdown(document: ToolContextDocument, latestPath?: string): string {
     const lines: string[] = [];
 
     // Title and metadata
@@ -441,7 +454,9 @@ export class ToolContextManager {
     lines.push('');
     lines.push('```text');
     lines.push('Example prompt:');
-    lines.push(`"Using the context from docs/context/${document.metadata.toolName}/latest.md,`);
+    lines.push(
+      `"Using the context from ${latestPath ?? `docs/context/${document.metadata.toolName}/latest.md`},`
+    );
     lines.push('continue the work from the previous session"');
     lines.push('```');
     lines.push('');
