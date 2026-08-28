@@ -56,24 +56,6 @@ describe('Dependency Injection Pattern Tests', () => {
     });
   });
 
-  describe('Bootstrap Validation Loop Tool DI', () => {
-    it('should export BootstrapValidationLoopDeps interface', async () => {
-      const module = await import('../../src/tools/bootstrap-validation-loop-tool.js');
-      expect(module).toBeDefined();
-    });
-
-    it('should allow BootstrapValidationLoop constructor to accept deps parameter', async () => {
-      const { BootstrapValidationLoop } =
-        await import('../../src/tools/bootstrap-validation-loop-tool.js');
-      expect(typeof BootstrapValidationLoop).toBe('function');
-
-      // This should not throw - constructor should accept deps
-      // Note: We can't fully instantiate due to other dependencies,
-      // but we verify the class exists and is constructible
-      expect(BootstrapValidationLoop.prototype).toBeDefined();
-    });
-  });
-
   describe('DI Pattern Usage Examples', () => {
     it('should demonstrate constructor DI pattern for EnvironmentMemoryManager', async () => {
       // This test demonstrates the intended usage pattern

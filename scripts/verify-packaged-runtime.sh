@@ -39,19 +39,34 @@ npm install --omit=dev "$WORK/$TARBALL" >/dev/null 2>&1
 
 # Every module that reaches an external runtime dependency. Add to this list when
 # a new one appears -- a module absent here is a module this check cannot defend.
+#
+# The list is also a liability, which is #1469: dynamic-deployment-intelligence.js
+# sat here until ADR-025 retired it, and its absence from the package then failed
+# this check with "most likely a runtime dependency is declared under
+# devDependencies" -- a misdiagnosis of a module that was deliberately deleted.
+# The two failures are distinguished below until #1469 replaces the list with
+# enumerated entry points.
 MODULES=(
   "dist/src/utils/ai-executor.js"
   "dist/src/tools/adr-suggestion-tool.js"
   "dist/src/tools/adr-validation-tool.js"
   "dist/src/utils/prompt-execution.js"
   "dist/src/utils/file-system.js"
-  "dist/src/utils/dynamic-deployment-intelligence.js"
   "dist/src/index.js"
 )
 
 echo "==> Importing AI-path entry points from the installed package"
 FAILED=0
+STALE=0
 for m in "${MODULES[@]}"; do
+  # A listed module that is not in the tarball is a stale list entry, not a
+  # missing dependency. Saying so is the difference between a one-line fix and
+  # an afternoon spent auditing devDependencies.
+  if [ ! -f "$WORK/node_modules/mcp-adr-analysis-server/$m" ]; then
+    echo "    STALE $m -- listed here but not in the package"
+    STALE=1
+    continue
+  fi
   if node --input-type=module -e "await import('mcp-adr-analysis-server/$m')" 2>"$WORK/err.txt"; then
     echo "    ok    $m"
   else
@@ -60,6 +75,14 @@ for m in "${MODULES[@]}"; do
     FAILED=1
   fi
 done
+
+if [ "$STALE" -ne 0 ]; then
+  echo
+  echo "MODULES lists a module the package does not contain."
+  echo "If it was deliberately removed, delete its line above. This is #1469:"
+  echo "a hand-maintained list goes stale silently and then misreports why."
+  exit 1
+fi
 
 if [ "$FAILED" -ne 0 ]; then
   echo

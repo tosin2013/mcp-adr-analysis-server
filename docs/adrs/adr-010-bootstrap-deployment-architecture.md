@@ -8,7 +8,16 @@ tags:
 
 ## Status
 
-Accepted
+Superseded in part (2026-08-28) — see the note below
+
+> **Superseded in part by [ADR-025](adr-025-retire-the-bootstrap-pattern-engine.md)
+> (2026-08-28).** The unified architecture this ADR decided — Validated Patterns + SystemCard + Bootstrap Validation Loop behind one tool — has been retired. `BootstrapValidationLoop`, `SystemCardManager` and the resource-tracking pipeline are deleted.
+>
+> It was built and then never connected. `generateGuidedExecutionInstructions` took the loop object and never read it; `executeLoop` had zero callers. The guided path this tool actually serves is unchanged — its output is byte-for-byte identical without the engine.
+>
+> The rest of this ADR stands. It is left unedited below so the original decision remains
+> readable; ADR-025 carries the measurements and the reasoning.
+
 
 ## Date
 
@@ -621,7 +630,7 @@ See the [End User Bootstrap ADR Template](../examples/bootstrap-adr-template.md)
 
 **Last Updated**: 2025-12-15
 **Author**: Tosin Akinosho
-**Status**: Accepted and Implemented
+**Status**: Superseded in part (2026-08-28) — see the note under `## Status` above
 
 ## Implementation Status Update (2025-12-15)
 

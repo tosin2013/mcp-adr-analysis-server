@@ -7,7 +7,16 @@ tags:
 
 ## Status
 
-Accepted (Phase 1 Complete)
+Superseded in part (2026-08-28) — see the note below
+
+> **Superseded in part by [ADR-025](adr-025-retire-the-bootstrap-pattern-engine.md)
+> (2026-08-28).** `DAGExecutor` (`src/utils/dag-executor.ts`) is deleted, and with it the unchecked Phase 2 item *"Wrap `BootstrapValidationLoop.run()` as a Task"* — that method's class no longer exists. The MCP Tasks integration itself is untouched.
+>
+> `DAGExecutor` was reachable only through `BootstrapValidationLoop`, which was constructed and never read. Nothing ever executed a DAG.
+>
+> The rest of this ADR stands. It is left unedited below so the original decision remains
+> readable; ADR-025 carries the measurements and the reasoning.
+
 
 ## Date
 
