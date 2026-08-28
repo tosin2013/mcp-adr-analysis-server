@@ -32,6 +32,16 @@ export interface CacheStats {
 /**
  * Resource cache with TTL support and statistics tracking
  */
+/**
+ * Hard ceiling on cached entries.
+ *
+ * The Map used to be unbounded (#1542). Lazy expiry in `get` only removes an
+ * entry that is READ AGAIN after expiring, so anything queried once -- a one-off
+ * resource URI, a per-project key -- stayed for the life of the process, which
+ * under stdio transport is the whole session.
+ */
+export const MAX_CACHE_ENTRIES = 500;
+
 export class ResourceCache {
   private cache = new Map<string, CacheEntry>();
   private hits = 0;
@@ -232,6 +242,19 @@ export class ResourceCache {
       entry.metadata = resourceMetadata;
     }
 
+    // Bound on write rather than on a timer. `startAutomaticCleanup` scheduled the
+    // only bulk sweep and had zero callers, so the sweep never ran; and a cache
+    // whose correctness depends on a background interval having been started is
+    // unbounded whenever it was not. A setInterval would also hold the stdio event
+    // loop open. Expired entries go first, so a live entry is never evicted to make
+    // room while dead ones remain. (#1542)
+    if (this.cache.size >= MAX_CACHE_ENTRIES) {
+      this.cleanup();
+      if (this.cache.size >= MAX_CACHE_ENTRIES) {
+        this.evictLRU(MAX_CACHE_ENTRIES - 1);
+      }
+    }
+
     this.cache.set(key, entry);
   }
 
@@ -396,33 +419,6 @@ export class ResourceCache {
  * Singleton resource cache instance
  */
 export const resourceCache = new ResourceCache();
-
-/**
- * Start automatic cleanup interval
- * Cleans up expired entries every 5 minutes
- */
-let cleanupInterval: NodeJS.Timeout | null = null;
-
-export function startAutomaticCleanup(intervalMs: number = 5 * 60 * 1000): void {
-  if (cleanupInterval) {
-    clearInterval(cleanupInterval);
-  }
-
-  cleanupInterval = setInterval(() => {
-    const removed = resourceCache.cleanup();
-    if (removed > 0) {
-      // NOTE: All console output goes to stderr to preserve stdout for MCP JSON-RPC
-      console.error(`[ResourceCache] Cleaned up ${removed} expired entries`);
-    }
-  }, intervalMs);
-}
-
-export function stopAutomaticCleanup(): void {
-  if (cleanupInterval) {
-    clearInterval(cleanupInterval);
-    cleanupInterval = null;
-  }
-}
 
 /**
  * Generate ETag for resource data
