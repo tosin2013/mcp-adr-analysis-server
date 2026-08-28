@@ -30,7 +30,6 @@ const SERVER = resolve(process.cwd(), 'dist/src/index.js');
 
 let client: Client;
 let transport: StdioClientTransport;
-let toolNames: string[] = [];
 
 describe('MCP protocol', () => {
   beforeAll(async () => {
@@ -77,7 +76,6 @@ describe('MCP protocol', () => {
 
   it('answers tools/list with a non-trivial tool set', async () => {
     const res = await client.listTools();
-    toolNames = res.tools.map(t => t.name);
 
     expect(Array.isArray(res.tools)).toBe(true);
     // Guards against a refactor that wires up an empty or near-empty registry.
@@ -100,9 +98,10 @@ describe('MCP protocol', () => {
     // Four hand-maintained registries feed this list today (#1416). A merge that
     // double-registers a tool is invisible to a grep and breaks dispatch.
     //
-    // Fetched here rather than reusing the shared `toolNames`: that is populated
-    // by an earlier test, so under a `-t` filter this asserted against an empty
-    // array and passed without checking anything (#1526).
+    // Fetched here rather than through a variable shared with another test.
+    // This block used to read one populated by the test above, so under a `-t`
+    // filter it asserted against an empty array and passed without checking
+    // anything (#1526). That shared variable is now gone.
     const names = (await client.listTools()).tools.map(t => t.name);
     expect(names.length).toBeGreaterThan(20);
     const dupes = names.filter((n, i) => names.indexOf(n) !== i);
@@ -120,10 +119,8 @@ describe('MCP protocol', () => {
     // That is not a hypothetical weakness in the grep guard -- it is the guard
     // being wrong today, found by the first run of this test.
     //
-    // Fetched here rather than reusing the shared `toolNames`, for the same
-    // reason as the test above: an empty array satisfies every assertion in this
-    // block except the `toContain` ones, and those would then fail for the wrong
-    // reason (#1526).
+    // Fetched here for the same reason as the test above: reading a variable
+    // another test populates means an empty array under a `-t` filter (#1526).
     const names = (await client.listTools()).tools.map(t => t.name);
     for (const name of ['mcp_planning', 'interactive_adr_planning']) {
       expect(names, `${name} is missing from tools/list`).toContain(name);
@@ -145,10 +142,10 @@ describe('MCP protocol', () => {
     // and a 57.5% confidence borrowed from a different measurement.
     //
     // Asserted over the wire because a grep cannot tell a registry entry from a
-    // string in a comment. Fetched here rather than reusing the shared
-    // `toolNames`: that is populated by another test, so under a `-t` filter
-    // this would assert against an empty array and pass without checking
-    // anything. It did exactly that on first run.
+    // string in a comment. Fetched here rather than through a variable another
+    // test populates: the first draft did that and, under a `-t` filter,
+    // asserted against an empty array -- passing while checking nothing, on a
+    // tool that was still registered.
     const res = await client.listTools();
     expect(res.tools.map(t => t.name)).not.toContain('llm_web_search');
   }, 60_000);
