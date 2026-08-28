@@ -421,16 +421,31 @@ export class ResearchOrchestrator {
       }
 
       // PHASE 3: Always include ADRs
-      const adrPath = path.join(this.projectPath, this.adrDirectory);
+      //
+      // Scanned from the project root, not from the ADR directory. findFiles
+      // returns paths relative to the root it was given, so scanning adrPath
+      // yielded bare 'adr-001.md' where every other phase yields
+      // 'docs/adrs/adr-001.md'. PHASE 5 then read those bare names -- against
+      // process.cwd(), see below -- they failed, and the relevance filter
+      // dropped them. "Always include ADRs" has therefore included none of
+      // them; any ADR that reached a research document arrived via PHASE 4's
+      // keyword search, by accident of filename. (#1528)
+      const adrGlob = `${this.adrDirectory.replace(/\\/g, '/').replace(/\/+$/, '')}/**/*.md`;
       try {
-        const adrResults = await findFiles(adrPath, ['**/*.md']);
+        const adrResults = await findFiles(this.projectPath, [adrGlob]);
         relevantFiles.push(...adrResults.files.map(f => f.path));
       } catch {
-        this.logger.warn(`ADR directory not found: ${adrPath}`, 'ResearchOrchestrator');
+        this.logger.warn(
+          `ADR directory not found: ${path.join(this.projectPath, this.adrDirectory)}`,
+          'ResearchOrchestrator'
+        );
       }
 
       // PHASE 4: Use glob-based file discovery (tree-sitter will analyze content)
-      // Note: Ripgrep removed per ADR-016 - deterministic tools, LLM reasoning
+      // Note: ripgrep was replaced by tree-sitter + glob discovery. The decision
+      // was implemented but never recorded -- this comment cited ADR-016, which
+      // has never existed. See ADR-006 for the tree-sitter rationale; the missing
+      // record is tracked in #1415.
       if (keywords.length > 0) {
         this.logger.info('Using file discovery for keyword-based search', 'ResearchOrchestrator');
 
@@ -465,7 +480,14 @@ export class ResearchOrchestrator {
       for (const file of results.files.slice(0, 50)) {
         // Limit to 50 files for performance
         try {
-          const content = await fs.readFile(file, 'utf-8');
+          // Resolved against the project, not the process. These paths are
+          // relative to projectPath, but fs.readFile resolves a relative path
+          // against process.cwd() -- so researching a project other than the
+          // server's own working directory read the wrong files entirely, and
+          // silently: a temp project with no README produced a document quoting
+          // this repository's README.md. It only looked correct because
+          // projectPath and cwd coincide when researching this repo. (#1528)
+          const content = await fs.readFile(path.resolve(this.projectPath, file), 'utf-8');
 
           // Calculate text-based relevance
           const relevance = this.calculateRelevanceLegacy(content, question);
