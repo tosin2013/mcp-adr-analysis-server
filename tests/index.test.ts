@@ -27,7 +27,7 @@ vi.mock('../src/utils/directory-compat.js', () => ({
 // Mock config utilities
 vi.mock('../src/utils/config.js', () => ({
   loadConfig: vi.fn(() => ({
-    projectPath: process.cwd(), // Use actual working directory
+    projectPath: '/test/project', // #1519: a fake config should not name the real tree
     adrDirectory: 'docs/adrs',
     logLevel: 'INFO',
     cacheEnabled: true,
@@ -103,7 +103,11 @@ describe('Index.ts - Core Functionality', () => {
     it('should test config loading', async () => {
       const config = await import('../src/utils/config.js');
       const result = config.loadConfig();
-      expect(result.projectPath).toBe(process.cwd());
+      // `loadConfig` is mocked at the top of this file, so this asserts the
+      // mock, not the module. It previously read `toBe(process.cwd())` against
+      // a mock that returned `process.cwd()` — true no matter what the real
+      // loader does, and it tied the suite to the working tree (#1519).
+      expect(result.projectPath).toBe('/test/project');
     });
 
     it('should test logger creation', async () => {

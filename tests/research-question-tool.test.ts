@@ -164,17 +164,21 @@ describe('Research Question Tool', () => {
       });
 
       test('should handle knowledge generation with enhanced mode enabled', async () => {
+        // #1519: this asserted `projectPath: process.cwd()`, which passes
+        // whether or not the argument is threaded through — cwd is also the
+        // default. Passing an explicit path makes the assertion mean something.
         await generateResearchQuestions({
           analysisType: 'correlation',
           problems: sampleProblems,
           knowledgeGraph: sampleKnowledgeGraph,
           enhancedMode: true,
           knowledgeEnhancement: true,
+          projectPath: '/fixture/research-project',
         });
 
         expect(mockGenerateArchitecturalKnowledge).toHaveBeenCalledWith(
           expect.objectContaining({
-            projectPath: process.cwd(),
+            projectPath: '/fixture/research-project',
             technologies: [],
             patterns: [],
             projectType: 'research-methodology',

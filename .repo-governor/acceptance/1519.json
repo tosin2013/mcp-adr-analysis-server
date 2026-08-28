@@ -1,0 +1,27 @@
+{
+  "authority_id": "1519",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -rl \"projectPath: process.cwd()\" tests/ | wc -l) -le 2'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -rn \"projectPath: process.cwd()\" tests/tools/search-codebase-tool.test.ts tests/tools/content-masking-tool.test.ts tests/research-question-tool.test.ts tests/index.test.ts'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "tests/tools/search-codebase-tool.test.ts"
+    },
+    {
+      "check": "tests_pass",
+      "target": "tests/tools/content-masking-tool.test.ts"
+    }
+  ],
+  "covers": {
+    "declared": "Tests whose SUBJECT is the live working tree no longer have one: search-codebase and content-masking now run against built fixtures, research-question asserts a threaded path instead of the default, and index.test.ts stops seeding a mock with the real cwd.",
+    "uncovered": "Two occurrences remain, in tests/resources/code-quality-resource.test.ts and tests/resources/deployment-history-resource.test.ts.",
+    "split_to": "1541"
+  },
+  "$comment": "The issue's first acceptance box asks for `grep -rc \"projectPath: process.cwd()\" tests/` to return 0. It returns 2, and the criterion above says <= 2 deliberately rather than 0. Those two assertions are not the defect the issue describes. They do not scan anything -- they assert that a MOCKED callee received process.cwd(), and it does, because code-quality-resource.ts:196 and deployment-history-resource.ts:305 HARDCODE process.cwd() with no parameter to override it. Rewriting those tests would either delete real coverage of a real contract or require changing the source, and the source change is the actual bug: both resources ignore the configured PROJECT_PATH, so an MCP server started with PROJECT_PATH=/foo analyses its own cwd instead. That is a hardcoded value presented as a measurement, which is #1541's cohort, so it is split there rather than smuggled in under test hygiene. Grep count as a proxy for 'no test scans the live repo' is right about 31 of 33 occurrences and wrong about these two; the second criterion pins the four files that actually changed so the proxy cannot be satisfied by weakening them later."
+}
