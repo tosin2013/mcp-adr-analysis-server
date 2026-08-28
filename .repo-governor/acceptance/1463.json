@@ -1,0 +1,22 @@
+{
+  "authority_id": "1463",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"/tmp/\" docs/adrs/adr-014-ce-mcp-architecture.md'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -qE \"index[.]ts:[0-9]\" docs/adrs/adr-014-ce-mcp-architecture.md'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/check-adr-drift.sh"
+    },
+    {
+      "check": "file_exists",
+      "target": "docs/adrs/adr-014-ce-mcp-architecture.md"
+    }
+  ],
+  "$comment": "Criterion 2 forbids ANY src/index.ts:NNN citation rather than requiring correct ones, deliberately. #1416 removes roughly 4,000 lines from that file, so a line number that is right today is wrong within one PR -- re-anchoring twice is the mistake this issue exists to stop. Symbol references are the only durable form, so the bar bans the fragile form outright. Criterion 1 is a bare '/tmp/' rather than the specific filename: the first draft of an adjacent bar (#1415's) failed because the note EXPLAINING that a file was gone quoted its path, and check-adr-drift.sh cannot tell a quoted dead path from a live one. So the ADR does not name the temp path even in its own Corrections section. The 82-tools and 6,145-lines figures in ADR-014's Context are NOT covered and are deliberately left wrong-for-today: they were true when the decision was taken, and an ADR that silently updates its own evidence to match the present cannot be checked against anything."
+}
