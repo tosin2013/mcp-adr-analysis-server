@@ -28,6 +28,7 @@ This directory contains the Architectural Decision Records for the MCP ADR Analy
 | [ADR-021](adr-021-ai-layer-disposition.md)                             | Disposition of the legacy AI execution layer     | Accepted   | 2026-08-26 | Architecture  |
 | [ADR-022](adr-022-adopt-madr-format.md)                                | Adopt MADR as the default decision-record format | Accepted   | 2026-08-27 | Documentation |
 | [ADR-023](adr-023-tool-surface-scope.md)                               | Which of the 75 tools should still exist         | Accepted   | 2026-08-27 | Architecture  |
+| [ADR-025](adr-025-retire-the-bootstrap-pattern-engine.md)              | Retire the bootstrap pattern-execution engine    | Proposed   | 2026-08-28 | Deployment    |
 
 > **ADR-016 was never written.** ADR-017 cites it twice as a predecessor decision
 > ("Replace ripgrep with tree-sitter"), and `tree-sitter-code-tools.ts` cited it in an
