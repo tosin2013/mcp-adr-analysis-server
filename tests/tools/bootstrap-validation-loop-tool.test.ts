@@ -119,6 +119,91 @@ describe('Bootstrap Validation Loop Tool', () => {
     });
   });
 
+  /**
+   * The teardown commands are handed to a calling agent to run (#1536).
+   *
+   * The tool registers itself as "GUIDED EXECUTION MODE ... it tells YOU what
+   * commands to run". Two things were wrong with what it told them:
+   *
+   *  - the Kubernetes/OpenShift selector was the literal `app=myapp`, derived
+   *    from nothing. For almost every user it matches nothing and the teardown
+   *    reports success having deleted nothing -- a false green in a validation
+   *    tool. For anyone who does label a workload `app=myapp`, an auto-approving
+   *    agent destroys their deployments, services, configmaps and secrets.
+   *  - the Docker teardown ran `docker system prune -f`, which is machine-wide.
+   *    It removes stopped containers, unused networks and dangling images
+   *    belonging to every other project on the host.
+   *
+   * Neither was caught because the tests asserted the strings the tool emitted.
+   * These assert the property instead: a destructive command is only emitted
+   * when its scope was supplied, and no emitted command reaches beyond it.
+   */
+  describe('emitted teardown commands are scoped (#1536)', () => {
+    const cleanup = async (platform: string, extra: Record<string, unknown> = {}) => {
+      mockDetectPlatforms.mockResolvedValue({
+        primaryPlatform: platform,
+        secondaryPlatforms: [],
+        confidence: 0.9,
+        evidence: [],
+      });
+      const result = await bootstrapValidationLoop({
+        projectPath: '/test/project',
+        currentIteration: 1,
+        deploymentCleanupRequested: true,
+        ...extra,
+      });
+      return result.content[0].text as string;
+    };
+
+    it.each(['kubernetes', 'openshift'])(
+      'emits no delete command for %s when no app selector was given',
+      async platform => {
+        const text = await cleanup(platform);
+
+        // A guessed selector is worse than none: it either deletes nothing and
+        // reports success, or deletes someone else's workload.
+        expect(text).not.toMatch(/kubectl\s+delete/);
+        expect(text).not.toMatch(/oc\s+delete/);
+      }
+    );
+
+    it.each(['kubernetes', 'openshift'])(
+      'never emits the hardcoded app=myapp selector for %s',
+      async platform => {
+        expect(await cleanup(platform)).not.toContain('myapp');
+      }
+    );
+
+    it.each(['kubernetes', 'openshift'])(
+      'emits a delete scoped to the selector it was given, for %s',
+      async platform => {
+        const text = await cleanup(platform, { appSelector: 'app=checkout-api' });
+
+        expect(text).toContain('app=checkout-api');
+        expect(text).not.toContain('myapp');
+        expect(text).toMatch(/(kubectl|oc)\s+delete/);
+      }
+    );
+
+    it.each(['docker', 'docker-compose'])(
+      'does not prune the whole machine for %s',
+      async platform => {
+        const text = await cleanup(platform);
+
+        // `docker-compose down -v` is scoped to the compose project.
+        // `docker system prune` is not scoped to anything.
+        expect(text).not.toContain('docker system prune');
+      }
+    );
+
+    it('tells the caller how to find the selector when it does not have one', async () => {
+      const text = await cleanup('kubernetes');
+
+      // Determinism: the server does not guess the scope, it says how to obtain it.
+      expect(text).toMatch(/--show-labels|appSelector/);
+    });
+  });
+
   describe('CI/CD Deployment Cleanup Workflow', () => {
     it('should provide OpenShift cleanup instructions when requested', async () => {
       mockDetectPlatforms.mockResolvedValue({
@@ -135,8 +220,8 @@ describe('Bootstrap Validation Loop Tool', () => {
       });
 
       expect(result.content[0].text).toContain('Deployment Cleanup & Restart');
-      expect(result.content[0].text).toContain('oc delete all --selector');
-      expect(result.content[0].text).toContain('oc get all --selector');
+      // No appSelector was passed, so no delete is offered -- discovery instead (#1536).
+      expect(result.content[0].text).toContain('oc get all --show-labels');
       expect(result.content[0].text).toContain('./bootstrap.sh');
       expect(result.isError).toBe(false);
     });
@@ -155,8 +240,8 @@ describe('Bootstrap Validation Loop Tool', () => {
         deploymentCleanupRequested: true,
       });
 
-      expect(result.content[0].text).toContain('kubectl delete deployment');
-      expect(result.content[0].text).toContain('kubectl get all');
+      // Was `kubectl delete ... -l app=myapp`; a delete now requires appSelector (#1536).
+      expect(result.content[0].text).toContain('kubectl get all --show-labels');
       expect(result.isError).toBe(false);
     });
 
@@ -175,7 +260,8 @@ describe('Bootstrap Validation Loop Tool', () => {
       });
 
       expect(result.content[0].text).toContain('docker-compose down -v');
-      expect(result.content[0].text).toContain('docker system prune');
+      // `docker system prune` reached every other project on the host (#1536).
+      expect(result.content[0].text).not.toContain('docker system prune');
       expect(result.content[0].text).toContain('docker ps -a');
       expect(result.isError).toBe(false);
     });
@@ -192,11 +278,32 @@ describe('Bootstrap Validation Loop Tool', () => {
         projectPath: '/test/project',
         currentIteration: 1,
         deploymentCleanupRequested: true,
+        appSelector: 'app=checkout-api',
       });
 
+      // The warning belongs on the path that actually offers a delete. Without a
+      // selector there is nothing to warn about, because nothing is offered (#1536).
       expect(result.content[0].text).toContain('DELETE all resources');
       expect(result.content[0].text).toContain('Confirm with human');
       expect(result.isError).toBe(false);
+    });
+
+    it('does not warn about deletion when no deletion is offered', async () => {
+      mockDetectPlatforms.mockResolvedValue({
+        primaryPlatform: 'openshift',
+        secondaryPlatforms: [],
+        confidence: 0.9,
+        evidence: [],
+      });
+
+      const result = await bootstrapValidationLoop({
+        projectPath: '/test/project',
+        currentIteration: 1,
+        deploymentCleanupRequested: true,
+      });
+
+      // A destruction warning with no destructive command trains readers to skim it.
+      expect(result.content[0].text).not.toContain('DELETE all resources');
     });
   });
 
