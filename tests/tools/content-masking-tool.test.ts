@@ -9,8 +9,40 @@
  * - Cognitive Systematization: Organized test structure covering all exported functions
  */
 
-import { describe, it as _it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it as _it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { McpAdrError } from '../../src/types/index.js';
+
+/**
+ * #1519: `configureCustomPatterns` used to be pointed at `process.cwd()` — the
+ * real working tree — so its assertions could only be structural ("the output
+ * mentions Total Files") and changed meaning whenever any unrelated file was
+ * added or deleted. Against a fixture of known size the count is exact.
+ */
+const FIXTURE_FILES: Record<string, string> = {
+  'package.json': '{"name":"masking-fixture","version":"1.0.0"}',
+  'src/server.ts': 'export const apiKey = process.env.API_KEY;\n',
+  'src/config.ts': 'export const config = { port: 3000 };\n',
+  '.env.example': 'API_KEY=replace-me\n',
+  'README.md': '# Masking fixture\n',
+};
+
+let FIXTURE: string;
+
+beforeAll(async () => {
+  FIXTURE = await mkdtemp(path.join(tmpdir(), 'content-masking-fixture-'));
+  for (const [relative, content] of Object.entries(FIXTURE_FILES)) {
+    const target = path.join(FIXTURE, relative);
+    await mkdir(path.dirname(target), { recursive: true });
+    await writeFile(target, content, 'utf-8');
+  }
+});
+
+afterAll(async () => {
+  if (FIXTURE) await rm(FIXTURE, { recursive: true, force: true });
+});
 
 // Use vi.hoisted to ensure mocks are available before vi.mock is hoisted
 const { mockFsPromises } = vi.hoisted(() => ({
@@ -411,7 +443,7 @@ describe('Content Masking Tool', () => {
     describe('basic functionality', () => {
       test('configures patterns for project path', async () => {
         const result = await configureCustomPatterns({
-          projectPath: process.cwd(),
+          projectPath: FIXTURE,
         });
 
         expect(result).toBeDefined();
@@ -423,7 +455,7 @@ describe('Content Masking Tool', () => {
         const existingPatterns = ['api-key-\\w+', 'password=\\S+'];
 
         const result = await configureCustomPatterns({
-          projectPath: process.cwd(),
+          projectPath: FIXTURE,
           existingPatterns,
         });
 
@@ -435,13 +467,20 @@ describe('Content Masking Tool', () => {
     describe('project structure analysis', () => {
       test('analyzes project structure correctly', async () => {
         const result = await configureCustomPatterns({
-          projectPath: process.cwd(),
+          projectPath: FIXTURE,
         });
 
-        expect(result).toBeDefined();
         expect(result.content[0].text).toContain('Project Structure');
-        expect(result.content[0].text).toContain('Root Path');
-        expect(result.content[0].text).toContain('Total Files');
+        expect(result.content[0].text).toContain(FIXTURE);
+        // Exact, not merely present. Note the number: the fixture holds five
+        // files, but `scanProjectStructure` only counts ones matching a known
+        // category (here, package.json), and the report labels that count
+        // "Total Files". Pinning 1 documents the gap rather than hiding it
+        // behind `toContain('Total Files')`. Compare the 0 asserted for a
+        // nonexistent path below — that case is indistinguishable from this one
+        // under the old structural assertion.
+        expect(Object.keys(FIXTURE_FILES)).toHaveLength(5);
+        expect(result.content[0].text).toContain('Total Files**: 1');
       });
     });
 
