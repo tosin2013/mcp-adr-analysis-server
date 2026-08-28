@@ -308,10 +308,6 @@ jobs:
         if: ${{ !inputs.skip_tests && !github.event.inputs.skip_tests }}
         run: npm run lint
 
-      - name: Run tests
-        if: ${{ !inputs.skip_tests && !github.event.inputs.skip_tests }}
-        run: npm test
-
       - name: Build project
         run: |
           echo "Building project..."
@@ -334,6 +330,17 @@ jobs:
             echo "❌ Build failed - no dist directory created"
             exit 1
           fi
+
+      # Tests run AFTER the build, not before. tests/integration/mcp-protocol.test.ts
+      # exercises the BUILT server (dist/src/index.js) because that is what ships to npm,
+      # and it fails fast when the artifact is missing. This workflow used to test first,
+      # which broke every publish from v2.6.21 to v2.7.5 -- ten consecutive releases,
+      # none of which reached npm. test.yml already builds first (make node-compat depends
+      # on build); publish.yml did not, and that difference was not checked when the test
+      # was added.
+      - name: Run tests
+        if: ${{ !inputs.skip_tests && !github.event.inputs.skip_tests }}
+        run: npm test
 
       - name: Test MCP server functionality
         run: |
