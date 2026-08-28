@@ -10,7 +10,6 @@
 import { McpAdrError } from '../types/index.js';
 import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
 import { getAIExecutor } from '../utils/ai-executor.js';
-import { KnowledgeGraphManager } from '../utils/knowledge-graph-manager.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -95,6 +94,33 @@ export async function validateAdr(args: {
   includeEnvironmentCheck?: boolean;
   confidenceThreshold?: number;
 }): Promise<any> {
+  const { result, research, aiAvailable } = await computeAdrValidation(args);
+
+  return {
+    content: [
+      {
+        type: 'text',
+        text: formatValidationResponse(result, research, aiAvailable),
+      },
+    ],
+  };
+}
+
+/**
+ * Compute a validation result for one ADR.
+ *
+ * Split out of `validateAdr` because `validateAllAdrs` needs the STRUCTURE, and
+ * previously had no way to get it: `validateAdr` returned formatted markdown, so
+ * the bulk path awaited it, discarded the return, and pushed `isValid: true`
+ * unconditionally. Every summary reported 100% valid and 0 critical issues. (#1539)
+ */
+async function computeAdrValidation(args: {
+  adrPath: string;
+  projectPath?: string;
+  adrDirectory?: string;
+  includeEnvironmentCheck?: boolean;
+  confidenceThreshold?: number;
+}): Promise<{ result: ADRValidationResult; research: any; aiAvailable: boolean }> {
   const {
     adrPath,
     projectPath = process.cwd(),
@@ -204,24 +230,13 @@ Return JSON with:
       validationResult = performRuleBasedValidation(fullAdrPath, adrTitle, adrDecision, research);
     }
 
-    // Step 5: Check knowledge graph for related ADRs
-    const kgManager = new KnowledgeGraphManager();
-    const relatedAdrs = kgManager.getRelationships('adr', 'relates-to') || [];
-
-    // Step 6: Format response
-    return {
-      content: [
-        {
-          type: 'text',
-          text: formatValidationResponse(
-            validationResult,
-            research,
-            relatedAdrs,
-            aiExecutor.isAvailable()
-          ),
-        },
-      ],
-    };
+    // The "related ADRs" step is gone. It called
+    // KnowledgeGraphManager.getRelationships, which is @deprecated and returns []
+    // unconditionally, and rendered the empty result as a section of the report.
+    // A heading that is always empty because its source is a stub is worse than
+    // no heading. `queryKnowledgeGraph` is the documented replacement if this is
+    // ever wanted back. (#1539)
+    return { result: validationResult, research, aiAvailable: aiExecutor.isAvailable() };
   } catch (error) {
     throw new McpAdrError(
       `ADR validation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -257,8 +272,11 @@ export async function validateAllAdrs(args: {
 
     for (const adrFile of adrFiles) {
       try {
-        // Validate individual ADR - result extraction will be added later
-        await validateAdr({
+        // The verdict comes from the validation, not from a literal. This loop
+        // used to `await validateAdr(...)` for its side effects, throw the return
+        // away, and push `isValid: true` -- so every summary read 100% valid and
+        // 0 critical issues regardless of what was in docs/adrs/. (#1539)
+        const { result } = await computeAdrValidation({
           adrPath: path.join(adrDirectory, adrFile),
           projectPath,
           adrDirectory,
@@ -266,17 +284,7 @@ export async function validateAllAdrs(args: {
           confidenceThreshold: minConfidence,
         });
 
-        // Extract validation result from response
-        // This is a simplified extraction - in production would parse the response
-        results.push({
-          adrPath: path.join(fullAdrDir, adrFile),
-          adrTitle: adrFile,
-          isValid: true,
-          confidence: 0.8,
-          findings: [],
-          recommendations: [],
-          researchData: { sources: [], confidence: 0.8, needsWebSearch: false },
-        });
+        results.push(result);
       } catch (error) {
         console.warn(`Failed to validate ${adrFile}:`, error);
       }
@@ -354,10 +362,26 @@ function extractAdrContext(content: string): string {
 function performRuleBasedValidation(
   adrPath: string,
   adrTitle: string,
-  _adrDecision: string,
+  adrDecision: string,
   research: any
 ): ADRValidationResult {
   const findings: ADRValidationResult['findings'] = [];
+
+  // An ADR whose Decision section is absent or empty records no decision. Before
+  // #1539 this path could only emit medium/low findings, so `isValid` -- computed
+  // as "no critical or high findings" -- was true for every ADR ever passed to it.
+  // The rule needed at least one condition it could actually fail.
+  //
+  // Not hypothetical: ADR-023 shipped Accepted with an empty Decision and needed
+  // #1490 to record one.
+  if (!adrDecision || adrDecision === 'No decision section found') {
+    findings.push({
+      type: 'missing_evidence',
+      severity: 'critical',
+      description: 'ADR records no decision - the Decision section is missing or empty',
+      evidence: `No "## Decision" content found in ${adrPath}`,
+    });
+  }
 
   // Check if research confidence is low
   if (research.confidence < 0.5) {
@@ -400,7 +424,6 @@ function performRuleBasedValidation(
 function formatValidationResponse(
   result: ADRValidationResult,
   research: any,
-  relatedAdrs: any[],
   aiEnabled: boolean
 ): string {
   return `# ADR Validation Report
@@ -443,9 +466,6 @@ ${
 
 ${result.recommendations.map(rec => `- ${rec}`).join('\n')}
 
-## Related ADRs
-
-${relatedAdrs.length > 0 ? relatedAdrs.map(adr => `- ${adr}`).join('\n') : 'No related ADRs found in knowledge graph.'}
 
 ## Next Steps
 
