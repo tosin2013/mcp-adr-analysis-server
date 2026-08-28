@@ -115,9 +115,26 @@ export class ToolContextManager {
    * @param document - Context document to save
    * @returns Path to the saved document
    */
-  async saveContext(category: string, document: ToolContextDocument): Promise<string> {
+  async saveContext(
+    category: string,
+    document: ToolContextDocument,
+    outputDir?: string
+  ): Promise<string> {
     try {
-      const categoryDir = path.join(this.contextDir, category);
+      // `outputDir` overrides the docs/context/<category> default entirely.
+      //
+      // Why the override exists (#1528): perform_research advertises no output
+      // path and wrote here regardless, so its user-facing artifacts landed in
+      // docs/context/research/ -- a directory no caller could set, discover from
+      // the tool schema, or predict from the docs. 187 files accumulated there,
+      // untracked, while docs/research/ (what the docs describe) held only a
+      // README. A tool's output belongs where the tool says it does.
+      //
+      // Callers that genuinely produce *context documents* -- bootstrap
+      // validation, for one -- pass nothing and keep docs/context/<category>.
+      const categoryDir = outputDir
+        ? path.resolve(outputDir)
+        : path.join(this.contextDir, category);
       await fs.mkdir(categoryDir, { recursive: true });
 
       // Generate filename with timestamp
@@ -132,7 +149,11 @@ export class ToolContextManager {
       await fs.writeFile(filePath, markdown, 'utf-8');
 
       // Update latest.md symlink
-      await this.updateLatestSymlink(category, filePath);
+      // latest.md follows the document. Without passing categoryDir this wrote to
+      // docs/context/<category>/latest.md while the document went elsewhere --
+      // caught by a clean-fixture dogfood run, which produced a research file in
+      // docs/research/ AND an orphan docs/context/research/latest.md (#1528).
+      await this.updateLatestSymlink(category, filePath, categoryDir);
 
       this.logger.info(`Context document saved: ${filePath}`, 'ToolContextManager');
 
@@ -243,9 +264,11 @@ export class ToolContextManager {
    * @param category - Category directory
    * @param filePath - Path to the latest context document
    */
-  async updateLatestSymlink(category: string, filePath: string): Promise<void> {
+  async updateLatestSymlink(category: string, filePath: string, outputDir?: string): Promise<void> {
     try {
-      const latestPath = path.join(this.contextDir, category, 'latest.md');
+      const latestPath = outputDir
+        ? path.join(path.resolve(outputDir), 'latest.md')
+        : path.join(this.contextDir, category, 'latest.md');
 
       // Remove existing latest.md
       try {

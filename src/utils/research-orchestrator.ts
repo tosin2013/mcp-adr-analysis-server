@@ -430,7 +430,10 @@ export class ResearchOrchestrator {
       }
 
       // PHASE 4: Use glob-based file discovery (tree-sitter will analyze content)
-      // Note: Ripgrep removed per ADR-016 - deterministic tools, LLM reasoning
+      // Note: ripgrep was replaced by tree-sitter + glob discovery. The decision
+      // was implemented but never recorded -- this comment cited ADR-016, which
+      // has never existed. See ADR-006 for the tree-sitter rationale; the missing
+      // record is tracked in #1415.
       if (keywords.length > 0) {
         this.logger.info('Using file discovery for keyword-based search', 'ResearchOrchestrator');
 

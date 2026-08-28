@@ -57,11 +57,41 @@ import * as path from 'path';
  * @category Tools
  * @mcp-tool
  */
+/**
+ * Which ADR files did this research actually read?
+ *
+ * Derived from the project_files source rather than re-globbing the directory:
+ * listing every ADR that exists would assert a link the research never made, and
+ * an over-broad citation is worse than none -- it makes the link unfalsifiable.
+ */
+function collectConsultedAdrs(
+  sources: Array<{ type: string; data?: any }>,
+  projectPath: string,
+  adrDirectory: string
+): string[] {
+  const adrRoot = path.resolve(projectPath, adrDirectory);
+  const files = sources
+    .filter(s => s.type === 'project_files')
+    .flatMap(s => (Array.isArray(s.data?.files) ? (s.data.files as string[]) : []));
+
+  const seen = new Set<string>();
+  for (const f of files) {
+    if (typeof f !== 'string') continue;
+    const abs = path.resolve(projectPath, f);
+    if (!abs.startsWith(adrRoot + path.sep)) continue;
+    if (!abs.endsWith('.md')) continue;
+    if (path.basename(abs).toLowerCase() === 'readme.md') continue;
+    seen.add(path.relative(projectPath, abs));
+  }
+  return [...seen].sort();
+}
+
 export async function performResearch(
   args: {
     question: string;
     projectPath?: string;
     adrDirectory?: string;
+    researchDirectory?: string;
     confidenceThreshold?: number;
     performWebSearch?: boolean;
   },
@@ -71,6 +101,7 @@ export async function performResearch(
     question,
     projectPath = process.cwd(),
     adrDirectory = 'docs/adrs',
+    researchDirectory = 'docs/research',
     confidenceThreshold = 0.6,
     performWebSearch = true,
   } = args;
@@ -222,7 +253,11 @@ ${generateSearchQueries(question)
     // Save research context for future sessions
     try {
       const contextManager = new ToolContextManager(projectPath);
-      await contextManager.initialize();
+      // No initialize() call: it eagerly mkdir -p's every category under
+      // docs/context/, which left an empty docs/context/research/ in the user's
+      // tree even when the document was written to researchDirectory. saveContext
+      // creates its own target directory, so initialize() is redundant here and
+      // its only effect was the orphan. (#1528)
 
       const contextDoc: ToolContextDocument = {
         metadata: {
@@ -291,7 +326,17 @@ ${generateSearchQueries(question)
           environmentSpecific: [],
         },
         relatedDocuments: {
-          adrs: [],
+          // The ADRs this research actually consulted, not an empty array.
+          //
+          // research-orchestrator.ts PHASE 3 ("Always include ADRs") globs every
+          // file under adrDirectory into the project_files source, and this write
+          // site used to hardcode `adrs: []` -- discarding it. That single line is
+          // why 187 generated research documents cite zero ADRs between them,
+          // while docs/research/README.md has required since 2025-12 that "all
+          // research must link to relevant ADRs". The field existed, the renderer
+          // existed (context-document-manager.ts:431 emits "**ADRs**:"), and the
+          // data was gathered. Only the assignment was missing. (#1528)
+          adrs: collectConsultedAdrs(research.sources, projectPath, adrDirectory),
           configs: [],
           otherContexts: [],
         },
@@ -306,7 +351,11 @@ ${generateSearchQueries(question)
         },
       };
 
-      await contextManager.saveContext('research', contextDoc);
+      await contextManager.saveContext(
+        'research',
+        contextDoc,
+        path.resolve(projectPath, researchDirectory)
+      );
       context?.info('💾 Research context saved for future reference');
     } catch (contextError) {
       // Don't fail the research if context saving fails
