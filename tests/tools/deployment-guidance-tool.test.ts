@@ -13,12 +13,26 @@
 import { describe, it, expect, vi, type MockedFunction } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
+const { answerResearchQuestionSpy } = vi.hoisted(() => ({
+  answerResearchQuestionSpy: vi.fn(),
+}));
+
 vi.mock('../../src/utils/adr-discovery.js', () => ({
   discoverAdrsInDirectory: vi.fn(),
 }));
 
-import { generateDeploymentGuidance as generateDeploymentGuidanceImpl } from '../../src/tools/deployment-guidance-tool.js';
+vi.mock('../../src/utils/research-orchestrator.js', () => ({
+  ResearchOrchestrator: vi.fn(function (this: any) {
+    this.answerResearchQuestion = answerResearchQuestionSpy;
+  }),
+}));
+
+import {
+  generateDeploymentGuidance as generateDeploymentGuidanceImpl,
+  defaultDeps,
+} from '../../src/tools/deployment-guidance-tool.js';
 import { discoverAdrsInDirectory } from '../../src/utils/adr-discovery.js';
+import { ResearchOrchestrator } from '../../src/utils/research-orchestrator.js';
 
 /**
  * #1459: the tool used to construct a real `ResearchOrchestrator`, so each of
@@ -648,5 +662,29 @@ describe('deployment-guidance-tool — injected environment research', () => {
 
     expect(result.content[0].text).toContain('Environment Analysis Failed');
     expect(result.content[0].text).toContain('BOOM_NO_ENVIRONMENT');
+  });
+});
+
+/**
+ * `defaultDeps` is the one place a `ResearchOrchestrator` is still constructed.
+ * Every other test injects past it, so without this the production wiring is
+ * the only line in the file nothing executes — and a transposed argument would
+ * ship: the seam takes (question, projectPath, adrDirectory) while the
+ * constructor takes (projectPath, adrDirectory).
+ */
+describe('defaultDeps.researchEnvironment', () => {
+  it('constructs the orchestrator with the project path and delegates the question', async () => {
+    vi.clearAllMocks();
+    answerResearchQuestionSpy.mockResolvedValue({ answer: 'WIRED', sources: [], confidence: 0.1 });
+
+    const research = await defaultDeps.researchEnvironment(
+      'what infrastructure is available?',
+      '/some/project',
+      'custom/adrs'
+    );
+
+    expect(ResearchOrchestrator).toHaveBeenCalledWith('/some/project', 'custom/adrs');
+    expect(answerResearchQuestionSpy).toHaveBeenCalledWith('what infrastructure is available?');
+    expect(research.answer).toBe('WIRED');
   });
 });
