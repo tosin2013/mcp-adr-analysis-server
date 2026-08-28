@@ -54,9 +54,6 @@ export PROJECT_PATH="/absolute/path/to/your/project"
 export OPENROUTER_API_KEY="your_openrouter_api_key_here"
 export EXECUTION_MODE="full"
 
-# Optional: Enable Firecrawl for web research (recommended)
-export FIRECRAWL_ENABLED="true"
-export FIRECRAWL_API_KEY="fc-your-api-key-here"
 ```
 
 ### **Step 4: Choose Your Client Configuration**
@@ -85,9 +82,7 @@ Select the configuration that matches your preferred AI assistant or IDE:
       "env": {
         "PROJECT_PATH": "/absolute/path/to/your/project",
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "fc-your-api-key-here"
+        "EXECUTION_MODE": "full"
       }
     }
   }
@@ -122,9 +117,7 @@ Select the configuration that matches your preferred AI assistant or IDE:
       "env": {
         "PROJECT_PATH": "${workspaceFolder}",
         "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
-        "EXECUTION_MODE": "full",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
+        "EXECUTION_MODE": "full"
       }
     }
   }
@@ -452,9 +445,7 @@ export OPENROUTER_API_KEY="your_key_here"
 {
   "env": {
     "ENABLE_CONTENT_MASKING": "true",
-    "MASKING_LEVEL": "strict",
-    "FIRECRAWL_ENABLED": "true",
-    "FIRECRAWL_API_KEY": "your_firecrawl_key"
+    "MASKING_LEVEL": "strict"
   }
 }
 ```

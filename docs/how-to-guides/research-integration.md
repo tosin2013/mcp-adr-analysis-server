@@ -19,7 +19,6 @@ The MCP ADR Analysis Server includes powerful research integration capabilities 
 
 - MCP ADR Analysis Server installed and configured
 - Basic understanding of ADRs
-- Access to research tools (optional: Firecrawl API)
 
 ---
 
@@ -33,7 +32,7 @@ Use the `perform_research` tool to generate relevant research questions for your
 await mcp.callTool('perform_research', {
   topic: 'microservices architecture',
   depth: 'comprehensive',
-  includeExamples: true,
+  includeExamples: true
 });
 ```
 
@@ -45,7 +44,7 @@ The server automatically suggests research-backed decisions:
 await mcp.callTool('research_integration_tool', {
   adrPath: './docs/adrs/001-architecture.md',
   researchTopics: ['scalability', 'performance'],
-  autoApply: false,
+  autoApply: false
 });
 ```
 
@@ -59,7 +58,6 @@ Configure your environment for research integration:
 
 ```bash
 # .env file
-FIRECRAWL_API_KEY=your_api_key_here  # Optional but recommended
 RESEARCH_CACHE_DIR=./.documcp/research
 ```
 
@@ -71,7 +69,7 @@ Generate research questions for your domain:
 const research = await mcp.callTool('research_question_tool', {
   projectPath: './',
   domain: 'backend-services',
-  focusAreas: ['architecture', 'security', 'performance'],
+  focusAreas: ['architecture', 'security', 'performance']
 });
 ```
 
@@ -93,7 +91,7 @@ Apply research findings to your decisions:
 ```typescript
 await mcp.callTool('interactive_adr_planning_tool', {
   includeResearch: true,
-  researchIntensity: 'high',
+  researchIntensity: 'high'
 });
 ```
 
@@ -113,7 +111,7 @@ const template = {
     'How to handle model versioning?',
     'What monitoring strategies work best?',
   ],
-  sources: ['arxiv', 'industry-blogs', 'documentation'],
+  sources: ['arxiv', 'industry-blogs', 'documentation']
 };
 ```
 
@@ -134,7 +132,7 @@ Generate ADRs directly from research:
 await mcp.callTool('generate_adrs_from_prd', {
   prdPath: './docs/requirements.md',
   includeResearch: true,
-  researchDepth: 'comprehensive',
+  researchDepth: 'comprehensive'
 });
 ```
 
@@ -227,7 +225,6 @@ docs/research/
 
 **Solutions**:
 
-1. Check Firecrawl API key configuration
 2. Verify internet connectivity
 3. Try different search topics
 4. Use `depth: 'standard'` instead of 'quick'
@@ -260,7 +257,6 @@ docs/research/
 
 - **[Perform Research Tool](../reference/generation-tools.md#perform-research)** - Tool reference
 - **[Interactive ADR Planning](./interactive-adr-planning.md)** - ADR workflows
-- **[Firecrawl Setup](./firecrawl-setup.md)** - API configuration
 - **[Research Architecture](../explanation/research-architecture.md)** - System design
 
 ---
@@ -274,14 +270,14 @@ docs/research/
 const archResearch = await mcp.callTool('perform_research', {
   topic: 'event-driven architecture',
   depth: 'comprehensive',
-  outputPath: './docs/research/architecture/event-driven.md',
+  outputPath: './docs/research/architecture/event-driven.md'
 });
 
 // Apply to ADR
 await mcp.callTool('research_integration_tool', {
   adrPath: './docs/adrs/005-event-architecture.md',
   researchSource: archResearch.outputPath,
-  sections: ['context', 'decision', 'consequences'],
+  sections: ['context', 'decision', 'consequences']
 });
 ```
 
@@ -292,14 +288,14 @@ await mcp.callTool('research_integration_tool', {
 const secResearch = await mcp.callTool('research_question_tool', {
   projectPath: './',
   domain: 'security',
-  focusAreas: ['authentication', 'authorization', 'encryption'],
+  focusAreas: ['authentication', 'authorization', 'encryption']
 });
 
 // Generate security ADRs
 await mcp.callTool('generate_adrs_from_prd', {
   prdPath: './docs/security-requirements.md',
   includeResearch: true,
-  researchResults: secResearch,
+  researchResults: secResearch
 });
 ```
 

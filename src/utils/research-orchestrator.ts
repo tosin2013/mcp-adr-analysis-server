@@ -16,9 +16,7 @@ import { KnowledgeGraphManager } from './knowledge-graph-manager.js';
 import { findFiles } from './file-system.js';
 import { scanProjectStructure } from './actual-file-operations.js';
 import { TreeSitterAnalyzer } from './tree-sitter-analyzer.js';
-// import { FirecrawlApp } from '@mendable/firecrawl-js';
 // import { loadAIConfig } from '../config/ai-config.js';
-import { loadConfig } from './config.js';
 import {
   createResearchWithDelegation,
   type ResearchPlan,
@@ -60,7 +58,6 @@ interface CachedResearchResult {
  * @deprecated This class is deprecated as of v2.2.0 and will be removed in v4.0.0.
  * Use atomic tools instead per ADR-018 (Atomic Tools Architecture):
  * - For codebase search: Use `searchCodebase` from `tools/search-codebase-tool.ts`
- * - For external research: Use `llm-web-search-tool.ts` (if needed)
  *
  * **Deprecation Rationale** (see ADR-018):
  * - Sequential execution blocking (2-8 seconds per call)
@@ -91,7 +88,6 @@ interface CachedResearchResult {
  * - Intelligent confidence scoring for each source
  * - Configurable confidence thresholds
  * - Result caching for performance optimization
- * - Firecrawl integration for web search capabilities
  * - Comprehensive error handling and fallback mechanisms
  *
  * @example
@@ -120,8 +116,6 @@ export class ResearchOrchestrator {
   private kgManager: KnowledgeGraphManager;
   private cache: Map<string, CachedResearchResult> = new Map();
   private cacheTtl: number = 5 * 60 * 1000; // 5 minutes
-  private firecrawl: any; // FirecrawlApp type
-  private config: any; // ServerConfig type
 
   constructor(projectPath?: string, adrDirectory?: string) {
     // DEPRECATION WARNING
@@ -131,7 +125,6 @@ export class ResearchOrchestrator {
         '           test complexity (14+ failures), and conflicts with CE-MCP architecture (ADR-014).\n' +
         '   Migration: Use atomic tools instead:\n' +
         '   - Codebase search: searchCodebase() from tools/search-codebase-tool.ts\n' +
-        '   - External research: llm-web-search-tool.ts\n' +
         '   See ADR-018 for atomic tools architecture.'
     );
 
@@ -139,23 +132,6 @@ export class ResearchOrchestrator {
     this.projectPath = projectPath || process.cwd();
     this.adrDirectory = adrDirectory || 'docs/adrs';
     this.kgManager = new KnowledgeGraphManager();
-
-    // Load server configuration
-    this.config = loadConfig();
-
-    // Initialize Firecrawl if enabled
-    if (this.config.firecrawlEnabled) {
-      // TODO: Uncomment when @mendable/firecrawl-js is installed
-      // this.firecrawl = new FirecrawlApp({
-      //   apiKey: this.config.firecrawlApiKey,
-      //   baseUrl: this.config.firecrawlBaseUrl
-      // });
-      this.firecrawl = null; // Placeholder until Firecrawl is available
-      this.logger.info('Firecrawl integration enabled', 'ResearchOrchestrator');
-    } else {
-      this.firecrawl = null;
-      this.logger.info('Firecrawl integration disabled', 'ResearchOrchestrator');
-    }
   }
 
   /**
@@ -297,40 +273,25 @@ export class ResearchOrchestrator {
         'ResearchOrchestrator'
       );
 
-      // SOURCE 4: WEB SEARCH (fallback)
+      // SOURCE 4: WEB SEARCH -- not performed here.
+      //
+      // This server does not search the web (#1526, ADR-023: "native web search
+      // in every frontier host"). It reports that web research would help and
+      // leaves the searching to the host, which can actually do it.
+      //
+      // What stood here attempted a Firecrawl search. `this.firecrawl` was
+      // assigned null on both branches of its own guard, so the only reachable
+      // path fabricated `example.com` URLs -- which `performWebSearch` then
+      // discarded, because it filtered on a `found` field the fabricated objects
+      // never had. Every call landed on the line below having burned a
+      // `Promise.all` to get there.
       if (answer.confidence < this.confidenceThreshold) {
-        this.logger.warn(
-          `Confidence below threshold (${this.confidenceThreshold}), attempting web search`,
+        answer.needsWebSearch = true;
+        this.logger.info(
+          `Confidence ${answer.confidence.toFixed(2)} is below threshold ` +
+            `${this.confidenceThreshold}; web research is recommended and is the caller's to do`,
           'ResearchOrchestrator'
         );
-
-        try {
-          const webSearchData = await this.performWebSearch(question);
-
-          if (webSearchData.found) {
-            answer.sources.push({
-              type: 'web_search',
-              data: webSearchData,
-              confidence: 0.7, // Web search has lower confidence
-              timestamp: new Date().toISOString(),
-            });
-            answer.metadata.sourcesQueried.push('web_search');
-
-            // Recalculate confidence with web search
-            answer.confidence = this.calculateConfidence(answer.sources);
-
-            this.logger.info(
-              `Web search found ${webSearchData.results?.length || 0} results`,
-              'ResearchOrchestrator'
-            );
-          } else {
-            answer.needsWebSearch = true;
-            this.logger.warn('Web search failed or returned no results', 'ResearchOrchestrator');
-          }
-        } catch (error) {
-          this.logger.error('Web search failed', 'ResearchOrchestrator', error as Error);
-          answer.needsWebSearch = true;
-        }
       }
 
       // Generate synthesized answer
@@ -817,255 +778,6 @@ export class ResearchOrchestrator {
    */
   setConfidenceThreshold(threshold: number): void {
     this.confidenceThreshold = Math.max(0, Math.min(1, threshold));
-  }
-
-  /**
-   * SOURCE 4: Perform web search using Firecrawl (LLM-managed)
-   */
-  private async performWebSearch(question: string): Promise<any> {
-    try {
-      this.logger.debug(
-        `Performing Firecrawl web search for: "${question}"`,
-        'ResearchOrchestrator'
-      );
-
-      // Generate search queries
-      const searchQueries = this.generateSearchQueries(question);
-
-      // Use Firecrawl to search and extract content
-      const results = await Promise.all(
-        searchQueries.map(async query => {
-          return await this.searchWithFirecrawl(query);
-        })
-      );
-
-      const flattenedResults = results.flat().filter(result => result.found);
-
-      return {
-        found: flattenedResults.length > 0,
-        results: flattenedResults,
-        queries: searchQueries,
-        timestamp: new Date().toISOString(),
-        provider: 'firecrawl',
-      };
-    } catch (error) {
-      this.logger.error('Firecrawl web search failed', 'ResearchOrchestrator', error as Error);
-      return {
-        found: false,
-        results: [],
-        queries: [],
-        error: error instanceof Error ? error.message : String(error),
-        provider: 'firecrawl',
-      };
-    }
-  }
-
-  /**
-   * Search using Firecrawl with LLM-driven query optimization
-   */
-  private async searchWithFirecrawl(query: string): Promise<any[]> {
-    try {
-      // Check if Firecrawl is available
-      if (!this.firecrawl) {
-        this.logger.warn(
-          'Firecrawl is not available, using fallback search',
-          'ResearchOrchestrator'
-        );
-        return this.generateFallbackSearchResults(query);
-      }
-
-      // Step 1: Generate search URLs using LLM
-      const searchUrls = await this.generateSearchUrls(query);
-
-      // Step 2: Use Firecrawl to extract content from search results
-      const results = await Promise.all(
-        searchUrls.map(async url => {
-          try {
-            const crawlResult = await this.firecrawl.scrapeUrl(url, {
-              formats: ['markdown', 'html'],
-              onlyMainContent: true,
-              removeBase64Images: true,
-              removeEmojis: true,
-              removeLinks: false,
-              removeImages: false,
-              removeScripts: true,
-              removeStyles: true,
-            });
-
-            return {
-              title: crawlResult.metadata?.title || 'No title',
-              url: url,
-              content: crawlResult.markdown || crawlResult.html,
-              relevance: await this.calculateRelevance(query, crawlResult.markdown || ''),
-              timestamp: new Date().toISOString(),
-            };
-          } catch (error) {
-            this.logger.debug(
-              `Failed to scrape ${url}`,
-              'ResearchOrchestrator',
-              error instanceof Error ? error : new Error(String(error))
-            );
-            return null;
-          }
-        })
-      );
-
-      return results.filter(result => result !== null && result.relevance > 0.3);
-    } catch (error) {
-      this.logger.error(
-        `Firecrawl search failed for query: ${query}`,
-        'ResearchOrchestrator',
-        error as Error
-      );
-      return this.generateFallbackSearchResults(query);
-    }
-  }
-
-  /**
-   * Generate fallback search results when Firecrawl is not available
-   */
-  private generateFallbackSearchResults(query: string): any[] {
-    const searchQueries = this.generateSearchQueries(query);
-    return searchQueries.map((searchQuery, index) => ({
-      title: `Search Result ${index + 1} for "${searchQuery}"`,
-      url: `https://example.com/search?q=${encodeURIComponent(searchQuery)}`,
-      content: `This is a fallback search result for the query: ${searchQuery}. Firecrawl is not available, so this is a placeholder result.`,
-      relevance: Math.max(0.3, 0.9 - index * 0.1),
-      timestamp: new Date().toISOString(),
-    }));
-  }
-
-  /**
-   * Generate search URLs using LLM
-   */
-  private async generateSearchUrls(query: string): Promise<string[]> {
-    // const aiConfig = loadAIConfig();
-    // const executor = getAIExecutor();
-
-    // const prompt = `
-    // Generate 3-5 relevant search URLs for this query: "${query}"
-    //
-    // Consider:
-    // - Technical documentation sites (docs, GitHub, Stack Overflow)
-    // - Official documentation (Red Hat, Ubuntu, macOS)
-    // - Community forums and wikis
-    // - API documentation
-    // - Tutorial and guide sites
-    //
-    // Return only the URLs, one per line.
-    // `;
-
-    // TODO: Implement LLM URL generation when AI executor is available
-    // try {
-    //   const result = await executor.executeStructuredPrompt(prompt, {
-    //     type: 'object',
-    //     properties: {
-    //       urls: {
-    //         type: 'array',
-    //         items: { type: 'string' },
-    //         description: 'List of URLs to search'
-    //       }
-    //     }
-    //   });
-    //   return result.data.urls || [];
-    // } catch (error) {
-    //   this.logger.warn('LLM search URL generation failed, using fallback', 'ResearchOrchestrator');
-    // }
-
-    // Fallback to common search URLs
-    return [
-      `https://www.google.com/search?q=${encodeURIComponent(query)}`,
-      `https://duckduckgo.com/?q=${encodeURIComponent(query)}`,
-      `https://www.bing.com/search?q=${encodeURIComponent(query)}`,
-    ];
-  }
-
-  /**
-   * Calculate relevance score using LLM
-   */
-  private async calculateRelevance(query: string, content: string): Promise<number> {
-    if (!content || content.length < 100) return 0;
-
-    // const aiConfig = loadAIConfig();
-    // const executor = getAIExecutor();
-
-    // const prompt = `
-    // Rate the relevance of this content to the query "${query}" on a scale of 0.0 to 1.0.
-    //
-    // Content (first 500 chars): ${content.substring(0, 500)}...
-    //
-    // Consider:
-    // - Direct answer to the query
-    // - Technical accuracy
-    // - Completeness of information
-    // - Authority of the source
-    //
-    // Return only a number between 0.0 and 1.0.
-    // `;
-
-    // TODO: Implement LLM relevance calculation when AI executor is available
-    // try {
-    //   const result = await executor.executeStructuredPrompt(prompt, {
-    //     type: 'object',
-    //     properties: {
-    //       relevance: { type: 'number', minimum: 0, maximum: 1 }
-    //     }
-    //   });
-    //   return result.data.relevance || 0;
-    // } catch (error) {
-    //   // Fallback to simple keyword matching
-    // }
-
-    // Fallback to simple keyword matching
-    const queryWords = query.toLowerCase().split(' ');
-    const contentLower = content.toLowerCase();
-    const matches = queryWords.filter(word => contentLower.includes(word)).length;
-    return Math.min(matches / queryWords.length, 1);
-  }
-
-  /**
-   * Generate search queries based on research question
-   */
-  private generateSearchQueries(question: string): string[] {
-    const queries: string[] = [question];
-
-    // Add variations
-    const questionLower = question.toLowerCase();
-
-    if (questionLower.includes('what')) {
-      queries.push(question.replace(/^what/i, 'how to'));
-    }
-
-    if (questionLower.includes('how')) {
-      queries.push(question.replace(/^how/i, 'best practices for'));
-    }
-
-    // Add context-specific queries
-    if (questionLower.includes('kubernetes') || questionLower.includes('k8s')) {
-      queries.push(`${question} kubernetes best practices`);
-    }
-
-    if (questionLower.includes('docker')) {
-      queries.push(`${question} docker production`);
-    }
-
-    if (questionLower.includes('openshift')) {
-      queries.push(`${question} openshift documentation`);
-    }
-
-    if (questionLower.includes('ansible')) {
-      queries.push(`${question} ansible automation`);
-    }
-
-    if (questionLower.includes('deployment')) {
-      queries.push(`${question} deployment strategy`);
-    }
-
-    if (questionLower.includes('security')) {
-      queries.push(`${question} security best practices`);
-    }
-
-    return queries.slice(0, 3); // Limit to top 3
   }
 
   /**

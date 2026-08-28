@@ -358,7 +358,7 @@ flowchart TD
 1. **Project Files**: Most authoritative, highest confidence
 2. **Knowledge Graph**: Architectural context and history
 3. **Environment**: Runtime configuration and deployment
-4. **Web Search**: External information (lowest confidence, requires Firecrawl)
+4. **Web Search**: not performed by this server. It reports that web research would help and leaves it to the host, which has native web search (ADR-023, #1526).
 
 ---
 

@@ -17,10 +17,6 @@ const ConfigSchema = z.object({
   cacheDirectory: z.string().default('.mcp-adr-cache'),
   maxCacheSize: z.number().default(100 * 1024 * 1024), // 100MB
   analysisTimeout: z.number().default(30000), // 30 seconds
-  // Firecrawl configuration
-  firecrawlApiKey: z.string().optional(),
-  firecrawlBaseUrl: z.string().default('http://localhost:3000'),
-  firecrawlEnabled: z.boolean().default(false),
   // ADR Aggregator configuration
   adrAggregatorUrl: z.string().default('https://jvgdaquuggzbkenxnkja.supabase.co'),
   adrAggregatorApiKey: z.string().optional(),
@@ -77,11 +73,6 @@ export function loadConfig(): ServerConfig {
     cacheDirectory: process.env['CACHE_DIRECTORY'] || '.mcp-adr-cache',
     maxCacheSize: parseInt(process.env['MAX_CACHE_SIZE'] || '104857600'), // 100MB
     analysisTimeout: parseInt(process.env['ANALYSIS_TIMEOUT'] || '30000'), // 30 seconds
-    // Firecrawl configuration
-    firecrawlApiKey: process.env['FIRECRAWL_API_KEY'],
-    firecrawlBaseUrl: process.env['FIRECRAWL_BASE_URL'] || 'http://localhost:3000',
-    firecrawlEnabled:
-      process.env['FIRECRAWL_ENABLED'] === 'true' || !!process.env['FIRECRAWL_API_KEY'],
     // ADR Aggregator configuration
     adrAggregatorUrl:
       process.env['ADR_AGGREGATOR_URL'] || 'https://jvgdaquuggzbkenxnkja.supabase.co',
@@ -206,11 +197,6 @@ export function printConfigSummary(config: ServerConfig): void {
   logger.info(`  Cache Directory: ${config.cacheDirectory}`);
   logger.info(`  Max Cache Size: ${Math.round(config.maxCacheSize / 1024 / 1024)}MB`);
   logger.info(`  Analysis Timeout: ${config.analysisTimeout}ms`);
-  logger.info(`  Firecrawl Enabled: ${config.firecrawlEnabled}`);
-  if (config.firecrawlEnabled) {
-    logger.info(`  Firecrawl Base URL: ${config.firecrawlBaseUrl}`);
-    logger.info(`  Firecrawl API Key: ${config.firecrawlApiKey ? '***configured***' : 'not set'}`);
-  }
   logger.info(`  ADR Aggregator Enabled: ${config.adrAggregatorEnabled}`);
   if (config.adrAggregatorEnabled) {
     logger.info(`  ADR Aggregator URL: ${config.adrAggregatorUrl}`);

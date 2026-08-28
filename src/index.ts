@@ -1561,46 +1561,6 @@ export class McpAdrAnalysisServer {
             },
           },
           {
-            name: 'llm_web_search',
-            description: 'LLM-managed web search using Firecrawl for cross-platform support',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                query: {
-                  type: 'string',
-                  description: 'The search query to execute',
-                },
-                maxResults: {
-                  type: 'number',
-                  description: 'Maximum results to return',
-                  default: 5,
-                  minimum: 1,
-                  maximum: 20,
-                },
-                includeContent: {
-                  type: 'boolean',
-                  description: 'Include full content in results',
-                  default: true,
-                },
-                llmInstructions: {
-                  type: 'string',
-                  description: 'LLM instructions for search optimization',
-                },
-                projectPath: {
-                  type: 'string',
-                  description: 'Path to project directory',
-                  default: '.',
-                },
-                adrDirectory: {
-                  type: 'string',
-                  description: 'Directory containing ADR files',
-                  default: 'docs/adrs',
-                },
-              },
-              required: ['query'],
-            },
-          },
-          {
             name: 'llm_cloud_management',
             description: 'LLM-managed cloud provider operations with research-driven approach',
             inputSchema: {
@@ -4028,9 +3988,6 @@ export class McpAdrAnalysisServer {
             break;
           case 'search_codebase':
             response = await this.searchCodebase(safeArgs);
-            break;
-          case 'llm_web_search':
-            response = await this.llmWebSearch(safeArgs);
             break;
           case 'llm_cloud_management':
             response = await this.llmCloudManagement(safeArgs);
@@ -7990,36 +7947,6 @@ Please provide:
         'SEARCH_ERROR'
       );
     }
-  }
-
-  /**
-   * LLM web search tool implementation
-   */
-  private async llmWebSearch(
-    args: Record<string, unknown>,
-    context?: ToolContext
-  ): Promise<CallToolResult> {
-    const ctx = context || createNoOpContext();
-
-    if (!('query' in args) || typeof args['query'] !== 'string') {
-      throw new McpAdrError('Missing required parameter: query', 'INVALID_ARGUMENTS');
-    }
-
-    ctx.info('🌐 Starting LLM-managed web search...');
-    ctx.report_progress(0, 100);
-
-    const { llmWebSearch } = await import('./tools/llm-web-search-tool.js');
-    return await llmWebSearch(
-      args as {
-        query: string;
-        maxResults?: number;
-        includeContent?: boolean;
-        llmInstructions?: string;
-        projectPath?: string;
-        adrDirectory?: string;
-      },
-      ctx // ✅ Pass context to tool function for progress updates
-    );
   }
 
   /**

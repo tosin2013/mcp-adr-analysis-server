@@ -36,9 +36,7 @@
       "env": {
         "PROJECT_PATH": "/absolute/path/to/your/project",
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "your_firecrawl_api_key_here"
+        "EXECUTION_MODE": "full"
       }
     }
   }
@@ -152,9 +150,7 @@
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "your_firecrawl_api_key"
+        "LOG_LEVEL": "ERROR"
       }
     }
   }
@@ -177,9 +173,7 @@
         "ADR_DIRECTORY": "./adrs",
         "LOG_LEVEL": "DEBUG",
         "AI_CACHE_ENABLED": "true",
-        "TIMING_ENABLED": "true",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "your_firecrawl_key"
+        "TIMING_ENABLED": "true"
       }
     }
   }
@@ -201,9 +195,7 @@ Create `.vscode/cline_mcp_settings.json`:
         "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
         "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "architecture/adrs",
-        "LOG_LEVEL": "INFO",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
+        "LOG_LEVEL": "INFO"
       }
     }
   }
@@ -238,9 +230,7 @@ Create `.vscode/cline_mcp_settings.json`:
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "your_firecrawl_api_key_here"
+        "LOG_LEVEL": "ERROR"
       }
     }
   }
@@ -344,9 +334,7 @@ Create `.vscode/cline_mcp_settings.json`:
         "ADR_DIRECTORY": "./architecture/decisions",
         "LOG_LEVEL": "INFO",
         "AI_TEMPERATURE": "0.2",
-        "AI_MAX_TOKENS": "8192",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "your_firecrawl_key"
+        "AI_MAX_TOKENS": "8192"
       }
     }
   }
@@ -404,9 +392,7 @@ Create `.vscode/cline_mcp_settings.json`:
         "EXECUTION_MODE": "full",
         "AI_MODEL": "anthropic/claude-3-sonnet",
         "ADR_DIRECTORY": "./docs/adrs",
-        "LOG_LEVEL": "DEBUG",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
+        "LOG_LEVEL": "DEBUG"
       }
     }
   ]
@@ -457,8 +443,6 @@ mcp_servers:
       LOG_LEVEL: 'DEBUG'
       AI_TEMPERATURE: '0.1'
       AI_MAX_TOKENS: '4000'
-      FIRECRAWL_ENABLED: 'true'
-      FIRECRAWL_API_KEY: 'your_firecrawl_key'
       ENABLE_CONTENT_MASKING: 'true'
       MASKING_LEVEL: 'strict'
 ```
@@ -491,9 +475,7 @@ mcp_servers:
         "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
         "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "your_firecrawl_api_key_here"
+        "LOG_LEVEL": "ERROR"
       }
     }
   }
@@ -579,7 +561,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 
 const client = new Client({
   name: 'adr-analysis-client',
-  version: '1.0.0',
+  version: '1.0.0'
 });
 
 await client.connect({
@@ -587,8 +569,8 @@ await client.connect({
   env: {
     PROJECT_PATH: '/path/to/project',
     OPENROUTER_API_KEY: 'your_key_here',
-    EXECUTION_MODE: 'full',
-  },
+    EXECUTION_MODE: 'full'
+  }
 });
 ```
 
@@ -638,206 +620,6 @@ await client.connect({
   }
 }
 ```
-
----
-
-## 🔥 Firecrawl Configuration
-
-**Firecrawl integration provides enhanced web research capabilities for comprehensive architectural analysis.**
-
-### **Firecrawl Environment Variables**
-
-| Variable             | Required | Default                  | Description                  |
-| -------------------- | -------- | ------------------------ | ---------------------------- |
-| `FIRECRAWL_ENABLED`  | No       | `false`                  | Enable Firecrawl integration |
-| `FIRECRAWL_API_KEY`  | No\*     | -                        | API key for cloud service    |
-| `FIRECRAWL_BASE_URL` | No       | `https://localhost:3000` | Self-hosted instance URL     |
-
-\*Required if using cloud service
-
-### **Configuration Examples**
-
-#### **Cloud Service (Recommended)**
-
-```json
-{
-  "env": {
-    "FIRECRAWL_ENABLED": "true",
-    "FIRECRAWL_API_KEY": "fc-your-api-key-here"
-  }
-}
-```
-
-#### **Self-Hosted**
-
-```json
-{
-  "env": {
-    "FIRECRAWL_ENABLED": "true",
-    "FIRECRAWL_BASE_URL": "https://localhost:3000"
-  }
-}
-```
-
-#### **Disabled (Default)**
-
-```json
-{
-  "env": {
-    "FIRECRAWL_ENABLED": "false"
-  }
-}
-```
-
-### **Client-Specific Firecrawl Configuration**
-
-#### **Claude Desktop**
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "env": {
-        "PROJECT_PATH": "/absolute/path/to/project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "fc-your-api-key-here"
-      }
-    }
-  }
-}
-```
-
-#### **Cline (VS Code)**
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
-      "env": {
-        "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
-        "EXECUTION_MODE": "full",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
-      }
-    }
-  }
-}
-```
-
-#### **Cursor**
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
-      "env": {
-        "PROJECT_PATH": ".",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "fc-your-api-key-here"
-      }
-    }
-  }
-}
-```
-
-#### **Gemini**
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "env": {
-        "PROJECT_PATH": "/absolute/path/to/project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "google/gemini-pro-1.5",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "fc-your-api-key-here"
-      }
-    }
-  }
-}
-```
-
-#### **Continue.dev**
-
-```json
-{
-  "mcpServers": [
-    {
-      "name": "adr-analysis",
-      "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
-      "env": {
-        "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
-        "EXECUTION_MODE": "full",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "${env:FIRECRAWL_API_KEY}"
-      }
-    }
-  ]
-}
-```
-
-#### **Aider (YAML)**
-
-```yaml
-mcp_servers:
-  - name: adr-analysis
-    command: mcp-adr-analysis-server
-    env:
-      PROJECT_PATH: '/absolute/path/to/project'
-      OPENROUTER_API_KEY: 'your_key_here'
-      EXECUTION_MODE: 'full'
-      FIRECRAWL_ENABLED: 'true'
-      FIRECRAWL_API_KEY: 'fc-your-api-key-here'
-```
-
-#### **Windsurf**
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "args": [],
-      "env": {
-        "PROJECT_PATH": "/absolute/path/to/project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "FIRECRAWL_ENABLED": "true",
-        "FIRECRAWL_API_KEY": "fc-your-api-key-here"
-      }
-    }
-  }
-}
-```
-
-### **Firecrawl Benefits**
-
-- **Real-time Research** - Access current best practices and architectural patterns
-- **Enhanced ADRs** - Generate more comprehensive decision records with external context
-- **Intelligent Scraping** - Extract relevant content from technical documentation and blogs
-- **Fallback Support** - Graceful degradation when web search is unavailable
-
-### **Getting Your Firecrawl API Key**
-
-1. **Visit**: https://firecrawl.dev
-2. **Sign up** for an account
-3. **Get your API key** (starts with "fc-")
-4. **Add to configuration** as shown above
 
 ---
 
