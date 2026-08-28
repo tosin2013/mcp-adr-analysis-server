@@ -1,0 +1,22 @@
+{
+  "authority_id": "1517",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(find tests -name \"*.vitest.ts\" | wc -l) -eq 0'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(ls tests/tools/deployment-guidance-tool.* 2>/dev/null | wc -l) -eq 1'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -cE \"expect\\(\" tests/tools/deployment-guidance-tool.test.ts) -ge 90'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "tests/tools/deployment-guidance-tool.test.ts"
+    }
+  ],
+  "$comment": "The issue's fourth acceptance box -- 'no test coverage lost' -- is checkable rather than assertable here, which is why it is a count and not a promise. The two files had byte-identical `it` names and, after normalising the mock identifier, byte-identical assertion text: 90 in each, zero unique to either. So deletion loses nothing, and the >=90 floor is the evidence. The third box, 'the surviving file's mocking approach is a deliberate choice, recorded', is discharged in the surviving file's header rather than by a criterion -- a check can confirm a comment exists but not that it records a real decision. Done together with #1459 per that issue's ordering note: fixing the flake in two files and then deleting one of them is wasted work."
+}

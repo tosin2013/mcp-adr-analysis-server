@@ -1,0 +1,22 @@
+{
+  "authority_id": "1459",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"new ResearchOrchestrator\" src/tools/deployment-guidance-tool.ts || grep -q \"defaultDeps\" src/tools/deployment-guidance-tool.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -qE \"\\}, 30000\\)\" tests/tools/deployment-guidance-tool.test.ts'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "tests/tools/deployment-guidance-tool.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/check-adr-drift.sh"
+    }
+  ],
+  "$comment": "Option 2 from the issue: inject the research step rather than mock the module. The flake was never a timeout-tuning problem -- 17 tests each ran a real ResearchOrchestrator over the working tree at ~3.3s apiece against a 30s per-test deadline, and a loaded runner lost that race. The first criterion is the load-bearing one: ResearchOrchestrator may still be NAMED in this file (defaultDeps constructs it, which is where production wiring belongs) but the tool body may not construct one, so tests cannot reach the real orchestrator by accident. The second asserts the per-test timeout overrides are GONE rather than raised -- option 3 was explicitly rejected in the issue, and leaving the overrides in place would let the flake reappear silently. Deliberately NOT declaring `covers`: this does not close #1461. It moves twelve ADR-018a violations to eleven and leaves the seam where the orchestrator gets cut when #1461 decides rule-vs-code. Claiming otherwise would make an undecided architectural question look settled by a test fix."
+}
