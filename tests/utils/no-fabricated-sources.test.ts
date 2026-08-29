@@ -18,14 +18,24 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync, globSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../src');
 
+// A plain recursive walk rather than fs.globSync: globSync landed in Node 22 and
+// the CI matrix still builds on Node 20, where it is undefined.
+function tsFilesUnder(dir: string): string[] {
+  return readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) return tsFilesUnder(full);
+    return entry.isFile() && entry.name.endsWith('.ts') ? [full] : [];
+  });
+}
+
 describe('no fabricated sources reach a tool result', () => {
-  const files = globSync('**/*.ts', { cwd: SRC }).map(f => path.join(SRC, f));
+  const files = tsFilesUnder(SRC);
 
   it('scans a non-trivial number of source files', () => {
     // Guards the guard: a glob that silently matches nothing would make every
