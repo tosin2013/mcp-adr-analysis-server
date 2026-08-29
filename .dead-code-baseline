@@ -1,0 +1,12 @@
+17
+
+Modules under src/ that no other src/ module imports, measured by
+scripts/check-dead-code.sh. A ratchet: this number may fall, never rise.
+
+17 files / 9,062 lines as of 2026-08-29, unchanged from the census that opened
+milestone 6 (#1540) even though src/ itself shrank from 183 files to 172 -- the
+deletions so far removed reachable code and dead methods, not whole orphans.
+
+14 of the 17 have a test suite and no caller. Their tests pass. Lower this
+number only by deleting a module through retirement.py with its own admission,
+or by wiring one up; never by editing this file alone.
