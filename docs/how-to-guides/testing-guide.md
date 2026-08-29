@@ -92,7 +92,6 @@ tests/
 │   ├── prompt-composition.test.ts
 │   ├── prompt-execution.test.ts
 │   ├── release-readiness-detector.test.ts
-│   ├── research-documentation.test.ts
 │   ├── research-integration.test.ts
 │   ├── research-questions.test.ts
 │   ├── rule-format.test.ts
