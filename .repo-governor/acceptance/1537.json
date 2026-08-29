@@ -1,0 +1,26 @@
+{
+  "authority_id": "1537",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -rl \"llm_cloud_management\\|llm_database_management\\|llm_web_search\" src/ | wc -l) -eq 0'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! test -f src/tools/llm-cloud-management-tool.ts && ! test -f src/tools/llm-database-management-tool.ts && ! test -f src/tools/llm-web-search-tool.ts'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "tests/integration/mcp-protocol.test.ts"
+    },
+    {
+      "check": "tests_pass",
+      "target": "tests/utils/no-fabricated-sources.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/verify-packaged-runtime.sh"
+    }
+  ],
+  "$comment": "All three assets carry a recorded RETIREMENT_REVIEW verdict, which is the expected terminal result from static analysis and the point at which the owner disposes -- the owner did, on 2026-08-28. No new ADR: unlike #1538, nothing Accepted MANDATES these tools. ADR-023 already removed them from the supported surface and routed deletion to a per-asset admission, which this issue is, so deleting them follows the decision rather than contradicting it. The fourth acceptance box asked for an example.com test 'written red first'. It is NOT red, and the test says so in its own header rather than implying it caught something: #1526 deleted `generateFallbackSearchResults` along with the firecrawl dependency, so the condition was gone before the test could be written. It is a ratchet, and it is mutation-checked in both directions -- injecting an example.com URL or the function name into any src file fails it by name. It also asserts its own glob matched >100 files, because a guard that silently scans nothing is the failure this milestone keeps finding. Recorded correction: both #1526 and #1537 described the fabricated URLs as reaching users at high confidence. They did not. `performWebSearch` filtered on a `found` field the fabricated objects never had, so all were discarded; the real defect was a tool that could not answer while naming a provider never constructed."
+}

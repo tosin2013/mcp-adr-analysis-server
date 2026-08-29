@@ -679,48 +679,6 @@ TOOL_CATALOG.set('create_research_template', {
   },
 });
 
-TOOL_CATALOG.set('llm_cloud_management', {
-  name: 'llm_cloud_management',
-  shortDescription: 'Cloud management via LLM',
-  fullDescription: 'Cloud resource management with LLM assistance.',
-  category: 'research',
-  complexity: 'complex',
-  tokenCost: { min: 3000, max: 6000 },
-  hasCEMCPDirective: false, // Phase 4.3: Complex tool - cloud management orchestration
-  relatedTools: ['llm_database_management'],
-  keywords: ['cloud', 'management', 'llm', 'aws', 'gcp', 'azure'],
-  requiresAI: true,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      operation: { type: 'string' },
-      provider: { type: 'string', enum: ['aws', 'gcp', 'azure'] },
-    },
-    required: ['operation'],
-  },
-});
-
-TOOL_CATALOG.set('llm_database_management', {
-  name: 'llm_database_management',
-  shortDescription: 'Database management via LLM',
-  fullDescription: 'Database operations with LLM assistance.',
-  category: 'research',
-  complexity: 'complex',
-  tokenCost: { min: 2500, max: 5000 },
-  hasCEMCPDirective: false, // Phase 4.3: Complex tool - database management orchestration
-  relatedTools: ['llm_cloud_management'],
-  keywords: ['database', 'management', 'llm', 'sql', 'nosql'],
-  requiresAI: true,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      operation: { type: 'string' },
-      databaseType: { type: 'string' },
-    },
-    required: ['operation'],
-  },
-});
-
 // ============================================================================
 // DEPLOYMENT & OPERATIONS TOOLS
 // ============================================================================

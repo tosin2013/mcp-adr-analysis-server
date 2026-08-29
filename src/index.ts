@@ -1561,90 +1561,6 @@ export class McpAdrAnalysisServer {
             },
           },
           {
-            name: 'llm_cloud_management',
-            description: 'LLM-managed cloud provider operations with research-driven approach',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                provider: {
-                  type: 'string',
-                  enum: ['aws', 'azure', 'gcp', 'redhat', 'ubuntu', 'macos'],
-                  description: 'Cloud provider to use',
-                },
-                action: {
-                  type: 'string',
-                  description: 'Action to perform',
-                },
-                parameters: {
-                  type: 'object',
-                  description: 'Action parameters',
-                },
-                llmInstructions: {
-                  type: 'string',
-                  description: 'LLM instructions for command generation',
-                },
-                researchFirst: {
-                  type: 'boolean',
-                  description: 'Research best approach first',
-                  default: true,
-                },
-                projectPath: {
-                  type: 'string',
-                  description: 'Path to project directory',
-                  default: '.',
-                },
-                adrDirectory: {
-                  type: 'string',
-                  description: 'Directory containing ADR files',
-                  default: 'docs/adrs',
-                },
-              },
-              required: ['provider', 'action', 'llmInstructions'],
-            },
-          },
-          {
-            name: 'llm_database_management',
-            description: 'LLM-managed database operations with research-driven approach',
-            inputSchema: {
-              type: 'object',
-              properties: {
-                database: {
-                  type: 'string',
-                  enum: ['postgresql', 'mongodb', 'redis', 'mysql', 'mariadb'],
-                  description: 'Database type to use',
-                },
-                action: {
-                  type: 'string',
-                  description: 'Database action to perform',
-                },
-                parameters: {
-                  type: 'object',
-                  description: 'Action parameters',
-                },
-                llmInstructions: {
-                  type: 'string',
-                  description: 'LLM instructions for command generation',
-                },
-                researchFirst: {
-                  type: 'boolean',
-                  description: 'Research best approach first',
-                  default: true,
-                },
-                projectPath: {
-                  type: 'string',
-                  description: 'Path to project directory',
-                  default: '.',
-                },
-                adrDirectory: {
-                  type: 'string',
-                  description: 'Directory containing ADR files',
-                  default: 'docs/adrs',
-                },
-              },
-              required: ['database', 'action', 'llmInstructions'],
-            },
-          },
-          {
             name: 'analyze_deployment_progress',
             description: 'Analyze deployment progress and verify completion with outcome rules',
             inputSchema: {
@@ -3988,12 +3904,6 @@ export class McpAdrAnalysisServer {
             break;
           case 'search_codebase':
             response = await this.searchCodebase(safeArgs);
-            break;
-          case 'llm_cloud_management':
-            response = await this.llmCloudManagement(safeArgs);
-            break;
-          case 'llm_database_management':
-            response = await this.llmDatabaseManagement(safeArgs);
             break;
           case 'analyze_deployment_progress':
             response = await this.analyzeDeploymentProgress(safeArgs);
@@ -7947,74 +7857,6 @@ Please provide:
         'SEARCH_ERROR'
       );
     }
-  }
-
-  /**
-   * LLM cloud management tool implementation
-   */
-  private async llmCloudManagement(
-    args: Record<string, unknown>,
-    context?: ToolContext
-  ): Promise<CallToolResult> {
-    const ctx = context || createNoOpContext();
-
-    if (!('provider' in args) || !('action' in args) || !('llmInstructions' in args)) {
-      throw new McpAdrError(
-        'Missing required parameters: provider, action, llmInstructions',
-        'INVALID_ARGUMENTS'
-      );
-    }
-
-    ctx.info('🔧 Starting LLM-managed cloud operation...');
-    ctx.report_progress(0, 100);
-
-    const { llmCloudManagement } = await import('./tools/llm-cloud-management-tool.js');
-    return await llmCloudManagement(
-      args as {
-        provider: 'aws' | 'azure' | 'gcp' | 'redhat' | 'ubuntu' | 'macos';
-        action: string;
-        parameters?: Record<string, any>;
-        llmInstructions: string;
-        researchFirst?: boolean;
-        projectPath?: string;
-        adrDirectory?: string;
-      },
-      ctx // ✅ Pass context to tool function for progress updates
-    );
-  }
-
-  /**
-   * LLM database management tool implementation
-   */
-  private async llmDatabaseManagement(
-    args: Record<string, unknown>,
-    context?: ToolContext
-  ): Promise<CallToolResult> {
-    const ctx = context || createNoOpContext();
-
-    if (!('database' in args) || !('action' in args) || !('llmInstructions' in args)) {
-      throw new McpAdrError(
-        'Missing required parameters: database, action, llmInstructions',
-        'INVALID_ARGUMENTS'
-      );
-    }
-
-    ctx.info('🗄️ Starting LLM-managed database operation...');
-    ctx.report_progress(0, 100);
-
-    const { llmDatabaseManagement } = await import('./tools/llm-database-management-tool.js');
-    return await llmDatabaseManagement(
-      args as {
-        database: 'postgresql' | 'mongodb' | 'redis' | 'mysql' | 'mariadb';
-        action: string;
-        parameters?: Record<string, any>;
-        llmInstructions: string;
-        researchFirst?: boolean;
-        projectPath?: string;
-        adrDirectory?: string;
-      },
-      ctx // ✅ Pass context to tool function for progress updates
-    );
   }
 
   /**

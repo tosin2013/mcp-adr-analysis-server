@@ -132,22 +132,25 @@ describe('MCP protocol', () => {
     expect(names).not.toContain('analyze_project');
   }, 60_000);
 
-  it('does not advertise llm_web_search', async () => {
-    // #1526: retired with @mendable/firecrawl-js. ADR-023 declassified it --
-    // "native web search in every frontier host" -- and the implementation could
-    // not have served it anyway: `this.firecrawl` was assigned null on both
-    // branches, so the only reachable path fabricated example.com URLs that
-    // `performWebSearch` then discarded on a missing `found` field. The tool
-    // returned "Search Results (0 found)" while reporting "Provider: Firecrawl"
-    // and a 57.5% confidence borrowed from a different measurement.
+  it('does not advertise the llm_* tools ADR-023 declassified', async () => {
+    // ADR-023 removed these from the supported surface -- "prompt wrappers over
+    // host capability" for two of them, "native web search in every frontier
+    // host" for the third. #1526 retired llm_web_search; #1537 retires the rest.
     //
-    // Asserted over the wire because a grep cannot tell a registry entry from a
-    // string in a comment. Fetched here rather than through a variable another
-    // test populates: the first draft did that and, under a `-t` filter,
-    // asserted against an empty array -- passing while checking nothing, on a
-    // tool that was still registered.
-    const res = await client.listTools();
-    expect(res.tools.map(t => t.name)).not.toContain('llm_web_search');
+    // None of the three could do what it advertised. Neither cloud nor database
+    // management contained a single shell-out or HTTP call; both emitted a
+    // fabricated command, then an "## Execution Result" section reading
+    // "❌ Failed" for a command never run, because `success` was
+    // `command.confidence > 0.7` against a hardcoded 0.3.
+    //
+    // Fetched here rather than through a variable another test populates: the
+    // first draft did that and, under a `-t` filter, asserted against an empty
+    // array -- passing while checking nothing, on a tool that was still
+    // registered.
+    const names = (await client.listTools()).tools.map(t => t.name);
+    for (const name of ['llm_web_search', 'llm_cloud_management', 'llm_database_management']) {
+      expect(names, `${name} is still advertised`).not.toContain(name);
+    }
   }, 60_000);
 
   it('dispatches tools/call and returns a well-formed result', async () => {
