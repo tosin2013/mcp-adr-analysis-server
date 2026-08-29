@@ -61,8 +61,23 @@ jobs:
       #   Some files were not found --- {"not_found_files": ["coverage/lcov.info"]}
       # That was latent for as long as lcov.info was never generated at all;
       # generating it and setting fail_ci_if_error: true is what surfaced it.
+      # Skipped for Dependabot. A Dependabot-triggered `pull_request` run does not
+      # receive the repository's Actions secrets, so `secrets.CODECOV_TOKEN`
+      # resolves to the empty string even though the secret exists in BOTH the
+      # Actions and the Dependabot store. The uploader says so plainly:
+      #   -> Token length: 0
+      #   error -- Upload queued for processing failed:
+      #            {"message":"Token required because branch is protected"}
+      # With fail_ci_if_error: true that fails `test (20)`, and it had blocked
+      # all 13 open Dependabot PRs -- every dependency and security update in
+      # the repository -- while 13 high-severity advisories sat on main.
+      #
+      # Skipping is the right call rather than relaxing fail_ci_if_error: the
+      # coverage delta of a dependency bump is not a signal worth gating a
+      # security update on, and the hard failure stays in force for every
+      # human-authored PR, where the token is present and the upload works.
       - name: Upload coverage reports
-        if: matrix.node-version == '20'
+        if: matrix.node-version == '20' && github.actor != 'dependabot[bot]'
         uses: codecov/codecov-action@v7
         with:
           files: ./coverage/lcov.info
