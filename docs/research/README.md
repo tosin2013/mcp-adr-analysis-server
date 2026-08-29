@@ -27,8 +27,16 @@ This directory contains research documentation for the project, written by the
 ### Creating New Research
 
 1. Use the `generate_research_questions` MCP tool to create research questions
-2. Research files are automatically generated in `docs/context/research/` with timestamp-based naming
+2. `perform_research` writes the findings to this directory as
+   `perform-research-{ISO timestamp}.md` — the one convention, stated once, above
 3. Research findings are integrated into project knowledge base
+
+The `research-index` resource groups these documents by **topic**, which it reads from
+the `- Question:` line in each document's Key Findings — not from the filename, and not
+from the heading. A timestamped filename carries no subject, and the heading is
+`# Tool Context: perform_research` in every research document ever written, so both
+collapse every document into one bucket. Parsing them for a topic is what #1530
+corrected.
 
 ### Research Process
 

@@ -34,24 +34,42 @@ function extractTitle(content: string): string {
 }
 
 /**
- * Extract topic from filename
+ * Extract topic from the document's own content.
+ *
+ * This used to parse the filename, splitting the basename on `_`. That never
+ * worked for either naming convention (#1530). `perform_research` writes
+ * `perform-research-{ISO}.md`, which has no underscore at all, so the whole
+ * filename -- timestamp included -- was returned as the "topic". The retired
+ * underscore convention fared no better: every such name returned the constant
+ * `"perform_research"`, collapsing `summary.byTopic` into a single bucket.
+ *
+ * A timestamped filename carries no subject, and neither does the heading: the
+ * document on disk is a tool-context document whose H1 is `# Tool Context:
+ * perform_research` for every research run ever written. The question is
+ * recorded in the body, as a `- Question:` key finding and again in the quick
+ * reference. Read it from there.
  */
-function extractTopic(filename: string): string {
-  // Remove extension and parse filename
-  // Example: perform_research_test_research_001.md -> research
-  const baseName = filename.replace(/\.md$/, '');
-  const parts = baseName.split('_');
-
-  // Try to find meaningful topic
-  if (parts.includes('research')) {
-    const researchIndex = parts.indexOf('research');
-    if (researchIndex > 0) {
-      return parts.slice(0, researchIndex + 1).join('_');
-    }
-    return 'research';
+function extractTopic(filename: string, content: string): string {
+  // `- Question: How is caching handled` -- the Key Findings entry. The quick
+  // reference above it repeats the question in prose, but parsing the
+  // structured line is the more durable of the two and a second parse that
+  // never changes an outcome is the kind of untested redundancy this milestone
+  // exists to remove.
+  const keyFinding = content.match(/^\s*-\s*Question:\s*(.+)$/m);
+  if (keyFinding?.[1]?.trim()) {
+    return keyFinding[1].trim();
   }
 
-  return parts[0] || 'general';
+  // A hand-written research note, which is a plain document with a real title.
+  const title = extractTitle(content);
+  if (title !== 'Untitled' && !/^Tool Context:/i.test(title)) {
+    const subject = title.replace(/^Research Results:\s*/i, '').trim();
+    if (subject) {
+      return subject;
+    }
+  }
+
+  return filename.replace(/\.md$/, '') || 'general';
 }
 
 /**
@@ -122,20 +140,19 @@ function groupByTopic(docs: ResearchDocument[]): Record<string, number> {
  *     summary: {
  *       total: 55,
  *       byTopic: {
- *         "performance": 12,
- *         "security": 8,
- *         "architecture": 15
+ *         "Kubernetes ingress configuration": 2,
+ *         "Database connection pooling": 1
  *       },
- *       totalWords: 45000,
- *       averageWordCount: 818
+ *       totalWordCount: 45000,
+ *       totalSize: 372736
  *     },
  *     documents: [
  *       {
- *         id: "perform_research_research_001",
- *         title: "TypeScript Performance Optimization",
- *         topic: "performance",
- *         path: "docs/research/perform_research_research_001.md",
- *         lastModified: "2025-10-10T12:00:00.000Z",
+ *         id: "perform-research-2026-08-28T04-37-26-533Z",
+ *         title: "Research Results: Kubernetes ingress configuration",
+ *         topic: "Kubernetes ingress configuration",
+ *         path: "docs/research/perform-research-2026-08-28T04-37-26-533Z.md",
+ *         lastModified: "2026-08-28T04:37:26.533Z",
  *         wordCount: 1250,
  *         size: 8192
  *       }
@@ -180,7 +197,7 @@ export async function generateResearchIndexResource(): Promise<ResourceGeneratio
             researchDocs.push({
               id: file.replace(/\.md$/, ''),
               title: extractTitle(content),
-              topic: extractTopic(file),
+              topic: extractTopic(file, content),
               path: path.join(dir, file),
               lastModified: stats.mtime.toISOString(),
               wordCount: content.split(/\s+/).filter(w => w.length > 0).length,
