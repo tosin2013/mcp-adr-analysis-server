@@ -1,19 +1,23 @@
-7
+5
 
 Modules under src/ that no other src/ module imports, measured by
 scripts/check-dead-code.sh. A ratchet: this number may fall, never rise.
 
-7 files / 4,457 lines as of 2026-08-29, down from 13 / 6,881. Six orphans
-retired under #1540, each with a recorded RETIREMENT_REVIEW verdict.
+5 files / 3,368 lines as of 2026-08-29, down from 17 / 9,062 when milestone 6
+opened. Twelve orphans retired under #1540, each with a recorded
+RETIREMENT_REVIEW verdict.
 
-The seven that remain are held for a named reason, not for lack of a verdict:
+The five that remain are held for a named reason, not for lack of a verdict:
 
   memory-migration-manager.ts     1016  owner's call: possible scaffolding
   sandbox-executor.ts              800  exercised by the CE-MCP suites (m5, #1416)
   memory-rollback-manager.ts       744  owner's call: possible scaffolding
-  adr-planning-task-integration.ts 658  #740 (open, v3.0) is what would wire it
-  llm-artifact-detector.ts         572  #752 (open, v3.0) plans to promote it
-  bootstrap-task-integration.ts    517  #740 (open, v3.0) is what would wire it
+  adr-planning-task-integration.ts 658  ADR-020 Phase 5 -- "Wrap 7-phase planning
+                                        workflow as a Task" -- is unchecked and
+                                        standing. Deleting a partial implementation
+                                        of a live commitment is implementing around
+                                        an accepted decision. Superseding that item
+                                        is a ratification act, not a retirement.
   aggregator-endpoint-map.ts       150  .github/workflows/aggregator-integration.yml
                                         runs its two suites against a live service
 
