@@ -1,0 +1,31 @@
+{
+  "authority_id": "1530",
+  "criteria": [
+    {
+      "check": "tests_pass",
+      "target": "tests/resources/research-index-resource.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"perform_research_research_001\\|totalWords:\" src/resources/research-index-resource.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(ls docs/research | grep -c test || true) -eq 0'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"perform-research-{ISO timestamp}.md\" docs/research/README.md'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "tests/tools/perform-research-output.test.ts"
+    }
+  ],
+  "covers": {
+    "declared": "The research index's topic derivation, the doc-comment example that documented a test artifact, and the naming convention statement in docs/research/README.md.",
+    "uncovered": "research-documentation.ts is still unretired -- it carries a recorded RETIREMENT_REVIEW verdict but deleting it belongs to the dead-code batch, not here.",
+    "split_to": "1540"
+  },
+  "$comment": "Two corrections to the issue's own account, both verified rather than reasoned. First: the retired underscore convention was no better than the live one. `perform_research_test_research_001` splits to five parts, indexOf finds `research` at 1, and the function returns parts.slice(0,2) -- the constant 'perform_research'. summary.byTopic was a single bucket under BOTH conventions, so the facet was decorative, not miscalibrated, and #1530's own proposed fix ('split on [-_]') would have rebuilt it. Second, and this one only the end-to-end case caught: the document on disk is NOT what perform-research-tool.ts:159 builds. That '# Research Results: {question}' string is the reply to the caller. The file is a tool-context document written by context-document-manager.ts:348, whose H1 is '# Tool Context: perform_research' in every research document ever produced -- so deriving the topic from the heading rebuilds the single-bucket defect by a third route. The hand-written fixtures agreed with that wrong guess and stayed green; only running the tool and reading the resource in one test disagreed. That is exactly what this issue's acceptance asked for, and it is why it asked. The topic now comes from the '- Question:' line in Key Findings. Every branch of extractTopic is mutation-checked: dropping the Question parse fails three tests, dropping the title fallback fails one, and a second redundant parse of the quick-reference line was written, found to change no outcome, and deleted rather than left as untested redundancy. Four of the eight tests are red against the original implementation; the header names which four and does not claim the other four caught anything. The three leaked perform_research_test_*.md fixtures were already gone before this work started."
+}
