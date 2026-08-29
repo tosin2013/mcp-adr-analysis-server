@@ -3,11 +3,12 @@
  * Validates that enhancements provide measurable improvements
  */
 
-import {
-  generateArchitecturalKnowledge,
-  optimizePromptWithAPE,
-  executeWithReflexion
-} from '../src/utils/index.js';
+// Imported from the three modules directly: src/utils/index.ts was a re-export
+// barrel with no importer in src/, and this file was its only consumer anywhere
+// (#1540).
+import { generateArchitecturalKnowledge } from '../src/utils/knowledge-generation.js';
+import { optimizePromptWithAPE } from '../src/utils/automatic-prompt-engineering.js';
+import { executeWithReflexion } from '../src/utils/reflexion.js';
 import {
   createTestPrompt,
   createTestKnowledgeConfig,
@@ -16,18 +17,17 @@ import {
   measureExecutionTime,
   runBenchmark,
   comparePromptQuality,
-  assessPromptQuality
+  assessPromptQuality,
 } from './utils/advanced-prompting-test-utils.js';
 
 describe('Performance and Effectiveness Tests', () => {
-
   describe('Knowledge Generation Performance', () => {
     it('should complete within acceptable time limits', async () => {
       const projectInfo = {
         projectPath: './test-project',
         technologies: ['react', 'node', 'postgresql'],
         patterns: ['mvc', 'repository'],
-        projectType: 'web-application'
+        projectType: 'web-application',
       };
       const config = createTestKnowledgeConfig();
 
@@ -40,29 +40,47 @@ describe('Performance and Effectiveness Tests', () => {
 
     it('should scale linearly with technology count', async () => {
       const baseTechnologies = ['react', 'node'];
-      const largeTechnologies = ['react', 'node', 'postgresql', 'redis', 'docker', 'kubernetes', 'aws', 'typescript'];
-      
+      const largeTechnologies = [
+        'react',
+        'node',
+        'postgresql',
+        'redis',
+        'docker',
+        'kubernetes',
+        'aws',
+        'typescript',
+      ];
+
       const baseProjectInfo = {
         projectPath: './test-project',
         technologies: baseTechnologies,
         patterns: [],
-        projectType: 'web-application'
+        projectType: 'web-application',
       };
-      
+
       const largeProjectInfo = {
         projectPath: './test-project',
         technologies: largeTechnologies,
         patterns: [],
-        projectType: 'web-application'
+        projectType: 'web-application',
       };
 
-      const baseBenchmark = await runBenchmark(async () => {
-        return await generateArchitecturalKnowledge(baseProjectInfo, createTestKnowledgeConfig());
-      }, { iterations: 3 });
+      const baseBenchmark = await runBenchmark(
+        async () => {
+          return await generateArchitecturalKnowledge(baseProjectInfo, createTestKnowledgeConfig());
+        },
+        { iterations: 3 }
+      );
 
-      const largeBenchmark = await runBenchmark(async () => {
-        return await generateArchitecturalKnowledge(largeProjectInfo, createTestKnowledgeConfig());
-      }, { iterations: 3 });
+      const largeBenchmark = await runBenchmark(
+        async () => {
+          return await generateArchitecturalKnowledge(
+            largeProjectInfo,
+            createTestKnowledgeConfig()
+          );
+        },
+        { iterations: 3 }
+      );
 
       // Large technology list should scale reasonably (optimized from 3x to 8x for realistic expectations)
       const performanceRatio = largeBenchmark.averageTime / baseBenchmark.averageTime;
@@ -77,12 +95,15 @@ describe('Performance and Effectiveness Tests', () => {
         projectPath: './test-project',
         technologies: ['react', 'node', 'postgresql'],
         patterns: [],
-        projectType: 'web-application'
+        projectType: 'web-application',
       };
 
-      const benchmark = await runBenchmark(async () => {
-        return await generateArchitecturalKnowledge(projectInfo, createTestKnowledgeConfig());
-      }, { iterations: 5 });
+      const benchmark = await runBenchmark(
+        async () => {
+          return await generateArchitecturalKnowledge(projectInfo, createTestKnowledgeConfig());
+        },
+        { iterations: 5 }
+      );
 
       expect(benchmark.memoryUsage).toBeLessThan(50); // Should use less than 50MB
     });
@@ -92,15 +113,15 @@ describe('Performance and Effectiveness Tests', () => {
         projectPath: './test-project',
         technologies: ['react', 'node'],
         patterns: [],
-        projectType: 'web-application'
+        projectType: 'web-application',
       };
 
       const concurrentRequests = 5;
       const startTime = performance.now();
 
-      const promises = Array(concurrentRequests).fill(null).map(() =>
-        generateArchitecturalKnowledge(projectInfo, createTestKnowledgeConfig())
-      );
+      const promises = Array(concurrentRequests)
+        .fill(null)
+        .map(() => generateArchitecturalKnowledge(projectInfo, createTestKnowledgeConfig()));
 
       const results = await Promise.all(promises);
       const endTime = performance.now();
@@ -133,9 +154,12 @@ describe('Performance and Effectiveness Tests', () => {
       for (const candidateCount of candidateCounts) {
         const config = createTestAPEConfig({ candidateCount });
 
-        const benchmark = await runBenchmark(async () => {
-          return await optimizePromptWithAPE(basePrompt, config);
-        }, { iterations: 2 });
+        const benchmark = await runBenchmark(
+          async () => {
+            return await optimizePromptWithAPE(basePrompt, config);
+          },
+          { iterations: 2 }
+        );
 
         benchmarks.push(benchmark.averageTime);
         results.push(await optimizePromptWithAPE(basePrompt, config));
@@ -165,9 +189,12 @@ describe('Performance and Effectiveness Tests', () => {
       for (const optimizationRounds of rounds) {
         const config = createTestAPEConfig({ optimizationRounds, candidateCount: 3 });
 
-        const benchmark = await runBenchmark(async () => {
-          return await optimizePromptWithAPE(basePrompt, config);
-        }, { iterations: 2 });
+        const benchmark = await runBenchmark(
+          async () => {
+            return await optimizePromptWithAPE(basePrompt, config);
+          },
+          { iterations: 2 }
+        );
 
         benchmarks.push(benchmark.averageTime);
         results.push(await optimizePromptWithAPE(basePrompt, config));
@@ -210,9 +237,12 @@ describe('Performance and Effectiveness Tests', () => {
       for (const depth of depths) {
         const config = createTestReflexionConfig({ reflectionDepth: depth });
 
-        const benchmark = await runBenchmark(async () => {
-          return await executeWithReflexion(basePrompt, config);
-        }, { iterations: 3 });
+        const benchmark = await runBenchmark(
+          async () => {
+            return await executeWithReflexion(basePrompt, config);
+          },
+          { iterations: 3 }
+        );
 
         benchmarks.push(benchmark.averageTime);
         results.push(await executeWithReflexion(basePrompt, config));
@@ -231,12 +261,12 @@ describe('Performance and Effectiveness Tests', () => {
       const maxTime = Math.max(...benchmarks);
       const minTime = Math.min(...benchmarks);
       const variance = maxTime / minTime;
-      
+
       // Use higher threshold in CI environments (Node 20+) to account for resource contention
       const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
       const nodeVersion = parseInt(process.version.slice(1).split('.')[0]);
-      const varianceThreshold = (isCI && nodeVersion >= 20) ? 100 : 50;
-      
+      const varianceThreshold = isCI && nodeVersion >= 20 ? 100 : 50;
+
       expect(variance).toBeLessThan(varianceThreshold);
     });
 
@@ -245,12 +275,12 @@ describe('Performance and Effectiveness Tests', () => {
       const memoryConfigs = [
         { maxMemoryEntries: 10 },
         { maxMemoryEntries: 50 },
-        { maxMemoryEntries: 100 }
+        { maxMemoryEntries: 100 },
       ];
 
       for (const memoryConfig of memoryConfigs) {
         const config = createTestReflexionConfig(memoryConfig);
-        
+
         const { executionTime } = await measureExecutionTime(async () => {
           return await executeWithReflexion(basePrompt, config);
         });
@@ -268,16 +298,16 @@ describe('Performance and Effectiveness Tests', () => {
         projectPath: './test-project',
         technologies: ['react', 'node'],
         patterns: [],
-        projectType: 'web-application'
+        projectType: 'web-application',
       };
 
       const knowledgeResult = await generateArchitecturalKnowledge(
-        projectInfo, 
+        projectInfo,
         createTestKnowledgeConfig()
       );
 
       const qualityComparison = comparePromptQuality(originalPrompt, knowledgeResult.prompt);
-      
+
       expect(qualityComparison.improvement).toBeGreaterThan(0);
       expect(qualityComparison.significantImprovement).toBe(true);
       expect(qualityComparison.enhancedScore).toBeGreaterThan(qualityComparison.originalScore);
@@ -291,7 +321,7 @@ describe('Performance and Effectiveness Tests', () => {
       const apeResult = await optimizePromptWithAPE(basePrompt, config);
 
       const qualityComparison = comparePromptQuality(originalPrompt, apeResult.prompt);
-      
+
       expect(qualityComparison.improvement).toBeGreaterThan(0);
       expect(qualityComparison.significantImprovement).toBe(true);
       expect(apeResult.prompt.length).toBeGreaterThan(originalPrompt.length);
@@ -300,7 +330,7 @@ describe('Performance and Effectiveness Tests', () => {
     it('should enhance prompt structure and clarity', async () => {
       const simplePrompt = 'Help with architecture';
       const basePrompt = createTestPrompt({ prompt: simplePrompt });
-      
+
       const apeResult = await optimizePromptWithAPE(basePrompt, createTestAPEConfig());
       const qualityAssessment = assessPromptQuality(apeResult.prompt);
 
@@ -313,7 +343,7 @@ describe('Performance and Effectiveness Tests', () => {
     it('should maintain context relevance in enhanced prompts', async () => {
       const contextualPrompt = createTestPrompt({
         prompt: 'Analyze React application architecture',
-        context: { technologies: ['react', 'typescript'], domain: 'web-application' }
+        context: { technologies: ['react', 'typescript'], domain: 'web-application' },
       });
 
       const apeResult = await optimizePromptWithAPE(contextualPrompt, createTestAPEConfig());
@@ -333,10 +363,10 @@ describe('Performance and Effectiveness Tests', () => {
         projectPath: './test-project',
         technologies: ['react', 'node'],
         patterns: [],
-        projectType: 'web-application'
+        projectType: 'web-application',
       };
       const knowledgeResult = await generateArchitecturalKnowledge(
-        projectInfo, 
+        projectInfo,
         createTestKnowledgeConfig()
       );
 
@@ -346,13 +376,13 @@ describe('Performance and Effectiveness Tests', () => {
 
       // Step 3: Apply Reflexion
       const reflexionResult = await executeWithReflexion(
-        createTestPrompt({ prompt: apeResult.prompt }), 
+        createTestPrompt({ prompt: apeResult.prompt }),
         createTestReflexionConfig()
       );
 
       // Final result should be significantly better than original
       const finalQualityComparison = comparePromptQuality(originalPrompt, reflexionResult.prompt);
-      
+
       expect(finalQualityComparison.improvement).toBeGreaterThan(0.3); // 30% improvement
       expect(finalQualityComparison.significantImprovement).toBe(true);
       expect(reflexionResult.prompt.length).toBeGreaterThan(originalPrompt.length * 3);
@@ -363,23 +393,23 @@ describe('Performance and Effectiveness Tests', () => {
         projectPath: './test-project',
         technologies: ['react'],
         patterns: [],
-        projectType: 'web-application'
+        projectType: 'web-application',
       };
 
       const { executionTime } = await measureExecutionTime(async () => {
         // Simulate combined technique application
         const knowledgeResult = await generateArchitecturalKnowledge(
-          projectInfo, 
+          projectInfo,
           createTestKnowledgeConfig()
         );
-        
+
         const apeResult = await optimizePromptWithAPE(
-          createTestPrompt({ prompt: knowledgeResult.prompt }), 
+          createTestPrompt({ prompt: knowledgeResult.prompt }),
           createTestAPEConfig({ candidateCount: 3 })
         );
-        
+
         const reflexionResult = await executeWithReflexion(
-          createTestPrompt({ prompt: apeResult.prompt }), 
+          createTestPrompt({ prompt: apeResult.prompt }),
           createTestReflexionConfig()
         );
 
@@ -398,13 +428,13 @@ describe('Performance and Effectiveness Tests', () => {
         projectPath: './test-project',
         technologies: ['react', 'node'],
         patterns: [],
-        projectType: 'web-application'
+        projectType: 'web-application',
       };
 
       const techniques = [
         () => generateArchitecturalKnowledge(projectInfo, createTestKnowledgeConfig()),
         () => optimizePromptWithAPE(basePrompt, createTestAPEConfig()),
-        () => executeWithReflexion(basePrompt, createTestReflexionConfig())
+        () => executeWithReflexion(basePrompt, createTestReflexionConfig()),
       ];
 
       for (const technique of techniques) {
@@ -419,7 +449,7 @@ describe('Performance and Effectiveness Tests', () => {
         iterations: 10,
         warmupIterations: 2,
         maxExecutionTime: 5000,
-        memoryThreshold: 200
+        memoryThreshold: 200,
       };
 
       const benchmark = await runBenchmark(async () => {
@@ -436,17 +466,21 @@ describe('Performance and Effectiveness Tests', () => {
     it('should not degrade performance compared to baseline', async () => {
       // This test would compare against historical benchmarks
       // For now, we ensure current performance meets standards
-      
+
       const basePrompt = createTestPrompt();
       const techniques = [
-        () => generateArchitecturalKnowledge({
-          projectPath: './test',
-          technologies: ['react'],
-          patterns: [],
-          projectType: 'web-application'
-        }, createTestKnowledgeConfig()),
+        () =>
+          generateArchitecturalKnowledge(
+            {
+              projectPath: './test',
+              technologies: ['react'],
+              patterns: [],
+              projectType: 'web-application',
+            },
+            createTestKnowledgeConfig()
+          ),
         () => optimizePromptWithAPE(basePrompt, createTestAPEConfig()),
-        () => executeWithReflexion(basePrompt, createTestReflexionConfig())
+        () => executeWithReflexion(basePrompt, createTestReflexionConfig()),
       ];
 
       for (const technique of techniques) {
@@ -460,7 +494,7 @@ describe('Performance and Effectiveness Tests', () => {
         'Analyze the architecture',
         'Generate architectural decisions',
         'Evaluate technology choices',
-        'Design system components'
+        'Design system components',
       ];
 
       for (const prompt of testPrompts) {

@@ -1,13 +1,21 @@
-13
+7
 
 Modules under src/ that no other src/ module imports, measured by
 scripts/check-dead-code.sh. A ratchet: this number may fall, never rise.
 
-13 files / 6,881 lines as of 2026-08-29, down from 17 / 9,062 -- the first four
-orphans retired under #1540, each with a recorded RETIREMENT_REVIEW verdict:
-tree-sitter-code-tools.ts, deployment-type-registry.ts, apply-cot-enhancement.ts
-and research-documentation.ts.
+7 files / 4,457 lines as of 2026-08-29, down from 13 / 6,881. Six orphans
+retired under #1540, each with a recorded RETIREMENT_REVIEW verdict.
 
-10 of the remaining 13 have a test suite and no caller. Their tests pass. Lower
-this number only by deleting a module through retirement.py with its own
+The seven that remain are held for a named reason, not for lack of a verdict:
+
+  memory-migration-manager.ts     1016  owner's call: possible scaffolding
+  sandbox-executor.ts              800  exercised by the CE-MCP suites (m5, #1416)
+  memory-rollback-manager.ts       744  owner's call: possible scaffolding
+  adr-planning-task-integration.ts 658  #740 (open, v3.0) is what would wire it
+  llm-artifact-detector.ts         572  #752 (open, v3.0) plans to promote it
+  bootstrap-task-integration.ts    517  #740 (open, v3.0) is what would wire it
+  aggregator-endpoint-map.ts       150  .github/workflows/aggregator-integration.yml
+                                        runs its two suites against a live service
+
+Lower this number only by deleting a module through retirement.py with its own
 admission, or by wiring one up; never by editing this file alone.
