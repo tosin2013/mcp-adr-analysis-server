@@ -346,6 +346,13 @@ return {
 
 #### 6.2 Bootstrap Validation Task Integration
 
+> **Retired 2026-08-29 (#1540).** `src/utils/bootstrap-task-integration.ts` and its 18
+> tests are deleted. The module was built, tested and never called — nothing in `src/`
+> imported it. Its mandate, ADR-020's Phase 2 item _"Wrap `BootstrapValidationLoop.run()`
+> as a Task"_, was superseded by ADR-025 when that class was deleted, so retiring the
+> module follows an accepted decision rather than working around one. The items below are
+> left as written; they were true when ticked.
+
 - [x] Create `src/utils/bootstrap-task-integration.ts`
 - [x] Implement BootstrapTaskManager with phases: platform_detection, infrastructure_setup, application_deployment, validation, cleanup
 - [x] Create `executeWithTaskTracking()` helper for automatic task lifecycle
@@ -367,6 +374,12 @@ return {
 - [x] 26 tests passing in `tests/utils/research-task-integration.test.ts`
 
 #### 6.5 ADR Planning Task Integration
+
+> **Unreachable but retained (#1540).** `src/utils/adr-planning-task-integration.ts` has
+> no importer in `src/`, but ADR-020's Phase 5 item _"Wrap 7-phase planning workflow as a
+> Task"_ is still unchecked and still standing. Deleting a partial implementation of a
+> live commitment would be implementing around an accepted decision; superseding that item
+> is a ratification act, not a retirement verdict.
 
 - [x] Create `src/utils/adr-planning-task-integration.ts`
 - [x] Implement AdrPlanningTaskManager with phases: initialization, requirements_gathering, architecture_analysis, adr_drafting, review, finalization

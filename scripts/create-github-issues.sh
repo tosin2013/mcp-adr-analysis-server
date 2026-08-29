@@ -322,7 +322,10 @@ gh issue create --repo "$REPO" \
   --milestone "v3.0" \
   --body "$BODY"
 
-# B7
+# B7 -- HISTORICAL. This block filed #752, closed as obsolete on 2026-08-29:
+# src/utils/llm-artifact-detector.ts had zero importers and was retired under #1540.
+# This script is not idempotent and has already run; the text below is left as a
+# record of what was filed, not as work to re-file.
 IFS='' read -r -d '' BODY <<'EOF' || true
 `src/utils/llm-artifact-detector.ts` is experimental: it detects draft docs (`draft_*.md`, `wip_*.md`) and experimental code markers. The functionality is useful for CI gates but needs hardening (tests, clear API, config docs) before it can be treated as stable.
 

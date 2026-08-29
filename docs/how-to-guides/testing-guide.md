@@ -81,7 +81,6 @@ tests/
 │   ├── deployment-analysis.test.ts
 │   ├── gitleaks-detector.test.ts
 │   ├── interactive-approval.test.ts
-│   ├── llm-artifact-detector.test.ts
 │   ├── location-filter.test.ts
 │   ├── mcp-response-validator.test.ts
 │   ├── memory-entity-manager.test.ts
