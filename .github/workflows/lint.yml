@@ -61,6 +61,15 @@ jobs:
       - name: Check ADR drift (ratchet)
         run: bash scripts/check-adr-drift.sh
 
+      # Modules under src/ that nothing in src/ imports. RATCHET, not a
+      # zero-dead-code gate: 17 remain, 14 of them carrying test suites that
+      # pass against code with no caller. Deleting one needs retirement.py plus
+      # its own admission, so demanding zero would gate CI behind a queue of
+      # human dispositions and the check would never land. The count may fall,
+      # never rise. See #1540.
+      - name: Check dead code (ratchet)
+        run: bash scripts/check-dead-code.sh
+
       - name: Check formatting
         run: |
           echo "=== Checking Code Formatting ==="
