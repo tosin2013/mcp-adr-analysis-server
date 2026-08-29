@@ -4,37 +4,41 @@ This directory contains the Architectural Decision Records for the MCP ADR Analy
 
 ## ADR Index
 
-| ADR                                                                    | Title                                            | Status     | Date       | Category      |
-| ---------------------------------------------------------------------- | ------------------------------------------------ | ---------- | ---------- | ------------- |
-| [ADR-001](adr-001-mcp-protocol-implementation-strategy.md)             | MCP Protocol Implementation Strategy             | Deprecated | 2024-01-15 | Architecture  |
-| [ADR-002](adr-002-ai-integration-and-advanced-prompting-strategy.md)   | AI Integration and Advanced Prompting Strategy   | Accepted   | 2024-01-15 | AI/ML         |
-| [ADR-003](adr-003-memory-centric-architecture.md)                      | Memory-Centric Architecture                      | Accepted   | 2024-01-15 | Architecture  |
-| [ADR-004](adr-004-security-and-content-masking-strategy.md)            | Security and Content Masking Strategy            | Accepted   | 2024-01-15 | Security      |
-| [ADR-005](adr-005-testing-and-quality-assurance-strategy.md)           | Testing and Quality Assurance Strategy           | Accepted   | 2024-01-15 | Quality       |
-| [ADR-006](adr-006-tree-sitter-integration-strategy.md)                 | Tree-Sitter Integration Strategy                 | Accepted   | 2024-01-15 | Architecture  |
-| [ADR-007](adr-007-cicd-pipeline-strategy.md)                           | CI/CD Pipeline Strategy                          | Accepted   | 2024-01-15 | DevOps        |
-| [ADR-008](adr-008-development-workflow-strategy.md)                    | Development Workflow Strategy                    | Accepted   | 2024-01-15 | Process       |
-| [ADR-009](adr-009-package-distribution-strategy.md)                    | Package Distribution Strategy                    | Accepted   | 2024-01-15 | Distribution  |
-| [ADR-010](adr-010-bootstrap-deployment-architecture.md)                | Bootstrap Deployment Architecture                | Superseded in part   | 2025-01-23 | Deployment    |
-| [ADR-011](adr-011-adr-timeline-tracking-and-context-aware-analysis.md) | ADR Timeline Tracking and Context-Aware Analysis | Accepted   | 2025-11-19 | Architecture  |
-| [ADR-012](adr-012-validated-patterns-framework.md)                     | Validated Patterns Framework                     | Superseded in part   | 2025-01-16 | Deployment    |
-| [ADR-013](adr-013-documentation-platform-strategy.md)                  | Documentation Platform Strategy                  | Accepted   | 2025-11-21 | Documentation |
-| [ADR-014](adr-014-ce-mcp-architecture.md)                              | CE-MCP Architecture                              | Accepted   | 2025-12-09 | Architecture  |
-| [ADR-015](adr-015-ape-optimization-strategy.md)                        | APE Optimization Strategy                        | Accepted   | 2025-12-12 | AI/ML         |
-| [ADR-017](adr-017-tree-sitter-version-strategy.md)                     | Tree-Sitter Version Strategy                     | Accepted   | 2025-12-13 | Architecture  |
-| [ADR-018](adr-018-atomic-tools-architecture.md)                        | Atomic Tools Architecture                        | Accepted   | 2025-12-16 | Architecture  |
-| [ADR-019](adr-019-vitest-migration.md)                                 | Migrate from Jest to Vitest for Testing          | Accepted   | 2024-12-16 | Testing       |
-| [ADR-020](adr-020-mcp-tasks-integration-strategy.md)                   | MCP Tasks Integration Strategy                   | Superseded in part   | 2025-12-16 | Architecture  |
-| [ADR-021](adr-021-ai-layer-disposition.md)                             | Disposition of the legacy AI execution layer     | Accepted   | 2026-08-26 | Architecture  |
-| [ADR-022](adr-022-adopt-madr-format.md)                                | Adopt MADR as the default decision-record format | Accepted   | 2026-08-27 | Documentation |
-| [ADR-023](adr-023-tool-surface-scope.md)                               | Which of the 75 tools should still exist         | Accepted   | 2026-08-27 | Architecture  |
-| [ADR-025](adr-025-retire-the-bootstrap-pattern-engine.md)              | Retire the bootstrap pattern-execution engine    | Accepted   | 2026-08-28 | Deployment    |
+| ADR                                                                    | Title                                            | Status             | Date       | Category      |
+| ---------------------------------------------------------------------- | ------------------------------------------------ | ------------------ | ---------- | ------------- |
+| [ADR-001](adr-001-mcp-protocol-implementation-strategy.md)             | MCP Protocol Implementation Strategy             | Deprecated         | 2024-01-15 | Architecture  |
+| [ADR-002](adr-002-ai-integration-and-advanced-prompting-strategy.md)   | AI Integration and Advanced Prompting Strategy   | Accepted           | 2024-01-15 | AI/ML         |
+| [ADR-003](adr-003-memory-centric-architecture.md)                      | Memory-Centric Architecture                      | Accepted           | 2024-01-15 | Architecture  |
+| [ADR-004](adr-004-security-and-content-masking-strategy.md)            | Security and Content Masking Strategy            | Accepted           | 2024-01-15 | Security      |
+| [ADR-005](adr-005-testing-and-quality-assurance-strategy.md)           | Testing and Quality Assurance Strategy           | Accepted           | 2024-01-15 | Quality       |
+| [ADR-006](adr-006-tree-sitter-integration-strategy.md)                 | Tree-Sitter Integration Strategy                 | Accepted           | 2024-01-15 | Architecture  |
+| [ADR-007](adr-007-cicd-pipeline-strategy.md)                           | CI/CD Pipeline Strategy                          | Accepted           | 2024-01-15 | DevOps        |
+| [ADR-008](adr-008-development-workflow-strategy.md)                    | Development Workflow Strategy                    | Accepted           | 2024-01-15 | Process       |
+| [ADR-009](adr-009-package-distribution-strategy.md)                    | Package Distribution Strategy                    | Accepted           | 2024-01-15 | Distribution  |
+| [ADR-010](adr-010-bootstrap-deployment-architecture.md)                | Bootstrap Deployment Architecture                | Superseded in part | 2025-01-23 | Deployment    |
+| [ADR-011](adr-011-adr-timeline-tracking-and-context-aware-analysis.md) | ADR Timeline Tracking and Context-Aware Analysis | Accepted           | 2025-11-19 | Architecture  |
+| [ADR-012](adr-012-validated-patterns-framework.md)                     | Validated Patterns Framework                     | Superseded in part | 2025-01-16 | Deployment    |
+| [ADR-013](adr-013-documentation-platform-strategy.md)                  | Documentation Platform Strategy                  | Accepted           | 2025-11-21 | Documentation |
+| [ADR-014](adr-014-ce-mcp-architecture.md)                              | CE-MCP Architecture                              | Accepted           | 2025-12-09 | Architecture  |
+| [ADR-015](adr-015-ape-optimization-strategy.md)                        | APE Optimization Strategy                        | Accepted           | 2025-12-12 | AI/ML         |
+| [ADR-017](adr-017-tree-sitter-version-strategy.md)                     | Tree-Sitter Version Strategy                     | Accepted           | 2025-12-13 | Architecture  |
+| [ADR-018](adr-018-atomic-tools-architecture.md)                        | Atomic Tools Architecture                        | Accepted           | 2025-12-16 | Architecture  |
+| [ADR-019](adr-019-vitest-migration.md)                                 | Migrate from Jest to Vitest for Testing          | Accepted           | 2024-12-16 | Testing       |
+| [ADR-020](adr-020-mcp-tasks-integration-strategy.md)                   | MCP Tasks Integration Strategy                   | Superseded in part | 2025-12-16 | Architecture  |
+| [ADR-021](adr-021-ai-layer-disposition.md)                             | Disposition of the legacy AI execution layer     | Accepted           | 2026-08-26 | Architecture  |
+| [ADR-022](adr-022-adopt-madr-format.md)                                | Adopt MADR as the default decision-record format | Accepted           | 2026-08-27 | Documentation |
+| [ADR-023](adr-023-tool-surface-scope.md)                               | Which of the 75 tools should still exist         | Accepted           | 2026-08-27 | Architecture  |
+| [ADR-025](adr-025-retire-the-bootstrap-pattern-engine.md)              | Retire the bootstrap pattern-execution engine    | Accepted           | 2026-08-28 | Deployment    |
 
 > **ADR-016 was never written.** ADR-017 cites it twice as a predecessor decision
 > ("Replace ripgrep with tree-sitter"), and `tree-sitter-code-tools.ts` cited it in an
 > `@see`. The switch was decided and implemented; the record was not. The number is left
 > unused rather than reassigned — renumbering a later ADR into the gap would fabricate a
 > history that did not happen. ADR-006 holds the tree-sitter rationale.
+>
+> `tree-sitter-code-tools.ts` itself was deleted under #1540 on 2026-08-29: 864 lines
+> that nothing in `src/`, `tests/` or `scripts/` referenced. Tree-sitter is still a real
+> capability here; that file was not how it was delivered.
 >
 > The note that stood here claimed this index "stops at ADR-018, omits ADR-019 and
 > ADR-020, and lists ADR-012, ADR-013 and ADR-014 as _Proposed_". None of that is true

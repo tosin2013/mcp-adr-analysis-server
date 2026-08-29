@@ -16,11 +16,19 @@
     {
       "check": "command_exit",
       "target": "bash -c 'test $(python3 scripts/dead-code.py | awk -F\"\\t\" \"\\$1==\\\"TOTAL\\\"{print \\$2}\") -le $(sed -n \"s/^[[:space:]]*\\([0-9][0-9]*\\).*/\\1/p\" .dead-code-baseline | head -1)'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! test -f src/tools/tree-sitter-code-tools.ts && ! test -f src/utils/deployment-type-registry.ts && ! test -f src/utils/apply-cot-enhancement.ts && ! test -f src/utils/research-documentation.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(git grep -lE \"from .[^\\\"]*/(tree-sitter-code-tools|deployment-type-registry|apply-cot-enhancement|research-documentation)[.]js\" -- src tests scripts | wc -l) -eq 0'"
     }
   ],
   "covers": {
-    "declared": "The instrument only: a ratcheting dead-code check that makes the census reproducible, wired into the lint workflow beside the ADR-drift ratchet, with the 17 known orphans confirmed as its starting reading.",
-    "uncovered": "No module is deleted here. Each of the 17 carries a recorded RETIREMENT_REVIEW verdict and needs its own admission. Three of them -- sandbox-executor.ts and the two memory-migration modules, 2,560 lines between them -- may be scaffolding for the CE-MCP work in milestone 5 rather than abandoned code, and that is an owner judgement the census cannot make."
+    "declared": "The instrument -- a ratcheting dead-code check that makes the census reproducible, wired into the lint workflow beside the ADR-drift ratchet -- and the first four retirements it authorises: tree-sitter-code-tools.ts, deployment-type-registry.ts, apply-cot-enhancement.ts and research-documentation.ts, 2,181 lines, each with a recorded RETIREMENT_REVIEW verdict. The ratchet fell 17 -> 13, 9,062 -> 6,881 lines.",
+    "uncovered": "Nine orphans remain, 4,700 lines. Three of them -- sandbox-executor.ts and the two memory-migration modules, 2,560 lines between them -- may be scaffolding for the CE-MCP work in milestone 5 rather than abandoned code. That is an owner judgement the census cannot make, and it is the open question gating the rest."
   },
   "$comment": "The check is mutation-verified in three directions: adding an orphan to src/ raises the count and exits 1; wiring an orphan into src/index.ts lowers it and prints the ratchet instruction; hiding src/index.ts aborts with exit 2 rather than reporting a clean repository, because a check that silently scans nothing is the failure this milestone keeps finding in the code it is cleaning up. That second mutation earned its place immediately -- it did NOT move the count on the first run, which exposed a missing edge shape in my own graph builder: bare side-effect imports (`import './x.js';`, no bindings) were not matched, so any module reached only that way would have been reported dead. A graph that misses an edge shape reports live code as dead, and deletion is the one error here that a revert does not always undo. Fixed before the script landed; the census reading is unchanged at 17/9,062 because no such import existed. Note the census held at 17 files / 9,062 lines while src/ itself fell from 183 files to 172 across this milestone: the work so far removed reachable code and dead methods inside live files, not whole orphans. 14 of the 17 have a test suite and no caller -- their tests pass against code nothing runs, which reads as coverage and is not."
 }
