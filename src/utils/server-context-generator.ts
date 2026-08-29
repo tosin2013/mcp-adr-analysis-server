@@ -338,8 +338,6 @@ export class ServerContextGenerator {
       { name: 'manage_cache', description: 'Manage multi-level caching system' },
 
       // Cloud & Database (3 tools)
-      { name: 'llm_cloud_management', description: 'Manage cloud resources and infrastructure' },
-      { name: 'llm_database_management', description: 'Manage database operations and queries' },
 
       // Other (3 tools)
       {
