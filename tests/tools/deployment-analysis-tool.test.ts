@@ -20,21 +20,19 @@ vi.mock('../../src/utils/prompt-execution.js', () => ({
 }));
 
 vi.mock('../../src/utils/research-orchestrator.js', () => ({
-  ResearchOrchestrator: vi.fn().mockImplementation(() => ({
-    answerResearchQuestion: vi.fn().mockResolvedValue({
-      answer: 'Mock environment analysis',
-      confidence: 0.85,
-      sources: [
-        {
-          type: 'environment',
-          data: {
-            capabilities: ['Docker', 'Kubernetes', 'GitHub Actions'],
-          },
+  answerResearchQuestion: vi.fn().mockResolvedValue({
+    answer: 'Mock environment analysis',
+    confidence: 0.85,
+    sources: [
+      {
+        type: 'environment',
+        data: {
+          capabilities: ['Docker', 'Kubernetes', 'GitHub Actions'],
         },
-      ],
-      needsWebSearch: false,
-    }),
-  })),
+      },
+    ],
+    needsWebSearch: false,
+  }),
 }));
 
 const { analyzeDeploymentProgress } = await import('../../src/tools/deployment-analysis-tool.js');
