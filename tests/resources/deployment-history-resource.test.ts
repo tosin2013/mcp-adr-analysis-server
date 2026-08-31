@@ -4,7 +4,9 @@
  */
 
 import { URLSearchParams } from 'url';
+import path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';
+import { getConfig } from '../../src/utils/config.js';
 // Mock ResourceCache with module-level mock functions
 vi.mock('../../src/resources/resource-cache.js', () => {
   const mockCacheGet = vi.fn().mockResolvedValue(null);
@@ -52,6 +54,10 @@ describe('Deployment History Resource', () => {
 
     const module = await import('../../src/resources/deployment-history-resource.js');
     generateDeploymentHistoryResource = module.generateDeploymentHistoryResource;
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   beforeEach(() => {
@@ -323,6 +329,17 @@ MTTR: 15 minutes
 
       expect(result.data.recentDeployments?.[0]?.version).toBe('0.0.0');
     });
+
+    it('should read package.json under configured PROJECT_PATH in fallback, not process.cwd()', async () => {
+      const configured = '/tmp/mcp-adr-1553-deployment-history-fallback';
+      vi.stubEnv('PROJECT_PATH', configured);
+      mockDeploymentReadiness.mockRejectedValue(new Error('Tool unavailable'));
+      mockReadFile.mockResolvedValue(JSON.stringify({ version: '9.9.9' }));
+
+      await generateDeploymentHistoryResource();
+
+      expect(mockReadFile).toHaveBeenCalledWith(path.resolve(configured, 'package.json'), 'utf-8');
+    });
   });
 
   describe('Bridge Integration', () => {
@@ -332,11 +349,25 @@ MTTR: 15 minutes
       expect(mockDeploymentReadiness).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: 'deployment_history',
-          projectPath: process.cwd(),
+          projectPath: getConfig().projectPath,
           strictMode: false,
           enableMemoryIntegration: true,
         })
       );
+    });
+
+    it('should pass configured PROJECT_PATH to the tool, not process.cwd()', async () => {
+      const configured = '/tmp/mcp-adr-1553-deployment-history';
+      vi.stubEnv('PROJECT_PATH', configured);
+
+      await generateDeploymentHistoryResource();
+
+      expect(mockDeploymentReadiness).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectPath: path.resolve(configured),
+        })
+      );
+      expect(mockDeploymentReadiness.mock.calls[0][0].projectPath).not.toBe(process.cwd());
     });
 
     it('should pass environment to tool', async () => {
