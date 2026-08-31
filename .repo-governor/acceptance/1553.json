@@ -1,0 +1,22 @@
+{
+  "authority_id": "1553",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -n \"process.cwd()\" src/resources/code-quality-resource.ts src/resources/deployment-history-resource.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"getConfig().projectPath\" src/resources/code-quality-resource.ts && grep -q \"getConfig().projectPath\" src/resources/deployment-history-resource.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -n \"projectPath: process.cwd()\" tests/resources/code-quality-resource.test.ts tests/resources/deployment-history-resource.test.ts'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/resources/code-quality-resource.test.ts tests/resources/deployment-history-resource.test.ts tests/config.test.ts"
+    }
+  ],
+  "$comment": "Four call sites ignored PROJECT_PATH and analysed process.cwd(). getConfig() is loadConfig() under the name the resources need. tests_pass is a real command: a bare .ts path exits 126 under the git adapter."
+}

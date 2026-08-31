@@ -95,6 +95,15 @@ export function loadConfig(): ServerConfig {
 }
 
 /**
+ * Current server config. Re-reads `PROJECT_PATH` on every call (falls back to
+ * `process.cwd()`). Same as {@link loadConfig}; named for call sites that need
+ * the configured project root rather than the process working directory.
+ */
+export function getConfig(): ServerConfig {
+  return loadConfig();
+}
+
+/**
  * Get the absolute path for ADR directory
  */
 export function getAdrDirectoryPath(config: ServerConfig): string {

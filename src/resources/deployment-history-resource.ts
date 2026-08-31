@@ -24,6 +24,7 @@ import { URLSearchParams } from 'url';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { ResourceCache } from './resource-cache.js';
+import { getConfig } from '../utils/config.js';
 
 const resourceCache = new ResourceCache();
 
@@ -303,7 +304,7 @@ async function generateComprehensiveHistory(
   // Call tool with deployment_history operation
   const toolResult = await deploymentReadiness({
     operation: 'deployment_history',
-    projectPath: process.cwd(),
+    projectPath: getConfig().projectPath,
     targetEnvironment: environment,
     strictMode: false,
     enableMemoryIntegration: true,
@@ -398,7 +399,7 @@ async function generateBasicHistory(
   // Try to read package.json for version info
   let version = '0.0.0';
   try {
-    const packagePath = path.resolve(process.cwd(), 'package.json');
+    const packagePath = path.resolve(getConfig().projectPath, 'package.json');
     const packageData = await fs.readFile(packagePath, 'utf-8');
     const packageJson = JSON.parse(packageData);
     version = packageJson.version || '0.0.0';

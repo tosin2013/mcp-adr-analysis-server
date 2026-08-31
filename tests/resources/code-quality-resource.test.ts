@@ -4,7 +4,9 @@
  */
 
 import { URLSearchParams } from 'url';
+import path from 'path';
 import { describe, it, expect, beforeAll } from 'vitest';
+import { getConfig } from '../../src/utils/config.js';
 // Mock ResourceCache with module-level mock functions
 vi.mock('../../src/resources/resource-cache.js', () => {
   const mockCacheGet = vi.fn().mockResolvedValue(null);
@@ -53,6 +55,10 @@ describe('Code Quality Resource', () => {
 
     const module = await import('../../src/resources/code-quality-resource.js');
     generateCodeQualityResource = module.generateCodeQualityResource;
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   beforeEach(() => {
@@ -465,6 +471,21 @@ Mock files: 10
       expect(result.data.grade).toBe('F');
       expect(result.data.metrics.codebaseSize.totalFiles).toBe(0);
     });
+
+    it('should read src/ under configured PROJECT_PATH in fallback, not process.cwd()', async () => {
+      const configured = '/tmp/mcp-adr-1553-code-quality-fallback';
+      vi.stubEnv('PROJECT_PATH', configured);
+      mockDeploymentReadiness.mockRejectedValue(new Error('Tool unavailable'));
+      mockReaddir.mockResolvedValue(['file1.ts']);
+      mockReadFile.mockResolvedValue('const x = 1;\n');
+
+      await generateCodeQualityResource();
+
+      expect(mockReaddir).toHaveBeenCalledWith(
+        path.resolve(configured, 'src'),
+        expect.objectContaining({ recursive: true })
+      );
+    });
   });
 
   describe('Bridge Integration', () => {
@@ -474,12 +495,26 @@ Mock files: 10
       expect(mockDeploymentReadiness).toHaveBeenCalledWith(
         expect.objectContaining({
           operation: 'check_readiness',
-          projectPath: process.cwd(),
+          projectPath: getConfig().projectPath,
           targetEnvironment: 'production',
           strictMode: true,
           enableMemoryIntegration: false,
         })
       );
+    });
+
+    it('should pass configured PROJECT_PATH to the tool, not process.cwd()', async () => {
+      const configured = '/tmp/mcp-adr-1553-code-quality';
+      vi.stubEnv('PROJECT_PATH', configured);
+
+      await generateCodeQualityResource();
+
+      expect(mockDeploymentReadiness).toHaveBeenCalledWith(
+        expect.objectContaining({
+          projectPath: path.resolve(configured),
+        })
+      );
+      expect(mockDeploymentReadiness.mock.calls[0][0].projectPath).not.toBe(process.cwd());
     });
 
     it('should use production environment for quality checks', async () => {
