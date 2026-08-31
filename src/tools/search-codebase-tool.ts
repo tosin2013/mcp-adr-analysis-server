@@ -180,6 +180,10 @@ export async function searchCodebase(
     }
   > = new Map();
   const discoveredFiles = new Set<string>();
+  const remember = (filePath: string) => {
+    const absolute = path.isAbsolute(filePath) ? filePath : path.join(projectPath, filePath);
+    discoveredFiles.add(path.normalize(absolute));
+  };
 
   try {
     // PHASE 1: Intent-based file discovery using scanProjectStructure
@@ -191,25 +195,25 @@ export async function searchCodebase(
 
     // Match relevant file categories based on query intent
     if (queryLower.match(/docker|container/i)) {
-      projectStructure.dockerFiles.forEach(f => discoveredFiles.add(f.path));
+      projectStructure.dockerFiles.forEach(f => remember(f.path));
     }
 
     if (queryLower.match(/kubernetes|k8s|pod|deployment/i)) {
-      projectStructure.kubernetesFiles.forEach(f => discoveredFiles.add(f.path));
+      projectStructure.kubernetesFiles.forEach(f => remember(f.path));
     }
 
     if (queryLower.match(/dependency|package|library/i)) {
-      projectStructure.packageFiles.forEach(f => discoveredFiles.add(f.path));
+      projectStructure.packageFiles.forEach(f => remember(f.path));
     }
 
     if (queryLower.match(/config|configuration|environment|env/i)) {
-      projectStructure.configFiles.forEach(f => discoveredFiles.add(f.path));
-      projectStructure.environmentFiles.forEach(f => discoveredFiles.add(f.path));
+      projectStructure.configFiles.forEach(f => remember(f.path));
+      projectStructure.environmentFiles.forEach(f => remember(f.path));
     }
 
     if (queryLower.match(/build|ci|cd|pipeline/i)) {
-      projectStructure.buildFiles.forEach(f => discoveredFiles.add(f.path));
-      projectStructure.ciFiles.forEach(f => discoveredFiles.add(f.path));
+      projectStructure.buildFiles.forEach(f => remember(f.path));
+      projectStructure.ciFiles.forEach(f => remember(f.path));
     }
 
     if (queryLower.match(/test|testing|spec/i)) {
@@ -221,7 +225,7 @@ export async function searchCodebase(
         '**/tests/**',
         '**/test/**',
       ]);
-      testResults.files.forEach(f => discoveredFiles.add(f.path));
+      testResults.files.forEach(f => remember(f.path));
     }
 
     // PHASE 2: Keyword-based file discovery
@@ -229,7 +233,7 @@ export async function searchCodebase(
       try {
         const keywordPatterns = keywords.slice(0, 5).map(k => `**/*${k}*`);
         const keywordResults = await findFiles(projectPath, keywordPatterns, { limit: 50 });
-        keywordResults.files.forEach(f => discoveredFiles.add(f.path));
+        keywordResults.files.forEach(f => remember(f.path));
       } catch {
         // Keyword discovery failed, continue with other methods
       }
@@ -238,7 +242,7 @@ export async function searchCodebase(
     // PHASE 3: Apply custom scope if provided
     if (scope && scope.length > 0) {
       const scopedResults = await findFiles(projectPath, scope, { limit: 100 });
-      scopedResults.files.forEach(f => discoveredFiles.add(f.path));
+      scopedResults.files.forEach(f => remember(f.path));
     }
 
     // PHASE 4: Read and score file relevance
@@ -248,9 +252,7 @@ export async function searchCodebase(
     let analyzer: TreeSitterAnalyzer | undefined;
     if (enableTreeSitter) {
       try {
-        const { TreeSitterAnalyzer: TSAnalyzer } = await import(
-          '../utils/tree-sitter-analyzer.js'
-        );
+        const { TreeSitterAnalyzer: TSAnalyzer } = await import('../utils/tree-sitter-analyzer.js');
         analyzer = new TSAnalyzer();
       } catch {
         // Tree-sitter not available (common in test environments), continue without it
@@ -265,7 +267,7 @@ export async function searchCodebase(
         const content = await deps.fs.readFile(fullPath, 'utf-8');
 
         // Calculate text-based relevance
-        let relevance = calculateTextRelevance(content, query, keywords);
+        let relevance = calculateTextRelevance(content, query, keywords, fullPath);
 
         if (includeContent) {
           contentMap.set(filePath, content);
@@ -307,7 +309,8 @@ export async function searchCodebase(
 
             parseAnalysisMap.set(filePath, {
               language: analysis.language,
-              hasInfrastructure: !!analysis.infraStructure,
+              hasInfrastructure:
+                Array.isArray(analysis.infraStructure) && analysis.infraStructure.length > 0,
               functionCount: analysis.functions?.length || 0,
               importCount: analysis.imports?.length || 0,
             });
@@ -370,16 +373,14 @@ export async function searchCodebase(
 /**
  * MCP tool wrapper for search_codebase
  */
-export async function searchCodebaseTool(
-  args: {
-    query: string;
-    projectPath?: string;
-    scope?: string[];
-    includeContent?: boolean;
-    maxFiles?: number;
-    enableTreeSitter?: boolean;
-  }
-): Promise<CallToolResult> {
+export async function searchCodebaseTool(args: {
+  query: string;
+  projectPath?: string;
+  scope?: string[];
+  includeContent?: boolean;
+  maxFiles?: number;
+  enableTreeSitter?: boolean;
+}): Promise<CallToolResult> {
   try {
     const result = await searchCodebase(args);
 
@@ -498,23 +499,34 @@ function extractKeywords(query: string): string[] {
 /**
  * Calculate text-based relevance score
  */
-function calculateTextRelevance(content: string, query: string, keywords: string[]): number {
+function calculateTextRelevance(
+  content: string,
+  query: string,
+  keywords: string[],
+  filePath: string
+): number {
   const contentLower = content.toLowerCase();
+  const pathLower = filePath.toLowerCase();
+  const basename = path.basename(filePath).toLowerCase();
   const queryLower = query.toLowerCase();
 
   let score = 0;
 
-  // Keyword matching
+  // Keyword matching against content and path (a Dockerfile must match "docker")
   for (const keyword of keywords) {
-    if (contentLower.includes(keyword.toLowerCase())) {
+    const k = keyword.toLowerCase();
+    if (contentLower.includes(k)) {
       score += 0.2;
+    }
+    if (basename.includes(k) || pathLower.includes(k)) {
+      score += 0.25;
     }
   }
 
   // Query phrase matching
   const queryWords = queryLower.split(/\s+/).filter(w => w.length > 3);
   for (const word of queryWords) {
-    if (contentLower.includes(word)) {
+    if (contentLower.includes(word) || basename.includes(word) || pathLower.includes(word)) {
       score += 0.1;
     }
   }

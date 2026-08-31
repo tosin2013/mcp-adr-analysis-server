@@ -9,7 +9,16 @@
  * - Cognitive Systematization: Organized test structure covering all exported functions
  */
 
-import { describe, it as _it, expect, beforeAll, afterAll, beforeEach, afterEach, vi } from 'vitest';
+import {
+  describe,
+  it as _it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  afterEach,
+  vi,
+} from 'vitest';
 import { mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -472,15 +481,10 @@ describe('Content Masking Tool', () => {
 
         expect(result.content[0].text).toContain('Project Structure');
         expect(result.content[0].text).toContain(FIXTURE);
-        // Exact, not merely present. Note the number: the fixture holds five
-        // files, but `scanProjectStructure` only counts ones matching a known
-        // category (here, package.json), and the report labels that count
-        // "Total Files". Pinning 1 documents the gap rather than hiding it
-        // behind `toContain('Total Files')`. Compare the 0 asserted for a
-        // nonexistent path below — that case is indistinguishable from this one
-        // under the old structural assertion.
+        // The fixture holds five files. Total Files is a walk of the tree, not
+        // a count of recognised categories (that used to report 1 for package.json).
         expect(Object.keys(FIXTURE_FILES)).toHaveLength(5);
-        expect(result.content[0].text).toContain('Total Files**: 1');
+        expect(result.content[0].text).toContain('Total Files**: 5');
       });
     });
 
