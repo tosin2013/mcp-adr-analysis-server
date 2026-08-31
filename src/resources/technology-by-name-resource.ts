@@ -81,8 +81,7 @@ async function findReferencingAdrs(
  * Find related patterns (placeholder)
  */
 function findRelatedPatterns(_name: string): string[] {
-  // Placeholder implementation
-  return ['MVC', 'Repository'];
+  return [];
 }
 
 /**
@@ -130,15 +129,15 @@ function assessAdoption(
     confidence = 'low';
   }
 
-  const risks = status === 'evaluating'
-    ? ['Unproven in production', 'Limited team experience']
-    : status === 'trial'
-    ? ['Limited production usage']
-    : [];
+  const risks =
+    status === 'evaluating'
+      ? ['Unproven in production', 'Limited team experience']
+      : status === 'trial'
+        ? ['Limited production usage']
+        : [];
 
-  const benefits = acceptedAdrs > 0
-    ? ['Documented decisions', 'Team adoption']
-    : ['Under evaluation'];
+  const benefits =
+    acceptedAdrs > 0 ? ['Documented decisions', 'Team adoption'] : ['Under evaluation'];
 
   return { status, confidence, risks, benefits };
 }
