@@ -816,7 +816,7 @@ function extractKeywordsFromContent(content: string): string[] {
   });
 
   // Extract potential class/function names (CamelCase or snake_case)
-  const codePatterns = /\b[A-Z][a-zA-Z]+(?:[A-Z][a-z]+)*\b|\b[a-z]+_[a-z_]+\b/g;
+  const codePatterns = /\b[A-Z](?:[a-z]+[A-Z]){1,10}[a-z]*\b|\b[a-z]+(?:_[a-z]+){1,10}\b/g;
   const codeMatches = content.match(codePatterns);
   if (codeMatches) {
     keywords.push(...codeMatches.slice(0, 10)); // Limit to 10 code patterns

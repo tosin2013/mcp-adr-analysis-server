@@ -8,7 +8,7 @@
  * - Red Hat tooling (Ansible, etc.)
  */
 
-import { exec } from 'node:child_process';
+import { exec, execFile } from 'node:child_process';
 import { promisify } from 'util';
 import * as os from 'os';
 import { EnhancedLogger } from './enhanced-logging.js';
@@ -41,6 +41,8 @@ export class EnvironmentCapabilityRegistry {
   private projectPath: string;
   private discoveryComplete: boolean = false;
   private execAsync: ExecFunction;
+
+  private execFileAsync = promisify(execFile);
 
   constructor(projectPath?: string, execFunction?: ExecFunction) {
     this.logger = new EnhancedLogger();
@@ -444,10 +446,21 @@ export class EnvironmentCapabilityRegistry {
 
           if (queryLower.includes('playbook')) {
             try {
-              const { stdout: playbooks } = await this.execAsync(
-                `find ${this.projectPath} -name "*.yml" -o -name "*.yaml" | grep -E "(playbook|play)" | head -20`
-              );
-              result.playbooks = playbooks.trim().split('\n').filter(Boolean);
+              const { stdout: findOut } = await this.execFileAsync('find', [
+                this.projectPath,
+                '(',
+                '-name',
+                '*.yml',
+                '-o',
+                '-name',
+                '*.yaml',
+                ')',
+              ]);
+              result.playbooks = findOut
+                .trim()
+                .split('\n')
+                .filter(f => /playbook|play/i.test(f))
+                .slice(0, 20);
             } catch {
               result.playbooks = [];
             }
@@ -455,10 +468,14 @@ export class EnvironmentCapabilityRegistry {
 
           if (queryLower.includes('role')) {
             try {
-              const { stdout: roles } = await this.execAsync(
-                `find ${this.projectPath} -type d -name "roles" | head -10`
-              );
-              result.roles = roles.trim().split('\n').filter(Boolean);
+              const { stdout: roles } = await this.execFileAsync('find', [
+                this.projectPath,
+                '-type',
+                'd',
+                '-name',
+                'roles',
+              ]);
+              result.roles = roles.trim().split('\n').filter(Boolean).slice(0, 10);
             } catch {
               result.roles = [];
             }
