@@ -3,11 +3,12 @@
  * Provides a Node.js interface to the ripgrep command-line tool
  */
 
-import { exec } from 'node:child_process';
+import { exec, execFile } from 'node:child_process';
 import { promisify } from 'util';
 import { FileSystemError } from '../types/index.js';
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 
 /**
  * Options for ripgrep search
@@ -93,36 +94,27 @@ export async function searchWithRipgrep(options: RipgrepOptions): Promise<string
       return [];
     }
 
-    // Build ripgrep command
+    // Build ripgrep argv (no shell — passes args directly to the process)
     const args: string[] = [];
 
-    // Add search pattern (escape special characters)
-    const escapedPattern = escapeShellArg(pattern);
-    args.push(escapedPattern);
-
-    // Add search path
-    args.push(searchPath);
-
-    // Add flags
-    args.push('--files-with-matches'); // Only return file paths
-    args.push('--no-heading'); // Don't group matches by file
+    args.push('--files-with-matches');
+    args.push('--no-heading');
 
     if (!gitignore) {
       args.push('--no-ignore');
     }
 
     if (maxMatches) {
-      args.push(`--max-count=${maxMatches}`);
+      args.push('--max-count', String(maxMatches));
     }
 
     if (fileType) {
-      // Handle comma-separated file types (e.g., "ts,js,py" -> "--type=ts --type=js --type=py")
       const types = fileType
         .split(',')
         .map(t => t.trim())
         .filter(t => t);
       for (const type of types) {
-        args.push(`--type=${type}`);
+        args.push('--type', type);
       }
     }
 
@@ -131,17 +123,17 @@ export async function searchWithRipgrep(options: RipgrepOptions): Promise<string
     }
 
     if (glob) {
-      args.push(`--glob=${escapeShellArg(glob)}`);
+      args.push('--glob', glob);
     }
 
     if (excludeGlob) {
-      args.push(`--glob=!${escapeShellArg(excludeGlob)}`);
+      args.push('--glob', `!${excludeGlob}`);
     }
 
-    // Execute ripgrep
-    const command = `rg ${args.join(' ')}`;
-    const { stdout } = await execAsync(command, {
-      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+    args.push('--', pattern, searchPath);
+
+    const { stdout } = await execFileAsync('rg', args, {
+      maxBuffer: 10 * 1024 * 1024,
     });
 
     // Parse results (one file path per line)
@@ -194,18 +186,10 @@ export async function searchWithRipgrepDetailed(options: RipgrepOptions): Promis
       return [];
     }
 
-    // Build ripgrep command
+    // Build ripgrep argv (no shell — passes args directly to the process)
     const args: string[] = [];
 
-    // Add search pattern
-    const escapedPattern = escapeShellArg(pattern);
-    args.push(escapedPattern);
-
-    // Add search path
-    args.push(searchPath);
-
-    // Add flags for detailed output
-    args.push('--json'); // JSON output for easy parsing
+    args.push('--json');
     args.push('--no-heading');
 
     if (!gitignore) {
@@ -213,17 +197,16 @@ export async function searchWithRipgrepDetailed(options: RipgrepOptions): Promis
     }
 
     if (maxMatches) {
-      args.push(`--max-count=${maxMatches}`);
+      args.push('--max-count', String(maxMatches));
     }
 
     if (fileType) {
-      // Handle comma-separated file types (e.g., "ts,js,py" -> "--type=ts --type=js --type=py")
       const types = fileType
         .split(',')
         .map(t => t.trim())
         .filter(t => t);
       for (const type of types) {
-        args.push(`--type=${type}`);
+        args.push('--type', type);
       }
     }
 
@@ -237,25 +220,25 @@ export async function searchWithRipgrepDetailed(options: RipgrepOptions): Promis
     }
 
     if (contextBefore > 0) {
-      args.push(`--before-context=${contextBefore}`);
+      args.push('--before-context', String(contextBefore));
     }
 
     if (contextAfter > 0) {
-      args.push(`--after-context=${contextAfter}`);
+      args.push('--after-context', String(contextAfter));
     }
 
     if (glob) {
-      args.push(`--glob=${escapeShellArg(glob)}`);
+      args.push('--glob', glob);
     }
 
     if (excludeGlob) {
-      args.push(`--glob=!${escapeShellArg(excludeGlob)}`);
+      args.push('--glob', `!${excludeGlob}`);
     }
 
-    // Execute ripgrep
-    const command = `rg ${args.join(' ')}`;
-    const { stdout } = await execAsync(command, {
-      maxBuffer: 10 * 1024 * 1024, // 10MB buffer
+    args.push('--', pattern, searchPath);
+
+    const { stdout } = await execFileAsync('rg', args, {
+      maxBuffer: 10 * 1024 * 1024,
     });
 
     // Parse JSON results
@@ -340,14 +323,6 @@ export async function searchMultiplePatterns(
   }
 
   return results;
-}
-
-/**
- * Escape shell arguments to prevent command injection
- */
-function escapeShellArg(arg: string): string {
-  // Escape single quotes and wrap in single quotes
-  return `'${arg.replace(/'/g, "'\\''")}'`;
 }
 
 /**
