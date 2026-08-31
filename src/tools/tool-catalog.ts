@@ -9,6 +9,7 @@
  */
 
 import { Tool } from '@modelcontextprotocol/sdk/types.js';
+import { MCP_TOOL_SCHEMAS } from './mcp-tool-schemas.js';
 
 /**
  * Tool category for organization and filtering
@@ -2076,4 +2077,28 @@ export function getLightweightToolList(): Array<{
   }
 
   return result.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Overlay ListTools schemas onto the catalog so there is one input shape per tool. */
+for (const tool of MCP_TOOL_SCHEMAS) {
+  const existing = TOOL_CATALOG.get(tool.name);
+  const description = tool.description ?? tool.name;
+  if (existing) {
+    existing.inputSchema = tool.inputSchema;
+    existing.fullDescription = description;
+    continue;
+  }
+  TOOL_CATALOG.set(tool.name, {
+    name: tool.name,
+    shortDescription: description.length > 100 ? `${description.slice(0, 97)}...` : description,
+    fullDescription: description,
+    category: 'utility',
+    complexity: 'moderate',
+    tokenCost: { min: 500, max: 3000 },
+    hasCEMCPDirective: false,
+    relatedTools: [],
+    keywords: tool.name.split('_'),
+    requiresAI: false,
+    inputSchema: tool.inputSchema,
+  });
 }
