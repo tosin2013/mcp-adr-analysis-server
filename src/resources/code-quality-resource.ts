@@ -25,6 +25,7 @@ import { URLSearchParams } from 'url';
 import path from 'path';
 import { promises as fs } from 'fs';
 import { ResourceCache } from './resource-cache.js';
+import { getConfig } from '../utils/config.js';
 
 const resourceCache = new ResourceCache();
 
@@ -193,7 +194,7 @@ async function generateComprehensiveQuality(
   // Call tool with check_readiness operation (includes code quality analysis)
   const toolResult = await deploymentReadiness({
     operation: 'check_readiness',
-    projectPath: process.cwd(),
+    projectPath: getConfig().projectPath,
     targetEnvironment: 'production',
     strictMode: true,
     enableMemoryIntegration: false,
@@ -405,7 +406,7 @@ async function generateBasicQuality(scope: string, threshold: number): Promise<C
   let totalLines = 0;
 
   try {
-    const srcPath = path.resolve(process.cwd(), 'src');
+    const srcPath = path.resolve(getConfig().projectPath, 'src');
     const files = await fs.readdir(srcPath, { recursive: true });
 
     for (const file of files) {

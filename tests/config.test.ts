@@ -4,6 +4,7 @@
 
 import {
   loadConfig,
+  getConfig,
   validateProjectPath,
   createLogger,
   getAdrDirectoryPath,
@@ -66,6 +67,17 @@ describe('Configuration Management', () => {
 
       expect(config.maxCacheSize).toBe(50000000);
       expect(config.analysisTimeout).toBe(45000);
+    });
+  });
+
+  describe('getConfig', () => {
+    test('should return the configured PROJECT_PATH rather than process.cwd()', () => {
+      process.env['PROJECT_PATH'] = '/tmp/mcp-adr-1553-config';
+
+      const config = getConfig();
+
+      expect(config.projectPath).toBe('/tmp/mcp-adr-1553-config');
+      expect(config.projectPath).not.toBe(process.cwd());
     });
   });
 
