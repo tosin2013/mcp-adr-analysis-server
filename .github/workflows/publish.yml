@@ -263,7 +263,7 @@ jobs:
           echo "tag=${TAG_NAME}" >> $GITHUB_OUTPUT
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           # NOTE: Node 22.x currently ships with npm 10.x, NOT npm 11. The "Verify
           # npm version" step below force-installs npm@11.5.1+ because OIDC Trusted
