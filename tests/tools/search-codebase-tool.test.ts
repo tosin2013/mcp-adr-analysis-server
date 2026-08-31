@@ -13,10 +13,9 @@
  * literal content. Because the contents are known, the assertions are exact.
  *
  * Doing that made four defects visible that the old assertions could not fail
- * on. They are pinned in the `known defects` block at the bottom rather than
- * fixed here — scope is hermeticity, not relevance scoring — and are filed
- * separately. Those tests assert what the tool DOES, and are written to break
- * when it starts doing the right thing.
+ * on. They were pinned, then fixed under #1552: path identity, filename scoring,
+ * hasInfrastructure emptiness, and Total Files counting recognised categories
+ * only (`configure_custom_patterns` / content-masking).
  */
 
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
@@ -52,7 +51,7 @@ const FIXTURE_FILES: Record<string, string> = {
 
 let FIXTURE: string;
 
-/** Discovery yields a mix of absolute and project-relative paths; see `known defects`. */
+/** Discovery used to mix absolute and project-relative paths; they are normalized. */
 const relativePaths = (result: { matches: Array<{ path: string }> }): string[] => [
   ...new Set(
     result.matches.map(m => (path.isAbsolute(m.path) ? path.relative(FIXTURE, m.path) : m.path))
@@ -138,8 +137,8 @@ describe('searchCodebase', () => {
       });
 
       // Intent routing reaches different files for different queries — the
-      // point of the phase. Exact counts, not `>= 0`.
-      expect(docker.totalFiles).toBe(4);
+      // point of the phase. Exact unique counts (the old 4 was a duplicate path).
+      expect(docker.totalFiles).toBe(3);
       expect(kubernetes.totalFiles).toBe(2);
     });
 
@@ -277,7 +276,7 @@ describe('searchCodebase', () => {
 
       expect(result.projectPath).toBe(FIXTURE);
       expect(result.keywords).toEqual(['deployment', 'configuration']);
-      expect(result.totalFiles).toBe(4);
+      expect(result.totalFiles).toBe(3);
       expect(result.duration).toBeGreaterThan(0);
     });
 
@@ -302,9 +301,8 @@ describe('searchCodebase', () => {
       });
 
       expect(result.keywords).toContain('docker');
-      // Discovery reaches the Docker files even though scoring drops them —
-      // see `known defects > filename is never scored`.
-      expect(result.totalFiles).toBe(4);
+      // Unique discovered files (the old 4 counted the same Docker path twice).
+      expect(result.totalFiles).toBe(3);
     });
 
     it('should detect Kubernetes-related queries', async () => {
@@ -362,7 +360,7 @@ describe('searchCodebase', () => {
 
       // Discovery still succeeds and is reported; only scoring is lost.
       expect(readFile).toHaveBeenCalled();
-      expect(result.totalFiles).toBe(4);
+      expect(result.totalFiles).toBe(3);
       expect(result.matches).toEqual([]);
     });
   });
@@ -431,39 +429,32 @@ describe('searchCodebaseTool', () => {
 });
 
 /**
- * Defects the old `process.cwd()` assertions could not fail on.
- *
- * These pin CURRENT behaviour, not desired behaviour. Each is written so that
- * fixing the underlying defect breaks the test — which is the point: the fix
- * should have to come back here and say so.
+ * Defects that were pinned to fail when fixed. They now assert the desired
+ * behaviour: one Set entry per file, filename scoring, and a real emptiness
+ * check for `hasInfrastructure`.
  */
-describe('searchCodebase — known defects (pinned, not endorsed)', () => {
-  it('returns the same file twice, once absolute and once relative', async () => {
+describe('searchCodebase — previously pinned defects', () => {
+  it('returns each file once, even when discovery yields absolute and relative paths', async () => {
     const result = await searchCodebase({
       query: 'deployment configuration',
       projectPath: FIXTURE,
     });
 
-    // `scanProjectStructure` yields absolute paths, `findFiles` yields relative
-    // ones, and both feed the same `discoveredFiles` Set — so a file found by
-    // both routes is scored, returned and counted twice.
-    expect(result.matches).toHaveLength(2);
-    expect(result.matches.filter(m => path.isAbsolute(m.path))).toHaveLength(1);
-    expect(result.matches.filter(m => !path.isAbsolute(m.path))).toHaveLength(1);
-    expect(relativePaths(result)).toHaveLength(1);
+    const relatives = relativePaths(result);
+    expect(relatives).toEqual([...new Set(relatives)]);
+    expect(result.matches.filter(m => m.path.endsWith('k8s/deployment.yaml'))).toHaveLength(1);
   });
 
-  it('never scores a filename, so searching "docker" cannot return Dockerfile', async () => {
+  it('scores filenames so searching "Docker configuration" returns Dockerfile', async () => {
     const result = await searchCodebase({ query: 'Docker configuration', projectPath: FIXTURE });
 
-    // Both Docker files are discovered...
-    expect(result.totalFiles).toBe(4);
-    // ...and none is returned, because relevance is computed from file CONTENT
-    // only and neither file contains the string "docker".
-    expect(result.matches).toEqual([]);
+    const names = relativePaths(result);
+    expect(names).toContain('Dockerfile');
+    expect(names).toContain('docker-compose.yml');
+    expect(result.matches.length).toBeGreaterThan(0);
   });
 
-  it('reports hasInfrastructure for a file with no infrastructure', async () => {
+  it('does not report hasInfrastructure for a file with no infrastructure', async () => {
     const result = await searchCodebase({
       query: 'deployment configuration',
       projectPath: FIXTURE,
@@ -472,8 +463,6 @@ describe('searchCodebase — known defects (pinned, not endorsed)', () => {
 
     const typescript = result.matches.find(m => m.path.endsWith('database.config.ts'));
     expect(typescript?.parseAnalysis).toBeDefined();
-    // `hasInfrastructure: !!analysis.infraStructure` — an empty array is truthy,
-    // so this is true for every parsed file regardless of content.
-    expect(typescript!.parseAnalysis!.hasInfrastructure).toBe(true);
+    expect(typescript!.parseAnalysis!.hasInfrastructure).toBe(false);
   });
 });
