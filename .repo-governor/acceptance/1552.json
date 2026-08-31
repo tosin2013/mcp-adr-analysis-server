@@ -1,0 +1,30 @@
+{
+  "authority_id": "1552",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -n \"hasInfrastructure: !!analysis.infraStructure\" src/tools/search-codebase-tool.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"basename.includes\" src/tools/search-codebase-tool.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"countProjectFiles\" src/utils/actual-file-operations.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -n \"known defects (pinned, not endorsed)\" tests/tools/search-codebase-tool.test.ts && grep -q \"returns Dockerfile\" tests/tools/search-codebase-tool.test.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"Total Files\\*\\*: 5\" tests/tools/content-masking-tool.test.ts && ! grep -q \"Total Files\\*\\*: 1\" tests/tools/content-masking-tool.test.ts'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/tools/search-codebase-tool.test.ts tests/tools/content-masking-tool.test.ts"
+    }
+  ],
+  "$comment": "Four defects pinned in search-codebase-tool.test.ts (and Total Files in configure_custom_patterns). tests_pass is a real command: a bare .ts path exits 126 under the git adapter."
+}
