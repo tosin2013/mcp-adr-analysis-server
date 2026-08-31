@@ -1,0 +1,37 @@
+{
+  "authority_id": "1597",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -P \"match\\(/.*\\\\s\\*.*\\\\s\\*.*\\$\" src/index.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -P \"\\(\\?:\\[A-Z\\]\\[a-z\\]\\+\\)\\*\" src/utils/file-system.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -P \"replace\\(.*\\\\/\\+\\$\" src/utils/research-orchestrator.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"execFileSync\" src/tools/smart-git-push-tool-v2.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"execFileAsync\\|execFile\" src/utils/ripgrep-wrapper.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -P \"find \\$\\{\" src/utils/environment-capability-registry.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "npm run typecheck"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/smoke.test.ts tests/tools/tool-dispatcher.test.ts tests/integration/mcp-protocol.test.ts"
+    }
+  ]
+}

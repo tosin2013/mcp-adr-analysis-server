@@ -444,10 +444,15 @@ export class EnvironmentCapabilityRegistry {
 
           if (queryLower.includes('playbook')) {
             try {
-              const { stdout: playbooks } = await this.execAsync(
-                `find ${this.projectPath} -name "*.yml" -o -name "*.yaml" | grep -E "(playbook|play)" | head -20`
+              const safePath = this.projectPath.replace(/'/g, "'\\''");
+              const { stdout: findOut } = await this.execAsync(
+                `find '${safePath}' '(' -name '*.yml' -o -name '*.yaml' ')'`
               );
-              result.playbooks = playbooks.trim().split('\n').filter(Boolean);
+              result.playbooks = findOut
+                .trim()
+                .split('\n')
+                .filter(f => /playbook|play/i.test(f))
+                .slice(0, 20);
             } catch {
               result.playbooks = [];
             }
@@ -455,10 +460,11 @@ export class EnvironmentCapabilityRegistry {
 
           if (queryLower.includes('role')) {
             try {
+              const safePath = this.projectPath.replace(/'/g, "'\\''");
               const { stdout: roles } = await this.execAsync(
-                `find ${this.projectPath} -type d -name "roles" | head -10`
+                `find '${safePath}' -type d -name 'roles'`
               );
-              result.roles = roles.trim().split('\n').filter(Boolean);
+              result.roles = roles.trim().split('\n').filter(Boolean).slice(0, 10);
             } catch {
               result.roles = [];
             }

@@ -1,9 +1,16 @@
 import { describe, it, expect, vi } from 'vitest';
 // Mock child_process to prevent actual git commands during tests
 const mockExecSync = vi.fn();
+const mockExecFileSync = vi.fn();
 const mockExec = vi.fn();
 vi.mock('child_process', () => ({
   execSync: mockExecSync,
+  execFileSync: mockExecFileSync,
+  exec: mockExec,
+}));
+vi.mock('node:child_process', () => ({
+  execSync: mockExecSync,
+  execFileSync: mockExecFileSync,
   exec: mockExec,
 }));
 
@@ -81,6 +88,16 @@ describe('Smart Git Push Tool V2', () => {
       }
       if (command.includes('git branch')) {
         return '* main';
+      }
+      return '';
+    });
+
+    mockExecFileSync.mockImplementation((file: string, args: string[]) => {
+      if (file === 'git' && args[0] === 'commit') {
+        return 'Commit successful';
+      }
+      if (file === 'git' && args[0] === 'push') {
+        return 'Push successful';
       }
       return '';
     });

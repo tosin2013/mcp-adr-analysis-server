@@ -358,6 +358,37 @@ describe('EnvironmentCapabilityRegistry', () => {
       const ansibleResult = results.find(r => r.capability === 'ansible');
       expect(ansibleResult?.data.playbooks).toBeDefined();
     });
+
+    it('should find playbooks and filter by play/playbook name', async () => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
+        if (cmd.includes('ansible --version')) {
+          return { stdout: 'ansible 2.15', stderr: '' };
+        } else if (cmd.includes('find')) {
+          return {
+            stdout: 'deploy-playbook.yml\nother.yml\nplay-setup.yaml\nunrelated.yaml',
+            stderr: '',
+          };
+        }
+        return { stdout: '', stderr: '' };
+      });
+      const results = await registry.query('What Ansible playbooks do we have?');
+      const ansibleResult = results.find(r => r.capability === 'ansible');
+      expect(ansibleResult?.data.playbooks).toEqual(['deploy-playbook.yml', 'play-setup.yaml']);
+    });
+
+    it('should find roles', async () => {
+      mockExecAsync.mockImplementation(async (cmd: string) => {
+        if (cmd.includes('ansible --version')) {
+          return { stdout: 'ansible 2.15', stderr: '' };
+        } else if (cmd.includes('find') && cmd.includes('roles')) {
+          return { stdout: '/test/project/roles\n', stderr: '' };
+        }
+        return { stdout: '', stderr: '' };
+      });
+      const results = await registry.query('What Ansible roles are defined?');
+      const ansibleResult = results.find(r => r.capability === 'ansible');
+      expect(ansibleResult?.data.roles).toEqual(['/test/project/roles']);
+    });
   });
 
   describe('matchCapabilities', () => {

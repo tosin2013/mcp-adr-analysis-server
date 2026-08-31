@@ -413,7 +413,8 @@ export class ResearchOrchestrator {
       // dropped them. "Always include ADRs" has therefore included none of
       // them; any ADR that reached a research document arrived via PHASE 4's
       // keyword search, by accident of filename. (#1528)
-      const adrGlob = `${this.adrDirectory.replace(/\\/g, '/').replace(/\/+$/, '')}/**/*.md`;
+      const normalised = this.adrDirectory.replace(/\\/g, '/');
+      const adrGlob = `${normalised.endsWith('/') ? normalised.slice(0, -1) : normalised}/**/*.md`;
       try {
         const adrResults = await findFiles(this.projectPath, [adrGlob]);
         relevantFiles.push(...adrResults.files.map(f => f.path));
