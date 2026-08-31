@@ -8,15 +8,18 @@ import * as path from 'path';
 import * as os from 'os';
 
 // Use vi.hoisted to ensure mock constructors are available before vi.mock is hoisted
-const { MockResearchOrchestrator, mockGetAIExecutor } = vi.hoisted(() => ({
-  MockResearchOrchestrator: vi.fn(),
-  mockGetAIExecutor: vi.fn(),
-}));
+const { MockResearchOrchestrator, mockAnswerResearchQuestion, mockGetAIExecutor } = vi.hoisted(
+  () => ({
+    MockResearchOrchestrator: vi.fn(),
+    mockAnswerResearchQuestion: vi.fn(),
+    mockGetAIExecutor: vi.fn(),
+  })
+);
 
-// Mock ResearchOrchestrator with proper constructor
 vi.mock('../../src/utils/research-orchestrator.js', () => ({
   __esModule: true,
   ResearchOrchestrator: MockResearchOrchestrator,
+  answerResearchQuestion: mockAnswerResearchQuestion,
 }));
 
 // Mock AI executor
@@ -48,6 +51,14 @@ describe('ADR Validation Tool', () => {
       isAvailable: () => false,
       executeStructuredPrompt: vi.fn(),
     } as any);
+
+    mockAnswerResearchQuestion.mockResolvedValue({
+      answer: 'Default research answer',
+      confidence: 0.8,
+      sources: [],
+      metadata: { filesAnalyzed: 0, duration: 100, sourcesQueried: [] },
+      needsWebSearch: false,
+    });
 
     // Set up default research orchestrator mock
     MockResearchOrchestrator.mockImplementation(

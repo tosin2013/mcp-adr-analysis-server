@@ -1,0 +1,26 @@
+{
+  "authority_id": "1461",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -rl \"new ResearchOrchestrator\" src/ | grep -v src/utils/research-orchestrator.ts | wc -l) -eq 0'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"export async function answerResearchQuestion\" src/utils/research-orchestrator.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/check-adr-drift.sh"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(tr -d \"[:space:]\" < .adr-drift-baseline) -eq 0'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/tools/deployment-guidance-tool.test.ts tests/tools/deployment-analysis-tool.test.ts tests/tools/troubleshoot-guided-workflow-tool.test.ts tests/tools/adr-validation-tool.test.ts"
+    }
+  ],
+  "$comment": "The rule stands (ADR-018a). Consumers must not construct ResearchOrchestrator; this module owns construction via an exported function. PR #1551 closed this issue after migrating only deployment-guidance-tool's body into defaultDeps, which still constructed. Drift is terminal: one file left constructing holds the check at 1. #1459's injected seam stays; defaultDeps now calls the exported function instead of new. Tests that mock the module must export answerResearchQuestion or they test a constructor nothing calls."
+}

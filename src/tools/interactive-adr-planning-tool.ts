@@ -39,7 +39,7 @@ import { join, basename } from 'path';
 import * as os from 'os';
 import { McpAdrError } from '../types/index.js';
 import { findFiles, findRelatedCode } from '../utils/file-system.js';
-import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import { answerResearchQuestion } from '../utils/research-orchestrator.js';
 
 // Planning session schema
 const PlanningSessionSchema = z.object({
@@ -344,11 +344,6 @@ async function performAutomatedResearch(
   }
 
   try {
-    const orchestrator = new ResearchOrchestrator(
-      session.context.projectPath,
-      session.context.adrDirectory
-    );
-
     const researchQuestion = `ADR Planning Research for: ${session.context.problemStatement}
 
 Please provide:
@@ -358,7 +353,11 @@ Please provide:
 4. Environment capabilities that might influence the decision
 5. Industry best practices and common approaches`;
 
-    const research = await orchestrator.answerResearchQuestion(researchQuestion);
+    const research = await answerResearchQuestion(
+      researchQuestion,
+      session.context.projectPath,
+      session.context.adrDirectory
+    );
 
     const findings: Array<{ source: string; insight: string; relevance: string }> = [];
 

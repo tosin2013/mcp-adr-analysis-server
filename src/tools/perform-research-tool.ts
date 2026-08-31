@@ -7,7 +7,7 @@
 
 import { McpAdrError } from '../types/index.js';
 import type { ToolContext } from '../types/tool-context.js';
-import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import { answerResearchQuestion } from '../utils/research-orchestrator.js';
 import { ToolContextManager, type ToolContextDocument } from '../utils/context-document-manager.js';
 import * as path from 'path';
 import { existsSync } from 'fs';
@@ -139,10 +139,6 @@ export async function performResearch(
     context?.info(`🔍 Starting research: ${question}`);
     context?.report_progress(0, 100);
 
-    // Create research orchestrator
-    const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
-    orchestrator.setConfidenceThreshold(confidenceThreshold);
-
     context?.info('📁 Searching project files...');
     context?.report_progress(25, 100);
 
@@ -150,7 +146,9 @@ export async function performResearch(
     context?.info('📊 Querying knowledge graph and environment resources...');
     context?.report_progress(50, 100);
 
-    const research = await orchestrator.answerResearchQuestion(question);
+    const research = await answerResearchQuestion(question, projectPath, adrDirectory, {
+      confidenceThreshold,
+    });
 
     context?.info('🌐 Analyzing results and preparing response...');
     context?.report_progress(75, 100);
