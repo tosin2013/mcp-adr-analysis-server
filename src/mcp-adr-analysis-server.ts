@@ -2836,26 +2836,32 @@ To re-run this validation with strict mode:
     const tasks: Array<{ title: string; completed: boolean; description?: string }> = [];
 
     for (const line of lines) {
-      // Look for markdown checkbox patterns
-      const taskMatch = line.match(/^[ \t]*[-*][ \t]*\[([x \t])\][ \t]*(.+)$/i);
-      if (taskMatch && taskMatch[1] && taskMatch[2]) {
-        const checkbox = taskMatch[1];
-        const title = taskMatch[2];
-        tasks.push({
-          title: title.trim(),
-          completed: checkbox.toLowerCase() === 'x',
-        });
-      }
-      // Also look for simple list items that might be tasks
-      else if (line.match(/^\s*[-*]\s+\w+/)) {
-        const title = line.replace(/^\s*[-*]\s+/, '').trim();
-        if (title.length > 3) {
-          // Avoid very short items
-          tasks.push({
-            title,
-            completed: false,
-          });
+      let pos = 0;
+      while (pos < line.length && (line[pos] === ' ' || line[pos] === '\t')) pos++;
+      if (pos >= line.length || (line[pos] !== '-' && line[pos] !== '*')) continue;
+      pos++;
+      while (pos < line.length && (line[pos] === ' ' || line[pos] === '\t')) pos++;
+
+      if (pos < line.length && line[pos] === '[') {
+        const checkbox = line[pos + 1];
+        if (
+          checkbox &&
+          (checkbox === 'x' || checkbox === 'X' || checkbox === ' ' || checkbox === '\t') &&
+          line[pos + 2] === ']'
+        ) {
+          pos += 3;
+          while (pos < line.length && (line[pos] === ' ' || line[pos] === '\t')) pos++;
+          const title = line.slice(pos).trim();
+          if (title.length > 0) {
+            tasks.push({ title, completed: checkbox.toLowerCase() === 'x' });
+          }
+          continue;
         }
+      }
+
+      const title = line.slice(pos).trim();
+      if (title.length > 3) {
+        tasks.push({ title, completed: false });
       }
     }
 
