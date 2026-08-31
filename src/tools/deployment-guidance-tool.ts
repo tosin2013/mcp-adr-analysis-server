@@ -4,16 +4,16 @@
  */
 
 import { McpAdrError } from '../types/index.js';
-import { ResearchOrchestrator, type ResearchAnswer } from '../utils/research-orchestrator.js';
+import { answerResearchQuestion, type ResearchAnswer } from '../utils/research-orchestrator.js';
 
 /**
  * Dependencies for generateDeploymentGuidance (injectable for testing)
  *
  * The tool used to construct its own `ResearchOrchestrator`, which meant every
  * test ran a real one against the working tree and raced the per-test timeout
- * (#1459). Construction now happens in `defaultDeps` and nowhere else, so tests
- * substitute the research step instead of performing it. ADR-018 marks the
- * orchestrator for removal; when #1461 lands, this seam is where it is cut.
+ * (#1459). Tests inject `researchEnvironment`. Production `defaultDeps` calls
+ * `answerResearchQuestion` from `research-orchestrator.ts`, which is the only
+ * module allowed to construct (#1461 / ADR-018a).
  */
 export interface DeploymentGuidanceDependencies {
   /** Answers a research question about the deployment environment */
@@ -29,7 +29,7 @@ export interface DeploymentGuidanceDependencies {
  */
 export const defaultDeps: DeploymentGuidanceDependencies = {
   researchEnvironment: (question, projectPath, adrDirectory) =>
-    new ResearchOrchestrator(projectPath, adrDirectory).answerResearchQuestion(question),
+    answerResearchQuestion(question, projectPath, adrDirectory),
 };
 
 /**

@@ -944,5 +944,24 @@ export class ResearchOrchestrator {
   }
 }
 
+/**
+ * Consumer entry point for research (#1461 / ADR-018a).
+ *
+ * Tools must not construct `ResearchOrchestrator`. This module owns that.
+ * Callers that need a different implementation in tests mock this function.
+ */
+export async function answerResearchQuestion(
+  question: string,
+  projectPath?: string,
+  adrDirectory?: string,
+  options?: { confidenceThreshold?: number }
+): Promise<ResearchAnswer> {
+  const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
+  if (options?.confidenceThreshold !== undefined) {
+    orchestrator.setConfidenceThreshold(options.confidenceThreshold);
+  }
+  return orchestrator.answerResearchQuestion(question);
+}
+
 // Re-export types from research-task-integration for convenience
 export type { ResearchPlan, ResearchTaskTracker, CreateResearchTaskOptions };

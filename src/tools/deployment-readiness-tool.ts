@@ -32,7 +32,7 @@ import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 import { findFiles, findRelatedCode } from '../utils/file-system.js';
-import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import { answerResearchQuestion } from '../utils/research-orchestrator.js';
 import { MermaidDiagrams } from '../utils/mermaid-diagrams.js';
 
 // Core schemas
@@ -201,11 +201,7 @@ interface EnvironmentStability {
 
 interface DeploymentBlocker {
   category:
-    | 'test_failure'
-    | 'deployment_history'
-    | 'code_quality'
-    | 'adr_compliance'
-    | 'environment';
+    'test_failure' | 'deployment_history' | 'code_quality' | 'adr_compliance' | 'environment';
   title: string;
   description: string;
   severity: 'critical' | 'high' | 'medium' | 'low';
@@ -1480,8 +1476,6 @@ async function performEnvironmentResearch(
   }
 
   try {
-    const orchestrator = new ResearchOrchestrator(projectPath, 'docs/adrs');
-
     const researchQuestion = `Verify deployment readiness for ${args.targetEnvironment} environment:
 1. Are required deployment tools available (Docker/Podman, Kubernetes/OpenShift)?
 2. What is the current infrastructure state and health?
@@ -1489,7 +1483,7 @@ async function performEnvironmentResearch(
 4. What deployment patterns are documented in ADRs?
 5. Are there any known deployment blockers or issues?`;
 
-    const research = await orchestrator.answerResearchQuestion(researchQuestion);
+    const research = await answerResearchQuestion(researchQuestion, projectPath, 'docs/adrs');
 
     const warnings: string[] = [];
 
