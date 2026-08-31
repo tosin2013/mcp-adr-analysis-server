@@ -307,18 +307,20 @@ MTTR: 15 minutes
 
       expect(result).toBeDefined();
       expect(result.data.metadata.dataSource).toBe('basic-analysis');
-      expect(result.data.metadata.confidence).toBe(0.5);
-      expect(result.data.summary.totalDeployments).toBe(1);
+      expect(result.data.metadata.confidence).toBe(0);
+      expect(result.data.summary.totalDeployments).toBe(0);
+      expect(result.data.summary.successRate).toBe(0);
+      expect(result.data.recentDeployments).toEqual([]);
     });
 
-    it('should include version from package.json in fallback', async () => {
+    it('should not invent a successful deployment from package.json version', async () => {
       mockDeploymentReadiness.mockRejectedValue(new Error('Tool unavailable'));
       mockReadFile.mockResolvedValue(JSON.stringify({ version: '2.3.4' }));
 
       const result = await generateDeploymentHistoryResource();
 
-      expect(result.data.recentDeployments).toBeDefined();
-      expect(result.data.recentDeployments?.[0]?.version).toBe('2.3.4');
+      expect(result.data.recentDeployments).toEqual([]);
+      expect(result.data.metadata.omittedReason).toContain('2.3.4');
     });
 
     it('should handle package.json read errors in fallback', async () => {
@@ -327,7 +329,8 @@ MTTR: 15 minutes
 
       const result = await generateDeploymentHistoryResource();
 
-      expect(result.data.recentDeployments?.[0]?.version).toBe('0.0.0');
+      expect(result.data.recentDeployments).toEqual([]);
+      expect(result.data.metadata.omittedReason).toContain('0.0.0');
     });
 
     it('should read package.json under configured PROJECT_PATH in fallback, not process.cwd()', async () => {

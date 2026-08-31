@@ -1,0 +1,38 @@
+{
+  "authority_id": "1541",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -E \"Math.min\\(100, 70 |securityScore: 0\\.8|successRate: 100|productionIndicators = Math.max\\(10\" src/tools/deployment-readiness-tool.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -n \"score: 100\" src/tools/deployment-readiness-tool.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"qualityMeasured: false\" src/tools/deployment-readiness-tool.ts && grep -q \"unmeasuredHistory\" src/tools/deployment-readiness-tool.ts && grep -q \"fmtMeasuredPct\" src/tools/deployment-readiness-tool.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -qE \"sourceBonus|length \\* 0.05\" src/utils/research-orchestrator.ts && grep -q \"export function calculateSourceConfidence\" src/utils/research-orchestrator.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"MVC.*,.*Repository\" src/resources/technology-by-name-resource.ts && ! grep -q \"TypeScript.*,.*Node.js\" src/resources/pattern-by-name-resource.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(grep -R --include=\"*.ts\" -E \"available: .10GB.|complexity = 85|technologiesUsed = 3|patternsApplied = 2|For now, return example rules|For now, return placeholder history\" src | wc -l) -le 6'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/tools/deployment-readiness-tool.test.ts tests/tools/deployment-readiness-unmeasured.test.ts tests/utils/research-orchestrator-confidence.test.ts tests/resources/deployment-history-resource.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "gh issue view 1590 --json title,body --jq '(.title | test(\"Triage remaining unmeasured\")) and (.body | test(\"checkDiskSpace\"))' | grep -q true"
+    }
+  ],
+  "$comment": "tests_pass is a real command: a bare .ts path exits 126 under the git adapter. Criterion 6 is a ratchet: the six leftover named strings may fall, never rise. Criterion 8 is the issue's fourth box (follow-up with dispositions); #1590 is unmilestoned (INV-001) and is not split_to — naming it in covers.uncovered would hold this issue behind the remaining ~50 sites, which is the opposite of 'not all 90 in one pass'. The ADR-noncompliance and failing-security tests are red against main: empty history used to print Success Rate 100%, and ADRs were compliant by construction. Deliberately NOT declaring covers (same as #1468): the criteria establish the 17 readiness sites, calculateConfidence, the named resource fabrications, the ratchet, and that #1590 exists with dispositions."
+}

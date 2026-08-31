@@ -140,7 +140,6 @@ export async function scanProjectStructure(
               if (fileInfo) {
                 fileInfo.type = fileSpec.category;
                 (structure as any)[fileSpec.category].push(fileInfo);
-                structure.totalFiles++;
               }
             }
           }
@@ -167,7 +166,6 @@ export async function scanProjectStructure(
             if (fileInfo) {
               fileInfo.type = fileSpec.category;
               (structure as any)[fileSpec.category].push(fileInfo);
-              structure.totalFiles++;
             }
           }
         }
@@ -178,11 +176,11 @@ export async function scanProjectStructure(
         if (fileInfo) {
           fileInfo.type = fileSpec.category;
           (structure as any)[fileSpec.category].push(fileInfo);
-          structure.totalFiles++;
         }
       }
     }
 
+    structure.totalFiles = await countProjectFiles(projectPath);
     return structure;
   } catch (error) {
     throw new McpAdrError(
@@ -190,6 +188,38 @@ export async function scanProjectStructure(
       'SCAN_ERROR'
     );
   }
+}
+
+/**
+ * Count every file under the project root, not only the ones that matched a
+ * known category. `totalFiles` used to be the sum of category hits, so a
+ * five-file fixture with one package.json reported "Total Files: 1".
+ */
+async function countProjectFiles(projectPath: string): Promise<number> {
+  const fs = await import('fs/promises');
+  const path = await import('path');
+  const skipDirs = new Set(['node_modules', '.git', 'dist', 'coverage', '.mcp-adr-cache']);
+  let count = 0;
+
+  async function walk(dir: string): Promise<void> {
+    let entries;
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch {
+      return;
+    }
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        if (skipDirs.has(entry.name)) continue;
+        await walk(path.join(dir, entry.name));
+      } else if (entry.isFile()) {
+        count++;
+      }
+    }
+  }
+
+  await walk(projectPath);
+  return count;
 }
 
 /**

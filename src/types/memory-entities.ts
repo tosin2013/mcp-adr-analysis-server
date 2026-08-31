@@ -388,11 +388,11 @@ export const DeploymentAssessmentMemorySchema = BaseMemoryEntitySchema.extend({
       }),
       securityValidation: z.object({
         vulnerabilities: z.number(),
-        securityScore: z.number().min(0).max(1),
+        securityScore: z.number().min(0).max(1).optional(),
         criticalIssues: z.array(z.string()),
       }),
       performanceValidation: z.object({
-        performanceScore: z.number().min(0).max(1),
+        performanceScore: z.number().min(0).max(1).optional(),
         bottlenecks: z.array(z.string()),
         resourceUtilization: z.record(z.string(), z.number()),
       }),
@@ -413,7 +413,7 @@ export const DeploymentAssessmentMemorySchema = BaseMemoryEntitySchema.extend({
       estimatedDowntime: z.string().optional(),
     }),
     complianceChecks: z.object({
-      adrCompliance: z.number().min(0).max(1),
+      adrCompliance: z.number().min(0).max(1).optional(),
       regulatoryCompliance: z.array(z.string()),
       auditTrail: z.array(z.string()),
     }),

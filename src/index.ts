@@ -6634,7 +6634,7 @@ To re-run this validation with strict mode:
 
     for (const line of lines) {
       // Look for markdown checkbox patterns
-      const taskMatch = line.match(/^\s*[-*]\s*\[([x\s])\]\s*(.+)$/i);
+      const taskMatch = line.match(/^[ \t]*[-*][ \t]*\[([x \t])\][ \t]*(.+)$/i);
       if (taskMatch && taskMatch[1] && taskMatch[2]) {
         const checkbox = taskMatch[1];
         const title = taskMatch[2];

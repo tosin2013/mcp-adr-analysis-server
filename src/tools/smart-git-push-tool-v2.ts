@@ -22,7 +22,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, existsSync, statSync, mkdirSync } from 'fs';
 import { join, extname, basename } from 'path';
 import * as os from 'os';
@@ -628,15 +628,15 @@ async function executePush(
     let output = '';
 
     if (message) {
-      const commitOutput = execSync('git commit -m "' + message + '"', {
+      const commitOutput = execFileSync('git', ['commit', '-m', message], {
         cwd: projectPath,
         encoding: 'utf8',
       });
       output += 'Commit:\n' + commitOutput + '\n\n';
     }
 
-    const pushCommand = branch ? 'git push origin ' + branch : 'git push';
-    const pushOutput = execSync(pushCommand, {
+    const pushArgs = branch ? ['push', 'origin', branch] : ['push'];
+    const pushOutput = execFileSync('git', pushArgs, {
       cwd: projectPath,
       encoding: 'utf8',
       stdio: ['pipe', 'pipe', 'pipe'],
