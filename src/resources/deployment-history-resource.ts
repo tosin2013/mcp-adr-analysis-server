@@ -99,6 +99,7 @@ export interface DeploymentHistoryResult {
     dataSource: 'comprehensive-tool' | 'basic-analysis';
     confidence: number;
     timestamp: string;
+    omittedReason?: string;
   };
 }
 
@@ -410,28 +411,21 @@ async function generateBasicHistory(
     environment,
     timestamp: new Date().toISOString(),
     summary: {
-      totalDeployments: 1,
-      successfulDeployments: 1,
+      totalDeployments: 0,
+      successfulDeployments: 0,
       failedDeployments: 0,
-      successRate: 100,
-      averageDeploymentTime: 'unknown',
+      successRate: 0,
+      averageDeploymentTime: 'not measured',
       deploymentsPerWeek: 0,
     },
-    recentDeployments: [
-      {
-        timestamp: new Date().toISOString(),
-        version,
-        environment,
-        status: 'success',
-        duration: 'unknown',
-      },
-    ],
+    recentDeployments: [],
     metadata: {
       period,
       environment,
       dataSource: 'basic-analysis',
-      confidence: 0.5,
+      confidence: 0,
       timestamp: new Date().toISOString(),
+      omittedReason: `no deployment history was read; package.json version ${version} is not a deployment`,
     },
   };
 }
