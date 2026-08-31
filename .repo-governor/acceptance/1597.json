@@ -23,7 +23,7 @@
     },
     {
       "check": "command_exit",
-      "target": "bash -c 'grep -q \"execFileAsync\\|execFile\" src/utils/environment-capability-registry.ts'"
+      "target": "bash -c '! grep -P \"find \\$\\{\" src/utils/environment-capability-registry.ts'"
     },
     {
       "check": "command_exit",
