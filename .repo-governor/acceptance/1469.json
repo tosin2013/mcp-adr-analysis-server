@@ -1,0 +1,22 @@
+{
+  "authority_id": "1469",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -qE \"^MODULES=\\(\" scripts/verify-packaged-runtime.sh'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q declaredEntries scripts/verify-packaged-runtime.sh && grep -q \"package.json\" scripts/verify-packaged-runtime.sh'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q STALE scripts/verify-packaged-runtime.sh && grep -q \"missing runtime dependency\" scripts/verify-packaged-runtime.sh'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/verify-packaged-runtime.sh"
+    }
+  ],
+  "$comment": "The check used to be a MODULES=(...) list of six dist paths. Adding a fake line was how it was maintained, and a deleted module then misdiagnosed as a missing dependency. Entry points are now enumerated from package.json main/bin/exports, the static import graph of those files, and every shipped dist/src/**/*.js that imports a third-party package. STALE still means enumerated-but-absent; FAIL still means the import cannot resolve."
+}
