@@ -1,0 +1,38 @@
+{
+  "authority_id": "1585",
+  "criteria": [
+    {
+      "check": "file_exists",
+      "target": "src/utils/memory-migration-manager.ts"
+    },
+    {
+      "check": "file_exists",
+      "target": "src/utils/sandbox-executor.ts"
+    },
+    {
+      "check": "file_exists",
+      "target": "src/utils/memory-rollback-manager.ts"
+    },
+    {
+      "check": "file_exists",
+      "target": "src/utils/adr-planning-task-integration.ts"
+    },
+    {
+      "check": "file_exists",
+      "target": "src/utils/aggregator-endpoint-map.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q memory-migration-manager.ts .dead-code-baseline && grep -q sandbox-executor.ts .dead-code-baseline && grep -q memory-rollback-manager.ts .dead-code-baseline && grep -q adr-planning-task-integration.ts .dead-code-baseline && grep -q aggregator-endpoint-map.ts .dead-code-baseline'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(sed -n \"s/^[[:space:]]*\\([0-9][0-9]*\\).*/\\1/p\" .dead-code-baseline | head -1) -eq 5'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash scripts/check-dead-code.sh"
+    }
+  ],
+  "$comment": "Split from #1540. These five modules are held, not leftover mistakes. retirement.py returned RETIREMENT_REVIEW on each. The bar is that they still exist, are named in the baseline, and the ratchet is still 5 — not that they have been deleted. Do not retire them under this authority."
+}
