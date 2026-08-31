@@ -37,34 +37,33 @@ vi.mock('../../src/utils/tree-sitter-analyzer.js', () => ({
   })),
 }));
 
-// Mock ResearchOrchestrator to eliminate slow research operations
+// Mock research to eliminate slow orchestrator operations
 vi.mock('../../src/utils/research-orchestrator.js', () => ({
-  ResearchOrchestrator: vi.fn().mockImplementation(() => ({
-    answerResearchQuestion: vi.fn().mockResolvedValue({
-      answer: 'Mock research answer',
-      confidence: 0.8,
-      sources: [
-        {
-          type: 'environment',
-          data: {
-            capabilities: ['docker', 'kubernetes'],
-          },
+  answerResearchQuestion: vi.fn().mockResolvedValue({
+    answer: 'Mock research answer',
+    confidence: 0.8,
+    sources: [
+      {
+        type: 'environment',
+        found: true,
+        data: {
+          capabilities: ['docker', 'kubernetes'],
         },
-        {
-          type: 'project_files',
-          data: {},
-        },
-        {
-          type: 'knowledge_graph',
-          data: {},
-        },
-      ],
-      metadata: {
-        filesAnalyzed: 10,
       },
-      needsWebSearch: false,
-    }),
-  })),
+      {
+        type: 'project_files',
+        data: {},
+      },
+      {
+        type: 'knowledge_graph',
+        data: {},
+      },
+    ],
+    metadata: {
+      filesAnalyzed: 10,
+    },
+    needsWebSearch: false,
+  }),
 }));
 
 // Mock MemoryEntityManager to eliminate memory operations

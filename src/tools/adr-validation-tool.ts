@@ -8,7 +8,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
-import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import { answerResearchQuestion } from '../utils/research-orchestrator.js';
 import { getAIExecutor } from '../utils/ai-executor.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -149,11 +149,9 @@ async function computeAdrValidation(args: {
     const adrContext = extractAdrContext(adrContent);
 
     // Step 3: Research current infrastructure state
-    const orchestrator = new ResearchOrchestrator(projectPath, adrDirectory);
-
     const researchQuestion = `Based on the ADR titled "${adrTitle}", verify if the following is still true: ${adrDecision}. Check project files, environment state, and existing implementations.`;
 
-    const research = await orchestrator.answerResearchQuestion(researchQuestion);
+    const research = await answerResearchQuestion(researchQuestion, projectPath, adrDirectory);
 
     // Step 4: Use AI to analyze alignment
     const aiExecutor = getAIExecutor();

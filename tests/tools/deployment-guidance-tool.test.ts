@@ -22,9 +22,7 @@ vi.mock('../../src/utils/adr-discovery.js', () => ({
 }));
 
 vi.mock('../../src/utils/research-orchestrator.js', () => ({
-  ResearchOrchestrator: vi.fn(function (this: any) {
-    this.answerResearchQuestion = answerResearchQuestionSpy;
-  }),
+  answerResearchQuestion: answerResearchQuestionSpy,
 }));
 
 import {
@@ -32,7 +30,7 @@ import {
   defaultDeps,
 } from '../../src/tools/deployment-guidance-tool.js';
 import { discoverAdrsInDirectory } from '../../src/utils/adr-discovery.js';
-import { ResearchOrchestrator } from '../../src/utils/research-orchestrator.js';
+import { answerResearchQuestion } from '../../src/utils/research-orchestrator.js';
 
 /**
  * #1459: the tool used to construct a real `ResearchOrchestrator`, so each of
@@ -666,14 +664,12 @@ describe('deployment-guidance-tool — injected environment research', () => {
 });
 
 /**
- * `defaultDeps` is the one place a `ResearchOrchestrator` is still constructed.
- * Every other test injects past it, so without this the production wiring is
- * the only line in the file nothing executes — and a transposed argument would
- * ship: the seam takes (question, projectPath, adrDirectory) while the
- * constructor takes (projectPath, adrDirectory).
+ * `defaultDeps` is the production wiring. Every other test injects past it, so
+ * without this the exported function is the only line nothing executes — and a
+ * transposed argument would ship: the seam takes (question, projectPath, adrDirectory).
  */
 describe('defaultDeps.researchEnvironment', () => {
-  it('constructs the orchestrator with the project path and delegates the question', async () => {
+  it('delegates to answerResearchQuestion with project path and ADR directory', async () => {
     vi.clearAllMocks();
     answerResearchQuestionSpy.mockResolvedValue({ answer: 'WIRED', sources: [], confidence: 0.1 });
 
@@ -683,8 +679,11 @@ describe('defaultDeps.researchEnvironment', () => {
       'custom/adrs'
     );
 
-    expect(ResearchOrchestrator).toHaveBeenCalledWith('/some/project', 'custom/adrs');
-    expect(answerResearchQuestionSpy).toHaveBeenCalledWith('what infrastructure is available?');
+    expect(answerResearchQuestion).toHaveBeenCalledWith(
+      'what infrastructure is available?',
+      '/some/project',
+      'custom/adrs'
+    );
     expect(research.answer).toBe('WIRED');
   });
 });

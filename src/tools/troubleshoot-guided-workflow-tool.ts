@@ -22,7 +22,7 @@ import { MemoryEntityManager } from '../utils/memory-entity-manager.js';
 // Note: Memory entity types are imported implicitly through MemoryEntityManager
 import { EnhancedLogger } from '../utils/enhanced-logging.js';
 import { findFiles, findRelatedCode } from '../utils/file-system.js';
-import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import { answerResearchQuestion } from '../utils/research-orchestrator.js';
 
 // Structured failure schema
 const FailureInfoSchema = z.object({
@@ -531,8 +531,6 @@ async function researchTroubleshootingContext(
   environmentInsights: string[];
 }> {
   try {
-    const orchestrator = new ResearchOrchestrator(projectPath, 'docs/adrs');
-
     // Build research question based on failure type
     let researchQuestion = `Troubleshoot ${failure.failureType} issue:
 Error: ${failure.failureDetails.errorMessage}`;
@@ -551,7 +549,7 @@ Error: ${failure.failureDetails.errorMessage}`;
 3. Related ADR decisions that may affect this
 4. Known deployment/infrastructure issues`;
 
-    const research = await orchestrator.answerResearchQuestion(researchQuestion);
+    const research = await answerResearchQuestion(researchQuestion, projectPath, 'docs/adrs');
 
     const environmentInsights: string[] = [];
 

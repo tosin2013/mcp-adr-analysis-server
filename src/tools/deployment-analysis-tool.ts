@@ -4,7 +4,7 @@
  */
 
 import { McpAdrError } from '../types/index.js';
-import { ResearchOrchestrator } from '../utils/research-orchestrator.js';
+import { answerResearchQuestion } from '../utils/research-orchestrator.js';
 
 /**
  * Analyze deployment progress and verify completion
@@ -66,9 +66,8 @@ export async function analyzeDeploymentProgress(args: {
         const result = await identifyDeploymentTasks(adrDirectory, todoPath);
 
         // Execute the deployment task identification with AI if enabled, otherwise return prompt
-        const { executePromptWithFallback, formatMCPResponse } = await import(
-          '../utils/prompt-execution.js'
-        );
+        const { executePromptWithFallback, formatMCPResponse } =
+          await import('../utils/prompt-execution.js');
         const executionResult = await executePromptWithFallback(
           result.identificationPrompt,
           result.instructions,
@@ -378,13 +377,14 @@ Use the verification results to:
         // Step 0: Research environment state
         let environmentResearch = '';
         try {
-          const orchestrator = new ResearchOrchestrator(process.cwd(), adrDirectory);
-          const research = await orchestrator.answerResearchQuestion(
+          const research = await answerResearchQuestion(
             `Analyze current deployment environment state:
 1. What deployment tools and infrastructure are available?
 2. What is the current deployment pipeline status?
 3. Are there any deployment blockers or issues?
-4. What deployment-related ADRs are documented?`
+4. What deployment-related ADRs are documented?`,
+            process.cwd(),
+            adrDirectory
           );
 
           const envSource = research.sources.find(s => s.type === 'environment');
