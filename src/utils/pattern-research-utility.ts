@@ -26,6 +26,7 @@ export interface PatternResearchResult {
   timestamp: string;
   success: boolean;
   error?: string;
+  omittedReason?: string;
 }
 
 /**
@@ -178,9 +179,10 @@ export class PatternResearchUtility {
     return {
       source,
       findings: instruction,
-      confidence: source.requiredForDeployment ? 1.0 : 0.8,
+      confidence: 0,
       timestamp: new Date().toISOString(),
-      success: true,
+      success: false,
+      omittedReason: 'querySource returns LLM instructions; it did not fetch the source',
     };
   }
 

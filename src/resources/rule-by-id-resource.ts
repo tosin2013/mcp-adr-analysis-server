@@ -36,6 +36,7 @@ export interface DetailedRule extends Rule {
     totalViolations: number;
     lastChecked: string;
     violationRate: number;
+    measured: boolean;
   };
 }
 
@@ -56,22 +57,15 @@ async function loadAllRules(): Promise<Rule[]> {
 /**
  * Find rule violations (placeholder - would require code analysis)
  */
-async function findRuleViolations(rule: Rule): Promise<Array<{
-  file: string;
-  line: number;
-  message: string;
-  severity: string;
-}>> {
-  // TODO: Implement actual code analysis for rule violations
-  // For now, return placeholder violations
-  return [
-    {
-      file: 'src/example.ts',
-      line: 42,
-      message: `Violation of rule: ${rule.name}`,
-      severity: rule.severity,
-    },
-  ];
+async function findRuleViolations(_rule: Rule): Promise<
+  Array<{
+    file: string;
+    line: number;
+    message: string;
+    severity: string;
+  }>
+> {
+  return [];
 }
 
 /**
@@ -97,17 +91,14 @@ async function getRuleUsageStats(_ruleId: string): Promise<{
   totalViolations: number;
   lastChecked: string;
   violationRate: number;
+  measured: boolean;
 }> {
-  // TODO: Implement actual usage tracking
-  // For now, return placeholder stats
-  const totalChecks = 100;
-  const totalViolations = 15;
-
   return {
-    totalChecks,
-    totalViolations,
-    lastChecked: new Date().toISOString(),
-    violationRate: totalViolations / totalChecks,
+    totalChecks: 0,
+    totalViolations: 0,
+    lastChecked: '',
+    violationRate: 0,
+    measured: false,
   };
 }
 

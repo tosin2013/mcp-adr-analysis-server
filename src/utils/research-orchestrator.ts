@@ -46,6 +46,28 @@ export interface ResearchAnswer {
   };
 }
 
+/** True when the source actually returned data, not when a confidence literal was assigned. */
+export function sourceReturnedData(source: ResearchSource): boolean {
+  if (source.found === false) return false;
+  if (source.found === true) return true;
+  const data = source.data as { files?: unknown[]; nodes?: unknown[]; capabilities?: unknown[] };
+  return Boolean(
+    (data?.files && data.files.length > 0) ||
+    (data?.nodes && data.nodes.length > 0) ||
+    (data?.capabilities && data.capabilities.length > 0)
+  );
+}
+
+/**
+ * Fraction of consulted sources that returned data.
+ * Replaces avg(fixed confidence literals) + 0.05 * sourceCount.
+ */
+export function calculateSourceConfidence(sources: ResearchSource[]): number {
+  if (sources.length === 0) return 0;
+  const returned = sources.filter(s => sourceReturnedData(s)).length;
+  return returned / sources.length;
+}
+
 interface CachedResearchResult {
   result: ResearchAnswer;
   timestamp: number;
@@ -213,7 +235,7 @@ export class ResearchOrchestrator {
         answer.sources.push({
           type: 'project_files',
           data: projectData,
-          confidence: 0.9,
+          confidence: projectData.found ? 1 : 0,
           timestamp: new Date().toISOString(),
         });
         answer.metadata.sourcesQueried.push('project_files');
@@ -235,7 +257,7 @@ export class ResearchOrchestrator {
         type: 'knowledge_graph',
         found: knowledgeData.found,
         data: knowledgeData,
-        confidence: knowledgeData.found ? 0.85 : 0,
+        confidence: knowledgeData.found ? 1 : 0,
         timestamp: new Date().toISOString(),
       });
 
@@ -254,7 +276,7 @@ export class ResearchOrchestrator {
         answer.sources.push({
           type: 'environment',
           data: envData,
-          confidence: 0.95,
+          confidence: envData.found ? 1 : 0,
           timestamp: new Date().toISOString(),
         });
         answer.metadata.sourcesQueried.push('environment');
@@ -266,7 +288,7 @@ export class ResearchOrchestrator {
       }
 
       // Calculate overall confidence
-      answer.confidence = this.calculateConfidence(answer.sources);
+      answer.confidence = calculateSourceConfidence(answer.sources);
 
       this.logger.info(
         `Research confidence: ${(answer.confidence * 100).toFixed(1)}%`,
@@ -629,22 +651,6 @@ export class ResearchOrchestrator {
       );
       return { found: false, capabilities: [], data: [] };
     }
-  }
-
-  /**
-   * Calculate confidence score from multiple sources
-   */
-  private calculateConfidence(sources: ResearchSource[]): number {
-    if (sources.length === 0) return 0;
-
-    // Weighted confidence calculation
-    const totalConfidence = sources.reduce((sum, s) => sum + s.confidence, 0);
-    const avgConfidence = totalConfidence / sources.length;
-
-    // Bonus for multiple sources
-    const sourceBonus = Math.min(sources.length * 0.05, 0.15);
-
-    return Math.min(avgConfidence + sourceBonus, 1.0);
   }
 
   /**

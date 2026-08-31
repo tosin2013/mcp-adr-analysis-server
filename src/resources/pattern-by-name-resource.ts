@@ -91,8 +91,7 @@ async function findReferencingAdrs(
  * Find related technologies (placeholder)
  */
 function findRelatedTechnologies(_name: string): string[] {
-  // Placeholder implementation
-  return ['TypeScript', 'Node.js'];
+  return [];
 }
 
 /**

@@ -163,12 +163,14 @@ interface TestFailure {
 
 interface DeploymentHistoryAnalysis {
   recentDeployments: DeploymentRecord[];
-  successRate: number;
-  rollbackRate: number;
-  averageDeploymentTime: number;
+  measured: boolean;
+  omittedReason?: string;
+  successRate?: number;
+  rollbackRate?: number;
+  averageDeploymentTime?: number;
   failurePatterns: FailurePattern[];
   environmentStability: EnvironmentStability;
-  recommendedAction: 'proceed' | 'block' | 'investigate';
+  recommendedAction: 'proceed' | 'block' | 'investigate' | 'unknown';
 }
 
 interface DeploymentRecord {
@@ -194,8 +196,9 @@ interface FailurePattern {
 }
 
 interface EnvironmentStability {
-  stabilityScore: number;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  measured: boolean;
+  stabilityScore?: number;
+  riskLevel: 'low' | 'medium' | 'high' | 'critical' | 'unknown';
   recommendation: string;
 }
 
@@ -212,9 +215,11 @@ interface DeploymentBlocker {
 }
 
 interface CodeQualityAnalysis {
-  qualityScore: number;
-  productionIndicators: number;
-  mockIndicators: number;
+  qualityScore?: number;
+  qualityMeasured: boolean;
+  productionIndicators?: number;
+  mockIndicators?: number;
+  indicatorsMeasured: boolean;
   failingFiles: string[];
   recommendations: string[];
   // Enhanced with tree-sitter analysis
@@ -243,18 +248,62 @@ interface CodeQualityAnalysis {
 }
 
 interface AdrComplianceResult {
-  score: number;
-  compliantAdrs: number;
+  measured: boolean;
+  omittedReason?: string;
+  score?: number;
+  compliantAdrs?: number;
   totalAdrs: number;
   missingImplementations: string[];
   recommendations: string[];
+}
+
+function unmeasuredAdrCompliance(totalAdrs: number, reason: string): AdrComplianceResult {
+  return {
+    measured: false,
+    omittedReason: reason,
+    totalAdrs,
+    missingImplementations: [],
+    recommendations: [],
+  };
+}
+
+function unmeasuredHistory(reason: string): DeploymentHistoryAnalysis {
+  return {
+    recentDeployments: [],
+    measured: false,
+    omittedReason: reason,
+    failurePatterns: [],
+    environmentStability: {
+      measured: false,
+      riskLevel: 'unknown',
+      recommendation: reason,
+    },
+    recommendedAction: 'unknown',
+  };
+}
+
+function fmtMeasuredPct(value: number | undefined, measured: boolean): string {
+  return measured && value !== undefined ? `${value}%` : 'not measured';
+}
+
+function fmtAdrScore(result: AdrComplianceResult): string {
+  if (!result.measured || result.score === undefined) {
+    return result.omittedReason ? `not measured (${result.omittedReason})` : 'not measured';
+  }
+  return `${result.score}%`;
+}
+
+function fmtScoreField(value: number, measured: boolean): string {
+  return measured ? `${value}%` : 'not measured';
 }
 
 interface DeploymentReadinessResult {
   // Overall Status
   isDeploymentReady: boolean;
   overallScore: number;
+  scoreMeasured: boolean;
   confidence: number;
+  confidenceMeasured: boolean;
 
   // Detailed Analysis
   codeQualityAnalysis: CodeQualityAnalysis;
@@ -343,14 +392,28 @@ class DeploymentMemoryManager {
             ),
           },
           securityValidation: {
-            vulnerabilities: 0, // Default - could be enhanced with actual security scan data
-            securityScore: 0.8, // Default - could be enhanced with actual security analysis
+            vulnerabilities: readinessData.codeQualityAnalysis.securityIssues.length,
+            ...(readinessData.codeQualityAnalysis.qualityMeasured
+              ? {
+                  securityScore: Math.max(
+                    0,
+                    1 -
+                      readinessData.codeQualityAnalysis.securityIssues.filter(
+                        i => i.severity === 'critical'
+                      ).length *
+                        0.3 -
+                      readinessData.codeQualityAnalysis.securityIssues.filter(
+                        i => i.severity === 'high'
+                      ).length *
+                        0.15
+                  ),
+                }
+              : {}),
             criticalIssues: readinessData.criticalBlockers
               .filter(b => b.category === 'adr_compliance')
               .map(b => b.title),
           },
           performanceValidation: {
-            performanceScore: Math.max(0, (readinessData.overallScore - 20) / 80), // Derived from overall score
             bottlenecks: [],
             resourceUtilization: {},
           },
@@ -388,13 +451,19 @@ class DeploymentMemoryManager {
             : 'Cannot deploy - blockers present',
         },
         complianceChecks: {
-          adrCompliance: readinessData.adrComplianceResult.score / 100, // Convert to 0-1 range
-          regulatoryCompliance: [], // Could be enhanced with actual compliance data
+          ...(readinessData.adrComplianceResult.measured &&
+          readinessData.adrComplianceResult.score !== undefined
+            ? { adrCompliance: readinessData.adrComplianceResult.score / 100 }
+            : {}),
+          regulatoryCompliance: [],
           auditTrail: [
             `Deployment assessment completed at ${new Date().toISOString()}`,
             `Test validation: ${readinessData.testValidationResult.overallTestStatus}`,
             `Overall readiness score: ${readinessData.overallScore}%`,
             `Git push status: ${readinessData.gitPushStatus}`,
+            readinessData.adrComplianceResult.measured
+              ? `ADR compliance measured: ${readinessData.adrComplianceResult.score}`
+              : `ADR compliance omitted: ${readinessData.adrComplianceResult.omittedReason}`,
           ],
         },
       };
@@ -411,7 +480,8 @@ class DeploymentMemoryManager {
           `score-${Math.floor(readinessData.overallScore / 10) * 10}`,
           ...(readinessData.criticalBlockers.length > 0 ? ['critical-issues'] : []),
           ...(readinessData.testValidationResult.failureCount > 0 ? ['test-failures'] : []),
-          ...(readinessData.deploymentHistoryAnalysis.rollbackRate > 20
+          ...(readinessData.deploymentHistoryAnalysis.rollbackRate !== undefined &&
+          readinessData.deploymentHistoryAnalysis.rollbackRate > 20
             ? ['high-rollback-risk']
             : []),
         ],
@@ -630,11 +700,9 @@ class DeploymentMemoryManager {
             },
         securityValidation: {
           vulnerabilities: 0,
-          securityScore: 0.8,
           criticalIssues: [],
         },
         performanceValidation: {
-          performanceScore: deployment.status === 'success' ? 0.8 : 0.2,
           bottlenecks: [],
           resourceUtilization: {},
         },
@@ -1088,33 +1156,22 @@ async function performTestValidation(
   return {
     isDeploymentReady: testBlockers.length === 0,
     overallScore: calculateTestScore(testResult, args),
-    confidence: 85,
+    scoreMeasured: testResult.overallTestStatus !== 'not_run',
+    confidence: calculateTestScore(testResult, args),
+    confidenceMeasured: testResult.overallTestStatus !== 'not_run',
     codeQualityAnalysis: await analyzeCodeQualityWithTreeSitter(
       args.projectPath || process.cwd(),
       args.enableTreeSitterAnalysis,
       args.treeSitterLanguages
     ),
     testValidationResult: testResult,
-    deploymentHistoryAnalysis: {
-      recentDeployments: [],
-      successRate: 100,
-      rollbackRate: 0,
-      averageDeploymentTime: 0,
-      failurePatterns: [],
-      environmentStability: {
-        stabilityScore: 100,
-        riskLevel: 'low',
-        recommendation: 'Proceed with deployment',
-      },
-      recommendedAction: 'proceed',
-    },
-    adrComplianceResult: {
-      score: 100,
-      compliantAdrs: 0,
-      totalAdrs: 0,
-      missingImplementations: [],
-      recommendations: [],
-    },
+    deploymentHistoryAnalysis: unmeasuredHistory(
+      'test validation does not load deployment history'
+    ),
+    adrComplianceResult: unmeasuredAdrCompliance(
+      0,
+      'ADR compliance is not evaluated on the test-validation path'
+    ),
     criticalBlockers: testBlockers.filter(b => b.severity === 'critical'),
     testFailureBlockers: testBlockers,
     deploymentHistoryBlockers: [],
@@ -1296,8 +1353,12 @@ async function performDeploymentHistoryAnalysis(
   const analysis = analyzeDeploymentHistory(history, args.targetEnvironment);
   const historyBlockers: DeploymentBlocker[] = [];
 
-  // Check success rate
-  if (analysis.successRate < args.deploymentSuccessThreshold) {
+  // Check success rate only when history was actually measured
+  if (
+    analysis.measured &&
+    analysis.successRate !== undefined &&
+    analysis.successRate < args.deploymentSuccessThreshold
+  ) {
     historyBlockers.push({
       category: 'deployment_history',
       title: 'Low Deployment Success Rate',
@@ -1316,7 +1377,11 @@ async function performDeploymentHistoryAnalysis(
   }
 
   // Check rollback rate
-  if (analysis.rollbackRate > args.rollbackFrequencyThreshold) {
+  if (
+    analysis.measured &&
+    analysis.rollbackRate !== undefined &&
+    analysis.rollbackRate > args.rollbackFrequencyThreshold
+  ) {
     historyBlockers.push({
       category: 'deployment_history',
       title: 'High Rollback Frequency',
@@ -1336,8 +1401,13 @@ async function performDeploymentHistoryAnalysis(
 
   return {
     isDeploymentReady: historyBlockers.length === 0,
-    overallScore: Math.min(analysis.successRate, 100 - analysis.rollbackRate),
-    confidence: 80,
+    overallScore:
+      analysis.measured && analysis.successRate !== undefined
+        ? Math.min(analysis.successRate, 100 - (analysis.rollbackRate ?? 0))
+        : 0,
+    scoreMeasured: analysis.measured,
+    confidence: analysis.measured ? Math.min(100, analysis.recentDeployments.length * 10) : 0,
+    confidenceMeasured: analysis.measured,
     codeQualityAnalysis: await analyzeCodeQualityWithTreeSitter(
       args.projectPath || process.cwd(),
       args.enableTreeSitterAnalysis,
@@ -1354,13 +1424,10 @@ async function performDeploymentHistoryAnalysis(
       lastTestRun: '',
     },
     deploymentHistoryAnalysis: analysis,
-    adrComplianceResult: {
-      score: 100,
-      compliantAdrs: 0,
-      totalAdrs: 0,
-      missingImplementations: [],
-      recommendations: [],
-    },
+    adrComplianceResult: unmeasuredAdrCompliance(
+      0,
+      'ADR compliance is not evaluated on the history-analysis path'
+    ),
     criticalBlockers: historyBlockers.filter(b => b.severity === 'critical'),
     testFailureBlockers: [],
     deploymentHistoryBlockers: historyBlockers,
@@ -1402,10 +1469,12 @@ function analyzeDeploymentHistory(
   const successCount = recentDeployments.filter(d => d.status === 'success').length;
   const rollbackCount = recentDeployments.filter(d => d.rollbackRequired).length;
 
-  const successRate =
-    recentDeployments.length > 0 ? (successCount / recentDeployments.length) * 100 : 100;
-  const rollbackRate =
-    recentDeployments.length > 0 ? (rollbackCount / recentDeployments.length) * 100 : 0;
+  if (recentDeployments.length === 0) {
+    return unmeasuredHistory(`no deployment records for ${environment}`);
+  }
+
+  const successRate = (successCount / recentDeployments.length) * 100;
+  const rollbackRate = (rollbackCount / recentDeployments.length) * 100;
 
   const failurePatterns = analyzeFailurePatterns(
     recentDeployments.filter(d => d.status === 'failed')
@@ -1413,6 +1482,7 @@ function analyzeDeploymentHistory(
 
   return {
     recentDeployments,
+    measured: true,
     successRate,
     rollbackRate,
     averageDeploymentTime: calculateAverageDeploymentTime(recentDeployments),
@@ -1608,26 +1678,38 @@ async function performFullAudit(
           );
         });
 
-        adrComplianceResult = {
-          score: Math.min(100, 70 + relatedCodeResult.confidence * 30),
-          compliantAdrs: discoveryResult.adrs.length,
-          totalAdrs: discoveryResult.adrs.length,
-          missingImplementations:
-            deploymentCriticalFiles.length === 0
-              ? ['Deployment-specific implementations not found in related code']
-              : [],
-          recommendations: [
-            ...(deploymentCriticalFiles.length > 0
-              ? [`Found ${deploymentCriticalFiles.length} deployment-critical files linked to ADRs`]
-              : ['Consider documenting deployment procedures in ADRs']),
-            ...(relatedCodeResult.relatedFiles.length > 10
-              ? ['High code-ADR linkage indicates good architectural documentation']
-              : ['Consider improving ADR-to-code traceability']),
-            ...(relatedCodeResult.confidence > 0.8
-              ? ['Strong architectural alignment detected between ADRs and implementation']
-              : ['Review ADR implementation alignment before deployment']),
-          ],
-        };
+        adrComplianceResult =
+          relatedCodeResult.relatedFiles.length === 0
+            ? {
+                measured: true,
+                score: 0,
+                compliantAdrs: 0,
+                totalAdrs: discoveryResult.adrs.length,
+                missingImplementations: [
+                  'No related implementation files found for discovered ADRs',
+                ],
+                recommendations: [
+                  'ADR compliance failed: ADRs exist but no linked implementation was found',
+                ],
+              }
+            : {
+                measured: false,
+                omittedReason:
+                  'related-code linking is not a per-ADR compliance verdict; refusing to mark every ADR compliant',
+                totalAdrs: discoveryResult.adrs.length,
+                missingImplementations:
+                  deploymentCriticalFiles.length === 0
+                    ? ['Deployment-specific implementations not found in related code']
+                    : [],
+                recommendations: [
+                  ...(deploymentCriticalFiles.length > 0
+                    ? [
+                        `Found ${deploymentCriticalFiles.length} deployment-critical files linked to ADRs`,
+                      ]
+                    : ['Consider documenting deployment procedures in ADRs']),
+                  'Do not treat file linkage as ADR compliance',
+                ],
+              };
 
         smartCodeAnalysis = `
 
@@ -1707,11 +1789,50 @@ ${
     });
   }
 
+  const adrBlockers: DeploymentBlocker[] = [];
+  if (
+    args.requireAdrCompliance &&
+    adrComplianceResult.measured &&
+    adrComplianceResult.score === 0
+  ) {
+    adrBlockers.push({
+      category: 'adr_compliance',
+      title: 'ADR compliance failed',
+      description:
+        adrComplianceResult.missingImplementations.join('; ') ||
+        'ADRs exist but compliance could not be established',
+      severity: 'critical',
+      impact: 'Blocks deployment: architectural decisions are not shown as implemented',
+      resolutionSteps: ['Link ADRs to implementing code', 'Or document why an ADR has no code yet'],
+      estimatedResolutionTime: '1-4 hours',
+      blocksDeployment: true,
+    });
+  }
+
+  const securityBlockers: DeploymentBlocker[] = [];
+  const criticalSecurity = testResult.codeQualityAnalysis.securityIssues.filter(
+    i => i.severity === 'critical'
+  );
+  if (testResult.codeQualityAnalysis.qualityMeasured && criticalSecurity.length > 0) {
+    securityBlockers.push({
+      category: 'code_quality',
+      title: 'Critical security findings',
+      description: `${criticalSecurity.length} critical security issue(s) in scanned files`,
+      severity: 'critical',
+      impact: 'Blocks deployment: security issues were measured, not assumed',
+      resolutionSteps: criticalSecurity.slice(0, 5).map(i => `Fix ${i.type} in ${i.file}`),
+      estimatedResolutionTime: '1-8 hours',
+      blocksDeployment: true,
+    });
+  }
+
   const allBlockers = [
     ...testResult.criticalBlockers,
     ...testResult.testFailureBlockers,
     ...historyResult.deploymentHistoryBlockers,
     ...environmentBlockers,
+    ...adrBlockers,
+    ...securityBlockers,
   ];
 
   // Adjust overall score based on environment research confidence
@@ -1723,11 +1844,13 @@ ${
   const result = {
     isDeploymentReady: isReady,
     overallScore,
+    scoreMeasured: testResult.scoreMeasured || historyResult.scoreMeasured,
     confidence: Math.min(
       testResult.confidence,
       historyResult.confidence,
       environmentResearch.confidence * 100
     ),
+    confidenceMeasured: testResult.confidenceMeasured || historyResult.confidenceMeasured,
     codeQualityAnalysis: testResult.codeQualityAnalysis,
     testValidationResult: testResult.testValidationResult,
     deploymentHistoryAnalysis: historyResult.deploymentHistoryAnalysis,
@@ -1776,8 +1899,10 @@ async function performEmergencyOverride(
   return {
     isDeploymentReady: true,
     overallScore: 100,
-    confidence: 50, // Lower confidence for overrides
-    codeQualityAnalysis: createDefaultCodeQualityAnalysis(100, 0, 0),
+    scoreMeasured: false,
+    confidence: 0,
+    confidenceMeasured: false,
+    codeQualityAnalysis: createDefaultCodeQualityAnalysis(),
     testValidationResult: {
       testSuitesExecuted: [],
       overallTestStatus: 'not_run',
@@ -1788,26 +1913,11 @@ async function performEmergencyOverride(
       testExecutionTime: 0,
       lastTestRun: '',
     },
-    deploymentHistoryAnalysis: {
-      recentDeployments: [],
-      successRate: 100,
-      rollbackRate: 0,
-      averageDeploymentTime: 0,
-      failurePatterns: [],
-      environmentStability: {
-        stabilityScore: 50,
-        riskLevel: 'medium',
-        recommendation: 'Monitor closely post-deployment',
-      },
-      recommendedAction: 'proceed',
-    },
-    adrComplianceResult: {
-      score: 100,
-      compliantAdrs: 0,
-      totalAdrs: 0,
-      missingImplementations: [],
-      recommendations: [],
-    },
+    deploymentHistoryAnalysis: unmeasuredHistory('emergency override bypassed history measurement'),
+    adrComplianceResult: unmeasuredAdrCompliance(
+      0,
+      'emergency override bypassed ADR compliance measurement'
+    ),
     criticalBlockers: [],
     testFailureBlockers: [],
     deploymentHistoryBlockers: [],
@@ -1850,6 +1960,7 @@ function assessEnvironmentStability(
   else riskLevel = 'critical';
 
   return {
+    measured: true,
     stabilityScore,
     riskLevel,
     recommendation:
@@ -1940,8 +2051,8 @@ function generateSuccessResponse(
 
 ## 🎯 Overall Assessment
 - **Deployment Ready**: ✅ **YES**
-- **Readiness Score**: ${result.overallScore}%
-- **Confidence**: ${result.confidence}%
+- **Readiness Score**: ${fmtScoreField(result.overallScore, result.scoreMeasured)}
+- **Confidence**: ${fmtScoreField(result.confidence, result.confidenceMeasured)}
 - **Target Environment**: ${args.targetEnvironment}
 - **Fast File Discovery**: ✅ Enhanced with fast-glob
 
@@ -1952,13 +2063,13 @@ function generateSuccessResponse(
 - **Execution Time**: ${result.testValidationResult.testExecutionTime}ms
 
 ## 📊 Deployment History
-- **Success Rate**: ${result.deploymentHistoryAnalysis.successRate}%
-- **Rollback Rate**: ${result.deploymentHistoryAnalysis.rollbackRate}%
+- **Success Rate**: ${fmtMeasuredPct(result.deploymentHistoryAnalysis.successRate, result.deploymentHistoryAnalysis.measured)}
+- **Rollback Rate**: ${fmtMeasuredPct(result.deploymentHistoryAnalysis.rollbackRate, result.deploymentHistoryAnalysis.measured)}
 - **Environment Stability**: ${result.deploymentHistoryAnalysis.environmentStability.riskLevel}
 
 ## 🏛️ ADR Compliance
-- **Compliance Score**: ${result.adrComplianceResult.score}%
-- **ADRs Analyzed**: ${result.adrComplianceResult.compliantAdrs}/${result.adrComplianceResult.totalAdrs}
+- **Compliance Score**: ${fmtAdrScore(result.adrComplianceResult)}
+- **ADRs Analyzed**: ${result.adrComplianceResult.measured ? `${result.adrComplianceResult.compliantAdrs}/${result.adrComplianceResult.totalAdrs}` : `not measured (${result.adrComplianceResult.totalAdrs} discovered)`}
 - **Missing Implementations**: ${result.adrComplianceResult.missingImplementations.length} items
 
 ${
@@ -2021,8 +2132,8 @@ function generateBlockedResponse(
         text: `# 🚨 DEPLOYMENT BLOCKED - Critical Issues Detected
 
 ## ⚠️ Deployment Readiness: ${result.isDeploymentReady ? '✅ READY' : '❌ BLOCKED'}
-- **Overall Score**: ${result.overallScore}/100
-- **Confidence**: ${result.confidence}%
+- **Overall Score**: ${result.scoreMeasured ? `${result.overallScore}/100` : 'not measured'}
+- **Confidence**: ${fmtScoreField(result.confidence, result.confidenceMeasured)}
 - **Target Environment**: ${args.targetEnvironment}
 - **Tree-sitter Analysis**: ${args.enableTreeSitterAnalysis ? '✅ Enhanced' : '❌ Basic'}
 - **Fast File Discovery**: ✅ Enhanced with fast-glob
@@ -2055,8 +2166,8 @@ ${result.testValidationResult.criticalTestFailures.map(f => `- ❌ ${f.testSuite
 ${
   result.deploymentHistoryBlockers.length > 0
     ? `
-**Success Rate**: ${result.deploymentHistoryAnalysis.successRate}% (Required: ${args.deploymentSuccessThreshold}%)
-**Rollback Rate**: ${result.deploymentHistoryAnalysis.rollbackRate}% (Threshold: ${args.rollbackFrequencyThreshold}%)
+**Success Rate**: ${fmtMeasuredPct(result.deploymentHistoryAnalysis.successRate, result.deploymentHistoryAnalysis.measured)} (Required: ${args.deploymentSuccessThreshold}%)
+**Rollback Rate**: ${fmtMeasuredPct(result.deploymentHistoryAnalysis.rollbackRate, result.deploymentHistoryAnalysis.measured)} (Threshold: ${args.rollbackFrequencyThreshold}%)
 
 ### Recent Failure Patterns:
 ${result.deploymentHistoryAnalysis.failurePatterns.map(p => `- **${p.pattern}**: ${p.frequency} occurrences`).join('\n')}
@@ -2147,15 +2258,10 @@ npm run deploy:emergency -- --justification="Critical security fix"
 /**
  * Create default CodeQualityAnalysis structure
  */
-function createDefaultCodeQualityAnalysis(
-  qualityScore: number = 75,
-  productionIndicators: number = 10,
-  mockIndicators: number = 2
-): CodeQualityAnalysis {
+function createDefaultCodeQualityAnalysis(): CodeQualityAnalysis {
   return {
-    qualityScore,
-    productionIndicators,
-    mockIndicators,
+    qualityMeasured: false,
+    indicatorsMeasured: false,
     failingFiles: [],
     recommendations: [],
     securityIssues: [],
@@ -2198,10 +2304,23 @@ async function analyzeCodeQualityWithTreeSitter(
     const filesToAnalyze = sourceFiles.slice(0, 20);
     let totalComplexity = 0;
     let totalFunctions = 0;
+    let productionIndicators = 0;
+    let mockIndicators = 0;
     const highComplexityFiles: string[] = [];
 
     for (const filePath of filesToAnalyze) {
       try {
+        const pathLower = filePath.toLowerCase();
+        if (
+          pathLower.includes('mock') ||
+          pathLower.includes('.test.') ||
+          pathLower.includes('.spec.') ||
+          pathLower.includes('__tests__')
+        ) {
+          mockIndicators++;
+        } else {
+          productionIndicators++;
+        }
         const analysis = await analyzer.analyzeFile(filePath);
 
         // Security issues
@@ -2297,30 +2416,28 @@ async function analyzeCodeQualityWithTreeSitter(
       totalFunctions,
     };
 
-    // Calculate enhanced quality score
-    let qualityScore = 85; // Base score
-
-    // Deduct for security issues
     const criticalSecurity = baseAnalysis.securityIssues.filter(
       i => i.severity === 'critical'
     ).length;
     const highSecurity = baseAnalysis.securityIssues.filter(i => i.severity === 'high').length;
-    qualityScore -= criticalSecurity * 20 + highSecurity * 10;
+    const qualityScore = Math.max(
+      0,
+      Math.min(
+        100,
+        100 -
+          criticalSecurity * 20 -
+          highSecurity * 10 -
+          Math.min(baseAnalysis.dependencyAnalysis.dangerousImports.length * 5, 20) -
+          Math.min(highComplexityFiles.length * 2, 15) +
+          Math.min(baseAnalysis.dependencyAnalysis.securityLibraries.length * 2, 10)
+      )
+    );
 
-    // Deduct for dangerous imports
-    qualityScore -= Math.min(baseAnalysis.dependencyAnalysis.dangerousImports.length * 5, 20);
-
-    // Deduct for high complexity
-    qualityScore -= Math.min(highComplexityFiles.length * 2, 15);
-
-    // Bonus for security libraries
-    qualityScore += Math.min(baseAnalysis.dependencyAnalysis.securityLibraries.length * 2, 10);
-
-    baseAnalysis.qualityScore = Math.max(0, Math.min(100, qualityScore));
-
-    // Update production/mock indicators based on analysis
-    baseAnalysis.productionIndicators = Math.max(10, baseAnalysis.qualityScore - 20);
-    baseAnalysis.mockIndicators = Math.max(0, 100 - baseAnalysis.qualityScore) / 10;
+    baseAnalysis.qualityScore = qualityScore;
+    baseAnalysis.qualityMeasured = true;
+    baseAnalysis.productionIndicators = productionIndicators;
+    baseAnalysis.mockIndicators = mockIndicators;
+    baseAnalysis.indicatorsMeasured = true;
 
     return baseAnalysis;
   } catch (error) {

@@ -402,7 +402,7 @@ Time:        0.123 s
       const result = await deploymentReadiness(input);
       // Should handle missing file gracefully with empty history
       expect(result).toBeDefined();
-      expect(result.content[0].text).toContain('100%'); // Empty history = 100% success
+      expect(result.content[0].text).toMatch(/not measured/i);
     });
 
     it('should handle corrupt deployment history file', async () => {
@@ -786,6 +786,21 @@ Time:        0.123 s
       const result = await deploymentReadiness(input);
       expect(result.content[0].text).toContain('80%');
       expect(result.content[0].text).toContain('Environment Stability');
+    });
+
+    it('does not report 100% success from empty deployment history', async () => {
+      mockReadFileSync.mockReturnValue(JSON.stringify({ deployments: [] }));
+
+      const result = await deploymentReadiness({
+        operation: 'deployment_history',
+        projectPath: testProjectPath,
+        targetEnvironment: 'production',
+        enableMemoryIntegration: false,
+      });
+
+      const text = result.content[0].text as string;
+      expect(text).toMatch(/not measured/i);
+      expect(text).not.toMatch(/\*\*Success Rate\*\*: 100%/);
     });
   });
 });
