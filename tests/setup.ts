@@ -1,5 +1,5 @@
 /**
- * Enhanced Jest test setup file
+ * Enhanced Vitest test setup file
  * Configures global test environment with proper resource management and cleanup
  */
 

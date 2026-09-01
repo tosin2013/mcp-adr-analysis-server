@@ -58,7 +58,7 @@ npm run prepublishOnly
 
 ### Testing Requirements
 
-- Maintain ≥85% coverage threshold (enforced by Jest)
+- Maintain ≥85% coverage threshold (enforced by Vitest)
 - Write unit tests for new utilities in `src/utils/`
 - Add integration tests for new tools in `src/tools/`
 - Use descriptive test names following the pattern: `should [expected behavior] when [condition]`

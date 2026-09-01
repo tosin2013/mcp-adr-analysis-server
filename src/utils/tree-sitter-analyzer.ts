@@ -145,7 +145,7 @@ export class TreeSitterAnalyzer {
    */
   private async initializeParsers(): Promise<void> {
     // Skip tree-sitter initialization in test environment
-    if (process.env['NODE_ENV'] === 'test' || process.env['JEST_WORKER_ID'] !== undefined) {
+    if (process.env['NODE_ENV'] === 'test' || process.env['VITEST'] !== undefined) {
       this.initialized = false;
       return;
     }
@@ -176,7 +176,7 @@ export class TreeSitterAnalyzer {
 
   private async loadParser(language: string, packageName: string): Promise<void> {
     // Skip loading parsers in test environment
-    if (process.env['NODE_ENV'] === 'test' || process.env['JEST_WORKER_ID'] !== undefined) {
+    if (process.env['NODE_ENV'] === 'test' || process.env['VITEST'] !== undefined) {
       return;
     }
 
@@ -199,7 +199,7 @@ export class TreeSitterAnalyzer {
       this.parsers.set(language, parser);
     } catch (error) {
       // Silently skip parser loading errors in test environment
-      if (process.env['NODE_ENV'] !== 'test' && process.env['JEST_WORKER_ID'] === undefined) {
+      if (process.env['NODE_ENV'] !== 'test' && process.env['VITEST'] === undefined) {
         console.warn(`Failed to load ${language} parser:`, error);
       }
     }
