@@ -176,7 +176,7 @@ server.setRequestHandler(CallToolRequestSchema, async request => {
 ```typescript
 // tests/tools/my-custom-tool.test.ts
 import { myCustomTool } from '../../src/tools/my-custom-tool';
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach } from 'vitest';
 
 describe('myCustomTool', () => {
   beforeEach(() => {
