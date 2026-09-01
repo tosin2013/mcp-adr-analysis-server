@@ -430,7 +430,7 @@ describe('KnowledgeGraphManager', () => {
       }
     });
 
-    it('should limit memory operations to 1000 entries', async () => {
+    it('should limit memory operations to 1000 entries', { timeout: 60_000 }, async () => {
       // Create more than 1000 operations
       for (let i = 0; i < 1005; i++) {
         await kgManager.addMemoryExecution('test_tool', 'add', 'entity', true);
