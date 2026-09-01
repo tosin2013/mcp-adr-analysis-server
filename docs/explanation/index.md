@@ -25,7 +25,7 @@ This section contains explanation documentation following the Diataxis framework
 - [Server Architecture](./server-architecture.md)
 - [MCP Architecture Flow](./mcp-architecture-flow.md)
 - [Tool Design](./tool-design.md)
-- [Knowledge Graph](./knowledge-graph.md)
+- [Session & Tool-Usage Tracker](./knowledge-graph.md)
 - [Security Philosophy](./security-philosophy.md)
 - [Performance Design](./performance-design.md)
 - [ADR Philosophy](./adr-philosophy.md)

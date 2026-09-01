@@ -181,9 +181,9 @@ The Human Override system forces AI-powered planning when LLMs get confused or s
 - Input: "The build is broken and tests are failing, need to fix everything"
 - Extracted Goals: ["Fix build issues", "Resolve test failures", "Validate system stability"]
 
-### Integration with Knowledge Graph
+### Integration with Session & Tool-Usage Tracker
 
-The Human Override system integrates with the Knowledge Graph to:
+The Human Override system integrates with the Session & Tool-Usage Tracker to:
 
 - Track human intervention patterns
 - Record forced execution contexts
@@ -414,7 +414,7 @@ Combine AI-powered tools for comprehensive workflows:
 Maintain context across tool executions:
 
 - Include conversation history in orchestration requests
-- Use knowledge graph to track intent progressions
+- Use session state to track intent progressions
 - Leverage smart scoring for continuous assessment
 
 ### Fallback Strategies
