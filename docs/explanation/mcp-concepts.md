@@ -138,7 +138,7 @@ Resources in MCP are like "live documents" that the AI can read. Unlike static f
 
 ### Our Key Resources
 
-#### **Architectural Knowledge Graph**
+#### **Architectural Session State**
 
 ```
 adr://architectural_knowledge_graph?projectPath=/your/project
@@ -326,7 +326,7 @@ You → AI + MCP → Specialized tools → Your actual project → Tailored anal
 1. **Real-Time Analysis** - Always works with current project state
 2. **Specialized Knowledge** - Applies architectural best practices and methodologies
 3. **Actionable Outputs** - Generates actual files, documentation, and plans
-4. **Continuous Learning** - Builds knowledge graph that improves over time
+4. **Continuous Tracking** - Builds project-local session state that accumulates over time
 5. **Integration-Ready** - Works with your existing tools and workflows
 
 ---
@@ -355,9 +355,9 @@ This context helps the AI:
 - Provide consistent recommendations across sessions
 - Build on previous analysis rather than starting fresh
 
-### Knowledge Graph Integration
+### Session State Tracking
 
-The server builds a persistent knowledge graph that captures:
+The server builds persistent project-local session state that captures:
 
 ```mermaid
 graph LR
@@ -378,10 +378,10 @@ graph LR
 
 This enables:
 
-- **Learning from Experience** - Each analysis improves future recommendations
+- **Accumulating State** - Each session adds intents, tool results, and ADR registrations to local snapshots
 - **Relationship Discovery** - Understanding how decisions impact each other
 - **Progress Tracking** - Monitoring implementation across time
-- **Pattern Recognition** - Identifying recurring issues and solutions
+- **Keyword Retrieval** - Finding relevant prior entries by keyword matching over stored snapshots
 
 ### Advanced AI Techniques
 
@@ -443,8 +443,8 @@ The server employs sophisticated prompting techniques:
    - Deployment readiness for production systems
    - Performance analysis for high-scale applications
 
-5. **Maintain the Knowledge Graph**
-   - Regular analysis updates keep the knowledge current
+5. **Maintain Session State**
+   - Regular analysis updates keep the tracked state current
    - Progressive refinement improves accuracy over time
 
 ---

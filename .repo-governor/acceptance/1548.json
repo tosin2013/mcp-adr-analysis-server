@@ -1,0 +1,21 @@
+{
+  "authority_id": "1548",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"A graph database maintained\" README.md'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"tool-usage\" README.md'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/smoke.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "npm run typecheck"
+    }
+  ]
+}
