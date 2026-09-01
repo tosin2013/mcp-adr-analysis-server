@@ -1,0 +1,13 @@
+{
+  "authority_id": "743",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -P \"it\\.skip\\(|itSkipFilesystem\" tests/tools/interactive-adr-planning-tool.test.ts'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/tools/interactive-adr-planning-tool.test.ts"
+    }
+  ]
+}
