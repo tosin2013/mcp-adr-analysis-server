@@ -25,14 +25,14 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 <details>
 <summary><b>Key Terms</b></summary>
 
-| Term                   | Definition                                                                                                                                                                                                        |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ADR**                | **Architectural Decision Record** — A document that captures an important architectural decision along with its context, alternatives considered, and consequences.                                               |
-| **MCP**                | **Model Context Protocol** — An open standard enabling AI assistants to connect to external tools and data sources.                                                                                               |
-| **Tree-sitter**        | An incremental parsing library that provides AST (Abstract Syntax Tree) analysis for 50+ languages. Used for semantic code understanding, extracting function signatures, and identifying architectural patterns. |
-| **Knowledge Graph**    | A graph database maintained by the server that tracks relationships between ADRs, code implementations, and architectural decisions. Enables intelligent code linking and impact analysis.                        |
-| **Smart Code Linking** | AI-powered discovery of code files related to ADRs and architectural decisions, using keyword extraction and semantic search.                                                                                     |
-| **ADR Aggregator**     | Optional SaaS integration for syncing and sharing ADR context across teams (`ADR_AGGREGATOR_API_KEY`).                                                                                                            |
+| Term                             | Definition                                                                                                                                                                                                         |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **ADR**                          | **Architectural Decision Record** — A document that captures an important architectural decision along with its context, alternatives considered, and consequences.                                                |
+| **MCP**                          | **Model Context Protocol** — An open standard enabling AI assistants to connect to external tools and data sources.                                                                                                |
+| **Tree-sitter**                  | An incremental parsing library that provides AST (Abstract Syntax Tree) analysis for 50+ languages. Used for semantic code understanding, extracting function signatures, and identifying architectural patterns.  |
+| **Session & Tool-Usage Tracker** | Project-local tracking of session intents, tool executions, and ADR registrations, with keyword-scored retrieval over JSON snapshots. Supports workflow continuity and tool-usage evidence — not a graph database. |
+| **Smart Code Linking**           | AI-powered discovery of code files related to ADRs and architectural decisions, using keyword extraction and semantic search.                                                                                      |
+| **ADR Aggregator**               | Optional SaaS integration for syncing and sharing ADR context across teams (`ADR_AGGREGATOR_API_KEY`).                                                                                                             |
 
 </details>
 
@@ -156,14 +156,14 @@ Get your API key at [adraggregator.com](https://adraggregator.com)
 
 ### Execution Modes
 
-|                          | **Full Mode**                                                                      | **Prompt-Only Mode**                                              |
-| ------------------------ | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| **Requires API key?**    | Yes (`OPENROUTER_API_KEY`)                                                         | No                                                                |
-| **Returns**              | Actual analysis results with confidence scores                                     | Prompts you can paste into any AI chat                            |
-| **Set via**              | `EXECUTION_MODE=full`                                                              | `EXECUTION_MODE=prompt-only` (default)                            |
-| **Best for**             | Production use, automation                                                         | Trying it out, no-cost exploration                                |
-| **Available Features**   | All 73 tools, AI analysis, confidence scoring, Smart Code Linking, Knowledge Graph | Analysis prompts, templates, local file operations, ADR discovery |
-| **Unavailable Features** | —                                                                                  | AI execution, confidence scores, Smart Code Linking, web research |
+|                          | **Full Mode**                                                                                   | **Prompt-Only Mode**                                              |
+| ------------------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| **Requires API key?**    | Yes (`OPENROUTER_API_KEY`)                                                                      | No                                                                |
+| **Returns**              | Actual analysis results with confidence scores                                                  | Prompts you can paste into any AI chat                            |
+| **Set via**              | `EXECUTION_MODE=full`                                                                           | `EXECUTION_MODE=prompt-only` (default)                            |
+| **Best for**             | Production use, automation                                                                      | Trying it out, no-cost exploration                                |
+| **Available Features**   | All 73 tools, AI analysis, confidence scoring, Smart Code Linking, Session & Tool-Usage Tracker | Analysis prompts, templates, local file operations, ADR discovery |
+| **Unavailable Features** | —                                                                                               | AI execution, confidence scores, Smart Code Linking, web research |
 
 **Tip:** Start with prompt-only mode to explore the tool catalog — you can analyze projects, discover ADRs, and generate templates without an API key. Add an API key when you're ready for AI-powered analysis with confidence scoring.
 

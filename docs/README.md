@@ -136,7 +136,7 @@ graph TD
 ### **Advanced Capabilities**
 
 - **AI-Powered Analysis** - Intelligent architectural pattern recognition
-- **Knowledge Graph** - Dynamic learning and relationship mapping
+- **Session & Tool-Usage Tracker** - Project-local state tracking with keyword-scored retrieval
 - **Content Security** - Automatic sensitive data masking
 - **Multi-Format Support** - TypeScript, Python, Java, Go, and more
 - **CI/CD Integration** - Automated validation and deployment workflows
@@ -145,13 +145,13 @@ graph TD
 
 ## 📊 Performance Metrics
 
-| Capability               | Performance   | Coverage |
-| ------------------------ | ------------- | -------- |
-| **Project Analysis**     | 2-5 seconds   | 100%     |
-| **ADR Generation**       | 8-15 seconds  | 95%      |
-| **Security Scanning**    | 1-3 seconds   | 100%     |
-| **Content Masking**      | 0.5-1 seconds | 95%      |
-| **Knowledge Graph**      | Real-time     | 90%      |
+| Capability                 | Performance   | Coverage |
+| -------------------------- | ------------- | -------- |
+| **Project Analysis**       | 2-5 seconds   | 100%     |
+| **ADR Generation**         | 8-15 seconds  | 95%      |
+| **Security Scanning**      | 1-3 seconds   | 100%     |
+| **Content Masking**        | 0.5-1 seconds | 95%      |
+| **Session State Tracking** | Real-time     | 90%      |
 
 ---
 

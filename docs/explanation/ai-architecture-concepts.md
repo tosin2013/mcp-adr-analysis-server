@@ -11,7 +11,7 @@ The MCP ADR Analysis Server integrates AI capabilities at multiple levels to pro
 ### Key Concepts
 
 - **Dual Execution Modes**: Full AI mode vs. prompt-only mode for flexibility
-- **Knowledge Graph**: Persistent memory of architectural relationships
+- **Session & Tool-Usage Tracker**: Project-local tracking of session intents, tool executions, and ADR registrations
 - **Tree-sitter Integration**: Semantic code understanding for accurate analysis
 - **Confidence Scoring**: Quantified reliability of analysis results
 - **Cascading Data Sources**: Multi-tier information retrieval strategy
@@ -118,9 +118,9 @@ interface AIExecutorRequest {
 
 ---
 
-## Knowledge Graph Architecture
+## Session & Tool-Usage Tracker Architecture
 
-The Knowledge Graph is a persistent memory system that tracks relationships between architectural artifacts.
+The Session & Tool-Usage Tracker is a project-local state system that tracks relationships between architectural artifacts using JSON snapshots with keyword-scored retrieval.
 
 ### Graph Structure
 
@@ -326,7 +326,7 @@ flowchart TD
     L1 -->|Not found| L2
     L1 -->|Found| R[Result]
 
-    subgraph L2[Level 2: Knowledge Graph]
+    subgraph L2[Level 2: Session State]
         D[ADR History]
         E[Decision Context]
         F[Relationships]
@@ -356,7 +356,7 @@ flowchart TD
 ### Priority Order
 
 1. **Project Files**: Most authoritative, highest confidence
-2. **Knowledge Graph**: Architectural context and history
+2. **Session State**: Architectural context and history
 3. **Environment**: Runtime configuration and deployment
 4. **Web Search**: not performed by this server. It reports that web research would help and leaves it to the host, which has native web search (ADR-023, #1526).
 
@@ -376,11 +376,11 @@ flowchart TD
 - Better user flexibility and adoption
 - No vendor lock-in for AI provider
 
-### Decision 2: Local Knowledge Graph
+### Decision 2: Local Session & Tool-Usage Tracker
 
 **Problem**: AI models lack persistent memory between sessions.
 
-**Solution**: Maintain a local knowledge graph that persists architectural relationships.
+**Solution**: Maintain project-local JSON snapshots that persist session intents, tool executions, and architectural relationships with keyword-scored retrieval.
 
 **Trade-offs**:
 

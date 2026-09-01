@@ -375,7 +375,7 @@ Please provide:
     const kgSource = research.sources.find(s => s.type === 'knowledge_graph');
     if (kgSource) {
       findings.push({
-        source: 'ADR Knowledge Graph',
+        source: 'Project ADR Index',
         insight: 'Found related architectural decisions that may influence this choice',
         relevance: 'Maintaining architectural consistency',
       });
