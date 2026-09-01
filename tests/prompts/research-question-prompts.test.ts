@@ -51,7 +51,7 @@ describe('Research Question Prompts', () => {
     it('should generate prompt with problems and knowledge graph', () => {
       const result = generateProblemKnowledgeCorrelationPrompt(mockProblems, mockKnowledgeGraph);
 
-      expect(result).toContain('Problem-Knowledge Graph Correlation Analysis Guide');
+      expect(result).toContain('Problem-Session State Correlation Analysis Guide');
       expect(result).toContain('Database performance issues');
       expect(result).toContain('Authentication system complexity');
       expect(result).toContain('PostgreSQL');
@@ -66,7 +66,7 @@ describe('Research Question Prompts', () => {
     it('should handle empty problems array', () => {
       const result = generateProblemKnowledgeCorrelationPrompt([], mockKnowledgeGraph);
 
-      expect(result).toContain('Problem-Knowledge Graph Correlation Analysis Guide');
+      expect(result).toContain('Problem-Session State Correlation Analysis Guide');
       expect(result).toContain('"totalProblems": 0');
       expect(result).toContain('PostgreSQL');
     });

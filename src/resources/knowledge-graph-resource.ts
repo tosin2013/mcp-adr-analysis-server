@@ -1,8 +1,8 @@
 /**
- * Knowledge Graph Resource - Read-only knowledge graph data
+ * Session State Resource - Read-only project session and tool-usage snapshots
  * URI Pattern: knowledge://graph
- * 
- * Provides direct access to the knowledge graph structure with nodes, edges, and metadata.
+ *
+ * Provides direct access to project session state with entities, relationships, and metadata.
  * This replaces querying KnowledgeGraphManager as a Tool, following ADR-018 atomic tools pattern.
  */
 
@@ -54,31 +54,31 @@ export interface KnowledgeGraphData {
 }
 
 /**
- * Generate knowledge graph resource providing read-only access to graph structure.
- * 
- * Returns comprehensive graph data including nodes (intents, ADRs, tools, code files)
+ * Generate session state resource providing read-only access to project session structure.
+ *
+ * Returns comprehensive session data including nodes (intents, ADRs, tools, code files)
  * and edges (relationships between nodes). This is a read-only view - use the
- * update_knowledge tool to modify the graph.
- * 
+ * update_knowledge tool to modify session state.
+ *
  * **URI Pattern:** `knowledge://graph`
- * 
+ *
  * **Query Parameters:** (none)
- * 
+ *
  * @param params - URL path parameters (none for this resource)
  * @param searchParams - URL query parameters (none used)
  * @param kgManager - KnowledgeGraphManager instance (injected by MCP server)
- * 
+ *
  * @returns Promise resolving to resource generation result containing:
- *   - data: Knowledge graph with nodes, edges, and metadata
+ *   - data: Session state with entities, relationships, and metadata
  *   - contentType: "application/json"
  *   - lastModified: ISO timestamp of generation
  *   - cacheKey: Unique identifier "knowledge-graph"
  *   - ttl: Cache duration (60 seconds)
  *   - etag: Entity tag for cache validation
- * 
+ *
  * @throws {McpAdrError} When:
  *   - RESOURCE_GENERATION_ERROR: KnowledgeGraphManager not provided or graph loading fails
- * 
+ *
  * @example
  * ```typescript
  * // Get knowledge graph
@@ -87,11 +87,11 @@ export interface KnowledgeGraphData {
  *   new URLSearchParams(),
  *   kgManager
  * );
- * 
+ *
  * console.log(`Nodes: ${graph.data.nodes.length}`);
  * console.log(`Edges: ${graph.data.edges.length}`);
  * console.log(`Active Intents: ${graph.data.analytics.activeIntents}`);
- * 
+ *
  * // Expected output structure:
  * {
  *   data: {
@@ -126,7 +126,7 @@ export interface KnowledgeGraphData {
  *   ttl: 60
  * }
  * ```
- * 
+ *
  * @since v2.2.0
  * @see {@link KnowledgeGraphManager.loadKnowledgeGraph} for graph data source
  */
@@ -153,7 +153,7 @@ export async function generateKnowledgeGraphResource(
 
     // Load knowledge graph snapshot
     const snapshot = await kgManager.loadKnowledgeGraph();
-    
+
     // Build nodes from intents
     const nodes: GraphNode[] = [];
     const edges: GraphEdge[] = [];
@@ -250,7 +250,7 @@ export async function generateKnowledgeGraphResource(
     return result;
   } catch (error) {
     throw new McpAdrError(
-      `Failed to generate knowledge graph: ${error instanceof Error ? error.message : String(error)}`,
+      `Failed to generate session state: ${error instanceof Error ? error.message : String(error)}`,
       'RESOURCE_GENERATION_ERROR'
     );
   }
@@ -287,5 +287,5 @@ function calculateIntentRelevance(intent: any): number {
 resourceRouter.register(
   '/graph',
   generateKnowledgeGraphResource as any, // TypeScript workaround for manager injection pattern
-  'Knowledge graph structure with nodes, edges, and metadata'
+  'Session state structure with entities, relationships, and metadata'
 );
