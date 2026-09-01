@@ -240,9 +240,9 @@
   color: 'ededed'
   description: 'Integration with external systems'
 
-- name: 'jest'
+- name: 'vitest'
   color: 'ededed'
-  description: 'Jest test framework'
+  description: 'Vitest test framework'
 
 - name: 'logging'
   color: 'ededed'

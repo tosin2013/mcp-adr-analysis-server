@@ -77,8 +77,8 @@ export async function myTool(args, deps: ToolDeps = {}) {
 // Test (5-10 lines of setup)
 test('myTool finds files', async () => {
   const mockFs = {
-    findFiles: jest.fn().mockResolvedValue(['file1.ts']),
-    readFile: jest.fn().mockResolvedValue('content'),
+    findFiles: vi.fn().mockResolvedValue(['file1.ts']),
+    readFile: vi.fn().mockResolvedValue('content'),
   };
 
   const result = await myTool({ projectPath: '/test' }, { fs: mockFs });
@@ -122,11 +122,12 @@ test('myTool finds files', async () => {
 - ⏳ `environment-analysis-tool.ts` - Plan to remove ResearchOrchestrator
 
 **Migration Stats**:
-| Tool | Lines Changed | Blocking Calls Removed | Status |
-|------|---------------|----------------------|--------|
-| review-existing-adrs | -16 | 1 (2-8s each) | ✅ |
-| adr-suggestion | TBD | TBD | ⏳ |
-| environment-analysis | TBD | TBD | ⏳ |
+
+| Tool                 | Lines Changed | Blocking Calls Removed | Status |
+| -------------------- | ------------- | ---------------------- | ------ |
+| review-existing-adrs | -16           | 1 (2-8s each)          | ✅     |
+| adr-suggestion       | TBD           | TBD                    | ⏳     |
+| environment-analysis | TBD           | TBD                    | ⏳     |
 
 ### Phase 3: Test Infrastructure Cleanup (Planned)
 
@@ -232,7 +233,7 @@ beforeAll(async () => {
 });
 
 // Deep dependency mocking
-const MockOrchestrator = jest.fn().mockImplementation(() => ({
+const MockOrchestrator = vi.fn().mockImplementation(() => ({
   // Mock implementation
 }));
 ```
@@ -250,7 +251,7 @@ const MockOrchestrator = jest.fn().mockImplementation(() => ({
 // Simple DI mocking
 test('tool works', async () => {
   const mockDeps = {
-    fs: { readFile: jest.fn().mockResolvedValue('content') },
+    fs: { readFile: vi.fn().mockResolvedValue('content') },
   };
 
   const result = await tool(args, mockDeps);

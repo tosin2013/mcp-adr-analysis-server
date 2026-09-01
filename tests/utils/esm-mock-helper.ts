@@ -1,10 +1,10 @@
 /**
  * ESM Mock Helper
  *
- * Provides utilities for ESM-compatible module mocking in Jest.
+ * Provides utilities for ESM-compatible module mocking in Vitest.
  * Uses vi.mock() which works with ES modules.
  *
- * @see Issue #308 - Implement ESM-compatible Jest mocking
+ * @see Issue #308 - Implement ESM-compatible Vitest mocking
  *
  * Usage:
  * ```typescript
