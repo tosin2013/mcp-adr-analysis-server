@@ -162,9 +162,9 @@ TOOL_CATALOG.set('analyze_project_ecosystem', {
 
 TOOL_CATALOG.set('get_architectural_context', {
   name: 'get_architectural_context',
-  shortDescription: 'Retrieve architectural context and knowledge graph',
+  shortDescription: 'Retrieve architectural context and session/tool-usage state',
   fullDescription:
-    'Retrieves the current architectural context including knowledge graph relationships, ADR decisions, and technology mappings.',
+    'Retrieves the current architectural context including session/tool-usage relationships, ADR decisions, and technology mappings.',
   category: 'analysis',
   complexity: 'moderate',
   tokenCost: { min: 2000, max: 5000 },

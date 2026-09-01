@@ -1,0 +1,13 @@
+{
+  "authority_id": "1338",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c 'cd docs && npm audit --audit-level=critical 2>&1 | grep -q \"found 0 vulnerabilities\" || ! npm audit --audit-level=critical 2>&1 | grep -q \"critical\"'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"/docs\" .github/dependabot.yml'"
+    }
+  ]
+}
