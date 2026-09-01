@@ -16,9 +16,9 @@ The MCP ADR Analysis Server is a [Model Context Protocol](https://modelcontextpr
 
 Each MCP tool follows a consistent response pattern and is registered in both `ListToolsRequestSchema` and `CallToolRequestSchema` handlers in `src/index.ts`. Tools are organized by domain in `src/tools/`.
 
-### Knowledge Graph
+### Session & Tool-Usage Tracker
 
-Maintains relationships between ADRs, code implementations, and technology decisions. Managed by `src/utils/knowledge-graph-manager.ts`.
+Tracks session intents, tool executions, and ADR registrations in project-local JSON snapshots with keyword-scored retrieval. Managed by `src/utils/knowledge-graph-manager.ts`.
 
 ### Content Security
 

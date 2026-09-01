@@ -1,26 +1,26 @@
-# 🧠 Knowledge Graph Architecture
+# Session & Tool-Usage Tracker
 
-**Understanding how the MCP ADR Analysis Server builds and maintains intelligent knowledge graphs for enhanced architectural analysis.**
+**Understanding how the MCP ADR Analysis Server tracks project-local session intents, tool usage, and ADR registrations with keyword-scored retrieval.**
 
 ---
 
 ## 🎯 Overview
 
-The Knowledge Graph system is the intelligent memory and learning component of the MCP ADR Analysis Server. It builds and maintains a dynamic graph of relationships between architectural decisions, code patterns, and project evolution over time, enabling the server to provide increasingly sophisticated and contextual analysis.
+This component stores project-local workflow state (intents, tool executions, ADR registrations, todo sync, score trends) and supports keyword retrieval. It tracks relationships between architectural decisions, code patterns, and project evolution over time within project-local JSON snapshots.
 
 ### Key Concepts
 
-- **Graph-Based Learning** - Relationships between architectural elements
+- **Session Intent Tracking** - Records human requests and AI tool executions per session
 - **Temporal Evolution** - How decisions and patterns change over time
-- **Contextual Memory** - Project-specific knowledge retention
-- **Intelligent Inference** - Drawing connections between disparate elements
-- **Adaptive Learning** - Improving analysis quality through experience
+- **Project-Local State** - Stores intents, tool results, ADR registrations, and score trends in JSON snapshots
+- **Keyword-Scored Retrieval** - Finds relevant entries by keyword matching over stored snapshots
+- **TODO Synchronization** - Keeps task state in sync with project TODO files
 
 ---
 
 ## 🏗️ Architecture and Design
 
-### Knowledge Graph Structure
+### Tracker Structure
 
 ```mermaid
 graph TB
@@ -38,7 +38,7 @@ graph TB
         HistoryParser --> Entities
 
         Entities --> Relations[Relationship Mapping]
-        Relations --> Graph[Knowledge Graph]
+        Relations --> Graph[Session State Store]
     end
 
     subgraph "Graph Storage"
@@ -359,14 +359,14 @@ class PatternRecognizer {
 
 ## 💡 Design Decisions
 
-### Decision 1: Graph-Based Knowledge Representation
+### Decision 1: JSON-Snapshot-Based State Tracking
 
-**Problem**: Traditional relational databases don't capture the complex, interconnected nature of architectural knowledge  
-**Solution**: Use a graph database to represent entities and their relationships naturally  
+**Problem**: Need a lightweight way to persist session state and architectural relationships without external dependencies  
+**Solution**: Use project-local JSON snapshots with keyword-scored retrieval  
 **Trade-offs**:
 
-- ✅ **Pros**: Natural representation of complex relationships, powerful query capabilities
-- ❌ **Cons**: More complex queries, potentially slower for simple lookups
+- ✅ **Pros**: No external database required, simple file-based persistence, easy to inspect and debug
+- ❌ **Cons**: Limited query expressiveness compared to a full database, linear scan for keyword matching
 
 ### Decision 2: Multi-Layer Graph Storage
 
@@ -397,7 +397,7 @@ class PatternRecognizer {
 
 ---
 
-## 📊 Knowledge Graph Metrics
+## 📊 Session & Tool-Usage Tracker Metrics
 
 ### Current Performance
 
@@ -420,18 +420,18 @@ class PatternRecognizer {
 
 ## 🔗 Related Concepts
 
-- **[Server Architecture](./server-architecture.md)** - How the knowledge graph integrates with the overall system
-- **[Performance Design](./performance-design.md)** - Graph query optimization strategies
-- **[Tool Design](./tool-design.md)** - How tools leverage the knowledge graph
+- **[Server Architecture](./server-architecture.md)** - How the session tracker integrates with the overall system
+- **[Performance Design](./performance-design.md)** - Query optimization strategies
+- **[Tool Design](./tool-design.md)** - How tools leverage the session tracker
 
 ---
 
 ## 📚 Further Reading
 
 - **[Knowledge Generation Framework](./knowledge-generation-framework-design.md)** - Detailed framework documentation
-- **[Research Integration Guide](../how-to-guides/research-integration.md)** - Using knowledge graph for research
-- **[API Reference](../reference/api-reference.md)** - Knowledge graph query endpoints
+- **[Research Integration Guide](../how-to-guides/research-integration.md)** - Using session state for research
+- **[API Reference](../reference/api-reference.md)** - Session state query endpoints
 
 ---
 
-**Questions about the knowledge graph?** → **[Open an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**
+**Questions about the session tracker?** → **[Open an Issue](https://github.com/tosin2013/mcp-adr-analysis-server/issues)**

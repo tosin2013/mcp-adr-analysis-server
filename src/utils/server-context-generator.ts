@@ -517,7 +517,7 @@ ${toolsSection}
         100
     );
 
-    return `## 🧠 Memory & Knowledge Graph Status
+    return `## 🧠 Memory & Session State Status
 
 ### Active Intents
 
@@ -694,7 +694,7 @@ Use MCP resources to get pattern details:
       },
       {
         uri: 'adr://architectural_knowledge_graph',
-        name: 'Knowledge Graph',
+        name: 'Session & Tool-Usage State',
         description: 'Complete architectural relationships and decisions',
       },
       {

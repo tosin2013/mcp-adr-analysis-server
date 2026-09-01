@@ -407,7 +407,7 @@ ${generateSearchQueries(question)
 function formatSourceName(sourceType: string): string {
   const names: Record<string, string> = {
     project_files: '📁 Project Files',
-    knowledge_graph: '🧠 Knowledge Graph',
+    knowledge_graph: 'Session & Tool-Usage Tracker',
     environment: '🔧 Environment Resources',
     web_search: '🌐 Web Search',
   };

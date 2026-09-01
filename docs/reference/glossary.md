@@ -14,9 +14,9 @@ A short document that captures an important architectural decision, including th
 
 A tree representation of the syntactic structure of source code. The server uses AST analysis (via tree-sitter) to understand code patterns, detect architectural decisions embedded in code, and perform intelligent code linking.
 
-## Knowledge Graph
+## Session & Tool-Usage Tracker (Knowledge Graph)
 
-An in-memory data structure maintained by the server that models relationships between ADRs, code implementations, technology decisions, and their impacts. It powers intelligent features like pattern recognition and cross-ADR dependency analysis.
+A project-local JSON-snapshot-based data structure maintained by the server that tracks session intents, tool executions, ADR registrations, and their relationships. It supports keyword-scored retrieval for contextual lookups and cross-ADR dependency analysis.
 
 ## MCP (Model Context Protocol)
 

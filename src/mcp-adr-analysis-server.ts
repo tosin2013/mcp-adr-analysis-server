@@ -360,9 +360,8 @@ export class McpAdrAnalysisServer {
           // Existing resources (refactored to return data)
           {
             uri: 'adr://architectural_knowledge_graph',
-            name: 'Architectural Knowledge Graph',
-            description:
-              'Complete architectural knowledge graph with technologies, patterns, and relationships',
+            name: 'Project Session State',
+            description: 'Project session state with technologies, patterns, and relationships',
             mimeType: 'application/json',
           },
           {
@@ -533,9 +532,9 @@ export class McpAdrAnalysisServer {
           // NEW Knowledge Graph Resource (ADR-018)
           {
             uri: 'knowledge://graph',
-            name: 'Knowledge Graph',
+            name: 'Session & Tool-Usage State',
             description:
-              'Read-only knowledge graph structure with nodes (intents, ADRs, tools, code files) and edges (relationships). Zero token cost for querying graph state. Use update_knowledge tool to modify.',
+              'Read-only session state structure with nodes (intents, ADRs, tools, code files) and edges (relationships). Zero token cost for querying state. Use update_knowledge tool to modify.',
             mimeType: 'application/json',
           },
         ],

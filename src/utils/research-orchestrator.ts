@@ -3,7 +3,7 @@
  *
  * Coordinates multi-source research with cascading fallback:
  * 1. Project Files (local, fast, free)
- * 2. Knowledge Graph (in-memory, instant)
+ * 2. Session/tool-usage tracker (project-local, keyword retrieval)
  * 3. Environment Resources (live runtime data)
  * 4. Web Search (external, last resort)
  */

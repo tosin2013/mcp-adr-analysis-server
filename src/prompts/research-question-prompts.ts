@@ -22,9 +22,9 @@ export function generateProblemKnowledgeCorrelationPrompt(
   }
 ): string {
   return `
-# Problem-Knowledge Graph Correlation Analysis Guide
+# Problem-Session State Correlation Analysis Guide
 
-**Note: Use this as guidance for analyzing problems and correlating them with the architectural knowledge graph to identify research opportunities and knowledge gaps. Focus on the most relevant correlations for this specific context.**
+**Note: Use this as guidance for analyzing problems and correlating them with the project session state / ADR index to identify research opportunities and knowledge gaps. Focus on the most relevant correlations for this specific context.**
 
 ## Identified Problems
 ${problems
@@ -39,7 +39,7 @@ ${problems
   )
   .join('')}
 
-## Architectural Knowledge Graph
+## Project Session State / ADR Index
 ### Technologies
 ${knowledgeGraph.technologies.map(tech => `- **${tech.name}**: ${tech.description || 'No description'}`).join('\n')}
 
@@ -59,12 +59,12 @@ Consider identifying correlations and research opportunities from these areas wh
 ### 🔍 **Problem-Knowledge Correlations**
 - **Direct Correlations**: Problems directly related to known technologies/patterns
 - **Indirect Correlations**: Problems that may be influenced by architectural decisions
-- **Missing Knowledge**: Problems that reveal gaps in the knowledge graph
+- **Missing Knowledge**: Problems that reveal gaps in the project session state / ADR index
 - **Pattern Conflicts**: Problems caused by conflicting architectural patterns
 - **Technology Limitations**: Problems stemming from technology constraints
 
 ### 📊 **Knowledge Gap Analysis**
-- **Unexplored Technologies**: Technologies mentioned in problems but not in knowledge graph
+- **Unexplored Technologies**: Technologies mentioned in problems but not in project session state / ADR index
 - **Missing Patterns**: Architectural patterns that could address problems
 - **Incomplete ADRs**: Decisions that need more research or documentation
 - **Relationship Gaps**: Missing connections between architectural elements
