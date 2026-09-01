@@ -1,0 +1,21 @@
+{
+  "authority_id": "1477",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! test -f tests/index.test.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -rq \"expect(true).toBe(true)\" tests/utils/environment-capability-registry.test.ts tests/utils/research-orchestrator-delegation.test.ts'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/smoke.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "npm run typecheck"
+    }
+  ]
+}

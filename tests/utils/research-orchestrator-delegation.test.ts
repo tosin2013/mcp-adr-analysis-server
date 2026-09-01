@@ -140,8 +140,8 @@ describe('ResearchOrchestrator LLM Delegation', () => {
       await tracker.startPhase('project_files_search', 'Starting search');
       await tracker.completePhase('project_files_search', 'Search complete');
 
-      // Should not throw
-      expect(true).toBe(true);
+      const context = tracker.getContext();
+      expect(context).toBeDefined();
     });
 
     it('should allow storing results', async () => {
@@ -180,8 +180,8 @@ describe('ResearchOrchestrator LLM Delegation', () => {
         },
       });
 
-      // Should not throw
-      expect(true).toBe(true);
+      const context = tracker.getContext();
+      expect(context.synthesizedAnswer).toBe('The authentication uses JWT tokens.');
     });
 
     it('should support cancellation', async () => {
