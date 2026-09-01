@@ -60,7 +60,7 @@ export async function expandMemory(
 
     // Add knowledge graph context if included
     if (result.knowledgeGraphContext && result.knowledgeGraphContext.length > 0) {
-      output += `\n## Knowledge Graph Context\n\n`;
+      output += `\n## Session State Context\n\n`;
       result.knowledgeGraphContext.forEach(context => {
         output += `- **${context.intent}**: ${context.outcome} (${context.timestamp})\n`;
       });
@@ -211,7 +211,7 @@ export async function getConversationSnapshot(
 
     // Active intents
     if (snapshot.activeIntents.length > 0) {
-      output += `## Active Knowledge Graph Intents\n\n`;
+      output += `## Active Session Intents\n\n`;
       snapshot.activeIntents.forEach(intent => {
         output += `- **${intent.intent}**: ${intent.status}\n`;
       });

@@ -27,7 +27,7 @@ graph TB
     subgraph "Input Processing"
         Task[Analysis Task] --> Context[Context Gathering]
         Context --> History[Historical Context]
-        History --> Knowledge[Knowledge Graph]
+        History --> Knowledge[Session State]
     end
 
     subgraph "Prompt Construction"
@@ -377,7 +377,7 @@ class ChainOfThoughtFramework {
 ### Decision 2: Context-Aware Prompt Generation
 
 **Problem**: Generic prompts don't leverage project-specific context effectively  
-**Solution**: Dynamically generate prompts based on project context and knowledge graph  
+**Solution**: Dynamically generate prompts based on project context and session state  
 **Trade-offs**:
 
 - ✅ **Pros**: More relevant and accurate analysis, better user experience
@@ -427,7 +427,7 @@ class ChainOfThoughtFramework {
 ## 🔗 Related Concepts
 
 - **[Server Architecture](./server-architecture.md)** - How prompt engineering integrates with the overall system
-- **[Knowledge Graph](./knowledge-graph.md)** - How knowledge graph enhances prompt context
+- **[Session & Tool-Usage Tracker](./knowledge-graph.md)** - How session state enhances prompt context
 - **[Tool Design](./tool-design.md)** - How tools leverage advanced prompting techniques
 
 ---
