@@ -1,0 +1,13 @@
+{
+  "authority_id": "744",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -P \"it\\.skip\\(\" tests/tools/rule-generation-tool.test.ts'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/tools/rule-generation-tool.test.ts"
+    }
+  ]
+}
