@@ -107,8 +107,7 @@ describe('EnvironmentCapabilityRegistry', () => {
       await registry.discoverCapabilities();
       await registry.discoverCapabilities();
 
-      // Should not re-discover
-      expect(true).toBe(true);
+      expect(mockExecAsync).toHaveBeenCalled();
     });
   });
 
