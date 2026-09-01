@@ -19,6 +19,9 @@ import {
   getCEMCPTools,
   getHighTokenCostTools,
 } from './tool-catalog.js';
+import { getSearchToolsDefinition, MCP_TOOL_SCHEMAS } from './mcp-tool-schemas.js';
+
+export { getSearchToolsDefinition };
 
 /**
  * Arguments for search_tools meta-tool
@@ -128,62 +131,6 @@ export function executeSearchTools(args: SearchToolsArgs): SearchToolsResult {
 }
 
 /**
- * Get the search_tools tool definition for MCP
- */
-export function getSearchToolsDefinition(): Tool {
-  return {
-    name: 'search_tools',
-    description:
-      'Search and discover available tools by category, keyword, or capability. Use this to find the right tool for a task without loading all tool schemas. Returns lightweight tool metadata by default; use includeSchema:true for full schemas.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        category: {
-          type: 'string',
-          enum: [
-            'analysis',
-            'adr',
-            'content-security',
-            'research',
-            'deployment',
-            'memory',
-            'file-system',
-            'rules',
-            'workflow',
-            'utility',
-          ],
-          description: 'Filter tools by category',
-        },
-        query: {
-          type: 'string',
-          description: 'Search query to match tool names, descriptions, and keywords',
-        },
-        complexity: {
-          type: 'string',
-          enum: ['simple', 'moderate', 'complex'],
-          description: 'Filter by tool complexity level',
-        },
-        cemcpOnly: {
-          type: 'boolean',
-          description: 'Only return tools with CE-MCP directive support (more token-efficient)',
-          default: false,
-        },
-        includeSchema: {
-          type: 'boolean',
-          description: 'Include full input schemas in response (increases token count)',
-          default: false,
-        },
-        limit: {
-          type: 'number',
-          description: 'Maximum number of tools to return',
-          default: 20,
-        },
-      },
-    },
-  };
-}
-
-/**
  * Get lightweight tool listing for MCP ListTools
  *
  * Returns tools with minimal metadata for token-efficient listing.
@@ -219,14 +166,8 @@ export function getToolListForMCP(options: { mode?: 'full' | 'lightweight' | 'su
     return { tools };
   }
 
-  // Full mode - return all tools with schemas from catalog
-  const tools: Tool[] = [getSearchToolsDefinition()];
-
-  for (const [, metadata] of TOOL_CATALOG) {
-    tools.push(toMCPTool(metadata));
-  }
-
-  return { tools };
+  // Full mode — the canonical list (#1416), not a second copy from the catalog.
+  return { tools: MCP_TOOL_SCHEMAS };
 }
 
 /**

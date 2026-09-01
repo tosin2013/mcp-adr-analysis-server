@@ -2,7 +2,7 @@
  * Endpoint-to-Tool Mapping Parity Tests
  *
  * Asserts that every ADR Aggregator endpoint in the canonical mapping has:
- *  1. A matching `case` dispatch in src/index.ts
+ *  1. A matching `case` dispatch in src/tools/tool-dispatch.ts
  *  2. A client method on AdrAggregatorClient that references the API path
  *  3. An exported handler function in the tool module
  *
@@ -19,11 +19,11 @@ import { AGGREGATOR_ENDPOINT_MAP } from '../../src/utils/aggregator-endpoint-map
 
 const SRC_ROOT = path.resolve(__dirname, '../../src');
 
-let indexSource: string;
+let dispatchSource: string;
 let clientSource: string;
 
 beforeAll(async () => {
-  indexSource = await fs.readFile(path.join(SRC_ROOT, 'index.ts'), 'utf-8');
+  dispatchSource = await fs.readFile(path.join(SRC_ROOT, 'tools', 'tool-dispatch.ts'), 'utf-8');
   clientSource = await fs.readFile(
     path.join(SRC_ROOT, 'utils', 'adr-aggregator-client.ts'),
     'utf-8'
@@ -45,11 +45,11 @@ describe('Aggregator Endpoint Mapping Parity', () => {
     expect(new Set(paths).size).toBe(paths.length);
   });
 
-  describe('Each endpoint has a case dispatch in index.ts', () => {
+  describe('Each endpoint has a case dispatch in tool-dispatch.ts', () => {
     for (const entry of AGGREGATOR_ENDPOINT_MAP) {
-      it(`index.ts dispatches case '${entry.mcpToolName}'`, () => {
+      it(`tool-dispatch.ts dispatches case '${entry.mcpToolName}'`, () => {
         const pattern = `case '${entry.mcpToolName}'`;
-        expect(indexSource).toContain(pattern);
+        expect(dispatchSource).toContain(pattern);
       });
     }
   });
@@ -86,13 +86,13 @@ describe('Aggregator Endpoint Mapping Parity', () => {
     }
   });
 
-  describe('Index.ts imports handler from correct tool module', () => {
+  describe('tool-dispatch.ts imports handler from correct tool module', () => {
     for (const entry of AGGREGATOR_ENDPOINT_MAP) {
       it(`case '${entry.mcpToolName}' imports from '${entry.toolModule}'`, () => {
-        const caseStart = indexSource.indexOf(`case '${entry.mcpToolName}'`);
+        const caseStart = dispatchSource.indexOf(`case '${entry.mcpToolName}'`);
         expect(caseStart).toBeGreaterThan(-1);
 
-        const caseBlock = indexSource.substring(caseStart, caseStart + 500);
+        const caseBlock = dispatchSource.substring(caseStart, caseStart + 500);
         expect(caseBlock).toContain(entry.toolModule);
       });
     }
