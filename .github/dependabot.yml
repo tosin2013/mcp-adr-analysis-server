@@ -71,6 +71,24 @@ updates:
     pull-request-branch-name:
       separator: '/'
 
+  # Docs site (Docusaurus) — security updates only, not shipped in npm package
+  - package-ecosystem: 'npm'
+    directory: '/docs'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+      timezone: 'UTC'
+    allow:
+      - dependency-type: 'direct'
+    commit-message:
+      prefix: 'deps(docs)'
+      include: 'scope'
+    labels:
+      - 'dependencies'
+      - 'documentation'
+    open-pull-requests-limit: 5
+
   # Also check GitHub Actions for security updates
   - package-ecosystem: 'github-actions'
     directory: '/'
