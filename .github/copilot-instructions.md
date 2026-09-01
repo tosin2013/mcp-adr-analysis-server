@@ -4,7 +4,7 @@
 
 This is a **Model Context Protocol (MCP) server** that provides AI-powered architectural analysis and ADR (Architectural Decision Record) management. The server integrates with AI assistants (Claude, Cline, Cursor) via the MCP protocol and uses OpenRouter.ai for generating actual analysis results instead of prompts.
 
-**Core Architecture**: MCP server (`src/index.ts`) exposes 73 tools through `@modelcontextprotocol/sdk` that call into utilities for AI execution, caching, knowledge graphs, and memory management.
+**Core Architecture**: MCP server (`src/index.ts`) exposes 73 tools through `@modelcontextprotocol/sdk` that call into utilities for AI execution, caching, session/tool-usage tracking, and memory management.
 
 ## Critical Technical Conventions
 
@@ -81,17 +81,17 @@ return {
 
 ## Memory & State Management
 
-### Knowledge Graph System (`src/utils/knowledge-graph-manager.ts`)
+### Session & Tool-Usage Tracker (`src/utils/knowledge-graph-manager.ts`)
 
-- **Persistent storage** in OS temp directory: `$TMPDIR/{projectName}/cache/`
+- **Persistent storage** in project-local JSON snapshots: `$TMPDIR/{projectName}/cache/knowledge-graph-snapshots.json`
 - Tracks intents, tool executions, ADR decisions, and relationships
-- Provides `queryKnowledgeGraph()` for semantic context retrieval
+- Provides `queryKnowledgeGraph()` for keyword-scored retrieval over stored snapshots
 - Memory operations are recorded for analytics (limited to last 1000 entries)
 
 ### State Reinforcement (`src/utils/state-reinforcement-manager.ts`)
 
 - **Context decay mitigation**: Re-injects core context every 5 turns or when responses exceed 3000 tokens
-- Integrates recent knowledge graph intents into context reminders
+- Integrates recent session tracker intents into context reminders
 - Configuration: `turnInterval`, `tokenThreshold`, `includeKnowledgeGraphContext`
 
 ### Conversation Memory (`src/utils/conversation-memory-manager.ts`)
@@ -138,7 +138,7 @@ Authoritative templates for infrastructure deployment that LLMs query for platfo
 
 ### Research & Integration
 
-- `research-question-tool.ts`: Query knowledge graph and external sources
+- `research-question-tool.ts`: Query session state and external sources
 - `llm-web-search-tool.ts`: Firecrawl integration for web research
 - `research-integration-tool.ts`: Synthesize research into actionable insights
 
@@ -179,7 +179,7 @@ Authoritative templates for infrastructure deployment that LLMs query for platfo
 src/
 ├── index.ts              # MCP server entry point (8466 lines - tool/resource/prompt handlers)
 ├── tools/                # 73 specialized MCP tools
-├── utils/                # Core utilities (AI, caching, knowledge graph, logging)
+├── utils/                # Core utilities (AI, caching, session tracking, logging)
 ├── types/                # TypeScript type definitions and schemas
 ├── config/               # Configuration management
 ├── prompts/              # Prompt templates for AI execution

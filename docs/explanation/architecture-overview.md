@@ -44,7 +44,7 @@ flowchart TB
 
         subgraph Utils[Utility Layer]
             U1[AI Executor]
-            U2[Knowledge Graph]
+            U2[Session Tracker]
             U3[Cache Manager]
             U4[Tree-sitter]
         end
@@ -119,7 +119,7 @@ graph LR
 
     subgraph Utilities
         AI[AI Executor]
-        KG[Knowledge Graph]
+        KG[Session Tracker]
         CM[Cache Manager]
         TS[Tree-sitter]
         LOG[Logger]
@@ -163,7 +163,7 @@ sequenceDiagram
     Server-->>Client: JSON-RPC Response
 ```
 
-### Knowledge Graph Flow
+### Session & Tool-Usage Tracking Flow
 
 ```mermaid
 flowchart LR
@@ -180,7 +180,7 @@ flowchart LR
     end
 
     subgraph Storage
-        G[(Knowledge Graph)]
+        G[(Session State)]
     end
 
     subgraph Output
@@ -321,9 +321,7 @@ The architecture supports extension through:
 export const myNewTool = {
   name: 'my_new_tool',
   description: 'Does something useful',
-  inputSchema: {
-    /* JSON Schema */
-  },
+  inputSchema: {/* JSON Schema */},
   handler: async params => {
     /* Implementation */
   },

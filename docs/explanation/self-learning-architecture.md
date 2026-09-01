@@ -46,7 +46,7 @@ graph TB
     subgraph "Knowledge Sources"
         ADR[ADR Files]
         ENV[Environment Detection]
-        GRAPH[Knowledge Graph]
+        GRAPH[Session State]
         WEB[Web Search]
         LEARNED[Learned Patterns]
     end
@@ -133,7 +133,7 @@ async generateDeploymentPlan(): Promise<DynamicDeploymentPlan> {
 graph LR
     Q[Question] --> PF[Project Files]
     PF --> |Found| CONF1[Confidence: 0.9]
-    PF --> |Not Found| KG[Knowledge Graph]
+    PF --> |Not Found| KG[Session State]
     KG --> |Found| CONF2[Confidence: 0.8]
     KG --> |Not Found| ENV[Environment]
     ENV --> |Found| CONF3[Confidence: 0.7]
@@ -189,9 +189,7 @@ await memory.upsertEntity({
     applicabilityScope: ['openshift', 'kubernetes'],
     lastValidated: '2025-01-09T...',
     keyInsights: ['Recommended platform: openshift', 'Confidence: 0.95', 'Required files: 8'],
-    actionableItems: [
-      /* deployment steps */
-    ],
+    actionableItems: [/* deployment steps */],
   },
 });
 ```
@@ -275,7 +273,7 @@ sequenceDiagram
         DDI-->>BVL: Use learned pattern (FAST)
     else No pattern or low confidence
         DDI->>RES: Research live documentation
-        RES->>RES: Query ADRs, Knowledge Graph, Environment
+        RES->>RES: Query ADRs, Session State, Environment
         alt Need web search
             RES->>RES: Fallback to web search
         end
@@ -667,7 +665,7 @@ Every intelligence source returns a confidence score:
 | --------------- | ---------------- | -------------- |
 | Learned Pattern | 0.8 - 1.0        | Reuse if > 0.8 |
 | Project Files   | 0.8 - 0.9        | High trust     |
-| Knowledge Graph | 0.7 - 0.8        | Medium trust   |
+| Session State   | 0.7 - 0.8        | Medium trust   |
 | Environment     | 0.6 - 0.7        | Context-aware  |
 | Web Search      | 0.5 - 0.6        | Lowest trust   |
 
@@ -816,7 +814,7 @@ LOG_LEVEL=debug npm start
 ### Research Areas
 
 1. **Reinforcement Learning**: Improve pattern selection based on success metrics
-2. **Graph Neural Networks**: Better relationship modeling in knowledge graph
+2. **Graph Neural Networks**: Better relationship modeling in session state tracking
 3. **Federated Learning**: Share patterns while preserving privacy
 4. **Active Learning**: Ask humans for feedback on uncertain decisions
 
@@ -824,7 +822,7 @@ LOG_LEVEL=debug npm start
 
 - [Bootstrap Validation Loop Guide](../how-to-guides/interactive-adr-planning.md)
 - [Deployment Readiness Tool](../reference/validation-tools.md#-deployment_readiness)
-- [Knowledge Graph System](./knowledge-graph-architecture.md)
+- [Session & Tool-Usage Tracker](./knowledge-graph-architecture.md)
 - [Memory Loading Tool](../reference/api-reference.md#memory_loading)
 
 ---

@@ -84,7 +84,7 @@ The patterns section shows **successful multi-tool workflows**:
 
 ### 4. **Context Awareness** (All Tools)
 
-Every tool execution is tracked in the knowledge graph:
+Every tool execution is tracked in the session state:
 
 ```markdown
 ### Active Intents
@@ -243,7 +243,7 @@ await generator.writeContextFile(kgManager, memoryManager, conversationManager);
 
 ### 2. **Rich Analytics**
 
-Let the knowledge graph track tool usage:
+Let the session tracker track tool usage:
 
 ```typescript
 await kgManager.addToolExecution(intentId, toolName, parameters, result, success);
@@ -266,7 +266,7 @@ await kgManager.createIntent('Implement authentication microservice', [
 Document successful tool chains:
 
 ```typescript
-// Knowledge graph automatically tracks tool execution order
+// Session tracker automatically tracks tool execution order
 // Context file surfaces successful patterns
 ```
 

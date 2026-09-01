@@ -1204,7 +1204,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
               context: { type: 'string' },
             },
           },
-          description: 'Problems to correlate with knowledge graph',
+          description: 'Problems to correlate with project session/tool-usage state',
         },
         knowledgeGraph: {
           type: 'object',
@@ -1214,7 +1214,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
             adrs: { type: 'array', items: { type: 'object' } },
             relationships: { type: 'array', items: { type: 'object' } },
           },
-          description: 'Architectural knowledge graph',
+          description: 'Project session state (intents, tool usage, ADR registrations)',
         },
         relevantKnowledge: {
           type: 'object',
@@ -1271,7 +1271,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'perform_research',
     description:
-      'Perform research using cascading sources: project files → knowledge graph → environment resources → web search (fallback)',
+      'Perform research using cascading sources: project files → session/tool-usage tracker → environment resources → web search (fallback)',
     inputSchema: {
       type: 'object',
       properties: {
@@ -2919,7 +2919,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
         },
         includeContext: {
           type: 'boolean',
-          description: 'Include related conversation context and knowledge graph state',
+          description: 'Include related conversation context and session/tool-usage state',
           default: true,
         },
       },
@@ -2986,14 +2986,14 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'update_knowledge',
     description:
-      'ADR-018: Simple CRUD operations for knowledge graph. Add/remove entities (intents, ADRs, tools, code) and relationships. Use knowledge://graph resource to read current state (zero token cost).',
+      'ADR-018: Simple CRUD operations for project session state. Not a graph database — keyword retrieval over local JSON snapshots. Add/remove entities (intents, ADRs, tools, code) and relationships. Use knowledge://graph resource to read current state (zero token cost).',
     inputSchema: {
       type: 'object',
       properties: {
         operation: {
           type: 'string',
           enum: ['add_entity', 'remove_entity', 'add_relationship', 'remove_relationship'],
-          description: 'Type of operation to perform on the knowledge graph',
+          description: 'Type of operation to perform on project session state',
         },
         entity: {
           type: 'string',
