@@ -1,0 +1,24 @@
+{
+  "$comment": "ADR-023 deprecation obligation for the 8 exposed host-native tools (read_file, write_file, list_directory, read_directory, list_roots, search_tools, load_prompt, get_current_datetime). REBASED onto current main after the #1416 refactor: the wire tools/list is now getToolListForMCP({mode:'full'}) -> MCP_TOOL_SCHEMAS in src/tools/mcp-tool-schemas.ts (the old inline list in index.ts is gone). Done = each marked deprecated on the WIRE (mcp-tool-schemas.ts, not a code comment) AND in the catalog (deprecated:true), docs carry a Deprecated section, CHANGELOG announces it under [Unreleased]. Marker: [DEPRECATED host-native, ADR-023]. Deletion is OUT of scope (retirement.py, later).",
+  "authority_id": "1638",
+  "criteria": [
+    { "check": "command_exit", "target": "npm run typecheck" },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(rg -c \"deprecated: true\" src/tools/tool-catalog.ts) -eq 8'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(rg -N \"DEPRECATED host-native\" src/tools/mcp-tool-schemas.ts | grep -vc \"//\") -ge 8'"
+    },
+    { "check": "command_exit", "target": "bash -c 'rg -q \"### Deprecated\" CHANGELOG.md'" },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'test $(rg -c \"DEPRECATED host-native\" docs/reference/api-reference.md) -ge 8'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! rg -q \"name: .llm_(web_search|cloud_management|database_management).\" src/tools/tool-catalog.ts'"
+    }
+  ]
+}
