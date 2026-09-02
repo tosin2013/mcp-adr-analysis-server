@@ -314,11 +314,34 @@ function isLikelyAdr(content: string, filename: string): boolean {
 }
 
 /**
- * Parse ADR metadata from content
+ * Structured fields extracted from an ADR document body.
+ *
+ * This is the single source of truth for the field-level regexes ADR tooling relies on
+ * (title, status, date, number, the Nygard Context/Decision/Consequences sections, and
+ * front-matter tags). `parseAdrMetadata` here and the format reader/converter in
+ * `adr-format.ts` both read through this helper rather than each keeping a private copy
+ * of the regexes.
  */
-function parseAdrMetadata(content: string, filename: string, fullPath: string): DiscoveredAdr {
+export interface ExtractedAdrFields {
+  title?: string;
+  status: string;
+  date?: string;
+  number?: string;
+  context?: string;
+  decision?: string;
+  consequences?: string;
+  tags: string[];
+}
+
+/**
+ * Extract ADR fields from raw markdown content.
+ *
+ * `filename` is optional: when supplied it seeds the title fallback and the ADR-number
+ * lookup (callers that only have content, such as the format converter, omit it).
+ */
+export function extractAdrFields(content: string, filename = ''): ExtractedAdrFields {
   // Extract title (usually first # heading)
-  let title = filename.replace(/\.md$/, '');
+  let title: string | undefined = filename ? filename.replace(/\.md$/, '') : undefined;
   const titleMatch = content.match(/^#\s+(.+)$/m);
   if (titleMatch && titleMatch[1]) {
     title = titleMatch[1].trim();
@@ -340,7 +363,8 @@ function parseAdrMetadata(content: string, filename: string, fullPath: string): 
 
   // Extract ADR number from filename or content
   let number: string | undefined;
-  const numberMatch = filename.match(/(?:adr[-_]?)?(\d+)/i) || content.match(/adr[-_]?(\d+)/i);
+  const numberMatch =
+    (filename ? filename.match(/(?:adr[-_]?)?(\d+)/i) : null) || content.match(/adr[-_]?(\d+)/i);
   if (numberMatch && numberMatch[1]) {
     number = numberMatch[1];
   }
@@ -407,22 +431,39 @@ function parseAdrMetadata(content: string, filename: string, fullPath: string): 
     }
   }
 
+  const fields: ExtractedAdrFields = { status, tags };
+  if (title !== undefined) fields.title = title;
+  if (date) fields.date = date;
+  if (number) fields.number = number;
+  if (context) fields.context = context;
+  if (decision) fields.decision = decision;
+  if (consequences) fields.consequences = consequences;
+  return fields;
+}
+
+/**
+ * Parse ADR metadata from content
+ */
+function parseAdrMetadata(content: string, filename: string, fullPath: string): DiscoveredAdr {
+  const fields = extractAdrFields(content, filename);
+  const tags = fields.tags;
+
   const metadata: DiscoveredAdr['metadata'] = { tags };
-  if (number) metadata.number = number;
+  if (fields.number) metadata.number = fields.number;
   if (tags[0]) metadata.category = tags[0];
 
   const result: DiscoveredAdr = {
     filename,
-    title,
-    status,
-    date,
+    title: fields.title ?? filename.replace(/\.md$/, ''),
+    status: fields.status,
+    date: fields.date,
     path: fullPath,
     metadata,
   };
 
-  if (context) result.context = context;
-  if (decision) result.decision = decision;
-  if (consequences) result.consequences = consequences;
+  if (fields.context) result.context = fields.context;
+  if (fields.decision) result.decision = fields.decision;
+  if (fields.consequences) result.consequences = fields.consequences;
 
   return result;
 }
