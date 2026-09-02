@@ -6,6 +6,10 @@
 
 import { McpAdrError } from '../types/index.js';
 import { BasicTimeline, TimelineExtractionOptions, AdrWorkQueue } from './adr-timeline-types.js';
+// Field extraction lives in adr-format.ts (the home for ADR-format concerns); discovery
+// consumes it. This direction — discovery -> format — keeps adr-format.ts a wired-in
+// dependency and avoids a cycle (adr-format imports nothing from discovery).
+import { extractAdrFields } from './adr-format.js';
 
 /**
  * Represents a discovered Architectural Decision Record
@@ -317,112 +321,25 @@ function isLikelyAdr(content: string, filename: string): boolean {
  * Parse ADR metadata from content
  */
 function parseAdrMetadata(content: string, filename: string, fullPath: string): DiscoveredAdr {
-  // Extract title (usually first # heading)
-  let title = filename.replace(/\.md$/, '');
-  const titleMatch = content.match(/^#\s+(.+)$/m);
-  if (titleMatch && titleMatch[1]) {
-    title = titleMatch[1].trim();
-  }
-
-  // Extract status
-  let status = 'unknown';
-  const statusMatch = content.match(/(?:##?\s*status|status:)\s*(.+?)(?:\n|$)/i);
-  if (statusMatch && statusMatch[1]) {
-    status = statusMatch[1].trim().toLowerCase();
-  }
-
-  // Extract date
-  let date: string | undefined;
-  const dateMatch = content.match(/(?:##?\s*date|date:)\s*(.+?)(?:\n|$)/i);
-  if (dateMatch && dateMatch[1]) {
-    date = dateMatch[1].trim();
-  }
-
-  // Extract ADR number from filename or content
-  let number: string | undefined;
-  const numberMatch = filename.match(/(?:adr[-_]?)?(\d+)/i) || content.match(/adr[-_]?(\d+)/i);
-  if (numberMatch && numberMatch[1]) {
-    number = numberMatch[1];
-  }
-
-  // Extract context
-  let context: string | undefined;
-  const contextMatch = content.match(/##?\s*context\s*\n([\s\S]*?)(?=\n##|\n#|$)/i);
-  if (contextMatch && contextMatch[1]) {
-    context = contextMatch[1].trim();
-  }
-
-  // Extract decision
-  let decision: string | undefined;
-  const decisionMatch = content.match(/##?\s*decision\s*\n([\s\S]*?)(?=\n##|\n#|$)/i);
-  if (decisionMatch && decisionMatch[1]) {
-    decision = decisionMatch[1].trim();
-  }
-
-  // Extract consequences
-  let consequences: string | undefined;
-  const consequencesMatch = content.match(/##?\s*consequences\s*\n([\s\S]*?)(?=\n##|\n#|$)/i);
-  if (consequencesMatch && consequencesMatch[1]) {
-    consequences = consequencesMatch[1].trim();
-  }
-
-  // Extract category/tags (if any).
-  //
-  // Three forms occur in the wild, and the idiomatic MADR one used to be the only one
-  // that did NOT work -- a YAML block list returned ["- architecture"], capturing the
-  // dash and dropping every entry after the first. ADR-022 adopted MADR, whose template
-  // uses block lists, so that was the form this needed most.
-  //
-  //   tags:               tags: a, b        tags: [a, b]
-  //     - a
-  //     - b
-  //
-  // Scoped to the leading `---` front-matter block when one is present, so a `tags:`
-  // mention in prose cannot be picked up -- the same discipline scripts/check-adr-drift.sh
-  // and repo-governor's adapters/adr both use after that exact false positive.
-  const tags: string[] = [];
-  const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  const tagScope = fmMatch?.[1] ?? content;
-
-  const blockMatch = tagScope.match(
-    /^[ \t]*(?:tags?|categories?):[ \t]*\r?\n((?:[ \t]*-[ \t]*\S.*\r?\n?)+)/im
-  );
-  if (blockMatch?.[1]) {
-    tags.push(
-      ...blockMatch[1]
-        .split(/\r?\n/)
-        .map(line => line.replace(/^[ \t]*-[ \t]*/, '').trim())
-        .filter(Boolean)
-    );
-  } else {
-    const inlineMatch = tagScope.match(/^[ \t]*(?:tags?|categories?):[ \t]*(.+?)[ \t]*\r?$/im);
-    if (inlineMatch?.[1]) {
-      tags.push(
-        ...inlineMatch[1]
-          .replace(/^\[|\]$/g, '') // tolerate the bracket form, which used to keep its brackets
-          .split(',')
-          .map(tag => tag.trim().replace(/^['"]|['"]$/g, ''))
-          .filter(Boolean)
-      );
-    }
-  }
+  const fields = extractAdrFields(content, filename);
+  const tags = fields.tags;
 
   const metadata: DiscoveredAdr['metadata'] = { tags };
-  if (number) metadata.number = number;
+  if (fields.number) metadata.number = fields.number;
   if (tags[0]) metadata.category = tags[0];
 
   const result: DiscoveredAdr = {
     filename,
-    title,
-    status,
-    date,
+    title: fields.title ?? filename.replace(/\.md$/, ''),
+    status: fields.status,
+    date: fields.date,
     path: fullPath,
     metadata,
   };
 
-  if (context) result.context = context;
-  if (decision) result.decision = decision;
-  if (consequences) result.consequences = consequences;
+  if (fields.context) result.context = fields.context;
+  if (fields.decision) result.decision = fields.decision;
+  if (fields.consequences) result.consequences = fields.consequences;
 
   return result;
 }

@@ -1,0 +1,25 @@
+{
+  "authority_id": "751",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -rq \"@jest/globals\" docs/ --include=\"*.md\" --exclude-dir=adrs --exclude-dir=node_modules'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"JEST_WORKER_ID\" src/utils/tree-sitter-analyzer.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"vitest\" .github/labels.yml'"
+    },
+    {
+      "check": "tests_pass",
+      "target": "npx vitest run tests/smoke.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "npm run typecheck"
+    }
+  ]
+}

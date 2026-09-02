@@ -21,7 +21,7 @@ This guide covers:
 - MCP ADR Analysis Server installed
 - Node.js development environment
 - Basic understanding of performance concepts
-- Jest test framework (included)
+- Vitest test framework (included)
 
 ---
 

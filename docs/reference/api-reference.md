@@ -1571,4 +1571,22 @@ These tools integrate with [ADR Aggregator](https://adraggregator.com) to provid
 
 ---
 
+## Deprecated tools
+
+The following eight host-native tools are **deprecated** under **ADR-023**. They still
+work today — they remain registered and dispatched — but they duplicate capabilities the
+MCP host already provides natively and will be removed in a later, retirement-gated step.
+Prefer the host-provided replacement in each row.
+
+- `read_file` — DEPRECATED host-native, ADR-023. Replaced by the MCP host's own file-read capability.
+- `write_file` — DEPRECATED host-native, ADR-023. Replaced by the MCP host's own file-write capability.
+- `list_directory` — DEPRECATED host-native, ADR-023. Replaced by the MCP host's own directory-listing capability.
+- `read_directory` — DEPRECATED host-native, ADR-023. Replaced by the MCP host's own directory-read capability.
+- `list_roots` — DEPRECATED host-native, ADR-023. Replaced by the MCP host's native roots capability (`roots/list`).
+- `search_tools` — DEPRECATED host-native, ADR-023. Replaced by MCP progressive tool discovery (native `tools/list` pagination).
+- `load_prompt` — DEPRECATED host-native, ADR-023. Replaced by the MCP host's native prompts capability (`prompts/list` and `prompts/get`).
+- `get_current_datetime` — DEPRECATED host-native, ADR-023. Replaced by the host environment's own date/time capability.
+
+---
+
 _Last updated: January 2025 | Version 2.1.27_

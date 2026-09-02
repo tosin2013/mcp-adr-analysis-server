@@ -1,0 +1,10 @@
+{
+  "$comment": "Issue #1466 — ADR format READER + Nygard->MADR CONVERTER. New pure-function module src/utils/adr-format.ts (detectAdrFormat + convertNygardToMadr, centralizing the AdrFormat union), reusing adr-discovery.ts field extraction and js-yaml for MADR front matter. Target = the ADR-022 YAML-front-matter MADR shape the real corpus uses, NOT the stale * Status: prompt template. Tests in tests/utils/adr-format.test.ts (TDD). Both file_exists and the vitest run fail pre-work (neither file exists yet).",
+  "authority_id": "1466",
+  "criteria": [
+    { "check": "command_exit", "target": "npm run typecheck" },
+    { "check": "file_exists", "target": "src/utils/adr-format.ts" },
+    { "check": "file_exists", "target": "tests/utils/adr-format.test.ts" },
+    { "check": "command_exit", "target": "npx vitest run tests/utils/adr-format.test.ts" }
+  ]
+}
