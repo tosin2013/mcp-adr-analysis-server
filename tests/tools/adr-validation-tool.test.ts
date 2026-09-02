@@ -271,7 +271,7 @@ We will use Redis for caching.
 
     // Skip: ESM mocking of ResearchOrchestrator fails, causing timeouts
     // See issue #308 for ESM-compatible mocking improvements
-    it.skip('should work without AI executor (rule-based fallback)', async () => {
+    it('should work without AI executor (rule-based fallback)', async () => {
       const adrContent = `# Use PostgreSQL
 
 ## Decision
@@ -305,7 +305,9 @@ We will use PostgreSQL as our primary database.
       });
 
       expect(result.content).toBeDefined();
-      expect(result.content[0].text).toContain('rule-based validation');
+      // Deterministic path (ADR-021 Option B): no AI executor, rule-based over research.
+      expect(result.content[0].text).toContain('# ADR Validation Report');
+      expect(result.content[0].text).toContain('Deterministic (rule-based over research evidence)');
     });
 
     it('should handle file read errors', async () => {
