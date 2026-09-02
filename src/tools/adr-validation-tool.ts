@@ -3,13 +3,12 @@
  *
  * Validates existing ADRs against actual infrastructure state using:
  * - Research Orchestrator (live environment data)
- * - AI Executor (intelligent analysis)
+ * - Deterministic rule-based analysis over the research evidence (ADR-021 Option B)
  * - Knowledge Graph (ADR relationships)
  */
 
 import { McpAdrError } from '../types/index.js';
 import { answerResearchQuestion } from '../utils/research-orchestrator.js';
-import { getAIExecutor } from '../utils/ai-executor.js';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
@@ -146,87 +145,27 @@ async function computeAdrValidation(args: {
     // Step 2: Extract ADR metadata
     const adrTitle = extractAdrTitle(adrContent);
     const adrDecision = extractAdrDecision(adrContent);
-    const adrContext = extractAdrContext(adrContent);
 
     // Step 3: Research current infrastructure state
     const researchQuestion = `Based on the ADR titled "${adrTitle}", verify if the following is still true: ${adrDecision}. Check project files, environment state, and existing implementations.`;
 
     const research = await answerResearchQuestion(researchQuestion, projectPath, adrDirectory);
 
-    // Step 4: Use AI to analyze alignment
-    const aiExecutor = getAIExecutor();
-    let validationResult: ADRValidationResult;
-
-    if (aiExecutor.isAvailable()) {
-      // AI-powered validation
-      const aiAnalysis = await aiExecutor.executeStructuredPrompt<{
-        isValid: boolean;
-        confidence: number;
-        findings: Array<{
-          type: 'compliance' | 'drift' | 'outdated' | 'missing_evidence' | 'conflict';
-          severity: 'critical' | 'high' | 'medium' | 'low';
-          description: string;
-          evidence: string;
-        }>;
-        recommendations: string[];
-      }>(
-        `You are an expert at validating Architecture Decision Records (ADRs) against actual infrastructure.
-
-**ADR Being Validated:**
-Title: ${adrTitle}
-Decision: ${adrDecision}
-Context: ${adrContext}
-
-**Current Infrastructure Research:**
-${research.answer}
-
-**Research Confidence:** ${(research.confidence * 100).toFixed(1)}%
-**Sources Consulted:** ${research.sources.map(s => s.type).join(', ')}
-**Files Analyzed:** ${research.metadata.filesAnalyzed}
-
-**Your Task:**
-Analyze if the ADR decision is still valid and being followed in the current infrastructure.
-
-Return JSON with:
-{
-  "isValid": boolean,
-  "confidence": number (0-1),
-  "findings": [
-    {
-      "type": "compliance" | "drift" | "outdated" | "missing_evidence" | "conflict",
-      "severity": "critical" | "high" | "medium" | "low",
-      "description": "Clear description of the finding",
-      "evidence": "Specific evidence from research data"
-    }
-  ],
-  "recommendations": ["Actionable recommendations"]
-}`,
-        null,
-        {
-          temperature: 0.2,
-          maxTokens: 2000,
-          systemPrompt:
-            'You are a meticulous architecture validator. Base your analysis ONLY on the research evidence provided. Do not hallucinate or assume information not present in the research data.',
-        }
-      );
-
-      validationResult = {
-        adrPath: fullAdrPath,
-        adrTitle,
-        isValid: aiAnalysis.data.isValid,
-        confidence: aiAnalysis.data.confidence,
-        findings: aiAnalysis.data.findings,
-        recommendations: aiAnalysis.data.recommendations,
-        researchData: {
-          sources: research.sources.map(s => s.type),
-          confidence: research.confidence,
-          needsWebSearch: research.needsWebSearch,
-        },
-      };
-    } else {
-      // Fallback: Rule-based validation
-      validationResult = performRuleBasedValidation(fullAdrPath, adrTitle, adrDecision, research);
-    }
+    // Step 4: Validate alignment deterministically (ADR-021 Option B, Batch 1).
+    //
+    // The OpenRouter-backed AI branch that used to run here (getAIExecutor ->
+    // executeStructuredPrompt) was removed. Validation now runs entirely on
+    // rule-based analysis of the research evidence -- no external API call. This
+    // matches ADR-014/ADR-021: the tool returns a deterministic verdict the host
+    // LLM can rely on and, if it wants a richer reading, it has the full research
+    // data (research.answer, sources, findings) in the response to reason over
+    // itself. (#1629)
+    const validationResult: ADRValidationResult = performRuleBasedValidation(
+      fullAdrPath,
+      adrTitle,
+      adrDecision,
+      research
+    );
 
     // The "related ADRs" step is gone. It called
     // KnowledgeGraphManager.getRelationships, which is @deprecated and returns []
@@ -234,7 +173,7 @@ Return JSON with:
     // A heading that is always empty because its source is a stub is worse than
     // no heading. `queryKnowledgeGraph` is the documented replacement if this is
     // ever wanted back. (#1539)
-    return { result: validationResult, research, aiAvailable: aiExecutor.isAvailable() };
+    return { result: validationResult, research, aiAvailable: false };
   } catch (error) {
     throw new McpAdrError(
       `ADR validation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -352,11 +291,6 @@ function extractAdrDecision(content: string): string {
   return decisionText ? decisionText.substring(0, 500) : 'No decision section found';
 }
 
-function extractAdrContext(content: string): string {
-  const contextMatch = content.match(/##\s+Context\s*\n\n([\s\S]+?)(?=\n##|$)/i);
-  return contextMatch?.[1]?.trim().substring(0, 500) ?? 'No context section found';
-}
-
 function performRuleBasedValidation(
   adrPath: string,
   adrTitle: string,
@@ -433,7 +367,7 @@ function formatValidationResponse(
 - **Confidence**: ${(result.confidence * 100).toFixed(1)}%
 
 ## Validation Method
-- **AI-Powered Analysis**: ${aiEnabled ? '✅ Enabled' : '❌ Disabled (using rule-based validation)'}
+- **Analysis**: ${aiEnabled ? '✅ AI-powered' : '✅ Deterministic (rule-based over research evidence)'}
 - **Research-Driven**: ✅ Enabled
 - **Environment Check**: ${research.sources.some((s: any) => s.type === 'environment') ? '✅ Completed' : '❌ Skipped'}
 
