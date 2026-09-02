@@ -8,7 +8,19 @@ For the release cadence and policy, see [RELEASES.md](./RELEASES.md).
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Deprecated
+
+- **Host-native tools marked deprecated (ADR-023).** The following eight tools are now
+  flagged `[DEPRECATED host-native, ADR-023]` on the wire (`tools/list` descriptions), in
+  the tool catalog, and in the API reference. They remain fully registered and dispatched —
+  this release only signals the deprecation; removal is a later, retirement-gated step.
+  - `read_file`, `write_file`, `list_directory`, `read_directory`, `list_roots` —
+    duplicate filesystem access the MCP host already provides natively; callers should use
+    the host's own file/directory capabilities instead.
+  - `get_current_datetime` — duplicates a capability the host environment supplies directly.
+  - `search_tools` and `load_prompt` — superseded by the MCP progressive-discovery model
+    (native `tools/list` pagination plus `prompts/list` / `prompts/get`), which the host
+    exposes without a bespoke server-side meta-tool.
 
 ---
 
