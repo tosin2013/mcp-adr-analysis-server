@@ -16,7 +16,6 @@
  */
 
 import yaml from 'js-yaml';
-import { extractAdrFields } from './adr-discovery.js';
 
 /**
  * The three ADR document shapes this module distinguishes.
@@ -27,6 +26,132 @@ import { extractAdrFields } from './adr-discovery.js';
  * scope and #1647.
  */
 export type AdrFormat = 'nygard' | 'madr' | 'custom';
+
+/**
+ * The fields a reader recovers from an ADR document, format-agnostic
+ * (title, status, date, number, the Context/Decision/Consequences sections, and
+ * front-matter tags). This is the single home for the field-extraction regexes:
+ * `adr-discovery.ts`'s `parseAdrMetadata` and this module's reader/converter both
+ * read through `extractAdrFields` rather than each keeping a private copy.
+ */
+export interface ExtractedAdrFields {
+  title?: string;
+  status: string;
+  date?: string;
+  number?: string;
+  context?: string;
+  decision?: string;
+  consequences?: string;
+  tags: string[];
+}
+
+/**
+ * Extract ADR fields from raw markdown content.
+ *
+ * `filename` is optional: when supplied it seeds the title fallback and the ADR-number
+ * lookup (callers that only have content, such as the format converter, omit it).
+ */
+export function extractAdrFields(content: string, filename = ''): ExtractedAdrFields {
+  // Extract title (usually first # heading)
+  let title: string | undefined = filename ? filename.replace(/\.md$/, '') : undefined;
+  const titleMatch = content.match(/^#\s+(.+)$/m);
+  if (titleMatch && titleMatch[1]) {
+    title = titleMatch[1].trim();
+  }
+
+  // Extract status
+  let status = 'unknown';
+  const statusMatch = content.match(/(?:##?\s*status|status:)\s*(.+?)(?:\n|$)/i);
+  if (statusMatch && statusMatch[1]) {
+    status = statusMatch[1].trim().toLowerCase();
+  }
+
+  // Extract date
+  let date: string | undefined;
+  const dateMatch = content.match(/(?:##?\s*date|date:)\s*(.+?)(?:\n|$)/i);
+  if (dateMatch && dateMatch[1]) {
+    date = dateMatch[1].trim();
+  }
+
+  // Extract ADR number from filename or content
+  let number: string | undefined;
+  const numberMatch =
+    (filename ? filename.match(/(?:adr[-_]?)?(\d+)/i) : null) || content.match(/adr[-_]?(\d+)/i);
+  if (numberMatch && numberMatch[1]) {
+    number = numberMatch[1];
+  }
+
+  // Extract context
+  let context: string | undefined;
+  const contextMatch = content.match(/##?\s*context\s*\n([\s\S]*?)(?=\n##|\n#|$)/i);
+  if (contextMatch && contextMatch[1]) {
+    context = contextMatch[1].trim();
+  }
+
+  // Extract decision
+  let decision: string | undefined;
+  const decisionMatch = content.match(/##?\s*decision\s*\n([\s\S]*?)(?=\n##|\n#|$)/i);
+  if (decisionMatch && decisionMatch[1]) {
+    decision = decisionMatch[1].trim();
+  }
+
+  // Extract consequences
+  let consequences: string | undefined;
+  const consequencesMatch = content.match(/##?\s*consequences\s*\n([\s\S]*?)(?=\n##|\n#|$)/i);
+  if (consequencesMatch && consequencesMatch[1]) {
+    consequences = consequencesMatch[1].trim();
+  }
+
+  // Extract category/tags (if any).
+  //
+  // Three forms occur in the wild, and the idiomatic MADR one used to be the only one
+  // that did NOT work -- a YAML block list returned ["- architecture"], capturing the
+  // dash and dropping every entry after the first. ADR-022 adopted MADR, whose template
+  // uses block lists, so that was the form this needed most.
+  //
+  //   tags:               tags: a, b        tags: [a, b]
+  //     - a
+  //     - b
+  //
+  // Scoped to the leading `---` front-matter block when one is present, so a `tags:`
+  // mention in prose cannot be picked up -- the same discipline scripts/check-adr-drift.sh
+  // and repo-governor's adapters/adr both use after that exact false positive.
+  const tags: string[] = [];
+  const fmMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  const tagScope = fmMatch?.[1] ?? content;
+
+  const blockMatch = tagScope.match(
+    /^[ \t]*(?:tags?|categories?):[ \t]*\r?\n((?:[ \t]*-[ \t]*\S.*\r?\n?)+)/im
+  );
+  if (blockMatch?.[1]) {
+    tags.push(
+      ...blockMatch[1]
+        .split(/\r?\n/)
+        .map(line => line.replace(/^[ \t]*-[ \t]*/, '').trim())
+        .filter(Boolean)
+    );
+  } else {
+    const inlineMatch = tagScope.match(/^[ \t]*(?:tags?|categories?):[ \t]*(.+?)[ \t]*\r?$/im);
+    if (inlineMatch?.[1]) {
+      tags.push(
+        ...inlineMatch[1]
+          .replace(/^\[|\]$/g, '') // tolerate the bracket form, which used to keep its brackets
+          .split(',')
+          .map(tag => tag.trim().replace(/^['"]|['"]$/g, ''))
+          .filter(Boolean)
+      );
+    }
+  }
+
+  const fields: ExtractedAdrFields = { status, tags };
+  if (title !== undefined) fields.title = title;
+  if (date) fields.date = date;
+  if (number) fields.number = number;
+  if (context) fields.context = context;
+  if (decision) fields.decision = decision;
+  if (consequences) fields.consequences = consequences;
+  return fields;
+}
 
 /**
  * Does the document open with a `---...---` YAML front-matter block that declares
