@@ -221,25 +221,37 @@ function mapStatusToMadr(status: string | undefined): string {
 }
 
 /**
- * Convert a Nygard-style ADR into the ADR-022 canonical MADR shape.
- *
- * Idempotent: content already detected as `'madr'` is returned unchanged.
- *
- * `'custom'` content is converted best-effort — whatever Nygard-shaped sections can be
- * recovered are carried across, and any section with nothing to carry becomes an empty
- * placeholder heading. The result is always valid MADR (front matter + MADR headings).
+ * The fields a deterministic MADR emitter needs. A superset-friendly subset of
+ * `ExtractedAdrFields`: everything is optional except that a missing title falls back to
+ * `'ADR'` and a missing/unknown status maps to `'proposed'`.
  */
-export function convertNygardToMadr(content: string): string {
-  if (detectAdrFormat(content) === 'madr') {
-    return content;
-  }
+export interface MadrDocumentFields {
+  title?: string | undefined;
+  status?: string | undefined;
+  date?: string | undefined;
+  tags?: string[] | undefined;
+  context?: string | undefined;
+  decision?: string | undefined;
+  consequences?: string | undefined;
+}
 
-  const fields = extractAdrFields(content);
-
+/**
+ * Emit an ADR-022 canonical MADR document from already-extracted fields.
+ *
+ * This is the pure emission half shared by `convertNygardToMadr` (which feeds it the
+ * fields it recovered from a Nygard/custom document) and the deterministic ADR generator
+ * in `adr-suggestion-tool.ts` (which feeds it a decision's title/context/decision/
+ * consequences). The output is always valid MADR: `---` front matter (`status:`, optional
+ * `date:`/`tags:`) followed by `# <title>` and the canonical
+ * `## Context and Problem Statement` / `## Decision` / `## Consequences` /
+ * `## More Information` headings. Any section with nothing to carry becomes an empty
+ * placeholder heading.
+ */
+export function buildMadrDocument(fields: MadrDocumentFields): string {
   // Build the YAML front matter via js-yaml (block style, 2-space indent).
   const frontMatter: Record<string, unknown> = { status: mapStatusToMadr(fields.status) };
   if (fields.date) frontMatter['date'] = fields.date;
-  if (fields.tags.length > 0) frontMatter['tags'] = fields.tags;
+  if (fields.tags && fields.tags.length > 0) frontMatter['tags'] = fields.tags;
 
   const yamlBlock = yaml.dump(frontMatter, { indent: 2, lineWidth: -1 }).trimEnd();
 
@@ -276,4 +288,31 @@ export function convertNygardToMadr(content: string): string {
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .replace(/\s*$/, '\n');
+}
+
+/**
+ * Convert a Nygard-style ADR into the ADR-022 canonical MADR shape.
+ *
+ * Idempotent: content already detected as `'madr'` is returned unchanged.
+ *
+ * `'custom'` content is converted best-effort — whatever Nygard-shaped sections can be
+ * recovered are carried across, and any section with nothing to carry becomes an empty
+ * placeholder heading. The result is always valid MADR (front matter + MADR headings).
+ */
+export function convertNygardToMadr(content: string): string {
+  if (detectAdrFormat(content) === 'madr') {
+    return content;
+  }
+
+  const fields = extractAdrFields(content);
+
+  return buildMadrDocument({
+    title: fields.title,
+    status: fields.status,
+    date: fields.date,
+    tags: fields.tags,
+    context: fields.context,
+    decision: fields.decision,
+    consequences: fields.consequences,
+  });
 }
