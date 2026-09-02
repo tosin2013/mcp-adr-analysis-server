@@ -1,12 +1,12 @@
 /**
- * Utility for getting current directory in Jest-compatible way
+ * Utility for getting current directory in Vitest-compatible way
  */
 
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 
 /**
- * Get current directory in a way that works in both Jest and normal execution.
+ * Get current directory in a way that works in both Vitest and normal execution.
  * When called with an explicit importMetaUrl, it resolves the directory of that URL.
  * When called without arguments, it falls back to test-aware heuristics.
  */
@@ -17,7 +17,7 @@ export function getCurrentDirCompat(importMetaUrl?: string): string {
       return dirname(fileURLToPath(importMetaUrl));
     }
 
-    // Check if we're in a Jest environment
+    // Check if we're in a test environment
     if (typeof process !== 'undefined' && process.env['NODE_ENV'] === 'test') {
       return process.cwd();
     }

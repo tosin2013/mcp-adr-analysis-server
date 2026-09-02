@@ -7,6 +7,7 @@ This document explains how Dependabot is configured in this repository to automa
 Dependabot is configured to:
 
 ### 🔒 Security-First Approach
+
 - **Daily checks** for npm package updates (focusing on security patches)
 - **Weekly checks** for GitHub Actions updates
 - **Priority handling** for security vulnerabilities
@@ -23,11 +24,13 @@ The remaining 9 critical vulnerabilities stem from the `debug` package malware i
 ### 📋 PR Management
 
 #### Grouping Strategy
+
 - **Production dependencies**: `@modelcontextprotocol/*`, `@types/*`
-- **Development dependencies**: Jest, TypeScript, linting tools
+- **Development dependencies**: Vitest, TypeScript, linting tools
 - **GitHub Actions**: Workflow security updates
 
 #### Labels Applied
+
 - `dependencies` - All dependency updates
 - `security` - Security-related updates (highest priority)
 - `github-actions` - Workflow updates
@@ -35,11 +38,13 @@ The remaining 9 critical vulnerabilities stem from the `debug` package malware i
 ### 🚨 Expected Behavior
 
 When Dependabot detects:
+
 - A new version of `@modelcontextprotocol/sdk` without the malware
 - Security patches for any dependencies
 - Updated GitHub Actions with security fixes
 
 It will automatically:
+
 1. Create a PR with detailed change information
 2. Add appropriate labels for easy identification
 3. Request review from @tosin2013
@@ -48,6 +53,7 @@ It will automatically:
 ### 🔄 Integration with Existing Workflows
 
 Dependabot PRs will trigger:
+
 - **Build validation** (from build.yml)
 - **Security audits** (from dependencies.yml)
 - **Node.js compatibility checks**
@@ -63,6 +69,7 @@ Dependabot PRs will trigger:
 ## Manual Override
 
 If urgent security fixes are needed:
+
 ```bash
 # Force update to resolve critical vulnerabilities
 npm audit fix --force

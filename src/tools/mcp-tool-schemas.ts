@@ -10,7 +10,7 @@ export function getSearchToolsDefinition(): Tool {
   return {
     name: 'search_tools',
     description:
-      'Search and discover available tools by category, keyword, or capability. Use this to find the right tool for a task without loading all tool schemas. Returns lightweight tool metadata by default; use includeSchema:true for full schemas.',
+      '[DEPRECATED host-native, ADR-023] Search and discover available tools by category, keyword, or capability. Use this to find the right tool for a task without loading all tool schemas. Returns lightweight tool metadata by default; use includeSchema:true for full schemas.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1566,7 +1566,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'list_roots',
     description:
-      'List available file system roots that can be accessed. Use this to discover what directories are available before reading files.',
+      '[DEPRECATED host-native, ADR-023] List available file system roots that can be accessed. Use this to discover what directories are available before reading files.',
     inputSchema: {
       type: 'object',
       properties: {},
@@ -1575,7 +1575,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'read_directory',
     description:
-      'List files and folders in a directory. Use this to explore the file structure within accessible roots.',
+      '[DEPRECATED host-native, ADR-023] List files and folders in a directory. Use this to explore the file structure within accessible roots.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1589,7 +1589,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   },
   {
     name: 'read_file',
-    description: 'Read contents of a file',
+    description: '[DEPRECATED host-native, ADR-023] Read contents of a file',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1607,7 +1607,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   },
   {
     name: 'write_file',
-    description: 'Write content to a file',
+    description: '[DEPRECATED host-native, ADR-023] Write content to a file',
     inputSchema: {
       type: 'object',
       properties: {
@@ -1625,7 +1625,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   },
   {
     name: 'list_directory',
-    description: 'List contents of a directory',
+    description: '[DEPRECATED host-native, ADR-023] List contents of a directory',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3058,7 +3058,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'get_current_datetime',
     description:
-      'Get the current date and time in various formats. Useful for timestamping ADRs, research documents, and other architectural artifacts. Returns ISO 8601, human-readable, and ADR-specific date formats.',
+      '[DEPRECATED host-native, ADR-023] Get the current date and time in various formats. Useful for timestamping ADRs, research documents, and other architectural artifacts. Returns ISO 8601, human-readable, and ADR-specific date formats.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -3109,7 +3109,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'load_prompt',
     description:
-      'Load a specific prompt or prompt section on-demand. Part of CE-MCP lazy loading system that reduces token usage by ~96% by loading prompts only when needed. Use this to retrieve prompt templates for ADR generation, analysis, deployment, and other operations.',
+      '[DEPRECATED host-native, ADR-023] Load a specific prompt or prompt section on-demand. Part of CE-MCP lazy loading system that reduces token usage by ~96% by loading prompts only when needed. Use this to retrieve prompt templates for ADR generation, analysis, deployment, and other operations.',
     inputSchema: {
       type: 'object',
       properties: {

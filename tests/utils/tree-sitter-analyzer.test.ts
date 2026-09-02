@@ -10,7 +10,7 @@
  * - CI/CD pipelines
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   TreeSitterAnalyzer,
   createTreeSitterAnalyzer,
@@ -1095,6 +1095,52 @@ app.listen(3000, () => {
         // Should detect AWS SDK import
         const awsImports = result.imports.filter(imp => imp.module.includes('@aws-sdk'));
         expect(awsImports.length).toBeGreaterThan(0);
+      }
+    });
+  });
+
+  describe('Environment-detection guards', () => {
+    it('should skip initialization via VITEST env var when NODE_ENV is unset', async () => {
+      const origNodeEnv = process.env['NODE_ENV'];
+      try {
+        delete process.env['NODE_ENV'];
+        const testAnalyzer = new TreeSitterAnalyzer();
+        await new Promise(r => setTimeout(r, 10));
+        expect((testAnalyzer as any).initialized).toBe(false);
+      } finally {
+        process.env['NODE_ENV'] = origNodeEnv;
+      }
+    });
+
+    it('should skip loadParser via VITEST env var', async () => {
+      const origNodeEnv = process.env['NODE_ENV'];
+      try {
+        delete process.env['NODE_ENV'];
+        const testAnalyzer = new TreeSitterAnalyzer();
+        await (testAnalyzer as any).loadParser('typescript', 'tree-sitter-typescript');
+        expect((testAnalyzer as any).parsers.size).toBe(0);
+      } finally {
+        process.env['NODE_ENV'] = origNodeEnv;
+      }
+    });
+
+    it('should warn on parser load failure outside test environment', async () => {
+      const origNodeEnv = process.env['NODE_ENV'];
+      const origVitest = process.env['VITEST'];
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      try {
+        const testAnalyzer = new TreeSitterAnalyzer();
+        delete process.env['NODE_ENV'];
+        delete process.env['VITEST'];
+        await (testAnalyzer as any).loadParser('nonexistent', 'nonexistent-parser');
+        expect(warnSpy).toHaveBeenCalledWith(
+          expect.stringContaining('Failed to load nonexistent parser:'),
+          expect.anything()
+        );
+      } finally {
+        process.env['NODE_ENV'] = origNodeEnv;
+        if (origVitest !== undefined) process.env['VITEST'] = origVitest;
+        warnSpy.mockRestore();
       }
     });
   });

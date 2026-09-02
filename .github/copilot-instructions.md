@@ -19,14 +19,14 @@ This is a **Model Context Protocol (MCP) server** that provides AI-powered archi
 
 - **Strict mode enabled**: All strict type checks are enforced (see `tsconfig.json`)
 - Output directory: `dist/src/` with source maps and declarations
-- Tree-sitter native modules are mocked in Jest (`tests/__mocks__/`)
+- Tree-sitter native modules are mocked in Vitest (`tests/__mocks__/`)
 
 ### Testing Requirements
 
 - **Coverage threshold: 85%** (branches, functions, lines, statements)
-- Jest 30+ with ESM support (`workerThreads: false` to allow dynamic imports)
+- Vitest with native ESM and TypeScript support
 - Run tests with: `npm test` or `make test`
-- Tree-sitter modules must be mocked for Jest VM environment
+- Tree-sitter modules must be mocked for Vitest environment
 
 ## Development Workflows
 
@@ -42,7 +42,7 @@ make ci            # Full pipeline: security, lint, test, build
 ### Testing Strategy
 
 ```bash
-npm test                      # All tests with Jest
+npm test                      # All tests with Vitest
 npm run test:coverage         # Generate coverage report
 npm run test:unit             # Unit tests via scripts/test-infrastructure.sh
 npm run test:integration      # Integration tests
@@ -200,7 +200,7 @@ tests/                    # 85%+ coverage requirement
 2. **Import extensions**: Always use `.js` in imports, even for `.ts` source files
 3. **Cache directory**: Never commit `.mcp-adr-cache` or files in OS temp directories
 4. **Test coverage**: Maintain 85%+ threshold; pre-commit hooks will block otherwise
-5. **Tree-sitter in Jest**: Use mocks from `tests/__mocks__/`, never import native modules directly
+5. **Tree-sitter in Vitest**: Use mocks from `tests/__mocks__/`, never import native modules directly
 6. **ESLint compliance**: Run `npm run lint` before committing (includes type checking)
 7. **Pattern detection**: When adding infrastructure patterns, update `detectionHints` for automatic recognition
 
