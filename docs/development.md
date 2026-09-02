@@ -38,7 +38,7 @@ npm run dev
 
 - **VS Code** or **Cursor** with TypeScript extension
 - **ESLint** extension for real-time linting
-- **Jest** extension for test running
+- **Vitest** extension for test running
 - **Git Graph** for visualizing branches
 
 ---
@@ -413,8 +413,8 @@ Coverage reports are generated in `coverage/`:
       "name": "Debug Tests",
       "type": "node",
       "request": "launch",
-      "program": "${workspaceFolder}/node_modules/.bin/jest",
-      "args": ["--runInBand", "${file}"],
+      "program": "${workspaceFolder}/node_modules/.bin/vitest",
+      "args": ["run", "${file}"],
       "console": "integratedTerminal"
     }
   ]
@@ -475,13 +475,13 @@ git commit --no-verify -m "message"
 
 GitHub Actions runs on every PR:
 
-| Job         | Description              |
-| ----------- | ------------------------ |
-| `lint`      | ESLint check             |
-| `typecheck` | TypeScript compilation   |
-| `test`      | Jest tests with coverage |
-| `build`     | Production build         |
-| `docs`      | Documentation build      |
+| Job         | Description                |
+| ----------- | -------------------------- |
+| `lint`      | ESLint check               |
+| `typecheck` | TypeScript compilation     |
+| `test`      | Vitest tests with coverage |
+| `build`     | Production build           |
+| `docs`      | Documentation build        |
 
 All checks must pass before merging.
 

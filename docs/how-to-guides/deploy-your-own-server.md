@@ -7,6 +7,7 @@ This document explains how to publish the MCP ADR Analysis Server to npmjs.com u
 ### Automatic Publishing (Recommended)
 
 1. **Create a version tag:**
+
    ```bash
    git tag v1.0.1
    git push origin v1.0.1
@@ -22,6 +23,7 @@ This document explains how to publish the MCP ADR Analysis Server to npmjs.com u
 ### Manual Publishing
 
 1. **Test the package locally:**
+
    ```bash
    npm run test:package
    ```
@@ -51,18 +53,21 @@ This document explains how to publish the MCP ADR Analysis Server to npmjs.com u
 ## 🔧 Publishing Workflow Features
 
 ### Automated Quality Checks
+
 - ✅ ESLint code quality validation
-- ✅ Jest test suite execution
+- ✅ Vitest test suite execution
 - ✅ TypeScript compilation verification
 - ✅ MCP server functionality testing
 - ✅ Package structure validation
 
 ### Version Management
+
 - **Tag-based publishing**: Push a version tag to trigger publishing
 - **Manual versioning**: Use workflow dispatch with version input
 - **Automatic version updates**: Updates package.json version
 
 ### Package Optimization
+
 - **Selective file inclusion**: Only includes necessary files
 - **Size optimization**: ~173 KB optimized package
 - **Binary setup**: Includes CLI binary for global installation
@@ -70,6 +75,7 @@ This document explains how to publish the MCP ADR Analysis Server to npmjs.com u
 ## 📦 Package Information
 
 ### Installation
+
 ```bash
 # Global installation
 npm install -g mcp-adr-analysis-server
@@ -79,6 +85,7 @@ npm install mcp-adr-analysis-server
 ```
 
 ### Usage
+
 ```bash
 # Run as CLI tool
 mcp-adr-analysis-server
@@ -88,6 +95,7 @@ node node_modules/mcp-adr-analysis-server/dist/src/index.js
 ```
 
 ### Package Contents
+
 - **Main entry**: `dist/src/index.js`
 - **Binary**: `mcp-adr-analysis-server` command
 - **Documentation**: README.md and ../../LICENSE
@@ -96,11 +104,13 @@ node node_modules/mcp-adr-analysis-server/dist/src/index.js
 ## 🔄 Version Management
 
 ### Semantic Versioning
+
 - **Patch** (1.0.1): Bug fixes and minor updates
 - **Minor** (1.1.0): New features, backward compatible
 - **Major** (2.0.0): Breaking changes
 
 ### Publishing Commands
+
 ```bash
 # Patch version (1.0.0 → 1.0.1)
 git tag v1.0.1 && git push origin v1.0.1
@@ -113,7 +123,9 @@ git tag v2.0.0 && git push origin v2.0.0
 ```
 
 ### Manual Workflow Dispatch
+
 You can also trigger publishing manually:
+
 1. Go to GitHub Actions tab
 2. Select "Publish to NPM" workflow
 3. Click "Run workflow"
@@ -122,17 +134,20 @@ You can also trigger publishing manually:
 ## 🛡️ Security & Best Practices
 
 ### Token Security
+
 - ✅ NPM token stored as GitHub secret
 - ✅ Token only accessible to authorized workflows
 - ✅ Automatic token rotation recommended
 
 ### Quality Gates
+
 - ✅ All tests must pass before publishing
 - ✅ Linting must pass before publishing
 - ✅ Build must succeed before publishing
 - ✅ MCP server functionality verified
 
 ### Package Integrity
+
 - ✅ Package contents verified before publishing
 - ✅ Main entry point validated
 - ✅ Binary accessibility confirmed
@@ -141,11 +156,13 @@ You can also trigger publishing manually:
 ## 📊 Monitoring & Maintenance
 
 ### NPM Package Stats
+
 - **Package page**: https://www.npmjs.com/package/mcp-adr-analysis-server
 - **Download stats**: Available on NPM package page
 - **Version history**: Tracked in NPM registry
 
 ### GitHub Releases
+
 - **Automatic releases**: Created for each published version
 - **Release notes**: Generated with feature highlights
 - **Asset downloads**: Package tarballs available
@@ -171,7 +188,9 @@ You can also trigger publishing manually:
    - Test locally with `npm run test:package`
 
 ### Support
+
 For issues with the publishing process, check:
+
 - GitHub Actions logs
 - NPM package page
 - Repository issues section

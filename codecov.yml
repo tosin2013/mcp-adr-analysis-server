@@ -1,44 +1,28 @@
-# Codecov configuration
+# Codecov configuration for mcp-adr-analysis-server
 #
-# Added because the default project status has zero tolerance, and this
-# repository is in the middle of a milestone whose entire purpose is deleting
-# code. Deleting code moves the coverage percentage mechanically, in whichever
-# direction, and a gate that reds half of those movements teaches everyone to
-# ignore the gate.
+# Why patch gates but project does not:
+#   - Patch coverage ("did you test the lines you changed?") is the actionable
+#     metric. It ignores legacy 49% coverage and focuses on new code quality.
+#   - Project coverage is already gated by vitest.config.ts thresholds
+#     (statements: 48, branches: 41, functions: 54, lines: 48), enforced
+#     via `make test-ci`. A second Codecov gate on the same number would be
+#     duplicative and would fail refactor PRs that delete well-covered dead
+#     code — the exact opposite of what the roadmap needs (#1416, ADR-023).
 #
-# Two measured cases, both correct outcomes, both red under the default:
+# Land this file BEFORE installing the Codecov GitHub app.
+# Reversed, default statuses go live unconfigured and the first refactor
+# PR turns red for the wrong reason.
 #
-#   #1551  -0.08%  a test stopped executing a module it was not testing.
-#                  `deployment-guidance-tool.test.ts` ran a real
-#                  ResearchOrchestrator and covered 202/308 of its statements
-#                  while asserting nothing about them. 19 of those were reachable
-#                  from nowhere else. No assertion was deleted -- assertions went
-#                  90 -> 97.
-#
-#   #1556  -0.10%  ~13,500 lines of unreachable code were deleted (ADR-025), and
-#                  it was 815/1588 = 51.3% covered -- BETTER than the project
-#                  average of 49.93%. The dead modules carried 2,081 lines of
-#                  passing tests. Removing above-average-covered code lowers the
-#                  mean.
-#
-# The second case also refutes the heuristic the Cleanup plan started with --
-# "if coverage falls, something live was deleted". It does not follow. Dead code
-# is not necessarily untested code, and this repository had 2,081 lines of proof.
-# Evidence that nothing live was deleted has to come from behaviour: identical
-# output, green tests, a clean build.
+# See: https://github.com/tosin2013/mcp-adr-analysis-server/issues/1522
 
 coverage:
   status:
-    project:
-      default:
-        # Tolerate the mechanical movement described above. A genuine regression
-        # is far larger than this; the two cases on record are 0.08% and 0.10%.
-        threshold: 1%
     patch:
       default:
-        # Deliberately left at the default. Patch coverage is the gate that
-        # matters for new code and it has already earned its place: on #1551 it
-        # caught the one line the dependency-injection seam left unexecuted, and
-        # that line was worth a test -- the constructor argument order it pinned
-        # is transposable and would have shipped silently.
-        target: auto
+        target: 80%
+    project:
+      default:
+        informational: true
+
+comment:
+  layout: 'condensed_header, diff, files'

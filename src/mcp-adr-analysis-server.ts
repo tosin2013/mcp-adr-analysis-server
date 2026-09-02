@@ -83,7 +83,7 @@ import { loadAIConfig, isCEMCPEnabled } from './config/ai-config.js';
  */
 export function getPackageVersion(): string {
   try {
-    // Handle both Jest environment and normal execution
+    // Handle both test environment and normal execution
     const currentDir = getCurrentDirCompat();
 
     // Strategy 1: Try multiple possible locations for package.json

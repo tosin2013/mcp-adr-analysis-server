@@ -69,8 +69,7 @@ tests/
 
 ### Key Technologies
 
-- **Jest**: Primary testing framework with TypeScript support
-- **ts-jest**: TypeScript transformation and ESM support
+- **Vitest**: Primary testing framework with TypeScript support
 - **Tree-sitter Mocks**: Native module mocking for cross-platform compatibility
 - **Custom Matchers**: Domain-specific assertions for ADR validation
 
@@ -80,7 +79,7 @@ tests/
 - ✅ **Automatic Cleanup**: Temp directory and mock cleanup
 - ✅ **Coverage Thresholds**: 85% minimum coverage requirement
 - ✅ **Performance Tracking**: Memory usage and execution time monitoring
-- ✅ **CI/CD Integration**: JUnit XML reporting for CI systems
+- ✅ **CI/CD Integration**: Built-in JUnit XML reporting for CI systems
 
 ---
 
@@ -190,7 +189,7 @@ npm run test:coverage
 open coverage/lcov-report/index.html
 
 # CI-friendly JUnit output
-npm test -- --ci --reporters=jest-junit
+npm test -- --reporter=junit
 ```
 
 ### Watch Mode Development
@@ -215,7 +214,7 @@ npm run test:watch -- --testPathPattern=tools
  * @category [Unit|Integration|Performance]
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { testInfrastructure } from '../utils/test-infrastructure.js';
 import { ComponentUnderTest } from '../../src/path/to/component.js';
 
@@ -250,7 +249,7 @@ describe('ComponentUnderTest', () => {
 
 ### Custom Matchers
 
-The testing framework includes custom Jest matchers for domain-specific assertions:
+The testing framework includes custom Vitest matchers for domain-specific assertions:
 
 ```typescript
 // ADR validation
@@ -422,7 +421,7 @@ npm test -- --testNamePattern="specific test" --verbose
 
 ```bash
 # Run with memory profiling
-node --inspect-brk node_modules/.bin/jest --runInBand
+npx vitest --inspect-brk --single-thread
 
 # Performance test analysis
 npm run test:performance -- --verbose
@@ -448,7 +447,7 @@ The project includes automated testing in CI with:
 CI=true npm test
 
 # Generate CI-compatible reports
-npm test -- --ci --coverage --reporters=jest-junit
+npm test -- --coverage --reporter=junit
 ```
 
 ### Pre-commit Testing
@@ -521,7 +520,7 @@ open coverage/lcov-report/index.html
 
 ## 📚 Additional Resources
 
-- **[Jest Documentation](https://jestjs.io/./getting-started)**
+- **[Vitest Documentation](https://vitest.dev/guide/)**
 - **[TypeScript Testing Guide](https://typescript-eslint.io/./linting/troubleshooting/)**
 - **[MCP Protocol Testing](https://modelcontextprotocol.io/./testing)**
 - **[Server Architecture](../explanation/server-architecture.md)**

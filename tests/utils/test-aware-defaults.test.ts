@@ -21,9 +21,29 @@ describe('Test-Aware Defaults Utility', () => {
       expect(isTestEnvironment()).toBe(true);
     });
 
-    it('should detect test environment via JEST_WORKER_ID', () => {
-      // Jest sets JEST_WORKER_ID, so this should return true
-      expect(isTestEnvironment()).toBe(true);
+    it('should detect test environment via VITEST env var', () => {
+      const origNodeEnv = process.env['NODE_ENV'];
+      try {
+        delete process.env['NODE_ENV'];
+        // VITEST is set by the test runner
+        expect(process.env['VITEST']).toBeDefined();
+        expect(isTestEnvironment()).toBe(true);
+      } finally {
+        process.env['NODE_ENV'] = origNodeEnv;
+      }
+    });
+
+    it('should return false when no test indicators are set', () => {
+      const origNodeEnv = process.env['NODE_ENV'];
+      const origVitest = process.env['VITEST'];
+      try {
+        delete process.env['NODE_ENV'];
+        delete process.env['VITEST'];
+        expect(isTestEnvironment()).toBe(false);
+      } finally {
+        process.env['NODE_ENV'] = origNodeEnv;
+        if (origVitest !== undefined) process.env['VITEST'] = origVitest;
+      }
     });
   });
 
