@@ -71,6 +71,9 @@ export interface ToolMetadata {
 
   /** Input schema (full MCP Tool inputSchema) */
   inputSchema: Tool['inputSchema'];
+
+  /** Whether the tool is deprecated (ADR-023 host-native deprecation) */
+  deprecated?: boolean;
 }
 
 /**
@@ -1019,7 +1022,8 @@ TOOL_CATALOG.set('expand_analysis_section', {
 TOOL_CATALOG.set('read_file', {
   name: 'read_file',
   shortDescription: 'Read file contents',
-  fullDescription: 'Reads the contents of a file.',
+  fullDescription: '[DEPRECATED host-native, ADR-023] Reads the contents of a file.',
+  deprecated: true,
   category: 'file-system',
   complexity: 'simple',
   tokenCost: { min: 100, max: 5000 },
@@ -1039,7 +1043,8 @@ TOOL_CATALOG.set('read_file', {
 TOOL_CATALOG.set('write_file', {
   name: 'write_file',
   shortDescription: 'Write file contents',
-  fullDescription: 'Writes content to a file.',
+  fullDescription: '[DEPRECATED host-native, ADR-023] Writes content to a file.',
+  deprecated: true,
   category: 'file-system',
   complexity: 'simple',
   tokenCost: { min: 100, max: 1000 },
@@ -1060,7 +1065,8 @@ TOOL_CATALOG.set('write_file', {
 TOOL_CATALOG.set('read_directory', {
   name: 'read_directory',
   shortDescription: 'Read directory contents',
-  fullDescription: 'Lists contents of a directory.',
+  fullDescription: '[DEPRECATED host-native, ADR-023] Lists contents of a directory.',
+  deprecated: true,
   category: 'file-system',
   complexity: 'simple',
   tokenCost: { min: 100, max: 1000 },
@@ -1081,7 +1087,8 @@ TOOL_CATALOG.set('read_directory', {
 TOOL_CATALOG.set('list_directory', {
   name: 'list_directory',
   shortDescription: 'List directory contents',
-  fullDescription: 'Lists files and directories in a path.',
+  fullDescription: '[DEPRECATED host-native, ADR-023] Lists files and directories in a path.',
+  deprecated: true,
   category: 'file-system',
   complexity: 'simple',
   tokenCost: { min: 100, max: 500 },
@@ -1101,7 +1108,8 @@ TOOL_CATALOG.set('list_directory', {
 TOOL_CATALOG.set('list_roots', {
   name: 'list_roots',
   shortDescription: 'List root directories',
-  fullDescription: 'Lists configured root directories.',
+  fullDescription: '[DEPRECATED host-native, ADR-023] Lists configured root directories.',
+  deprecated: true,
   category: 'file-system',
   complexity: 'simple',
   tokenCost: { min: 50, max: 200 },
@@ -1356,7 +1364,9 @@ TOOL_CATALOG.set('get_server_context', {
 TOOL_CATALOG.set('get_current_datetime', {
   name: 'get_current_datetime',
   shortDescription: 'Get current date/time',
-  fullDescription: 'Gets the current date and time in various formats.',
+  fullDescription:
+    '[DEPRECATED host-native, ADR-023] Gets the current date and time in various formats.',
+  deprecated: true,
   category: 'utility',
   complexity: 'simple',
   tokenCost: { min: 50, max: 100 },
@@ -1378,7 +1388,8 @@ TOOL_CATALOG.set('load_prompt', {
   name: 'load_prompt',
   shortDescription: 'Load prompts on-demand (CE-MCP)',
   fullDescription:
-    'Loads prompts on-demand instead of eagerly loading all prompts at startup. Part of CE-MCP lazy loading system that reduces token usage by ~96%.',
+    '[DEPRECATED host-native, ADR-023] Loads prompts on-demand instead of eagerly loading all prompts at startup. Part of CE-MCP lazy loading system that reduces token usage by ~96%.',
+  deprecated: true,
   category: 'utility',
   complexity: 'simple',
   tokenCost: { min: 100, max: 500 },
@@ -1823,7 +1834,8 @@ TOOL_CATALOG.set('search_tools', {
   name: 'search_tools',
   shortDescription: 'Search and discover tools (CE-MCP)',
   fullDescription:
-    'Search and discover available tools by category, keyword, or capability. Returns lightweight tool metadata for token-efficient discovery.',
+    '[DEPRECATED host-native, ADR-023] Search and discover available tools by category, keyword, or capability. Returns lightweight tool metadata for token-efficient discovery.',
+  deprecated: true,
   category: 'utility',
   complexity: 'simple',
   tokenCost: { min: 100, max: 300 },

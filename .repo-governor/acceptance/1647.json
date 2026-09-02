@@ -1,0 +1,15 @@
+{
+  "$comment": "CE-MCP migration of adr-suggestion-tool.ts (ADR-021 Option B), the deferred half of #1629, done on top of #1466's converter. Remove ai-executor/prompt-execution: suggestAdrs returns a CE-MCP directive; generateAdrFromDecision builds its content DETERMINISTICALLY (via adr-format.ts) instead of the AI-execution result, preserving the autoSave + knowledge-graph auto-registration + release-linkage + manual-instructions behaviour (tests/tools/adr-suggestion-auto-index.test.ts, 3 tests) and DROPPING the [ADR_CONTENT_PLACEHOLDER] write. The auto-index tests are in the bar this time (the gap that broke the first attempt). Import gate fails pre-work; the two test files pass on main and must stay green.",
+  "authority_id": "1647",
+  "criteria": [
+    { "check": "command_exit", "target": "npm run typecheck" },
+    {
+      "check": "command_exit",
+      "target": "npx vitest run tests/tools/adr-suggestion-tool.test.ts tests/tools/adr-suggestion-auto-index.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! rg -q \"ai-executor|prompt-execution\" src/tools/adr-suggestion-tool.ts'"
+    }
+  ]
+}

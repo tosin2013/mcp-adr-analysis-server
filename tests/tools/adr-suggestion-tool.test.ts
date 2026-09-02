@@ -11,16 +11,17 @@
 import { describe, expect, vi } from 'vitest';
 import { McpAdrError } from '../../src/types/index.js';
 
-// generateAdrFromDecision's prompt-only branch WRITES to disk
-// (adr-suggestion-tool.ts:1101 -> writeFileCompat(fullPath, '[ADR_CONTENT_PLACEHOLDER]')).
-// Tests that omit `adrDirectory` fall back to 'docs/adrs', so every full suite run
-// created docs/adrs/adr-0001-test-decision.md in THIS repository -- a 25-byte
-// placeholder that was then committed and mistaken for a leaked fixture (#1415).
-// It also broke scripts/check-adr-drift.sh on every run.
+// generateAdrFromDecision no longer writes a placeholder: after the #1647 CE-MCP
+// migration the auto-save path (autoSave=true) writes the REAL deterministic MADR
+// content, and the manual path (autoSave=false) performs no file I/O at all. The
+// #1415 hazard was a 25-byte '[ADR_CONTENT_PLACEHOLDER]' write into this repo's
+// docs/adrs on every suite run (via the old prompt-only branch).
 //
-// These tests assert on the returned text, never on the file, so stubbing the
-// writes costs no coverage. The underlying tool behaviour -- writing a
-// placeholder into a real ADR directory -- is a separate product question.
+// These generateAdrFromDecision tests assert on the returned text only, so they pass
+// autoSave:false to exercise the deterministic manual branch without touching disk.
+// The file-write behaviour is covered by tests/tools/adr-suggestion-auto-index.test.ts,
+// which runs against a fresh tmp directory. The file-system stub below remains as a
+// belt-and-braces guard against accidental writes to the real repo.
 vi.mock('../../src/utils/file-system.js', async importOriginal => {
   const actual = await importOriginal<typeof import('../../src/utils/file-system.js')>();
   return {
@@ -204,6 +205,7 @@ describe('ADR Suggestion Tool', () => {
 
         const result = await generateAdrFromDecision({
           decisionData,
+          autoSave: false,
         });
 
         expect(result).toBeDefined();
@@ -220,6 +222,7 @@ describe('ADR Suggestion Tool', () => {
 
         const result = await generateAdrFromDecision({
           decisionData,
+          autoSave: false,
         });
 
         // ADR-022 changed the default emitted format from Nygard to MADR.
@@ -237,6 +240,7 @@ describe('ADR Suggestion Tool', () => {
         const result = await generateAdrFromDecision({
           decisionData,
           templateFormat: 'madr',
+          autoSave: false,
         });
 
         expect(result.content[0].text).toContain('MADR');
@@ -259,6 +263,7 @@ describe('ADR Suggestion Tool', () => {
           templateFormat: 'custom',
           existingAdrs: ['Existing ADR'],
           adrDirectory: 'custom/dir',
+          autoSave: false,
         });
 
         expect(result).toBeDefined();
@@ -376,6 +381,7 @@ describe('ADR Suggestion Tool', () => {
 
         const result = await generateAdrFromDecision({
           decisionData,
+          autoSave: false,
         });
 
         expect(result.content[0].text).toContain('docs/adrs');
