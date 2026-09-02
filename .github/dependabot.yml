@@ -81,6 +81,20 @@ updates:
       timezone: 'UTC'
     allow:
       - dependency-type: 'direct'
+    groups:
+      # Keep the React packages on the same major. Dependabot had split react and
+      # react-dom into separate PRs (#1620 / #1622); each fails `npm ci` on its own
+      # because react-dom@19 peer-requires react@19. Grouping makes the bump atomic.
+      react:
+        patterns:
+          - 'react'
+          - 'react-dom'
+          - '@types/react'
+          - '@types/react-dom'
+        update-types:
+          - 'major'
+          - 'minor'
+          - 'patch'
     commit-message:
       prefix: 'deps(docs)'
       include: 'scope'
