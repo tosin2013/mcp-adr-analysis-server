@@ -639,50 +639,42 @@ export async function findRelatedCode(
 }
 
 /**
- * Extract keywords from ADR content using AI
+ * Extract keywords from ADR content deterministically.
+ * (AI-based extraction via ai-executor was removed during CE-MCP migration #1636.)
  */
 async function extractKeywordsWithAI(content: string): Promise<string[]> {
-  try {
-    // Dynamic import to avoid circular dependencies
-    const aiModule = await import('./ai-executor.js');
-    const { AIExecutor } = aiModule;
+  const text = content.substring(0, 3000);
 
-    const executor = new AIExecutor();
+  // Extract PascalCase / camelCase identifiers (class names, function names)
+  const identifiers = text.match(/\b[A-Z][a-zA-Z0-9]{2,}\b/g) || [];
+  const camelCase = text.match(/\b[a-z][a-zA-Z0-9]*[A-Z][a-zA-Z0-9]*\b/g) || [];
 
-    if (!executor.isAvailable()) {
-      throw new Error('AI executor not available');
+  // Extract snake_case identifiers
+  const snakeCase = text.match(/\b[a-z][a-z0-9]*(?:_[a-z0-9]+)+\b/g) || [];
+
+  // Extract quoted strings that look like technical terms
+  const quoted = text.match(/[`"']([A-Za-z][A-Za-z0-9_.-]{2,})[`"']/g) || [];
+  const quotedClean = quoted.map(q => q.replace(/[`"']/g, ''));
+
+  // Common architectural/technical keywords
+  const techPatterns =
+    /\b(API|REST|GraphQL|gRPC|JWT|OAuth|SQL|NoSQL|PostgreSQL|MongoDB|Redis|Docker|Kubernetes|AWS|Azure|GCP|CI\/CD|microservice|monolith|event.driven|CQRS|DDD|TDD|BDD)\b/gi;
+  const techMatches = text.match(techPatterns) || [];
+
+  // Deduplicate and rank by frequency
+  const all = [...identifiers, ...camelCase, ...snakeCase, ...quotedClean, ...techMatches];
+  const freq = new Map<string, number>();
+  for (const kw of all) {
+    const key = kw.trim();
+    if (key.length >= 3) {
+      freq.set(key, (freq.get(key) || 0) + 1);
     }
-
-    const prompt = `Extract the most important technical keywords, class names, function names, and architectural terms from this ADR content. Return only a JSON array of strings with the top 20 most relevant keywords for code searching.
-
-ADR Content:
-${content.substring(0, 3000)} // Limit content length
-
-Example output format:
-["UserService", "authentication", "JWT", "PostgreSQL", "REST_API", "validate_token", "user_repository"]
-
-Return ONLY the JSON array, no other text.`;
-
-    const result = await executor.executePrompt(prompt, {
-      temperature: 0.3,
-      maxTokens: 500,
-    });
-
-    // Parse the AI response
-    const cleanedResponse = result.content.trim();
-    const jsonMatch = cleanedResponse.match(/\[.*\]/s);
-    if (jsonMatch) {
-      const keywords = JSON.parse(jsonMatch[0]);
-      if (Array.isArray(keywords)) {
-        return keywords.filter(k => typeof k === 'string').slice(0, 20);
-      }
-    }
-
-    throw new Error('Invalid AI response format');
-  } catch (error) {
-    console.error('AI keyword extraction failed:', error);
-    throw error;
   }
+
+  return [...freq.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([k]) => k)
+    .slice(0, 20);
 }
 
 // Helper functions

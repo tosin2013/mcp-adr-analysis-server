@@ -12,10 +12,12 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-const mockGetAIExecutionStatus = vi.fn();
+const mockLoadAIConfig = vi.fn();
+const mockIsAIExecutionEnabled = vi.fn();
 
-vi.mock('../../src/utils/prompt-execution.js', () => ({
-  getAIExecutionStatus: mockGetAIExecutionStatus,
+vi.mock('../../src/config/ai-config.js', () => ({
+  loadAIConfig: (...args: unknown[]) => mockLoadAIConfig(...args),
+  isAIExecutionEnabled: (...args: unknown[]) => mockIsAIExecutionEnabled(...args),
 }));
 
 // Mock the heavy dependencies so the module can be loaded without side effects.
@@ -75,7 +77,8 @@ describe('check_ai_execution_status honesty (#1630)', () => {
   }>;
 
   beforeEach(async () => {
-    mockGetAIExecutionStatus.mockReset();
+    mockLoadAIConfig.mockReset();
+    mockIsAIExecutionEnabled.mockReset();
     const mod = await import('../../src/mcp-adr-analysis-server.js');
     const method = mod.McpAdrAnalysisServer.prototype.checkAIExecutionStatus;
     callHandler = (args = {}) => method.call({}, args);
@@ -83,13 +86,12 @@ describe('check_ai_execution_status honesty (#1630)', () => {
 
   describe('CE-MCP mode (default)', () => {
     beforeEach(() => {
-      mockGetAIExecutionStatus.mockReturnValue({
-        isEnabled: false,
-        hasApiKey: false,
+      mockLoadAIConfig.mockReturnValue({
+        apiKey: '',
         executionMode: 'ce-mcp',
-        model: 'anthropic/claude-3-sonnet',
-        reason: undefined,
+        defaultModel: 'anthropic/claude-3-sonnet',
       });
+      mockIsAIExecutionEnabled.mockReturnValue(false);
     });
 
     it('says no API key is required', async () => {
@@ -126,13 +128,12 @@ describe('check_ai_execution_status honesty (#1630)', () => {
 
   describe('legacy mode without API key', () => {
     beforeEach(() => {
-      mockGetAIExecutionStatus.mockReturnValue({
-        isEnabled: false,
-        hasApiKey: false,
+      mockLoadAIConfig.mockReturnValue({
+        apiKey: '',
         executionMode: 'prompt-only',
-        model: 'anthropic/claude-3-sonnet',
-        reason: 'Missing OPENROUTER_API_KEY environment variable',
+        defaultModel: 'anthropic/claude-3-sonnet',
       });
+      mockIsAIExecutionEnabled.mockReturnValue(false);
     });
 
     it('shows Issue Detected with the missing-key reason', async () => {
@@ -154,13 +155,12 @@ describe('check_ai_execution_status honesty (#1630)', () => {
 
   describe('legacy mode fully configured', () => {
     beforeEach(() => {
-      mockGetAIExecutionStatus.mockReturnValue({
-        isEnabled: true,
-        hasApiKey: true,
+      mockLoadAIConfig.mockReturnValue({
+        apiKey: 'sk-test-key',
         executionMode: 'full',
-        model: 'anthropic/claude-3-sonnet',
-        reason: undefined,
+        defaultModel: 'anthropic/claude-3-sonnet',
       });
+      mockIsAIExecutionEnabled.mockReturnValue(true);
     });
 
     it('shows Configuration Looks Good', async () => {
