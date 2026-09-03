@@ -1156,7 +1156,7 @@ TOOL_CATALOG.set('validate_rules', {
   category: 'rules',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false, // Phase 4.3: Moderate tool - rule validation
+  hasCEMCPDirective: true, // CE-MCP Batch 4 (#1633): directive added
   relatedTools: ['generate_rules', 'create_rule_set'],
   keywords: ['rules', 'validate', 'check', 'violations'],
   requiresAI: false,
