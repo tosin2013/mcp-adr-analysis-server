@@ -367,10 +367,12 @@ export function getAIExecutionStatus(): {
     const isEnabled = isAIExecutionEnabled(config);
 
     let reason: string | undefined = undefined;
-    if (!hasApiKey) {
-      reason = 'Missing OPENROUTER_API_KEY environment variable';
-    } else if (config.executionMode !== 'full') {
-      reason = `EXECUTION_MODE is '${config.executionMode}', should be 'full'`;
+    if (config.executionMode !== 'ce-mcp') {
+      if (!hasApiKey) {
+        reason = 'Missing OPENROUTER_API_KEY environment variable';
+      } else if (config.executionMode !== 'full') {
+        reason = `EXECUTION_MODE is '${config.executionMode}', should be 'full'`;
+      }
     }
 
     return {
