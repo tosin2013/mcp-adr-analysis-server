@@ -1336,6 +1336,110 @@ export function createToolChainOrchestratorDirective(
 }
 
 // ============================================================================
+// CE-MCP Batch 3: Research-question directives (#1632)
+// ============================================================================
+
+/**
+ * Arguments for CE-MCP generate_research_questions
+ */
+export interface CEMCPGenerateResearchQuestionsArgs {
+  analysisType?: 'correlation' | 'relevance' | 'questions' | 'tracking' | 'comprehensive';
+  researchContext?: {
+    topic: string;
+    category: string;
+    scope: string;
+    objectives: string[];
+    constraints?: string[];
+    timeline?: string;
+  };
+  problems?: Array<{
+    id: string;
+    description: string;
+    category: string;
+    severity: string;
+    context: string;
+  }>;
+  projectPath?: string;
+}
+
+/**
+ * CE-MCP version of generate_research_questions
+ *
+ * Returns an orchestration directive for research question generation instead
+ * of calling OpenRouter. The host LLM generates research questions directly.
+ */
+export function createGenerateResearchQuestionsDirective(
+  args: CEMCPGenerateResearchQuestionsArgs
+): OrchestrationDirective {
+  const {
+    analysisType = 'comprehensive',
+    researchContext,
+    problems = [],
+    projectPath = '.',
+  } = args;
+
+  const topic = researchContext?.topic || 'general research';
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'research-methodology',
+        scope: 'question-generation',
+      },
+      store: 'researchKnowledge',
+    },
+    {
+      op: 'analyzeFiles',
+      args: {
+        patterns: ['docs/adrs/**/*.md', 'docs/research/**/*.md'],
+        maxFiles: 50,
+      },
+      store: 'existingResearch',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'research-question-generation',
+        analysisType,
+        topic,
+        problemCount: problems.length,
+        projectPath,
+      },
+      inputs: ['researchKnowledge', 'existingResearch'],
+      store: 'questionContext',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['researchKnowledge', 'existingResearch', 'questionContext'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'generate_research_questions',
+    description: `Generate ${analysisType} research questions for: ${topic}`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'existingResearch', key: 'priorResearch', transform: 'summarize' },
+        { source: 'questionContext', key: 'questions' },
+      ],
+      template: 'research_questions_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 2500,
+      complexity: 'medium',
+      cacheable: true,
+      cache_key: `research-questions-${topic}`,
+    },
+  };
+}
+
+// ============================================================================
 // CE-MCP TOOL REGISTRY
 // ============================================================================
 
@@ -1359,6 +1463,8 @@ export function shouldUseCEMCPDirective(toolName: string, config: { mode: string
     'troubleshoot_guided_workflow',
     // Phase 5: OpenRouter Elimination
     'tool_chain_orchestrator',
+    // CE-MCP Batch 3: research-questions (#1632)
+    'generate_research_questions',
   ];
 
   return (
@@ -1387,6 +1493,7 @@ export const CE_MCP_DIRECTIVE_TOOLS: ReadonlySet<string> = new Set([
   'analyze_project_ecosystem',
   'deployment_readiness',
   'generate_adrs_from_prd',
+  'generate_research_questions',
   'generate_rules',
   'interactive_adr_planning',
   'mcp_planning',
@@ -1447,6 +1554,12 @@ export function getCEMCPDirective(
     case 'tool_chain_orchestrator':
       return createToolChainOrchestratorDirective(
         args as unknown as CEMCPToolChainOrchestratorArgs
+      );
+
+    // CE-MCP Batch 3: research-questions (#1632)
+    case 'generate_research_questions':
+      return createGenerateResearchQuestionsDirective(
+        args as unknown as CEMCPGenerateResearchQuestionsArgs
       );
 
     default:
