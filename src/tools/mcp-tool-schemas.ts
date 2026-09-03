@@ -65,6 +65,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'analyze_project_ecosystem',
     description:
       'Comprehensive recursive project ecosystem analysis with advanced prompting techniques (Knowledge Generation + Reflexion)',
+    annotations: {
+      title: 'Analyze Project Ecosystem',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -129,6 +136,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_architectural_context',
     description:
       'Get detailed architectural context for specific files or the entire project, automatically sets up ADR infrastructure if missing, and provides outcome-focused workflow for project success',
+    annotations: {
+      title: 'Get Architectural Context',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -149,6 +163,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'generate_adrs_from_prd',
     description:
       'Generate Architectural Decision Records from a Product Requirements Document with advanced prompting techniques (APE + Knowledge Generation)',
+    annotations: {
+      title: 'Generate ADRs from PRD',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -197,6 +218,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'compare_adr_progress',
     description:
       'Compare TODO.md progress against ADRs and current environment to validate implementation status',
+    annotations: {
+      title: 'Compare ADR Progress',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -293,6 +321,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'analyze_content_security',
     description:
       'Analyze content for sensitive information using AI-powered detection with optional memory integration for security pattern learning',
+    annotations: {
+      title: 'Analyze Content Security',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -334,6 +369,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'generate_content_masking',
     description: 'Generate masking instructions for detected sensitive content',
+    annotations: {
+      title: 'Generate Content Masking',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -368,6 +410,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'configure_custom_patterns',
     description: 'Configure custom sensitive patterns for a project',
+    annotations: {
+      title: 'Configure Custom Patterns',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -387,6 +436,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'apply_basic_content_masking',
     description: 'Apply basic content masking (fallback when AI is not available)',
+    annotations: {
+      title: 'Apply Basic Content Masking',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -407,6 +463,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'validate_content_masking',
     description: 'Validate that content masking was applied correctly',
+    annotations: {
+      title: 'Validate Content Masking',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -425,6 +488,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'manage_cache',
     description: 'Manage MCP resource cache (clear, stats, cleanup)',
+    annotations: {
+      title: 'Manage Cache',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -444,6 +514,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'configure_output_masking',
     description: 'Configure content masking for all MCP outputs',
+    annotations: {
+      title: 'Configure Output Masking',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -474,6 +551,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'suggest_adrs',
     description:
       'Suggest architectural decisions with advanced prompting techniques (Knowledge Generation + Reflexion). TIP: Read @.mcp-server-context.md first for project history, patterns, and previous ADRs to ensure consistency.',
+    annotations: {
+      title: 'Suggest ADRs',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -533,6 +617,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'generate_adr_from_decision',
     description:
       'Generate a complete ADR from decision data. TIP: Reference @.mcp-server-context.md to align with existing architectural patterns and decisions.',
+    annotations: {
+      title: 'Generate ADR from Decision',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -580,6 +671,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'generate_adr_bootstrap',
     description:
       "Generate bootstrap.sh and validate_bootstrap.sh scripts to ensure deployed code follows ADR requirements. **CRITICAL**: Before generating scripts, use WebFetch to query the base code repository (e.g., https://github.com/validatedpatterns/common for OpenShift) and authoritative pattern documentation (e.g., https://play.validatedpatterns.io/). Merge the base repository code into your project and have bootstrap.sh call the pattern's scripts rather than generating everything from scratch. This ensures compliance with validated deployment patterns.",
+    annotations: {
+      title: 'Generate ADR Bootstrap',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -626,6 +724,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'bootstrap_validation_loop',
     description:
       '**GUIDED EXECUTION MODE**: This tool guides you through an interactive, step-by-step deployment validation workflow. It does NOT execute commands internally - instead, it tells YOU what commands to run and processes the results iteratively. **Workflow**: (1) First call with iteration=0: Detects platform (OpenShift/K8s/Docker), validates environment connection, and requests human approval for target platform. (2) Subsequent calls: After running each command and reporting back with output, the tool provides next steps. **Environment Validation**: Before deployment, the tool verifies connection to the target platform (e.g., `oc status` for OpenShift, `kubectl cluster-info` for K8s) and requires explicit human confirmation. **Validated Patterns Integration**: Automatically identifies base code repositories (e.g., validatedpatterns/common for OpenShift) and guides you to merge them into your project. **Deployment Cleanup**: Supports CI/CD-style workflows with deployment teardown/restart guidance. **Call this tool iteratively**, passing previous command output back each time.',
+    annotations: {
+      title: 'Bootstrap Validation Loop',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -695,6 +800,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'discover_existing_adrs',
     description: 'Discover and catalog existing ADRs in the project',
+    annotations: {
+      title: 'Discover Existing ADRs',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -715,6 +827,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'analyze_adr_timeline',
     description:
       'Analyze ADR timeline with smart time tracking, adaptive thresholds, and actionable recommendations. Auto-detects project context (startup/growth/mature) and generates prioritized work queue based on staleness, implementation lag, and technical debt.',
+    annotations: {
+      title: 'Analyze ADR Timeline',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -760,6 +879,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'review_existing_adrs',
     description:
       'Review existing ADRs against actual code implementation with cloud/DevOps expertise. TIP: After review, call get_server_context to update @.mcp-server-context.md with findings.',
+    annotations: {
+      title: 'Review Existing ADRs',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -800,6 +926,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'validate_adr',
     description:
       'Validate an existing ADR against actual infrastructure reality using research-driven analysis. TIP: Compare findings against patterns in @.mcp-server-context.md for consistency checks.',
+    annotations: {
+      title: 'Validate ADR',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -834,6 +967,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'validate_all_adrs',
     description: 'Validate all ADRs in a directory against actual infrastructure reality',
+    annotations: {
+      title: 'Validate All ADRs',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -863,6 +1003,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'incorporate_research',
     description: 'Incorporate research findings into architectural decisions',
+    annotations: {
+      title: 'Incorporate Research',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -934,6 +1081,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'create_research_template',
     description: 'Create a research template file for documenting findings',
+    annotations: {
+      title: 'Create Research Template',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -958,6 +1112,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'request_action_confirmation',
     description: 'Request confirmation before applying research-based changes',
+    annotations: {
+      title: 'Request Action Confirmation',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -982,6 +1143,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'generate_rules',
     description: 'Generate architectural rules from ADRs and code patterns',
+    annotations: {
+      title: 'Generate Rules',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1025,6 +1193,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'validate_rules',
     description: 'Validate code against architectural rules',
+    annotations: {
+      title: 'Validate Rules',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1075,6 +1250,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'create_rule_set',
     description: 'Create machine-readable rule set in JSON/YAML format',
+    annotations: {
+      title: 'Create Rule Set',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1121,6 +1303,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'analyze_environment',
     description:
       'Analyze environment context and provide optimization recommendations with optional memory integration for environment snapshot tracking',
+    annotations: {
+      title: 'Analyze Environment',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1170,6 +1359,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'generate_research_questions',
     description: 'Generate context-aware research questions and create research tracking system',
+    annotations: {
+      title: 'Generate Research Questions',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1271,6 +1467,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'perform_research',
     description:
       'Perform research using cascading sources: project files → session/tool-usage tracker → environment resources → web search (fallback)',
+    annotations: {
+      title: 'Perform Research',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1314,6 +1517,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'search_codebase',
     description:
       'Atomic tool for searching codebase files based on query patterns. Returns raw file matches with relevance scores. Extracted from ResearchOrchestrator per ADR-018.',
+    annotations: {
+      title: 'Search Codebase',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1362,6 +1572,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'analyze_deployment_progress',
     description: 'Analyze deployment progress and verify completion with outcome rules',
+    annotations: {
+      title: 'Analyze Deployment Progress',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1448,6 +1665,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_workflow_guidance',
     description:
       'Get intelligent workflow guidance and tool recommendations based on your goals and project context to achieve expected outcomes efficiently',
+    annotations: {
+      title: 'Get Workflow Guidance',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1495,6 +1719,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_development_guidance',
     description:
       'Get comprehensive development guidance that translates architectural decisions and workflow recommendations into specific coding tasks, implementation patterns, and development roadmap',
+    annotations: {
+      title: 'Get Development Guidance',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1559,6 +1790,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'generate_deployment_guidance',
     description:
       'Generate deployment guidance and instructions from ADRs with environment-specific configurations',
+    annotations: {
+      title: 'Generate Deployment Guidance',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1639,6 +1877,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'smart_git_push',
     description:
       'AI-driven security-focused git push with credential detection, file filtering, and deployment metrics tracking. Tests should be run by calling AI and results provided.',
+    annotations: {
+      title: 'Smart Git Push',
+      readOnlyHint: false,
+      destructiveHint: true,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1728,6 +1973,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'deployment_readiness',
     description:
       'Comprehensive deployment readiness validation with test failure tracking, deployment history analysis, and hard blocking for unsafe deployments. Integrates with smart_git_push for deployment gating.',
+    annotations: {
+      title: 'Check Deployment Readiness',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1867,6 +2119,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'release_tracking',
     description:
       'Track releases mapped to ADR decisions. Generates changelogs, manages milestones, compares releases, and assesses release readiness. Supports greenfield and brownfield projects. Writes CHANGELOG.md, creates GitHub Releases and Milestones.',
+    annotations: {
+      title: 'Track Releases',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -1989,6 +2248,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'generate_adr_todo',
     description:
       'Generate TODO.md from ADRs with comprehensive task breakdown. Decomposes each ADR into paired test+production tasks (TDD), links tasks to release milestones, and preserves manual edits via a bounded HTML-comment section. Re-runs are idempotent; tasks for deleted/superseded ADRs move to a Stale Tasks section.',
+    annotations: {
+      title: 'Generate ADR Todo',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2037,6 +2303,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'troubleshoot_guided_workflow',
     description:
       'Structured failure analysis and test plan generation with memory integration for troubleshooting session tracking and intelligent ADR/research suggestion capabilities - provide JSON failure info to get specific test commands',
+    annotations: {
+      title: 'Troubleshoot Guided Workflow',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2172,6 +2445,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'smart_score',
     description:
       'Central coordination for project health scoring system - recalculate, sync, diagnose, optimize, and reset scores across all MCP tools',
+    annotations: {
+      title: 'Smart Score',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2313,6 +2593,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'mcp_planning',
     description:
       'Enhanced project planning and workflow management tool - phase-based project management, team resource allocation, progress tracking, risk analysis, and executive reporting',
+    annotations: {
+      title: 'MCP Planning',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2553,6 +2840,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'interactive_adr_planning',
     description:
       'Interactive guided ADR planning and creation tool - walks users through structured decision-making process with research integration, option evaluation, and automatic ADR generation. TIP: Start by reading @.mcp-server-context.md to understand project context and previous decisions.',
+    annotations: {
+      title: 'Interactive ADR Planning',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2605,6 +2899,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'memory_loading',
     description:
       'Advanced memory loading tool for the memory-centric architecture. Query, explore, and manage memory entities and relationships. Load ADRs into memory system and perform intelligent queries.',
+    annotations: {
+      title: 'Load Memory',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2757,6 +3058,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'expand_analysis_section',
     description:
       'Retrieve full analysis content from tiered responses. Expand entire analysis or specific sections stored in memory. Use this when a tool returns a summary with an expandable ID.',
+    annotations: {
+      title: 'Expand Analysis Section',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2783,6 +3091,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'tool_chain_orchestrator',
     description:
       'AI-powered dynamic tool sequencing - intelligently analyze user requests and generate structured tool execution plans',
+    annotations: {
+      title: 'Tool Chain Orchestrator',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2824,6 +3139,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'expand_memory',
     description:
       'Phase 3: Retrieve and expand stored content from a tiered response using its expandable ID',
+    annotations: {
+      title: 'Expand Memory',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2847,6 +3169,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'query_conversation_history',
     description: 'Phase 3: Search and retrieve conversation sessions based on filters',
+    annotations: {
+      title: 'Query Conversation History',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2882,6 +3211,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'get_conversation_snapshot',
     description: 'Phase 3: Get current conversation context snapshot for resumption or analysis',
+    annotations: {
+      title: 'Get Conversation Snapshot',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2896,6 +3232,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
   {
     name: 'get_memory_stats',
     description: 'Phase 3: Get statistics about stored conversation memory',
+    annotations: {
+      title: 'Get Memory Stats',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {},
@@ -2905,6 +3248,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'update_knowledge',
     description:
       'ADR-018: Simple CRUD operations for project session state. Not a graph database — keyword retrieval over local JSON snapshots. Add/remove entities (intents, ADRs, tools, code) and relationships. Use knowledge://graph resource to read current state (zero token cost).',
+    annotations: {
+      title: 'Update Knowledge',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2948,6 +3298,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_server_context',
     description:
       "Generate a comprehensive context file showing the server's current state, memory, and capabilities. Creates .mcp-server-context.md that can be @ referenced in conversations for instant LLM awareness",
+    annotations: {
+      title: 'Get Server Context',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -2979,6 +3336,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'set_project_path',
     description:
       'Dynamically set the active project path for the current session. Call this at the start of a session to switch between projects without restarting the server or modifying environment variables. All subsequent tool calls will use this path as the default.',
+    annotations: {
+      title: 'Set Project Path',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3002,6 +3366,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'sync_to_aggregator',
     description:
       'Sync ADRs to ADR Aggregator platform (https://adraggregator.com) for centralized tracking, visualization, and team collaboration. Supports incremental and full sync modes with optional metadata.',
+    annotations: {
+      title: 'Sync to Aggregator',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3051,6 +3422,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_adr_context',
     description:
       'Fetch ADR context from ADR Aggregator including summaries, diagrams, timeline data, and code links. Useful for getting a consolidated view of architectural decisions.',
+    annotations: {
+      title: 'Get ADR Context',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3097,6 +3475,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_staleness_report',
     description:
       'Get ADR staleness report from ADR Aggregator with review compliance metrics. Identifies stale ADRs that need attention and provides governance insights.',
+    annotations: {
+      title: 'Get Staleness Report',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3116,6 +3501,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_adr_templates',
     description:
       'Get domain-specific ADR templates and anti-patterns from ADR Aggregator. Includes best practices for web applications, microservices, APIs, and more. No authentication required.',
+    annotations: {
+      title: 'Get ADR Templates',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3130,6 +3522,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_adr_diagrams',
     description:
       'Get Mermaid diagrams for ADRs from ADR Aggregator. Includes workflow, relationship, and impact diagrams. Requires Pro+ tier.',
+    annotations: {
+      title: 'Get ADR Diagrams',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3148,6 +3547,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'validate_adr_compliance',
     description:
       'Validate ADR compliance against implementation via ADR Aggregator. Checks that code actually implements documented decisions. Requires Pro+ tier.',
+    annotations: {
+      title: 'Validate ADR Compliance',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3173,6 +3579,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_knowledge_graph',
     description:
       'Get cross-repository knowledge graph from ADR Aggregator with analytics and insights. Visualize ADR relationships across repositories. Requires Team tier.',
+    annotations: {
+      title: 'Get Knowledge Graph',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3198,6 +3611,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'update_implementation_status',
     description:
       'Update the implementation status of synced ADRs directly from the IDE. Supports statuses: not_started, in_progress, implemented, deprecated, blocked. Requires Pro+ tier.',
+    annotations: {
+      title: 'Update Implementation Status',
+      readOnlyHint: false,
+      destructiveHint: false,
+      idempotentHint: false,
+      openWorldHint: true,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3236,6 +3656,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_adr_priorities',
     description:
       'Get ADR priorities for roadmap and backlog planning from ADR Aggregator. Returns prioritized ADRs with scores, dependencies, blockers, implementation status, and gap counts.',
+    annotations: {
+      title: 'Get ADR Priorities',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: true,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3255,6 +3682,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'analyze_gaps',
     description:
       'Scan local codebase and compare with ADRs to detect bi-directional gaps. Finds: (1) ADR-to-code gaps: file references in ADRs that do not exist, (2) Code-to-ADR gaps: technologies in package.json and architectural patterns without ADR coverage. Reports gaps to ADR Aggregator for tracking.',
+    annotations: {
+      title: 'Analyze Gaps',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
@@ -3294,6 +3728,13 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
     name: 'get_gaps',
     description:
       'Get current code gaps from ADR Aggregator. Returns gaps with their status (open, dismissed, resolved) for tracking and management.',
+    annotations: {
+      title: 'Get Gaps',
+      readOnlyHint: true,
+      destructiveHint: false,
+      idempotentHint: true,
+      openWorldHint: false,
+    },
     inputSchema: {
       type: 'object',
       properties: {
