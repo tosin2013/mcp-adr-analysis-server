@@ -803,13 +803,24 @@ If you're still seeing prompts instead of results, try:
 3. Verify network connectivity to OpenRouter.ai`
 }
 
-## Environment Variables Expected
+${
+  status.executionMode === 'ce-mcp'
+    ? `## Environment Variables (CE-MCP mode)
+No environment variables are required. CE-MCP mode is the default and works
+without any API keys or execution-mode flags.
+
+To switch to legacy OpenRouter execution instead, set:
+- **OPENROUTER_API_KEY**: Your OpenRouter API key
+- **EXECUTION_MODE**: \`full\`
+- **AI_MODEL**: AI model to use (optional, defaults to claude-3-sonnet)`
+    : `## Environment Variables Expected
 - **OPENROUTER_API_KEY**: Your OpenRouter API key
 - **EXECUTION_MODE**: Set to "full" for AI execution
 - **AI_MODEL**: AI model to use (optional, defaults to claude-3-sonnet)
 
 ## Testing
-After fixing the configuration, try calling \`suggest_adrs\` - it should return actual ADR suggestions instead of prompts.
+After fixing the configuration, try calling \`suggest_adrs\` - it should return actual ADR suggestions instead of prompts.`
+}
 `,
           },
         ],
@@ -823,10 +834,12 @@ After fixing the configuration, try calling \`suggest_adrs\` - it should return 
 
 **Error**: ${error instanceof Error ? error.message : String(error)}
 
-This diagnostic tool helps identify why tools return prompts instead of actual results.
+This diagnostic tool checks the execution configuration. The server defaults to
+CE-MCP mode, which requires no API key — so if you have not set any environment
+variables, this error is unlikely to be a configuration problem.
 
-## Manual Check
-Verify these environment variables are set in your MCP configuration:
+## Manual Check (legacy OpenRouter mode only)
+If you explicitly set EXECUTION_MODE=full, verify these environment variables:
 - OPENROUTER_API_KEY
 - EXECUTION_MODE=full
 - AI_MODEL (optional)
