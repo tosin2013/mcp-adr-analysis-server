@@ -1,10 +1,12 @@
 /**
  * Tool Dispatcher Tests
+ *
+ * Updated after ADR-023 Phase 0 (#1673): search_tools removed from the wire,
+ * getToolListForMCP simplified to full-only mode.
  */
 
 import {
   executeSearchTools,
-  getSearchToolsDefinition,
   getToolListForMCP,
   getToolCategories,
   getCEMCPSummary,
@@ -93,78 +95,57 @@ describe('Tool Dispatcher', () => {
         expect(tool.complexity).toBe('simple');
       }
     });
-  });
 
-  describe('getSearchToolsDefinition', () => {
-    it('should return valid MCP tool definition', () => {
-      const def = getSearchToolsDefinition();
-
-      expect(def.name).toBe('search_tools');
-      expect(def.description).toBeTruthy();
-      expect(def.inputSchema).toBeDefined();
-      expect(def.inputSchema.type).toBe('object');
-    });
-
-    it('should have all expected properties', () => {
-      const def = getSearchToolsDefinition();
-      const props = def.inputSchema.properties as Record<string, unknown>;
-
-      expect(props['category']).toBeDefined();
-      expect(props['query']).toBeDefined();
-      expect(props['complexity']).toBeDefined();
-      expect(props['cemcpOnly']).toBeDefined();
-      expect(props['includeSchema']).toBeDefined();
-      expect(props['limit']).toBeDefined();
+    it('should NOT return removed host-native tools', () => {
+      const removedTools = [
+        'read_file',
+        'write_file',
+        'list_directory',
+        'read_directory',
+        'list_roots',
+        'search_tools',
+        'load_prompt',
+        'get_current_datetime',
+        'check_ai_execution_status',
+      ];
+      const result = executeSearchTools({ limit: 100 });
+      const returnedNames = result.tools.map(t => t.name);
+      for (const removed of removedTools) {
+        expect(returnedNames).not.toContain(removed);
+      }
     });
   });
 
   describe('getToolListForMCP', () => {
-    it('should return summary mode with only search_tools', () => {
-      const result = getToolListForMCP({ mode: 'summary' });
-
-      expect(result.tools.length).toBe(1);
-      expect(result.tools[0].name).toBe('search_tools');
-    });
-
-    it('should return lightweight mode with all tools', () => {
-      const result = getToolListForMCP({ mode: 'lightweight' });
-
-      expect(result.tools.length).toBeGreaterThan(50);
-      // First tool should be search_tools
-      expect(result.tools[0].name).toBe('search_tools');
-    });
-
-    it('should include category in lightweight descriptions', () => {
-      const result = getToolListForMCP({ mode: 'lightweight' });
-
-      // Skip search_tools, check others
-      const toolWithCategory = result.tools.find(t => t.name === 'suggest_adrs');
-      expect(toolWithCategory?.description).toContain('[adr]');
-    });
-
-    it('should mark CE-MCP tools in lightweight mode', () => {
-      const result = getToolListForMCP({ mode: 'lightweight' });
-
-      const cemcpTool = result.tools.find(t => t.name === 'analyze_project_ecosystem');
-      expect(cemcpTool?.description).toContain('(CE-MCP)');
-    });
-
     it('should return full mode with all schemas', () => {
       const result = getToolListForMCP({ mode: 'full' });
 
       expect(result.tools.length).toBeGreaterThan(50);
-      // Tools should have proper inputSchema
       const tool = result.tools.find(t => t.name === 'analyze_project_ecosystem');
       expect(tool?.inputSchema.properties).toBeDefined();
     });
 
-    it('should default to lightweight mode', () => {
+    it('should default to full mode', () => {
       const result = getToolListForMCP({});
 
       expect(result.tools.length).toBeGreaterThan(50);
-      // Lightweight tools have placeholder schemas
-      const tool = result.tools.find(t => t.name === 'suggest_adrs');
-      expect(tool?.inputSchema.description).toContain('search_tools');
+      const tool = result.tools.find(t => t.name === 'analyze_project_ecosystem');
+      expect(tool?.inputSchema.properties).toBeDefined();
+    });
+
+    it('should NOT include removed host-native tools', () => {
+      const result = getToolListForMCP({ mode: 'full' });
+      const names = result.tools.map(t => t.name);
+
+      expect(names).not.toContain('read_file');
+      expect(names).not.toContain('write_file');
+      expect(names).not.toContain('list_directory');
+      expect(names).not.toContain('read_directory');
+      expect(names).not.toContain('list_roots');
+      expect(names).not.toContain('search_tools');
+      expect(names).not.toContain('load_prompt');
+      expect(names).not.toContain('get_current_datetime');
+      expect(names).not.toContain('check_ai_execution_status');
     });
   });
 
@@ -222,12 +203,19 @@ describe('Tool Dispatcher', () => {
     it('should return true for existing tools', () => {
       expect(toolExists('analyze_project_ecosystem')).toBe(true);
       expect(toolExists('suggest_adrs')).toBe(true);
-      expect(toolExists('get_current_datetime')).toBe(true);
+      expect(toolExists('manage_cache')).toBe(true);
     });
 
     it('should return false for non-existent tools', () => {
       expect(toolExists('non_existent_tool')).toBe(false);
       expect(toolExists('')).toBe(false);
+    });
+
+    it('should return false for removed host-native tools', () => {
+      expect(toolExists('get_current_datetime')).toBe(false);
+      expect(toolExists('read_file')).toBe(false);
+      expect(toolExists('search_tools')).toBe(false);
+      expect(toolExists('check_ai_execution_status')).toBe(false);
     });
   });
 
@@ -246,49 +234,10 @@ describe('Tool Dispatcher', () => {
 
       expect(tool).toBeUndefined();
     });
-  });
 
-  describe('Token Savings', () => {
-    it('should achieve token reduction in lightweight mode', () => {
-      const full = getToolListForMCP({ mode: 'full' });
-      const lightweight = getToolListForMCP({ mode: 'lightweight' });
-
-      const fullSize = JSON.stringify(full).length;
-      const lightSize = JSON.stringify(lightweight).length;
-
-      // Lightweight should be smaller (placeholder schemas replace full schemas)
-      const reduction = 1 - lightSize / fullSize;
-      // Note: lightweight mode adds category prefixes to descriptions,
-      // so reduction is modest (~17%). The real savings come from:
-      // 1. Summary mode (93%+ reduction)
-      // 2. search_tools returning only relevant tools on-demand
-      expect(reduction).toBeGreaterThan(0.1); // At least 10% reduction
-    });
-
-    it('should achieve maximum reduction in summary mode', () => {
-      const full = getToolListForMCP({ mode: 'full' });
-      const summary = getToolListForMCP({ mode: 'summary' });
-
-      const fullSize = JSON.stringify(full).length;
-      const summarySize = JSON.stringify(summary).length;
-
-      // Summary should be dramatically smaller (only search_tools)
-      const reduction = 1 - summarySize / fullSize;
-      expect(reduction).toBeGreaterThan(0.9); // At least 90% reduction
-    });
-
-    it('should have search_tools enable on-demand schema loading', () => {
-      // The key insight: clients use search_tools to get specific tool schemas
-      // instead of loading all 50+ schemas upfront
-      const searchResult = executeSearchTools({ query: 'adr', includeSchema: true, limit: 5 });
-
-      // Only 5 tools returned with schemas instead of 50+
-      expect(searchResult.tools.length).toBeLessThanOrEqual(5);
-
-      // Each returned tool has schema for immediate use
-      for (const tool of searchResult.tools) {
-        expect(tool.inputSchema).toBeDefined();
-      }
+    it('should return undefined for removed tools', () => {
+      expect(getToolMetadata('get_current_datetime')).toBeUndefined();
+      expect(getToolMetadata('search_tools')).toBeUndefined();
     });
   });
 });
