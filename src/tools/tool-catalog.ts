@@ -1019,109 +1019,11 @@ TOOL_CATALOG.set('expand_analysis_section', {
 // FILE SYSTEM TOOLS
 // ============================================================================
 
-TOOL_CATALOG.set('read_file', {
-  name: 'read_file',
-  shortDescription: 'Read file contents',
-  fullDescription: '[DEPRECATED host-native, ADR-023] Reads the contents of a file.',
-  deprecated: true,
-  category: 'file-system',
-  complexity: 'simple',
-  tokenCost: { min: 100, max: 5000 },
-  hasCEMCPDirective: false, // Phase 4.3: Simple tool - file read operation
-  relatedTools: ['write_file', 'read_directory'],
-  keywords: ['file', 'read', 'contents'],
-  requiresAI: false,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      path: { type: 'string', description: 'Path to file' },
-    },
-    required: ['path'],
-  },
-});
-
-TOOL_CATALOG.set('write_file', {
-  name: 'write_file',
-  shortDescription: 'Write file contents',
-  fullDescription: '[DEPRECATED host-native, ADR-023] Writes content to a file.',
-  deprecated: true,
-  category: 'file-system',
-  complexity: 'simple',
-  tokenCost: { min: 100, max: 1000 },
-  hasCEMCPDirective: false, // Phase 4.3: Simple tool - file write operation
-  relatedTools: ['read_file', 'list_directory'],
-  keywords: ['file', 'write', 'save'],
-  requiresAI: false,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      path: { type: 'string', description: 'Path to file' },
-      content: { type: 'string', description: 'Content to write' },
-    },
-    required: ['path', 'content'],
-  },
-});
-
-TOOL_CATALOG.set('read_directory', {
-  name: 'read_directory',
-  shortDescription: 'Read directory contents',
-  fullDescription: '[DEPRECATED host-native, ADR-023] Lists contents of a directory.',
-  deprecated: true,
-  category: 'file-system',
-  complexity: 'simple',
-  tokenCost: { min: 100, max: 1000 },
-  hasCEMCPDirective: false, // Phase 4.3: Simple tool - directory read
-  relatedTools: ['read_file', 'list_directory'],
-  keywords: ['directory', 'read', 'list'],
-  requiresAI: false,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      path: { type: 'string', description: 'Path to directory' },
-      recursive: { type: 'boolean', default: false },
-    },
-    required: ['path'],
-  },
-});
-
-TOOL_CATALOG.set('list_directory', {
-  name: 'list_directory',
-  shortDescription: 'List directory contents',
-  fullDescription: '[DEPRECATED host-native, ADR-023] Lists files and directories in a path.',
-  deprecated: true,
-  category: 'file-system',
-  complexity: 'simple',
-  tokenCost: { min: 100, max: 500 },
-  hasCEMCPDirective: false, // Phase 4.3: Simple tool - directory listing
-  relatedTools: ['read_directory', 'read_file'],
-  keywords: ['directory', 'list', 'files'],
-  requiresAI: false,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      path: { type: 'string', description: 'Path to directory' },
-    },
-    required: ['path'],
-  },
-});
-
-TOOL_CATALOG.set('list_roots', {
-  name: 'list_roots',
-  shortDescription: 'List root directories',
-  fullDescription: '[DEPRECATED host-native, ADR-023] Lists configured root directories.',
-  deprecated: true,
-  category: 'file-system',
-  complexity: 'simple',
-  tokenCost: { min: 50, max: 200 },
-  hasCEMCPDirective: false, // Phase 4.3: Simple tool - root listing
-  relatedTools: ['read_directory', 'list_directory'],
-  keywords: ['roots', 'list', 'directories'],
-  requiresAI: false,
-  inputSchema: {
-    type: 'object',
-    properties: {},
-  },
-});
+// read_file removed — host-native, ADR-023 (#1673)
+// write_file removed — host-native, ADR-023 (#1673)
+// read_directory removed — host-native, ADR-023 (#1673)
+// list_directory removed — host-native, ADR-023 (#1673)
+// list_roots removed — host-native, ADR-023 (#1673)
 
 // ============================================================================
 // RULES & VALIDATION TOOLS
@@ -1325,22 +1227,7 @@ TOOL_CATALOG.set('manage_cache', {
   },
 });
 
-TOOL_CATALOG.set('check_ai_execution_status', {
-  name: 'check_ai_execution_status',
-  shortDescription: 'Check AI execution status',
-  fullDescription: 'Checks the status of AI execution capabilities.',
-  category: 'utility',
-  complexity: 'simple',
-  tokenCost: { min: 100, max: 300 },
-  hasCEMCPDirective: false, // Phase 4.3: Simple tool - status check
-  relatedTools: ['get_server_context'],
-  keywords: ['ai', 'status', 'check', 'execution'],
-  requiresAI: false,
-  inputSchema: {
-    type: 'object',
-    properties: {},
-  },
-});
+// check_ai_execution_status removed — host-native, ADR-023 (#1673)
 
 TOOL_CATALOG.set('get_server_context', {
   name: 'get_server_context',
@@ -1350,7 +1237,7 @@ TOOL_CATALOG.set('get_server_context', {
   complexity: 'simple',
   tokenCost: { min: 200, max: 500 },
   hasCEMCPDirective: false, // Phase 4.3: Simple tool - context retrieval
-  relatedTools: ['check_ai_execution_status', 'manage_cache'],
+  relatedTools: ['manage_cache'],
   keywords: ['server', 'context', 'config', 'status'],
   requiresAI: false,
   inputSchema: {
@@ -1361,72 +1248,9 @@ TOOL_CATALOG.set('get_server_context', {
   },
 });
 
-TOOL_CATALOG.set('get_current_datetime', {
-  name: 'get_current_datetime',
-  shortDescription: 'Get current date/time',
-  fullDescription:
-    '[DEPRECATED host-native, ADR-023] Gets the current date and time in various formats.',
-  deprecated: true,
-  category: 'utility',
-  complexity: 'simple',
-  tokenCost: { min: 50, max: 100 },
-  hasCEMCPDirective: false, // Phase 4.3: Simple tool - datetime retrieval
-  relatedTools: [],
-  keywords: ['datetime', 'time', 'date', 'current'],
-  requiresAI: false,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      format: { type: 'string', enum: ['iso', 'human', 'adr', 'all'] },
-      timezone: { type: 'string' },
-    },
-  },
-});
+// get_current_datetime removed — host-native, ADR-023 (#1673)
 
-// CE-MCP Phase 4: Lazy Prompt Loading
-TOOL_CATALOG.set('load_prompt', {
-  name: 'load_prompt',
-  shortDescription: 'Load prompts on-demand (CE-MCP)',
-  fullDescription:
-    '[DEPRECATED host-native, ADR-023] Loads prompts on-demand instead of eagerly loading all prompts at startup. Part of CE-MCP lazy loading system that reduces token usage by ~96%.',
-  deprecated: true,
-  category: 'utility',
-  complexity: 'simple',
-  tokenCost: { min: 100, max: 500 },
-  hasCEMCPDirective: false,
-  relatedTools: ['search_tools', 'analyze_project_ecosystem'],
-  keywords: ['prompt', 'load', 'lazy', 'ce-mcp', 'token', 'optimization'],
-  requiresAI: false,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      promptName: {
-        type: 'string',
-        description: 'Name of the prompt to load',
-        enum: [
-          'adr-suggestion',
-          'deployment-analysis',
-          'environment-analysis',
-          'research-question',
-          'rule-generation',
-          'analysis',
-          'research-integration',
-          'validated-pattern',
-          'security',
-        ],
-      },
-      section: {
-        type: 'string',
-        description: 'Specific section within the prompt to load',
-      },
-      estimateOnly: {
-        type: 'boolean',
-        description: 'Return only token estimate without loading content',
-      },
-    },
-    required: ['promptName'],
-  },
-});
+// load_prompt removed — host-native, ADR-023 (#1673)
 
 // ============================================================================
 // ADR AGGREGATOR INTEGRATION TOOLS
@@ -1829,60 +1653,7 @@ TOOL_CATALOG.set('analyze_gaps', {
   },
 });
 
-// CE-MCP Meta-Tool: search_tools
-TOOL_CATALOG.set('search_tools', {
-  name: 'search_tools',
-  shortDescription: 'Search and discover tools (CE-MCP)',
-  fullDescription:
-    '[DEPRECATED host-native, ADR-023] Search and discover available tools by category, keyword, or capability. Returns lightweight tool metadata for token-efficient discovery.',
-  deprecated: true,
-  category: 'utility',
-  complexity: 'simple',
-  tokenCost: { min: 100, max: 300 },
-  hasCEMCPDirective: false,
-  relatedTools: ['load_prompt'],
-  keywords: ['search', 'discover', 'tools', 'catalog', 'ce-mcp', 'meta'],
-  requiresAI: false,
-  inputSchema: {
-    type: 'object',
-    properties: {
-      category: {
-        type: 'string',
-        description: 'Filter by tool category',
-        enum: [
-          'analysis',
-          'adr',
-          'aggregator',
-          'content-security',
-          'research',
-          'deployment',
-          'memory',
-          'file-system',
-          'rules',
-          'workflow',
-          'utility',
-        ],
-      },
-      query: {
-        type: 'string',
-        description: 'Search query to match tool names, descriptions, and keywords',
-      },
-      complexity: {
-        type: 'string',
-        enum: ['simple', 'moderate', 'complex'],
-        description: 'Filter by complexity level',
-      },
-      cemcpOnly: {
-        type: 'boolean',
-        description: 'Only return tools with CE-MCP directive support',
-      },
-      limit: {
-        type: 'number',
-        description: 'Maximum number of tools to return',
-      },
-    },
-  },
-});
+// search_tools removed — host-native, ADR-023 (#1673)
 
 // ============================================================================
 // CATALOG HELPER FUNCTIONS

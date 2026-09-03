@@ -153,12 +153,29 @@ describe('MCP protocol', () => {
     }
   }, 60_000);
 
+  it('does not advertise the 9 host-native tools ADR-023 Phase 0 removed (#1673)', async () => {
+    const names = (await client.listTools()).tools.map(t => t.name);
+    const removed = [
+      'read_file',
+      'write_file',
+      'list_directory',
+      'read_directory',
+      'list_roots',
+      'search_tools',
+      'load_prompt',
+      'get_current_datetime',
+      'check_ai_execution_status',
+    ];
+    for (const name of removed) {
+      expect(names, `${name} is still advertised after ADR-023 removal`).not.toContain(name);
+    }
+  }, 60_000);
+
   it('dispatches tools/call and returns a well-formed result', async () => {
-    // One call that actually reaches a handler. This is what the grep could
-    // never do: prove the name resolves to something that runs.
+    // get_current_datetime removed (#1673); use manage_cache as a simple smoke tool
     const res: any = await client.callTool({
-      name: 'get_current_datetime',
-      arguments: {},
+      name: 'manage_cache',
+      arguments: { action: 'stats' },
     });
 
     expect(res).toBeDefined();

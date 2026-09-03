@@ -1,22 +1,27 @@
-7
+9
 
 Modules under src/ that no other src/ module imports, measured by
 scripts/check-dead-code.sh. A ratchet: this number may fall, never rise.
 
-7 files / 4,279 lines as of 2026-09-03, up from 5 / 3,368 because Milestone 5
-(CE-MCP migration) intentionally severed the last consumers of two modules:
+9 files / 4,807 lines as of 2026-09-03, up from 7 / 4,279 because ADR-023
+Phase 0 (#1673) removed 9 host-native tools, severing the last consumers of:
+
+  root-manager.ts                  175  Only consumers were the removed listRoots,
+                                        readFile, readDirectory, writeFile, and
+                                        listDirectory handlers plus setProjectPath
+                                        (which only wrote to it, never read).
+  prompt-catalog.ts                353  Only consumer was the removed loadPrompt
+                                        handler.
+
+Both are candidates for retirement via retirement.py.
+
+The seven that were already here remain held for a named reason:
 
   prompt-execution.ts              455  All 7 server-layer consumers severed in
                                         Batches 2-5 and 7 (#1631-#1636).
                                         Retirement issue: #1669.
   ai-executor.ts                   456  Only consumer was prompt-execution.ts.
                                         Retirement issue: #1670.
-
-Both received RETIREMENT_REVIEW verdicts from retirement.py and have dedicated
-issues for the actual deletion step (governed, not automatic).
-
-The five that were already here remain held for a named reason:
-
   memory-migration-manager.ts     1016  owner's call: possible scaffolding
   sandbox-executor.ts              800  exercised by the CE-MCP suites (m5, #1416)
   memory-rollback-manager.ts       744  owner's call: possible scaffolding

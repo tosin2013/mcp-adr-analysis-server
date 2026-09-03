@@ -3,7 +3,6 @@
  */
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { McpAdrError } from '../types/index.js';
-import { executeSearchTools, type SearchToolsArgs } from './tool-dispatcher.js';
 import type { ToolContext } from '../types/tool-context.js';
 import type {
   GetWorkflowGuidanceArgs,
@@ -13,8 +12,6 @@ import type {
   ValidateRulesArgs,
   CreateRuleSetArgs,
   ToolChainOrchestratorArgs,
-  ReadFileArgs,
-  WriteFileArgs,
   AnalyzeProjectEcosystemArgs,
   AnalyzeContentSecurityArgs,
   GenerateContentMaskingArgs,
@@ -145,9 +142,6 @@ export async function dispatchTool(
     case 'analyze_deployment_progress':
       response = await host.analyzeDeploymentProgress(safeArgs);
       break;
-    case 'check_ai_execution_status':
-      response = await host.checkAIExecutionStatus(safeArgs);
-      break;
     case 'get_workflow_guidance':
       response = await host.getWorkflowGuidance(safeArgs as unknown as GetWorkflowGuidanceArgs);
       break;
@@ -156,26 +150,8 @@ export async function dispatchTool(
         safeArgs as unknown as GetDevelopmentGuidanceArgs
       );
       break;
-    case 'list_roots':
-      response = await host.listRoots();
-      break;
-    case 'read_directory':
-      response = await host.readDirectory(safeArgs);
-      break;
-    case 'read_file': {
-      // Map 'path' parameter to 'filePath' for compatibility
-      const readFileArgs = safeArgs as { path?: string; filePath?: string };
-      response = await host.readFile({
-        filePath: readFileArgs.filePath || readFileArgs.path || '',
-      } as ReadFileArgs);
-      break;
-    }
-    case 'write_file':
-      response = await host.writeFile(safeArgs as unknown as WriteFileArgs);
-      break;
-    case 'list_directory':
-      response = await host.listDirectory(safeArgs);
-      break;
+    // Host-native tools removed: list_roots, read_directory, read_file, write_file, list_directory — ADR-023 (#1673)
+    // Also removed: search_tools, load_prompt, get_current_datetime, check_ai_execution_status
     case 'generate_deployment_guidance':
       response = await host.generateDeploymentGuidance(safeArgs);
       break;
@@ -231,37 +207,11 @@ export async function dispatchTool(
     case 'get_server_context':
       response = await host.getServerContext(safeArgs);
       break;
-    case 'get_current_datetime':
-      response = await host.getCurrentDatetime(safeArgs);
-      break;
-    case 'search_tools':
-      response = {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              executeSearchTools(safeArgs as unknown as SearchToolsArgs),
-              null,
-              2
-            ),
-          },
-        ],
-      };
-      break;
     case 'set_project_path':
       response = await host.setProjectPath(
         safeArgs as unknown as {
           path: string;
           validatePath?: boolean;
-        }
-      );
-      break;
-    case 'load_prompt':
-      response = await host.loadPrompt(
-        safeArgs as unknown as {
-          promptName: string;
-          section?: string;
-          estimateOnly?: boolean;
         }
       );
       break;

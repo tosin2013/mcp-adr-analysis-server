@@ -60,8 +60,7 @@ export function getSearchToolsDefinition(): Tool {
 }
 
 export const MCP_TOOL_SCHEMAS: Tool[] = [
-  // Meta-tool for dynamic tool discovery (CE-MCP Phase 3)
-  getSearchToolsDefinition(),
+  // search_tools removed from wire — spec assigns to host, ADR-023 (#1673)
   {
     name: 'analyze_project_ecosystem',
     description:
@@ -1444,16 +1443,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
       },
     },
   },
-  {
-    name: 'check_ai_execution_status',
-    description:
-      'Check AI execution configuration and status for debugging prompt-only mode issues',
-    inputSchema: {
-      type: 'object',
-      properties: {},
-      required: [],
-    },
-  },
+  // check_ai_execution_status removed — dies with AI layer, ADR-023 (#1673)
   {
     name: 'get_workflow_guidance',
     description:
@@ -1563,80 +1553,8 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
       required: ['developmentPhase'],
     },
   },
-  {
-    name: 'list_roots',
-    description:
-      '[DEPRECATED host-native, ADR-023] List available file system roots that can be accessed. Use this to discover what directories are available before reading files.',
-    inputSchema: {
-      type: 'object',
-      properties: {},
-    },
-  },
-  {
-    name: 'read_directory',
-    description:
-      '[DEPRECATED host-native, ADR-023] List files and folders in a directory. Use this to explore the file structure within accessible roots.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        path: {
-          type: 'string',
-          description: 'Directory path to list (relative to project root or absolute within roots)',
-        },
-      },
-      required: ['path'],
-    },
-  },
-  {
-    name: 'read_file',
-    description: '[DEPRECATED host-native, ADR-023] Read contents of a file',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        filePath: {
-          type: 'string',
-          description: 'Path to the file to read',
-        },
-        path: {
-          type: 'string',
-          description: 'Path to the file to read (alias for filePath)',
-        },
-      },
-      required: [],
-    },
-  },
-  {
-    name: 'write_file',
-    description: '[DEPRECATED host-native, ADR-023] Write content to a file',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        path: {
-          type: 'string',
-          description: 'Path to the file to write',
-        },
-        content: {
-          type: 'string',
-          description: 'Content to write to the file',
-        },
-      },
-      required: ['path', 'content'],
-    },
-  },
-  {
-    name: 'list_directory',
-    description: '[DEPRECATED host-native, ADR-023] List contents of a directory',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        path: {
-          type: 'string',
-          description: 'Path to the directory to list',
-        },
-      },
-      required: ['path'],
-    },
-  },
+  // Host-native tools removed: list_roots, read_directory, read_file,
+  // write_file, list_directory — ADR-023 Phase 0 (#1673)
   {
     name: 'generate_deployment_guidance',
     description:
@@ -3055,34 +2973,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
       },
     },
   },
-  {
-    name: 'get_current_datetime',
-    description:
-      '[DEPRECATED host-native, ADR-023] Get the current date and time in various formats. Useful for timestamping ADRs, research documents, and other architectural artifacts. Returns ISO 8601, human-readable, and ADR-specific date formats.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        timezone: {
-          type: 'string',
-          description:
-            'Timezone for the datetime (e.g., "UTC", "America/New_York", "Europe/London"). Defaults to UTC.',
-          default: 'UTC',
-        },
-        format: {
-          type: 'string',
-          enum: ['iso', 'human', 'adr', 'all'],
-          description:
-            'Output format: "iso" for ISO 8601, "human" for human-readable, "adr" for ADR date format (YYYY-MM-DD), "all" for all formats',
-          default: 'all',
-        },
-        includeTimestamp: {
-          type: 'boolean',
-          description: 'Include Unix timestamp in milliseconds',
-          default: true,
-        },
-      },
-    },
-  },
+  // get_current_datetime removed — host-native, ADR-023 (#1673)
   // Session management tool for dynamic project switching
   {
     name: 'set_project_path',
@@ -3105,45 +2996,7 @@ export const MCP_TOOL_SCHEMAS: Tool[] = [
       required: ['path'],
     },
   },
-  // CE-MCP Phase 4: Lazy Prompt Loading Tool
-  {
-    name: 'load_prompt',
-    description:
-      '[DEPRECATED host-native, ADR-023] Load a specific prompt or prompt section on-demand. Part of CE-MCP lazy loading system that reduces token usage by ~96% by loading prompts only when needed. Use this to retrieve prompt templates for ADR generation, analysis, deployment, and other operations.',
-    inputSchema: {
-      type: 'object',
-      properties: {
-        promptName: {
-          type: 'string',
-          description:
-            'Name of the prompt to load (e.g., "adr-suggestion", "deployment-analysis", "environment-analysis", "research-question", "rule-generation", "analysis", "security")',
-          enum: [
-            'adr-suggestion',
-            'deployment-analysis',
-            'environment-analysis',
-            'research-question',
-            'rule-generation',
-            'analysis',
-            'research-integration',
-            'validated-pattern',
-            'security',
-          ],
-        },
-        section: {
-          type: 'string',
-          description:
-            'Specific section within the prompt to load. If not provided, loads the entire prompt. Available sections depend on the prompt.',
-        },
-        estimateOnly: {
-          type: 'boolean',
-          description:
-            'If true, returns only token estimate without loading the full prompt content',
-          default: false,
-        },
-      },
-      required: ['promptName'],
-    },
-  },
+  // load_prompt removed — spec assigns to host, ADR-023 (#1673)
   // ADR Aggregator Integration Tools (https://adraggregator.com)
   {
     name: 'sync_to_aggregator',
