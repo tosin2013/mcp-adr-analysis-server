@@ -477,7 +477,7 @@ TOOL_CATALOG.set('analyze_content_security', {
   category: 'content-security',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false, // Phase 4.3: Moderate tool - security analysis
+  hasCEMCPDirective: true, // CE-MCP Batch 2 (#1631): directive added
   relatedTools: ['generate_content_masking', 'validate_content_masking'],
   keywords: ['security', 'content', 'analyze', 'secrets', 'sensitive'],
   requiresAI: true,
@@ -498,7 +498,7 @@ TOOL_CATALOG.set('generate_content_masking', {
   category: 'content-security',
   complexity: 'moderate',
   tokenCost: { min: 1000, max: 2500 },
-  hasCEMCPDirective: false, // Phase 4.3: Moderate tool - masking rule generation
+  hasCEMCPDirective: true, // CE-MCP Batch 2 (#1631): directive added
   relatedTools: ['analyze_content_security', 'apply_basic_content_masking'],
   keywords: ['masking', 'generate', 'rules', 'protection'],
   requiresAI: true,

@@ -75,10 +75,7 @@ class SecurityMemoryManager {
         },
         riskAssessment: {
           overallRisk: calculateOverallRisk(detectedPatterns) as
-            | 'low'
-            | 'medium'
-            | 'high'
-            | 'critical',
+            'low' | 'medium' | 'high' | 'critical',
           specificRisks: detectedPatterns.map(p => `${p.type || 'unknown'} exposure risk`),
           mitigationStrategies: [
             'Implement content masking',
@@ -426,7 +423,6 @@ export async function analyzeContentSecurity(args: {
 
     // Perform tree-sitter analysis for enhanced security detection
     const treeSitterFindings: any[] = [];
-    let treeSitterContext = '';
     if (enableTreeSitterAnalysis && contentType === 'code') {
       try {
         const analyzer = new TreeSitterAnalyzer();
@@ -511,7 +507,9 @@ export async function analyzeContentSecurity(args: {
           }
 
           if (treeSitterFindings.length > 0) {
-            treeSitterContext = `\n## 🔍 Tree-sitter Enhanced Analysis\n\n**Detected ${treeSitterFindings.length} security findings:**\n${treeSitterFindings.map(f => `- **${f.type}**: ${f.content} (${f.severity} confidence)`).join('\n')}\n\n---\n`;
+            // Tree-sitter findings are available via treeSitterFindings array
+            // for future integration; the formatted context was consumed by the
+            // removed AI response template.
           }
         } finally {
           // Clean up temp file
@@ -560,187 +558,17 @@ export async function analyzeContentSecurity(args: {
     const result = await analyzeSensitiveContent(content, contentType, userDefinedPatterns);
     enhancedPrompt = knowledgeContext + result.analysisPrompt;
 
-    // Execute the security analysis with AI if enabled, otherwise return prompt
-    const { executePromptWithFallback, formatMCPResponse } =
-      await import('../utils/prompt-execution.js');
-    const executionResult = await executePromptWithFallback(enhancedPrompt, result.instructions, {
-      temperature: 0.1,
-      maxTokens: 4000,
-      systemPrompt: `You are a cybersecurity expert specializing in sensitive information detection.
-Analyze the provided content to identify potential security risks, secrets, and sensitive data.
-Leverage the provided cybersecurity and data privacy knowledge to create comprehensive, industry-standard analysis.
-Provide detailed findings with confidence scores and practical remediation recommendations.
-Consider regulatory compliance requirements, data classification standards, and modern security practices.
-Focus on actionable security insights that can prevent data exposure and ensure compliance.`,
-      responseFormat: 'text',
-    });
-
-    if (executionResult.isAIGenerated) {
-      // Memory integration: store security patterns and analysis results
-      let memoryIntegrationInfo = '';
-      if (securityMemoryManager) {
-        try {
-          // Extract patterns from AI analysis (simplified parsing)
-          const detectedPatterns = parseDetectedPatterns(
-            executionResult.content,
-            userDefinedPatterns
-          );
-          const maskingResults = {
-            strategy: 'analysis-only',
-            securityScore: calculateSecurityScore(detectedPatterns, content),
-            successRate: 1.0,
-            preservedContext: 1.0, // Analysis doesn't mask, so context is preserved
-            complianceLevel: 'analysis-complete',
-          };
-
-          // Store security pattern
-          const patternId = await securityMemoryManager.storeSecurityPattern(
-            contentType,
-            detectedPatterns,
-            maskingResults,
-            {
-              contentLength: content.length,
-              method: 'ai-powered-analysis',
-              userDefinedPatterns: userDefinedPatterns?.length || 0,
-            }
-          );
-
-          // Track evolution
-          const evolution = await securityMemoryManager.trackMaskingEvolution(
-            undefined,
-            maskingResults
-          );
-
-          // Get institutional insights
-          const institutionalAnalysis = await securityMemoryManager.analyzeInstitutionalSecurity();
-
-          memoryIntegrationInfo = `
-
-## 🧠 Security Memory Integration
-
-- **Pattern Stored**: ✅ Security analysis saved (ID: ${patternId.substring(0, 8)}...)
-- **Content Type**: ${contentType}
-- **Patterns Detected**: ${detectedPatterns.length}
-- **Security Score**: ${Math.round(maskingResults.securityScore * 100)}%
-
-${
-  evolution.improvements.length > 0
-    ? `### Security Improvements
-${evolution.improvements.map(improvement => `- ${improvement}`).join('\n')}
-`
-    : ''
-}
-
-${
-  evolution.recommendations.length > 0
-    ? `### Evolution Recommendations
-${evolution.recommendations.map(rec => `- ${rec}`).join('\n')}
-`
-    : ''
-}
-
-${
-  institutionalAnalysis.commonPatterns.length > 0
-    ? `### Institutional Security Patterns
-${institutionalAnalysis.commonPatterns
-  .slice(0, 3)
-  .map(pattern => `- **${pattern.type}**: ${pattern.frequency} occurrences`)
-  .join('\n')}
-`
-    : ''
-}
-
-${
-  institutionalAnalysis.complianceStatus
-    ? `### Compliance Status
-- **GDPR**: ${institutionalAnalysis.complianceStatus.gdpr}
-- **HIPAA**: ${institutionalAnalysis.complianceStatus.hipaa}
-- **PCI**: ${institutionalAnalysis.complianceStatus.pci}
-`
-    : ''
-}
-
-${
-  institutionalAnalysis.recommendations.length > 0
-    ? `### Security Recommendations
-${institutionalAnalysis.recommendations
-  .slice(0, 3)
-  .map(rec => `- ${rec}`)
-  .join('\n')}
-`
-    : ''
-}
-`;
-        } catch (memoryError) {
-          memoryIntegrationInfo = `
-
-## 🧠 Security Memory Integration Status
-
-- **Status**: ⚠️ Memory integration failed - analysis completed without persistence
-- **Error**: ${memoryError instanceof Error ? memoryError.message : 'Unknown error'}
-`;
-        }
-      }
-
-      // AI execution successful - return actual security analysis results
-      return formatMCPResponse({
-        ...executionResult,
-        content: `# Content Security Analysis Results (GKP Enhanced)
-
-## Enhancement Features
-- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
-- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
-- **Memory Integration**: ${enableMemoryIntegration ? '✅ Enabled' : '❌ Disabled'}
-- **Tree-sitter Analysis**: ${enableTreeSitterAnalysis ? '✅ Enabled' : '❌ Disabled'}
-- **Knowledge Domains**: Cybersecurity, data privacy, regulatory compliance, secret management
-
-## Analysis Information
-- **Content Type**: ${contentType}
-
-${
-  knowledgeContext
-    ? `## Applied Security Knowledge
-
-${knowledgeContext}
-`
-    : ''
-}
-${treeSitterContext}
-- **Content Length**: ${content.length} characters
-- **User-Defined Patterns**: ${userDefinedPatterns?.length || 0} patterns
-
-## AI Security Analysis
-
-${executionResult.content}
-
-${memoryIntegrationInfo}
-
-## Next Steps
-
-Based on the security analysis:
-
-1. **Review Identified Issues**: Examine each flagged item for actual sensitivity
-2. **Apply Recommended Masking**: Use suggested masking strategies for sensitive content
-3. **Update Security Policies**: Incorporate findings into security guidelines
-4. **Implement Monitoring**: Set up detection for similar patterns in the future
-5. **Train Team**: Share findings to improve security awareness
-
-## Remediation Commands
-
-To apply masking to identified sensitive content, use the \`generate_content_masking\` tool with the detected items.
-`,
-      });
-    } else {
-      // Fallback to prompt-only mode
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# Sensitive Content Analysis (GKP Enhanced)\n\n## Enhancement Status\n- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '\u2705 Applied' : '\u274c Disabled'}\n- **Enhanced Mode**: ${enhancedMode ? '\u2705 Applied' : '\u274c Disabled'}\n\n${knowledgeContext ? `## Security Knowledge Context\n\n${knowledgeContext}\n` : ''}\n\n${result.instructions}\n\n## Enhanced AI Analysis Prompt\n\n${enhancedPrompt}`,
-          },
-        ],
-      };
-    }
+    // CE-MCP: return prompt text for the host LLM. The directive path in
+    // mcp-adr-analysis-server.ts intercepts this tool before it reaches here
+    // when CE-MCP mode is active; this return serves legacy/prompt-only mode.
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# Sensitive Content Analysis (GKP Enhanced)\n\n## Enhancement Status\n- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '\u2705 Applied' : '\u274c Disabled'}\n- **Enhanced Mode**: ${enhancedMode ? '\u2705 Applied' : '\u274c Disabled'}\n\n${knowledgeContext ? `## Security Knowledge Context\n\n${knowledgeContext}\n` : ''}\n\n${result.instructions}\n\n## Enhanced AI Analysis Prompt\n\n${enhancedPrompt}`,
+        },
+      ],
+    };
   } catch (error) {
     throw new McpAdrError(
       `Failed to analyze content security: ${error instanceof Error ? error.message : String(error)}`,
@@ -812,69 +640,17 @@ export async function generateContentMasking(args: {
 
     const result = await generateMaskingInstructions(content, sensitiveItems, maskingStrategy);
 
-    // Execute the content masking with AI if enabled, otherwise return prompt
-    const { executePromptWithFallback, formatMCPResponse } =
-      await import('../utils/prompt-execution.js');
-    const executionResult = await executePromptWithFallback(
-      result.maskingPrompt,
-      result.instructions,
-      {
-        temperature: 0.1,
-        maxTokens: 4000,
-        systemPrompt: `You are a cybersecurity expert specializing in intelligent content masking.
-Apply appropriate masking to sensitive content while preserving functionality and readability.
-Focus on balancing security with usability, maintaining context where possible.
-Provide detailed explanations for masking decisions and security recommendations.`,
-        responseFormat: 'text',
-      }
-    );
-
-    if (executionResult.isAIGenerated) {
-      // AI execution successful - return actual content masking results
-      return formatMCPResponse({
-        ...executionResult,
-        content: `# Content Masking Results
-
-## Masking Information
-- **Content Length**: ${content.length} characters
-- **Detected Items**: ${detectedItems.length} sensitive items
-- **Masking Strategy**: ${maskingStrategy}
-
-## AI Content Masking Results
-
-${executionResult.content}
-
-## Next Steps
-
-Based on the masking results:
-
-1. **Review Masked Content**: Examine the masked content for accuracy and completeness
-2. **Validate Functionality**: Ensure masked content still functions as intended
-3. **Apply to Production**: Use the masked content in documentation or sharing
-4. **Update Security Policies**: Incorporate findings into security guidelines
-5. **Monitor for Similar Patterns**: Set up detection for similar sensitive content
-
-## Security Benefits
-
-The applied masking provides:
-- **Data Protection**: Sensitive information is properly redacted
-- **Context Preservation**: Enough context remains for understanding
-- **Consistent Approach**: Uniform masking patterns across content
-- **Compliance Support**: Helps meet data protection requirements
-- **Usability Balance**: Security without sacrificing functionality
-`,
-      });
-    } else {
-      // Fallback to prompt-only mode
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# Content Masking Instructions\n\n${result.instructions}\n\n## AI Masking Prompt\n\n${result.maskingPrompt}`,
-          },
-        ],
-      };
-    }
+    // CE-MCP: return prompt text for the host LLM. The directive path in
+    // mcp-adr-analysis-server.ts intercepts this tool before it reaches here
+    // when CE-MCP mode is active; this return serves legacy/prompt-only mode.
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# Content Masking Instructions\n\n${result.instructions}\n\n## AI Masking Prompt\n\n${result.maskingPrompt}`,
+        },
+      ],
+    };
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate masking instructions: ${error instanceof Error ? error.message : String(error)}`,
@@ -1249,88 +1025,6 @@ function assessComplianceImpact(detectedPatterns: any[]): string {
   return 'Standard security practices apply - low impact';
 }
 
-/**
- * Helper function to parse detected patterns from AI analysis content
- */
-function parseDetectedPatterns(aiContent: string, userDefinedPatterns?: string[]): any[] {
-  // Simplified pattern parsing - in production, would use more sophisticated NLP
-  const patterns: any[] = [];
-
-  // Look for common security-related keywords
-  const securityKeywords = [
-    { keyword: 'password', type: 'password', severity: 'high' },
-    { keyword: 'secret', type: 'secret', severity: 'high' },
-    { keyword: 'api.key', type: 'api-key', severity: 'critical' },
-    { keyword: 'email', type: 'email', severity: 'medium' },
-    { keyword: 'token', type: 'token', severity: 'high' },
-    { keyword: 'credit.card', type: 'credit-card', severity: 'critical' },
-    { keyword: 'ssn', type: 'ssn', severity: 'critical' },
-    { keyword: 'phone', type: 'phone', severity: 'low' },
-  ];
-
-  const lowerContent = aiContent.toLowerCase();
-
-  securityKeywords.forEach(({ keyword, type, severity }) => {
-    if (lowerContent.includes(keyword.replace('.', ' '))) {
-      patterns.push({
-        type,
-        category: 'sensitive-data',
-        confidence: 0.7, // Simplified confidence
-        severity: severity as 'low' | 'medium' | 'high' | 'critical',
-        description: `Detected potential ${type.replace('-', ' ')} pattern`,
-        context: `Found in AI analysis content`,
-      });
-    }
-  });
-
-  // Add user-defined patterns
-  if (userDefinedPatterns) {
-    userDefinedPatterns.forEach(pattern => {
-      if (lowerContent.includes(pattern.toLowerCase())) {
-        patterns.push({
-          type: 'user-defined',
-          category: 'custom-pattern',
-          confidence: 0.8,
-          severity: 'medium',
-          description: `User-defined pattern detected: ${pattern}`,
-          context: 'User-defined security pattern',
-        });
-      }
-    });
-  }
-
-  return patterns;
-}
-
-/**
- * Helper function to calculate security score based on detected patterns
- */
-function calculateSecurityScore(detectedPatterns: any[], content: string): number {
-  if (detectedPatterns.length === 0) {
-    return 1.0; // No patterns detected = highest security score
-  }
-
-  const contentLength = content.length;
-  const patternDensity = detectedPatterns.length / Math.max(contentLength / 1000, 1); // patterns per 1000 chars
-
-  // Calculate base score based on pattern density and severity
-  let baseScore = 1.0;
-
-  detectedPatterns.forEach(pattern => {
-    const severityWeight =
-      {
-        low: 0.05,
-        medium: 0.1,
-        high: 0.2,
-        critical: 0.3,
-      }[pattern.severity as 'low' | 'medium' | 'high' | 'critical'] || 0.1;
-
-    baseScore -= severityWeight * pattern.confidence;
-  });
-
-  // Apply density penalty
-  const densityPenalty = Math.min(patternDensity * 0.1, 0.3);
-  baseScore -= densityPenalty;
-
-  return Math.max(0, Math.min(1, baseScore));
-}
+// parseDetectedPatterns and calculateSecurityScore were removed as part of
+// the CE-MCP migration (#1631). They were only used by the AI memory
+// integration path that is now handled by the orchestration directive.

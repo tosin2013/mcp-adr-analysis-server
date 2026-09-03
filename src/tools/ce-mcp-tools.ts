@@ -1336,6 +1336,184 @@ export function createToolChainOrchestratorDirective(
 }
 
 // ============================================================================
+// CE-MCP Batch 2: Content-masking directives (#1631)
+// ============================================================================
+
+/**
+ * Arguments for CE-MCP analyze_content_security
+ */
+export interface CEMCPAnalyzeContentSecurityArgs {
+  content: string;
+  contentType?: 'code' | 'documentation' | 'configuration' | 'logs' | 'general';
+  userDefinedPatterns?: string[];
+  knowledgeEnhancement?: boolean;
+  enhancedMode?: boolean;
+  enableMemoryIntegration?: boolean;
+  enableTreeSitterAnalysis?: boolean;
+}
+
+/**
+ * CE-MCP version of analyze_content_security
+ *
+ * Returns an orchestration directive for security analysis instead of calling
+ * OpenRouter. The host LLM performs the analysis directly using the system
+ * prompt and context assembled by sandbox operations.
+ */
+export function createAnalyzeContentSecurityDirective(
+  args: CEMCPAnalyzeContentSecurityArgs
+): OrchestrationDirective {
+  const {
+    content,
+    contentType = 'general',
+    userDefinedPatterns = [],
+    knowledgeEnhancement = getKnowledgeEnhancementDefault(),
+    enableTreeSitterAnalysis = true,
+  } = args;
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'analyzeFiles',
+      args: {
+        content,
+        contentType,
+        userDefinedPatterns,
+        enableTreeSitterAnalysis,
+      },
+      store: 'sensitiveContentAnalysis',
+    },
+    ...(knowledgeEnhancement
+      ? [
+          {
+            op: 'loadKnowledge' as const,
+            args: {
+              domain: 'cybersecurity',
+              scope: 'sensitive-data-detection',
+            },
+            store: 'securityKnowledge',
+          },
+        ]
+      : []),
+    {
+      op: 'generateContext',
+      args: {
+        type: 'content-security-analysis',
+        contentType,
+        contentLength: content.length,
+        userDefinedPatterns,
+      },
+      inputs: ['sensitiveContentAnalysis', 'securityKnowledge'],
+      store: 'analysisContext',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['sensitiveContentAnalysis', 'securityKnowledge', 'analysisContext'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'analyze_content_security',
+    description: `Analyze ${contentType} content (${content.length} chars) for security concerns`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'sensitiveContentAnalysis', key: 'findings' },
+        { source: 'analysisContext', key: 'analysis' },
+      ],
+      template: 'security_analysis_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 2000,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+/**
+ * Arguments for CE-MCP generate_content_masking
+ */
+export interface CEMCPGenerateContentMaskingArgs {
+  content: string;
+  detectedItems: Array<{
+    type: string;
+    category?: string;
+    content: string;
+    startPosition: number;
+    endPosition: number;
+    confidence?: number;
+    reasoning?: string;
+    severity: string;
+    suggestedMask?: string;
+  }>;
+  maskingStrategy?: 'full' | 'partial' | 'placeholder' | 'environment';
+}
+
+/**
+ * CE-MCP version of generate_content_masking
+ *
+ * Returns an orchestration directive for content masking instead of calling
+ * OpenRouter. The host LLM applies masking rules directly.
+ */
+export function createGenerateContentMaskingDirective(
+  args: CEMCPGenerateContentMaskingArgs
+): OrchestrationDirective {
+  const { content, detectedItems = [], maskingStrategy = 'full' } = args;
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'analyzeFiles',
+      args: {
+        content,
+        detectedItems,
+        maskingStrategy,
+      },
+      store: 'maskingInstructions',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'content-masking',
+        maskingStrategy,
+        detectedItemCount: detectedItems.length,
+        contentLength: content.length,
+      },
+      inputs: ['maskingInstructions'],
+      store: 'maskingContext',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['maskingInstructions', 'maskingContext'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'generate_content_masking',
+    description: `Generate masking for ${detectedItems.length} detected items using ${maskingStrategy} strategy`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'maskingInstructions', key: 'instructions' },
+        { source: 'maskingContext', key: 'maskedContent' },
+      ],
+      template: 'content_masking_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 1500,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+// ============================================================================
 // CE-MCP Batch 3: Research-question directives (#1632)
 // ============================================================================
 
@@ -1463,6 +1641,9 @@ export function shouldUseCEMCPDirective(toolName: string, config: { mode: string
     'troubleshoot_guided_workflow',
     // Phase 5: OpenRouter Elimination
     'tool_chain_orchestrator',
+    // CE-MCP Batch 2: content-masking (#1631)
+    'analyze_content_security',
+    'generate_content_masking',
     // CE-MCP Batch 3: research-questions (#1632)
     'generate_research_questions',
   ];
@@ -1489,10 +1670,12 @@ export function shouldUseCEMCPDirective(toolName: string, config: { mode: string
  * fails if they diverge, and if the catalog disagrees with either.
  */
 export const CE_MCP_DIRECTIVE_TOOLS: ReadonlySet<string> = new Set([
+  'analyze_content_security',
   'analyze_environment',
   'analyze_project_ecosystem',
   'deployment_readiness',
   'generate_adrs_from_prd',
+  'generate_content_masking',
   'generate_research_questions',
   'generate_rules',
   'interactive_adr_planning',
@@ -1554,6 +1737,17 @@ export function getCEMCPDirective(
     case 'tool_chain_orchestrator':
       return createToolChainOrchestratorDirective(
         args as unknown as CEMCPToolChainOrchestratorArgs
+      );
+
+    // CE-MCP Batch 2: content-masking (#1631)
+    case 'analyze_content_security':
+      return createAnalyzeContentSecurityDirective(
+        args as unknown as CEMCPAnalyzeContentSecurityArgs
+      );
+
+    case 'generate_content_masking':
+      return createGenerateContentMaskingDirective(
+        args as unknown as CEMCPGenerateContentMaskingArgs
       );
 
     // CE-MCP Batch 3: research-questions (#1632)
