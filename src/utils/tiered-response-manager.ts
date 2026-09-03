@@ -13,7 +13,6 @@ import {
   ExpandableContent,
   TieredResponseConfig,
 } from '../types/tiered-response.js';
-// prompt-execution import removed during CE-MCP migration (#1636)
 import { EnhancedLogger } from './enhanced-logging.js';
 
 export class TieredResponseManager {
@@ -132,7 +131,7 @@ export class TieredResponseManager {
 
   /**
    * Generate a summary using deterministic truncation.
-   * (AI summarization via prompt-execution was removed during CE-MCP migration #1636.)
+   * Uses deterministic truncation (CE-MCP migration #1636).
    */
   private async generateSummary(
     content: string,

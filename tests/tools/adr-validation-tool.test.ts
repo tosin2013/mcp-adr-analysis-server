@@ -8,11 +8,10 @@ import * as path from 'path';
 import * as os from 'os';
 
 // Use vi.hoisted to ensure mock constructors are available before vi.mock is hoisted
-const { MockResearchOrchestrator, mockAnswerResearchQuestion, mockGetAIExecutor } = vi.hoisted(
+const { MockResearchOrchestrator, mockAnswerResearchQuestion } = vi.hoisted(
   () => ({
     MockResearchOrchestrator: vi.fn(),
     mockAnswerResearchQuestion: vi.fn(),
-    mockGetAIExecutor: vi.fn(),
   })
 );
 
@@ -20,12 +19,6 @@ vi.mock('../../src/utils/research-orchestrator.js', () => ({
   __esModule: true,
   ResearchOrchestrator: MockResearchOrchestrator,
   answerResearchQuestion: mockAnswerResearchQuestion,
-}));
-
-// Mock AI executor
-vi.mock('../../src/utils/ai-executor.js', () => ({
-  __esModule: true,
-  getAIExecutor: mockGetAIExecutor,
 }));
 
 vi.mock('../../src/utils/knowledge-graph-manager.js');
@@ -45,12 +38,6 @@ describe('ADR Validation Tool', () => {
 
     // Clear mocks AFTER directory setup
     vi.clearAllMocks();
-
-    // Set up default AI executor mock (can be overridden in specific tests)
-    mockGetAIExecutor.mockReturnValue({
-      isAvailable: () => false,
-      executeStructuredPrompt: vi.fn(),
-    } as any);
 
     mockAnswerResearchQuestion.mockResolvedValue({
       answer: 'Default research answer',
@@ -127,20 +114,6 @@ We will use Kubernetes for container orchestration.
           }) as any
       );
 
-      // Mock AI executor
-      mockGetAIExecutor.mockReturnValue({
-        isAvailable: () => true,
-        executeStructuredPrompt: vi.fn().mockResolvedValue({
-          data: {
-            isValid: true,
-            confidence: 0.9,
-            findings: [],
-            recommendations: ['Continue monitoring for drift'],
-          },
-          raw: { metadata: {} },
-        }),
-      } as any);
-
       const result = await validateAdr({
         adrPath: 'docs/adrs/adr-001-kubernetes.md',
         projectPath: tempDir,
@@ -175,29 +148,6 @@ We will use Docker Swarm for container orchestration.
           }) as any
       );
 
-      mockGetAIExecutor.mockReturnValue({
-        isAvailable: () => true,
-        executeStructuredPrompt: vi.fn().mockResolvedValue({
-          data: {
-            isValid: false,
-            confidence: 0.85,
-            findings: [
-              {
-                type: 'drift',
-                severity: 'high',
-                description: 'ADR states Docker Swarm but Kubernetes is deployed',
-                evidence: 'Found kubectl and K8s manifests, no Swarm evidence',
-              },
-            ],
-            recommendations: [
-              'Update ADR to reflect Kubernetes deployment',
-              'Document migration from Swarm to K8s',
-            ],
-          },
-          raw: { metadata: {} },
-        }),
-      } as any);
-
       const result = await validateAdr({
         adrPath: 'docs/adrs/adr-001-docker-swarm.md',
         projectPath: tempDir,
@@ -231,30 +181,6 @@ We will use Redis for caching.
             }),
           }) as any
       );
-
-      mockGetAIExecutor.mockReturnValue({
-        isAvailable: () => true,
-        executeStructuredPrompt: vi.fn().mockResolvedValue({
-          data: {
-            isValid: false,
-            confidence: 0.3,
-            findings: [
-              {
-                type: 'missing_evidence',
-                severity: 'medium',
-                description: 'No evidence of Redis deployment found',
-                evidence: 'No config files, no environment variables, no running processes',
-              },
-            ],
-            recommendations: [
-              'Verify Redis is deployed',
-              'Check if ADR was implemented',
-              'Consider updating ADR status',
-            ],
-          },
-          raw: { metadata: {} },
-        }),
-      } as any);
 
       const result = await validateAdr({
         adrPath: 'docs/adrs/adr-002-redis.md',
@@ -293,11 +219,6 @@ We will use PostgreSQL as our primary database.
             }),
           }) as any
       );
-
-      mockGetAIExecutor.mockReturnValue({
-        isAvailable: () => false,
-        executeStructuredPrompt: vi.fn(),
-      } as any);
 
       const result = await validateAdr({
         adrPath: 'docs/adrs/adr-003-postgresql.md',
@@ -355,10 +276,6 @@ Test decision 2
           }) as any
       );
 
-      mockGetAIExecutor.mockReturnValue({
-        isAvailable: () => false,
-      } as any);
-
       const result = await validateAllAdrs({
         projectPath: tempDir,
         adrDirectory: 'docs/adrs',
@@ -387,10 +304,6 @@ Test decision 2
             }),
           }) as any
       );
-
-      mockGetAIExecutor.mockReturnValue({
-        isAvailable: () => false,
-      } as any);
 
       const result = await validateAllAdrs({
         projectPath: tempDir,

@@ -1,27 +1,25 @@
-9
+6
 
 Modules under src/ that no other src/ module imports, measured by
 scripts/check-dead-code.sh. A ratchet: this number may fall, never rise.
 
-9 files / 4,807 lines as of 2026-09-03, up from 7 / 4,279 because ADR-023
-Phase 0 (#1673) removed 9 host-native tools, severing the last consumers of:
+6 files / 3,543 lines as of 2026-09-03, down from 9 / 4,807 because
+CE-MCP wrap-up (#1669, #1670, #1671) retired three dead modules:
+
+  prompt-execution.ts              455  Retired: zero src/ consumers since
+                                        Batches 2-7 (#1631-#1636). #1669
+  ai-executor.ts                   456  Retired: only consumer was
+                                        prompt-execution.ts. #1670
+  prompt-catalog.ts                353  Retired: only consumer was the
+                                        loadPrompt handler removed in #1673. #1671
+
+The six that remain are held for a named reason:
 
   root-manager.ts                  175  Only consumers were the removed listRoots,
                                         readFile, readDirectory, writeFile, and
                                         listDirectory handlers plus setProjectPath
                                         (which only wrote to it, never read).
-  prompt-catalog.ts                353  Only consumer was the removed loadPrompt
-                                        handler.
-
-Both are candidates for retirement via retirement.py.
-
-The seven that were already here remain held for a named reason:
-
-  prompt-execution.ts              455  All 7 server-layer consumers severed in
-                                        Batches 2-5 and 7 (#1631-#1636).
-                                        Retirement issue: #1669.
-  ai-executor.ts                   456  Only consumer was prompt-execution.ts.
-                                        Retirement issue: #1670.
+                                        Candidate for retirement via retirement.py.
   memory-migration-manager.ts     1016  owner's call: possible scaffolding
   sandbox-executor.ts              800  exercised by the CE-MCP suites (m5, #1416)
   memory-rollback-manager.ts       744  owner's call: possible scaffolding
