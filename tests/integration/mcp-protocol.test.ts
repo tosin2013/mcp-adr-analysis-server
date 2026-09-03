@@ -171,6 +171,25 @@ describe('MCP protocol', () => {
     }
   }, 60_000);
 
+  it('every tool has MCP annotations (#1677)', async () => {
+    const tools = (await client.listTools()).tools;
+    const missing: string[] = [];
+    for (const tool of tools) {
+      if (!(tool as any).annotations) {
+        missing.push(tool.name);
+      }
+    }
+    expect(missing, `tools without annotations: ${missing.join(', ')}`).toEqual([]);
+
+    // Verify annotation structure on a sample tool
+    const ecosystem = tools.find(t => t.name === 'analyze_project_ecosystem');
+    const ann = (ecosystem as any).annotations;
+    expect(ann.readOnlyHint).toBe(true);
+    expect(ann.destructiveHint).toBe(false);
+    expect(ann.openWorldHint).toBe(false);
+    expect(ann.title).toBeTruthy();
+  }, 60_000);
+
   it('dispatches tools/call and returns a well-formed result', async () => {
     // get_current_datetime removed (#1673); use manage_cache as a simple smoke tool
     const res: any = await client.callTool({
