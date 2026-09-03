@@ -1514,6 +1514,94 @@ export function createGenerateContentMaskingDirective(
 }
 
 // ============================================================================
+// CE-MCP Batch 4: Rule-generation directives (#1633)
+// ============================================================================
+
+/**
+ * Arguments for CE-MCP validate_rules
+ */
+export interface CEMCPValidateRulesArgs {
+  filePath?: string;
+  fileContent?: string;
+  fileName?: string;
+  rules: Array<{
+    name: string;
+    description?: string;
+    pattern?: string;
+    severity?: string;
+  }>;
+  validationType?: 'full' | 'quick' | 'pattern-only';
+}
+
+/**
+ * CE-MCP version of validate_rules
+ *
+ * Returns an orchestration directive for rule validation instead of calling
+ * OpenRouter. The host LLM validates code against rules directly.
+ */
+export function createValidateRulesDirective(args: CEMCPValidateRulesArgs): OrchestrationDirective {
+  const { filePath, rules = [], validationType = 'full' } = args;
+
+  const target = filePath || 'provided content';
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'analyzeFiles',
+      args: {
+        patterns: filePath ? [filePath] : [],
+        maxFiles: 1,
+      },
+      store: 'codeContent',
+    },
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'architectural-rules',
+        scope: 'validation',
+      },
+      store: 'ruleKnowledge',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'rule-validation',
+        validationType,
+        ruleCount: rules.length,
+        target,
+      },
+      inputs: ['codeContent', 'ruleKnowledge'],
+      store: 'validationResults',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['codeContent', 'ruleKnowledge', 'validationResults'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'validate_rules',
+    description: `Validate ${target} against ${rules.length} architectural rules (${validationType})`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'codeContent', key: 'analyzedCode', transform: 'summarize' },
+        { source: 'validationResults', key: 'violations' },
+      ],
+      template: 'rule_validation_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 2000,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+// ============================================================================
 // CE-MCP Batch 3: Research-question directives (#1632)
 // ============================================================================
 
@@ -1646,6 +1734,8 @@ export function shouldUseCEMCPDirective(toolName: string, config: { mode: string
     'generate_content_masking',
     // CE-MCP Batch 3: research-questions (#1632)
     'generate_research_questions',
+    // CE-MCP Batch 4: rule-generation (#1633)
+    'validate_rules',
   ];
 
   return (
@@ -1677,6 +1767,7 @@ export const CE_MCP_DIRECTIVE_TOOLS: ReadonlySet<string> = new Set([
   'generate_adrs_from_prd',
   'generate_content_masking',
   'generate_research_questions',
+  'validate_rules',
   'generate_rules',
   'interactive_adr_planning',
   'mcp_planning',
@@ -1749,6 +1840,10 @@ export function getCEMCPDirective(
       return createGenerateContentMaskingDirective(
         args as unknown as CEMCPGenerateContentMaskingArgs
       );
+
+    // CE-MCP Batch 4: rule-generation (#1633)
+    case 'validate_rules':
+      return createValidateRulesDirective(args as unknown as CEMCPValidateRulesArgs);
 
     // CE-MCP Batch 3: research-questions (#1632)
     case 'generate_research_questions':
