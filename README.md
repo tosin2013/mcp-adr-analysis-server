@@ -7,7 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue)](https://www.typescriptlang.org/)
 [![Good First Issues](https://img.shields.io/github/issues/tosin2013/mcp-adr-analysis-server/good%20first%20issue?label=good%20first%20issues&color=7057ff)](https://github.com/tosin2013/mcp-adr-analysis-server/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
-> **AI-powered architectural analysis for intelligent development workflows.** Returns actual analysis results, not prompts to submit elsewhere.
+> **Architectural analysis for intelligent development workflows.** 64 MCP tools for drift detection, content safety, and decision memory — powered by your host LLM via CE-MCP directives.
 
 ## What is MCP?
 
@@ -15,12 +15,12 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 
 ## TL;DR
 
-**What:** MCP server that provides AI-powered architectural decision analysis and ADR management  
-**Who:** AI coding assistants (Claude, Cline, Cursor), enterprise architects, development teams  
-**Why:** Get immediate architectural insights instead of prompts, with 95% confidence scoring  
-**How:** `npm install -g mcp-adr-analysis-server` → Configure with OpenRouter API → Start analyzing
+**What:** MCP server providing architectural decision analysis, drift detection, content safety, and ADR management  
+**Who:** AI coding assistants (Claude, Cline, Cursor, Windsurf), enterprise architects, development teams  
+**Why:** Get immediate architectural insights — no external API key required in CE-MCP mode  
+**How:** `npm install -g mcp-adr-analysis-server` → Add to your MCP client → Start analyzing
 
-**Key Features:** Tree-sitter AST analysis • Security content masking • Test-driven development • Deployment readiness validation
+**Key Features:** Tree-sitter AST analysis • Security content masking • Drift detection • CE-MCP orchestration directives • Deployment readiness validation
 
 <details>
 <summary><b>Key Terms</b></summary>
@@ -29,9 +29,10 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **ADR**                          | **Architectural Decision Record** — A document that captures an important architectural decision along with its context, alternatives considered, and consequences.                                                |
 | **MCP**                          | **Model Context Protocol** — An open standard enabling AI assistants to connect to external tools and data sources.                                                                                                |
+| **CE-MCP**                       | **Claude-Enriched MCP** — Execution mode where tools return orchestration directives for the host LLM instead of making their own AI calls. Default since v2.14.                                                  |
 | **Tree-sitter**                  | An incremental parsing library that provides AST (Abstract Syntax Tree) analysis for 50+ languages. Used for semantic code understanding, extracting function signatures, and identifying architectural patterns.  |
 | **Session & Tool-Usage Tracker** | Project-local tracking of session intents, tool executions, and ADR registrations, with keyword-scored retrieval over JSON snapshots. Supports workflow continuity and tool-usage evidence — not a graph database. |
-| **Smart Code Linking**           | AI-powered discovery of code files related to ADRs and architectural decisions, using keyword extraction and semantic search.                                                                                      |
+| **Smart Code Linking**           | Discovery of code files related to ADRs and architectural decisions, using keyword extraction and ripgrep search.                                                                                                  |
 | **ADR Aggregator**               | Optional SaaS integration for syncing and sharing ADR context across teams (`ADR_AGGREGATOR_API_KEY`).                                                                                                             |
 
 </details>
@@ -42,12 +43,12 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 
 ## ✨ Core Capabilities
 
-🤖 **AI-Powered Analysis** - Immediate architectural insights with OpenRouter.ai integration
+🔄 **Drift Detection** - Validate ADR decisions against live code and infrastructure evidence
+🛡️ **Content Safety** - Detect and mask secrets, PII, and sensitive content automatically
+🧠 **Decision Memory** - Session & tool-usage tracking with keyword-scored retrieval
 🏗️ **Technology Detection** - Identify any tech stack and architectural patterns
 📋 **ADR Management** - Generate, suggest, and maintain Architectural Decision Records
-🔗 **Smart Code Linking** - AI-powered discovery of code files related to ADRs and decisions
-🛡️ **Security & Compliance** - Detect and mask sensitive content automatically
-🧪 **TDD Integration** - Two-phase Test-Driven Development with validation
+🔗 **Smart Code Linking** - Discovery of code files related to ADRs and decisions
 🚀 **Deployment Readiness** - Zero-tolerance test validation with hard blocking
 
 📖 **[View Full Capabilities →](docs/explanation/index.md)** · 📜 **[Release policy →](RELEASES.md)** · 🗒️ **[Changelog →](CHANGELOG.md)**
@@ -94,11 +95,10 @@ curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/ma
 
 📖 **[Detailed Installation Guide →](docs/tutorials/01-first-steps.md)** | **[RHEL Setup →](scripts/install-rhel.sh)**
 
-## ⚡ Quick Setup (3 Steps)
+## ⚡ Quick Setup (2 Steps)
 
-1. **Get API Key**: Sign up at [OpenRouter.ai/keys](https://openrouter.ai/keys) — OpenRouter is an API gateway that provides access to multiple AI models (Claude, GPT, etc.) through a single key. _No API key? The server still works in prompt-only mode — see [Execution Modes](#execution-modes) below._
-2. **Set Environment**: `OPENROUTER_API_KEY=your_key` + `EXECUTION_MODE=full`
-3. **Configure Client**: Add to Claude Desktop, Cline, Cursor, or Windsurf
+1. **Install**: `npm install -g mcp-adr-analysis-server`
+2. **Configure Client**: Add to Claude Desktop, Cline, Cursor, or Windsurf — no API key required
 
 ```json
 {
@@ -106,14 +106,14 @@ curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/ma
     "adr-analysis": {
       "command": "mcp-adr-analysis-server",
       "env": {
-        "PROJECT_PATH": "/path/to/your/project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full"
+        "PROJECT_PATH": "/path/to/your/project"
       }
     }
   }
 }
 ```
+
+That's it. The server runs in **CE-MCP mode** by default — your host LLM (Claude, GPT, etc.) executes the analysis using orchestration directives returned by the tools. No external API key needed.
 
 > **Claude Desktop users:** Save this JSON to `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS) or `%APPDATA%\Claude\claude_desktop_config.json` (Windows).
 
@@ -130,7 +130,9 @@ curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/ma
 </details>
 
 <details>
-<summary><b>With ADR Aggregator (Optional)</b></summary>
+<summary><b>Optional: OpenRouter Full Mode (legacy)</b></summary>
+
+If you want the server to make its own AI calls (bypassing the host LLM), add an OpenRouter API key:
 
 ```json
 {
@@ -140,7 +142,27 @@ curl -sSL https://raw.githubusercontent.com/tosin2013/mcp-adr-analysis-server/ma
       "env": {
         "PROJECT_PATH": "/path/to/your/project",
         "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
+        "EXECUTION_MODE": "full"
+      }
+    }
+  }
+}
+```
+
+Sign up at [OpenRouter.ai/keys](https://openrouter.ai/keys). This mode is **not recommended** — CE-MCP produces equivalent results using your existing host LLM context.
+
+</details>
+
+<details>
+<summary><b>Optional: ADR Aggregator integration</b></summary>
+
+```json
+{
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "/path/to/your/project",
         "ADR_AGGREGATOR_API_KEY": "agg_your_key_here"
       }
     }
@@ -156,16 +178,15 @@ Get your API key at [adraggregator.com](https://adraggregator.com)
 
 ### Execution Modes
 
-|                          | **Full Mode**                                                                                   | **Prompt-Only Mode**                                              |
-| ------------------------ | ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
-| **Requires API key?**    | Yes (`OPENROUTER_API_KEY`)                                                                      | No                                                                |
-| **Returns**              | Actual analysis results with confidence scores                                                  | Prompts you can paste into any AI chat                            |
-| **Set via**              | `EXECUTION_MODE=full`                                                                           | `EXECUTION_MODE=prompt-only` (default)                            |
-| **Best for**             | Production use, automation                                                                      | Trying it out, no-cost exploration                                |
-| **Available Features**   | All 73 tools, AI analysis, confidence scoring, Smart Code Linking, Session & Tool-Usage Tracker | Analysis prompts, templates, local file operations, ADR discovery |
-| **Unavailable Features** | —                                                                                               | AI execution, confidence scores, Smart Code Linking, web research |
+|                          | **CE-MCP (default)**                                                                             | **Full Mode (legacy)**                                                                           | **Prompt-Only**                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| **Requires API key?**    | No                                                                                               | Yes (`OPENROUTER_API_KEY`)                                                                       | No                                                                |
+| **Returns**              | Orchestration directives for the host LLM to execute                                             | Server-side AI analysis results                                                                  | Prompts you can paste into any AI chat                            |
+| **Set via**              | Default (no env var needed)                                                                      | `EXECUTION_MODE=full`                                                                            | `EXECUTION_MODE=prompt-only`                                      |
+| **Best for**             | All users — recommended                                                                          | Legacy workflows with dedicated API budget                                                       | Offline exploration                                               |
+| **Tools available**      | All 64 tools with annotated MCP metadata                                                         | All 64 tools                                                                                     | Analysis prompts, templates, local file operations, ADR discovery |
 
-**Tip:** Start with prompt-only mode to explore the tool catalog — you can analyze projects, discover ADRs, and generate templates without an API key. Add an API key when you're ready for AI-powered analysis with confidence scoring.
+**What are CE-MCP directives?** When a tool is called, it returns a structured orchestration directive that tells your host LLM what to analyze, what data to gather, and how to format results. The host LLM (e.g. Claude in Claude Desktop, or GPT in Cursor) executes the directive using its existing context window. This means **zero additional API costs** and **better results** because the LLM already has your conversation context.
 
 ## 🚀 Usage Examples
 
@@ -177,7 +198,7 @@ Just ask your MCP client in natural language — no code required:
 
 > "Check this codebase for security issues and provide masking recommendations"
 
-**The server returns actual analysis results** instead of prompts to submit elsewhere!
+**The server returns structured analysis and orchestration directives** that your host LLM executes in context.
 
 <details>
 <summary><b>Programmatic Usage (Advanced)</b></summary>
@@ -203,7 +224,6 @@ const relatedCode = await findRelatedCode(
   'We will implement JWT authentication with Express middleware',
   '/path/to/project',
   {
-    useAI: true, // AI-powered keyword extraction
     useRipgrep: true, // Fast text search
     maxFiles: 10, // Limit results
     includeContent: true, // Include file contents
@@ -231,14 +251,14 @@ const relatedCode = await findRelatedCode(
 ## 🛠️ Technology Stack
 
 **Runtime:** Node.js 20+ • **Language:** TypeScript • **Framework:** MCP SDK • **Testing:** Vitest (~49% statements, enforced floor)
-**Search:** [ripgrep](https://github.com/BurntSushi/ripgrep) (fast recursive text search) + fast-glob (file matching) • **AI Integration:** OpenRouter.ai • **Code Analysis:** [tree-sitter](https://tree-sitter.github.io/tree-sitter/) (incremental code parser) + Smart Code Linking
+**Search:** [ripgrep](https://github.com/BurntSushi/ripgrep) (fast recursive text search) + fast-glob (file matching) • **AI Integration:** CE-MCP orchestration directives (host LLM) • **Code Analysis:** [tree-sitter](https://tree-sitter.github.io/tree-sitter/) (incremental code parser) + Smart Code Linking
 
 📖 **[Technical Details →](docs/explanation/server-architecture.md)** | **[CE-MCP Migration Playbook →](docs/how-to-guides/ce-mcp-migration-playbook.md)**
 
 ## 📁 Project Structure
 
 ```
-src/tools/     # 73 MCP tools for analysis
+src/tools/     # 64 MCP tools with annotated metadata
 docs/adrs/     # Architectural Decision Records
 tests/         # ~49% statement coverage, floor enforced in CI
 .github/       # CI/CD automation
@@ -331,7 +351,7 @@ Then open `http://localhost:8080` in your browser. Markdown documentation lives 
 **Common Issues:**
 
 - **RHEL Systems**: Use special installer script
-- **Tools return prompts**: Set `EXECUTION_MODE=full` + API key
+- **Tools return directives instead of results**: This is expected in CE-MCP mode — your host LLM executes the directives. For server-side execution, set `EXECUTION_MODE=full` + `OPENROUTER_API_KEY`
 - **Module not found**: Run `npm install && npm run build`
 - **Permission denied**: Check file permissions and project path
 
@@ -363,12 +383,7 @@ We welcome contributions! Whether you're fixing bugs, adding features, or improv
 
 ### 🗺️ Roadmap
 
-Work is tracked in GitHub milestones, and milestone membership is what marks an issue as
-admitted:
-
-- [**Release & docs foundation**](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/1) — shipped as v2.6.20
-- [**v3.0**](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/2) — tool registry consolidation and the CI safety net
-- [**v3.1**](https://github.com/tosin2013/mcp-adr-analysis-server/milestone/3) — work gated on the tool-surface decision in [ADR-023](docs/adrs/adr-023-tool-surface-scope.md)
+Work is tracked in [GitHub milestones](https://github.com/tosin2013/mcp-adr-analysis-server/milestones), and milestone membership is what marks an issue as admitted.
 
 Architectural direction lives in [`docs/adrs/`](docs/adrs/README.md); release cadence is in
 [`RELEASES.md`](RELEASES.md).
@@ -407,4 +422,4 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Built with ❤️ by [Tosin Akinosho](https://github.com/tosin2013) for AI-driven architectural analysis**
 
-_Empowering AI assistants with deep architectural intelligence and decision-making capabilities._
+_Empowering AI assistants with drift detection, content safety, and decision memory via CE-MCP orchestration directives._
