@@ -835,7 +835,7 @@ TOOL_CATALOG.set('analyze_deployment_progress', {
   category: 'deployment',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false, // Phase 4.3: Moderate tool - deployment tracking
+  hasCEMCPDirective: true, // CE-MCP Batch 5 (#1634)
   relatedTools: ['deployment_readiness', 'generate_deployment_guidance'],
   keywords: ['deployment', 'progress', 'analyze', 'status'],
   requiresAI: false,

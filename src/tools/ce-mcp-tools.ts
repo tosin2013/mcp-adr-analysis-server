@@ -1602,6 +1602,103 @@ export function createValidateRulesDirective(args: CEMCPValidateRulesArgs): Orch
 }
 
 // ============================================================================
+// CE-MCP Batch 5: Deployment/environment directives (#1634)
+// ============================================================================
+
+/**
+ * Arguments for CE-MCP analyze_deployment_progress
+ */
+export interface CEMCPAnalyzeDeploymentProgressArgs {
+  analysisType?: 'tasks' | 'cicd' | 'progress' | 'completion' | 'comprehensive';
+  adrDirectory?: string;
+  todoPath?: string;
+  cicdLogs?: string;
+  pipelineConfig?: string;
+  deploymentTasks?: Array<{
+    taskId: string;
+    taskName: string;
+    status?: string;
+    category?: string;
+  }>;
+  outcomeRules?: Array<{
+    ruleId: string;
+    description: string;
+    criteria: string;
+  }>;
+  actualOutcomes?: Record<string, unknown>;
+  cicdStatus?: Record<string, unknown>;
+  environmentStatus?: Record<string, unknown>;
+}
+
+/**
+ * CE-MCP version of analyze_deployment_progress
+ *
+ * Returns an orchestration directive for deployment analysis instead of calling
+ * OpenRouter. The host LLM performs the analysis directly.
+ */
+export function createAnalyzeDeploymentProgressDirective(
+  args: CEMCPAnalyzeDeploymentProgressArgs
+): OrchestrationDirective {
+  const { analysisType = 'tasks', adrDirectory, todoPath } = args;
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'analyzeFiles',
+      args: {
+        patterns: adrDirectory ? [`${adrDirectory}/**/*.md`] : ['docs/adr/**/*.md'],
+        maxFiles: 30,
+      },
+      store: 'adrContent',
+    },
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'deployment-analysis',
+        scope: analysisType,
+      },
+      store: 'deploymentKnowledge',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'deployment-progress',
+        analysisType,
+        adrDirectory,
+        todoPath,
+      },
+      inputs: ['adrContent', 'deploymentKnowledge'],
+      store: 'analysisResults',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['adrContent', 'deploymentKnowledge', 'analysisResults'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'analyze_deployment_progress',
+    description: `Analyze deployment progress (${analysisType}) for ADRs in ${adrDirectory || 'default directory'}`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'adrContent', key: 'architecturalDecisions', transform: 'summarize' },
+        { source: 'analysisResults', key: 'deploymentAnalysis' },
+      ],
+      template: 'deployment_progress_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 3000,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+// ============================================================================
 // CE-MCP Batch 3: Research-question directives (#1632)
 // ============================================================================
 
@@ -1736,6 +1833,8 @@ export function shouldUseCEMCPDirective(toolName: string, config: { mode: string
     'generate_research_questions',
     // CE-MCP Batch 4: rule-generation (#1633)
     'validate_rules',
+    // CE-MCP Batch 5: deployment/environment (#1634)
+    'analyze_deployment_progress',
   ];
 
   return (
@@ -1761,6 +1860,7 @@ export function shouldUseCEMCPDirective(toolName: string, config: { mode: string
  */
 export const CE_MCP_DIRECTIVE_TOOLS: ReadonlySet<string> = new Set([
   'analyze_content_security',
+  'analyze_deployment_progress',
   'analyze_environment',
   'analyze_project_ecosystem',
   'deployment_readiness',
@@ -1844,6 +1944,12 @@ export function getCEMCPDirective(
     // CE-MCP Batch 4: rule-generation (#1633)
     case 'validate_rules':
       return createValidateRulesDirective(args as unknown as CEMCPValidateRulesArgs);
+
+    // CE-MCP Batch 5: deployment/environment (#1634)
+    case 'analyze_deployment_progress':
+      return createAnalyzeDeploymentProgressDirective(
+        args as unknown as CEMCPAnalyzeDeploymentProgressArgs
+      );
 
     // CE-MCP Batch 3: research-questions (#1632)
     case 'generate_research_questions':
