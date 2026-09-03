@@ -171,7 +171,7 @@ TOOL_CATALOG.set('get_architectural_context', {
   category: 'analysis',
   complexity: 'moderate',
   tokenCost: { min: 2000, max: 5000 },
-  hasCEMCPDirective: false, // Phase 4.3: Moderate tool - context assembly
+  hasCEMCPDirective: true, // CE-MCP Batch 7 (#1636): directive added
   relatedTools: ['analyze_project_ecosystem', 'discover_existing_adrs'],
   keywords: ['architecture', 'context', 'knowledge', 'graph'],
   requiresAI: false,
@@ -1202,7 +1202,7 @@ TOOL_CATALOG.set('get_workflow_guidance', {
   category: 'workflow',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false, // Phase 4.3: Moderate tool - workflow guidance
+  hasCEMCPDirective: true, // CE-MCP Batch 7 (#1636): directive added
   relatedTools: ['get_development_guidance', 'mcp_planning'],
   keywords: ['workflow', 'guidance', 'help', 'process'],
   requiresAI: true,
@@ -1223,7 +1223,7 @@ TOOL_CATALOG.set('get_development_guidance', {
   category: 'workflow',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false, // Phase 4.3: Moderate tool - development guidance
+  hasCEMCPDirective: true, // CE-MCP Batch 7 (#1636): directive added
   relatedTools: ['get_workflow_guidance', 'mcp_planning'],
   keywords: ['development', 'guidance', 'best-practices'],
   requiresAI: true,
