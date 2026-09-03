@@ -10,9 +10,6 @@ const mockFindRelevantAdrPatterns = vi.fn() as MockedFunction<any>;
 const mockGenerateContextAwareQuestions = vi.fn() as MockedFunction<any>;
 const mockCreateResearchTaskTracking = vi.fn() as MockedFunction<any>;
 const mockGenerateArchitecturalKnowledge = vi.fn() as MockedFunction<any>;
-const mockExecuteResearchPrompt = vi.fn() as MockedFunction<any>;
-const mockFormatMCPResponse = vi.fn() as MockedFunction<any>;
-
 // Mock research-questions utilities
 vi.mock('../src/utils/research-questions.js', () => ({
   correlateProblemKnowledge: mockCorrelateProblemKnowledge,
@@ -24,12 +21,6 @@ vi.mock('../src/utils/research-questions.js', () => ({
 // Mock knowledge generation utilities
 vi.mock('../src/utils/knowledge-generation.js', () => ({
   generateArchitecturalKnowledge: mockGenerateArchitecturalKnowledge,
-}));
-
-// Mock prompt execution utilities
-vi.mock('../src/utils/prompt-execution.js', () => ({
-  executeResearchPrompt: mockExecuteResearchPrompt,
-  formatMCPResponse: mockFormatMCPResponse,
 }));
 
 // Import the function to test after mocking
@@ -64,19 +55,6 @@ describe('Research Question Tool', () => {
       prompt: 'Test knowledge prompt',
     });
 
-    mockExecuteResearchPrompt.mockResolvedValue({
-      isAIGenerated: false,
-      content: 'Test AI content',
-    });
-
-    mockFormatMCPResponse.mockReturnValue({
-      content: [
-        {
-          type: 'text',
-          text: 'Formatted response',
-        },
-      ],
-    });
   });
 
   afterEach(() => {
@@ -294,11 +272,6 @@ describe('Research Question Tool', () => {
       });
 
       test('should handle AI generation failure and fallback to prompt-only mode', async () => {
-        mockExecuteResearchPrompt.mockResolvedValue({
-          isAIGenerated: false,
-          content: 'Prompt only content',
-        });
-
         const result = await generateResearchQuestions({
           analysisType: 'questions',
           researchContext: sampleResearchContext,

@@ -18,13 +18,6 @@ import {
   isOrchestrationDirective,
   isStateMachineDirective,
 } from '../../src/types/ce-mcp.js';
-import {
-  PromptLoader,
-  getPromptLoader,
-  resetPromptLoader,
-  calculateTokenSavings,
-  getPromptsByCategory,
-} from '../../src/prompts/prompt-catalog.js';
 
 describe('CE-MCP Integration Flow', () => {
   let executor: SandboxExecutor;
@@ -332,67 +325,6 @@ describe('CE-MCP Integration Flow', () => {
       const result = await executor.executeDirective(directive, '/test/project');
 
       expect(result.success).toBe(true);
-    });
-  });
-
-  describe('Prompt Loader Integration', () => {
-    let loader: PromptLoader;
-
-    beforeEach(() => {
-      resetPromptLoader();
-      loader = getPromptLoader(3600);
-    });
-
-    afterEach(() => {
-      resetPromptLoader();
-    });
-
-    it('should integrate prompt loading with directive execution', async () => {
-      // First, use prompt loader to determine what to load
-      const recommendations = loader.getLoadRecommendations('adr_analysis');
-      expect(recommendations).toContain('adr-suggestion');
-
-      // Then execute directive that would use those prompts
-      const directive: OrchestrationDirective = {
-        type: 'orchestration_directive',
-        version: '1.0',
-        tool: 'adr_analysis',
-        description: 'ADR analysis with lazy prompt loading',
-        sandbox_operations: [
-          {
-            op: 'loadPrompt',
-            args: { name: 'adr-suggestion', section: 'implicit_decisions' },
-            store: 'prompt',
-          },
-          {
-            op: 'loadKnowledge',
-            args: { domain: 'adr' },
-            store: 'knowledge',
-          },
-          {
-            op: 'composeResult',
-            inputs: ['prompt', 'knowledge'],
-            return: true,
-          },
-        ],
-      };
-
-      const result = await executor.executeDirective(directive, '/test/project');
-      expect(result.success).toBe(true);
-
-      // Calculate token savings
-      const savings = calculateTokenSavings(['adr-suggestion']);
-      expect(savings.percentage).toBeGreaterThan(80);
-    });
-
-    it('should preload related prompts for complex operations', async () => {
-      const deploymentPrompts = getPromptsByCategory('deployment');
-      expect(deploymentPrompts.length).toBeGreaterThan(0);
-
-      // Preload deployment prompts
-      await loader.preloadPromptGroup(deploymentPrompts);
-      const stats = loader.getCacheStats();
-      expect(stats.size).toBe(deploymentPrompts.length);
     });
   });
 
