@@ -106,10 +106,7 @@ class EnvironmentMemoryManager {
           {
             timestamp: new Date().toISOString(),
             changeType: 'configuration' as
-              | 'configuration'
-              | 'infrastructure'
-              | 'security'
-              | 'dependencies',
+              'configuration' | 'infrastructure' | 'security' | 'dependencies',
             description: `Environment snapshot created for ${environmentType}`,
             impact: 'medium' as 'low' | 'medium' | 'high',
             author: 'environment-analysis-tool',
@@ -623,157 +620,12 @@ comprehensive project context including dependencies, frameworks, and architectu
         const result = await analyzeEnvironmentSpecs(projectPath);
         enhancedPrompt = liveEnvironmentData + knowledgeContext + result.analysisPrompt;
 
-        // Execute the environment analysis with AI if enabled, otherwise return prompt
-        const { executePromptWithFallback, formatMCPResponse } =
-          await import('../utils/prompt-execution.js');
-        const executionResult = await executePromptWithFallback(
-          enhancedPrompt,
-          result.instructions,
-          {
-            temperature: 0.1,
-            maxTokens: 5000,
-            systemPrompt: `You are a DevOps and infrastructure expert specializing in environment analysis.
-Analyze the provided project to understand its infrastructure requirements, deployment patterns, and environment configuration.
-Leverage the provided cloud infrastructure and DevOps knowledge to create comprehensive, industry-standard recommendations.
-Focus on providing actionable insights for environment optimization, security, scalability, and modern DevOps practices.
-Consider cloud-native patterns, containerization best practices, and deployment automation.
-Provide specific recommendations with implementation guidance.`,
-            responseFormat: 'text',
-          }
-        );
-
-        if (executionResult.isAIGenerated) {
-          // AI execution successful - return actual environment analysis results
-
-          // Store environment snapshot in memory if enabled
-          let memoryIntegrationInfo = '';
-          if (memoryManager) {
-            try {
-              // Parse AI result to extract configuration data
-              const analysisData = parseAnalysisResults(executionResult.content, result.actualData);
-
-              // Compare with previous snapshots
-              const comparison = await memoryManager.compareWithPreviousSnapshots(
-                analysisData,
-                environmentType
-              );
-
-              // Store new snapshot
-              const snapshotId = await memoryManager.storeEnvironmentSnapshot(
-                environmentType,
-                analysisData,
-                undefined, // No compliance data for specs analysis
-                projectPath
-              );
-
-              memoryIntegrationInfo = `
-## 🧠 Memory Integration Status
-
-- **Snapshot Stored**: ✅ Environment snapshot saved (ID: ${snapshotId.substring(0, 8)}...)
-- **Environment Type**: ${environmentType}
-- **Change Detection**: ${comparison.hasChanges ? '🔄 Changes detected' : '✅ No changes from previous snapshot'}
-- **Improvements**: ${comparison.improvements.length} detected
-- **Regressions**: ${comparison.regressions.length} detected
-
-${
-  comparison.changes.length > 0
-    ? `### Configuration Changes
-${comparison.changes.map(change => `- ${change}`).join('\n')}
-`
-    : ''
-}
-
-${
-  comparison.improvements.length > 0
-    ? `### Improvements Detected
-${comparison.improvements.map(improvement => `- ${improvement}`).join('\n')}
-`
-    : ''
-}
-
-${
-  comparison.regressions.length > 0
-    ? `### Regressions Detected  
-${comparison.regressions.map(regression => `- ⚠️ ${regression}`).join('\n')}
-`
-    : ''
-}
-`;
-            } catch (memoryError) {
-              memoryIntegrationInfo = `
-## 🧠 Memory Integration Status
-
-- **Status**: ⚠️ Memory storage failed - analysis continued without persistence
-- **Error**: ${memoryError instanceof Error ? memoryError.message : 'Unknown error'}
-`;
-            }
-          }
-
-          return formatMCPResponse({
-            ...executionResult,
-            content: `# Environment Specification Analysis Results (GKP Enhanced)
-
-## Enhancement Features
-- **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
-- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
-- **Memory Integration**: ${enableMemoryIntegration ? '✅ Enabled' : '❌ Disabled'}
-- **Knowledge Domains**: Cloud infrastructure, DevOps practices, containerization, deployment patterns
-
-${memoryIntegrationInfo}
-
-## Analysis Information
-- **Project Path**: ${projectPath}
-- **ADR Directory**: ${adrDirectory}
-- **Analysis Type**: Environment Specifications
-- **Environment Type**: ${environmentType}
-
-${
-  knowledgeContext
-    ? `## Applied Infrastructure Knowledge
-
-${knowledgeContext}
-`
-    : ''
-}
-
-## AI Environment Analysis Results
-
-${executionResult.content}
-
-## Next Steps
-
-Based on the environment analysis:
-
-1. **Review Infrastructure Requirements**: Examine identified infrastructure needs
-2. **Optimize Resource Allocation**: Right-size compute and storage resources
-3. **Improve Security Posture**: Implement security best practices and compliance
-4. **Enhance Scalability**: Design for growth and load handling
-5. **Plan Implementation**: Create tasks for environment improvements
-
-## Environment Optimization Areas
-
-Use the analysis results to:
-- **Optimize Resource Allocation**: Right-size compute and storage resources
-- **Improve Security Posture**: Implement security best practices and compliance
-- **Enhance Scalability**: Design for growth and load handling
-- **Reduce Costs**: Optimize cloud service usage and resource efficiency
-- **Increase Reliability**: Implement redundancy and disaster recovery
-
-## Follow-up Analysis
-
-For deeper insights, consider running:
-- **Containerization Analysis**: \`analyze_environment\` with \`analysisType: "containerization"\`
-- **Compliance Assessment**: \`analyze_environment\` with \`analysisType: "compliance"\`
-- **Requirements Analysis**: \`analyze_environment\` with \`analysisType: "requirements"\`
-`,
-          });
-        } else {
-          // Fallback to prompt-only mode
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `# Environment Specification Analysis (GKP Enhanced)
+        // CE-MCP: return prompt text directly; directive intercepts in CE-MCP mode.
+        return {
+          content: [
+            {
+              type: 'text',
+              text: `# Environment Specification Analysis (GKP Enhanced)
 
 ## Enhancement Status
 - **Generated Knowledge Prompting**: ${knowledgeEnhancement ? '✅ Applied' : '❌ Disabled'}
@@ -801,10 +653,9 @@ ${enhancedPrompt}
 3. **Review infrastructure requirements** and quality attributes
 4. **Use findings** for environment optimization and planning
 `,
-              },
-            ],
-          };
-        }
+            },
+          ],
+        };
       }
 
       case 'containerization': {
@@ -1255,143 +1106,6 @@ All analyses follow these principles:
   }
 }
 
-/**
- * Helper function to parse AI analysis results into structured configuration data
- */
-function parseAnalysisResults(aiContent: string, actualData?: any): any {
-  // Try to extract structured data from AI response
-  const configuration = {
-    infrastructure: actualData?.infrastructure || {},
-    containerization: {
-      detected:
-        aiContent.toLowerCase().includes('docker') || aiContent.toLowerCase().includes('container'),
-      technologies: extractTechnologies(aiContent, [
-        'docker',
-        'kubernetes',
-        'podman',
-        'containerd',
-      ]),
-    },
-    cloudServices: {
-      providers: extractTechnologies(aiContent, [
-        'aws',
-        'azure',
-        'gcp',
-        'google cloud',
-        'heroku',
-        'vercel',
-        'netlify',
-      ]),
-    },
-    security: {
-      httpsEnabled:
-        aiContent.toLowerCase().includes('https') || aiContent.toLowerCase().includes('ssl'),
-      securityMentioned: aiContent.toLowerCase().includes('security'),
-    },
-    monitoring: {
-      metrics:
-        aiContent.toLowerCase().includes('monitoring') ||
-        aiContent.toLowerCase().includes('metrics'),
-    },
-    deployment: {
-      automated:
-        aiContent.toLowerCase().includes('ci/cd') || aiContent.toLowerCase().includes('pipeline'),
-      loadBalancing:
-        aiContent.toLowerCase().includes('load balanc') || aiContent.toLowerCase().includes('lb'),
-    },
-    discoveredFiles: actualData?.discoveredFiles || [],
-    recommendations: extractRecommendations(aiContent),
-    qualityAttributes: extractQualityAttributes(aiContent),
-    riskAssessment: extractRiskAssessment(aiContent),
-  };
-
-  return configuration;
-}
-
-/**
- * Extract technology mentions from AI content
- */
-function extractTechnologies(content: string, technologies: string[]): string[] {
-  const found = [];
-  const lowerContent = content.toLowerCase();
-
-  for (const tech of technologies) {
-    if (lowerContent.includes(tech.toLowerCase())) {
-      found.push(tech);
-    }
-  }
-
-  return found;
-}
-
-/**
- * Extract recommendations from AI content
- */
-function extractRecommendations(content: string): string[] {
-  const recommendations = [];
-  const lines = content.split('\n');
-
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (
-      trimmed.startsWith('- ') &&
-      (trimmed.toLowerCase().includes('recommend') ||
-        trimmed.toLowerCase().includes('suggest') ||
-        trimmed.toLowerCase().includes('consider') ||
-        trimmed.toLowerCase().includes('should'))
-    ) {
-      recommendations.push(trimmed.substring(2)); // Remove '- ' prefix
-    }
-  }
-
-  return recommendations;
-}
-
-/**
- * Extract quality attributes from AI content
- */
-function extractQualityAttributes(content: string): any {
-  const attributes: any = {};
-  const lowerContent = content.toLowerCase();
-
-  if (lowerContent.includes('performance')) {
-    attributes.performance = 'mentioned';
-  }
-  if (lowerContent.includes('scalability') || lowerContent.includes('scalable')) {
-    attributes.scalability = 'mentioned';
-  }
-  if (lowerContent.includes('security')) {
-    attributes.security = 'mentioned';
-  }
-  if (lowerContent.includes('reliability') || lowerContent.includes('reliable')) {
-    attributes.reliability = 'mentioned';
-  }
-  if (lowerContent.includes('maintainability') || lowerContent.includes('maintainable')) {
-    attributes.maintainability = 'mentioned';
-  }
-
-  return attributes;
-}
-
-/**
- * Extract risk assessment from AI content
- */
-function extractRiskAssessment(content: string): any {
-  const risks = [];
-  const lowerContent = content.toLowerCase();
-
-  if (lowerContent.includes('risk') || lowerContent.includes('vulnerability')) {
-    risks.push('Security risks mentioned in analysis');
-  }
-  if (lowerContent.includes('single point of failure') || lowerContent.includes('spof')) {
-    risks.push('Single point of failure identified');
-  }
-  if (lowerContent.includes('outdated') || lowerContent.includes('deprecated')) {
-    risks.push('Outdated technologies or dependencies detected');
-  }
-
-  return {
-    risks,
-    riskLevel: risks.length > 2 ? 'high' : risks.length > 0 ? 'medium' : 'low',
-  };
-}
+// AI analysis helpers (parseAnalysisResults, extractTechnologies, etc.) removed
+// during CE-MCP migration — the AI memory integration path that consumed them
+// has been eliminated. See #1634.
