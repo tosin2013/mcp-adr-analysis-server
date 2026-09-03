@@ -42,7 +42,7 @@ import {
 import { StateReinforcementManager } from './utils/state-reinforcement-manager.js';
 import { ConversationMemoryManager } from './utils/conversation-memory-manager.js';
 import { MemoryEntityManager } from './utils/memory-entity-manager.js';
-import { RootManager } from './utils/root-manager.js';
+// RootManager import removed — ADR-023 (#1673)
 import { ServerContextGenerator } from './utils/server-context-generator.js';
 import { type ToolContext, createNoOpContext } from './types/tool-context.js';
 import {
@@ -53,8 +53,7 @@ import {
   type ValidateRulesArgs,
   type CreateRuleSetArgs,
   type ToolChainOrchestratorArgs,
-  type ReadFileArgs,
-  type WriteFileArgs,
+  // ReadFileArgs, WriteFileArgs removed — host-native, ADR-023 (#1673)
   type AnalyzeProjectEcosystemArgs,
   type ArchitecturalDomain,
   type AnalyzeContentSecurityArgs,
@@ -140,7 +139,7 @@ export class McpAdrAnalysisServer {
   private stateReinforcementManager: StateReinforcementManager;
   private conversationMemoryManager: ConversationMemoryManager;
   private memoryEntityManager: MemoryEntityManager;
-  private rootManager: RootManager;
+  // rootManager removed — only consumers were removed host-native handlers, ADR-023 (#1673)
   private contextGenerator: ServerContextGenerator;
 
   constructor() {
@@ -152,8 +151,7 @@ export class McpAdrAnalysisServer {
     this.conversationMemoryManager = new ConversationMemoryManager(this.kgManager);
     this.memoryEntityManager = new MemoryEntityManager();
 
-    // Initialize root manager for file access control
-    this.rootManager = new RootManager(this.config.projectPath, this.config.adrDirectory);
+    // rootManager init removed — ADR-023 (#1673)
 
     // Initialize server context generator
     this.contextGenerator = new ServerContextGenerator();
@@ -711,161 +709,8 @@ export class McpAdrAnalysisServer {
   /**
    * Tool implementations
    */
-  async checkAIExecutionStatus(_args: Record<string, unknown>): Promise<CallToolResult> {
-    try {
-      const { loadAIConfig, isAIExecutionEnabled } = await import('./config/ai-config.js');
-      const config = loadAIConfig();
-      const hasApiKey = !!config.apiKey;
-      const isEnabled = isAIExecutionEnabled(config);
-      let reason: string | undefined = undefined;
-      if (config.executionMode !== 'ce-mcp') {
-        if (!hasApiKey) {
-          reason = 'Missing OPENROUTER_API_KEY environment variable';
-        } else if (config.executionMode !== 'full') {
-          reason = `EXECUTION_MODE is '${config.executionMode}', should be 'full'`;
-        }
-      }
-      const status = {
-        isEnabled,
-        hasApiKey,
-        executionMode: config.executionMode,
-        model: config.defaultModel,
-        reason,
-      };
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# AI Execution Status Diagnostic
-
-> **Note**: As of Phase 5, this server uses CE-MCP (Claude-Enriched MCP) mode by default.
-> In CE-MCP mode, tools return orchestration directives that the host LLM executes directly,
-> eliminating the need for external API calls. The configuration below applies to legacy mode only.
-
-## Current Configuration
-- **AI Execution Enabled**: ${status.isEnabled ? '✅ YES' : '❌ NO'}
-- **Has API Key**: ${status.hasApiKey ? '✅ YES' : '❌ NO'}
-- **Execution Mode**: ${status.executionMode}
-- **AI Model**: ${status.model}
-
-${
-  // CE-MCP is the DEFAULT mode and needs no API key. Reporting the absence of
-  // one as an "Issue Detected" -- immediately after saying no external API call
-  // is needed -- told every new user to go and buy a key they do not need.
-  // Legacy configuration is only a problem for someone who asked for it. (#1414)
-  status.executionMode === 'ce-mcp'
-    ? `## ✅ Running in CE-MCP mode
-
-No API key is required. Tools return orchestration directives that your host LLM
-executes directly, which is why **AI Execution Enabled: NO** above is expected and
-correct rather than a fault.
-
-Note that only some tools currently return a directive; the rest return their
-result directly. See ADR-014 and ADR-021.
-
-Legacy OpenRouter execution is off by design. You only need the configuration
-below if you deliberately want that older path.`
-    : status.reason
-      ? `## ⚠️ Issue Detected
-**Problem**: ${status.reason}
-
-## Solution
-${
-  !status.hasApiKey
-    ? `
-1. Get an OpenRouter API key from https://openrouter.ai/keys
-2. Add it to your MCP configuration:
-   \`\`\`json
-   {
-     "mcpServers": {
-       "adr-analysis": {
-         "command": "mcp-adr-analysis-server",
-         "env": {
-           "OPENROUTER_API_KEY": "your_api_key_here",
-           "EXECUTION_MODE": "full",
-           "AI_MODEL": "anthropic/claude-3-sonnet"
-         }
-       }
-     }
-   }
-   \`\`\`
-3. Restart your MCP client (Claude Desktop, etc.)
-`
-    : status.executionMode !== 'full'
-      ? `
-1. Update your MCP configuration to set EXECUTION_MODE to "full":
-   \`\`\`json
-   {
-     "mcpServers": {
-       "adr-analysis": {
-         "env": {
-           "EXECUTION_MODE": "full"
-         }
-       }
-     }
-   }
-   \`\`\`
-2. Restart your MCP client
-`
-      : ''
-}`
-      : `## ✅ Configuration Looks Good!
-
-AI execution is properly configured. Tools should return actual results instead of prompts.
-
-If you're still seeing prompts instead of results, try:
-1. Restart your MCP client
-2. Check your OpenRouter API key has sufficient credits
-3. Verify network connectivity to OpenRouter.ai`
-}
-
-${
-  status.executionMode === 'ce-mcp'
-    ? `## Environment Variables (CE-MCP mode)
-No environment variables are required. CE-MCP mode is the default and works
-without any API keys or execution-mode flags.
-
-To switch to legacy OpenRouter execution instead, set:
-- **OPENROUTER_API_KEY**: Your OpenRouter API key
-- **EXECUTION_MODE**: \`full\`
-- **AI_MODEL**: AI model to use (optional, defaults to claude-3-sonnet)`
-    : `## Environment Variables Expected
-- **OPENROUTER_API_KEY**: Your OpenRouter API key
-- **EXECUTION_MODE**: Set to "full" for AI execution
-- **AI_MODEL**: AI model to use (optional, defaults to claude-3-sonnet)
-
-## Testing
-After fixing the configuration, try calling \`suggest_adrs\` - it should return actual ADR suggestions instead of prompts.`
-}
-`,
-          },
-        ],
-      };
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# AI Execution Status Check Failed
-
-**Error**: ${error instanceof Error ? error.message : String(error)}
-
-This diagnostic tool checks the execution configuration. The server defaults to
-CE-MCP mode, which requires no API key — so if you have not set any environment
-variables, this error is unlikely to be a configuration problem.
-
-## Manual Check (legacy OpenRouter mode only)
-If you explicitly set EXECUTION_MODE=full, verify these environment variables:
-- OPENROUTER_API_KEY
-- EXECUTION_MODE=full
-- AI_MODEL (optional)
-`,
-          },
-        ],
-      };
-    }
-  }
+  // checkAIExecutionStatus removed — host-native, ADR-023 (#1673)
 
   async getWorkflowGuidance(args: GetWorkflowGuidanceArgs): Promise<CallToolResult> {
     const {
@@ -4496,193 +4341,15 @@ Please provide:
     });
   }
 
-  /**
-   * File system tool implementations
-   */
+  // listRoots removed — host-native, ADR-023 (#1673)
 
-  /**
-   * List accessible roots (MCP best practice)
-   */
-  async listRoots(): Promise<CallToolResult> {
-    const roots = this.rootManager.listRoots();
+  // readDirectory removed — host-native, ADR-023 (#1673)
 
-    const rootsList = roots
-      .map(r => `### ${r.name}\n\n**Path**: \`${r.path}\`\n\n**Description**: ${r.description}\n`)
-      .join('\n');
+  // readFile removed — host-native, ADR-023 (#1673)
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `# Available File System Roots\n\nThese are the directories that can be accessed by this MCP server.\n\n${rootsList}\nUse these paths with \`read_directory\` and \`read_file\` tools to explore and access files.`,
-        },
-      ],
-    };
-  }
+  // writeFile removed — host-native, ADR-023 (#1673)
 
-  /**
-   * Read directory contents (MCP best practice for autonomous file discovery)
-   */
-  async readDirectory(args: { path?: string }): Promise<CallToolResult> {
-    const targetPath = args.path || this.config.projectPath;
-
-    try {
-      const path = await import('path');
-      const resolvedPath = path.resolve(targetPath);
-
-      // Security check: ensure path is within accessible roots
-      if (!this.rootManager.isPathAllowed(resolvedPath)) {
-        const roots = this.rootManager.listRoots();
-        const rootList = roots.map(r => `  - ${r.name}: ${r.path}`).join('\n');
-
-        throw new McpAdrError(
-          `Access denied: Path '${targetPath}' is outside accessible roots.\n\nAccessible roots:\n${rootList}\n\nUse list_roots tool for more details.`,
-          'ACCESS_DENIED'
-        );
-      }
-
-      const { readdir } = await import('fs/promises');
-      const entries = await readdir(resolvedPath, { withFileTypes: true });
-
-      const files = entries.filter(e => e.isFile()).map(e => `📄 ${e.name}`);
-
-      const dirs = entries.filter(e => e.isDirectory()).map(e => `📁 ${e.name}/`);
-
-      const root = this.rootManager.getRootForPath(resolvedPath);
-      const relPath = this.rootManager.getRelativePathFromRoot(resolvedPath);
-
-      const filesList = files.length > 0 ? files.join('\n') : '(no files)';
-      const dirsList = dirs.length > 0 ? dirs.join('\n') : '(no directories)';
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# Directory: ${targetPath}\n\n**Root**: ${root?.name}\n**Relative Path**: ${relPath || '/'}\n**Full Path**: \`${resolvedPath}\`\n\n## Directories (${dirs.length})\n\n${dirsList}\n\n## Files (${files.length})\n\n${filesList}`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to read directory: ${error instanceof Error ? error.message : String(error)}`,
-        'DIRECTORY_READ_ERROR'
-      );
-    }
-  }
-
-  async readFile(args: ReadFileArgs): Promise<CallToolResult> {
-    const { filePath } = args;
-
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
-      // Resolve path (handle both relative and absolute paths)
-      const safePath = path.resolve(filePath);
-
-      // Security check: ensure path is within accessible roots
-      if (!this.rootManager.isPathAllowed(safePath)) {
-        const roots = this.rootManager.listRoots();
-        const rootList = roots.map(r => `  - ${r.name}: ${r.path}`).join('\n');
-
-        throw new McpAdrError(
-          `Access denied: Path '${filePath}' is outside accessible roots.\n\nAccessible roots:\n${rootList}\n\nUse list_roots tool for more details.`,
-          'ACCESS_DENIED'
-        );
-      }
-
-      const content = await fs.readFile(safePath, 'utf-8');
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: content,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to read file: ${error instanceof Error ? error.message : String(error)}`,
-        'FILE_READ_ERROR'
-      );
-    }
-  }
-
-  async writeFile(args: WriteFileArgs): Promise<CallToolResult> {
-    const { filePath, content } = args;
-
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
-      // Resolve path relative to project path for security
-      const safePath = path.resolve(this.config.projectPath, filePath);
-
-      // Security check: ensure path is within project directory
-      if (!safePath.startsWith(this.config.projectPath)) {
-        throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
-      }
-
-      // Ensure directory exists
-      await fs.mkdir(path.dirname(safePath), { recursive: true });
-
-      // Write file
-      await fs.writeFile(safePath, content, 'utf-8');
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Successfully wrote to ${filePath}`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to write file: ${error instanceof Error ? error.message : String(error)}`,
-        'FILE_WRITE_ERROR'
-      );
-    }
-  }
-
-  async listDirectory(args: Record<string, unknown>): Promise<CallToolResult> {
-    const { path: dirPath } = args;
-
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
-      // Resolve path relative to project path for security
-      const safePath = path.resolve(this.config.projectPath, dirPath as string);
-
-      // Security check: ensure path is within project directory
-      if (!safePath.startsWith(this.config.projectPath)) {
-        throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
-      }
-
-      const entries = await fs.readdir(safePath, { withFileTypes: true });
-      const fileList = entries.map(entry => ({
-        name: entry.name,
-        type: entry.isDirectory() ? 'directory' : 'file',
-        path: path.join(dirPath as string, entry.name),
-      }));
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(fileList, null, 2),
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to list directory: ${error instanceof Error ? error.message : String(error)}`,
-        'DIRECTORY_LIST_ERROR'
-      );
-    }
-  }
+  // listDirectory removed — host-native, ADR-023 (#1673)
 
   async generateDeploymentGuidance(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
@@ -4946,130 +4613,7 @@ This tool has been deprecated and replaced with memory-centric health scoring.
     }
   }
 
-  /**
-   * Get Current Datetime Tool
-   * Returns the current date and time in various formats for ADR generation and timestamping
-   */
-  async getCurrentDatetime(args: {
-    timezone?: string;
-    format?: 'iso' | 'human' | 'adr' | 'all';
-    includeTimestamp?: boolean;
-  }): Promise<CallToolResult> {
-    const { timezone = 'UTC', format = 'all', includeTimestamp = true } = args;
-
-    try {
-      const now = new Date();
-
-      // Format date for different timezones
-      const formatOptions: Intl.DateTimeFormatOptions = {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      };
-
-      // Get date parts for the specified timezone
-      const formatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      const parts = formatter.formatToParts(now);
-      const year = parts.find(p => p.type === 'year')?.value || '';
-      const month = parts.find(p => p.type === 'month')?.value || '';
-      const day = parts.find(p => p.type === 'day')?.value || '';
-
-      // ADR date format: YYYY-MM-DD
-      const adrDate = `${year}-${month}-${day}`;
-
-      // ISO 8601 format
-      const isoDate = now.toISOString();
-
-      // Human-readable format
-      const humanFormatter = new Intl.DateTimeFormat('en-US', {
-        ...formatOptions,
-        weekday: 'long',
-        month: 'long',
-      });
-      const humanDate = humanFormatter.format(now);
-
-      // Build response based on requested format
-      let responseData: Record<string, string | number> = {};
-
-      switch (format) {
-        case 'iso':
-          responseData = { iso: isoDate };
-          break;
-        case 'human':
-          responseData = { human: humanDate };
-          break;
-        case 'adr':
-          responseData = { adr: adrDate };
-          break;
-        case 'all':
-        default:
-          responseData = {
-            iso: isoDate,
-            human: humanDate,
-            adr: adrDate,
-            timezone: timezone,
-          };
-      }
-
-      if (includeTimestamp) {
-        responseData['timestamp'] = now.getTime();
-      }
-
-      const responseText = `# Current Date and Time
-
-## Formats
-${format === 'all' || format === 'iso' ? `- **ISO 8601**: ${isoDate}` : ''}
-${format === 'all' || format === 'human' ? `- **Human Readable**: ${humanDate}` : ''}
-${format === 'all' || format === 'adr' ? `- **ADR Date (YYYY-MM-DD)**: ${adrDate}` : ''}
-${format === 'all' ? `- **Timezone**: ${timezone}` : ''}
-${includeTimestamp ? `- **Unix Timestamp (ms)**: ${now.getTime()}` : ''}
-
-## Usage for ADR Generation
-
-When generating ADRs, use the ADR date format (\`${adrDate}\`) in the Date field:
-
-\`\`\`markdown
-# ADR-XXXX: [Title]
-
-## Date
-${adrDate}
-
-## Status
-Proposed
-\`\`\`
-
-## Raw Data
-
-\`\`\`json
-${JSON.stringify(responseData, null, 2)}
-\`\`\`
-`;
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: responseText,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to get current datetime: ${error instanceof Error ? error.message : String(error)}`,
-        'DATETIME_ERROR'
-      );
-    }
-  }
+  // getCurrentDatetime removed — host-native, ADR-023 (#1673)
 
   /**
    * Set Project Path Tool - Dynamic Session Configuration
@@ -5100,8 +4644,7 @@ ${JSON.stringify(responseData, null, 2)}
       // Update the server configuration
       this.config.projectPath = absolutePath;
 
-      // Re-initialize the RootManager with the new path
-      this.rootManager = new RootManager(absolutePath, this.config.adrDirectory);
+      // rootManager re-init removed — ADR-023 (#1673)
 
       this.logger.info(`Project path changed: ${previousPath} -> ${absolutePath}`);
 
@@ -5139,136 +4682,5 @@ To make this permanent, set the \`PROJECT_PATH\` environment variable.
     }
   }
 
-  /**
-   * Load Prompt Tool - CE-MCP Phase 4 Lazy Loading
-   *
-   * @description Loads prompts on-demand instead of eagerly loading all prompts at startup.
-   * This reduces token usage by ~96% (from 28K tokens to ~1K on-demand).
-   *
-   * @param args - Load prompt arguments
-   * @param args.promptName - Name of the prompt to load
-   * @param args.section - Optional section within the prompt
-   * @param args.estimateOnly - If true, returns only token estimate
-   * @returns Promise<CallToolResult> - Loaded prompt content or estimate
-   */
-  async loadPrompt(args: {
-    promptName: string;
-    section?: string;
-    estimateOnly?: boolean;
-  }): Promise<CallToolResult> {
-    const { promptName, section, estimateOnly = false } = args;
-
-    // Import the prompt catalog dynamically to enable lazy loading
-    const { getPromptLoader, getPromptMetadata, calculateTokenSavings } =
-      await import('./prompts/prompt-catalog.js');
-
-    const metadata = getPromptMetadata(promptName);
-
-    if (!metadata) {
-      const availablePrompts = [
-        'adr-suggestion',
-        'deployment-analysis',
-        'environment-analysis',
-        'research-question',
-        'rule-generation',
-        'analysis',
-        'research-integration',
-        'validated-pattern',
-        'security',
-      ];
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                success: false,
-                error: `Unknown prompt: ${promptName}`,
-                availablePrompts,
-                hint: 'Use one of the available prompt names listed above',
-              },
-              null,
-              2
-            ),
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    // If estimate only, return token information without loading
-    if (estimateOnly) {
-      const loader = getPromptLoader();
-      const estimatedTokens = loader.getEstimatedTokens(promptName, section);
-      const savings = calculateTokenSavings([promptName]);
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                success: true,
-                promptName,
-                section: section || 'full',
-                estimatedTokens,
-                metadata: {
-                  file: metadata.file,
-                  category: metadata.category,
-                  totalTokens: metadata.tokens,
-                  availableSections: metadata.sections,
-                  loadOnDemand: metadata.loadOnDemand,
-                },
-                tokenSavings: {
-                  loaded: savings.loaded,
-                  total: savings.total,
-                  saved: savings.saved,
-                  percentage: `${savings.percentage}%`,
-                },
-              },
-              null,
-              2
-            ),
-          },
-        ],
-      };
-    }
-
-    // Load the prompt content
-    try {
-      const loader = getPromptLoader();
-      const content = await loader.loadPrompt(promptName, section);
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# Loaded Prompt: ${promptName}${section ? ` (section: ${section})` : ''}
-
-## Metadata
-- **Category**: ${metadata.category}
-- **Estimated Tokens**: ${metadata.tokens}
-- **Available Sections**: ${metadata.sections.join(', ')}
-
-## Content
-
-${content}
-
----
-
-*Loaded on-demand via CE-MCP lazy loading system. Token savings: ~96% compared to eager loading all prompts.*
-`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to load prompt '${promptName}'${section ? ` section '${section}'` : ''}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        'PROMPT_LOAD_ERROR'
-      );
-    }
-  }
+  // loadPrompt removed — host-native, ADR-023 (#1673)
 }
