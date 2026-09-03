@@ -1803,6 +1803,218 @@ export function createGenerateResearchQuestionsDirective(
 }
 
 // ============================================================================
+// ============================================================================
+// CE-MCP Batch 7: Server-level directives (#1636)
+// ============================================================================
+
+/**
+ * Arguments for CE-MCP get_workflow_guidance
+ */
+export interface CEMCPGetWorkflowGuidanceArgs {
+  goal?: string;
+  projectContext?: string;
+  availableAssets?: string[];
+  timeframe?: string;
+  primaryConcerns?: string[];
+}
+
+/**
+ * CE-MCP version of get_workflow_guidance
+ */
+export function createGetWorkflowGuidanceDirective(
+  args: CEMCPGetWorkflowGuidanceArgs
+): OrchestrationDirective {
+  const { goal = '', projectContext = '', timeframe = '' } = args;
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'workflow-guidance',
+        scope: 'tool-recommendations',
+      },
+      store: 'workflowKnowledge',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'workflow-guidance',
+        goal,
+        projectContext,
+        timeframe,
+      },
+      inputs: ['workflowKnowledge'],
+      store: 'guidanceResults',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['workflowKnowledge', 'guidanceResults'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'get_workflow_guidance',
+    description: `Generate workflow guidance for goal: ${goal.slice(0, 80) || 'general analysis'}`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [{ source: 'guidanceResults', key: 'workflowRecommendations' }],
+      template: 'workflow_guidance_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 3000,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+/**
+ * Arguments for CE-MCP get_development_guidance
+ */
+export interface CEMCPGetDevelopmentGuidanceArgs {
+  developmentPhase?: string;
+  adrsToImplement?: string[];
+  technologyStack?: string[];
+  currentProgress?: string;
+  teamContext?: { size?: string; experienceLevel?: string };
+  timeline?: string;
+  focusAreas?: string[];
+}
+
+/**
+ * CE-MCP version of get_development_guidance
+ */
+export function createGetDevelopmentGuidanceDirective(
+  args: CEMCPGetDevelopmentGuidanceArgs
+): OrchestrationDirective {
+  const { developmentPhase = 'planning', technologyStack = [], focusAreas = [] } = args;
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'development-guidance',
+        scope: developmentPhase,
+      },
+      store: 'devKnowledge',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'development-guidance',
+        developmentPhase,
+        technologyStack,
+        focusAreas,
+      },
+      inputs: ['devKnowledge'],
+      store: 'guidanceResults',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['devKnowledge', 'guidanceResults'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'get_development_guidance',
+    description: `Generate development guidance for ${developmentPhase} phase`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [{ source: 'guidanceResults', key: 'developmentRecommendations' }],
+      template: 'development_guidance_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 4000,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+/**
+ * Arguments for CE-MCP get_architectural_context
+ */
+export interface CEMCPGetArchitecturalContextArgs {
+  filePath?: string;
+  projectPath?: string;
+  includePatterns?: boolean;
+  includeEnvironment?: boolean;
+}
+
+/**
+ * CE-MCP version of get_architectural_context
+ */
+export function createGetArchitecturalContextDirective(
+  args: CEMCPGetArchitecturalContextArgs
+): OrchestrationDirective {
+  const { filePath, projectPath } = args;
+  const target = filePath || projectPath || 'project';
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'analyzeFiles',
+      args: {
+        patterns: ['docs/adr/**/*.md', '*.md'],
+        maxFiles: 50,
+      },
+      store: 'adrContent',
+    },
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'architectural-context',
+        scope: 'analysis',
+      },
+      store: 'archKnowledge',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'architectural-context',
+        filePath,
+        projectPath,
+      },
+      inputs: ['adrContent', 'archKnowledge'],
+      store: 'contextResults',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['adrContent', 'archKnowledge', 'contextResults'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'get_architectural_context',
+    description: `Analyze architectural context for ${target}`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'adrContent', key: 'architecturalDecisions', transform: 'summarize' },
+        { source: 'contextResults', key: 'architecturalContext' },
+      ],
+      template: 'architectural_context_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 2500,
+      complexity: 'medium',
+      cacheable: true,
+      cache_key: `arch-context-${target}`,
+    },
+  };
+}
+
 // CE-MCP TOOL REGISTRY
 // ============================================================================
 
@@ -1835,6 +2047,10 @@ export function shouldUseCEMCPDirective(toolName: string, config: { mode: string
     'validate_rules',
     // CE-MCP Batch 5: deployment/environment (#1634)
     'analyze_deployment_progress',
+    // CE-MCP Batch 7: server-level (#1636)
+    'get_workflow_guidance',
+    'get_development_guidance',
+    'get_architectural_context',
   ];
 
   return (
@@ -1869,6 +2085,9 @@ export const CE_MCP_DIRECTIVE_TOOLS: ReadonlySet<string> = new Set([
   'generate_research_questions',
   'validate_rules',
   'generate_rules',
+  'get_architectural_context',
+  'get_development_guidance',
+  'get_workflow_guidance',
   'interactive_adr_planning',
   'mcp_planning',
   'perform_research',
@@ -1955,6 +2174,18 @@ export function getCEMCPDirective(
     case 'generate_research_questions':
       return createGenerateResearchQuestionsDirective(
         args as unknown as CEMCPGenerateResearchQuestionsArgs
+      );
+
+    // CE-MCP Batch 7: server-level directives (#1636)
+    case 'get_workflow_guidance':
+      return createGetWorkflowGuidanceDirective(args as unknown as CEMCPGetWorkflowGuidanceArgs);
+    case 'get_development_guidance':
+      return createGetDevelopmentGuidanceDirective(
+        args as unknown as CEMCPGetDevelopmentGuidanceArgs
+      );
+    case 'get_architectural_context':
+      return createGetArchitecturalContextDirective(
+        args as unknown as CEMCPGetArchitecturalContextArgs
       );
 
     default:
