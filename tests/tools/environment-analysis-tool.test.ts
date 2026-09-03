@@ -94,21 +94,6 @@ vi.mock('../../src/utils/knowledge-generation.js', () => ({
   }),
 }));
 
-vi.mock('../../src/utils/prompt-execution.js', () => ({
-  executePromptWithFallback: vi.fn().mockResolvedValue({
-    content: 'Mock prompt execution result',
-    isAIGenerated: false,
-  }),
-  formatMCPResponse: vi.fn((content: string) => ({
-    content: [
-      {
-        type: 'text',
-        text: content,
-      },
-    ],
-  })),
-}));
-
 // Default test options to disable memory integration and ensure fast tests
 const defaultTestOptions = {
   enableMemoryIntegration: false, // Critical: prevents internal I/O operations

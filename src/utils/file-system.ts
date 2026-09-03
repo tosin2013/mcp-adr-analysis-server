@@ -639,8 +639,7 @@ export async function findRelatedCode(
 }
 
 /**
- * Extract keywords from ADR content deterministically.
- * (AI-based extraction via ai-executor was removed during CE-MCP migration #1636.)
+ * Extract keywords from ADR content deterministically (CE-MCP migration #1636).
  */
 async function extractKeywordsWithAI(content: string): Promise<string[]> {
   const text = content.substring(0, 3000);
