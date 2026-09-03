@@ -649,7 +649,7 @@ TOOL_CATALOG.set('generate_research_questions', {
   category: 'research',
   complexity: 'moderate',
   tokenCost: { min: 1500, max: 3000 },
-  hasCEMCPDirective: false, // Phase 4.3: Moderate tool - question generation
+  hasCEMCPDirective: true, // CE-MCP Batch 3 (#1632): directive added
   relatedTools: ['perform_research', 'create_research_template'],
   keywords: ['research', 'questions', 'generate', 'gaps'],
   requiresAI: true,
