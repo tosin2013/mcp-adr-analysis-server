@@ -248,12 +248,7 @@ describe('Research Question Tool', () => {
 
     describe('questions analysis type', () => {
       test('should generate context-aware questions when relevant knowledge provided', async () => {
-        mockExecuteResearchPrompt.mockResolvedValue({
-          isAIGenerated: true,
-          content: 'Generated research questions content',
-        });
-
-        await generateResearchQuestions({
+        const result = await generateResearchQuestions({
           analysisType: 'questions',
           researchContext: sampleResearchContext,
           relevantKnowledge: sampleRelevantKnowledge,
@@ -265,8 +260,8 @@ describe('Research Question Tool', () => {
           sampleRelevantKnowledge,
           '/test/path'
         );
-        expect(mockExecuteResearchPrompt).toHaveBeenCalled();
-        expect(mockFormatMCPResponse).toHaveBeenCalled();
+        // CE-MCP: prompt-execution is no longer called; returns prompt text directly
+        expect(result.content[0].text).toContain('Context-Aware Research Question Generation');
       });
 
       test('should throw error when relevant knowledge missing for questions', async () => {
@@ -551,33 +546,19 @@ describe('Research Question Tool', () => {
         expect(typeof result.content[0].text).toBe('string');
       });
 
-      test('should return proper MCP response format for AI-generated questions', async () => {
-        mockExecuteResearchPrompt.mockResolvedValue({
-          isAIGenerated: true,
-          content: 'AI generated content',
-        });
-
-        mockFormatMCPResponse.mockReturnValue({
-          content: [
-            {
-              type: 'text',
-              text: 'Formatted AI response',
-            },
-          ],
-        });
-
-        await generateResearchQuestions({
+      test('should return prompt-only MCP response for questions', async () => {
+        // CE-MCP: the AI execution path has been removed; the function now
+        // returns prompt text directly for the host LLM to process.
+        const result = await generateResearchQuestions({
           analysisType: 'questions',
           researchContext: sampleResearchContext,
           relevantKnowledge: sampleRelevantKnowledge,
         });
 
-        expect(mockFormatMCPResponse).toHaveBeenCalledWith(
-          expect.objectContaining({
-            isAIGenerated: true,
-            content: expect.stringContaining('Context-Aware Research Question Generation Results'),
-          })
-        );
+        expect(result.content).toHaveLength(1);
+        expect(result.content[0].type).toBe('text');
+        expect(result.content[0].text).toContain('Context-Aware Research Question Generation');
+        expect(result.content[0].text).toContain('File Creation Instructions');
       });
     });
 
