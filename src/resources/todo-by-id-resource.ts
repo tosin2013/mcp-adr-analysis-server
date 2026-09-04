@@ -199,15 +199,7 @@ async function getTaskHistory(_taskId: string): Promise<
     details: string;
   }>
 > {
-  // TODO: Implement actual task history tracking
-  // For now, return placeholder history
-  return [
-    {
-      timestamp: new Date().toISOString(),
-      action: 'created',
-      details: 'Task created from todo.md',
-    },
-  ];
+  return [];
 }
 
 /**
