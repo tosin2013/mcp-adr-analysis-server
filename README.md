@@ -29,7 +29,7 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **ADR**                          | **Architectural Decision Record** — A document that captures an important architectural decision along with its context, alternatives considered, and consequences.                                                |
 | **MCP**                          | **Model Context Protocol** — An open standard enabling AI assistants to connect to external tools and data sources.                                                                                                |
-| **CE-MCP**                       | **Claude-Enriched MCP** — Execution mode where tools return orchestration directives for the host LLM instead of making their own AI calls. Default since v2.14.                                                  |
+| **CE-MCP**                       | **Claude-Enriched MCP** — Execution mode where tools return orchestration directives for the host LLM instead of making their own AI calls. Default since v2.14.                                                   |
 | **Tree-sitter**                  | An incremental parsing library that provides AST (Abstract Syntax Tree) analysis for 50+ languages. Used for semantic code understanding, extracting function signatures, and identifying architectural patterns.  |
 | **Session & Tool-Usage Tracker** | Project-local tracking of session intents, tool executions, and ADR registrations, with keyword-scored retrieval over JSON snapshots. Supports workflow continuity and tool-usage evidence — not a graph database. |
 | **Smart Code Linking**           | Discovery of code files related to ADRs and architectural decisions, using keyword extraction and ripgrep search.                                                                                                  |
@@ -125,7 +125,10 @@ That's it. The server runs in **CE-MCP mode** by default — your host LLM (Clau
 | **Claude Desktop (macOS)**   | `~/Library/Application Support/Claude/claude_desktop_config.json`             |
 | **Claude Desktop (Windows)** | `%APPDATA%\Claude\claude_desktop_config.json`                                 |
 | **Cline (VS Code)**          | VS Code Settings → Cline → MCP Servers (or `.vscode/cline_mcp_settings.json`) |
+| **VS Code (native MCP)**     | `.vscode/mcp.json` in workspace root                                          |
 | **Cursor**                   | Cursor Settings → MCP → Add Server                                            |
+
+📖 **[VS Code Integration Guide →](docs/how-to-guides/vscode-integration.md)** — step-by-step setup for Cline, Continue, and VS Code native MCP with example configs.
 
 </details>
 
@@ -178,13 +181,13 @@ Get your API key at [adraggregator.com](https://adraggregator.com)
 
 ### Execution Modes
 
-|                          | **CE-MCP (default)**                                                                             | **Full Mode (legacy)**                                                                           | **Prompt-Only**                                                   |
-| ------------------------ | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
-| **Requires API key?**    | No                                                                                               | Yes (`OPENROUTER_API_KEY`)                                                                       | No                                                                |
-| **Returns**              | Orchestration directives for the host LLM to execute                                             | Server-side AI analysis results                                                                  | Prompts you can paste into any AI chat                            |
-| **Set via**              | Default (no env var needed)                                                                      | `EXECUTION_MODE=full`                                                                            | `EXECUTION_MODE=prompt-only`                                      |
-| **Best for**             | All users — recommended                                                                          | Legacy workflows with dedicated API budget                                                       | Offline exploration                                               |
-| **Tools available**      | All 64 tools with annotated MCP metadata                                                         | All 64 tools                                                                                     | Analysis prompts, templates, local file operations, ADR discovery |
+|                       | **CE-MCP (default)**                                 | **Full Mode (legacy)**                     | **Prompt-Only**                                                   |
+| --------------------- | ---------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------- |
+| **Requires API key?** | No                                                   | Yes (`OPENROUTER_API_KEY`)                 | No                                                                |
+| **Returns**           | Orchestration directives for the host LLM to execute | Server-side AI analysis results            | Prompts you can paste into any AI chat                            |
+| **Set via**           | Default (no env var needed)                          | `EXECUTION_MODE=full`                      | `EXECUTION_MODE=prompt-only`                                      |
+| **Best for**          | All users — recommended                              | Legacy workflows with dedicated API budget | Offline exploration                                               |
+| **Tools available**   | All 64 tools with annotated MCP metadata             | All 64 tools                               | Analysis prompts, templates, local file operations, ADR discovery |
 
 **What are CE-MCP directives?** When a tool is called, it returns a structured orchestration directive that tells your host LLM what to analyze, what data to gather, and how to format results. The host LLM (e.g. Claude in Claude Desktop, or GPT in Cursor) executes the directive using its existing context window. This means **zero additional API costs** and **better results** because the LLM already has your conversation context.
 
