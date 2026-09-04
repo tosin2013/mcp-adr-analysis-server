@@ -1,0 +1,14 @@
+{
+  "$comment": "Add concurrency guard to auto-release workflow so concurrent runs queue instead of racing. Verify the block exists and uses cancel-in-progress: false.",
+  "authority_id": "1560",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "grep -q 'concurrency:' .github/workflows/auto-release-on-merge.yml"
+    },
+    {
+      "check": "command_exit",
+      "target": "grep -q 'cancel-in-progress: false' .github/workflows/auto-release-on-merge.yml"
+    }
+  ]
+}
