@@ -2,7 +2,7 @@
   "name": "mcp-adr-analysis-server",
   "mcpName": "io.github.tosin2013/mcp-adr-analysis-server",
   "version": "2.14.7",
-  "description": "MCP server for analyzing Architectural Decision Records and project architecture",
+  "description": "MCP server with live ADR drift detection, content safety, and decision memory — validates architectural decisions against your actual code",
   "main": "dist/src/index.js",
   "type": "module",
   "engines": {
@@ -96,8 +96,11 @@
     "mcp",
     "architectural-decision-records",
     "adr",
+    "drift-detection",
+    "content-safety",
+    "ce-mcp",
     "architecture",
-    "analysis",
+    "code-analysis",
     "typescript",
     "model-context-protocol"
   ],

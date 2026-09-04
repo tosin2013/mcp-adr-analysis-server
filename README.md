@@ -7,17 +7,17 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue)](https://www.typescriptlang.org/)
 [![Good First Issues](https://img.shields.io/github/issues/tosin2013/mcp-adr-analysis-server/good%20first%20issue?label=good%20first%20issues&color=7057ff)](https://github.com/tosin2013/mcp-adr-analysis-server/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
-> **Architectural analysis for intelligent development workflows.** 64 MCP tools for drift detection, content safety, and decision memory — powered by your host LLM via CE-MCP directives.
+> **Your ADRs are lying to you.** This MCP server catches it — live drift detection validates architectural decisions against your actual code. Plus content safety, decision memory, and 64 tools powered by your host LLM via CE-MCP.
 
 ## What is MCP?
 
-The **Model Context Protocol (MCP)** is an open standard that enables seamless integration between AI assistants and external tools and data sources. Think of it as a universal adapter that lets AI assistants like Claude, Cline, and Cursor connect to specialized analysis servers. This server enhances AI assistants with deep architectural analysis capabilities, enabling intelligent code generation, decision tracking, and development workflow automation.
+The **Model Context Protocol (MCP)** is an open standard that enables seamless integration between AI assistants and external tools and data sources. Think of it as a universal adapter that lets AI assistants like Claude, Cline, and Cursor connect to specialized servers. This server gives your AI assistant the ability to detect ADR drift against live code, mask sensitive content before it leaks, and remember architectural decisions across conversations.
 
 ## TL;DR
 
-**What:** MCP server providing architectural decision analysis, drift detection, content safety, and ADR management  
+**What:** MCP server that validates architectural decisions against your actual code — drift detection, content safety, and decision memory  
 **Who:** AI coding assistants (Claude, Cline, Cursor, Windsurf), enterprise architects, development teams  
-**Why:** Get immediate architectural insights — no external API key required in CE-MCP mode  
+**Why:** Catch stale ADRs before they cause production incidents — live validation against code evidence, no API key required  
 **How:** `npm install -g mcp-adr-analysis-server` → Add to your MCP client → Start analyzing
 
 **Key Features:** Tree-sitter AST analysis • Security content masking • Drift detection • CE-MCP orchestration directives • Deployment readiness validation
