@@ -1,17 +1,17 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.tosin2013/mcp-adr-analysis-server",
-  "description": "AI-powered MCP server for analyzing Architectural Decision Records (ADRs).",
+  "description": "MCP server with live ADR drift detection, content safety, and decision memory — validates architectural decisions against your actual code",
   "repository": {
     "url": "https://github.com/tosin2013/mcp-adr-analysis-server",
     "source": "github"
   },
-  "version": "2.4.0",
+  "version": "2.14.7",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "mcp-adr-analysis-server",
-      "version": "2.4.0",
+      "version": "2.14.7",
       "transport": {
         "type": "stdio"
       },
@@ -30,7 +30,7 @@
         },
         {
           "name": "EXECUTION_MODE",
-          "description": "Execution mode: 'full' for AI results or 'prompt-only' for prompts (default: prompt-only)",
+          "description": "Execution mode: 'ce-mcp' (default), 'full' for AI results, or 'prompt-only' for prompts",
           "isRequired": false,
           "isSecret": false
         },

@@ -1,0 +1,9 @@
+{
+  "authority_id": "1701",
+  "criteria": [
+    { "check": "command_exit", "target": "grep -q '2.14.7' server.json" },
+    { "check": "command_exit", "target": "grep -q 'drift detection' server.json" },
+    { "check": "command_exit", "target": "grep -q 'ce-mcp' server.json" },
+    { "check": "file_exists", "target": ".github/workflows/publish-mcp.yml" }
+  ]
+}
