@@ -5,9 +5,9 @@ slug: /
 
 # MCP ADR Analysis Server
 
-**AI-powered architectural analysis for intelligent development workflows**
+**Your ADRs are lying to you.** This MCP server catches it.
 
-An MCP server that gives AI coding assistants — Claude, Cursor, Cline, Windsurf — deep architectural analysis capabilities. Unlike other tools, it returns **actual analysis results with confidence scoring**, not prompts to submit elsewhere.
+Live drift detection validates architectural decisions against your actual code — plus content safety, decision memory, and 64 tools powered by your host LLM via CE-MCP.
 
 ```bash
 npm install -g mcp-adr-analysis-server
@@ -17,19 +17,19 @@ npm install -g mcp-adr-analysis-server
 
 ## ✨ Core Capabilities
 
-🤖 **AI-Powered Analysis** — Immediate architectural insights via OpenRouter.ai integration
+🔄 **Drift Detection** — Validate ADR decisions against live code and infrastructure evidence. No other ADR tool does this.
 
-📋 **ADR Management** — Generate, suggest, and maintain Architectural Decision Records automatically
+🛡️ **Content Safety** — Detect and mask secrets, PII, and sensitive content automatically before it reaches the LLM.
 
-🔗 **Smart Code Linking** — AI-powered discovery of code files related to ADRs and decisions
+🧠 **Decision Memory** — Session & tool-usage tracking with keyword-scored retrieval across conversations.
 
-🏗️ **Technology Detection** — Identify any tech stack and architectural patterns in your codebase
+🏗️ **Technology Detection** — Identify any tech stack and architectural patterns in your codebase.
 
-🛡️ **Security & Compliance** — Detect and mask sensitive content with configurable patterns
+📋 **ADR Management** — Generate, suggest, and maintain Architectural Decision Records automatically.
 
-🚀 **Deployment Readiness** — Zero-tolerance test validation with hard blocking before deploy
+🔗 **Smart Code Linking** — Discovery of code files related to ADRs and decisions using tree-sitter AST analysis and ripgrep.
 
-🧪 **TDD Integration** — Two-phase Test-Driven Development with automated validation
+🚀 **Deployment Readiness** — Zero-tolerance test validation with hard blocking before deploy.
 
 ---
 
@@ -37,15 +37,15 @@ npm install -g mcp-adr-analysis-server
 
 ### 👨‍💻 AI Assistant Users
 
-Use with **Claude Desktop**, **Cline**, **Cursor**, or **Windsurf** to enhance your AI coding workflow with architectural intelligence. Ask questions in natural language and get real analysis results back.
+Use with **Claude Desktop**, **Cline**, **Cursor**, or **Windsurf** to enhance your AI coding workflow with architectural intelligence. No API key required — the server runs in CE-MCP mode by default, using your host LLM's existing context.
 
 ### 🏢 Enterprise Architects
 
-Track architectural decisions with ADRs, build knowledge graphs across repositories, enforce compliance standards, and generate governance reports — all integrated into your existing toolchain.
+Track architectural decisions with ADRs, detect drift before it causes production incidents, enforce content safety standards, and generate governance reports — all integrated into your existing toolchain.
 
 ### 🛠️ Development Teams
 
-Integrate into CI/CD pipelines for automated code quality checks, deployment readiness validation, security scanning, and test coverage enforcement with >80% thresholds.
+Integrate into CI/CD pipelines for automated ADR validation, deployment readiness checks, security scanning, and architectural compliance enforcement.
 
 ---
 
@@ -57,11 +57,9 @@ Integrate into CI/CD pipelines for automated code quality checks, deployment rea
 npm install -g mcp-adr-analysis-server
 ```
 
-### 2. Get an API Key (optional)
+### 2. Configure Your MCP Client
 
-Sign up at [OpenRouter.ai/keys](https://openrouter.ai/keys) for full AI-powered analysis. No API key? The server still works in **prompt-only mode** — you'll get prompts you can paste into any AI chat.
-
-### 3. Configure Your MCP Client
+No API key required. The server runs in **CE-MCP mode** by default — your host LLM executes the analysis using orchestration directives.
 
 ```json
 {
@@ -69,9 +67,7 @@ Sign up at [OpenRouter.ai/keys](https://openrouter.ai/keys) for full AI-powered 
     "adr-analysis": {
       "command": "mcp-adr-analysis-server",
       "env": {
-        "PROJECT_PATH": "/path/to/your/project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full"
+        "PROJECT_PATH": "/path/to/your/project"
       }
     }
   }
@@ -94,7 +90,7 @@ Task-oriented recipes for specific goals: configuring clients, running analyses,
 
 ### [📖 Reference](./reference/api-reference.md)
 
-Technical details on all 23 MCP tools, environment variables, configuration options, and API specifications.
+Technical details on all 64 MCP tools, environment variables, configuration options, and the CE-MCP directive format.
 
 ### [💡 Explanation](./explanation/)
 
