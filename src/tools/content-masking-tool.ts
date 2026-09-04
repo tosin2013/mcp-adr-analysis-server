@@ -70,8 +70,8 @@ class SecurityMemoryManager {
           effectiveness: maskingResults?.securityScore || 0.8,
           method: maskingResults?.strategy || 'analysis-only',
           preservedUtility: maskingResults?.preservedContext || 0.7,
-          falsePositives: 0, // Simplified - could be enhanced with actual analysis
-          falseNegatives: 0, // Simplified - could be enhanced with actual analysis
+          falsePositives: undefined,
+          falseNegatives: undefined,
         },
         riskAssessment: {
           overallRisk: calculateOverallRisk(detectedPatterns) as
@@ -334,7 +334,7 @@ class SecurityMemoryManager {
       effectivenessMetrics: {
         overallScore: avgScore,
         totalAnalyses: totalPatterns,
-        averageConfidence: 0.8, // Simplified
+        averageConfidence: null,
       },
       complianceStatus: {
         gdpr: avgScore > 0.8 ? 'likely-compliant' : 'needs-review',

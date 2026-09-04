@@ -1,0 +1,26 @@
+{
+  "authority_id": "1695",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "npx vitest run tests/resources/project-status-resource.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "npx vitest run tests/resources/project-metrics-resource.test.ts"
+    },
+    { "check": "command_exit", "target": "npx vitest run tests/utils/adr-action-analyzer.test.ts" },
+    {
+      "check": "command_exit",
+      "target": "npx vitest run tests/resources/rule-catalog-resource.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "npx vitest run tests/resources/pattern-by-name-resource.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "npx vitest run tests/resources/todo-by-id-resource.test.ts"
+    }
+  ]
+}

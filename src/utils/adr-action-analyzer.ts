@@ -5,11 +5,7 @@
  * with priority scoring and effort estimation
  */
 
-import type {
-  AdrActionItem,
-  AdrWorkQueue,
-  ThresholdProfile,
-} from './adr-timeline-types.js';
+import type { AdrActionItem, AdrWorkQueue, ThresholdProfile } from './adr-timeline-types.js';
 import type { DiscoveredAdr } from './adr-discovery.js';
 import { detectAdrType, adjustThresholdsForAdrType } from './adr-context-detector.js';
 
@@ -104,11 +100,11 @@ function analyzeAdrActions(adr: DiscoveredAdr, thresholds: ThresholdProfile): Ad
       priority: urgency > 70 ? 'high' : 'medium',
       urgencyScore: urgency,
       actionType: 'implement',
-      actionDescription: 'Begin implementation of accepted decision',
+      actionDescription: 'Verify implementation status',
       rationale:
         `ADR was accepted ${timeline.age_days} days ago ` +
         `(>${thresholds.acceptedUnimplementedDays} days threshold). ` +
-        `Accepted decisions should be implemented promptly to maintain architectural integrity.`,
+        `Implementation status has not been verified — this may need attention.`,
       estimatedEffort: estimateImplementationEffort(adr),
       dueDate: addDays(new Date(), 30).toISOString(),
       blockers: [
@@ -226,10 +222,7 @@ function analyzeAdrActions(adr: DiscoveredAdr, thresholds: ThresholdProfile): Ad
         `Rapid changes may indicate unstable requirements or unclear context.`,
       estimatedEffort: 'low',
       dueDate: addDays(new Date(), 7).toISOString(),
-      blockers: [
-        'May need to stabilize requirements',
-        'May need additional stakeholder input',
-      ],
+      blockers: ['May need to stabilize requirements', 'May need additional stakeholder input'],
       timeline,
     });
   }
@@ -287,10 +280,10 @@ function categorizeActions(actions: AdrActionItem[]): AdrWorkQueue {
   // Sort by urgency score (highest first)
   actions.sort((a, b) => b.urgencyScore - a.urgencyScore);
 
-  const critical = actions.filter((a) => a.priority === 'critical');
-  const high = actions.filter((a) => a.priority === 'high');
-  const medium = actions.filter((a) => a.priority === 'medium');
-  const low = actions.filter((a) => a.priority === 'low');
+  const critical = actions.filter(a => a.priority === 'critical');
+  const high = actions.filter(a => a.priority === 'high');
+  const medium = actions.filter(a => a.priority === 'medium');
+  const low = actions.filter(a => a.priority === 'low');
 
   // Estimate total hours based on effort
   const effortHours = {
@@ -407,7 +400,7 @@ function formatActionItem(action: AdrActionItem, index: number): string {
 
   if (action.blockers.length > 0) {
     item += `**Potential Blockers:**\n`;
-    action.blockers.forEach((blocker) => {
+    action.blockers.forEach(blocker => {
       item += `- ${blocker}\n`;
     });
     item += '\n';
