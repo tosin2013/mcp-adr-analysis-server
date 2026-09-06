@@ -21,8 +21,8 @@ export interface ProjectStatus {
   };
   metrics: {
     completionRate: number;
-    qualityScore: number;
-    resourceCoverage: number;
+    qualityScore: number | null;
+    resourceCoverage: number | null;
   };
 }
 
@@ -76,40 +76,34 @@ function calculateCompletionRate(todoStats: any): number {
 /**
  * Calculate quality score from various metrics
  */
-function calculateQualityScore(components: any): number {
-  // Simplified quality score calculation
-  // In production, this would analyze code quality, test coverage, etc.
-  let score = 75; // Baseline score
+function calculateQualityScore(components: any): number | null {
+  let score = 0;
+  let hasMeasurement = false;
 
-  // Adjust based on rule compliance
   if (components.rules && components.rules.summary) {
     const { enabled, total } = components.rules.summary;
     if (total > 0) {
       score += (enabled / total) * 10;
+      hasMeasurement = true;
     }
   }
 
-  // Adjust based on research documentation
   if (components.research && components.research.summary) {
     const { total } = components.research.summary;
     if (total > 5) {
-      score += 5; // Bonus for good documentation
+      score += 5;
+      hasMeasurement = true;
     }
   }
 
-  return Math.min(Math.max(score, 0), 100);
+  return hasMeasurement ? Math.min(Math.max(score, 0), 100) : null;
 }
 
 /**
  * Calculate resource coverage
  */
-function calculateResourceCoverage(): number {
-  // Currently: 7 resources (3 original refactored + 4 new)
-  // Target: 20+ resources
-  const current = 7;
-  const target = 20;
-
-  return (current / target) * 100;
+function calculateResourceCoverage(): null {
+  return null;
 }
 
 /**

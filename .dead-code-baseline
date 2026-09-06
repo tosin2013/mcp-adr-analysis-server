@@ -1,14 +1,25 @@
-5
+6
 
 Modules under src/ that no other src/ module imports, measured by
 scripts/check-dead-code.sh. A ratchet: this number may fall, never rise.
 
-5 files / 3,368 lines as of 2026-08-29, down from 17 / 9,062 when milestone 6
-opened. Twelve orphans retired under #1540, each with a recorded
-RETIREMENT_REVIEW verdict.
+6 files / 3,543 lines as of 2026-09-03, down from 9 / 4,807 because
+CE-MCP wrap-up (#1669, #1670, #1671) retired three dead modules:
 
-The five that remain are held for a named reason, not for lack of a verdict:
+  prompt-execution.ts              455  Retired: zero src/ consumers since
+                                        Batches 2-7 (#1631-#1636). #1669
+  ai-executor.ts                   456  Retired: only consumer was
+                                        prompt-execution.ts. #1670
+  prompt-catalog.ts                353  Retired: only consumer was the
+                                        loadPrompt handler removed in #1673. #1671
 
+The six that remain are held for a named reason:
+
+  root-manager.ts                  175  Only consumers were the removed listRoots,
+                                        readFile, readDirectory, writeFile, and
+                                        listDirectory handlers plus setProjectPath
+                                        (which only wrote to it, never read).
+                                        Candidate for retirement via retirement.py.
   memory-migration-manager.ts     1016  owner's call: possible scaffolding
   sandbox-executor.ts              800  exercised by the CE-MCP suites (m5, #1416)
   memory-rollback-manager.ts       744  owner's call: possible scaffolding

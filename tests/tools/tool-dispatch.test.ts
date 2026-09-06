@@ -82,13 +82,10 @@ describe('dispatchTool', () => {
     ['perform_research', 'performResearch'],
     ['search_codebase', 'searchCodebase'],
     ['analyze_deployment_progress', 'analyzeDeploymentProgress'],
-    ['check_ai_execution_status', 'checkAIExecutionStatus'],
+    // check_ai_execution_status, list_roots, read_directory, write_file,
+    // list_directory removed — ADR-023 Phase 0 (#1673)
     ['get_workflow_guidance', 'getWorkflowGuidance'],
     ['get_development_guidance', 'getDevelopmentGuidance'],
-    ['list_roots', 'listRoots'],
-    ['read_directory', 'readDirectory'],
-    ['write_file', 'writeFile'],
-    ['list_directory', 'listDirectory'],
     ['generate_deployment_guidance', 'generateDeploymentGuidance'],
     ['smart_git_push', 'smartGitPush'],
     ['deployment_readiness', 'deploymentReadiness'],
@@ -107,9 +104,8 @@ describe('dispatchTool', () => {
     ['get_memory_stats', 'getMemoryStats'],
     ['update_knowledge', 'updateKnowledge'],
     ['get_server_context', 'getServerContext'],
-    ['get_current_datetime', 'getCurrentDatetime'],
+    // get_current_datetime, load_prompt removed — ADR-023 Phase 0 (#1673)
     ['set_project_path', 'setProjectPath'],
-    ['load_prompt', 'loadPrompt'],
   ];
 
   it.each(hostDispatchedTools)('dispatches %s to host.%s', async (toolName, methodName) => {
@@ -118,22 +114,23 @@ describe('dispatchTool', () => {
     expect(host[methodName]).toHaveBeenCalledTimes(1);
   });
 
-  it('dispatches read_file and maps path to filePath', async () => {
-    const result = await dispatchTool(host, 'read_file', { path: '/foo.ts' }, ctx);
-    expect(result).toEqual(OK);
-    expect(host.readFile).toHaveBeenCalledWith({ filePath: '/foo.ts' });
-  });
+  // read_file, search_tools dispatch tests removed — ADR-023 Phase 0 (#1673)
 
-  it('dispatches read_file with filePath directly', async () => {
-    await dispatchTool(host, 'read_file', { filePath: '/bar.ts' }, ctx);
-    expect(host.readFile).toHaveBeenCalledWith({ filePath: '/bar.ts' });
-  });
-
-  it('dispatches search_tools inline without host', async () => {
-    const result = await dispatchTool(host, 'search_tools', { query: 'adr', limit: 2 }, ctx);
-    expect(result.content).toHaveLength(1);
-    const parsed = JSON.parse(result.content[0].text as string);
-    expect(parsed.success).toBe(true);
+  it('rejects removed host-native tools', async () => {
+    const removed = [
+      'read_file',
+      'write_file',
+      'list_directory',
+      'read_directory',
+      'list_roots',
+      'search_tools',
+      'load_prompt',
+      'get_current_datetime',
+      'check_ai_execution_status',
+    ];
+    for (const name of removed) {
+      await expect(dispatchTool(host, name, {}, ctx)).rejects.toThrow('Unknown tool');
+    }
   });
 
   const aggregatorTools: Array<[string, string]> = [

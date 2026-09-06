@@ -151,15 +151,9 @@ async function computeAdrValidation(args: {
 
     const research = await answerResearchQuestion(researchQuestion, projectPath, adrDirectory);
 
-    // Step 4: Validate alignment deterministically (ADR-021 Option B, Batch 1).
-    //
-    // The OpenRouter-backed AI branch that used to run here (getAIExecutor ->
-    // executeStructuredPrompt) was removed. Validation now runs entirely on
-    // rule-based analysis of the research evidence -- no external API call. This
-    // matches ADR-014/ADR-021: the tool returns a deterministic verdict the host
-    // LLM can rely on and, if it wants a richer reading, it has the full research
-    // data (research.answer, sources, findings) in the response to reason over
-    // itself. (#1629)
+    // Step 4: Validate alignment deterministically (ADR-021 Option B).
+    // Rule-based analysis of research evidence — no external API call.
+    // The host LLM has the full research data to reason over itself. (#1629)
     const validationResult: ADRValidationResult = performRuleBasedValidation(
       fullAdrPath,
       adrTitle,

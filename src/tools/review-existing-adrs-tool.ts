@@ -2,7 +2,7 @@
  * MCP Tool for reviewing existing ADRs against actual code implementation
  * Validates ADR compliance, identifies gaps, and suggests updates
  * Uses tree-sitter for accurate code analysis
- * 
+ *
  * Following ADR-018 Atomic Tools Architecture:
  * - Dependency injection for testability
  * - No ResearchOrchestrator (deprecated) - direct utility calls
@@ -198,7 +198,7 @@ export async function reviewExistingAdrs(args: {
 > **Note**: For detailed environment analysis, use the \`environment-analysis-tool\` separately.
 > This tool focuses on ADR-to-code compliance validation.
 `;
-    const researchConfidence = 0.85; // Static confidence for basic code analysis
+    const researchConfidence: number | null = null;
 
     // Step 4: Analyze code structure
     const codeAnalysis = await analyzeCodeStructure(resolvedProjectPath, includeTreeSitter);
@@ -247,7 +247,7 @@ export async function reviewExistingAdrs(args: {
 - **Project**: ${path.basename(resolvedProjectPath)}
 - **ADRs Reviewed**: ${reviewResults.length}
 - **Overall Compliance Score**: ${overallScore.toFixed(1)}/10
-- **Research Confidence**: ${(researchConfidence * 100).toFixed(1)}%
+- **Research Confidence**: ${researchConfidence !== null ? `${(researchConfidence * 100).toFixed(1)}%` : 'not measured'}
 - **Analysis Depth**: ${analysisDepth}
 - **Tree-sitter Analysis**: ${includeTreeSitter ? '✅ Enabled' : '❌ Disabled'}
 
@@ -393,9 +393,9 @@ ${
 ## Quality Assessment
 
 ### Best Practices Compliance
-- **Documentation Quality**: ${calculateDocumentationQuality(reviewResults)}/10
-- **Implementation Fidelity**: ${calculateImplementationFidelity(reviewResults)}/10
-- **Architectural Consistency**: ${calculateArchitecturalConsistency(reviewResults)}/10
+- **Documentation Quality**: ${calculateDocumentationQuality(reviewResults)}
+- **Implementation Fidelity**: ${calculateImplementationFidelity(reviewResults)}
+- **Architectural Consistency**: ${calculateArchitecturalConsistency(reviewResults)}
 
 ### Recommendations for Process Improvement
 1. **Regular ADR Reviews**: Schedule quarterly compliance reviews
@@ -1624,17 +1624,17 @@ ${mediumPriority
 `;
 }
 
-function calculateDocumentationQuality(results: AdrReviewResult[]): number {
-  // Simplified calculation based on compliance scores
-  return results.reduce((sum, r) => sum + r.complianceScore, 0) / results.length;
+function calculateDocumentationQuality(results: AdrReviewResult[]): string {
+  const avg = results.reduce((sum, r) => sum + r.complianceScore, 0) / results.length;
+  return `${avg.toFixed(1)} (derived from compliance scores)`;
 }
 
-function calculateImplementationFidelity(results: AdrReviewResult[]): number {
+function calculateImplementationFidelity(results: AdrReviewResult[]): string {
   const implemented = results.filter(r => r.codeCompliance.implemented).length;
-  return (implemented / results.length) * 10;
+  return `${((implemented / results.length) * 10).toFixed(1)} (${implemented}/${results.length} implemented)`;
 }
 
-function calculateArchitecturalConsistency(results: AdrReviewResult[]): number {
+function calculateArchitecturalConsistency(results: AdrReviewResult[]): string {
   const consistent = results.filter(r => r.complianceScore >= 7).length;
-  return (consistent / results.length) * 10;
+  return `${((consistent / results.length) * 10).toFixed(1)} (${consistent}/${results.length} above threshold)`;
 }

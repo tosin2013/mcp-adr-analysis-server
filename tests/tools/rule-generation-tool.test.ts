@@ -86,27 +86,6 @@ vi.mock('../../src/utils/knowledge-generation.js', () => ({
     Promise.resolve(prompt + '\n\n[Enhanced with knowledge]'),
 }));
 
-vi.mock('../../src/utils/prompt-execution.js', () => ({
-  executePromptWithFallback: () =>
-    Promise.resolve({
-      success: true,
-      response: 'Mock AI response',
-      isAIGenerated: false,
-    }),
-  isAIExecutionAvailable: () => false,
-  getAIExecutionStatus: () => ({
-    available: false,
-    reason: 'Test mode',
-  }),
-  getAIExecutionInfo: () => ({
-    available: false,
-    mode: 'prompt-only',
-  }),
-  formatMCPResponse: (result: any) => ({
-    content: [{ type: 'text', text: result?.response || result?.prompt || 'Mock response' }],
-  }),
-}));
-
 describe('rule-generation-tool', () => {
   let generateRules: any;
   let validateRules: any;

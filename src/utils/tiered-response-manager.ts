@@ -13,7 +13,6 @@ import {
   ExpandableContent,
   TieredResponseConfig,
 } from '../types/tiered-response.js';
-import { executePromptWithFallback } from './prompt-execution.js';
 import { EnhancedLogger } from './enhanced-logging.js';
 
 export class TieredResponseManager {
@@ -131,50 +130,15 @@ export class TieredResponseManager {
   }
 
   /**
-   * Generate a summary using AI or fallback to truncation
+   * Generate a summary using deterministic truncation.
+   * Uses deterministic truncation (CE-MCP migration #1636).
    */
   private async generateSummary(
     content: string,
     maxTokens: number,
-    type: 'executive' | 'section'
+    _type: 'executive' | 'section'
   ): Promise<string> {
-    if (!this.config.useAiSummarization) {
-      return this.truncateSummary(content, maxTokens);
-    }
-
     try {
-      const prompt =
-        type === 'executive'
-          ? `Provide a concise executive summary of the following analysis in ${maxTokens} tokens or less. Focus on key findings, critical insights, and actionable recommendations. Maintain technical accuracy while being brief.
-
-ANALYSIS:
-${content}
-
-EXECUTIVE SUMMARY (max ${maxTokens} tokens):`
-          : `Summarize the following section in ${maxTokens} tokens or less. Capture the essential information and key points concisely.
-
-SECTION CONTENT:
-${content}
-
-SUMMARY (max ${maxTokens} tokens):`;
-
-      const result = await executePromptWithFallback(
-        prompt,
-        'Generate a concise summary of analysis content',
-        {
-          temperature: this.config.summarizationTemperature,
-          maxTokens,
-          systemPrompt:
-            'You are a technical writer specializing in concise, accurate summaries. Focus on clarity and actionable insights.',
-          responseFormat: 'text',
-        }
-      );
-
-      if (result.isAIGenerated) {
-        return result.content;
-      }
-
-      // Fallback to truncation if AI fails
       return this.truncateSummary(content, maxTokens);
     } catch (error) {
       this.logger.warn('AI summarization failed, using truncation', 'TieredResponseManager', {

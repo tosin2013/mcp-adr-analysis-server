@@ -235,7 +235,7 @@ export async function generateTechnologyByNameResource(
     description: technology.description || `Technology: ${technology.name}`,
     usage: {
       adrsReferencing,
-      componentsUsing: [], // Placeholder - would require component analysis
+      componentsUsing: [],
       patternsRelated,
     },
     relationships,

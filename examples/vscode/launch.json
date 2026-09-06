@@ -1,0 +1,33 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "MCP ADR Analysis Server",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/dist/src/index.js",
+      "args": [],
+      "env": {
+        "PROJECT_PATH": "${workspaceFolder}",
+        "LOG_LEVEL": "DEBUG"
+      },
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: build"
+    },
+    {
+      "name": "MCP ADR Server (Full Mode)",
+      "type": "node",
+      "request": "launch",
+      "program": "${workspaceFolder}/dist/src/index.js",
+      "args": [],
+      "env": {
+        "PROJECT_PATH": "${workspaceFolder}",
+        "EXECUTION_MODE": "full",
+        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
+        "LOG_LEVEL": "DEBUG"
+      },
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: build"
+    }
+  ]
+}

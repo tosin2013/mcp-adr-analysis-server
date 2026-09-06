@@ -1,0 +1,15 @@
+{
+  "$comment": "Unskip + rewrite the 5 skipped tests in adr-validation-tool.test.ts for the deterministic path. All tests must pass, no it.skip placeholders remain, companion summary tests still green.",
+  "authority_id": "1648",
+  "criteria": [
+    { "check": "command_exit", "target": "npx vitest run tests/tools/adr-validation-tool.test.ts" },
+    {
+      "check": "command_exit",
+      "target": "npx vitest run tests/tools/adr-validation-summary.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q it.skip tests/tools/adr-validation-tool.test.ts'"
+    }
+  ]
+}

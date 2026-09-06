@@ -161,19 +161,6 @@ export const MockFactories = {
   }),
 
   /**
-   * Create a mock AI executor
-   */
-  createAIExecutor: (overrides?: { isAvailable?: boolean }) => ({
-    getAIExecutor: vi.fn().mockReturnValue({
-      isAvailable: () => overrides?.isAvailable ?? false,
-      executeStructuredPrompt: vi.fn().mockResolvedValue({
-        data: { isValid: true, confidence: 0.9, findings: [], recommendations: [] },
-        raw: { metadata: {} },
-      }),
-    }),
-  }),
-
-  /**
    * Create a mock KnowledgeGraphManager
    */
   createKnowledgeGraphManager: () => ({
@@ -223,18 +210,6 @@ export const MockFactories = {
     }),
   }),
 
-  /**
-   * Create mock prompt execution
-   */
-  createPromptExecution: () => ({
-    executePromptWithFallback: vi.fn().mockResolvedValue({
-      content: 'Mock prompt execution result',
-      isAIGenerated: false,
-    }),
-    formatMCPResponse: vi.fn((content: string) => ({
-      content: [{ type: 'text', text: content }],
-    })),
-  }),
 };
 
 /**
@@ -247,7 +222,6 @@ export async function setupEnvironmentAnalysisMocks(): Promise<void> {
     '../../src/utils/enhanced-logging.js': MockFactories.createEnhancedLogger(),
     '../../src/utils/environment-analysis.js': MockFactories.createEnvironmentAnalysis(),
     '../../src/utils/knowledge-generation.js': MockFactories.createKnowledgeGeneration(),
-    '../../src/utils/prompt-execution.js': MockFactories.createPromptExecution(),
   });
 }
 
@@ -257,7 +231,6 @@ export async function setupEnvironmentAnalysisMocks(): Promise<void> {
 export async function setupAdrValidationMocks(): Promise<void> {
   await setupESMMocks({
     '../../src/utils/research-orchestrator.js': MockFactories.createResearchOrchestrator(),
-    '../../src/utils/ai-executor.js': MockFactories.createAIExecutor(),
     '../../src/utils/knowledge-graph-manager.js': MockFactories.createKnowledgeGraphManager(),
   });
 }

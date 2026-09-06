@@ -13,7 +13,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { CE_MCP_DIRECTIVE_TOOLS, getCEMCPDirective } from '../../src/tools/ce-mcp-tools.js';
+import {
+  CE_MCP_DIRECTIVE_TOOLS,
+  getCEMCPDirective,
+  createAnalyzeContentSecurityDirective,
+  createGenerateContentMaskingDirective,
+} from '../../src/tools/ce-mcp-tools.js';
 import { TOOL_CATALOG } from '../../src/tools/tool-catalog.js';
 
 describe('CE-MCP directive claims', () => {
@@ -66,5 +71,98 @@ describe('CE-MCP directive claims', () => {
   it('does not over-claim across the catalog as a whole', () => {
     const claimedCount = [...TOOL_CATALOG.values()].filter(m => m.hasCEMCPDirective).length;
     expect(claimedCount).toBe(CE_MCP_DIRECTIVE_TOOLS.size);
+  });
+});
+
+describe('CE-MCP content-masking directives (#1631)', () => {
+  describe('createAnalyzeContentSecurityDirective', () => {
+    it('returns an orchestration directive with correct structure', () => {
+      const directive = createAnalyzeContentSecurityDirective({
+        content: 'password=secret123',
+        contentType: 'configuration',
+      });
+
+      expect(directive.type).toBe('orchestration_directive');
+      expect(directive.version).toBe('1.0');
+      expect(directive.tool).toBe('analyze_content_security');
+      expect(directive.description).toContain('configuration');
+      expect(directive.description).toContain('18 chars');
+      expect(directive.sandbox_operations.length).toBeGreaterThanOrEqual(3);
+      expect(directive.compose).toBeDefined();
+      expect(directive.metadata).toBeDefined();
+    });
+
+    it('includes loadKnowledge op when knowledgeEnhancement is true', () => {
+      const directive = createAnalyzeContentSecurityDirective({
+        content: 'test content',
+        knowledgeEnhancement: true,
+      });
+
+      const ops = directive.sandbox_operations.map(op => op.op);
+      expect(ops).toContain('loadKnowledge');
+    });
+
+    it('omits loadKnowledge op when knowledgeEnhancement is false', () => {
+      const directive = createAnalyzeContentSecurityDirective({
+        content: 'test content',
+        knowledgeEnhancement: false,
+      });
+
+      const ops = directive.sandbox_operations.map(op => op.op);
+      expect(ops).not.toContain('loadKnowledge');
+    });
+
+    it('passes userDefinedPatterns and contentType through', () => {
+      const directive = createAnalyzeContentSecurityDirective({
+        content: 'some code',
+        contentType: 'code',
+        userDefinedPatterns: ['ACME_KEY_.*'],
+        enableTreeSitterAnalysis: false,
+        knowledgeEnhancement: false,
+      });
+
+      const analyzeOp = directive.sandbox_operations.find(op => op.op === 'analyzeFiles');
+      expect(analyzeOp?.args?.userDefinedPatterns).toEqual(['ACME_KEY_.*']);
+      expect(analyzeOp?.args?.contentType).toBe('code');
+      expect(analyzeOp?.args?.enableTreeSitterAnalysis).toBe(false);
+    });
+  });
+
+  describe('createGenerateContentMaskingDirective', () => {
+    const sampleItems = [
+      {
+        type: 'password',
+        content: 'secret123',
+        startPosition: 9,
+        endPosition: 18,
+        severity: 'high',
+      },
+    ];
+
+    it('returns an orchestration directive with correct structure', () => {
+      const directive = createGenerateContentMaskingDirective({
+        content: 'password=secret123',
+        detectedItems: sampleItems,
+        maskingStrategy: 'placeholder',
+      });
+
+      expect(directive.type).toBe('orchestration_directive');
+      expect(directive.version).toBe('1.0');
+      expect(directive.tool).toBe('generate_content_masking');
+      expect(directive.description).toContain('1 detected items');
+      expect(directive.description).toContain('placeholder');
+      expect(directive.sandbox_operations.length).toBeGreaterThanOrEqual(2);
+      expect(directive.compose).toBeDefined();
+      expect(directive.metadata).toBeDefined();
+    });
+
+    it('defaults to full masking strategy', () => {
+      const directive = createGenerateContentMaskingDirective({
+        content: 'test',
+        detectedItems: sampleItems,
+      });
+
+      expect(directive.description).toContain('full');
+    });
   });
 });

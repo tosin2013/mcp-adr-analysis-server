@@ -1,0 +1,11 @@
+{
+  "servers": {
+    "adr-analysis": {
+      "type": "stdio",
+      "command": "mcp-adr-analysis-server",
+      "env": {
+        "PROJECT_PATH": "${workspaceFolder}"
+      }
+    }
+  }
+}

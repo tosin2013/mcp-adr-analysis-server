@@ -1,0 +1,9 @@
+{
+  "authority_id": "757",
+  "criteria": [
+    { "check": "file_exists", "target": "docs/how-to-guides/vscode-integration.md" },
+    { "check": "file_exists", "target": "examples/vscode/mcp.json" },
+    { "check": "file_exists", "target": "examples/vscode/launch.json" },
+    { "check": "command_exit", "target": "grep -q 'vscode-integration' README.md" }
+  ]
+}

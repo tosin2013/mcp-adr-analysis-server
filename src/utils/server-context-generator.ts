@@ -275,10 +275,6 @@ export class ServerContextGenerator {
         description: 'Analyze deployment progress and identify blockers',
       },
       {
-        name: 'check_ai_execution_status',
-        description: 'Check AI execution mode and capabilities',
-      },
-      {
         name: 'analyze_environment',
         description: 'Analyze project environment and system configuration',
       },
@@ -304,13 +300,6 @@ export class ServerContextGenerator {
         name: 'get_development_guidance',
         description: 'Get development guidance and best practices',
       },
-
-      // File System Operations (5 tools)
-      { name: 'list_roots', description: 'List available filesystem roots for operations' },
-      { name: 'read_directory', description: 'Read directory contents and metadata' },
-      { name: 'read_file', description: 'Read file contents from filesystem' },
-      { name: 'write_file', description: 'Write content to filesystem' },
-      { name: 'list_directory', description: 'List directory contents with filtering' },
 
       // Memory & Context (8 tools)
       {
@@ -387,7 +376,6 @@ ${toolsSection}
       'Research & Analysis': [],
       'Deployment & Infrastructure': [],
       'Development Workflow': [],
-      'File System Operations': [],
       'Memory & Context': [],
       'Cloud & Database': [],
       Other: [],
@@ -430,14 +418,6 @@ ${toolsSection}
         name.includes('guidance')
       ) {
         categories['Development Workflow']?.push(tool);
-      } else if (
-        name.includes('file') ||
-        name.includes('directory') ||
-        name.includes('list_roots') ||
-        name.includes('read_file') ||
-        name.includes('write_file')
-      ) {
-        categories['File System Operations']?.push(tool);
       } else if (
         name.includes('memory') ||
         name.includes('conversation') ||

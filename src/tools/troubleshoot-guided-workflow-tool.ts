@@ -392,8 +392,6 @@ class TroubleshootingMemoryManager {
   }
 
   private async findRelatedADRs(_failure: FailureInfo): Promise<string[]> {
-    // This would typically search for ADRs related to the failure context
-    // For now, return empty array - this will be enhanced when ADR search is integrated
     return [];
   }
 

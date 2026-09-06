@@ -24,39 +24,14 @@ export interface Rule {
  * Extract rules from ADRs
  */
 async function extractRulesFromAdrs(): Promise<Rule[]> {
-  // TODO: Implement actual rule extraction from ADRs
-  // For now, return example rules
-  return [
-    {
-      id: 'adr-rule-001',
-      name: 'MCP Best Practices',
-      description: 'Follow MCP protocol best practices for resources vs tools',
-      type: 'architectural',
-      severity: 'warning',
-      message: 'Read-only operations should use resources, not tools',
-      source: 'adr',
-      enabled: true,
-    },
-  ];
+  return [];
 }
 
 /**
  * Extract inferred rules from code patterns
  */
 async function extractInferredRules(): Promise<Rule[]> {
-  // TODO: Implement actual inference from code
-  return [
-    {
-      id: 'inferred-rule-001',
-      name: 'TypeScript Strict Mode',
-      description: 'Project uses TypeScript strict mode',
-      type: 'coding',
-      severity: 'info',
-      message: 'Maintain strict TypeScript compilation',
-      source: 'inferred',
-      enabled: true,
-    },
-  ];
+  return [];
 }
 
 /**
