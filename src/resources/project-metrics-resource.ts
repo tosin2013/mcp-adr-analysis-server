@@ -180,7 +180,7 @@ async function calculateQualityMetrics(): Promise<{
   };
 }> {
   let maintainability = 100;
-  let complexity = 100;
+  const complexity = 100;
   let documentation = 100;
   let testing = 100;
 
@@ -218,8 +218,7 @@ async function calculateQualityMetrics(): Promise<{
       // Could not parse test results
     }
   } catch {
-    // Tests failed or not available
-    testing = 50;
+    testing = 0;
   }
 
   // Documentation score (based on README and docs existence)
@@ -227,7 +226,7 @@ async function calculateQualityMetrics(): Promise<{
     await fs.access(path.join(process.cwd(), 'README.md'));
     documentation = 80;
   } catch {
-    documentation = 40;
+    documentation = 0;
   }
 
   try {
@@ -237,12 +236,7 @@ async function calculateQualityMetrics(): Promise<{
     // No docs directory
   }
 
-  // Complexity (placeholder - would require actual complexity analysis)
-  complexity = 85;
-
-  const overallScore = Math.round(
-    maintainability * 0.3 + complexity * 0.2 + documentation * 0.2 + testing * 0.3
-  );
+  const overallScore = Math.round(maintainability * 0.4 + documentation * 0.25 + testing * 0.35);
 
   return {
     overallScore,
@@ -288,9 +282,8 @@ async function getArchitectureMetrics(): Promise<{
     // No ADRs found
   }
 
-  // Placeholder for technologies and patterns (would need proper implementation)
-  const technologiesUsed = 3; // TypeScript, Node.js, MCP
-  const patternsApplied = 2; // Resource Pattern, Tool Pattern
+  const technologiesUsed = 0;
+  const patternsApplied = 0;
 
   // Calculate architectural debt
   const issues: string[] = [];
@@ -492,7 +485,7 @@ function calculateProductivityMetrics(gitMetrics: {
 } {
   const velocity = gitMetrics.activity.commitsLastWeek;
   const activeContributors = gitMetrics.contributors;
-  const avgCommitSize = 'Medium'; // Placeholder
+  const avgCommitSize = 'unknown';
   const changeFrequency =
     gitMetrics.activity.commitsLastMonth > 30
       ? 'High'

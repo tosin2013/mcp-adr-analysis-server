@@ -8,19 +8,18 @@ For the release cadence and policy, see [RELEASES.md](./RELEASES.md).
 
 ## [Unreleased]
 
-### Deprecated
+### Removed
 
-- **Host-native tools marked deprecated (ADR-023).** The following eight tools are now
-  flagged `[DEPRECATED host-native, ADR-023]` on the wire (`tools/list` descriptions), in
-  the tool catalog, and in the API reference. They remain fully registered and dispatched —
-  this release only signals the deprecation; removal is a later, retirement-gated step.
+- **9 host-native / obsolete tools removed from the wire (ADR-023 Phase 0, #1673).**
+  These tools were deprecated in the previous release and are now fully removed from
+  `tools/list`, the catalog, and the dispatch layer. Clients calling these by name will
+  receive an "Unknown tool" error. Use the host's native capabilities instead.
   - `read_file`, `write_file`, `list_directory`, `read_directory`, `list_roots` —
-    duplicate filesystem access the MCP host already provides natively; callers should use
-    the host's own file/directory capabilities instead.
-  - `get_current_datetime` — duplicates a capability the host environment supplies directly.
-  - `search_tools` and `load_prompt` — superseded by the MCP progressive-discovery model
-    (native `tools/list` pagination plus `prompts/list` / `prompts/get`), which the host
-    exposes without a bespoke server-side meta-tool.
+    host filesystem tools.
+  - `get_current_datetime` — host capability.
+  - `search_tools`, `load_prompt` — MCP spec assigns progressive discovery to the host.
+  - `check_ai_execution_status` — dies with the AI execution layer (CE-MCP migration).
+  - Tool count drops from 72 to 63 on the wire (68 → 59 in the catalog).
 
 ---
 

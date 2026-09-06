@@ -8,21 +8,6 @@ import * as fs from 'fs/promises';
 import * as os from 'os';
 import * as path from 'path';
 
-vi.mock('../../src/utils/prompt-execution.js', () => ({
-  executeADRGenerationPrompt: vi.fn().mockResolvedValue({
-    content: '# Test ADR\n\n## Status\nAccepted\n\n## Context\nTesting\n',
-    isAIGenerated: true,
-  }),
-  formatMCPResponse: vi.fn((payload: any) => ({
-    content: [
-      {
-        type: 'text',
-        text: payload.content,
-      },
-    ],
-  })),
-}));
-
 const { registerAdrMock } = vi.hoisted(() => ({
   registerAdrMock: vi.fn().mockResolvedValue(undefined),
 }));

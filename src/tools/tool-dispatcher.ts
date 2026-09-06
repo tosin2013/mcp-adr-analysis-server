@@ -14,14 +14,11 @@ import {
   ToolCategory,
   searchTools,
   getCatalogSummary,
-  getLightweightToolList,
   toMCPTool,
   getCEMCPTools,
   getHighTokenCostTools,
 } from './tool-catalog.js';
-import { getSearchToolsDefinition, MCP_TOOL_SCHEMAS } from './mcp-tool-schemas.js';
-
-export { getSearchToolsDefinition };
+import { MCP_TOOL_SCHEMAS } from './mcp-tool-schemas.js';
 
 /**
  * Arguments for search_tools meta-tool
@@ -131,42 +128,16 @@ export function executeSearchTools(args: SearchToolsArgs): SearchToolsResult {
 }
 
 /**
- * Get lightweight tool listing for MCP ListTools
+ * Get tool listing for MCP ListTools.
  *
- * Returns tools with minimal metadata for token-efficient listing.
- * Clients can use search_tools to get full schemas when needed.
+ * After ADR-023 Phase 0 (#1673) the only mode is 'full' — the canonical
+ * schema array. The 'summary' and 'lightweight' modes were removed because
+ * they depended on the search_tools meta-tool which is now a host concern.
  */
-export function getToolListForMCP(options: { mode?: 'full' | 'lightweight' | 'summary' }): {
+export function getToolListForMCP(options: { mode?: 'full' }): {
   tools: Tool[];
 } {
-  const { mode = 'lightweight' } = options;
-
-  if (mode === 'summary') {
-    // Return only the search_tools meta-tool
-    return {
-      tools: [getSearchToolsDefinition()],
-    };
-  }
-
-  if (mode === 'lightweight') {
-    // Return lightweight list with search_tools
-    const lightList = getLightweightToolList();
-    const tools: Tool[] = [
-      getSearchToolsDefinition(),
-      ...lightList.map(item => ({
-        name: item.name,
-        description: `[${item.category}] ${item.description}${item.hasCEMCPDirective ? ' (CE-MCP)' : ''}`,
-        inputSchema: {
-          type: 'object' as const,
-          properties: {},
-          description: `Use search_tools with query:"${item.name}" to get full schema`,
-        },
-      })),
-    ];
-    return { tools };
-  }
-
-  // Full mode — the canonical list (#1416), not a second copy from the catalog.
+  void options;
   return { tools: MCP_TOOL_SCHEMAS };
 }
 

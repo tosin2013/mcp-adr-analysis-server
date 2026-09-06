@@ -42,7 +42,7 @@ import {
 import { StateReinforcementManager } from './utils/state-reinforcement-manager.js';
 import { ConversationMemoryManager } from './utils/conversation-memory-manager.js';
 import { MemoryEntityManager } from './utils/memory-entity-manager.js';
-import { RootManager } from './utils/root-manager.js';
+// RootManager import removed — ADR-023 (#1673)
 import { ServerContextGenerator } from './utils/server-context-generator.js';
 import { type ToolContext, createNoOpContext } from './types/tool-context.js';
 import {
@@ -53,8 +53,7 @@ import {
   type ValidateRulesArgs,
   type CreateRuleSetArgs,
   type ToolChainOrchestratorArgs,
-  type ReadFileArgs,
-  type WriteFileArgs,
+  // ReadFileArgs, WriteFileArgs removed — host-native, ADR-023 (#1673)
   type AnalyzeProjectEcosystemArgs,
   type ArchitecturalDomain,
   type AnalyzeContentSecurityArgs,
@@ -140,7 +139,7 @@ export class McpAdrAnalysisServer {
   private stateReinforcementManager: StateReinforcementManager;
   private conversationMemoryManager: ConversationMemoryManager;
   private memoryEntityManager: MemoryEntityManager;
-  private rootManager: RootManager;
+  // rootManager removed — only consumers were removed host-native handlers, ADR-023 (#1673)
   private contextGenerator: ServerContextGenerator;
 
   constructor() {
@@ -152,8 +151,7 @@ export class McpAdrAnalysisServer {
     this.conversationMemoryManager = new ConversationMemoryManager(this.kgManager);
     this.memoryEntityManager = new MemoryEntityManager();
 
-    // Initialize root manager for file access control
-    this.rootManager = new RootManager(this.config.projectPath, this.config.adrDirectory);
+    // rootManager init removed — ADR-023 (#1673)
 
     // Initialize server context generator
     this.contextGenerator = new ServerContextGenerator();
@@ -711,131 +709,8 @@ export class McpAdrAnalysisServer {
   /**
    * Tool implementations
    */
-  async checkAIExecutionStatus(_args: Record<string, unknown>): Promise<CallToolResult> {
-    try {
-      const { getAIExecutionStatus } = await import('./utils/prompt-execution.js');
-      const status = getAIExecutionStatus();
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# AI Execution Status Diagnostic
-
-> **Note**: As of Phase 5, this server uses CE-MCP (Claude-Enriched MCP) mode by default.
-> In CE-MCP mode, tools return orchestration directives that the host LLM executes directly,
-> eliminating the need for external API calls. The configuration below applies to legacy mode only.
-
-## Current Configuration
-- **AI Execution Enabled**: ${status.isEnabled ? '✅ YES' : '❌ NO'}
-- **Has API Key**: ${status.hasApiKey ? '✅ YES' : '❌ NO'}
-- **Execution Mode**: ${status.executionMode}
-- **AI Model**: ${status.model}
-
-${
-  // CE-MCP is the DEFAULT mode and needs no API key. Reporting the absence of
-  // one as an "Issue Detected" -- immediately after saying no external API call
-  // is needed -- told every new user to go and buy a key they do not need.
-  // Legacy configuration is only a problem for someone who asked for it. (#1414)
-  status.executionMode === 'ce-mcp'
-    ? `## ✅ Running in CE-MCP mode
-
-No API key is required. Tools return orchestration directives that your host LLM
-executes directly, which is why **AI Execution Enabled: NO** above is expected and
-correct rather than a fault.
-
-Note that only some tools currently return a directive; the rest return their
-result directly. See ADR-014 and ADR-021.
-
-Legacy OpenRouter execution is off by design. You only need the configuration
-below if you deliberately want that older path.`
-    : status.reason
-      ? `## ⚠️ Issue Detected
-**Problem**: ${status.reason}
-
-## Solution
-${
-  !status.hasApiKey
-    ? `
-1. Get an OpenRouter API key from https://openrouter.ai/keys
-2. Add it to your MCP configuration:
-   \`\`\`json
-   {
-     "mcpServers": {
-       "adr-analysis": {
-         "command": "mcp-adr-analysis-server",
-         "env": {
-           "OPENROUTER_API_KEY": "your_api_key_here",
-           "EXECUTION_MODE": "full",
-           "AI_MODEL": "anthropic/claude-3-sonnet"
-         }
-       }
-     }
-   }
-   \`\`\`
-3. Restart your MCP client (Claude Desktop, etc.)
-`
-    : status.executionMode !== 'full'
-      ? `
-1. Update your MCP configuration to set EXECUTION_MODE to "full":
-   \`\`\`json
-   {
-     "mcpServers": {
-       "adr-analysis": {
-         "env": {
-           "EXECUTION_MODE": "full"
-         }
-       }
-     }
-   }
-   \`\`\`
-2. Restart your MCP client
-`
-      : ''
-}`
-      : `## ✅ Configuration Looks Good!
-
-AI execution is properly configured. Tools should return actual results instead of prompts.
-
-If you're still seeing prompts instead of results, try:
-1. Restart your MCP client
-2. Check your OpenRouter API key has sufficient credits
-3. Verify network connectivity to OpenRouter.ai`
-}
-
-## Environment Variables Expected
-- **OPENROUTER_API_KEY**: Your OpenRouter API key
-- **EXECUTION_MODE**: Set to "full" for AI execution
-- **AI_MODEL**: AI model to use (optional, defaults to claude-3-sonnet)
-
-## Testing
-After fixing the configuration, try calling \`suggest_adrs\` - it should return actual ADR suggestions instead of prompts.
-`,
-          },
-        ],
-      };
-    } catch (error) {
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# AI Execution Status Check Failed
-
-**Error**: ${error instanceof Error ? error.message : String(error)}
-
-This diagnostic tool helps identify why tools return prompts instead of actual results.
-
-## Manual Check
-Verify these environment variables are set in your MCP configuration:
-- OPENROUTER_API_KEY
-- EXECUTION_MODE=full
-- AI_MODEL (optional)
-`,
-          },
-        ],
-      };
-    }
-  }
+  // checkAIExecutionStatus removed — host-native, ADR-023 (#1673)
 
   async getWorkflowGuidance(args: GetWorkflowGuidanceArgs): Promise<CallToolResult> {
     const {
@@ -962,70 +837,15 @@ Provide a comprehensive workflow guide that includes:
 Make the guidance **actionable, specific, and outcome-focused** so the user can immediately start executing the recommended workflow.
 `;
 
-      // Execute the workflow guidance with AI if enabled
-      const { executePromptWithFallback, formatMCPResponse } =
-        await import('./utils/prompt-execution.js');
-      const executionResult = await executePromptWithFallback(
-        workflowPrompt,
-        'Analyze the user context and provide intelligent workflow guidance with specific tool recommendations.',
-        {
-          temperature: 0.1,
-          maxTokens: 6000,
-          systemPrompt: `You are an expert workflow advisor for the MCP ADR Analysis Server.
-Your role is to analyze user goals and project context, then recommend the optimal sequence of tools to achieve their objectives efficiently.
-Provide specific, actionable guidance with clear tool sequences, expected outcomes, and success criteria.
-Focus on practical workflows that deliver measurable results.`,
-        }
-      );
-
-      if (executionResult.isAIGenerated) {
-        // AI execution successful - return actual workflow guidance
-        return formatMCPResponse({
-          ...executionResult,
-          content: `# Workflow Guidance & Tool Recommendations
-
-## Your Context
-- **Goal**: ${goal}
-- **Project Context**: ${projectContext}
-- **Available Assets**: ${availableAssets.length > 0 ? availableAssets.join(', ') : 'None specified'}
-- **Timeframe**: ${timeframe}
-- **Primary Concerns**: ${primaryConcerns.length > 0 ? primaryConcerns.join(', ') : 'General analysis'}
-
-## AI-Generated Workflow Guidance
-
-${executionResult.content}
-
-## Quick Reference: Available Tools
-
-**Core Analysis**: analyze_project_ecosystem, get_architectural_context, generate_adrs_from_prd, analyze_content_security
-**ADR Management**: suggest_adrs, generate_adr_from_decision, discover_existing_adrs
-**Security**: generate_content_masking, configure_custom_patterns, validate_content_masking
-**Governance**: generate_rules, validate_rules, create_rule_set
-**Environment**: analyze_environment, analyze_deployment_progress
-**Utilities**: manage_cache, configure_output_masking, check_ai_execution_status
-
-## Next Steps
-
-1. **Start with the recommended primary workflow** above
-2. **Call the first tool** with the suggested parameters
-3. **Review the results** and proceed to the next step
-4. **Track progress** using the success metrics provided
-5. **Adjust as needed** based on your specific findings
-
-This guidance is tailored to your specific context and goals for maximum effectiveness!
-`,
-        });
-      } else {
-        // Fallback to prompt-only mode
-        return {
-          content: [
-            {
-              type: 'text',
-              text: workflowPrompt,
-            },
-          ],
-        };
-      }
+      // CE-MCP: return prompt text directly; directive intercepts in CE-MCP mode.
+      return {
+        content: [
+          {
+            type: 'text',
+            text: workflowPrompt,
+          },
+        ],
+      };
     } catch (error) {
       throw new McpAdrError(
         `Failed to generate workflow guidance: ${error instanceof Error ? error.message : String(error)}`,
@@ -1221,82 +1041,15 @@ Ensure all development guidance:
 Make the guidance **actionable, specific, and immediately implementable** so developers can start coding with confidence and architectural alignment.
 `;
 
-      // Execute the development guidance with AI if enabled
-      const { executePromptWithFallback, formatMCPResponse } =
-        await import('./utils/prompt-execution.js');
-      const executionResult = await executePromptWithFallback(
-        developmentPrompt,
-        'Analyze the development context and provide comprehensive implementation guidance that translates architectural decisions into specific coding tasks and development roadmap.',
-        {
-          temperature: 0.1,
-          maxTokens: 8000,
-          systemPrompt: `You are an expert software development advisor specializing in translating architectural decisions into practical implementation guidance.
-Your role is to bridge the gap between architectural planning and actual code development.
-Provide specific, actionable development guidance with clear implementation steps, code patterns, and quality criteria.
-Focus on practical guidance that ensures architectural decisions are properly implemented in code.
-Consider team context, technology stack, and development phase to provide tailored recommendations.`,
-        }
-      );
-
-      if (executionResult.isAIGenerated) {
-        // AI execution successful - return actual development guidance
-        return formatMCPResponse({
-          ...executionResult,
-          content: `# Development Guidance & Implementation Roadmap
-
-## Your Development Context
-- **Development Phase**: ${developmentPhase}
-- **Technology Stack**: ${technologyStack.length > 0 ? technologyStack.join(', ') : 'Not specified'}
-- **Current Progress**: ${currentProgress || 'Starting fresh'}
-- **Team Context**: ${teamContext.size} team with ${teamContext.experienceLevel} experience
-- **Timeline**: ${timeline || 'Not specified'}
-- **Focus Areas**: ${focusAreas.length > 0 ? focusAreas.join(', ') : 'General development'}
-- **ADRs to Implement**: ${adrsToImplement.length > 0 ? adrsToImplement.join(', ') : 'None specified'}
-
-## AI-Generated Development Guidance
-
-${executionResult.content}
-
-## Integration with Workflow Tools
-
-This development guidance works seamlessly with other MCP tools:
-
-### **Workflow Integration**
-1. **get_workflow_guidance** → Recommends architectural process
-2. **get_development_guidance** → Guides implementation (this tool)
-3. **validate_rules** → Ensures code follows architectural decisions
-4. **analyze_deployment_progress** → Tracks implementation progress
-
-### **Quality Assurance Tools**
-- **generate_rules** → Extract coding standards from ADRs
-- **validate_rules** → Validate code against architectural rules
-- **analyze_content_security** → Security validation during development
-
-### **Documentation Tools**
-- **discover_existing_adrs** → Reference existing architectural decisions
-
-## Next Steps: From Architecture to Code
-
-1. **📋 Review the Development Roadmap** above
-2. **🏗️ Set Up Project Structure** as recommended
-3. **🧪 Implement Testing Strategy** early in development
-4. **📊 Track Progress** using the success metrics provided
-5. **🔄 Iterate and Refine** based on implementation learnings
-
-This guidance ensures your development work is **architecturally aligned**, **quality-focused**, and **efficiently executed**!
-`,
-        });
-      } else {
-        // Fallback to prompt-only mode
-        return {
-          content: [
-            {
-              type: 'text',
-              text: developmentPrompt,
-            },
-          ],
-        };
-      }
+      // CE-MCP: return prompt text directly; directive intercepts in CE-MCP mode.
+      return {
+        content: [
+          {
+            type: 'text',
+            text: developmentPrompt,
+          },
+        ],
+      };
     } catch (error) {
       throw new McpAdrError(
         `Failed to generate development guidance: ${error instanceof Error ? error.message : String(error)}`,
@@ -1556,22 +1309,10 @@ ${environmentResult.content[0].text}
           baseProjectAnalysisPrompt.prompt + knowledgeContext + environmentAnalysisContext;
       }
 
-      // Execute the analysis with AI if enabled, otherwise return prompt
-      ctx.info('🤖 Phase 6: Executing AI-powered ecosystem analysis');
+      // Step 6: Record project structure to knowledge graph
+      ctx.info('📊 Phase 6: Recording project structure');
       ctx.report_progress(85, 100);
 
-      const { executeEcosystemAnalysisPrompt, formatMCPResponse } =
-        await import('./utils/prompt-execution.js');
-      const executionResult = await executeEcosystemAnalysisPrompt(
-        enhancedAnalysisPrompt,
-        baseProjectAnalysisPrompt.instructions,
-        {
-          temperature: 0.1,
-          maxTokens: 6000,
-        }
-      );
-
-      // Step 6: Record project structure to knowledge graph
       try {
         this.logger.info('Recording project structure to knowledge graph');
 
@@ -1590,87 +1331,17 @@ ${environmentResult.content[0].text}
         this.logger.info('✅ Project structure recorded to knowledge graph');
       } catch (kgError) {
         this.logger.warn('Failed to record project structure to knowledge graph:', kgError);
-        // Don't fail the entire analysis if KG recording fails
       }
 
       ctx.info('✅ Ecosystem analysis completed successfully');
       ctx.report_progress(100, 100);
 
-      // Return appropriate response based on execution result
-      if (executionResult.isAIGenerated) {
-        // AI execution successful - return actual analysis results
-        return formatMCPResponse({
-          ...executionResult,
-          content: `# Comprehensive Project Ecosystem Analysis Results
-
-## Analysis Configuration
-- **Project Path**: ${projectPath}
-- **Analysis Depth**: ${analysisDepth}
-- **Recursive Depth**: ${recursiveDepth}
-- **Environment Analysis**: ${includeEnvironment ? '✅ Included' : '❌ Excluded'}
-- **Analysis Scope**: ${analysisScope.length > 0 ? analysisScope.join(', ') : 'Full ecosystem analysis'}
-
-## Enhancement Features
-- **Knowledge Generation**: ${enhancedMode && knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
-- **Reflexion Learning**: ${enhancedMode && learningEnabled ? '✅ Enabled' : '❌ Disabled'}
-- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
-- **Technology Focus**: ${technologyFocus.length > 0 ? technologyFocus.join(', ') : 'Auto-detect'}
-- **Knowledge Graph**: ✅ Project structure recorded
-
-${knowledgeContext}
-
-${reflexionContext}
-
-## Comprehensive Ecosystem Analysis Results
-
-${executionResult.content}
-
-${
-  includeEnvironment
-    ? `
-
-## Environment Integration Summary
-
-The analysis above includes comprehensive environment analysis covering:
-- **Infrastructure Specifications**: Deployment and runtime environment details
-- **Containerization**: Docker, Kubernetes, and container orchestration analysis
-- **Environment Requirements**: Configuration and dependency requirements
-- **Compliance Assessment**: Security and regulatory compliance evaluation
-
-This integrated approach provides complete understanding of both codebase patterns AND operational environment.
-`
-    : ''
-}
-
-## Next Steps: Complete Ecosystem Understanding
-
-Based on the comprehensive analysis above:
-
-### **Immediate Actions**
-1. **Review Ecosystem Overview**: Examine the complete technology stack and environment context
-2. **Assess Integration Points**: Understand how code patterns relate to operational environment
-3. **Identify Critical Dependencies**: Focus on key dependencies between code and infrastructure
-
-### **Strategic Planning**
-4. **Address Architectural Issues**: Prioritize improvements based on both code and environment analysis
-5. **Plan Environment Optimization**: Optimize deployment and operational configurations
-6. **Update Documentation**: Document both architectural decisions and environment specifications
-
-### **Implementation Roadmap**
-7. **Implement Code Improvements**: Execute code-level architectural enhancements
-8. **Optimize Environment**: Improve infrastructure and deployment configurations
-9. **Monitor Integration**: Ensure code and environment changes work together effectively
-
-This comprehensive ecosystem analysis provides the foundation for informed architectural and operational decisions.
-`,
-        });
-      } else {
-        // Fallback to prompt-only mode
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `# Comprehensive Project Ecosystem Analysis
+      // CE-MCP: return prompt text directly; directive intercepts in CE-MCP mode.
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Comprehensive Project Ecosystem Analysis
 
 This comprehensive analysis provides deep recursive project understanding with integrated environment analysis.
 
@@ -1699,51 +1370,10 @@ ${enhancedAnalysisPrompt}
 
 ## Enhanced Implementation Instructions
 
-${baseProjectAnalysisPrompt.instructions}
-
-### Enhancement-Specific Instructions
-
-${
-  enhancedMode && knowledgeEnhancement
-    ? `
-#### Knowledge Enhancement
-- Apply technology-specific knowledge to ecosystem analysis
-- Use domain expertise to identify patterns and anti-patterns
-- Leverage architectural best practices for technology stack evaluation
-`
-    : ''
-}
-
-${
-  enhancedMode && learningEnabled
-    ? `
-#### Learning Integration
-- Apply lessons learned from past ecosystem analyses
-- Use memory insights to improve pattern recognition accuracy
-- Incorporate feedback from previous analysis outcomes
-`
-    : ''
-}
-
-## Expected Enhanced Output
-
-The enhanced analysis should provide:
-1. **Technology Stack Analysis** with domain knowledge context
-2. **Architectural Pattern Detection** informed by past experiences
-3. **Ecosystem Health Assessment** using learned evaluation criteria
-4. **Improvement Recommendations** based on domain best practices
-5. **Learning Insights** for future analysis improvement
-
-## Quality Assurance
-
-- Ensure analysis leverages all available enhancement features
-- Verify technology-specific knowledge is properly applied
-- Confirm learning insights improve analysis accuracy
-- Validate recommendations align with domain best practices`,
-            },
-          ],
-        };
-      }
+${baseProjectAnalysisPrompt.instructions}`,
+          },
+        ],
+      };
     } catch (error) {
       throw new McpAdrError(
         `Failed to analyze project ecosystem: ${error instanceof Error ? error.message : String(error)}`,
@@ -1932,79 +1562,15 @@ After this analysis, follow this **outcome-focused workflow**:
 This approach ensures that architectural work is **grounded in measurable outcomes** and **aligned with project success**.
 `;
 
-      // Execute the analysis with AI if enabled, otherwise return prompt
-      const { executeEcosystemAnalysisPrompt, formatMCPResponse } =
-        await import('./utils/prompt-execution.js');
-      const executionResult = await executeEcosystemAnalysisPrompt(
-        architecturalPrompt,
-        projectAnalysisPrompt.instructions,
-        {
-          temperature: 0.1,
-          maxTokens: 5000,
-          systemPrompt: `You are a senior software architect specializing in architectural context analysis.
-Analyze the provided project to understand its architectural patterns, design decisions, and structural organization.
-Focus on providing actionable insights about the architecture that can guide development decisions.`,
-        }
-      );
-
-      if (executionResult.isAIGenerated) {
-        // AI execution successful - return actual analysis results
-        return formatMCPResponse({
-          ...executionResult,
-          content: `# Architectural Context Analysis Results
-
-${filePath ? `## Target File: ${filePath}` : '## Project-wide Analysis'}
-
-## Project Information
-- **Project Path**: ${projectPath}
-- **Analysis Scope**: ${filePath ? 'File-specific' : 'Project-wide'}
-- **ADR Directory**: ${this.config.adrDirectory}
-
-## ADR Infrastructure Setup
-
-The analysis includes automatic ADR infrastructure setup:
-
-${adrDirectoryCheckPrompt.instructions}
-
-${adrDirectorySetupPrompt.instructions}
-
-## AI Analysis Results
-
-${executionResult.content}
-
-## Outcome-Focused Next Steps
-
-Based on the architectural analysis, follow this **grounded workflow**:
-
-### **Immediate Actions (This Week)**
-1. **Review Analysis**: Examine the architectural context and recommendations above
-2. **Set Up ADRs**: Ensure ADR directory structure is created and ready
-3. **Identify Quick Wins**: Focus on low-effort, high-impact improvements
-
-### **Short-term Goals (Next Month)**
-4. **Document Key Decisions**: Create ADRs for the most significant architectural choices
-5. **Address Critical Issues**: Tackle the highest-priority architectural concerns
-6. **Establish Metrics**: Set up measurement for the success metrics identified
-
-### **Long-term Vision (Next Quarter)**
-7. **Implement Roadmap**: Execute the architectural improvement plan
-8. **Monitor Progress**: Track success metrics and adjust approach as needed
-9. **Continuous Improvement**: Establish regular architectural reviews
-
-This **outcome-focused approach** ensures architectural work delivers **measurable value** and keeps the project **grounded in clear objectives**.
-`,
-        });
-      } else {
-        // Fallback to prompt-only mode
-        return {
-          content: [
-            {
-              type: 'text',
-              text: architecturalPrompt,
-            },
-          ],
-        };
-      }
+      // CE-MCP: return prompt text directly; directive intercepts in CE-MCP mode.
+      return {
+        content: [
+          {
+            type: 'text',
+            text: architecturalPrompt,
+          },
+        ],
+      };
     } catch (error) {
       throw new McpAdrError(
         `Failed to get architectural context: ${error instanceof Error ? error.message : String(error)}`,
@@ -2209,95 +1775,15 @@ For each generated ADR, create a file creation prompt using the following patter
 `;
 
       // Execute the ADR generation with AI if enabled, otherwise return prompt
-      ctx.info('🤖 Phase 6: Executing AI-powered ADR generation');
-      ctx.report_progress(90, 100);
-
-      const { executeADRGenerationPrompt, formatMCPResponse } =
-        await import('./utils/prompt-execution.js');
-      const executionResult = await executeADRGenerationPrompt(
-        adrPrompt,
-        'Generate comprehensive ADRs from PRD analysis with enhanced domain knowledge and optimization',
-        {
-          temperature: 0.1,
-          maxTokens: 8000,
-          systemPrompt: `You are an expert software architect who creates comprehensive Architectural Decision Records (ADRs) from Product Requirements Documents (PRDs).
-Generate well-structured ADRs that follow best practices and include all necessary sections.
-Focus on extracting architectural decisions from the PRD and creating actionable ADRs with clear reasoning.`,
-        }
-      );
-
       ctx.info('✅ ADR generation completed successfully');
       ctx.report_progress(100, 100);
 
-      if (executionResult.isAIGenerated) {
-        // AI execution successful - return actual ADR generation results
-        return formatMCPResponse({
-          ...executionResult,
-          content: `# ADR Generation from PRD Results
-
-## Enhancement Features
-- **APE Optimization**: ${enhancedMode && promptOptimization ? '✅ Enabled' : '❌ Disabled'}
-- **Knowledge Generation**: ${enhancedMode && knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
-- **PRD Type Optimization**: ${prdType}
-- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
-
-## Source Information
-- **PRD Path**: ${prdPath}
-- **Output Directory**: ${outputDirectory}
-
-## Generated ADRs
-
-${executionResult.content}
-
-## Next Steps
-
-1. **Review Generated ADRs**: Examine each ADR for completeness and accuracy
-2. **Save ADR Files**: Create individual .md files for each ADR in ${outputDirectory}
-3. **Update ADR Index**: Add new ADRs to your project's ADR catalog
-4. **Stakeholder Review**: Share ADRs with team for feedback and approval
-5. **Implementation Planning**: Create tasks for implementing the architectural decisions
-
-## File Creation Commands
-
-To save the generated ADRs, create individual files in ${outputDirectory}:
-
-\`\`\`bash
-# Create ADR directory if it doesn't exist
-mkdir -p ${outputDirectory}
-
-# Save each ADR as a separate file (example)
-# Replace [NUMBER] and [TITLE] with actual values from generated ADRs
-# cat > "${outputDirectory}/001-example-decision.md" << 'EOF'
-# [ADR content here]
-# EOF
-\`\`\`
-`,
-        });
-      } else {
-        // Fallback to prompt-only mode
-        return {
-          content: [
-            {
-              type: 'text',
-              text: `# Enhanced ADR Generation from PRD: ${prdPath}
-
-## Advanced Prompt-Driven ADR Generation Process
-
-This tool uses a 100% prompt-driven architecture enhanced with advanced prompting techniques:
-
-### Enhancement Features
-- **APE Optimization**: ${enhancedMode && promptOptimization ? '✅ Enabled - Prompts optimized for superior quality' : '❌ Disabled'}
-- **Knowledge Generation**: ${enhancedMode && knowledgeEnhancement ? '✅ Enabled - Domain knowledge enhanced analysis' : '❌ Disabled'}
-- **PRD Type Optimization**: ${prdType} - Tailored for specific domain requirements
-- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled - All advanced features active' : '❌ Disabled - Basic mode'}
-
-### Enhanced AI Agent Workflow
-
-1. **Validate PRD file existence** using secure file system operations
-2. **Read PRD content** safely with proper security validation
-3. **Apply domain knowledge** to enhance understanding (if enabled)
-4. **Generate optimized ADRs** using APE-enhanced prompts (if enabled)
-5. **Create enhanced ADR files** in the specified output directory: ${outputDirectory}
+      // CE-MCP: return prompt text directly; directive intercepts in CE-MCP mode.
+      return {
+        content: [
+          {
+            type: 'text',
+            text: `# Enhanced ADR Generation from PRD: ${prdPath}
 
 ## Execution Instructions
 
@@ -2305,53 +1791,15 @@ Please execute the following enhanced comprehensive prompt:
 
 ${adrPrompt}
 
-## Advanced Features
-
-${
-  enhancedMode && knowledgeEnhancement
-    ? `
-### Knowledge Enhancement
-- Domain-specific architectural knowledge has been generated
-- PRD analysis is enhanced with ${prdType} domain expertise
-- ADR decisions leverage domain best practices and patterns
-`
-    : ''
-}
-
-${
-  enhancedMode && promptOptimization
-    ? `
-### APE Optimization
-- Prompts have been automatically optimized for quality
-- Enhanced evaluation criteria ensure superior ADR generation
-- Optimization focused on task completion, clarity, and specificity
-`
-    : ''
-}
-
-## Security and Validation
-
-- All file operations include security validation
-- Path traversal protection is enabled
-- System directory access is prevented
-- User confirmation is required for file creation
-- Content validation ensures safe enhanced ADR generation
-
-## Expected Enhanced Workflow
-
-1. Execute file existence check for: ${prdPath}
-2. If file exists, read PRD content securely
-3. Apply domain knowledge to enhance PRD understanding
-4. Analyze PRD content using optimized prompts
-5. Generate domain-enhanced individual ADRs for each decision
-6. Create file creation prompts for each enhanced ADR
-7. Confirm with user before writing files to: ${outputDirectory}
-
-The enhanced process maintains full traceability from PRD requirements to generated ADRs while providing superior quality through advanced prompting techniques and ensuring security and user control over file operations.`,
-            },
-          ],
-        };
-      }
+## Enhancement Features
+- **APE Optimization**: ${enhancedMode && promptOptimization ? '✅ Enabled' : '❌ Disabled'}
+- **Knowledge Generation**: ${enhancedMode && knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
+- **PRD Type Optimization**: ${prdType}
+- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
+- **Output Directory**: ${outputDirectory}`,
+          },
+        ],
+      };
     } catch (error) {
       throw new McpAdrError(
         `Failed to generate ADR prompts from PRD: ${error instanceof Error ? error.message : String(error)}`,
@@ -4893,193 +4341,15 @@ Please provide:
     });
   }
 
-  /**
-   * File system tool implementations
-   */
+  // listRoots removed — host-native, ADR-023 (#1673)
 
-  /**
-   * List accessible roots (MCP best practice)
-   */
-  async listRoots(): Promise<CallToolResult> {
-    const roots = this.rootManager.listRoots();
+  // readDirectory removed — host-native, ADR-023 (#1673)
 
-    const rootsList = roots
-      .map(r => `### ${r.name}\n\n**Path**: \`${r.path}\`\n\n**Description**: ${r.description}\n`)
-      .join('\n');
+  // readFile removed — host-native, ADR-023 (#1673)
 
-    return {
-      content: [
-        {
-          type: 'text',
-          text: `# Available File System Roots\n\nThese are the directories that can be accessed by this MCP server.\n\n${rootsList}\nUse these paths with \`read_directory\` and \`read_file\` tools to explore and access files.`,
-        },
-      ],
-    };
-  }
+  // writeFile removed — host-native, ADR-023 (#1673)
 
-  /**
-   * Read directory contents (MCP best practice for autonomous file discovery)
-   */
-  async readDirectory(args: { path?: string }): Promise<CallToolResult> {
-    const targetPath = args.path || this.config.projectPath;
-
-    try {
-      const path = await import('path');
-      const resolvedPath = path.resolve(targetPath);
-
-      // Security check: ensure path is within accessible roots
-      if (!this.rootManager.isPathAllowed(resolvedPath)) {
-        const roots = this.rootManager.listRoots();
-        const rootList = roots.map(r => `  - ${r.name}: ${r.path}`).join('\n');
-
-        throw new McpAdrError(
-          `Access denied: Path '${targetPath}' is outside accessible roots.\n\nAccessible roots:\n${rootList}\n\nUse list_roots tool for more details.`,
-          'ACCESS_DENIED'
-        );
-      }
-
-      const { readdir } = await import('fs/promises');
-      const entries = await readdir(resolvedPath, { withFileTypes: true });
-
-      const files = entries.filter(e => e.isFile()).map(e => `📄 ${e.name}`);
-
-      const dirs = entries.filter(e => e.isDirectory()).map(e => `📁 ${e.name}/`);
-
-      const root = this.rootManager.getRootForPath(resolvedPath);
-      const relPath = this.rootManager.getRelativePathFromRoot(resolvedPath);
-
-      const filesList = files.length > 0 ? files.join('\n') : '(no files)';
-      const dirsList = dirs.length > 0 ? dirs.join('\n') : '(no directories)';
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# Directory: ${targetPath}\n\n**Root**: ${root?.name}\n**Relative Path**: ${relPath || '/'}\n**Full Path**: \`${resolvedPath}\`\n\n## Directories (${dirs.length})\n\n${dirsList}\n\n## Files (${files.length})\n\n${filesList}`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to read directory: ${error instanceof Error ? error.message : String(error)}`,
-        'DIRECTORY_READ_ERROR'
-      );
-    }
-  }
-
-  async readFile(args: ReadFileArgs): Promise<CallToolResult> {
-    const { filePath } = args;
-
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
-      // Resolve path (handle both relative and absolute paths)
-      const safePath = path.resolve(filePath);
-
-      // Security check: ensure path is within accessible roots
-      if (!this.rootManager.isPathAllowed(safePath)) {
-        const roots = this.rootManager.listRoots();
-        const rootList = roots.map(r => `  - ${r.name}: ${r.path}`).join('\n');
-
-        throw new McpAdrError(
-          `Access denied: Path '${filePath}' is outside accessible roots.\n\nAccessible roots:\n${rootList}\n\nUse list_roots tool for more details.`,
-          'ACCESS_DENIED'
-        );
-      }
-
-      const content = await fs.readFile(safePath, 'utf-8');
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: content,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to read file: ${error instanceof Error ? error.message : String(error)}`,
-        'FILE_READ_ERROR'
-      );
-    }
-  }
-
-  async writeFile(args: WriteFileArgs): Promise<CallToolResult> {
-    const { filePath, content } = args;
-
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
-      // Resolve path relative to project path for security
-      const safePath = path.resolve(this.config.projectPath, filePath);
-
-      // Security check: ensure path is within project directory
-      if (!safePath.startsWith(this.config.projectPath)) {
-        throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
-      }
-
-      // Ensure directory exists
-      await fs.mkdir(path.dirname(safePath), { recursive: true });
-
-      // Write file
-      await fs.writeFile(safePath, content, 'utf-8');
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `Successfully wrote to ${filePath}`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to write file: ${error instanceof Error ? error.message : String(error)}`,
-        'FILE_WRITE_ERROR'
-      );
-    }
-  }
-
-  async listDirectory(args: Record<string, unknown>): Promise<CallToolResult> {
-    const { path: dirPath } = args;
-
-    try {
-      const fs = await import('fs/promises');
-      const path = await import('path');
-
-      // Resolve path relative to project path for security
-      const safePath = path.resolve(this.config.projectPath, dirPath as string);
-
-      // Security check: ensure path is within project directory
-      if (!safePath.startsWith(this.config.projectPath)) {
-        throw new McpAdrError('Access denied: Path is outside project directory', 'ACCESS_DENIED');
-      }
-
-      const entries = await fs.readdir(safePath, { withFileTypes: true });
-      const fileList = entries.map(entry => ({
-        name: entry.name,
-        type: entry.isDirectory() ? 'directory' : 'file',
-        path: path.join(dirPath as string, entry.name),
-      }));
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(fileList, null, 2),
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to list directory: ${error instanceof Error ? error.message : String(error)}`,
-        'DIRECTORY_LIST_ERROR'
-      );
-    }
-  }
+  // listDirectory removed — host-native, ADR-023 (#1673)
 
   async generateDeploymentGuidance(args: Record<string, unknown>): Promise<CallToolResult> {
     try {
@@ -5343,130 +4613,7 @@ This tool has been deprecated and replaced with memory-centric health scoring.
     }
   }
 
-  /**
-   * Get Current Datetime Tool
-   * Returns the current date and time in various formats for ADR generation and timestamping
-   */
-  async getCurrentDatetime(args: {
-    timezone?: string;
-    format?: 'iso' | 'human' | 'adr' | 'all';
-    includeTimestamp?: boolean;
-  }): Promise<CallToolResult> {
-    const { timezone = 'UTC', format = 'all', includeTimestamp = true } = args;
-
-    try {
-      const now = new Date();
-
-      // Format date for different timezones
-      const formatOptions: Intl.DateTimeFormatOptions = {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: false,
-      };
-
-      // Get date parts for the specified timezone
-      const formatter = new Intl.DateTimeFormat('en-CA', {
-        timeZone: timezone,
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-      });
-      const parts = formatter.formatToParts(now);
-      const year = parts.find(p => p.type === 'year')?.value || '';
-      const month = parts.find(p => p.type === 'month')?.value || '';
-      const day = parts.find(p => p.type === 'day')?.value || '';
-
-      // ADR date format: YYYY-MM-DD
-      const adrDate = `${year}-${month}-${day}`;
-
-      // ISO 8601 format
-      const isoDate = now.toISOString();
-
-      // Human-readable format
-      const humanFormatter = new Intl.DateTimeFormat('en-US', {
-        ...formatOptions,
-        weekday: 'long',
-        month: 'long',
-      });
-      const humanDate = humanFormatter.format(now);
-
-      // Build response based on requested format
-      let responseData: Record<string, string | number> = {};
-
-      switch (format) {
-        case 'iso':
-          responseData = { iso: isoDate };
-          break;
-        case 'human':
-          responseData = { human: humanDate };
-          break;
-        case 'adr':
-          responseData = { adr: adrDate };
-          break;
-        case 'all':
-        default:
-          responseData = {
-            iso: isoDate,
-            human: humanDate,
-            adr: adrDate,
-            timezone: timezone,
-          };
-      }
-
-      if (includeTimestamp) {
-        responseData['timestamp'] = now.getTime();
-      }
-
-      const responseText = `# Current Date and Time
-
-## Formats
-${format === 'all' || format === 'iso' ? `- **ISO 8601**: ${isoDate}` : ''}
-${format === 'all' || format === 'human' ? `- **Human Readable**: ${humanDate}` : ''}
-${format === 'all' || format === 'adr' ? `- **ADR Date (YYYY-MM-DD)**: ${adrDate}` : ''}
-${format === 'all' ? `- **Timezone**: ${timezone}` : ''}
-${includeTimestamp ? `- **Unix Timestamp (ms)**: ${now.getTime()}` : ''}
-
-## Usage for ADR Generation
-
-When generating ADRs, use the ADR date format (\`${adrDate}\`) in the Date field:
-
-\`\`\`markdown
-# ADR-XXXX: [Title]
-
-## Date
-${adrDate}
-
-## Status
-Proposed
-\`\`\`
-
-## Raw Data
-
-\`\`\`json
-${JSON.stringify(responseData, null, 2)}
-\`\`\`
-`;
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: responseText,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to get current datetime: ${error instanceof Error ? error.message : String(error)}`,
-        'DATETIME_ERROR'
-      );
-    }
-  }
+  // getCurrentDatetime removed — host-native, ADR-023 (#1673)
 
   /**
    * Set Project Path Tool - Dynamic Session Configuration
@@ -5497,8 +4644,7 @@ ${JSON.stringify(responseData, null, 2)}
       // Update the server configuration
       this.config.projectPath = absolutePath;
 
-      // Re-initialize the RootManager with the new path
-      this.rootManager = new RootManager(absolutePath, this.config.adrDirectory);
+      // rootManager re-init removed — ADR-023 (#1673)
 
       this.logger.info(`Project path changed: ${previousPath} -> ${absolutePath}`);
 
@@ -5536,136 +4682,5 @@ To make this permanent, set the \`PROJECT_PATH\` environment variable.
     }
   }
 
-  /**
-   * Load Prompt Tool - CE-MCP Phase 4 Lazy Loading
-   *
-   * @description Loads prompts on-demand instead of eagerly loading all prompts at startup.
-   * This reduces token usage by ~96% (from 28K tokens to ~1K on-demand).
-   *
-   * @param args - Load prompt arguments
-   * @param args.promptName - Name of the prompt to load
-   * @param args.section - Optional section within the prompt
-   * @param args.estimateOnly - If true, returns only token estimate
-   * @returns Promise<CallToolResult> - Loaded prompt content or estimate
-   */
-  async loadPrompt(args: {
-    promptName: string;
-    section?: string;
-    estimateOnly?: boolean;
-  }): Promise<CallToolResult> {
-    const { promptName, section, estimateOnly = false } = args;
-
-    // Import the prompt catalog dynamically to enable lazy loading
-    const { getPromptLoader, getPromptMetadata, calculateTokenSavings } =
-      await import('./prompts/prompt-catalog.js');
-
-    const metadata = getPromptMetadata(promptName);
-
-    if (!metadata) {
-      const availablePrompts = [
-        'adr-suggestion',
-        'deployment-analysis',
-        'environment-analysis',
-        'research-question',
-        'rule-generation',
-        'analysis',
-        'research-integration',
-        'validated-pattern',
-        'security',
-      ];
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                success: false,
-                error: `Unknown prompt: ${promptName}`,
-                availablePrompts,
-                hint: 'Use one of the available prompt names listed above',
-              },
-              null,
-              2
-            ),
-          },
-        ],
-        isError: true,
-      };
-    }
-
-    // If estimate only, return token information without loading
-    if (estimateOnly) {
-      const loader = getPromptLoader();
-      const estimatedTokens = loader.getEstimatedTokens(promptName, section);
-      const savings = calculateTokenSavings([promptName]);
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: JSON.stringify(
-              {
-                success: true,
-                promptName,
-                section: section || 'full',
-                estimatedTokens,
-                metadata: {
-                  file: metadata.file,
-                  category: metadata.category,
-                  totalTokens: metadata.tokens,
-                  availableSections: metadata.sections,
-                  loadOnDemand: metadata.loadOnDemand,
-                },
-                tokenSavings: {
-                  loaded: savings.loaded,
-                  total: savings.total,
-                  saved: savings.saved,
-                  percentage: `${savings.percentage}%`,
-                },
-              },
-              null,
-              2
-            ),
-          },
-        ],
-      };
-    }
-
-    // Load the prompt content
-    try {
-      const loader = getPromptLoader();
-      const content = await loader.loadPrompt(promptName, section);
-
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# Loaded Prompt: ${promptName}${section ? ` (section: ${section})` : ''}
-
-## Metadata
-- **Category**: ${metadata.category}
-- **Estimated Tokens**: ${metadata.tokens}
-- **Available Sections**: ${metadata.sections.join(', ')}
-
-## Content
-
-${content}
-
----
-
-*Loaded on-demand via CE-MCP lazy loading system. Token savings: ~96% compared to eager loading all prompts.*
-`,
-          },
-        ],
-      };
-    } catch (error) {
-      throw new McpAdrError(
-        `Failed to load prompt '${promptName}'${section ? ` section '${section}'` : ''}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        'PROMPT_LOAD_ERROR'
-      );
-    }
-  }
+  // loadPrompt removed — host-native, ADR-023 (#1673)
 }
