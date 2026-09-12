@@ -23,7 +23,7 @@ ADR-018 introduced an atomic tools architecture with dependency injection to dra
 1. **Orchestrator Pattern**: Tools depended on `ResearchOrchestrator` and `KnowledgeGraphManager` classes
 2. **Sequential Execution**: Orchestrators execute sequentially, blocking test execution
 3. **Token Overhead**: 5,000-6,000 tokens per session from orchestrator calls
-4. **ESM Mocking Complexity**: `jest.unstable_mockModule()` required for deep dependency chains
+4. **ESM Mocking Complexity**: `vi.mock()` required for deep dependency chains
 
 ## Solution: Atomic Tools with Dependency Injection
 
@@ -68,8 +68,8 @@ beforeAll(async () => {
 // NEW: Simple DI
 test('myTool finds files', async () => {
   const mockFs = {
-    findFiles: jest.fn().mockResolvedValue(['file1.ts']),
-    readFile: jest.fn().mockResolvedValue('content'),
+    findFiles: vi.fn().mockResolvedValue(['file1.ts']),
+    readFile: vi.fn().mockResolvedValue('content'),
   };
 
   const result = await myTool({ projectPath: '/test' }, { fs: mockFs });
@@ -198,7 +198,7 @@ test('myTool finds files', async () => {
 
    ```typescript
    test('tool works', async () => {
-     const mockDeps = { utils: { fn: jest.fn() } };
+     const mockDeps = { utils: { fn: vi.fn() } };
      const result = await myTool(args, mockDeps);
      expect(result).toBeDefined();
    });

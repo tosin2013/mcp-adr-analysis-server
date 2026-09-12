@@ -14,11 +14,6 @@ vi.mock('../../src/utils/deployment-analysis.js', () => ({
   verifyDeploymentCompletion: vi.fn(),
 }));
 
-vi.mock('../../src/utils/prompt-execution.js', () => ({
-  executePromptWithFallback: vi.fn(),
-  formatMCPResponse: vi.fn(),
-}));
-
 vi.mock('../../src/utils/research-orchestrator.js', () => ({
   answerResearchQuestion: vi.fn().mockResolvedValue({
     answer: 'Mock environment analysis',
@@ -42,9 +37,6 @@ const {
   calculateDeploymentProgress,
   verifyDeploymentCompletion,
 } = await import('../../src/utils/deployment-analysis.js');
-const { executePromptWithFallback, formatMCPResponse } =
-  await import('../../src/utils/prompt-execution.js');
-
 describe('deployment-analysis-tool', () => {
   describe('analyzeDeploymentProgress', () => {
     beforeEach(() => {
@@ -52,36 +44,15 @@ describe('deployment-analysis-tool', () => {
     });
 
     describe('tasks analysis type', () => {
-      it('should identify deployment tasks with AI execution', async () => {
+      it('should identify deployment tasks with prompt-only return', async () => {
         const mockTaskResult = {
           identificationPrompt: 'Mock identification prompt for deployment tasks',
           instructions: 'Mock instructions for task identification',
         };
 
-        const mockExecutionResult = {
-          isAIGenerated: true,
-          content: 'AI-generated deployment task analysis results',
-          metadata: { confidence: 0.95 },
-        };
-
-        const mockFormattedResponse = {
-          content: [
-            {
-              type: 'text',
-              text: 'Formatted deployment task identification results',
-            },
-          ],
-        };
-
         (
           identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockTaskResult);
-        (
-          executePromptWithFallback as MockedFunction<typeof executePromptWithFallback>
-        ).mockResolvedValue(mockExecutionResult);
-        (formatMCPResponse as MockedFunction<typeof formatMCPResponse>).mockReturnValue(
-          mockFormattedResponse
-        );
 
         const result = await analyzeDeploymentProgress({
           analysisType: 'tasks',
@@ -90,17 +61,9 @@ describe('deployment-analysis-tool', () => {
         });
 
         expect(identifyDeploymentTasks).toHaveBeenCalledWith('docs/adrs', 'TODO.md');
-        expect(executePromptWithFallback).toHaveBeenCalledWith(
-          mockTaskResult.identificationPrompt,
-          mockTaskResult.instructions,
-          expect.objectContaining({
-            temperature: 0.1,
-            maxTokens: 5000,
-            responseFormat: 'text',
-          })
-        );
-        expect(formatMCPResponse).toHaveBeenCalled();
-        expect(result).toEqual(mockFormattedResponse);
+        expect(result.content[0].text).toContain('Deployment Task Identification');
+        expect(result.content[0].text).toContain(mockTaskResult.instructions);
+        expect(result.content[0].text).toContain(mockTaskResult.identificationPrompt);
       });
 
       it('should fallback to prompt-only mode when AI execution fails', async () => {
@@ -109,17 +72,9 @@ describe('deployment-analysis-tool', () => {
           instructions: 'Mock instructions for task identification',
         };
 
-        const mockExecutionResult = {
-          isAIGenerated: false,
-          content: 'Fallback prompt content',
-        };
-
         (
           identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockTaskResult);
-        (
-          executePromptWithFallback as MockedFunction<typeof executePromptWithFallback>
-        ).mockResolvedValue(mockExecutionResult);
 
         const result = await analyzeDeploymentProgress({
           analysisType: 'tasks',
@@ -139,17 +94,9 @@ describe('deployment-analysis-tool', () => {
           instructions: 'Default instructions',
         };
 
-        const mockExecutionResult = {
-          isAIGenerated: false,
-          content: 'Default content',
-        };
-
         (
           identifyDeploymentTasks as MockedFunction<typeof identifyDeploymentTasks>
         ).mockResolvedValue(mockTaskResult);
-        (
-          executePromptWithFallback as MockedFunction<typeof executePromptWithFallback>
-        ).mockResolvedValue(mockExecutionResult);
 
         await analyzeDeploymentProgress({ analysisType: 'tasks' });
 
@@ -673,11 +620,6 @@ describe('deployment-analysis-tool', () => {
         const analysisTypes = ['tasks', 'comprehensive'] as const;
 
         for (const analysisType of analysisTypes) {
-          const mockExecutionResult = { isAIGenerated: false, content: 'test' };
-          (
-            executePromptWithFallback as MockedFunction<typeof executePromptWithFallback>
-          ).mockResolvedValue(mockExecutionResult);
-
           const result = await analyzeDeploymentProgress({ analysisType });
 
           expect(result).toHaveProperty('content');

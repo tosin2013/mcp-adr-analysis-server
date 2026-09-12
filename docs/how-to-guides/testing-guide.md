@@ -314,7 +314,7 @@ describe('Memory Performance', () => {
  * - Integration scenarios
  */
 
-import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { [COMPONENT_NAME] } from '../src/path/to/component.js';
 
 describe('[COMPONENT_NAME]', () => {
@@ -463,11 +463,11 @@ npm run build
 #### 1. Memory/Timeout Issues
 
 ```bash
-# Increase Jest timeout
+# Increase Vitest timeout
 npm test -- --testTimeout=30000
 
 # Run tests with more memory
-node --max-old-space-size=4096 node_modules/.bin/jest
+node --max-old-space-size=4096 npx vitest
 ```
 
 #### 2. Path Resolution Issues
@@ -487,8 +487,8 @@ const testWorkspace = join(__dirname, '../../test-workspace');
 ```typescript
 // Proper mock cleanup
 afterEach(() => {
-  jest.clearAllMocks();
-  jest.resetModules();
+  vi.clearAllMocks();
+  vi.resetModules();
 });
 ```
 
@@ -504,13 +504,13 @@ console.warn('Tree-sitter parser failed, falling back to regex analysis');
 
 ```bash
 # Run single test with debugging
-node --inspect-brk node_modules/.bin/jest tests/specific-test.test.ts
+npx vitest --inspect-brk tests/specific-test.test.ts
 
 # Run with verbose logging
 DEBUG=* npm test
 
-# Run with Jest debugging
-npm test -- --detectOpenHandles --forceExit
+# Run with Vitest debugging
+npm test -- --reporter=verbose
 ```
 
 ---
@@ -628,7 +628,7 @@ Current test metrics:
 
 ## 📚 Additional Resources
 
-- **[Jest Documentation](https://jestjs.io/./getting-started)** - Testing framework guide
+- **[Vitest Documentation](https://vitest.dev/guide/)** - Testing framework guide
 - **[Testing Best Practices](https://github.com/goldbergyoni/javascript-testing-best-practices)** - Industry standards
 - **[CI/CD Guide](./how-to-guides/cicd-integration.md)** - Continuous integration setup
 - **[Contributing Guide](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)** - Project contribution guidelines

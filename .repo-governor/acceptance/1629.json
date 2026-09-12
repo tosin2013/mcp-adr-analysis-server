@@ -1,0 +1,15 @@
+{
+  "$comment": "CE-MCP Batch 1 (ADR-021 Option B), REDUCED SCOPE. Originally covered the ADR suggestion + validation cluster; reduced to adr-validation-tool.ts only after the adr-suggestion-tool.ts migration was found to be entangled with generateAdrFromDecision's deterministic autoSave + knowledge-graph auto-registration feature (3 tests) and with the content-generation rework in #1466. That half of the cluster is deferred to a follow-up batch coordinated with #1466 (do #1466 first, then migrate adr-suggestion-tool.ts on top of its deterministic MADR content generator). This bar therefore covers adr-validation-tool.ts only.",
+  "authority_id": "1629",
+  "criteria": [
+    { "check": "command_exit", "target": "npm run typecheck" },
+    {
+      "check": "command_exit",
+      "target": "npx vitest run tests/tools/adr-validation-tool.test.ts tests/tools/adr-validation-summary.test.ts"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! rg -q \"ai-executor|prompt-execution\" src/tools/adr-validation-tool.ts'"
+    }
+  ]
+}

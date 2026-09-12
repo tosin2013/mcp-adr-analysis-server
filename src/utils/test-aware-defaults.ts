@@ -11,11 +11,7 @@
  * Check if we're running in a test environment
  */
 export function isTestEnvironment(): boolean {
-  return (
-    process.env['NODE_ENV'] === 'test' ||
-    process.env['JEST_WORKER_ID'] !== undefined ||
-    process.env['VITEST'] !== undefined
-  );
+  return process.env['NODE_ENV'] === 'test' || process.env['VITEST'] !== undefined;
 }
 
 /**

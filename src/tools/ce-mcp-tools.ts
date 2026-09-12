@@ -1336,6 +1336,685 @@ export function createToolChainOrchestratorDirective(
 }
 
 // ============================================================================
+// CE-MCP Batch 2: Content-masking directives (#1631)
+// ============================================================================
+
+/**
+ * Arguments for CE-MCP analyze_content_security
+ */
+export interface CEMCPAnalyzeContentSecurityArgs {
+  content: string;
+  contentType?: 'code' | 'documentation' | 'configuration' | 'logs' | 'general';
+  userDefinedPatterns?: string[];
+  knowledgeEnhancement?: boolean;
+  enhancedMode?: boolean;
+  enableMemoryIntegration?: boolean;
+  enableTreeSitterAnalysis?: boolean;
+}
+
+/**
+ * CE-MCP version of analyze_content_security
+ *
+ * Returns an orchestration directive for security analysis instead of calling
+ * OpenRouter. The host LLM performs the analysis directly using the system
+ * prompt and context assembled by sandbox operations.
+ */
+export function createAnalyzeContentSecurityDirective(
+  args: CEMCPAnalyzeContentSecurityArgs
+): OrchestrationDirective {
+  const {
+    content,
+    contentType = 'general',
+    userDefinedPatterns = [],
+    knowledgeEnhancement = getKnowledgeEnhancementDefault(),
+    enableTreeSitterAnalysis = true,
+  } = args;
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'analyzeFiles',
+      args: {
+        content,
+        contentType,
+        userDefinedPatterns,
+        enableTreeSitterAnalysis,
+      },
+      store: 'sensitiveContentAnalysis',
+    },
+    ...(knowledgeEnhancement
+      ? [
+          {
+            op: 'loadKnowledge' as const,
+            args: {
+              domain: 'cybersecurity',
+              scope: 'sensitive-data-detection',
+            },
+            store: 'securityKnowledge',
+          },
+        ]
+      : []),
+    {
+      op: 'generateContext',
+      args: {
+        type: 'content-security-analysis',
+        contentType,
+        contentLength: content.length,
+        userDefinedPatterns,
+      },
+      inputs: ['sensitiveContentAnalysis', 'securityKnowledge'],
+      store: 'analysisContext',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['sensitiveContentAnalysis', 'securityKnowledge', 'analysisContext'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'analyze_content_security',
+    description: `Analyze ${contentType} content (${content.length} chars) for security concerns`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'sensitiveContentAnalysis', key: 'findings' },
+        { source: 'analysisContext', key: 'analysis' },
+      ],
+      template: 'security_analysis_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 2000,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+/**
+ * Arguments for CE-MCP generate_content_masking
+ */
+export interface CEMCPGenerateContentMaskingArgs {
+  content: string;
+  detectedItems: Array<{
+    type: string;
+    category?: string;
+    content: string;
+    startPosition: number;
+    endPosition: number;
+    confidence?: number;
+    reasoning?: string;
+    severity: string;
+    suggestedMask?: string;
+  }>;
+  maskingStrategy?: 'full' | 'partial' | 'placeholder' | 'environment';
+}
+
+/**
+ * CE-MCP version of generate_content_masking
+ *
+ * Returns an orchestration directive for content masking instead of calling
+ * OpenRouter. The host LLM applies masking rules directly.
+ */
+export function createGenerateContentMaskingDirective(
+  args: CEMCPGenerateContentMaskingArgs
+): OrchestrationDirective {
+  const { content, detectedItems = [], maskingStrategy = 'full' } = args;
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'analyzeFiles',
+      args: {
+        content,
+        detectedItems,
+        maskingStrategy,
+      },
+      store: 'maskingInstructions',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'content-masking',
+        maskingStrategy,
+        detectedItemCount: detectedItems.length,
+        contentLength: content.length,
+      },
+      inputs: ['maskingInstructions'],
+      store: 'maskingContext',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['maskingInstructions', 'maskingContext'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'generate_content_masking',
+    description: `Generate masking for ${detectedItems.length} detected items using ${maskingStrategy} strategy`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'maskingInstructions', key: 'instructions' },
+        { source: 'maskingContext', key: 'maskedContent' },
+      ],
+      template: 'content_masking_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 1500,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+// ============================================================================
+// CE-MCP Batch 4: Rule-generation directives (#1633)
+// ============================================================================
+
+/**
+ * Arguments for CE-MCP validate_rules
+ */
+export interface CEMCPValidateRulesArgs {
+  filePath?: string;
+  fileContent?: string;
+  fileName?: string;
+  rules: Array<{
+    name: string;
+    description?: string;
+    pattern?: string;
+    severity?: string;
+  }>;
+  validationType?: 'full' | 'quick' | 'pattern-only';
+}
+
+/**
+ * CE-MCP version of validate_rules
+ *
+ * Returns an orchestration directive for rule validation instead of calling
+ * OpenRouter. The host LLM validates code against rules directly.
+ */
+export function createValidateRulesDirective(args: CEMCPValidateRulesArgs): OrchestrationDirective {
+  const { filePath, rules = [], validationType = 'full' } = args;
+
+  const target = filePath || 'provided content';
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'analyzeFiles',
+      args: {
+        patterns: filePath ? [filePath] : [],
+        maxFiles: 1,
+      },
+      store: 'codeContent',
+    },
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'architectural-rules',
+        scope: 'validation',
+      },
+      store: 'ruleKnowledge',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'rule-validation',
+        validationType,
+        ruleCount: rules.length,
+        target,
+      },
+      inputs: ['codeContent', 'ruleKnowledge'],
+      store: 'validationResults',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['codeContent', 'ruleKnowledge', 'validationResults'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'validate_rules',
+    description: `Validate ${target} against ${rules.length} architectural rules (${validationType})`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'codeContent', key: 'analyzedCode', transform: 'summarize' },
+        { source: 'validationResults', key: 'violations' },
+      ],
+      template: 'rule_validation_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 2000,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+// ============================================================================
+// CE-MCP Batch 5: Deployment/environment directives (#1634)
+// ============================================================================
+
+/**
+ * Arguments for CE-MCP analyze_deployment_progress
+ */
+export interface CEMCPAnalyzeDeploymentProgressArgs {
+  analysisType?: 'tasks' | 'cicd' | 'progress' | 'completion' | 'comprehensive';
+  adrDirectory?: string;
+  todoPath?: string;
+  cicdLogs?: string;
+  pipelineConfig?: string;
+  deploymentTasks?: Array<{
+    taskId: string;
+    taskName: string;
+    status?: string;
+    category?: string;
+  }>;
+  outcomeRules?: Array<{
+    ruleId: string;
+    description: string;
+    criteria: string;
+  }>;
+  actualOutcomes?: Record<string, unknown>;
+  cicdStatus?: Record<string, unknown>;
+  environmentStatus?: Record<string, unknown>;
+}
+
+/**
+ * CE-MCP version of analyze_deployment_progress
+ *
+ * Returns an orchestration directive for deployment analysis instead of calling
+ * OpenRouter. The host LLM performs the analysis directly.
+ */
+export function createAnalyzeDeploymentProgressDirective(
+  args: CEMCPAnalyzeDeploymentProgressArgs
+): OrchestrationDirective {
+  const { analysisType = 'tasks', adrDirectory, todoPath } = args;
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'analyzeFiles',
+      args: {
+        patterns: adrDirectory ? [`${adrDirectory}/**/*.md`] : ['docs/adr/**/*.md'],
+        maxFiles: 30,
+      },
+      store: 'adrContent',
+    },
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'deployment-analysis',
+        scope: analysisType,
+      },
+      store: 'deploymentKnowledge',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'deployment-progress',
+        analysisType,
+        adrDirectory,
+        todoPath,
+      },
+      inputs: ['adrContent', 'deploymentKnowledge'],
+      store: 'analysisResults',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['adrContent', 'deploymentKnowledge', 'analysisResults'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'analyze_deployment_progress',
+    description: `Analyze deployment progress (${analysisType}) for ADRs in ${adrDirectory || 'default directory'}`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'adrContent', key: 'architecturalDecisions', transform: 'summarize' },
+        { source: 'analysisResults', key: 'deploymentAnalysis' },
+      ],
+      template: 'deployment_progress_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 3000,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+// ============================================================================
+// CE-MCP Batch 3: Research-question directives (#1632)
+// ============================================================================
+
+/**
+ * Arguments for CE-MCP generate_research_questions
+ */
+export interface CEMCPGenerateResearchQuestionsArgs {
+  analysisType?: 'correlation' | 'relevance' | 'questions' | 'tracking' | 'comprehensive';
+  researchContext?: {
+    topic: string;
+    category: string;
+    scope: string;
+    objectives: string[];
+    constraints?: string[];
+    timeline?: string;
+  };
+  problems?: Array<{
+    id: string;
+    description: string;
+    category: string;
+    severity: string;
+    context: string;
+  }>;
+  projectPath?: string;
+}
+
+/**
+ * CE-MCP version of generate_research_questions
+ *
+ * Returns an orchestration directive for research question generation instead
+ * of calling OpenRouter. The host LLM generates research questions directly.
+ */
+export function createGenerateResearchQuestionsDirective(
+  args: CEMCPGenerateResearchQuestionsArgs
+): OrchestrationDirective {
+  const {
+    analysisType = 'comprehensive',
+    researchContext,
+    problems = [],
+    projectPath = '.',
+  } = args;
+
+  const topic = researchContext?.topic || 'general research';
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'research-methodology',
+        scope: 'question-generation',
+      },
+      store: 'researchKnowledge',
+    },
+    {
+      op: 'analyzeFiles',
+      args: {
+        patterns: ['docs/adrs/**/*.md', 'docs/research/**/*.md'],
+        maxFiles: 50,
+      },
+      store: 'existingResearch',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'research-question-generation',
+        analysisType,
+        topic,
+        problemCount: problems.length,
+        projectPath,
+      },
+      inputs: ['researchKnowledge', 'existingResearch'],
+      store: 'questionContext',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['researchKnowledge', 'existingResearch', 'questionContext'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'generate_research_questions',
+    description: `Generate ${analysisType} research questions for: ${topic}`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'existingResearch', key: 'priorResearch', transform: 'summarize' },
+        { source: 'questionContext', key: 'questions' },
+      ],
+      template: 'research_questions_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 2500,
+      complexity: 'medium',
+      cacheable: true,
+      cache_key: `research-questions-${topic}`,
+    },
+  };
+}
+
+// ============================================================================
+// ============================================================================
+// CE-MCP Batch 7: Server-level directives (#1636)
+// ============================================================================
+
+/**
+ * Arguments for CE-MCP get_workflow_guidance
+ */
+export interface CEMCPGetWorkflowGuidanceArgs {
+  goal?: string;
+  projectContext?: string;
+  availableAssets?: string[];
+  timeframe?: string;
+  primaryConcerns?: string[];
+}
+
+/**
+ * CE-MCP version of get_workflow_guidance
+ */
+export function createGetWorkflowGuidanceDirective(
+  args: CEMCPGetWorkflowGuidanceArgs
+): OrchestrationDirective {
+  const { goal = '', projectContext = '', timeframe = '' } = args;
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'workflow-guidance',
+        scope: 'tool-recommendations',
+      },
+      store: 'workflowKnowledge',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'workflow-guidance',
+        goal,
+        projectContext,
+        timeframe,
+      },
+      inputs: ['workflowKnowledge'],
+      store: 'guidanceResults',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['workflowKnowledge', 'guidanceResults'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'get_workflow_guidance',
+    description: `Generate workflow guidance for goal: ${goal.slice(0, 80) || 'general analysis'}`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [{ source: 'guidanceResults', key: 'workflowRecommendations' }],
+      template: 'workflow_guidance_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 3000,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+/**
+ * Arguments for CE-MCP get_development_guidance
+ */
+export interface CEMCPGetDevelopmentGuidanceArgs {
+  developmentPhase?: string;
+  adrsToImplement?: string[];
+  technologyStack?: string[];
+  currentProgress?: string;
+  teamContext?: { size?: string; experienceLevel?: string };
+  timeline?: string;
+  focusAreas?: string[];
+}
+
+/**
+ * CE-MCP version of get_development_guidance
+ */
+export function createGetDevelopmentGuidanceDirective(
+  args: CEMCPGetDevelopmentGuidanceArgs
+): OrchestrationDirective {
+  const { developmentPhase = 'planning', technologyStack = [], focusAreas = [] } = args;
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'development-guidance',
+        scope: developmentPhase,
+      },
+      store: 'devKnowledge',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'development-guidance',
+        developmentPhase,
+        technologyStack,
+        focusAreas,
+      },
+      inputs: ['devKnowledge'],
+      store: 'guidanceResults',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['devKnowledge', 'guidanceResults'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'get_development_guidance',
+    description: `Generate development guidance for ${developmentPhase} phase`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [{ source: 'guidanceResults', key: 'developmentRecommendations' }],
+      template: 'development_guidance_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 4000,
+      complexity: 'medium',
+      cacheable: false,
+    },
+  };
+}
+
+/**
+ * Arguments for CE-MCP get_architectural_context
+ */
+export interface CEMCPGetArchitecturalContextArgs {
+  filePath?: string;
+  projectPath?: string;
+  includePatterns?: boolean;
+  includeEnvironment?: boolean;
+}
+
+/**
+ * CE-MCP version of get_architectural_context
+ */
+export function createGetArchitecturalContextDirective(
+  args: CEMCPGetArchitecturalContextArgs
+): OrchestrationDirective {
+  const { filePath, projectPath } = args;
+  const target = filePath || projectPath || 'project';
+
+  const operations: SandboxOperation[] = [
+    {
+      op: 'analyzeFiles',
+      args: {
+        patterns: ['docs/adr/**/*.md', '*.md'],
+        maxFiles: 50,
+      },
+      store: 'adrContent',
+    },
+    {
+      op: 'loadKnowledge',
+      args: {
+        domain: 'architectural-context',
+        scope: 'analysis',
+      },
+      store: 'archKnowledge',
+    },
+    {
+      op: 'generateContext',
+      args: {
+        type: 'architectural-context',
+        filePath,
+        projectPath,
+      },
+      inputs: ['adrContent', 'archKnowledge'],
+      store: 'contextResults',
+    },
+    {
+      op: 'composeResult',
+      inputs: ['adrContent', 'archKnowledge', 'contextResults'],
+      return: true,
+    },
+  ];
+
+  return {
+    type: 'orchestration_directive',
+    version: '1.0',
+    tool: 'get_architectural_context',
+    description: `Analyze architectural context for ${target}`,
+    sandbox_operations: operations,
+    compose: {
+      sections: [
+        { source: 'adrContent', key: 'architecturalDecisions', transform: 'summarize' },
+        { source: 'contextResults', key: 'architecturalContext' },
+      ],
+      template: 'architectural_context_report',
+      format: 'markdown',
+    },
+    metadata: {
+      estimated_tokens: 2500,
+      complexity: 'medium',
+      cacheable: true,
+      cache_key: `arch-context-${target}`,
+    },
+  };
+}
+
 // CE-MCP TOOL REGISTRY
 // ============================================================================
 
@@ -1359,6 +2038,19 @@ export function shouldUseCEMCPDirective(toolName: string, config: { mode: string
     'troubleshoot_guided_workflow',
     // Phase 5: OpenRouter Elimination
     'tool_chain_orchestrator',
+    // CE-MCP Batch 2: content-masking (#1631)
+    'analyze_content_security',
+    'generate_content_masking',
+    // CE-MCP Batch 3: research-questions (#1632)
+    'generate_research_questions',
+    // CE-MCP Batch 4: rule-generation (#1633)
+    'validate_rules',
+    // CE-MCP Batch 5: deployment/environment (#1634)
+    'analyze_deployment_progress',
+    // CE-MCP Batch 7: server-level (#1636)
+    'get_workflow_guidance',
+    'get_development_guidance',
+    'get_architectural_context',
   ];
 
   return (
@@ -1383,11 +2075,19 @@ export function shouldUseCEMCPDirective(toolName: string, config: { mode: string
  * fails if they diverge, and if the catalog disagrees with either.
  */
 export const CE_MCP_DIRECTIVE_TOOLS: ReadonlySet<string> = new Set([
+  'analyze_content_security',
+  'analyze_deployment_progress',
   'analyze_environment',
   'analyze_project_ecosystem',
   'deployment_readiness',
   'generate_adrs_from_prd',
+  'generate_content_masking',
+  'generate_research_questions',
+  'validate_rules',
   'generate_rules',
+  'get_architectural_context',
+  'get_development_guidance',
+  'get_workflow_guidance',
   'interactive_adr_planning',
   'mcp_planning',
   'perform_research',
@@ -1447,6 +2147,45 @@ export function getCEMCPDirective(
     case 'tool_chain_orchestrator':
       return createToolChainOrchestratorDirective(
         args as unknown as CEMCPToolChainOrchestratorArgs
+      );
+
+    // CE-MCP Batch 2: content-masking (#1631)
+    case 'analyze_content_security':
+      return createAnalyzeContentSecurityDirective(
+        args as unknown as CEMCPAnalyzeContentSecurityArgs
+      );
+
+    case 'generate_content_masking':
+      return createGenerateContentMaskingDirective(
+        args as unknown as CEMCPGenerateContentMaskingArgs
+      );
+
+    // CE-MCP Batch 4: rule-generation (#1633)
+    case 'validate_rules':
+      return createValidateRulesDirective(args as unknown as CEMCPValidateRulesArgs);
+
+    // CE-MCP Batch 5: deployment/environment (#1634)
+    case 'analyze_deployment_progress':
+      return createAnalyzeDeploymentProgressDirective(
+        args as unknown as CEMCPAnalyzeDeploymentProgressArgs
+      );
+
+    // CE-MCP Batch 3: research-questions (#1632)
+    case 'generate_research_questions':
+      return createGenerateResearchQuestionsDirective(
+        args as unknown as CEMCPGenerateResearchQuestionsArgs
+      );
+
+    // CE-MCP Batch 7: server-level directives (#1636)
+    case 'get_workflow_guidance':
+      return createGetWorkflowGuidanceDirective(args as unknown as CEMCPGetWorkflowGuidanceArgs);
+    case 'get_development_guidance':
+      return createGetDevelopmentGuidanceDirective(
+        args as unknown as CEMCPGetDevelopmentGuidanceArgs
+      );
+    case 'get_architectural_context':
+      return createGetArchitecturalContextDirective(
+        args as unknown as CEMCPGetArchitecturalContextArgs
       );
 
     default:

@@ -8,7 +8,18 @@ For the release cadence and policy, see [RELEASES.md](./RELEASES.md).
 
 ## [Unreleased]
 
-_No unreleased changes._
+### Removed
+
+- **9 host-native / obsolete tools removed from the wire (ADR-023 Phase 0, #1673).**
+  These tools were deprecated in the previous release and are now fully removed from
+  `tools/list`, the catalog, and the dispatch layer. Clients calling these by name will
+  receive an "Unknown tool" error. Use the host's native capabilities instead.
+  - `read_file`, `write_file`, `list_directory`, `read_directory`, `list_roots` —
+    host filesystem tools.
+  - `get_current_datetime` — host capability.
+  - `search_tools`, `load_prompt` — MCP spec assigns progressive discovery to the host.
+  - `check_ai_execution_status` — dies with the AI execution layer (CE-MCP migration).
+  - Tool count drops from 72 to 63 on the wire (68 → 59 in the catalog).
 
 ---
 
