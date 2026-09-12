@@ -87,8 +87,8 @@ describe('Tool Catalog', () => {
       const highCost = getCatalogEntry('analyze_project_ecosystem');
       expect(highCost!.isHighTokenCost).toBe(true);
 
-      // Low token cost tool
-      const lowCost = getCatalogEntry('get_current_datetime');
+      // Low token cost tool (get_current_datetime removed in #1673; use manage_cache instead)
+      const lowCost = getCatalogEntry('manage_cache');
       expect(lowCost!.isHighTokenCost).toBe(false);
     });
   });
@@ -359,13 +359,10 @@ describe('Tool Catalog', () => {
       expect(entry!.relatedTools).toContain('generate_adr_from_decision');
     });
 
-    it('should have get_current_datetime as simple utility', () => {
+    // get_current_datetime removed — host-native, ADR-023 (#1673)
+    it('should NOT have get_current_datetime (removed host-native tool)', () => {
       const entry = getCatalogEntry('get_current_datetime');
-      expect(entry).toBeDefined();
-      expect(entry!.category).toBe('utility');
-      expect(entry!.complexity).toBe('simple');
-      expect(entry!.requiresAI).toBe(false);
-      expect(entry!.tokenCost.max).toBeLessThan(500);
+      expect(entry).toBeUndefined();
     });
   });
 });

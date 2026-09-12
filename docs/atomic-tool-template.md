@@ -138,7 +138,7 @@ function processData(data: any): any {
  * Following ADR-018 testing pattern with dependency injection
  */
 
-import { describe, it, expect, jest } from '@jest/globals';
+import { describe, it, expect, vi } from 'vitest';
 import { myAtomicTool } from '../../src/tools/my-atomic-tool.js';
 import { McpAdrError } from '../../src/types/index.js';
 
@@ -147,13 +147,13 @@ describe('My Atomic Tool', () => {
     it('processes files successfully', async () => {
       // Simple DI mocking - 5-10 lines
       const mockFs = {
-        findFiles: jest.fn().mockResolvedValue(['file1.ts', 'file2.ts']),
-        readFile: jest.fn().mockResolvedValue('export const test = true;'),
+        findFiles: vi.fn().mockResolvedValue(['file1.ts', 'file2.ts']),
+        readFile: vi.fn().mockResolvedValue('export const test = true;'),
       };
 
       const mockAI = {
-        isAvailable: jest.fn().mockReturnValue(true),
-        executeStructuredPrompt: jest.fn().mockResolvedValue({
+        isAvailable: vi.fn().mockReturnValue(true),
+        executeStructuredPrompt: vi.fn().mockResolvedValue({
           data: { analysis: 'Test analysis result' },
         }),
       };
@@ -174,13 +174,13 @@ describe('My Atomic Tool', () => {
 
     it('works without AI when unavailable', async () => {
       const mockFs = {
-        findFiles: jest.fn().mockResolvedValue(['file1.ts']),
-        readFile: jest.fn().mockResolvedValue('content'),
+        findFiles: vi.fn().mockResolvedValue(['file1.ts']),
+        readFile: vi.fn().mockResolvedValue('content'),
       };
 
       const mockAI = {
-        isAvailable: jest.fn().mockReturnValue(false),
-        executeStructuredPrompt: jest.fn(),
+        isAvailable: vi.fn().mockReturnValue(false),
+        executeStructuredPrompt: vi.fn(),
       };
 
       const result = await myAtomicTool({ projectPath: '/test' }, { fs: mockFs, ai: mockAI });
@@ -199,8 +199,8 @@ describe('My Atomic Tool', () => {
   describe('error handling', () => {
     it('handles file system errors gracefully', async () => {
       const mockFs = {
-        findFiles: jest.fn().mockRejectedValue(new Error('FS Error')),
-        readFile: jest.fn(),
+        findFiles: vi.fn().mockRejectedValue(new Error('FS Error')),
+        readFile: vi.fn(),
       };
 
       await expect(myAtomicTool({ projectPath: '/test' }, { fs: mockFs })).rejects.toThrow(
@@ -245,7 +245,7 @@ const result = await orch.answerResearchQuestion(); // Multiple layers
 ```typescript
 // ✅ DO: Mock via DI (5-10 lines)
 const mockFs = {
-  findFiles: jest.fn().mockResolvedValue([]),
+  findFiles: vi.fn().mockResolvedValue([]),
 };
 const result = await tool(args, { fs: mockFs });
 

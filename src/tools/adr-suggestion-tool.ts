@@ -17,11 +17,12 @@ import {
   retrieveRelevantMemories,
   createToolReflexionConfig,
 } from '../utils/reflexion.js';
-import { executeADRSuggestionPrompt, formatMCPResponse } from '../utils/prompt-execution.js';
 import { TreeSitterAnalyzer } from '../utils/tree-sitter-analyzer.js';
 import { findRelatedCode } from '../utils/file-system.js';
+import { buildMadrDocument } from '../utils/adr-format.js';
 // ResearchOrchestrator removed per ADR-018 - using static infrastructure context instead
-import { getAIExecutor } from '../utils/ai-executor.js';
+// Server-side LLM execution removed per CE-MCP migration (#1647): ADR content is now
+// emitted deterministically and suggestions return a CE-MCP directive for the agent.
 import {
   getEnhancedModeDefault,
   getKnowledgeEnhancementDefault,
@@ -701,146 +702,24 @@ ${reflexionResult.prompt}
           enhancedPrompt = implicitResult.analysisPrompt;
         }
 
-        // Execute the analysis with AI if enabled, otherwise return prompt
-        const aiExecutor = getAIExecutor();
-        let executionResult: any;
-
-        // Try AI-powered analysis with research context
-        if (aiExecutor.isAvailable()) {
-          try {
-            const aiResult = await aiExecutor.executeStructuredPrompt(
-              `You are an expert software architect analyzing a project for ADR recommendations.
-
-${researchContext}
-
-${knowledgeContext}
-
-${reflexionContext}
-
-${codeContext}
-
-Based on the research data above, generate comprehensive ADR suggestions.
-
-${implicitResult.instructions}
-
-${enhancedPrompt}`,
-              null,
-              {
-                temperature: 0.3,
-                maxTokens: 4000,
-                systemPrompt:
-                  'You are an architecture expert. Generate ADR recommendations based on ACTUAL infrastructure data from research, not assumptions. Reference specific files, environment data, and existing ADRs found in the research.',
-              }
-            );
-
-            executionResult = {
-              isAIGenerated: true,
-              content:
-                typeof aiResult.data === 'string'
-                  ? aiResult.data
-                  : JSON.stringify(aiResult.data, null, 2),
-              metadata: aiResult.raw.metadata,
-            };
-          } catch (error) {
-            console.warn('[WARNING] AI execution failed, falling back to prompt-only mode:', error);
-            executionResult = await executeADRSuggestionPrompt(
-              enhancedPrompt,
-              implicitResult.instructions,
-              {
-                temperature: 0.1,
-                maxTokens: 4000,
-              }
-            );
-          }
-        } else {
-          executionResult = await executeADRSuggestionPrompt(
-            enhancedPrompt,
-            implicitResult.instructions,
+        // CE-MCP directive (#1647): the server no longer calls an LLM itself. It
+        // deterministically assembles the research/knowledge/learning context and the
+        // analysis prompt, and returns them as a directive for the calling agent to act
+        // on. No server-side LLM round-trip.
+        return {
+          content: [
             {
-              temperature: 0.1,
-              maxTokens: 4000,
-            }
-          );
-        }
+              type: 'text',
+              text: `# ADR Suggestions: Enhanced Comprehensive Analysis (Research-Driven)
 
-        if (executionResult.isAIGenerated) {
-          // AI execution successful - return actual analysis results
-          return formatMCPResponse({
-            ...executionResult,
-            content: `# ADR Suggestions: AI Analysis Results (Research-Driven)
+This analysis assembles research-driven context and a structured analysis directive for the calling agent to execute. Content is generated deterministically — no server-side LLM call.
 
 ## Enhancement Features
-- **Research-Driven Analysis**: ✅ Enabled (Live infrastructure data)
+- **Research-Driven Analysis**: ✅ Enabled (Static infrastructure context)
 - **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
 - **Reflexion Learning**: ${learningEnabled ? '✅ Enabled' : '❌ Disabled'}
 - **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
 - **Smart Code Linking**: ${existingAdrs && existingAdrs.length > 0 ? '✅ Enabled' : '❌ No existing ADRs'}
-- **AI Execution**: ✅ Enabled (${executionResult.metadata?.model || 'default model'})
-
-## Project Analysis
-- **Project Path**: ${projectPath}
-- **Existing ADRs**: ${existingAdrs?.length || 0} ADRs provided
-- **Analysis Type**: Comprehensive (Research + AI-driven)
-- **AI Response Time**: ${executionResult.metadata?.executionTime || 'N/A'}ms
-- **Tokens Used**: ${executionResult.metadata?.usage?.totalTokens || 'N/A'}
-
-${researchContext}
-
-${codeContext}
-
-${knowledgeContext}
-
-${reflexionContext}
-
-## AI Analysis Results
-
-${executionResult.content}
-
-## Next Steps
-
-Based on the analysis above:
-
-1. **Review Suggested ADRs**: Examine each suggested architectural decision
-2. **Prioritize by Impact**: Focus on high-impact decisions first
-3. **Generate ADRs**: Use the \`generate_adr_from_decision\` tool for priority decisions
-4. **Implement Changes**: Plan and execute the architectural changes
-5. **Update Documentation**: Keep ADRs current as decisions evolve
-
-## Integration Workflow
-
-For each suggested decision, use:
-\`\`\`json
-{
-  "tool": "generate_adr_from_decision",
-  "args": {
-    "decisionData": {
-      "title": "Decision title from analysis",
-      "context": "Context from analysis",
-      "decision": "Decision description",
-      "consequences": "Consequences from analysis"
-    }
-  }
-}
-\`\`\`
-`,
-          });
-        } else {
-          // Fallback to prompt-only mode
-          return {
-            content: [
-              {
-                type: 'text',
-                text: `# ADR Suggestions: Enhanced Comprehensive Analysis (Research-Driven)
-
-This enhanced analysis uses research-driven architecture with live infrastructure data and advanced prompting techniques.
-
-## Enhancement Features
-- **Research-Driven Analysis**: ✅ Enabled (Live infrastructure data)
-- **Knowledge Generation**: ${knowledgeEnhancement ? '✅ Enabled' : '❌ Disabled'}
-- **Reflexion Learning**: ${learningEnabled ? '✅ Enabled' : '❌ Disabled'}
-- **Enhanced Mode**: ${enhancedMode ? '✅ Enabled' : '❌ Disabled'}
-- **Smart Code Linking**: ${existingAdrs && existingAdrs.length > 0 ? '✅ Enabled' : '❌ No existing ADRs'}
-- **AI Execution**: ❌ Disabled (set EXECUTION_MODE=full for legacy AI execution)
 
 ## Project Analysis
 - **Project Path**: ${projectPath}
@@ -855,18 +734,18 @@ ${knowledgeContext}
 
 ${reflexionContext}
 
-## AI Analysis Instructions
+## Analysis Instructions
 
 ${implicitResult.instructions}
 
-## Enhanced AI Analysis Prompt
+## Enhanced Analysis Directive
 
 ${enhancedPrompt}
 
 ## Recommended Workflow
 
 ### 1. **Initial Analysis**
-Submit the prompt above to get comprehensive decision detection
+Act on the directive above to get comprehensive decision detection
 
 ### 2. **Priority Review**
 - Focus on **high** and **critical** priority decisions first
@@ -882,10 +761,9 @@ Use \`generate_adr_from_decision\` tool for each prioritized decision
 - Schedule team review sessions
 - Plan implementation tasks
 `,
-              },
-            ],
-          };
-        }
+            },
+          ],
+        };
       }
 
       default:
@@ -927,7 +805,7 @@ export async function generateAdrFromDecision(args: {
   } = args;
 
   try {
-    const { generateAdrFromDecision, generateNextAdrNumber, suggestAdrFilename } =
+    const { generateNextAdrNumber, suggestAdrFilename } =
       await import('../utils/adr-suggestions.js');
 
     if (
@@ -942,88 +820,66 @@ export async function generateAdrFromDecision(args: {
       );
     }
 
-    const result = await generateAdrFromDecision(decisionData, templateFormat, existingAdrs);
-
     // Generate suggested metadata
     const adrNumber = generateNextAdrNumber(existingAdrs);
     const filename = suggestAdrFilename(decisionData.title, adrNumber);
     const fullPath = `${adrDirectory}/${filename}`;
 
-    // Execute ADR generation with AI if enabled
-    const { executeADRGenerationPrompt } = await import('../utils/prompt-execution.js');
-    const executionResult = await executeADRGenerationPrompt(
-      result.generationPrompt,
-      result.instructions,
-      {
-        temperature: 0.1,
-        maxTokens: 6000,
-        responseFormat: 'text',
-      }
-    );
+    // Deterministically emit the ADR content as a canonical ADR-022 MADR document
+    // (#1647 CE-MCP migration — no server-side LLM call). The emitted content contains
+    // `# <title>` and the MADR heading set built from the decision fields.
+    const adrContent = buildMadrDocument({
+      title: decisionData.title,
+      status: 'proposed',
+      context: decisionData.context,
+      decision: decisionData.decision,
+      consequences: decisionData.consequences,
+    });
 
-    if (executionResult.isAIGenerated) {
-      // AI execution successful - optionally persist and index the ADR
-      let savedSection = `## File Creation Instructions
+    let releaseSection = '';
+    let saved = false;
+    let indexed = false;
 
-To save this ADR to your project:
+    // Auto-save path: write the real deterministic content, register in the knowledge
+    // graph, and preview release linkage. Any failure falls through to the
+    // manual-instructions output below without throwing.
+    if (autoSave) {
+      try {
+        const { writeFile } = await import('../utils/file-system.js');
+        const writeResult = await writeFile(fullPath, adrContent);
+        if (writeResult.success) {
+          saved = true;
 
-1. **Create the ADR directory** (if it doesn't exist):
-   \`\`\`bash
-   mkdir -p ${adrDirectory}
-   \`\`\`
+          // Register in knowledge graph (best-effort)
+          try {
+            const { KnowledgeGraphManager } = await import('../utils/knowledge-graph-manager.js');
+            const kg = new KnowledgeGraphManager();
+            await kg.registerAdr({
+              adrNumber,
+              filename,
+              path: fullPath,
+              title: decisionData.title,
+              status: 'accepted',
+              createdAt: new Date().toISOString(),
+            });
+            indexed = true;
+          } catch {
+            // KG registration is best-effort; do not block user on failure
+          }
 
-2. **Save the ADR content** to the file:
-   \`\`\`bash
-   cat > "${fullPath}" << 'EOF'
-   ${executionResult.content}
-   EOF
-   \`\`\`
-
-3. **Verify the file** was created successfully:
-   \`\`\`bash
-   ls -la "${fullPath}"
-   \`\`\``;
-      let releaseSection = '';
-      let saved = false;
-      let indexed = false;
-
-      if (autoSave) {
-        try {
-          const { writeFile } = await import('../utils/file-system.js');
-          const writeResult = await writeFile(fullPath, executionResult.content);
-          if (writeResult.success) {
-            saved = true;
-
-            // Register in knowledge graph (best-effort)
-            try {
-              const { KnowledgeGraphManager } = await import('../utils/knowledge-graph-manager.js');
-              const kg = new KnowledgeGraphManager();
-              await kg.registerAdr({
-                adrNumber,
-                filename,
-                path: fullPath,
-                title: decisionData.title,
-                status: 'accepted',
-                createdAt: new Date().toISOString(),
-              });
-              indexed = true;
-            } catch {
-              // KG registration is best-effort; do not block user on failure
-            }
-
-            // Preview next release linkage (best-effort)
-            try {
-              const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
-              const { detectReleases, previewNextRelease } =
-                await import('../utils/release-tracker.js');
-              const discovered = await discoverAdrsInDirectory(adrDirectory, projectPath, {
-                includeContent: false,
-                includeTimeline: false,
-              });
-              const releases = await detectReleases(projectPath);
-              const preview = await previewNextRelease(projectPath, discovered.adrs, releases);
-              const queued = preview.pendingAdrs.some(a => a.filename === filename);
-              releaseSection = `## 🔗 Release Linkage
+          // Preview next release linkage (best-effort)
+          try {
+            const { discoverAdrsInDirectory } = await import('../utils/adr-discovery.js');
+            const { detectReleases, previewNextRelease } =
+              await import('../utils/release-tracker.js');
+            const discovered = await discoverAdrsInDirectory(adrDirectory, projectPath, {
+              includeContent: false,
+              includeTimeline: false,
+            });
+            const releases = await detectReleases(projectPath);
+            const preview = await previewNextRelease(projectPath, discovered.adrs, releases);
+            const queued = preview.pendingAdrs.some(a => a.filename === filename);
+            releaseSection = `## 🔗 Release Linkage
 
 - **Next release (predicted bump)**: ${preview.suggestedVersion}
 - **Queued for next release**: ${queued ? 'yes' : 'no (ADR not yet discoverable — check status is "accepted")'}
@@ -1032,25 +888,22 @@ To save this ADR to your project:
 
 Run \`release_tracking\` with \`next_release_preview\` for full details.
 `;
-            } catch {
-              releaseSection = '';
-            }
+          } catch {
+            releaseSection = '';
+          }
 
-            savedSection = `## ✅ File Saved
+          const savedSection = `## ✅ File Saved
 
 - **Saved to**: \`${writeResult.filePath}\`
 - **Size**: ${writeResult.metadata?.size ?? 0} bytes
 - **Knowledge graph**: ${indexed ? 'registered' : 'registration skipped (non-fatal)'}
 `;
-          }
-        } catch {
-          // Fallback to manual-instructions output — do not throw
-        }
-      }
 
-      return formatMCPResponse({
-        ...executionResult,
-        content: `# Generated ADR: ${decisionData.title}
+          return {
+            content: [
+              {
+                type: 'text',
+                text: `# Generated ADR: ${decisionData.title}
 
 ## ADR Metadata
 - **ADR Number**: ${adrNumber}
@@ -1062,7 +915,7 @@ Run \`release_tracking\` with \`next_release_preview\` for full details.
 
 ## Generated ADR Content
 
-${executionResult.content}
+${adrContent}
 
 ${savedSection}
 
@@ -1070,18 +923,10 @@ ${releaseSection}
 
 ## Next Steps
 
-${
-  saved
-    ? `1. **Review the saved ADR** at \`${fullPath}\`
+1. **Review the saved ADR** at \`${fullPath}\`
 2. **Share with stakeholders** for review and approval
 3. **Plan implementation** of the architectural decision
-4. **Run \`release_tracking next_release_preview\`** to confirm the ADR is queued for the next release`
-    : `1. **Review the generated ADR** for accuracy and completeness
-2. **Save the file** using the instructions above
-3. **Update your ADR index** or catalog
-4. **Share with stakeholders** for review and approval
-5. **Plan implementation** of the architectural decision`
-}
+4. **Run \`release_tracking next_release_preview\`** to confirm the ADR is queued for the next release
 
 ## Quality Checklist
 
@@ -1092,47 +937,66 @@ ${
 - ✅ **Format** follows ${templateFormat.toUpperCase()} template standards
 - ✅ **Numbering** is sequential (${adrNumber})
 `,
-      });
-    } else {
-      // Fallback to prompt-only mode
-      const { ensureDirectoryCompat: ensureDirectory, writeFileCompat: writeFile } =
-        await import('../utils/file-system.js');
-      const ensureDirPrompt = await ensureDirectory(adrDirectory);
-      const writeFilePrompt = await writeFile(fullPath, '[ADR_CONTENT_PLACEHOLDER]');
+              },
+            ],
+          };
+        }
+      } catch {
+        // Fallback to manual-instructions output — do not throw
+      }
+    }
 
-      return {
-        content: [
-          {
-            type: 'text',
-            text: `# ADR Generation: ${decisionData.title}
+    // Manual-instructions output: autoSave disabled, or the write failed. No file I/O is
+    // performed here (the directory is NOT created), and nothing is registered.
+    return {
+      content: [
+        {
+          type: 'text',
+          text: `# ADR Generation: ${decisionData.title}
 
-${result.instructions}
-
-## Suggested ADR Metadata
+## ADR Metadata
 - **ADR Number**: ${adrNumber}
 - **Filename**: ${filename}
 - **Full Path**: ${fullPath}
 - **Template Format**: ${templateFormat.toUpperCase()}
+- **Auto-saved**: ${saved ? 'yes' : 'no'}
 
-## Step 1: Create ADR Directory
-${ensureDirPrompt.prompt}
+## Generated ADR Content
 
-## Step 2: Generate ADR Content
+${adrContent}
 
-${result.generationPrompt}
+## File Creation Instructions
 
-## Step 3: Save ADR to File
+To save this ADR to your project:
 
-After generating the ADR content from Step 2, create the ADR file:
+1. **Create the ADR directory** (if it doesn't exist):
+   \`\`\`bash
+   mkdir -p ${adrDirectory}
+   \`\`\`
 
-${writeFilePrompt.prompt}
+2. **Save the ADR content** above to the file:
+   \`\`\`bash
+   cat > "${fullPath}" << 'EOF'
+   <paste the Generated ADR Content above>
+   EOF
+   \`\`\`
 
-**Important**: Replace \`[ADR_CONTENT_PLACEHOLDER]\` with the actual generated ADR content from Step 2.
+3. **Verify the file** was created successfully:
+   \`\`\`bash
+   ls -la "${fullPath}"
+   \`\`\`
+
+## Next Steps
+
+1. **Review the generated ADR** for accuracy and completeness
+2. **Save the file** using the instructions above
+3. **Update your ADR index** or catalog
+4. **Share with stakeholders** for review and approval
+5. **Plan implementation** of the architectural decision
 `,
-          },
-        ],
-      };
-    }
+        },
+      ],
+    };
   } catch (error) {
     throw new McpAdrError(
       `Failed to generate ADR: ${error instanceof Error ? error.message : String(error)}`,

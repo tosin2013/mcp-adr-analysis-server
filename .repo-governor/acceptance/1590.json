@@ -1,0 +1,26 @@
+{
+  "$comment": "Triage remaining unmeasured-output sites after #1541. Each fix site must have fabricated values removed or marked unmeasured. Tests must pass.",
+  "authority_id": "1590",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"adr-rule-001\" src/resources/rule-catalog-resource.ts && ! grep -q \"inferred-rule-001\" src/resources/rule-catalog-resource.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"complexity = 85\" src/resources/project-metrics-resource.ts && ! grep -q \"technologiesUsed = 3\" src/resources/project-metrics-resource.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"researchConfidence = 0.85\" src/tools/review-existing-adrs-tool.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c '! grep -q \"Begin implementation of accepted decision\" src/utils/adr-action-analyzer.ts'"
+    },
+    {
+      "check": "command_exit",
+      "target": "npx vitest run tests/tools/content-masking-tool.test.ts tests/tools/troubleshoot-guided-workflow-tool.test.ts tests/tools/review-existing-adrs-tool.test.ts tests/utils/release-readiness-detector.test.ts tests/utils/context-document-manager.test.ts"
+    }
+  ]
+}

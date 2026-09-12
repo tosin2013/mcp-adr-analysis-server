@@ -36,7 +36,7 @@ export interface PatternDetails {
   quality: {
     complexity: 'low' | 'medium' | 'high';
     maintainability: number;
-    testability: number;
+    testability: number | null;
     documentation: number;
   };
   examples: Array<{
@@ -119,7 +119,7 @@ function assessPatternQuality(
 ): {
   complexity: 'low' | 'medium' | 'high';
   maintainability: number;
-  testability: number;
+  testability: null;
   documentation: number;
 } {
   // Determine complexity based on pattern type
@@ -132,16 +132,12 @@ function assessPatternQuality(
   const acceptedAdrs = adrsReferencing.filter(a => a.status === 'accepted').length;
   const maintainability = acceptedAdrs >= 3 ? 90 : acceptedAdrs >= 1 ? 70 : 50;
 
-  // Testability (placeholder - would require actual analysis)
-  const testability = complexity === 'low' ? 90 : complexity === 'medium' ? 70 : 50;
-
-  // Documentation based on ADRs
   const documentation = adrsReferencing.length > 0 ? 80 : 40;
 
   return {
     complexity,
     maintainability,
-    testability,
+    testability: null,
     documentation,
   };
 }
@@ -149,19 +145,12 @@ function assessPatternQuality(
 /**
  * Generate pattern examples
  */
-function generatePatternExamples(patternName: string): Array<{
+function generatePatternExamples(_patternName: string): Array<{
   title: string;
   description: string;
   codeReference?: string;
 }> {
-  // Placeholder - would extract from ADRs or code
-  return [
-    {
-      title: `${patternName} Implementation`,
-      description: `Example usage of ${patternName} pattern in the codebase`,
-      codeReference: 'See relevant ADRs for implementation details',
-    },
-  ];
+  return [];
 }
 
 /**

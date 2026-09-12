@@ -1,0 +1,25 @@
+{
+  "authority_id": "1522",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "test -f codecov.yml"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"informational: true\" codecov.yml'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"target: 80%\" codecov.yml'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"condensed_header\" codecov.yml'"
+    },
+    {
+      "check": "command_exit",
+      "target": "bash -c 'grep -q \"statements: 48\" vitest.config.ts'"
+    }
+  ]
+}

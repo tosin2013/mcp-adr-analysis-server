@@ -5,6 +5,10 @@ on:
     types: [closed]
     branches: [main]
 
+concurrency:
+  group: auto-release-on-merge
+  cancel-in-progress: false
+
 jobs:
   auto-release:
     # Only run if the PR was actually merged (not just closed).

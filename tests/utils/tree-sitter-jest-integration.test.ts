@@ -9,7 +9,7 @@
 
 import { TreeSitterAnalyzer } from '../../src/utils/tree-sitter-analyzer.js';
 
-describe('TreeSitter Jest Integration', () => {
+describe('TreeSitter Vitest Integration', () => {
   it('should initialize without loading parsers in test environment', () => {
     // Verify test environment is set
     expect(process.env.NODE_ENV).toBe('test');
