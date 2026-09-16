@@ -47,6 +47,13 @@
       "last 1 safari version"
     ]
   },
+  "overrides": {
+    "image-size": "^2.0.3",
+    "serialize-javascript": "^7.1.0",
+    "uuid": "^11.1.1",
+    "qs": "^6.15.4",
+    "lodash-es": "^4.17.24"
+  },
   "engines": {
     "node": ">=18.0"
   },

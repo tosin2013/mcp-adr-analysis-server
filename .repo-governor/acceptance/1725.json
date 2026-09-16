@@ -1,0 +1,9 @@
+{
+  "authority_id": "1725",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "cd docs && npm audit --audit-level=moderate"
+    }
+  ]
+}
