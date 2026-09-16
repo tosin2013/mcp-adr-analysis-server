@@ -15,7 +15,7 @@
  * third private copy of those regexes.
  */
 
-import yaml from 'js-yaml';
+import * as yaml from 'js-yaml';
 
 /**
  * The three ADR document shapes this module distinguishes.

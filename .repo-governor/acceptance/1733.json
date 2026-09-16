@@ -1,0 +1,9 @@
+{
+  "authority_id": "1733",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "npx vitest run --reporter=verbose 2>&1 | tail -1 | grep -q 'Tests.*passed'"
+    }
+  ]
+}
