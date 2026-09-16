@@ -1,10 +1,18 @@
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const _jwt = require('jsonwebtoken');
 const { Pool } = require('pg');
 const redis = require('redis');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
 
 // Database connection
 const pool = new Pool({
@@ -24,7 +32,7 @@ const _redisClient = redis.createClient({
 app.use(express.json());
 
 // Routes
-app.get('/api/users', async (req, res) => {
+app.get('/api/users', apiLimiter, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM users');
     res.json(result.rows);
@@ -33,7 +41,7 @@ app.get('/api/users', async (req, res) => {
   }
 });
 
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', apiLimiter, async (req, res) => {
   try {
     const { name, email } = req.body;
     const result = await pool.query(

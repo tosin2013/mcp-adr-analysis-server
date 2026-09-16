@@ -287,7 +287,7 @@ export function buildMadrDocument(fields: MadrDocumentFields): string {
   return lines
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
-    .replace(/\s*$/, '\n');
+    .trimEnd() + '\n';
 }
 
 /**

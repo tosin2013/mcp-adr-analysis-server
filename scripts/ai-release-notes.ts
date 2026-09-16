@@ -739,7 +739,7 @@ If you're upgrading from a previous version, please review the breaking changes 
     return contributors
       .map(contributor => {
         // Remove email if present
-        const name = contributor.replace(/<.*>/, '').trim();
+        const name = contributor.replace(/<[^>]*>/g, '').trim();
         return `- @${name}`;
       })
       .join('\n');

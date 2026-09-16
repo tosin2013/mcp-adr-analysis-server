@@ -457,7 +457,7 @@ export class PlatformDetector {
             await walk(fullPath);
           } else if (entry.isFile()) {
             // Simple pattern matching
-            if (pattern === '*' || entry.name.endsWith(pattern.replace('*', ''))) {
+            if (pattern === '*' || entry.name.endsWith(pattern.replaceAll('*', ''))) {
               files.push(fullPath);
             }
           }

@@ -1,0 +1,9 @@
+{
+  "authority_id": "1726",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "test $(gh api repos/tosin2013/mcp-adr-analysis-server/code-scanning/alerts --jq '[.[] | select(.number == 19 or .number == 8 or .number == 7 or .number == 6 or .number == 2 or .number == 1) | select(.state == \"open\")] | length') -eq 0"
+    }
+  ]
+}

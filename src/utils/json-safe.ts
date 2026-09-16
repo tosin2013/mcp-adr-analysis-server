@@ -76,10 +76,12 @@ export function jsonSafeFilePath(filePath: string | undefined | null): string {
     return '';
   }
 
-  // For file paths, only escape quotes and backslashes, normalize separators
+  // Normalize Windows path separators to forward slashes, then escape
+  // any remaining backslashes and quotes for JSON safety.
   return String(filePath)
     .replace(/\\/g, '/') // Normalize Windows paths
-    .replace(/"/g, '\\"'); // Only escape quotes for JSON safety
+    .replace(/\\/g, '\\\\') // Escape any remaining backslashes for JSON safety
+    .replace(/"/g, '\\"'); // Escape quotes for JSON safety
 }
 
 /**
