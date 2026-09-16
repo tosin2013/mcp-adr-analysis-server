@@ -1,0 +1,9 @@
+{
+  "authority_id": "1724",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "test -z \"$(git log --all -p -S 'mongodb://admin:secret123' -- tests/ 2>/dev/null | head -1)\""
+    }
+  ]
+}

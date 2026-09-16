@@ -1,0 +1,9 @@
+{
+  "authority_id": "1723",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "test -z \"$(git log --all -p -S 'sk-or-v1-506814cb' -- playbooks/ GITHUB_SUPPORT_REQUEST.md 2>/dev/null | head -1)\""
+    }
+  ]
+}
