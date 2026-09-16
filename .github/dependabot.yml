@@ -64,6 +64,13 @@ updates:
     labels:
       - 'dependencies'
       - 'security'
+    ignore:
+      # ADR-017: tree-sitter ecosystem is pinned to 0.21.x because
+      # tree-sitter-typescript (latest 0.23.2) still requires ^0.21.0.
+      # Upgrading the core library breaks TypeScript and Java parsing.
+      # Re-evaluate when tree-sitter-typescript releases a 0.25.x build.
+      - dependency-name: 'tree-sitter'
+        versions: ['>=0.22.0']
     # Add reviewers for critical dependencies
     reviewers:
       - 'tosin2013'
