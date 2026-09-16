@@ -94,7 +94,7 @@ Server → [JSON-RPC Response] → Client
 
 ### Tool Layer
 
-The server exposes 73 tools organized by functionality:
+The server exposes 63 tools organized by functionality:
 
 | Category           | Tools                                                     | Purpose               |
 | ------------------ | --------------------------------------------------------- | --------------------- |
@@ -200,7 +200,7 @@ flowchart LR
 ```
 src/
 ├── index.ts              # MCP server entry point
-├── tools/                # Tool implementations (73 tools)
+├── tools/                # Tool implementations (63 tools)
 │   ├── adr-suggestion-tool.ts
 │   ├── smart-score-tool.ts
 │   ├── deployment-readiness-tool.ts
@@ -208,12 +208,14 @@ src/
 │   └── ...
 ├── utils/                # Shared utilities
 │   ├── ai-executor.ts           # OpenRouter integration
-│   ├── knowledge-graph-manager.ts
+│   ├── knowledge-graph-manager.ts  # ⚠️ Deprecated (see note below)
 │   ├── cache.ts                 # Multi-level caching
 │   ├── enhanced-logging.ts
 │   └── ...
 └── types/                # TypeScript type definitions
 ```
+
+> **Deprecation notice:** The KnowledgeGraphManager is deprecated per ADR-018 and scheduled for replacement by atomic CRUD operations in v3.0.0.
 
 ---
 

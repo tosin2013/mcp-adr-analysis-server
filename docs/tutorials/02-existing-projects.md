@@ -206,7 +206,7 @@ Many projects have some architectural documentation, even if not formal ADRs.
 
 **Common ADR Locations to Check:**
 
-- `././adrs/`
+- `./adrs/`
 - `./decisions/`
 - `./architecture/`
 - `architecture/`

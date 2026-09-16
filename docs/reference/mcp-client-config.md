@@ -919,7 +919,7 @@ mcp-adr-analysis-server --test
 
 ```json
 {
-  "tool": "check_ai_execution_status"
+  "tool": "analyze_project_ecosystem"
 }
 ```
 

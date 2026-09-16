@@ -2,7 +2,7 @@
 
 **Comprehensive testing guide for developers and contributors**
 
-> **Version**: 2.1.0 | **Test Files**: 70+ | **Coverage**: 100% (1,739 tests passing)
+> **Version**: 2.14.12 | **Test Files**: 70+ | **Coverage**: 100% (1,739 tests passing)
 
 ---
 
@@ -630,7 +630,7 @@ Current test metrics:
 
 - **[Vitest Documentation](https://vitest.dev/guide/)** - Testing framework guide
 - **[Testing Best Practices](https://github.com/goldbergyoni/javascript-testing-best-practices)** - Industry standards
-- **[CI/CD Guide](./how-to-guides/cicd-integration.md)** - Continuous integration setup
+- **[CI/CD Guide](./cicd-integration.md)** - Continuous integration setup
 - **[Contributing Guide](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/CONTRIBUTING.md)** - Project contribution guidelines
 
 ---

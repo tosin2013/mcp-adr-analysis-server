@@ -347,7 +347,7 @@ The workflow and development guidance tools work seamlessly with all other MCP t
 - **TDD Tools**: `generate_adr_todo` (enhanced with phase-based approach)
 - **Validation Tools**: `compare_adr_progress`, `generate_rules`, `validate_rules`
 - **Quality Tools**: `analyze_content_security`, `generate_content_masking`
-- **Utility Tools**: `check_ai_execution_status`, `manage_cache`
+- **Utility Tools**: `manage_cache`
 
 ## 🚀 Next Steps
 

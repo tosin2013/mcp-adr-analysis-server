@@ -215,7 +215,7 @@ Systematic problem-solving with ADR/TODO alignment and AI-powered test plan gene
   "severity": "high",
   "context": {
     "environment": "production",
-    "lastWorkingVersion": "v2.1.0",
+    "lastWorkingVersion": "v2.14.12",
     "errorDetails": "Connection timeout after 30s"
   }
 }

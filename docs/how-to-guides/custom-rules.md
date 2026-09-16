@@ -318,10 +318,10 @@ const codePatternRules: CodePatternRule[] = [
 ```json
 {
   "rule_versioning": {
-    "version": "2.1.0",
+    "version": "2.14.12",
     "changelog": [
       {
-        "version": "2.1.0",
+        "version": "2.14.12",
         "date": "2024-01-15",
         "changes": [
           "Added new security patterns for API keys",

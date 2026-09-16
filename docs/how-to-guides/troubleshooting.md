@@ -125,7 +125,7 @@ mcp-adr-analysis-server --test
 **Expected outputs**:
 
 - Node.js: `v20.x.x` or higher
-- Server version: `MCP ADR Analysis Server v2.1.0` (or current version)
+- Server version: `MCP ADR Analysis Server v2.14.12` (or current version)
 - Test: `✅ Server health check passed`
 
 ### Step 2: Validate Configuration
@@ -164,20 +164,7 @@ Check your MCP client configuration:
 Run this diagnostic sequence:
 
 ```json
-// 1. Test AI execution status
-{
-  "tool": "check_ai_execution_status"
-}
-
-// 2. Test file operations
-{
-  "tool": "list_directory",
-  "parameters": {
-    "path": "."
-  }
-}
-
-// 3. Test analysis capabilities
+// 1. Test analysis capabilities
 {
   "tool": "analyze_project_ecosystem",
   "parameters": {
@@ -228,12 +215,8 @@ ls -la | grep -E "\.(git|env|config)"
 **Solution 3: Verify Project Path**
 
 ```json
-{
-  "tool": "read_file",
-  "parameters": {
-    "path": "package.json"
-  }
-}
+// Use your MCP host's native file-read capability to read package.json
+// (read_file was removed in ADR-023)
 ```
 
 ### ADR Generation Fails
@@ -282,15 +265,7 @@ ls -la | grep -E "\.(git|env|config)"
 - Long delays without responses
 - Timeout errors
 
-**Solution 1: Check AI Service Status**
-
-```json
-{
-  "tool": "check_ai_execution_status"
-}
-```
-
-**Solution 2: Use Simpler Operations**
+**Solution 1: Use Simpler Operations**
 
 ```json
 // Instead of comprehensive analysis, start with basic
@@ -374,11 +349,11 @@ ls -la | grep -E "\.(git|env|config)"
 
 ```bash
 # Check ADR files exist
-ls -la ././adrs/
+ls -la ./adrs/
 # Should see .md files like 001-decision-name.md
 
 # Check ADR format
-head -20 ././adrs/001-*.md
+head -20 ./adrs/001-*.md
 ```
 
 **Solution 3: Manual Progress Sync**
@@ -518,7 +493,7 @@ rm -rf .mcp-adr-cache/
 
 ```bash
 # Backup your work
-cp -r ././adrs/ ~/backup-./adrs/
+cp -r ./adrs/ ~/backup-adrs/
 
 # Start fresh
 rm -rf ./

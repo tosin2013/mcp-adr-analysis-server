@@ -1,14 +1,14 @@
-# How `.mcp-server-context.md` Helps with ALL 25 Tools
+# How `.mcp-server-context.md` Helps with ALL 63 Tools
 
 ## Overview
 
-The `.mcp-server-context.md` file provides **comprehensive support for all 25+ tools** in the MCP ADR Analysis Server through multiple mechanisms:
+The `.mcp-server-context.md` file provides **comprehensive support for all 63 tools** in the MCP ADR Analysis Server through multiple mechanisms:
 
 ## ✅ Complete Tool Coverage
 
 ### 1. **Tool Discovery** (All Tools)
 
-When LLMs `@.mcp-server-context.md`, they instantly see **all 25 tools organized by category**:
+When LLMs `@.mcp-server-context.md`, they instantly see **all 63 tools organized by category**:
 
 ```markdown
 **ADR Management** (5 tools)
@@ -289,7 +289,7 @@ Document successful tool chains:
 
 ## Conclusion
 
-**YES - The context file helps with ALL 25+ tools by:**
+**YES - The context file helps with ALL 63 tools by:**
 
 1. ✅ **Listing all tools by category** (discovery)
 2. ✅ **Tracking usage of every tool** (analytics)
@@ -308,4 +308,4 @@ Document successful tool chains:
 
 ---
 
-_This context file transforms your 25+ tools from a scattered toolkit into a coherent, discoverable, learnable system that LLMs can master._
+_This context file transforms your 63 tools from a scattered toolkit into a coherent, discoverable, learnable system that LLMs can master._

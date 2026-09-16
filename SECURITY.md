@@ -4,11 +4,11 @@
 
 We actively support the following versions of the MCP ADR Analysis Server:
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 2.6.x   | :white_check_mark: |
-| 2.5.x   | :white_check_mark: |
-| < 2.5   | :x:                |
+| Version  | Supported          |
+| -------- | ------------------ |
+| 2.14.x   | :white_check_mark: |
+| 2.6.x    | :white_check_mark: |
+| < 2.6    | :x:                |
 
 ## Reporting Vulnerabilities
 
@@ -79,4 +79,4 @@ For security-related questions or concerns, please contact:
 
 ---
 
-_This security policy is reviewed and updated regularly to ensure it meets current best practices._
+_Last reviewed: 2026-09-16. This security policy is reviewed and updated regularly to ensure it meets current best practices._

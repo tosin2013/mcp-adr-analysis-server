@@ -233,7 +233,7 @@ npm run test:integration
 ### Resources
 
 - [README.md](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md) - Project overview
-- [API Reference](../../reference/api-reference.md) - Technical documentation
+- [API Reference](../reference/api-reference.md) - Technical documentation
 - [Troubleshooting Guide](./troubleshooting.md) - Common issues
 - [Developer Guidance](../notes/DEVELOPER_GUIDANCE.md) - Development details
 
@@ -257,7 +257,7 @@ Thank you for contributing to the MCP ADR Analysis Server project!
 ## Related Documentation
 
 - [README.md](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md)
-- [API Reference](../../reference/api-reference.md)
+- [API Reference](../reference/api-reference.md)
 - [Developer Guidance](../notes/DEVELOPER_GUIDANCE.md)
 - [Testing Guide](../TESTING_GUIDE.md)
 - [Troubleshooting Guide](./troubleshooting.md)

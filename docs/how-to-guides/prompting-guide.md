@@ -2,7 +2,7 @@
 
 **Master the art of effective prompting for architectural analysis and decision-making**
 
-> **Version**: 2.1.0 | **Updated**: September 2025 | **Audience**: AI Assistants, Developers, Architects
+> **Version**: 2.14.12 | **Updated**: September 2026 | **Audience**: AI Assistants, Developers, Architects
 
 ---
 
@@ -31,7 +31,7 @@ Before crafting prompts, reference the context file for instant server awareness
 
 This gives you:
 
-- ✅ All available tools by category (37+ tools)
+- ✅ All available tools by category (63 tools)
 - ✅ Current project state and recent activity
 - ✅ Active workflows and intents
 - ✅ Tool usage examples and capabilities
@@ -120,7 +120,7 @@ Enable the server's advanced AI capabilities:
 
 The `.mcp-server-context.md` file is auto-generated and provides comprehensive context about:
 
-- All 37+ available tools by category
+- All 63 available tools by category
 - Current server state and memory
 - Active intents and workflow context
 - Recent architectural decisions

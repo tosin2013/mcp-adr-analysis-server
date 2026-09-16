@@ -5,7 +5,7 @@ This guide walks through setting up the MCP ADR Analysis Server with VS Code usi
 ## Prerequisites
 
 - [VS Code](https://code.visualstudio.com/) 1.85+
-- [Node.js](https://nodejs.org/) 18+
+- [Node.js](https://nodejs.org/) 20+
 - One of:
   - [Cline extension](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev) (recommended)
   - [Continue extension](https://marketplace.visualstudio.com/items?itemName=Continue.continue)
@@ -176,7 +176,7 @@ Press `F5` to build and launch the server with debug logging. Set breakpoints in
 
 - Check the VS Code Output panel (select "Cline" or "Continue" from the dropdown) for error messages.
 - Set `LOG_LEVEL=DEBUG` to see detailed server logs.
-- Ensure Node.js 18+ is installed (`node --version`).
+- Ensure Node.js 20+ is installed (`node --version`).
 
 **No ADRs found**
 

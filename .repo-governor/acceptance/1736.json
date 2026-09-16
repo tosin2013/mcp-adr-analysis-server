@@ -1,0 +1,18 @@
+{
+  "authority_id": "1736",
+  "$comment": "Acceptance criteria for documentation content fixes. Verifies stale versions, removed tools, and wrong Node.js requirements are cleaned up.",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "test $(rg -c '2\\.1\\.[0-9]' docs/tutorials/ docs/how-to-guides/ docs/reference/ docs/explanation/ 2>/dev/null | wc -l) -eq 0"
+    },
+    {
+      "check": "command_exit",
+      "target": "test $(rg -c 'Node.js.*18' docs/how-to-guides/ 2>/dev/null | wc -l) -eq 0"
+    },
+    {
+      "check": "command_exit",
+      "target": "test $(rg -wc 'check_ai_execution_status' docs/tutorials/ docs/how-to-guides/ docs/reference/ docs/explanation/ 2>/dev/null | wc -l) -eq 0"
+    }
+  ]
+}

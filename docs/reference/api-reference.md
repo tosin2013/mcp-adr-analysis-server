@@ -2,7 +2,7 @@
 
 **MCP ADR Analysis Server** - All available tools, parameters, and usage examples
 
-> **Version**: 2.1.21 | **Tools**: 59 comprehensive tools | **Updated**: December 2024
+> **Version**: 2.14.12 | **Tools**: 63 tools (on wire) | **Updated**: September 2026
 
 ---
 
@@ -66,9 +66,9 @@
 
 ### **🗂️ File & Cache Management**
 
-- [`read_file`](#read_file) - Read files with security validation
-- [`write_file`](#write_file) - Write files with safety checks
-- [`list_directory`](#list_directory) - List directory contents securely
+- [`read_file`](#read_file) - ~~Read files with security validation~~ (removed in ADR-023; use host's native file-read)
+- [`write_file`](#write_file) - ~~Write files with safety checks~~ (removed in ADR-023; use host's native file-write)
+- [`list_directory`](#list_directory) - ~~List directory contents securely~~ (removed in ADR-023; use host's native directory-listing)
 - [`manage_cache`](#manage_cache) - Manage analysis cache
 - [`manage_todo_json`](#manage_todo_json) - Manage TODO JSON files
 
@@ -76,7 +76,6 @@
 
 - [`configure_output_masking`](#configure_output_masking) - Configure output masking
 - [`request_action_confirmation`](#request_action_confirmation) - Request user confirmation
-- [`check_ai_execution_status`](#check_ai_execution_status) - Check AI execution status
 - [`mcp_planning`](#mcp_planning) - MCP server planning and coordination
 
 ### **🌐 ADR Aggregator Integration**
@@ -601,6 +600,8 @@
 
 ### `smart_git_push_v2`
 
+> **Note:** This tool does not exist in the current codebase (v2.14.12). This section needs to be regenerated from source. The source file `smart-git-push-tool-v2.ts` exists but no tool with the exact name `smart_git_push_v2` is registered in `mcp-tool-schemas.ts`.
+
 **Purpose**: Security-focused Git push with deployment readiness validation and metrics tracking
 
 **Use Cases**:
@@ -873,51 +874,25 @@
 
 ### `read_file`
 
-**Purpose**: Read files with security validation and content analysis
+> **⚠️ Removed in ADR-023.** Use the MCP host's native file-read capability instead.
 
-**Parameters**:
-
-```json
-{
-  "filePath": "string (required) - Path to file",
-  "encoding": "string (default: 'utf8') - File encoding",
-  "securityCheck": "boolean (default: true) - Enable security validation"
-}
-```
+~~**Purpose**: Read files with security validation and content analysis~~
 
 ---
 
 ### `write_file`
 
-**Purpose**: Write files with safety checks and backup creation
+> **⚠️ Removed in ADR-023.** Use the MCP host's native file-write capability instead.
 
-**Parameters**:
-
-```json
-{
-  "filePath": "string (required) - Path to file",
-  "content": "string (required) - Content to write",
-  "encoding": "string (default: 'utf8') - File encoding",
-  "createBackup": "boolean (default: true) - Create backup before overwriting",
-  "validateContent": "boolean (default: true) - Validate content before writing"
-}
-```
+~~**Purpose**: Write files with safety checks and backup creation~~
 
 ---
 
 ### `list_directory`
 
-**Purpose**: List directory contents securely with filtering options
+> **⚠️ Removed in ADR-023.** Use the MCP host's native directory-listing capability instead.
 
-**Parameters**:
-
-```json
-{
-  "directoryPath": "string (required) - Path to directory",
-  "recursive": "boolean (default: false) - Include subdirectories",
-  "includeHidden": "boolean (default: false) - Include hidden files",
-  "filePatterns": "array (optional) - File patterns to filter"
-}
+~~**Purpose**: List directory contents securely with filtering options~~
 ```
 
 ---
@@ -939,6 +914,8 @@
 ---
 
 ### `manage_todo_json`
+
+> **Note:** This tool does not exist in the current codebase (v2.14.12). This section needs to be regenerated from source.
 
 **Purpose**: Manage TODO JSON files for task tracking
 
@@ -990,20 +967,13 @@
 
 ---
 
-### `check_ai_execution_status`
+### AI Execution Status Check (removed in ADR-023)
 
-**Purpose**: Check the current AI execution mode and status
+> **⚠️ Removed in ADR-023.** This tool is no longer available on the wire.
 
-**Parameters**:
+~~**Purpose**: Check the current AI execution mode and status~~
 
-```json
-{
-  "includeMetrics": "boolean (default: false) - Include execution metrics",
-  "includeConfig": "boolean (default: true) - Include configuration details"
-}
-```
-
-**Response Format**:
+Previously returned:
 
 ```json
 {
@@ -1589,4 +1559,4 @@ Prefer the host-provided replacement in each row.
 
 ---
 
-_Last updated: January 2025 | Version 2.1.27_
+_Last updated: September 2026 | Version 2.14.12_

@@ -257,7 +257,7 @@ docs/research/
 
 - **[Perform Research Tool](../reference/generation-tools.md#perform-research)** - Tool reference
 - **[Interactive ADR Planning](./interactive-adr-planning.md)** - ADR workflows
-- **[Research Architecture](../explanation/research-architecture.md)** - System design
+- **Research Architecture** - System design <!-- Link removed: ../explanation/research-architecture.md does not exist -->
 
 ---
 

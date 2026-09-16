@@ -162,7 +162,7 @@ interface GenerateAdrFromDecisionParams {
       ]
     },
     "template": "madr",
-    "outputPath": "././adrs/001-database-selection.md"
+    "outputPath": "./adrs/001-database-selection.md"
   }
 }
 ```
@@ -506,7 +506,7 @@ for (const suggestion of adrSuggestions) {
       priority: suggestion.priority,
     },
     template: 'madr',
-    outputPath: `././adrs/${suggestion.title.toLowerCase().replace(/\s+/g, '-')}.md`,
+    outputPath: `./adrs/${suggestion.title.toLowerCase().replace(/\s+/g, '-')}.md`,
   });
 }
 ```

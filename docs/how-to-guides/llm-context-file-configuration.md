@@ -485,6 +485,6 @@ Configure your LLM to use this workflow, and watch your architectural decision q
 
 **Need Help?**
 
-- See: [Server Context File Guide](/docs/how-to-guides/server-context-file.md)
+- See: [Server Context File Guide](./server-context-file.md)
 - Tool: `get_server_context` - Refresh context manually
 - Issue: [Report Configuration Problems](https://github.com/your-repo/issues)

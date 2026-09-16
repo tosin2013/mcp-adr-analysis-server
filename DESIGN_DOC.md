@@ -5,7 +5,7 @@
 **Status:** Accepted
 **Audience:** Architects, contributors, MCP client integrators
 **Voice:** STE100
-**Related requirements:** `docs/planning/PRD-v3.0-tool-registry-and-ai-layer.md`
+**Related requirements:** [`docs/planning/PRD-v3.0-tool-registry-and-ai-layer.md`](docs/planning/PRD-v3.0-tool-registry-and-ai-layer.md)
 
 ---
 
@@ -13,7 +13,7 @@
 
 MCP ADR Analysis Server is a Model Context Protocol server that manages the lifecycle of Architectural Decision Records. It detects drift between documented decisions and the actual codebase, enforces content safety on sensitive material, and maintains a persistent knowledge graph of architectural knowledge.
 
-The server exposes 34 tools, 31 resources, and 10 prompt modules over the MCP stdio transport. MCP clients (Claude Desktop, Cursor, VS Code, and other MCP-compatible hosts) connect to the server as a subprocess. The server reads the project filesystem directly and optionally calls the OpenRouter API for AI-powered analysis.
+The server exposes 63 tools (implemented across 34 source modules), 31 resources, and 10 prompt modules over the MCP stdio transport. MCP clients (Claude Desktop, Cursor, VS Code, and other MCP-compatible hosts) connect to the server as a subprocess. The server reads the project filesystem directly and optionally calls the OpenRouter API for AI-powered analysis.
 
 ### 1.1 Quality goals
 
@@ -116,7 +116,7 @@ The server is organized into seven source packages under `src/`.
 
 | Building block | Responsibility | Key files |
 |----------------|----------------|-----------|
-| `tools/` (34 modules) | MCP tool implementations. Each module exports a handler function. | `mcp-tool-schemas.ts`, `tool-catalog.ts`, `tool-dispatch.ts` |
+| `tools/` (34 source modules, 63 registered tools) | MCP tool implementations. Each module exports a handler function. | `mcp-tool-schemas.ts`, `tool-catalog.ts`, `tool-dispatch.ts` |
 | `resources/` (31 modules) | MCP resource handlers. URI-routed via `resource-router.ts`. | `resource-router.ts`, `index.ts` |
 | `prompts/` (10 modules) | MCP prompt templates for AI-driven analysis. | `analysis-prompts.ts`, `security-prompts.ts` |
 | `utils/` (66 modules) | Shared utilities: tree-sitter analyzer, knowledge graph, caching, content masking, ADR format. | `tree-sitter-analyzer.ts`, `knowledge-graph-manager.ts`, `content-masking.ts`, `config.ts` |
@@ -348,7 +348,9 @@ This project records decisions in MADR format (ADR-022) under `docs/adrs/`. The 
 | ADR-022 | Adopt MADR Format | Accepted |
 | ADR-023 | Tool Surface Scope | Accepted |
 | ADR-025 | Retire the Bootstrap Pattern Engine | Accepted |
-| ADR-026 | Tool Call Best Practices Conformance | Accepted |
+| ADR-026 | Tool Call Best Practices Conformance | Proposed |
+
+ADR-016 and ADR-024 are intentional numbering gaps (no files exist for these numbers).
 
 See `docs/adrs/` for the full text of each decision.
 

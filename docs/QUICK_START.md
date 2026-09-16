@@ -1,6 +1,8 @@
-# 🚀 Quick Start - API Documentation (TypeDoc)
+# 🚀 Quick Start — TypeDoc API Documentation
 
-This project generates API docs with **TypeDoc** from the root package scripts.
+> **Looking for the project quick start?** See the [README installation section](../README.md#-quick-installation) or [First Steps tutorial](./tutorials/01-first-steps.md).
+
+This page covers generating **TypeDoc API docs** from the root package scripts.
 
 ---
 
