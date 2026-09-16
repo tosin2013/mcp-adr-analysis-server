@@ -66,7 +66,7 @@ npm install -g mcp-adr-analysis-server
 mcp-adr-analysis-server --version
 ```
 
-You should see output like: `MCP ADR Analysis Server v2.5.0`
+You should see output like: `MCP ADR Analysis Server v2.14.12`
 
 If you installed from source instead of globally, run this first from the repository root:
 
@@ -348,7 +348,7 @@ Pick one of the suggested decisions and create an ADR:
 
 ### Review Your ADR
 
-Check the `././adrs/` directory. You should see a new file like `001-web-framework-selection.md`.
+Check the `./adrs/` directory. You should see a new file like `001-web-framework-selection.md`.
 
 **Exercise**: Open the ADR file and review:
 
@@ -380,7 +380,7 @@ Use the new **research-driven ADR validation** to check if your documented decis
 {
   "tool": "validate_adr",
   "arguments": {
-    "adrPath": "././adrs/001-web-framework-selection.md",
+    "adrPath": "./adrs/001-web-framework-selection.md",
     "projectPath": ".",
     "includeEnvironmentCheck": true,
     "confidenceThreshold": 0.6
@@ -502,7 +502,7 @@ Now that you understand the basics, you can:
 
 ### **Deep Dive into Features**
 
-- **[API Reference](../reference/api-reference.md)** - Complete documentation of all 73 available tools
+- **[API Reference](../reference/api-reference.md)** - Complete documentation of all 63 available tools
 - **[Architecture Concepts](../explanation/mcp-concepts.md)** - Understand the deeper architectural principles
 
 ---

@@ -18,7 +18,7 @@ name: ADR Validation
 
 on:
   pull_request:
-    paths: ['././adrs/**', 'src/**', 'package.json']
+    paths: ['./adrs/**', 'src/**', 'package.json']
   push:
     branches: [main, develop]
 
@@ -77,7 +77,7 @@ adr-validation:
     EXECUTION_MODE: full
   only:
     changes:
-      - ././adrs/**/*
+      - ./adrs/**/*
       - src/**/*
       - package.json
 ```
@@ -291,7 +291,7 @@ trigger:
       - develop
   paths:
     include:
-      - ././adrs/*
+      - ./adrs/*
       - src/*
 
 pool:
@@ -388,7 +388,7 @@ jobs:
 echo "📈 Analyzing ADR trends..."
 
 # Collect historical data
-git log --oneline --since="30 days ago" ././adrs/ > recent_adr_changes.txt
+git log --oneline --since="30 days ago" ./adrs/ > recent_adr_changes.txt
 
 # Analyze patterns
 echo "Recent ADR activity:"
@@ -410,7 +410,7 @@ name: ADR Notifications
 
 on:
   pull_request:
-    paths: ['././adrs/**']
+    paths: ['./adrs/**']
 
 jobs:
   notify-team:

@@ -822,11 +822,11 @@ LOG_LEVEL=debug npm start
 
 - [Bootstrap Validation Loop Guide](../how-to-guides/interactive-adr-planning.md)
 - [Deployment Readiness Tool](../reference/validation-tools.md#-deployment_readiness)
-- [Session & Tool-Usage Tracker](./knowledge-graph-architecture.md)
+- Session & Tool-Usage Tracker <!-- Link removed: ./knowledge-graph-architecture.md does not exist -->
 - [Memory Loading Tool](../reference/api-reference.md#memory_loading)
 
 ---
 
 **Last Updated**: 2025-01-09
-**Version**: 2.1.11
+**Version**: 2.14.12
 **Contributors**: Claude Code, Human Architect

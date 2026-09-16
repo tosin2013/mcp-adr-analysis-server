@@ -22,15 +22,15 @@ graph TB
     subgraph "MCP ADR Server"
         subgraph "Core Server"
             Index[index.ts<br/>Server Entry Point]
-            Tools[Tool Registry<br/>23 MCP Tools]
+            Tools[Tool Registry<br/>63 MCP Tools]
             Resources[Resource Registry<br/>3 MCP Resources]
             Prompts[Prompt Registry<br/>AI Templates]
         end
 
-        subgraph "New File System Layer"
-            ReadFile[read_file tool]
-            WriteFile[write_file tool]
-            ListDir[list_directory tool]
+        subgraph "File System Layer (removed in ADR-023)"
+            ReadFile[read_file tool<br/>removed - use host]
+            WriteFile[write_file tool<br/>removed - use host]
+            ListDir[list_directory tool<br/>removed - use host]
             Security[Path Security<br/>Validation]
         end
 
@@ -55,7 +55,7 @@ graph TB
 
     subgraph "Target Project"
         ProjectFiles[Project Files]
-        ADRs[././adrs/<br/>ADR Files]
+        ADRs[./adrs/<br/>ADR Files]
         Research[./research/<br/>Research Files]
         Config2[Configuration Files]
         Scripts[Build Scripts]
@@ -119,13 +119,13 @@ sequenceDiagram
     Note over Client,Project: Example: discover_existing_adrs tool call
 
     Client->>MCP: discover_existing_adrs(adrDirectory)
-    MCP->>FileSystem: list_directory(adrDirectory)
+    MCP->>FileSystem: list_directory(adrDirectory) [removed in ADR-023]
     FileSystem->>Utils: Security validation
     Utils->>Project: Read directory contents
     Project-->>Utils: File list
 
     loop For each ADR file
-        Utils->>FileSystem: read_file(adrPath)
+        Utils->>FileSystem: read_file(adrPath) [removed in ADR-023]
         FileSystem->>Project: Read ADR content
         Project-->>FileSystem: ADR content
         FileSystem-->>Utils: Validated content
@@ -188,48 +188,26 @@ graph LR
 - **Prompt Registry**: AI-ready templates for analysis tasks
 - **Session & Tool-Usage Tracker**: Project-local intent tracking and TODO synchronization
 
-### 2. File System Layer (New)
+### 2. File System Layer (removed in ADR-023)
 
-Three new fundamental tools that enable universal LLM compatibility:
+> **⚠️ These tools were removed in ADR-023.** MCP hosts now provide file operations natively. Use the host's own file-read, file-write, and directory-listing capabilities instead.
 
-#### `read_file` Tool
+#### `read_file` Tool (removed)
 
-```typescript
-{
-  name: 'read_file',
-  description: 'Read contents of a file',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      path: { type: 'string', description: 'Path to file' }
-    },
-    required: ['path']
-  }
-}
-```
+Previously provided file reading with security validation. Now handled by the MCP host's native file-read capability.
 
-#### `write_file` Tool
+#### `write_file` Tool (removed)
+
+Previously provided file writing with safety checks. Now handled by the MCP host's native file-write capability.
+
+#### `list_directory` Tool (removed)
+
+Previously provided directory listing with filtering. Now handled by the MCP host's native directory-listing capability.
 
 ```typescript
+// These tools are no longer on the wire. Example of the former schema:
 {
-  name: 'write_file',
-  description: 'Write content to a file',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      path: { type: 'string', description: 'Path to file' },
-      content: { type: 'string', description: 'Content to write' }
-    },
-    required: ['path', 'content']
-  }
-}
-```
-
-#### `list_directory` Tool
-
-```typescript
-{
-  name: 'list_directory',
+  name: 'list_directory', // removed in ADR-023
   description: 'List contents of a directory',
   inputSchema: {
     type: 'object',

@@ -8,7 +8,7 @@ This guide helps you enhance and maintain projects that already have Architectur
 
 ### Required Software
 
-- **Node.js** ≥18.0.0
+- **Node.js** ≥20.0.0
 - **MCP Client** (Claude Desktop, Cline, Cursor, or Windsurf)
 - **Existing ADRs** in your project
 

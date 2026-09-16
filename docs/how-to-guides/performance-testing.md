@@ -354,8 +354,8 @@ suite
 ## 📚 Related Documentation
 
 - **[Performance Design](../explanation/performance-design.md)** - Architecture overview
-- **[Caching Strategy](../explanation/caching-strategy.md)** - Caching details
-- **[Monitoring Guide](./monitoring.md)** - Production monitoring
+- **Caching Strategy** - Caching details <!-- Link removed: ../explanation/caching-strategy.md does not exist -->
+- **Monitoring Guide** - Production monitoring <!-- Link removed: ./monitoring.md does not exist -->
 - **[Testing Guide](../TESTING_GUIDE.md)** - General testing practices
 
 ---

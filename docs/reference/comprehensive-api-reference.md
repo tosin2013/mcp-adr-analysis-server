@@ -821,6 +821,8 @@ await client.callTool(toolName, arguments);
 
 **6. `generate_adr_from_template`**
 
+> **Note:** This tool does not exist in the current codebase (v2.14.12). This section needs to be regenerated from source.
+
 - Create new ADR from standard template
 - Returns: ADR file path, content preview
 
@@ -851,6 +853,8 @@ await client.callTool(toolName, arguments);
 
 **10. `llm_web_search`**
 
+> **Note:** This tool does not exist in the current codebase (v2.14.12). This section needs to be regenerated from source.
+
 - Web search with result parsing
 - Returns: Search results with relevance scoring
 
@@ -861,6 +865,8 @@ await client.callTool(toolName, arguments);
 #### Knowledge Graph Access
 
 **11. `conversation_memory`**
+
+> **Note:** This tool does not exist in the current codebase (v2.14.12). This section needs to be regenerated from source.
 
 - Store/retrieve conversation context
 - Returns: Memory entries with timestamps

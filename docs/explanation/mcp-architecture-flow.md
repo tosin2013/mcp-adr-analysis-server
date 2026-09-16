@@ -24,7 +24,7 @@ graph TD
     C --> N[Security Scanner]
     C --> O[Deployment Validator]
     
-    M --> P[././adrs/]
+    M --> P[./adrs/]
     N --> Q[Content Masking]
     O --> R[Health Scoring]
     

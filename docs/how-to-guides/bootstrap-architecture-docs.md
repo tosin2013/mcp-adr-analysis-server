@@ -8,7 +8,7 @@ This guide helps you set up ADR analysis in an existing repository that has no A
 
 ### Required Software
 
-- **Node.js** ≥18.0.0
+- **Node.js** ≥20.0.0
 - **MCP Client** (Claude Desktop, Cline, Cursor, or Windsurf)
 - **Git** repository with existing code
 

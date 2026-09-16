@@ -127,6 +127,8 @@ interface ProjectEcosystemAnalysis {
 
 **Purpose**: Analyze deployment environment, infrastructure configuration, and operational readiness.
 
+> **Note:** The parameter schema documented below was fabricated and does not match the actual tool implementation. The actual parameters are defined in `src/tools/mcp-tool-schemas.ts` and `src/tools/environment-analysis-tool.ts`. This section needs to be regenerated from source. The actual parameters are: `projectPath`, `adrDirectory`, `analysisType` (enum: `specs`|`containerization`|`requirements`|`compliance`|`comprehensive`), `currentEnvironment`, `requirements`, `industryStandards`, `enableMemoryIntegration`, and `enableTrendAnalysis`.
+
 ### Parameters
 
 ```typescript

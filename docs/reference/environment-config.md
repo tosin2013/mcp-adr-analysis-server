@@ -153,7 +153,7 @@ ADR_DIRECTORY="./architecture/adrs"
 **Directory Structure Created**:
 
 ```
-././adrs/
+./adrs/
 ├── README.md           # ADR index
 ├── 001-first-decision.md
 ├── 002-second-decision.md
@@ -422,7 +422,7 @@ echo $OPENROUTER_API_KEY | head -c 10
 
 ```json
 {
-  "tool": "check_ai_execution_status",
+  "tool": "analyze_project_ecosystem",
   "parameters": {}
 }
 ```

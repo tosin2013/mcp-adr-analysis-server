@@ -603,7 +603,7 @@ The following MCP tools now automatically generate mermaid diagrams in their out
 ### 📊 Coverage Statistics
 
 - **Total diagram types**: 8 generator functions
-- **Tools with diagrams**: 6 out of ~25 tools
+- **Tools with diagrams**: 6 out of ~63 tools
 - **ADR-generating tools covered**: 6 out of 6 major ADR tools (100%)
 - **Lines of diagram code**: 528 lines in mermaid-diagrams.ts
 
@@ -612,7 +612,7 @@ The following MCP tools now automatically generate mermaid diagrams in their out
 - [Bootstrap Deployment Architecture ADR](../adrs/adr-010-bootstrap-deployment-architecture.md)
 - [Interactive ADR Planning Tool](../how-to-guides/interactive-adr-planning.md)
 - [Deployment Readiness Guide](../how-to-guides/deployment-readiness.md)
-- [Tool Chain Orchestrator](../how-to-guides/tool-orchestration.md)
+- Tool Chain Orchestrator <!-- Link removed: ../how-to-guides/tool-orchestration.md does not exist -->
 
 ---
 

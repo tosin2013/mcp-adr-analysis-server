@@ -21,6 +21,12 @@ For the release cadence and policy, see [RELEASES.md](./RELEASES.md).
   - `check_ai_execution_status` — dies with the AI execution layer (CE-MCP migration).
   - Tool count drops from 72 to 63 on the wire (68 → 59 in the catalog).
 
+> **Note on versions 2.6.12 through 2.14.11.** These versions were published through the
+> automated release pipeline but their changelog entries were not captured in this file.
+> The [GitHub Releases page](https://github.com/tosin2013/mcp-adr-analysis-server/releases)
+> has the auto-generated release notes for each tag. A backfill of this section is tracked
+> as a documentation task.
+
 ---
 
 ## [2.6.11] — 2026-08-05
@@ -812,7 +818,7 @@ Baseline for this changelog. Earlier history is captured only via git tags and r
 
 ---
 
-[Unreleased]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.6.11...HEAD
+[Unreleased]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.14.8...HEAD
 [2.6.11]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.6.9...v2.6.11
 [2.6.9]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.6.8...v2.6.9
 [2.5.0]: https://github.com/tosin2013/mcp-adr-analysis-server/compare/v2.4.1...v2.5.0

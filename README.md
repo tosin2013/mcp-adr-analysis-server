@@ -7,7 +7,26 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9+-blue)](https://www.typescriptlang.org/)
 [![Good First Issues](https://img.shields.io/github/issues/tosin2013/mcp-adr-analysis-server/good%20first%20issue?label=good%20first%20issues&color=7057ff)](https://github.com/tosin2013/mcp-adr-analysis-server/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
 
-> **Your ADRs are lying to you.** This MCP server catches it — live drift detection validates architectural decisions against your actual code. Plus content safety, decision memory, and 64 tools powered by your host LLM via CE-MCP.
+> **Your ADRs are lying to you.** This MCP server catches it — live drift detection validates architectural decisions against your actual code. Plus content safety, decision memory, and 63 tools powered by your host LLM via CE-MCP.
+
+## Table of contents
+
+- [What is MCP?](#what-is-mcp)
+- [Prerequisites](#prerequisites)
+- [Quick Installation](#-quick-installation)
+- [Quick Setup](#-quick-setup-2-steps)
+- [Usage Examples](#-usage-examples)
+- [Use Cases](#-use-cases)
+- [Technology Stack](#-technology-stack)
+- [Project Structure](#-project-structure)
+- [Testing](#-testing)
+- [ADR Aggregator Integration](#-adr-aggregator-integration-optional)
+- [Development](#-development)
+- [Troubleshooting](#-troubleshooting)
+- [Security & Performance](#-security--performance)
+- [Contributing](#-contributing)
+- [Resources](#-resources)
+- [License](#-license)
 
 ## What is MCP?
 
@@ -39,7 +58,7 @@ The **Model Context Protocol (MCP)** is an open standard that enables seamless i
 
 ---
 
-**Author**: [Tosin Akinosho](https://github.com/tosin2013) | **Repository**: [GitHub](https://github.com/tosin2013/mcp-adr-analysis-server.git)
+**Author**: [Tosin Akinosho](https://github.com/tosin2013) | **Repository**: [GitHub](https://github.com/tosin2013/mcp-adr-analysis-server.git) | **Version**: 2.14.12
 
 ## ✨ Core Capabilities
 
@@ -187,7 +206,7 @@ Get your API key at [adraggregator.com](https://adraggregator.com)
 | **Returns**           | Orchestration directives for the host LLM to execute | Server-side AI analysis results            | Prompts you can paste into any AI chat                            |
 | **Set via**           | Default (no env var needed)                          | `EXECUTION_MODE=full`                      | `EXECUTION_MODE=prompt-only`                                      |
 | **Best for**          | All users — recommended                              | Legacy workflows with dedicated API budget | Offline exploration                                               |
-| **Tools available**   | All 64 tools with annotated MCP metadata             | All 64 tools                               | Analysis prompts, templates, local file operations, ADR discovery |
+| **Tools available**   | All 63 tools with annotated MCP metadata             | All 63 tools                               | Analysis prompts, templates, local file operations, ADR discovery |
 
 **What are CE-MCP directives?** When a tool is called, it returns a structured orchestration directive that tells your host LLM what to analyze, what data to gather, and how to format results. The host LLM (e.g. Claude in Claude Desktop, or GPT in Cursor) executes the directive using its existing context window. This means **zero additional API costs** and **better results** because the LLM already has your conversation context.
 

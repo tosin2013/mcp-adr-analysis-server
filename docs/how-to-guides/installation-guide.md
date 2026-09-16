@@ -2,7 +2,7 @@
 
 **Complete installation guide for all environments and use cases**
 
-> **Version**: 2.1.0 | **Node.js**: ≥20.0.0 | **NPM**: ≥9.0.0
+> **Version**: 2.14.12 | **Node.js**: ≥20.0.0 | **NPM**: ≥9.0.0
 
 ---
 
@@ -25,11 +25,11 @@
 
 ```bash
 # Install globally from NPM
-npm install -g mcp-adr-analysis-server@2.1.0
+npm install -g mcp-adr-analysis-server@2.14.12
 
 # Verify installation
 mcp-adr-analysis-server --version
-# Expected: MCP ADR Analysis Server v2.1.0
+# Expected: MCP ADR Analysis Server v2.14.12
 
 # Quick health check
 mcp-adr-analysis-server --test
@@ -130,7 +130,7 @@ winget install OpenJS.NodeJS
 npm install -g mcp-adr-analysis-server
 
 # Install specific version
-npm install -g mcp-adr-analysis-server@2.1.0
+npm install -g mcp-adr-analysis-server@2.14.12
 
 # Verify installation
 which mcp-adr-analysis-server
@@ -158,7 +158,7 @@ mcp-adr-analysis-server --version
 cd /path/to/your/project
 
 # Install locally
-npm install mcp-adr-analysis-server@2.1.0
+npm install mcp-adr-analysis-server@2.14.12
 
 # Run via npx
 npx mcp-adr-analysis-server --version
@@ -199,13 +199,13 @@ mcp-adr-analysis-server --version
 
 ```bash
 # Pull Docker image (when available)
-docker pull tosin2013/mcp-adr-analysis-server:2.1.0
+docker pull tosin2013/mcp-adr-analysis-server:2.14.12
 
 # Run in container
 docker run -it --rm \
   -v $(pwd):/workspace \
   -e OPENROUTER_API_KEY=your_key \
-  tosin2013/mcp-adr-analysis-server:2.1.0 \
+  tosin2013/mcp-adr-analysis-server:2.14.12 \
   analyze_project_ecosystem --projectPath=/workspace
 ```
 
@@ -359,7 +359,7 @@ security add-generic-password -a $USER -s openrouter-api -w "sk-or-v1-your-key"
 ```bash
 # 1. Check installation
 mcp-adr-analysis-server --version
-# Expected: MCP ADR Analysis Server v2.1.0
+# Expected: MCP ADR Analysis Server v2.14.12
 
 # 2. Verify configuration
 mcp-adr-analysis-server --config
@@ -448,7 +448,7 @@ echo $PATH
 
 # Reinstall if needed
 npm uninstall -g mcp-adr-analysis-server
-npm install -g mcp-adr-analysis-server@2.1.0
+npm install -g mcp-adr-analysis-server@2.14.12
 ```
 
 #### 4. API Key Issues

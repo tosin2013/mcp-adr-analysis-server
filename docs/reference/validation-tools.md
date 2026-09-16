@@ -11,7 +11,7 @@
 | `review_existing_adrs`   | ADR compliance and gap analysis   | `adrDirectory`, `complianceFramework` | Compliance scores and recommendations |
 | `compare_adr_progress`   | Track implementation progress     | `todoPath`, `adrDirectory`            | Progress metrics and status           |
 | `deployment_readiness`   | Validate deployment readiness     | `operation`, `projectPath`            | Readiness assessment and blockers     |
-| `validate_adr_bootstrap` | Validate ADR setup and compliance | `adrDirectory`, `complianceFramework` | Bootstrap validation report           |
+| `generate_adr_bootstrap` | Validate ADR setup and compliance | `adrDirectory`, `complianceFramework` | Bootstrap validation report           |
 
 ---
 
@@ -428,7 +428,7 @@ interface DeploymentReadinessResponse {
 
 ---
 
-## 🔧 validate_adr_bootstrap
+## 🔧 generate_adr_bootstrap
 
 **Purpose**: Validate ADR setup, structure, and compliance with organizational standards.
 
@@ -452,7 +452,7 @@ interface ValidateAdrBootstrapParams {
 
 ```json
 {
-  "tool": "validate_adr_bootstrap",
+  "tool": "generate_adr_bootstrap",
   "parameters": {
     "adrDirectory": "./adrs",
     "complianceFramework": "madr"
@@ -464,7 +464,7 @@ interface ValidateAdrBootstrapParams {
 
 ```json
 {
-  "tool": "validate_adr_bootstrap",
+  "tool": "generate_adr_bootstrap",
   "parameters": {
     "adrDirectory": "./adrs",
     "complianceFramework": "madr",
@@ -557,7 +557,7 @@ validation_pipeline:
         securityValidation: true
 
     - name: 'bootstrap_validation'
-      tool: 'validate_adr_bootstrap'
+      tool: 'generate_adr_bootstrap'
       config:
         processValidation: true
 ```

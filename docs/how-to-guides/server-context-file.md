@@ -331,9 +331,9 @@ await generator.generateContext(kgManager, memoryManager, conversationManager, {
 
 ## Related Documentation
 
-- [Memory Architecture](../explanation/memory-architecture.md)
+- Memory Architecture <!-- Link removed: ../explanation/memory-architecture.md does not exist -->
 - [Knowledge Graph](../explanation/knowledge-graph.md)
-- [Tool Context](../reference/tool-context.md)
+- Tool Context <!-- Link removed: ../reference/tool-context.md does not exist -->
 
 ---
 

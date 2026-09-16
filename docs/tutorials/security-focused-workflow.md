@@ -343,7 +343,7 @@ Let's create a detailed ADR for secret management:
       ]
     },
     "template": "madr",
-    "outputPath": "././adrs/001-secret-management-strategy.md"
+    "outputPath": "./adrs/001-secret-management-strategy.md"
   }
 }
 ```

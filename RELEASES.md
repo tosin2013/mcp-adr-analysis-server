@@ -144,3 +144,7 @@ The server is listed on the official MCP Registry as [`io.github.tosin2013/mcp-a
 - Release process questions: open a [Discussion](https://github.com/tosin2013/mcp-adr-analysis-server/discussions).
 - Bug in the release pipeline itself: open an issue with the `ci-cd` and `release-pipeline` labels.
 - Security issues: see [SECURITY.md](./SECURITY.md) (tracked in #758). Do not file a public issue.
+
+---
+
+_Last reviewed: 2026-09-16._

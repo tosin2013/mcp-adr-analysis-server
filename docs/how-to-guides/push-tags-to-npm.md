@@ -7,16 +7,16 @@ This guide explains how to publish your package versions to npmjs.com by pushing
 ### 1. Create and Push a Git Tag
 
 ```bash
-# Create a version tag (e.g., v2.1.16)
-git tag v2.1.16
+# Create a version tag (e.g., v2.14.12)
+git tag v2.14.12
 
 # Push the tag to GitHub
-git push origin v2.1.16
+git push origin v2.14.12
 ```
 
 ### 2. Automatic Publishing
 
-When you push a tag matching the pattern `v*` (e.g., `v2.1.16`), the GitHub Actions workflow automatically:
+When you push a tag matching the pattern `v*` (e.g., `v2.14.12`), the GitHub Actions workflow automatically:
 
 1. ✅ Runs all tests and linting
 2. ✅ Builds the project
@@ -45,31 +45,31 @@ The workflow automatically:
 
 ### NPM Dist-Tags
 
-- **Stable versions** (e.g., `v2.1.16`): Published with `latest` tag
-- **Prerelease versions** (e.g., `v2.1.16-beta.1`): Published with `beta` tag
+- **Stable versions** (e.g., `v2.14.12`): Published with `latest` tag
+- **Prerelease versions** (e.g., `v2.14.12-beta.1`): Published with `beta` tag
 
 ## Examples
 
 ### Publishing a Patch Version
 
 ```bash
-# Current version: 2.1.15
-git tag v2.1.16
-git push origin v2.1.16
+# Current version: 2.14.11
+git tag v2.14.12
+git push origin v2.14.12
 ```
 
 ### Publishing a Minor Version
 
 ```bash
-# Current version: 2.1.15
-git tag v2.2.0
-git push origin v2.2.0
+# Current version: 2.14.11
+git tag v2.15.0
+git push origin v2.15.0
 ```
 
 ### Publishing a Major Version
 
 ```bash
-# Current version: 2.1.15
+# Current version: 2.14.11
 git tag v3.0.0
 git push origin v3.0.0
 ```
@@ -78,8 +78,8 @@ git push origin v3.0.0
 
 ```bash
 # Beta release
-git tag v2.1.16-beta.1
-git push origin v2.1.16-beta.1
+git tag v2.14.12-beta.1
+git push origin v2.14.12-beta.1
 ```
 
 ## Verification
@@ -102,7 +102,7 @@ npm view mcp-adr-analysis-server versions
 npm view mcp-adr-analysis-server dist-tags
 
 # Check specific version
-npm view mcp-adr-analysis-server@2.1.16
+npm view mcp-adr-analysis-server@2.14.12
 ```
 
 ### Check Package Page
@@ -113,7 +113,7 @@ Visit: https://www.npmjs.com/package/mcp-adr-analysis-server
 
 ### Tag Not Publishing
 
-1. **Check tag format**: Must start with `v` (e.g., `v2.1.16`)
+1. **Check tag format**: Must start with `v` (e.g., `v2.14.12`)
 2. **Verify workflow trigger**: Check Actions tab for workflow run
 3. **Check NPM_TOKEN**: Ensure `NPM_TOKEN` secret is set in GitHub
 4. **Review workflow logs**: Check for errors in the workflow run
@@ -123,7 +123,7 @@ Visit: https://www.npmjs.com/package/mcp-adr-analysis-server
 If a version already exists on npm, the publish will fail. Options:
 
 1. **Use a different version**: Increment to next version
-2. **Unpublish** (if recently published): `npm unpublish mcp-adr-analysis-server@2.1.16`
+2. **Unpublish** (if recently published): `npm unpublish mcp-adr-analysis-server@2.14.12`
    - Note: Unpublishing is only allowed within 72 hours
 
 ### Missing NPM Token

@@ -6,7 +6,7 @@ This guide helps you bootstrap architectural decisions for new projects using a 
 
 ### Required Software
 
-- **Node.js** ≥18.0.0
+- **Node.js** ≥20.0.0
 - **MCP Client** (Claude Desktop, Cline, Cursor, or Windsurf)
 - **PRD.md file** with your project requirements
 
@@ -113,7 +113,7 @@ generate_adrs_from_prd
 
 **Expected Output:**
 
-- Multiple ADR files in `././adrs/` directory
+- Multiple ADR files in `./adrs/` directory
 - Each ADR addresses a specific architectural decision
 - ADRs follow standard format (Context, Decision, Consequences)
 - Numbered sequence (001-xxx.md, 002-xxx.md, etc.)

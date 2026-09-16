@@ -1,12 +1,12 @@
 # 🛠️ Tool Design Philosophy
 
-**Understanding the design principles and architecture behind the MCP ADR Analysis Server's 37 specialized tools.**
+**Understanding the design principles and architecture behind the MCP ADR Analysis Server's 63 specialized tools.**
 
 ---
 
 ## 🎯 Overview
 
-The MCP ADR Analysis Server implements a comprehensive suite of 37 specialized tools designed around the principle of "intelligent automation with human oversight." Each tool is carefully crafted to provide specific capabilities while maintaining consistency, reliability, and extensibility.
+The MCP ADR Analysis Server implements a comprehensive suite of 63 specialized tools designed around the principle of "intelligent automation with human oversight." Each tool is carefully crafted to provide specific capabilities while maintaining consistency, reliability, and extensibility.
 
 ### Key Design Principles
 

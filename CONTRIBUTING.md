@@ -196,7 +196,7 @@ All contributions must pass:
 
 ## Getting Help
 
-- **Architecture Questions**: Review existing ADRs in `././adrs/`
+- **Architecture Questions**: Review existing ADRs in `docs/adrs/`
 - **Tool Development**: Examine existing tools in `src/tools/`
 - **Testing Patterns**: Check `tests/` for examples
 - **MCP Protocol**: Refer to [@modelcontextprotocol/sdk documentation](https://github.com/modelcontextprotocol/sdk)
@@ -207,4 +207,4 @@ Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ---
 
-_This guide is maintained to reflect our current toolchain and practices. When in doubt, follow the automated tooling—it embodies our agreed-upon standards._
+_Last reviewed: 2026-09-16. This guide is maintained to reflect our current toolchain and practices. When in doubt, follow the automated tooling — it embodies our agreed-upon standards._
