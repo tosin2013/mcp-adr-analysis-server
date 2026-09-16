@@ -1,0 +1,9 @@
+{
+  "authority_id": "1721",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "npm audit --omit=dev --audit-level=moderate"
+    }
+  ]
+}
