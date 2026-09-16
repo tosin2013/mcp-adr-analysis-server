@@ -738,9 +738,15 @@ If you're upgrading from a previous version, please review the breaking changes 
 
     return contributors
       .map(contributor => {
-        // Remove email if present
-        const name = contributor.replace(/<[^>]*>/g, '').trim();
-        return `- @${name}`;
+        // Remove HTML-like tags, looping until stable to prevent
+        // incomplete sanitization with nested patterns like <scr<script>ipt>
+        let name = contributor;
+        let prev: string;
+        do {
+          prev = name;
+          name = name.replace(/<[^>]*>/g, '');
+        } while (name !== prev);
+        return `- @${name.trim()}`;
       })
       .join('\n');
   }

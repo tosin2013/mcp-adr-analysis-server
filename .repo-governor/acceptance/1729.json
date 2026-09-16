@@ -1,0 +1,9 @@
+{
+  "authority_id": "1729",
+  "criteria": [
+    {
+      "check": "command_exit",
+      "target": "test $(gh api repos/tosin2013/mcp-adr-analysis-server/code-scanning/alerts/20 --jq '.state') = 'fixed'"
+    }
+  ]
+}
