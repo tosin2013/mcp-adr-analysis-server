@@ -152,12 +152,10 @@ Check your MCP client configuration:
 
 **Common configuration issues**:
 
-- ❌ `"PROJECT_PATH": "."` (relative path)
+- ❌ `"PROJECT_PATH": "."` (relative path — use absolute path in Claude Desktop)
 - ✅ `"PROJECT_PATH": "/Users/you/project"` (absolute path)
-- ❌ Missing `OPENROUTER_API_KEY` (required for AI features)
-- ❌ Missing `EXECUTION_MODE` (should be "full" for AI or "prompt-only" for basic)
-- ❌ Missing `ADR_DIRECTORY`
 - ❌ Wrong command name
+- No `OPENROUTER_API_KEY` or `EXECUTION_MODE` needed — CE-MCP mode (the default) uses your host LLM
 
 ### Step 3: Test Basic Functionality
 

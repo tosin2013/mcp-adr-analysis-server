@@ -4,61 +4,40 @@
 
 **When to use this guide**: When you want to set up the MCP ADR Analysis Server with your preferred AI assistant (Claude Desktop, Cline, Cursor, Gemini, etc.) or IDE.
 
+> **No API key required.** CE-MCP mode (the default) uses your host LLM for all analysis — just set `PROJECT_PATH` and you're done.
+
 ---
 
 ## 🎯 Quick Compatibility Matrix
 
-| AI Assistant/IDE   | MCP Support       | Config File                  | Command                       | Status           |
-| ------------------ | ----------------- | ---------------------------- | ----------------------------- | ---------------- |
-| **Claude Desktop** | ✅ Native         | `claude_desktop_config.json` | `mcp-adr-analysis-server`     | **Recommended**  |
-| **Cline**          | ✅ Extension      | `cline_mcp_settings.json`    | `npx mcp-adr-analysis-server` | **Full Support** |
-| **Cursor**         | ✅ Native         | `.cursor/mcp.json`           | `npx mcp-adr-analysis-server` | **Full Support** |
-| **Gemini**         | ✅ Native         | `gemini_mcp_config.json`     | `mcp-adr-analysis-server`     | **Full Support** |
-| **Continue.dev**   | ✅ Extension      | `.continue/config.json`      | `npx mcp-adr-analysis-server` | **Full Support** |
-| **Aider**          | ✅ Native         | `.aider_config.yaml`         | `mcp-adr-analysis-server`     | **Full Support** |
-| **Windsurf**       | ✅ Native         | `mcp_config.json`            | `mcp-adr-analysis-server`     | **Full Support** |
-| **VS Code**        | ✅ Via Extensions | Various                      | `npx mcp-adr-analysis-server` | **Full Support** |
+| AI Assistant/IDE   | MCP Support       | Config File                  | Command                           | Status           |
+| ------------------ | ----------------- | ---------------------------- | --------------------------------- | ---------------- |
+| **Claude Desktop** | ✅ Native         | `claude_desktop_config.json` | `npx -y mcp-adr-analysis-server` | **Recommended**  |
+| **Cline**          | ✅ Extension      | `cline_mcp_settings.json`    | `npx -y mcp-adr-analysis-server` | **Full Support** |
+| **Cursor**         | ✅ Native         | `.cursor/mcp.json`           | `npx -y mcp-adr-analysis-server` | **Full Support** |
+| **Gemini**         | ✅ Native         | `gemini_mcp_config.json`     | `npx -y mcp-adr-analysis-server` | **Full Support** |
+| **Continue.dev**   | ✅ Extension      | `.continue/config.json`      | `npx -y mcp-adr-analysis-server` | **Full Support** |
+| **Aider**          | ✅ Native         | `.aider_config.yaml`         | `mcp-adr-analysis-server`        | **Full Support** |
+| **Windsurf**       | ✅ Native         | `mcp_config.json`            | `npx -y mcp-adr-analysis-server` | **Full Support** |
+| **VS Code**        | ✅ Via Extensions | Various                      | `npx -y mcp-adr-analysis-server` | **Full Support** |
 
 ---
 
 ## 🚀 Universal Setup Steps
 
-### **Step 1: Install the Server**
+### **Step 1: Install (or use npx)**
 
 ```bash
-# Option 1: Global installation (recommended)
+# Option 1: Zero-install via npx (recommended)
+npx -y mcp-adr-analysis-server --version
+
+# Option 2: Global installation
 npm install -g mcp-adr-analysis-server
-
-# Option 2: Local installation (for development)
-npm install mcp-adr-analysis-server
 ```
 
-### **Step 2: Verify Installation**
+### **Step 2: Choose Your Client Configuration**
 
-```bash
-# Test global installation
-mcp-adr-analysis-server --version
-
-# Test with npx
-npx mcp-adr-analysis-server --version
-
-# Test server functionality
-mcp-adr-analysis-server --test
-```
-
-### **Step 3: Configure Environment Variables**
-
-```bash
-# Set required environment variables
-export PROJECT_PATH="/absolute/path/to/your/project"
-export OPENROUTER_API_KEY="your_openrouter_api_key_here"
-export EXECUTION_MODE="full"
-
-```
-
-### **Step 4: Choose Your Client Configuration**
-
-Select the configuration that matches your preferred AI assistant or IDE:
+Select the configuration that matches your preferred AI assistant or IDE below. All configurations use **CE-MCP mode** (the default) — no API key or `EXECUTION_MODE` setting needed.
 
 ---
 
@@ -72,29 +51,21 @@ Select the configuration that matches your preferred AI assistant or IDE:
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-### Basic Configuration
+### Configuration
 
 ```json
 {
   "mcpServers": {
     "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "/absolute/path/to/your/project",
-        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full"
+        "PROJECT_PATH": "/absolute/path/to/your/project"
       }
     }
   }
 }
 ```
-
-### Advantages
-
-- ✅ Native MCP support
-- ✅ Best AI integration
-- ✅ Stable and reliable
-- ✅ Easy configuration
 
 ---
 
@@ -106,30 +77,21 @@ Select the configuration that matches your preferred AI assistant or IDE:
 
 **File**: `cline_mcp_settings.json` (in workspace or global settings)
 
-### Basic Configuration
+### Configuration
 
 ```json
 {
   "mcpServers": {
     "adr-analysis": {
       "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
-        "EXECUTION_MODE": "full"
+        "PROJECT_PATH": "${workspaceFolder}"
       }
     }
   }
 }
 ```
-
-### Advantages
-
-- ✅ VS Code integration
-- ✅ Workspace-aware
-- ✅ Team-friendly
-- ✅ Environment variable support
 
 ---
 
@@ -141,30 +103,21 @@ Select the configuration that matches your preferred AI assistant or IDE:
 
 **File**: `.cursor/mcp.json` (in project root)
 
-### Basic Configuration
+### Configuration
 
 ```json
 {
   "mcpServers": {
     "adr-analysis": {
       "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": ".",
-        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full"
+        "PROJECT_PATH": "."
       }
     }
   }
 }
 ```
-
-### Advantages
-
-- ✅ AI-native IDE
-- ✅ Built-in MCP support
-- ✅ Modern interface
-- ✅ Fast performance
 
 ---
 
@@ -176,30 +129,21 @@ Select the configuration that matches your preferred AI assistant or IDE:
 
 **File**: `gemini_mcp_config.json` (in project root or user config directory)
 
-### Basic Configuration
+### Configuration
 
 ```json
 {
   "mcpServers": {
     "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "/absolute/path/to/project",
-        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "google/gemini-pro-1.5"
+        "PROJECT_PATH": "/absolute/path/to/project"
       }
     }
   }
 }
 ```
-
-### Advantages
-
-- ✅ Google AI integration
-- ✅ Multimodal capabilities
-- ✅ Large context windows
-- ✅ Advanced reasoning
 
 ---
 
@@ -211,7 +155,7 @@ Select the configuration that matches your preferred AI assistant or IDE:
 
 **File**: `config.json` (in `.continue` directory)
 
-### Basic Configuration
+### Configuration
 
 ```json
 {
@@ -219,23 +163,14 @@ Select the configuration that matches your preferred AI assistant or IDE:
     {
       "name": "adr-analysis",
       "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
-        "EXECUTION_MODE": "full"
+        "PROJECT_PATH": "${workspaceFolder}"
       }
     }
   ]
 }
 ```
-
-### Advantages
-
-- ✅ Open-source
-- ✅ VS Code integration
-- ✅ Extensible
-- ✅ Community-driven
 
 ---
 
@@ -247,7 +182,7 @@ Select the configuration that matches your preferred AI assistant or IDE:
 
 **File**: `.aider_config.yaml` (in project root or home directory)
 
-### Basic Configuration
+### Configuration
 
 ```yaml
 mcp_servers:
@@ -255,16 +190,7 @@ mcp_servers:
     command: mcp-adr-analysis-server
     env:
       PROJECT_PATH: '/absolute/path/to/project'
-      OPENROUTER_API_KEY: 'your_openrouter_api_key_here'
-      EXECUTION_MODE: 'full'
 ```
-
-### Advantages
-
-- ✅ Command-line interface
-- ✅ Automation-friendly
-- ✅ CI/CD integration
-- ✅ Lightweight
 
 ---
 
@@ -276,29 +202,21 @@ mcp_servers:
 
 **File**: `~/.codeium/windsurf/mcp_config.json`
 
-### Basic Configuration
+### Configuration
 
 ```json
 {
   "mcpServers": {
     "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "/absolute/path/to/project",
-        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full"
+        "PROJECT_PATH": "/absolute/path/to/project"
       }
     }
   }
 }
 ```
-
-### Advantages
-
-- ✅ Professional features
-- ✅ Enterprise support
-- ✅ Advanced AI capabilities
-- ✅ Performance optimized
 
 ---
 
@@ -307,34 +225,25 @@ mcp_servers:
 ### **Step 1: Test Server Installation**
 
 ```bash
-# Verify the server is installed and working
-mcp-adr-analysis-server --version
-mcp-adr-analysis-server --test
+npx -y mcp-adr-analysis-server --version
 ```
 
-### **Step 2: Test Client Connection**
+### **Step 2: Restart Your Client**
 
-```bash
-# Test with your specific client
-# For Claude Desktop: Restart Claude Desktop
-# For VS Code: Reload window
-# For Cursor: Restart Cursor
-```
+After saving config:
+- **Claude Desktop**: Restart the app
+- **VS Code** (Cline/Continue): Reload window (`Ctrl+Shift+P` → "Reload Window")
+- **Cursor**: Restart Cursor
 
 ### **Step 3: Verify Tools Availability**
 
-In your AI assistant, try:
+In your AI assistant, ask:
 
 ```
-"List the available MCP tools for ADR analysis"
+List the available MCP tools for ADR analysis
 ```
 
-Expected response should include tools like:
-
-- `analyze_project_ecosystem`
-- `generate_adrs_from_prd`
-- `analyze_content_security`
-- And 34+ other tools
+You should see 63 tools including `analyze_project_ecosystem`, `suggest_adrs`, `analyze_content_security`, and more.
 
 ---
 
@@ -343,18 +252,14 @@ Expected response should include tools like:
 ### **"Server not found" or "Unknown tool"**
 
 ```bash
-# Solution 1: Verify installation
-which mcp-adr-analysis-server
-npm list -g mcp-adr-analysis-server
-
-# Solution 2: Check PATH
-echo $PATH | grep -E "(node|npm)"
-
-# Solution 3: Restart your AI client
+# Verify Node.js is installed (≥20.0.0)
+node --version
+npx --version
 ```
 
 ### **"Permission denied" errors**
 
+Use an absolute path for `PROJECT_PATH`:
 ```json
 {
   "env": {
@@ -363,37 +268,9 @@ echo $PATH | grep -E "(node|npm)"
 }
 ```
 
-### **"Tools return prompts instead of results"**
-
-```json
-{
-  "env": {
-    "EXECUTION_MODE": "full",
-    "OPENROUTER_API_KEY": "required_for_ai_features"
-  }
-}
-```
-
 ### **"Command not found: npx"**
 
-```bash
-# Install Node.js and npm
-# Then verify installation
-node --version
-npm --version
-```
-
-### **Environment variables not working**
-
-```bash
-# Check if variables are set
-echo $PROJECT_PATH
-echo $OPENROUTER_API_KEY
-
-# Set them in your shell profile
-export PROJECT_PATH="/absolute/path/to/project"
-export OPENROUTER_API_KEY="your_key_here"
-```
+Install Node.js ≥20.0.0, which includes npx.
 
 ---
 
@@ -405,36 +282,21 @@ export OPENROUTER_API_KEY="your_key_here"
 {
   "mcpServers": {
     "adr-frontend": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
         "PROJECT_PATH": "/Users/username/frontend-project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "./adrs"
       }
     },
     "adr-backend": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
         "PROJECT_PATH": "/Users/username/backend-project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "architecture/decisions"
       }
     }
-  }
-}
-```
-
-### **Performance Optimization**
-
-```json
-{
-  "env": {
-    "AI_CACHE_ENABLED": "true",
-    "AI_CACHE_TTL": "3600",
-    "MAX_FILES_PER_ANALYSIS": "500",
-    "LOG_LEVEL": "WARN"
   }
 }
 ```
@@ -449,6 +311,22 @@ export OPENROUTER_API_KEY="your_key_here"
   }
 }
 ```
+
+### **Legacy Full Mode (Server-Side AI)**
+
+If you need server-side AI execution instead of CE-MCP:
+
+```json
+{
+  "env": {
+    "PROJECT_PATH": "/path/to/project",
+    "EXECUTION_MODE": "full",
+    "OPENROUTER_API_KEY": "your_key_here"
+  }
+}
+```
+
+> CE-MCP mode (the default) is recommended — it produces better results because your host LLM already has your conversation context.
 
 ---
 

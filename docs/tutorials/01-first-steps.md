@@ -8,7 +8,8 @@
 - An MCP-compatible client — [Claude Desktop](https://claude.ai/download), [Cline](https://marketplace.visualstudio.com/items?itemName=saoudrizwan.claude-dev), [Cursor](https://cursor.sh/), or [Windsurf](https://codeium.com/windsurf)
 - Basic understanding of software architecture
 - Text editor or IDE
-- _(Optional)_ [OpenRouter API key](https://openrouter.ai/keys) for full AI-powered analysis mode
+
+**No API key required** — the server runs in CE-MCP mode by default, where your host LLM provides all AI capabilities.
 
 **Time Required**: 30 minutes
 
@@ -83,27 +84,19 @@ Add this configuration to your MCP client (e.g., Claude Desktop):
 {
   "mcpServers": {
     "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "/path/to/your/project",
-        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR"
+        "PROJECT_PATH": "/path/to/your/project"
       }
     }
   }
 }
 ```
 
-**Important Configuration Notes**:
+That's it — just two fields. CE-MCP mode is the default, so your host LLM (Claude, GPT, etc.) handles all AI analysis automatically. No API key needed.
 
-- Replace `/path/to/your/project` with your actual project path
-- Get your OpenRouter API key from [https://openrouter.ai/keys](https://openrouter.ai/keys)
-- `EXECUTION_MODE: "full"` enables AI-powered analysis (use `"prompt-only"` for basic mode)
-- `AI_MODEL` specifies which AI model to use (optional, defaults to claude-3-sonnet)
-- `LOG_LEVEL: "ERROR"` reduces console output (use "INFO" or "DEBUG" for more details)
+**Optional**: Add `"ADR_DIRECTORY": "docs/adrs"` if your ADRs are in a non-default location.
 
 ### Test the Connection
 
@@ -155,12 +148,13 @@ After running this, your memory system will be actively learning from your archi
 
 > **Where data is stored:** project analysis cache lives in `.mcp-adr-cache` in your project. Conversation memory snapshots are stored in your OS temp directory under `$TMPDIR/{projectName}/conversation-memory/`.
 
-**Note**: The server works in two modes:
+**Note**: The server works in three modes:
 
-- **`EXECUTION_MODE: "full"`** - AI-powered analysis with intelligent insights (requires OpenRouter API key)
-- **`EXECUTION_MODE: "prompt-only"`** - Basic analysis with structured prompts for manual AI use
+- **`ce-mcp`** (default) — Your host LLM executes analysis via orchestration directives. No API key required.
+- **`full`** (legacy) — Server-side AI execution via OpenRouter. Requires `OPENROUTER_API_KEY`.
+- **`prompt-only`** (legacy) — Returns prompts you can paste into any AI chat.
 
-For the full learning experience, we recommend using "full" mode with an OpenRouter API key.
+CE-MCP mode is recommended for all users — it produces the best results because your host LLM already has your conversation context.
 
 ---
 
@@ -535,19 +529,14 @@ Now that you understand the basics, you can:
 - **[GitHub Issues](https://github.com/tosin2013/mcp-adr-analysis-server/issues)** - Report bugs or request features
 - **[Main Documentation](https://github.com/tosin2013/mcp-adr-analysis-server/blob/main/README.md)** - Complete project overview
 
-### API Key Issues
+### API Key Issues (Legacy Full Mode Only)
 
-**"AI execution not enabled" errors**
+If you explicitly set `EXECUTION_MODE=full` and see "AI execution not enabled" errors:
 
 - Check that `OPENROUTER_API_KEY` is set in your MCP configuration
 - Verify your API key is valid at [https://openrouter.ai/keys](https://openrouter.ai/keys)
-- Ensure `EXECUTION_MODE` is set to `"full"`
 
-**"Permission denied" or rate limit errors**
-
-- Check your OpenRouter account has sufficient credits
-- Try a different AI model (e.g., "openai/gpt-4o-mini" for lower cost)
-- Reduce analysis scope with `enhancedMode: false`
+**Recommended**: Switch to CE-MCP mode (the default) by removing `EXECUTION_MODE` and `OPENROUTER_API_KEY` from your config. CE-MCP mode requires no API key.
 
 ---
 
