@@ -2,18 +2,20 @@
 
 **Complete guide to configuring MCP ADR Analysis Server with different MCP clients.**
 
+> **CE-MCP mode** (the default) requires **no API key**. Your host LLM executes analysis via orchestration directives returned by the 63 tools. All configurations below use CE-MCP mode unless noted otherwise.
+
 ---
 
 ## 📋 Quick Setup Matrix
 
 | Client             | Config File                  | Command                       | Best For                         |
 | ------------------ | ---------------------------- | ----------------------------- | -------------------------------- |
-| **Claude Desktop** | `claude_desktop_config.json` | `mcp-adr-analysis-server`     | General use, best AI integration |
-| **Cline**          | `cline_mcp_settings.json`    | `npx mcp-adr-analysis-server` | VS Code development              |
-| **Cursor**         | `.cursor/mcp.json`           | `npx mcp-adr-analysis-server` | AI-powered coding                |
-| **Gemini**         | `gemini_mcp_config.json`     | `mcp-adr-analysis-server`     | Google AI integration            |
-| **Windsurf**       | `mcp_config.json`            | `mcp-adr-analysis-server`     | Professional development         |
-| **Continue.dev**   | `config.json`                | `npx mcp-adr-analysis-server` | VS Code AI extension             |
+| **Claude Desktop** | `claude_desktop_config.json` | `npx -y mcp-adr-analysis-server` | General use, best AI integration |
+| **Cline**          | `cline_mcp_settings.json`    | `npx -y mcp-adr-analysis-server` | VS Code development              |
+| **Cursor**         | `.cursor/mcp.json`           | `npx -y mcp-adr-analysis-server` | AI-powered coding                |
+| **Gemini**         | `gemini_mcp_config.json`     | `npx -y mcp-adr-analysis-server` | Google AI integration            |
+| **Windsurf**       | `mcp_config.json`            | `npx -y mcp-adr-analysis-server` | Professional development         |
+| **Continue.dev**   | `config.json`                | `npx -y mcp-adr-analysis-server` | VS Code AI extension             |
 | **Aider**          | `.aider_config.yaml`         | `mcp-adr-analysis-server`     | Command-line AI coding           |
 
 ---
@@ -22,8 +24,8 @@
 
 ### Configuration Location
 
-**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`  
-**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`  
+**macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+**Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
 ### Basic Configuration
@@ -32,41 +34,17 @@
 {
   "mcpServers": {
     "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "/absolute/path/to/your/project",
-        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full"
+        "PROJECT_PATH": "/absolute/path/to/your/project"
       }
     }
   }
 }
 ```
 
-### Advanced Configuration
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "env": {
-        "PROJECT_PATH": "/Users/username/my-project",
-        "OPENROUTER_API_KEY": "sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxx",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR",
-        "AI_TEMPERATURE": "0.1",
-        "AI_MAX_TOKENS": "4000",
-        "AI_CACHE_ENABLED": "true",
-        "ENABLE_CONTENT_MASKING": "true",
-        "MASKING_LEVEL": "moderate"
-      }
-    }
-  }
-}
-```
+That's it — CE-MCP mode is the default, so no API key or execution mode setting is needed.
 
 ### Multi-Project Setup
 
@@ -74,23 +52,19 @@
 {
   "mcpServers": {
     "adr-frontend": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
         "PROJECT_PATH": "/Users/username/frontend-project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR"
+        "ADR_DIRECTORY": "./adrs"
       }
     },
     "adr-backend": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
         "PROJECT_PATH": "/Users/username/backend-project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "architecture/decisions",
-        "LOG_LEVEL": "ERROR"
+        "ADR_DIRECTORY": "architecture/decisions"
       }
     }
   }
@@ -104,9 +78,9 @@
 1. **"Server not found"**
 
    ```bash
-   # Verify installation
-   which mcp-adr-analysis-server
-   mcp-adr-analysis-server --version
+   # Verify Node.js is installed
+   node --version
+   npx --version
    ```
 
 2. **"Permission denied"**
@@ -115,16 +89,6 @@
    {
      "env": {
        "PROJECT_PATH": "/absolute/path/not/relative"
-     }
-   }
-   ```
-
-3. **"Tools return prompts"**
-   ```json
-   {
-     "env": {
-       "EXECUTION_MODE": "full",
-       "OPENROUTER_API_KEY": "required_for_ai"
      }
    }
    ```
@@ -144,36 +108,9 @@
   "mcpServers": {
     "mcp-adr-analysis-server": {
       "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR"
-      }
-    }
-  }
-}
-```
-
-### Development Configuration
-
-```json
-{
-  "mcpServers": {
-    "mcp-adr-analysis-server": {
-      "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
-      "env": {
-        "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "anthropic/claude-3-haiku",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "DEBUG",
-        "AI_CACHE_ENABLED": "true",
-        "TIMING_ENABLED": "true"
+        "PROJECT_PATH": "${workspaceFolder}"
       }
     }
   }
@@ -189,11 +126,9 @@ Create `.vscode/cline_mcp_settings.json`:
   "mcpServers": {
     "project-adr-analysis": {
       "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
         "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
-        "EXECUTION_MODE": "full",
         "ADR_DIRECTORY": "architecture/adrs",
         "LOG_LEVEL": "INFO"
       }
@@ -205,9 +140,8 @@ Create `.vscode/cline_mcp_settings.json`:
 ### Cline Best Practices
 
 1. **Use workspace variables**: `${workspaceFolder}` for PROJECT_PATH
-2. **Environment variables**: `${env:VAR_NAME}` for secrets
-3. **npx command**: Ensures latest version without global install
-4. **DEBUG logging**: Helpful during development
+2. **npx command**: Ensures latest version without global install
+3. **DEBUG logging**: Helpful during development
 
 ---
 
@@ -224,37 +158,9 @@ Create `.vscode/cline_mcp_settings.json`:
   "mcpServers": {
     "adr-analysis": {
       "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": ".",
-        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR"
-      }
-    }
-  }
-}
-```
-
-### AI-Optimized Configuration
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
-      "env": {
-        "PROJECT_PATH": ".",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR",
-        "AI_TEMPERATURE": "0.05",
-        "AI_MAX_TOKENS": "3000",
-        "ENABLE_CONTENT_MASKING": "true"
+        "PROJECT_PATH": "."
       }
     }
   }
@@ -268,15 +174,12 @@ Create `.vscode/cline_mcp_settings.json`:
   "mcpServers": {
     "adr-analysis": {
       "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
         "PROJECT_PATH": ".",
-        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "anthropic/claude-3-sonnet",
         "ADR_DIRECTORY": "./architecture/decisions",
         "LOG_LEVEL": "WARN",
-        "AI_CACHE_ENABLED": "true",
+        "ENABLE_CONTENT_MASKING": "true",
         "MASKING_LEVEL": "strict"
       }
     }
@@ -287,9 +190,8 @@ Create `.vscode/cline_mcp_settings.json`:
 ### Cursor Tips
 
 1. **Relative paths**: Use `"."` for PROJECT_PATH in Cursor
-2. **Environment variables**: Reference with `${VAR_NAME}`
-3. **Version in .gitignore**: Add `.cursor/` to `.gitignore` if it contains secrets
-4. **Team sharing**: Use environment variables for API keys
+2. **Version in .gitignore**: Add `.cursor/` to `.gitignore` if it contains secrets
+3. **Team sharing**: Commit `.cursor/mcp.json` for team-wide configuration
 
 ---
 
@@ -305,48 +207,15 @@ Create `.vscode/cline_mcp_settings.json`:
 {
   "mcpServers": {
     "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "/absolute/path/to/project",
-        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "google/gemini-pro",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "INFO"
+        "PROJECT_PATH": "/absolute/path/to/project"
       }
     }
   }
 }
 ```
-
-### Google AI Optimized Configuration
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "env": {
-        "PROJECT_PATH": "/Users/username/project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "google/gemini-pro-1.5",
-        "ADR_DIRECTORY": "./architecture/decisions",
-        "LOG_LEVEL": "INFO",
-        "AI_TEMPERATURE": "0.2",
-        "AI_MAX_TOKENS": "8192"
-      }
-    }
-  }
-}
-```
-
-### Gemini Best Practices
-
-1. **Model Selection**: Use `google/gemini-pro-1.5` for best performance
-2. **Temperature**: Lower values (0.1-0.3) for consistent architectural analysis
-3. **Token Limits**: Gemini supports larger contexts, use higher limits
-4. **Multimodal**: Gemini can process images and documents in ADRs
 
 ---
 
@@ -364,35 +233,9 @@ Create `.vscode/cline_mcp_settings.json`:
     {
       "name": "adr-analysis",
       "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
-        "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "INFO"
-      }
-    }
-  ]
-}
-```
-
-### VS Code Integration Configuration
-
-```json
-{
-  "mcpServers": [
-    {
-      "name": "adr-analysis",
-      "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
-      "env": {
-        "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "./docs/adrs",
-        "LOG_LEVEL": "DEBUG"
+        "PROJECT_PATH": "${workspaceFolder}"
       }
     }
   ]
@@ -403,8 +246,6 @@ Create `.vscode/cline_mcp_settings.json`:
 
 1. **Workspace Integration**: Use `${workspaceFolder}` for seamless VS Code integration
 2. **Environment Variables**: Leverage VS Code's environment variable support
-3. **Debug Mode**: Enable DEBUG logging for development troubleshooting
-4. **Multi-Project**: Configure different servers for different workspace folders
 
 ---
 
@@ -422,10 +263,6 @@ mcp_servers:
     command: mcp-adr-analysis-server
     env:
       PROJECT_PATH: '/absolute/path/to/project'
-      OPENROUTER_API_KEY: 'your_openrouter_api_key_here'
-      EXECUTION_MODE: 'full'
-      ADR_DIRECTORY: './adrs'
-      LOG_LEVEL: 'INFO'
 ```
 
 ### Advanced Aider Configuration
@@ -436,13 +273,8 @@ mcp_servers:
     command: mcp-adr-analysis-server
     env:
       PROJECT_PATH: '/Users/username/project'
-      OPENROUTER_API_KEY: 'your_key_here'
-      EXECUTION_MODE: 'full'
-      AI_MODEL: 'anthropic/claude-3-sonnet'
       ADR_DIRECTORY: './architecture/decisions'
       LOG_LEVEL: 'DEBUG'
-      AI_TEMPERATURE: '0.1'
-      AI_MAX_TOKENS: '4000'
       ENABLE_CONTENT_MASKING: 'true'
       MASKING_LEVEL: 'strict'
 ```
@@ -452,7 +284,6 @@ mcp_servers:
 1. **YAML Format**: Use proper YAML indentation and syntax
 2. **Absolute Paths**: Always use absolute paths for PROJECT_PATH
 3. **Security**: Enable content masking for sensitive projects
-4. **Performance**: Use DEBUG logging only when needed
 
 ---
 
@@ -468,39 +299,10 @@ mcp_servers:
 {
   "mcpServers": {
     "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "args": [],
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "/absolute/path/to/your/project",
-        "OPENROUTER_API_KEY": "your_openrouter_api_key_here",
-        "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR"
-      }
-    }
-  }
-}
-```
-
-### Professional Configuration
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "args": [],
-      "env": {
-        "PROJECT_PATH": "/Users/developer/current-project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR",
-        "AI_CACHE_ENABLED": "true",
-        "AI_CACHE_TTL": "3600",
-        "ENABLE_CONTENT_MASKING": "true",
-        "MASKING_LEVEL": "strict"
+        "PROJECT_PATH": "/absolute/path/to/your/project"
       }
     }
   }
@@ -513,20 +315,14 @@ mcp_servers:
 {
   "mcpServers": {
     "enterprise-adr": {
-      "command": "mcp-adr-analysis-server",
-      "args": [],
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
         "PROJECT_PATH": "/enterprise/project/path",
-        "OPENROUTER_API_KEY": "enterprise_key_here",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "anthropic/claude-3-sonnet",
         "ADR_DIRECTORY": "architecture/decisions",
         "LOG_LEVEL": "WARN",
-        "AI_TEMPERATURE": "0.1",
-        "AI_MAX_TOKENS": "4000",
         "ENABLE_CONTENT_MASKING": "true",
-        "MASKING_LEVEL": "strict",
-        "CUSTOM_SECRET_PATTERNS": "ENTERPRISE_.*,INTERNAL_.*"
+        "MASKING_LEVEL": "strict"
       }
     }
   }
@@ -535,26 +331,7 @@ mcp_servers:
 
 ---
 
-## 🔧 Alternative Clients
-
-### Continue (VS Code Extension)
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "env": {
-        "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full"
-      }
-    }
-  }
-}
-```
-
-### Custom MCP Client
+## 🔧 Custom MCP Client
 
 ```typescript
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
@@ -565,283 +342,63 @@ const client = new Client({
 });
 
 await client.connect({
-  command: 'mcp-adr-analysis-server',
+  command: 'npx',
+  args: ['-y', 'mcp-adr-analysis-server'],
   env: {
-    PROJECT_PATH: '/path/to/project',
-    OPENROUTER_API_KEY: 'your_key_here',
-    EXECUTION_MODE: 'full'
+    PROJECT_PATH: '/path/to/project'
   }
 });
 ```
 
 ---
 
-## 🚀 Performance Optimization
+## 🔒 Legacy Full Mode Configuration
 
-### Fast Configuration (Development)
+If you need server-side AI execution instead of CE-MCP, add `EXECUTION_MODE` and `OPENROUTER_API_KEY`:
 
 ```json
 {
-  "env": {
-    "AI_MODEL": "anthropic/claude-3-haiku",
-    "AI_MAX_TOKENS": "2000",
-    "AI_TEMPERATURE": "0.05",
-    "AI_CACHE_ENABLED": "true",
-    "LOG_LEVEL": "ERROR"
+  "mcpServers": {
+    "adr-analysis": {
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
+      "env": {
+        "PROJECT_PATH": "/path/to/project",
+        "EXECUTION_MODE": "full",
+        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
+      }
+    }
   }
 }
 ```
 
-### Quality Configuration (Production)
-
-```json
-{
-  "env": {
-    "AI_MODEL": "anthropic/claude-3-sonnet",
-    "AI_MAX_TOKENS": "4000",
-    "AI_TEMPERATURE": "0.1",
-    "AI_CACHE_ENABLED": "true",
-    "AI_CACHE_TTL": "86400",
-    "LOG_LEVEL": "WARN"
-  }
-}
-```
-
-### Large Project Configuration
-
-```json
-{
-  "env": {
-    "MAX_FILES_PER_ANALYSIS": "500",
-    "MAX_RECURSION_DEPTH": "5",
-    "AI_TIMEOUT": "120000",
-    "CACHE_DIRECTORY": "/tmp/mcp-cache",
-    "MAX_CACHE_SIZE": "500MB"
-  }
-}
-```
+> **Note**: CE-MCP mode (the default) is recommended for most users. It produces better results because your host LLM already has your conversation context and requires no additional API key.
 
 ---
 
-## 🚨 Client-Specific Troubleshooting
+## 🚨 General Troubleshooting
 
-### Claude Desktop Issues
-
-#### **"Server not found" or "Unknown tool"**
+### Test Server Installation
 
 ```bash
-# 1. Verify global installation
-which mcp-adr-analysis-server
-npm list -g mcp-adr-analysis-server
+# Test with npx (no install needed)
+npx -y mcp-adr-analysis-server --version
 
-# 2. Check PATH in Claude Desktop
-# Ensure Node.js and npm are in your system PATH
-echo $PATH | grep -E "(node|npm)"
-
-# 3. Restart Claude Desktop after installation
-```
-
-#### **"Permission denied" errors**
-
-```json
-{
-  "env": {
-    "PROJECT_PATH": "/absolute/path/not/relative"
-  }
-}
-```
-
-#### **"Tools return prompts instead of results"**
-
-```json
-{
-  "env": {
-    "EXECUTION_MODE": "full",
-    "OPENROUTER_API_KEY": "required_for_ai_features"
-  }
-}
-```
-
-### Cline (VS Code) Issues
-
-#### **"Command not found: npx"**
-
-```bash
-# Install Node.js and npm
-# Then verify installation
-node --version
-npm --version
-```
-
-#### **"Workspace folder not found"**
-
-```json
-{
-  "env": {
-    "PROJECT_PATH": "${workspaceFolder}"
-  }
-}
-```
-
-#### **"Environment variables not resolved"**
-
-```json
-{
-  "env": {
-    "OPENROUTER_API_KEY": "${env:OPENROUTER_API_KEY}"
-  }
-}
-```
-
-### Cursor Issues
-
-#### **"Relative paths not working"**
-
-```json
-{
-  "env": {
-    "PROJECT_PATH": "/absolute/path/to/project"
-  }
-}
-```
-
-#### **"npx command fails"**
-
-```json
-{
-  "command": "mcp-adr-analysis-server",
-  "args": []
-}
-```
-
-### Gemini Issues
-
-#### **"Model not supported"**
-
-```json
-{
-  "env": {
-    "AI_MODEL": "google/gemini-pro-1.5"
-  }
-}
-```
-
-#### **"Token limit exceeded"**
-
-```json
-{
-  "env": {
-    "AI_MAX_TOKENS": "8192"
-  }
-}
-```
-
-### Continue.dev Issues
-
-#### **"Array format expected"**
-
-```json
-{
-  "mcpServers": [
-    {
-      "name": "adr-analysis",
-      "command": "npx",
-      "args": ["mcp-adr-analysis-server"]
-    }
-  ]
-}
-```
-
-#### **"Workspace folder not accessible"**
-
-```json
-{
-  "env": {
-    "PROJECT_PATH": "${workspaceFolder}"
-  }
-}
-```
-
-### Aider Issues
-
-#### **"YAML syntax error"**
-
-```yaml
-# Check indentation (use spaces, not tabs)
-mcp_servers:
-  - name: adr-analysis
-    command: mcp-adr-analysis-server
-    env:
-      PROJECT_PATH: '/absolute/path'
-```
-
-#### **"Command not found"**
-
-```bash
-# Ensure mcp-adr-analysis-server is in PATH
-which mcp-adr-analysis-server
-```
-
-### Windsurf Issues
-
-#### **"Configuration not loaded"**
-
-```bash
-# Check file location
-ls -la ~/.codeium/windsurf/mcp_config.json
-
-# Ensure proper JSON syntax
-cat ~/.codeium/windsurf/mcp_config.json | jq .
-```
-
-#### **"Environment variables not working"**
-
-```json
-{
-  "env": {
-    "PROJECT_PATH": "/absolute/path",
-    "OPENROUTER_API_KEY": "your_key_here"
-  }
-}
-```
-
-### General Troubleshooting
-
-#### **Test Server Installation**
-
-```bash
 # Test global installation
 mcp-adr-analysis-server --version
-
-# Test with npx
-npx mcp-adr-analysis-server --version
-
-# Test configuration
-mcp-adr-analysis-server --test
 ```
 
-#### **Validate Configuration**
+### Common Issues
 
-```bash
-# Test JSON syntax
-cat config.json | jq .
+| Issue                | Symptom                  | Solution                                                          |
+| -------------------- | ------------------------ | ----------------------------------------------------------------- |
+| Server not found     | "Unknown tool" errors    | Ensure Node.js ≥20.0.0 is installed: `node --version`            |
+| Permission denied    | File access errors       | Use absolute paths, check permissions                             |
+| Slow performance     | Long response times      | Enable caching: `AI_CACHE_ENABLED=true`                           |
 
-# Test YAML syntax (for Aider)
-yamllint .aider_config.yaml
-```
+### Debug Configuration
 
-#### **Check Environment Variables**
-
-```bash
-# List all environment variables
-env | grep -E "(PROJECT_PATH|OPENROUTER|FIRECRAWL)"
-
-# Test specific variables
-echo $PROJECT_PATH
-echo $OPENROUTER_API_KEY
-```
-
-#### **Debug Mode**
+Add these env vars temporarily to diagnose issues:
 
 ```json
 {
@@ -855,45 +412,6 @@ echo $OPENROUTER_API_KEY
 
 ## 🔒 Security Best Practices
 
-### Environment Variables
-
-**Never hardcode API keys in config files**:
-
-```bash
-# Set in your shell profile
-export OPENROUTER_API_KEY="your_key_here"
-```
-
-```json
-{
-  "env": {
-    "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}"
-  }
-}
-```
-
-### Secure Configuration Template
-
-```json
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "env": {
-        "PROJECT_PATH": "/absolute/path/to/project",
-        "OPENROUTER_API_KEY": "${OPENROUTER_API_KEY}",
-        "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR",
-        "ENABLE_CONTENT_MASKING": "true",
-        "MASKING_LEVEL": "strict",
-        "AI_CACHE_ENABLED": "false"
-      }
-    }
-  }
-}
-```
-
 ### File Permissions
 
 ```bash
@@ -902,107 +420,17 @@ chmod 600 ~/.config/Claude/claude_desktop_config.json
 chmod 600 .cursor/mcp.json
 ```
 
----
+### Content Masking
 
-## 🧪 Testing Configuration
-
-### Validate Setup
-
-1. **Test Server Installation**
-
-```bash
-mcp-adr-analysis-server --version
-mcp-adr-analysis-server --test
-```
-
-2. **Test MCP Connection**
-
-```json
-{
-  "tool": "analyze_project_ecosystem"
-}
-```
-
-3. **Test Basic Functionality**
-
-```json
-{
-  "tool": "analyze_project_ecosystem",
-  "parameters": {
-    "projectPath": ".",
-    "recursiveDepth": "shallow"
-  }
-}
-```
-
-### Diagnostic Commands
-
-```json
-// Check environment
-{
-  "tool": "analyze_environment",
-  "parameters": {
-    "includeOptimizations": true
-  }
-}
-
-// Test AI execution
-{
-  "tool": "suggest_adrs",
-  "parameters": {
-    "projectPath": ".",
-    "maxSuggestions": 1
-  }
-}
-```
-
----
-
-## 🔧 Troubleshooting
-
-### Common Configuration Issues
-
-| Issue                | Symptom                             | Solution                                                          |
-| -------------------- | ----------------------------------- | ----------------------------------------------------------------- |
-| Server not found     | "Unknown tool" errors               | Install server globally: `npm install -g mcp-adr-analysis-server` |
-| Tools return prompts | Get instructions instead of results | Set `EXECUTION_MODE=full` and add API key                         |
-| Permission denied    | File access errors                  | Use absolute paths, check permissions                             |
-| Slow performance     | Long response times                 | Use `claude-3-haiku` model, enable caching                        |
-| High API costs       | Expensive requests                  | Reduce `AI_MAX_TOKENS`, use cheaper model                         |
-
-### Debug Configuration
+For sensitive projects, enable content masking:
 
 ```json
 {
   "env": {
-    "LOG_LEVEL": "DEBUG",
-    "VERBOSE": "true",
-    "TIMING_ENABLED": "true",
-    "MEMORY_TRACKING": "true"
+    "ENABLE_CONTENT_MASKING": "true",
+    "MASKING_LEVEL": "strict"
   }
 }
-```
-
-### Reset Configuration
-
-```bash
-# Backup current config
-cp claude_desktop_config.json claude_desktop_config.json.backup
-
-# Start with minimal config
-cat > claude_desktop_config.json << 'EOF'
-{
-  "mcpServers": {
-    "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
-      "env": {
-        "PROJECT_PATH": "/absolute/path/to/project",
-        "EXECUTION_MODE": "prompt-only"
-      }
-    }
-  }
-}
-EOF
 ```
 
 ---

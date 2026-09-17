@@ -7,7 +7,7 @@ slug: /
 
 **Your ADRs are lying to you.** This MCP server catches it.
 
-Live drift detection validates architectural decisions against your actual code — plus content safety, decision memory, and 64 tools powered by your host LLM via CE-MCP.
+Live drift detection validates architectural decisions against your actual code — plus content safety, decision memory, and 63 tools powered by your host LLM via CE-MCP.
 
 ```bash
 npm install -g mcp-adr-analysis-server
@@ -90,7 +90,7 @@ Task-oriented recipes for specific goals: configuring clients, running analyses,
 
 ### [📖 Reference](./reference/api-reference.md)
 
-Technical details on all 64 MCP tools, environment variables, configuration options, and the CE-MCP directive format.
+Technical details on all 63 MCP tools, environment variables, configuration options, and the CE-MCP directive format.
 
 ### [💡 Explanation](./explanation/)
 

@@ -6,17 +6,16 @@
 
 ## 📋 Quick Reference
 
-| Variable                 | Required | Default                     | Description                         |
-| ------------------------ | -------- | --------------------------- | ----------------------------------- |
-| `PROJECT_PATH`           | ✅       | -                           | Absolute path to project directory  |
-| `OPENROUTER_API_KEY`     | ⚡       | -                           | API key for AI-powered analysis     |
-| `EXECUTION_MODE`         | ⚡       | `prompt-only`               | `full` or `prompt-only`             |
-| `AI_MODEL`               | ❌       | `anthropic/claude-3-sonnet` | AI model to use                     |
-| `ADR_DIRECTORY`          | ❌       | `./adrs`                    | Directory for ADR files             |
-| `LOG_LEVEL`              | ❌       | `INFO`                      | Logging verbosity                   |
-| `ADR_AGGREGATOR_API_KEY` | ❌       | -                           | API key for ADR Aggregator platform |
+| Variable                 | Required | Default    | Description                                                           |
+| ------------------------ | -------- | ---------- | --------------------------------------------------------------------- |
+| `PROJECT_PATH`           | ❌       | `.`        | Path to project directory (defaults to current directory)             |
+| `EXECUTION_MODE`         | ❌       | `ce-mcp`   | `ce-mcp` (default), `full` (legacy, needs API key), or `prompt-only` |
+| `ADR_DIRECTORY`          | ❌       | `docs/adrs`| Directory for ADR files relative to project path                      |
+| `LOG_LEVEL`              | ❌       | `INFO`     | Logging verbosity                                                     |
+| `OPENROUTER_API_KEY`     | ❌       | -          | OpenRouter API key (only needed for legacy `full` execution mode)     |
+| `ADR_AGGREGATOR_API_KEY` | ❌       | -          | API key for ADR Aggregator platform                                   |
 
-**Legend**: ✅ Required • ⚡ Required for AI features • ❌ Optional
+**Legend**: ❌ Optional — CE-MCP mode (the default) requires **no API key**. Your host LLM executes analysis via orchestration directives.
 
 ---
 
@@ -49,88 +48,56 @@ ls -la "$PROJECT_PATH"
 # Should show your project files
 ```
 
-### OPENROUTER_API_KEY (Required for AI)
+### EXECUTION_MODE
 
-**Purpose**: Enables AI-powered analysis instead of prompt-only mode
+**Purpose**: Controls how tools return results
+
+```bash
+# ✅ CE-MCP mode (default, recommended — no API key needed)
+EXECUTION_MODE="ce-mcp"
+
+# Legacy: server-side AI execution (requires OPENROUTER_API_KEY)
+EXECUTION_MODE="full"
+
+# Legacy: returns prompts you can paste into any AI chat
+EXECUTION_MODE="prompt-only"
+```
+
+**Mode Comparison**:
+
+| Mode          | Returns                                        | Requires API Key? |
+| ------------- | ---------------------------------------------- | ----------------- |
+| `ce-mcp`      | Orchestration directives for your host LLM     | No                |
+| `full`        | Server-side AI analysis results                | Yes               |
+| `prompt-only` | Prompts you can paste into any AI chat         | No                |
+
+**CE-MCP mode** is recommended for all users. Your host LLM (Claude, GPT, etc.) executes the analysis using orchestration directives returned by the tools — zero additional API cost and better results because the LLM already has your conversation context.
+
+### OPENROUTER_API_KEY (Legacy — Full Mode Only)
+
+**Purpose**: Only needed if you set `EXECUTION_MODE=full` for server-side AI execution
 
 ```bash
 # Get your key from: https://openrouter.ai/keys
 OPENROUTER_API_KEY="sk-or-v1-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
 ```
 
-**Without this key**:
-
-- Tools return prompts instead of analysis results
-- No AI-powered insights or suggestions
-- Limited to basic file operations
-
-**Validation**:
-
-```bash
-# Test API key (first 10 characters only for security)
-echo $OPENROUTER_API_KEY | head -c 10
-# Should show: sk-or-v1-x
-```
-
-### EXECUTION_MODE (Critical for AI)
-
-**Purpose**: Controls whether tools execute AI analysis or return prompts
-
-```bash
-# ✅ AI-powered execution (recommended)
-EXECUTION_MODE="full"
-
-# ❌ Legacy prompt-only mode
-EXECUTION_MODE="prompt-only"
-```
-
-**Mode Comparison**:
-
-| Mode          | `suggest_adrs` Returns                | `analyze_project_ecosystem` Returns |
-| ------------- | ------------------------------------- | ----------------------------------- |
-| `full`        | Actual ADR suggestions with reasoning | Complete technology analysis        |
-| `prompt-only` | Instructions to analyze architecture  | Instructions to examine project     |
+**Not needed in CE-MCP mode** (the default). In CE-MCP mode, your host LLM provides all AI capabilities.
 
 ---
 
-## 🤖 AI Configuration
+## 🤖 AI Configuration (Legacy Full Mode Only)
+
+> **Note**: The settings below only apply when `EXECUTION_MODE=full`. In CE-MCP mode (default), your host LLM handles all AI execution and these settings are ignored.
 
 ### AI_MODEL
 
-**Purpose**: Choose which AI model to use for analysis
+**Purpose**: Choose which AI model to use for server-side analysis (full mode only)
 
 ```bash
-# Recommended models
-AI_MODEL="anthropic/claude-3-sonnet"    # Best quality
-AI_MODEL="anthropic/claude-3-haiku"     # Fastest/cheapest
-AI_MODEL="openai/gpt-4o"                # Alternative quality option
-AI_MODEL="openai/gpt-4o-mini"          # Alternative fast option
-```
-
-**Model Comparison**:
-
-| Model             | Speed  | Quality   | Cost | Best For              |
-| ----------------- | ------ | --------- | ---- | --------------------- |
-| `claude-3-sonnet` | Medium | Excellent | High | Complex analysis      |
-| `claude-3-haiku`  | Fast   | Good      | Low  | Quick tasks           |
-| `gpt-4o`          | Medium | Excellent | High | Alternative to Claude |
-| `gpt-4o-mini`     | Fast   | Good      | Low  | Cost-effective        |
-
-### AI Performance Tuning
-
-```bash
-# Response consistency (0-1, lower = more consistent)
-AI_TEMPERATURE="0.1"
-
-# Maximum response length
-AI_MAX_TOKENS="4000"
-
-# Request timeout (milliseconds)
-AI_TIMEOUT="60000"
-
-# Enable response caching
-AI_CACHE_ENABLED="true"
-AI_CACHE_TTL="3600"  # 1 hour
+AI_MODEL="anthropic/claude-3-sonnet"    # Default
+AI_MODEL="anthropic/claude-3-haiku"     # Faster/cheaper
+AI_MODEL="openai/gpt-4o"                # Alternative
 ```
 
 ---
@@ -290,14 +257,9 @@ ADR_AGGREGATOR_API_KEY="agg_your_key_here"
 ### Development Environment
 
 ```bash
-# .env.development
+# .env.development — CE-MCP mode (default), no API key needed
 PROJECT_PATH="/Users/developer/current-project"
-OPENROUTER_API_KEY="your-dev-key"
-EXECUTION_MODE="full"
-AI_MODEL="anthropic/claude-3-haiku"  # Faster for dev
 LOG_LEVEL="DEBUG"
-AI_CACHE_ENABLED="true"
-TIMING_ENABLED="true"
 ```
 
 ### Production Environment
@@ -305,12 +267,7 @@ TIMING_ENABLED="true"
 ```bash
 # .env.production
 PROJECT_PATH="/app/project"
-OPENROUTER_API_KEY="your-prod-key"
-EXECUTION_MODE="full"
-AI_MODEL="anthropic/claude-3-sonnet"  # Best quality
 LOG_LEVEL="ERROR"
-AI_CACHE_ENABLED="true"
-AI_CACHE_TTL="86400"  # 24 hours
 ```
 
 ### CI/CD Environment
@@ -318,11 +275,16 @@ AI_CACHE_TTL="86400"  # 24 hours
 ```bash
 # .env.ci
 PROJECT_PATH="${GITHUB_WORKSPACE}"
-OPENROUTER_API_KEY="${OPENROUTER_API_KEY}"  # From secrets
-EXECUTION_MODE="full"
-AI_MODEL="anthropic/claude-3-haiku"  # Fast for CI
 LOG_LEVEL="INFO"
-AI_CACHE_ENABLED="false"  # Fresh analysis each time
+```
+
+### Legacy Full Mode (server-side AI)
+
+```bash
+# Only needed if you explicitly want server-side AI execution
+PROJECT_PATH="/Users/developer/current-project"
+OPENROUTER_API_KEY="your-key"
+EXECUTION_MODE="full"
 ```
 
 ---
@@ -335,19 +297,17 @@ AI_CACHE_ENABLED="false"  # Fresh analysis each time
 {
   "mcpServers": {
     "adr-analysis": {
-      "command": "mcp-adr-analysis-server",
+      "command": "npx",
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "/absolute/path/to/project",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "AI_MODEL": "anthropic/claude-3-sonnet",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR",
+        "PROJECT_PATH": "/absolute/path/to/project"
       }
     }
   }
 }
 ```
+
+That's it — CE-MCP mode is the default, so no API key or `EXECUTION_MODE` is needed.
 
 ### Cline (VS Code)
 
@@ -356,13 +316,9 @@ AI_CACHE_ENABLED="false"  # Fresh analysis each time
   "mcpServers": {
     "mcp-adr-analysis-server": {
       "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": "${workspaceFolder}",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR"
+        "PROJECT_PATH": "${workspaceFolder}"
       }
     }
   }
@@ -376,13 +332,9 @@ AI_CACHE_ENABLED="false"  # Fresh analysis each time
   "mcpServers": {
     "adr-analysis": {
       "command": "npx",
-      "args": ["mcp-adr-analysis-server"],
+      "args": ["-y", "mcp-adr-analysis-server"],
       "env": {
-        "PROJECT_PATH": ".",
-        "OPENROUTER_API_KEY": "your_key_here",
-        "EXECUTION_MODE": "full",
-        "ADR_DIRECTORY": "./adrs",
-        "LOG_LEVEL": "ERROR"
+        "PROJECT_PATH": "."
       }
     }
   }
@@ -410,13 +362,11 @@ echo $OPENROUTER_API_KEY | head -c 10
 
 ### Common Configuration Errors
 
-| Error                        | Cause                              | Solution               |
-| ---------------------------- | ---------------------------------- | ---------------------- |
-| "Project path not found"     | Relative or invalid `PROJECT_PATH` | Use absolute path      |
-| "Tools return prompts"       | Missing `EXECUTION_MODE=full`      | Set execution mode     |
-| "AI execution not available" | Missing `OPENROUTER_API_KEY`       | Add API key            |
-| "Permission denied"          | Wrong directory permissions        | Check file permissions |
-| "Module not found"           | Server not installed properly      | Reinstall server       |
+| Error                        | Cause                              | Solution                                                |
+| ---------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| "Project path not found"     | Invalid `PROJECT_PATH`             | Use a valid absolute or relative path                   |
+| "Permission denied"          | Wrong directory permissions        | Check file permissions                                  |
+| "Module not found"           | Server not installed properly      | Reinstall with `npm install -g mcp-adr-analysis-server` |
 
 ### Diagnostic Tool
 
@@ -424,19 +374,6 @@ echo $OPENROUTER_API_KEY | head -c 10
 {
   "tool": "analyze_project_ecosystem",
   "parameters": {}
-}
-```
-
-**Expected Response**:
-
-```json
-{
-  "aiExecutionAvailable": true,
-  "executionMode": "full",
-  "apiKeyConfigured": true,
-  "model": "anthropic/claude-3-sonnet",
-  "projectPath": "/absolute/path/to/project",
-  "adrDirectory": "./adrs"
 }
 ```
 
@@ -451,9 +388,6 @@ echo $OPENROUTER_API_KEY | head -c 10
 MAX_FILES_PER_ANALYSIS="500"
 MAX_RECURSION_DEPTH="5"
 
-# Use faster model for initial analysis
-AI_MODEL="anthropic/claude-3-haiku"
-
 # Enable aggressive caching
 AI_CACHE_ENABLED="true"
 AI_CACHE_TTL="86400"
@@ -464,9 +398,6 @@ AI_CACHE_TTL="86400"
 ```bash
 # Shared cache location
 CACHE_DIRECTORY="/shared/mcp-cache"
-
-# Consistent model across team
-AI_MODEL="anthropic/claude-3-sonnet"
 
 # Standardized ADR location
 ADR_DIRECTORY="./architecture/decisions"

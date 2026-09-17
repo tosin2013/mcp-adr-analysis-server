@@ -10,7 +10,7 @@ The MCP ADR Analysis Server integrates AI capabilities at multiple levels to pro
 
 ### Key Concepts
 
-- **Dual Execution Modes**: Full AI mode vs. prompt-only mode for flexibility
+- **Three Execution Modes**: CE-MCP (default, no API key), Full (server-side AI), and Prompt-only
 - **Session & Tool-Usage Tracker**: Project-local tracking of session intents, tool executions, and ADR registrations
 - **Tree-sitter Integration**: Semantic code understanding for accurate analysis
 - **Confidence Scoring**: Quantified reliability of analysis results
@@ -20,11 +20,17 @@ The MCP ADR Analysis Server integrates AI capabilities at multiple levels to pro
 
 ## AI Execution Pipeline
 
-The server supports two execution modes, each with distinct characteristics:
+The server supports three execution modes:
 
-### Full Mode (AI-Powered)
+### CE-MCP Mode (Default — Recommended)
 
-When `EXECUTION_MODE=full` and an OpenRouter API key is configured, the server executes AI analysis directly:
+In CE-MCP mode (the default since v2.14), tools return **orchestration directives** — structured instructions that tell the host LLM (Claude, GPT, etc.) how to perform the analysis. No API key is required; your host LLM provides all AI capabilities using its existing conversation context.
+
+This mode produces the best results because the host LLM already has your conversation context and can synthesize analysis across multiple tool calls.
+
+### Full Mode (Legacy — Server-Side AI)
+
+When `EXECUTION_MODE=full` and an OpenRouter API key is configured, the server executes AI analysis directly on the server side:
 
 ```mermaid
 flowchart LR
@@ -59,9 +65,9 @@ flowchart LR
 4. **Response Processing**: AI response parsed, validated, and formatted
 5. **Result Delivery**: Structured result returned to MCP client
 
-### Prompt-Only Mode (Fallback)
+### Prompt-Only Mode (Legacy)
 
-When no API key is configured, the server generates prompts for manual AI execution:
+In prompt-only mode, the server generates prompts for manual AI execution:
 
 ```mermaid
 flowchart LR
@@ -79,23 +85,14 @@ This mode allows users to:
 
 ---
 
-## OpenRouter Integration
+## OpenRouter Integration (Full Mode Only)
 
-The server uses OpenRouter as its AI gateway, providing access to multiple AI models through a unified API.
+When using the legacy full execution mode (`EXECUTION_MODE=full`), the server uses OpenRouter as its AI gateway, providing access to multiple AI models through a unified API. **This is not needed in CE-MCP mode (the default).**
 
-### Why OpenRouter?
-
-| Benefit               | Description                                                    |
-| --------------------- | -------------------------------------------------------------- |
-| **Model Diversity**   | Access Claude, GPT-4, Llama, and other models with one API key |
-| **Automatic Routing** | Intelligent model selection based on request type              |
-| **Cost Management**   | Unified billing and usage tracking                             |
-| **Fallback Support**  | Automatic failover if primary model is unavailable             |
-
-### Configuration
+### Configuration (Full Mode Only)
 
 ```typescript
-// Environment variables
+// Environment variables — only needed for EXECUTION_MODE=full
 OPENROUTER_API_KEY; // Required for full mode
 AI_MODEL; // Model selection (default: anthropic/claude-3-sonnet)
 AI_TEMPERATURE; // Response consistency (default: 0.3)
