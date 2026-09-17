@@ -23,11 +23,52 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
 
-      - name: Get current version
+      - name: Determine version to publish
         id: version
         run: |
-          VERSION=$(node -p "require('./package.json').version")
+          # When cascading from "Publish to NPM", the triggering run's
+          # head_branch is the tag (e.g. "v2.14.13"). Extract the version
+          # from that tag so we publish the version that was ACTUALLY sent
+          # to npm — not whatever package.json says on HEAD of main, which
+          # may have already been bumped to the next version by a subsequent
+          # auto-release cycle.
+          #
+          # BUG THIS FIXES: publish-mcp-registry reads package.json from
+          # HEAD, which races with auto-release. If another PR merged and
+          # bumped the version between the npm publish and this workflow,
+          # HEAD's package.json contains the NEXT version — which doesn't
+          # exist on npm yet — causing a 400 "version not found" from the
+          # MCP Registry validator. This happened on every run from
+          # v2.14.10 through v2.14.13 (Sep 16 2026).
+          if [[ "${{ github.event_name }}" == "workflow_run" ]]; then
+            TAG="${{ github.event.workflow_run.head_branch }}"
+            VERSION="${TAG#v}"
+            if [[ -z "$VERSION" || "$VERSION" == "$TAG" ]]; then
+              echo "::warning::Could not extract version from head_branch '$TAG', falling back to package.json"
+              VERSION=$(node -p "require('./package.json').version")
+            fi
+            echo "source=workflow_run (tag: $TAG)" >> "$GITHUB_STEP_SUMMARY"
+          else
+            VERSION=$(node -p "require('./package.json').version")
+            echo "source=workflow_dispatch (package.json)" >> "$GITHUB_STEP_SUMMARY"
+          fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "Publishing version: $VERSION"
+
+      - name: Wait for npm propagation
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          echo "Waiting for npm to serve version $VERSION..."
+          for i in $(seq 1 12); do
+            NPM_VERSION=$(npm view mcp-adr-analysis-server@"$VERSION" version 2>/dev/null || echo "")
+            if [[ "$NPM_VERSION" == "$VERSION" ]]; then
+              echo "✅ npm version $VERSION is available (attempt $i)"
+              exit 0
+            fi
+            echo "[attempt $i/12] npm version $VERSION not yet available, waiting 10s..."
+            sleep 10
+          done
+          echo "::warning::npm version $VERSION not available after 2 minutes; proceeding anyway"
 
       - name: Update server.json version
         run: |
@@ -47,5 +88,14 @@ jobs:
 
       - name: Verify publication
         run: |
+          VERSION="${{ steps.version.outputs.version }}"
           sleep 5
-          curl -s "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.tosin2013/mcp-adr-analysis-server"
+          echo "Verifying MCP Registry publication..."
+          REGISTRY_VERSION=$(curl -s "https://registry.modelcontextprotocol.io/v0.1/servers/io.github.tosin2013%2Fmcp-adr-analysis-server/versions/latest" | jq -r '.server.version // "unknown"')
+          echo "Registry version: $REGISTRY_VERSION"
+          echo "Expected version: $VERSION"
+          if [[ "$REGISTRY_VERSION" == "$VERSION" ]]; then
+            echo "✅ MCP Registry updated to $VERSION"
+          else
+            echo "::warning::MCP Registry shows $REGISTRY_VERSION, expected $VERSION (may take time to propagate)"
+          fi
