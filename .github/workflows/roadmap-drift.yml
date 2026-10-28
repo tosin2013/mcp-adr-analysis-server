@@ -1,0 +1,39 @@
+# Drift check between ROADMAP.md and specs/ (PLAYBOOK: "PM: plan the roadmap first").
+# Drift findings are ::warning:: annotations and never fail the job. Execution errors (git failure,
+# a named branch that can't be resolved, an unparseable table) print ERROR and fail the job, so a
+# check that didn't run never looks clean. Read-only token, no secrets, no network beyond the
+# checkout; plain pull_request (not pull_request_target), so PR code never gets a privileged token.
+# Ported from tosin2013/invoice-exception-desk (PLAYBOOK section 3). It runs only where this file exists.
+name: roadmap-drift
+
+on:
+  pull_request:
+    paths:
+      [
+        'ROADMAP.md',
+        'specs/**',
+        '.github/scripts/roadmap_drift.py',
+        '.github/workflows/roadmap-drift.yml',
+      ]
+  push:
+    paths:
+      [
+        'ROADMAP.md',
+        'specs/**',
+        '.github/scripts/roadmap_drift.py',
+        '.github/workflows/roadmap-drift.yml',
+      ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0 # all branches, so branch-qualified spec dirs (branch:specs/...) resolve to origin/<branch>
+      - name: Check ROADMAP.md against specs (drift = warnings; execution error = fail)
+        run: python3 .github/scripts/roadmap_drift.py ROADMAP.md
