@@ -14,6 +14,9 @@ Only when you are working an issue labelled **`agent-ready`** (an "Agent ruling"
 issue is the ruling: it answers every question you would otherwise guess. Without the label,
 don't start.
 
+Which row gets built next is the operator's pick from [`ROADMAP.md`](ROADMAP.md) ("How the
+next row is picked"), never the builder's.
+
 ## Builder rules
 
 Inputs: `.specify/memory/constitution.md`, the ruling issue, and `specs/<NNN-feature>/spec.md`,
@@ -46,7 +49,7 @@ change anything. If a task would contradict an Accepted ADR, that's a `BLOCKED` 
 Stop rather than edit any of these, in addition to anything the ruling lists:
 
 - `.github/`, `.specify/`, `.opencode/`, `.claude/`, `acceptance/`
-- `AGENTS.md`, `CLAUDE.md`, `.repo-governor*`
+- `AGENTS.md`, `CLAUDE.md`, `ROADMAP.md`, `.repo-governor*`
 - `docs/adrs/`: decisions are the owner's; a builder reads ADRs and never writes or edits them
 - `package.json`, `package-lock.json`, `server.json`, `CHANGELOG.md`
 - the grader's own files: `vitest.config.ts`, `vitest.acceptance.config.ts`,

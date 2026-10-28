@@ -1,9 +1,11 @@
 # mcp-adr-analysis-server Constitution
 
 <!--
-Sync impact: 1.0.0 -> 1.1.0 (MINOR: section added).
+Sync impact: 1.1.0 -> 1.2.0 (MINOR: rule added).
   1.0.0  ratified 2026-10-28 as approved by the owner.
   1.1.0  adds "Specs and ADRs", which links Spec Kit to docs/adrs/.
+  1.2.0  adds ROADMAP.md as the roadmap of record (Development workflow).
+         Also updated: AGENTS.md, .github/workflows/roadmap-drift.yml
   Templates updated: .specify/templates/overrides/spec-template.md,
                      .specify/templates/overrides/plan-template.md
   Also updated: AGENTS.md, .github/ISSUE_TEMPLATE/agent-ruling.yml
@@ -93,6 +95,9 @@ decisions; Spec Kit specs are the work that carries them out. The two are linked
 - Agent-built changes follow Spec Kit in order: constitution, specify, clarify, plan,
   tasks, analyze (HIGH findings fixed), implement. One command per step, with a review
   after each. Builder-loop rules are in `AGENTS.md`.
+- `ROADMAP.md` is the roadmap of record: it names and orders features, and each spec's
+  `Input:` line cites its row. GitHub milestones admit work; status lives only in
+  `ROADMAP.md`. The owner edits it; a builder loop never does.
 - Dependency bumps, config changes, typos and prototypes get a normal PR, not a spec.
 - Before a release, update `CHANGELOG.md` (Keep a Changelog 1.1.0) and, if categories
   change, `.github/release-drafter.yml`.
@@ -104,4 +109,4 @@ ADR or an amendment settles it. Amendments go through a PR the owner approves, w
 version bump: MAJOR when a rule is removed or reversed, MINOR when one is added, PATCH
 for wording.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-28 | **Last Amended**: 2026-10-28
+**Version**: 1.2.0 | **Ratified**: 2026-10-28 | **Last Amended**: 2026-10-28
