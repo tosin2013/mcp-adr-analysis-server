@@ -1,0 +1,90 @@
+name: Agent ruling
+description: A frozen, decided change for a builder agent. A human adds `agent-ready` only when it is final.
+title: '[Ruling]: '
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Every choice the builder would otherwise guess goes here, before the run (PLAYBOOK §4 step 2).
+        Anything this issue doesn't answer is a **stop**, not a guess. Don't add `agent-ready` until it's final.
+        Builder rules live in `AGENTS.md`.
+  - type: textarea
+    id: rule
+    attributes:
+      label: The rule
+      description: What must be true after this change, in plain words. Cite the ADR or issue it comes from.
+    validations:
+      required: true
+  - type: textarea
+    id: adrs
+    attributes:
+      label: Governing ADRs
+      description: Every ADR in docs/adrs/ this change must honour, with its status and the exact part that applies. A Proposed ADR can't be implemented until it's Accepted. The spec's Governing Decisions section is filled from this.
+      placeholder: |
+        - ADR-023 (Accepted): tool surface stays at the supported set; ...
+    validations:
+      required: true
+  - type: textarea
+    id: interfaces
+    attributes:
+      label: Types and interfaces
+      description: Exact names, signatures, tool schemas or response shapes. What other callers/tools get.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance checks (given / when / then)
+      description: Exact inputs and expected outputs. The grader's acceptance tests are written from these and kept out of the builder's reach.
+      placeholder: |
+        AC1 — Given ..., when ..., then ...
+    validations:
+      required: true
+  - type: textarea
+    id: forbidden
+    attributes:
+      label: Forbidden files
+      description: Paths the builder must not touch, beyond the list in AGENTS.md.
+    validations:
+      required: true
+  - type: textarea
+    id: test-edits
+    attributes:
+      label: Allowed edits to existing tests
+      description: Exactly which existing tests may change, and how. "None" is a valid answer.
+      value: None
+    validations:
+      required: true
+  - type: textarea
+    id: spec-trail
+    attributes:
+      label: Expected Spec Kit trail
+      description: Which spec folder, and whether this is a new spec or a dated Clarification on an existing one.
+    validations:
+      required: true
+  - type: input
+    id: size-cap
+    attributes:
+      label: Size cap (counted diff lines, tests included, lockfiles excluded)
+      value: '300'
+    validations:
+      required: true
+  - type: textarea
+    id: exceptions
+    attributes:
+      label: Constitution exceptions
+      description: Any constitution rule this change is allowed to break, and why. Usually "None".
+      value: None
+    validations:
+      required: true
+  - type: checkboxes
+    id: stop
+    attributes:
+      label: Builder contract
+      options:
+        - label: If anything here conflicts or is unclear, the builder stops and asks on this issue.
+          required: true
+        - label: Graded by the Acceptance Grader workflow and the required CI checks; a human merges.
+          required: true

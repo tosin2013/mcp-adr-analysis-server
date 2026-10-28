@@ -92,6 +92,11 @@
   color: 'ededed'
   description: 'GitHub agentic workflow automation'
 
+# Added by a human only when an agent-ruling issue is final. No label, no run.
+- name: 'agent-ready'
+  color: '0E8A16'
+  description: 'Ruling is final; a builder agent may start'
+
 - name: 'knowledge-graph'
   color: 'ededed'
   description: 'Knowledge-graph manager'

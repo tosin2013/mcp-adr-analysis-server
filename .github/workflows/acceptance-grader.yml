@@ -1,0 +1,79 @@
+name: Acceptance Grader
+
+# The grader from PLAYBOOK §4 step 6: checks the builder never saw.
+#   1. acceptance/issue-<N>/ tests, added in a separate grader commit
+#   2. every test ID on the base commit still exists on the head
+#   3. a diff-size summary, so sizes come from CI and never from the agent
+# Read-only, no secrets. The full suite already runs in test.yml.
+# Not a required check yet; add `grade` to branch protection once it has
+# graded a pilot PR cleanly.
+
+on:
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    env:
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Diff size summary
+        # Counted the way PLAYBOOK §7 counts the 300-line cap: tests included,
+        # lockfiles and the grader's own acceptance/ commit excluded.
+        run: |
+          COUNTED=$(git diff --numstat "$BASE_SHA" "$HEAD_SHA" -- . \
+            ':(exclude)package-lock.json' ':(exclude)docs/package-lock.json' \
+            ':(exclude)acceptance/**' \
+            | awk '{a+=$1; d+=$2} END {print a+d+0}')
+          {
+            echo "### Diff size"
+            echo "- counted lines (added + deleted, excl. lockfiles and acceptance/): **$COUNTED**"
+            echo '```'
+            git diff --stat "$BASE_SHA" "$HEAD_SHA" | tail -25
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$COUNTED" -gt 300 ]; then
+            echo "::warning::Diff is $COUNTED counted lines, over the default 300-line ruling cap. Check the ruling's own limit."
+          fi
+
+      - name: Acceptance tests
+        run: |
+          if find acceptance -name '*.test.ts' 2>/dev/null | grep -q .; then
+            npx vitest run --config vitest.acceptance.config.ts
+          else
+            echo "No acceptance/ tests in this PR; skipping." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Base test IDs still present
+        run: |
+          npx vitest list --json="$RUNNER_TEMP/head.json" >/dev/null
+          git worktree add --detach "$RUNNER_TEMP/base" "$BASE_SHA"
+          # Listing only collects tests, so the head's node_modules is close
+          # enough; a dependency the base needs but the head dropped would show
+          # up here as a collection error, which is worth a look anyway.
+          ln -s "$GITHUB_WORKSPACE/node_modules" "$RUNNER_TEMP/base/node_modules"
+          (cd "$RUNNER_TEMP/base" && npx vitest list --json="$RUNNER_TEMP/base.json" >/dev/null)
+          node scripts/check-base-test-ids.mjs \
+            "$RUNNER_TEMP/base.json" "$RUNNER_TEMP/head.json" \
+            "$RUNNER_TEMP/base" "$GITHUB_WORKSPACE"
