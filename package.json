@@ -78,7 +78,7 @@
     "@types/node": "^26.1.2",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",
-    "@vitest/coverage-v8": "^4.0.17",
+    "@vitest/coverage-v8": "^4.1.12",
     "ajv": "^8.17.1",
     "eslint": "^10.2.1",
     "eslint-config-prettier": "^10.1.8",
@@ -90,7 +90,7 @@
     "tsx": "^4.6.0",
     "typedoc": "^0.28.13",
     "typescript": "^6.0.3",
-    "vitest": "^4.0.18"
+    "vitest": "^4.1.12"
   },
   "keywords": [
     "mcp",
