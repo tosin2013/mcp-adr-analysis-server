@@ -58,8 +58,11 @@ jobs:
           fi
 
       - name: Acceptance tests
+        # Acceptance tests may boot the built server over stdio (dist/src/index.js),
+        # the artifact users run, so build first. npm install doesn't build here.
         run: |
           if find acceptance -name '*.test.ts' 2>/dev/null | grep -q .; then
+            npm run build
             npx vitest run --config vitest.acceptance.config.ts
           else
             echo "No acceptance/ tests in this PR; skipping." | tee -a "$GITHUB_STEP_SUMMARY"
