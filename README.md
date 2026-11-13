@@ -15,7 +15,17 @@
 - [Prerequisites](#prerequisites)
 - [Quick Installation](#-quick-installation)
 - [Quick Setup](#-quick-setup-2-steps)
+- [Tool Spotlight](#-tool-spotlight)
 - [Usage Examples](#-usage-examples)
+
+## 🔦 Tool Spotlight
+
+High-value tools to try first. See [`docs/reference/`](docs/reference/) for full references.
+
+- **adr_suggestion** — Suggest ADRs from your codebase. `{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"adr_suggestion","arguments":{}}}`
+- **smart_score** — Score architectural health. `{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"smart_score","arguments":{}}}`
+- **perform_research** — Research-backed analysis. `{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"perform_research","arguments":{}}}`
+- **deployment_readiness** — Validate deploy readiness. `{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"deployment_readiness","arguments":{}}}`
 - [Use Cases](#-use-cases)
 - [Technology Stack](#-technology-stack)
 - [Project Structure](#-project-structure)
